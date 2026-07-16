@@ -15,6 +15,7 @@ import Foundation
 struct BenchmarkArgs {
     var jsonOutputPath: String? = nil
     var filter: String? = nil      // optional: run only benchmarks whose name contains this string
+    var suite: String? = nil       // optional: run only suites whose module contains this string
 
     static func parse() -> BenchmarkArgs {
         var args = BenchmarkArgs()
@@ -26,6 +27,8 @@ struct BenchmarkArgs {
                 args.jsonOutputPath = iter.next()
             case "--filter":
                 args.filter = iter.next()
+            case "--suite":
+                args.suite = iter.next()
             default:
                 break
             }
@@ -50,6 +53,9 @@ struct BenchmarkEntryPoint {
         if let filter = args.filter {
             print("Filter   : \"\(filter)\"")
         }
+        if let suite = args.suite {
+            print("Suite    : \"\(suite)\"")
+        }
         print("")
 
         // ── Collect all suites ─────────────────────────────────────────────
@@ -63,6 +69,10 @@ struct BenchmarkEntryPoint {
         var allResults: [BenchmarkResult] = []
 
         for suite in suites {
+            if let needle = args.suite,
+               !suite.module.lowercased().contains(needle.lowercased()) {
+                continue
+            }
             print("▶ Running \(suite.module) benchmarks …")
             let results = await suite.run()
 

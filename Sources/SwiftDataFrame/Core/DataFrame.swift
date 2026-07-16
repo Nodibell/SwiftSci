@@ -337,19 +337,18 @@ public struct DataFrame: Sendable {
 
     private func rows(at indices: [Int]) -> DataFrame {
         guard !indices.isEmpty else { return DataFrame.empty }
-        let newCols: [any AnyColumn] = columns.map { col in
-            // Build ordered values from the selected row indices
-            let vals: [Any?] = indices.map { col.value(at: $0) }
-            return makeColumn(name: col.name, dtype: col.dtype, rawValues: vals)
-        }
+        let newCols: [any AnyColumn] = columns.map { $0.gathered(at: indices) }
         return (try? DataFrame(columns: newCols)) ?? DataFrame.empty
     }
 
     private func applyMask(_ mask: [Bool]) -> DataFrame {
-        let newCols: [any AnyColumn] = columns.compactMap { col in
-            try? col.filtered(by: mask)
+        var indices: [Int] = []
+        indices.reserveCapacity(mask.count / 2)
+        for (i, keep) in mask.enumerated() where keep {
+            indices.append(i)
         }
-        return (try? DataFrame(columns: newCols)) ?? DataFrame.empty
+        guard !indices.isEmpty else { return DataFrame.empty }
+        return rows(at: indices)
     }
 }
 

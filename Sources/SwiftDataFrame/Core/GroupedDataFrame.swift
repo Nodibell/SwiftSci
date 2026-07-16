@@ -128,10 +128,7 @@ public struct GroupedDataFrame: Sendable {
         // Aggregated columns
         for (colName, agg) in aggregations {
             guard let col = dataFrame[column: colName], col.dtype.isNumeric else { continue }
-            let aggValues: [Double?] = groups.map { indices in
-                let nums = indices.compactMap { col.value(at: $0).flatMap { toDouble($0) } }
-                return apply(agg, to: nums)
-            }
+            let aggValues = aggregateNumeric(col: col, groups: groups, agg: agg)
             resultColumns.append(TypedColumn<Double>(name: "\(colName)_\(aggLabel(agg))",
                                                       values: aggValues))
         }
@@ -143,22 +140,51 @@ public struct GroupedDataFrame: Sendable {
 
     /// Groups row indices by the unique combination of groupColumn values.
     private func buildGroups() -> [[Int]] {
+        let rowCount = dataFrame.shape.rows
+        guard rowCount > 0, !groupColumns.isEmpty else { return [] }
+
+        // Fast path: single utf8 key column (common category / groupBy case).
+        if groupColumns.count == 1,
+           let typed = dataFrame[column: groupColumns[0], as: String.self] {
+            var groupMap: [String: [Int]] = [:]
+            var order: [String] = []
+            groupMap.reserveCapacity(16)
+            let vals = typed.values
+            for row in 0..<vals.count {
+                let key = vals[row] ?? "__null__"
+                if groupMap[key] == nil {
+                    groupMap[key] = []
+                    order.append(key)
+                }
+                groupMap[key]!.append(row)
+            }
+            return order.map { groupMap[$0]! }
+        }
+
         var groupMap: [String: [Int]] = [:]
         var order: [String] = []
+        let keyCols = groupColumns.compactMap { dataFrame[column: $0] }
 
-        for row in 0..<dataFrame.shape.rows {
-            let key = groupColumns.map { col in
-                dataFrame[column: col].map { "\($0.value(at: row) ?? "null")" } ?? "null"
-            }.joined(separator: "||")
+        for row in 0..<rowCount {
+            var key = ""
+            key.reserveCapacity(32)
+            for (i, col) in keyCols.enumerated() {
+                if i > 0 { key.append("||") }
+                if let v = col.value(at: row) {
+                    key.append("\(v)")
+                } else {
+                    key.append("null")
+                }
+            }
 
             if groupMap[key] == nil {
                 groupMap[key] = []
                 order.append(key)
             }
-            groupMap[key]?.append(row)
+            groupMap[key]!.append(row)
         }
 
-        return order.compactMap { groupMap[$0] }
+        return order.map { groupMap[$0]! }
     }
 
     private func aggregate(using agg: Aggregation) -> DataFrame {
@@ -184,21 +210,88 @@ public struct GroupedDataFrame: Sendable {
                 let counts: [Int64?] = groups.map { Int64($0.count) }
                 resultColumns.append(TypedColumn<Int64>(name: col.name, values: counts))
             } else {
-                let aggValues: [Double?] = groups.map { indices in
-                    let nums = indices.compactMap { col.value(at: $0).flatMap { toDouble($0) } }
-                    return apply(agg, to: nums)
-                }
+                let aggValues = aggregateNumeric(col: col, groups: groups, agg: agg)
                 resultColumns.append(TypedColumn<Double>(name: col.name, values: aggValues))
             }
         }
 
         if agg == .count && valueColumns.isEmpty {
-            // If no numeric columns, just return count column
             let counts: [Int64?] = groups.map { Int64($0.count) }
             resultColumns.append(TypedColumn<Int64>(name: "count", values: counts))
         }
 
         return (try? DataFrame(columns: resultColumns)) ?? DataFrame.empty
+    }
+
+    private func aggregateNumeric(col: any AnyColumn, groups: [[Int]], agg: Aggregation) -> [Double?] {
+        if let typed = col as? TypedColumn<Double> {
+            return groups.map { applyNumeric(agg, to: typed.values, indices: $0) }
+        }
+        if let typed = col as? TypedColumn<Float> {
+            return groups.map { applyNumeric(agg, to: typed.values, indices: $0) }
+        }
+        if let typed = col as? TypedColumn<Int64> {
+            return groups.map { applyNumeric(agg, to: typed.values, indices: $0) }
+        }
+        if let typed = col as? TypedColumn<Int32> {
+            return groups.map { applyNumeric(agg, to: typed.values, indices: $0) }
+        }
+        return groups.map { indices in
+            let nums = indices.compactMap { col.value(at: $0).flatMap { toDouble($0) } }
+            return apply(agg, to: nums)
+        }
+    }
+
+    private func applyNumeric<T: SupportedType>(_ agg: Aggregation, to vals: [T?], indices: [Int]) -> Double? {
+        switch agg {
+        case .count:
+            var n = 0
+            for i in indices where vals[i] != nil { n += 1 }
+            return Double(n)
+        case .sum:
+            var s = 0.0
+            var any = false
+            for i in indices {
+                if let v = vals[i]?.doubleValue { s += v; any = true }
+            }
+            return any ? s : nil
+        case .mean:
+            var s = 0.0
+            var n = 0
+            for i in indices {
+                if let v = vals[i]?.doubleValue { s += v; n += 1 }
+            }
+            return n > 0 ? s / Double(n) : nil
+        case .min:
+            var best: Double?
+            for i in indices {
+                guard let v = vals[i]?.doubleValue else { continue }
+                if best == nil || v < best! { best = v }
+            }
+            return best
+        case .max:
+            var best: Double?
+            for i in indices {
+                guard let v = vals[i]?.doubleValue else { continue }
+                if best == nil || v > best! { best = v }
+            }
+            return best
+        case .first:
+            for i in indices {
+                if let v = vals[i]?.doubleValue { return v }
+            }
+            return nil
+        case .last:
+            var last: Double?
+            for i in indices {
+                if let v = vals[i]?.doubleValue { last = v }
+            }
+            return last
+        }
+    }
+
+    private func apply(_ agg: Aggregation, to vals: [Double?], indices: [Int]) -> Double? {
+        applyNumeric(agg, to: vals, indices: indices)
     }
 
     private func apply(_ agg: Aggregation, to nums: [Double]) -> Double? {

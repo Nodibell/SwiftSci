@@ -1,3 +1,5 @@
+import Foundation
+
 /// A strongly-typed column backed by a contiguous Swift array.
 /// `nil` elements represent null / missing values.
 public struct TypedColumn<T: SupportedType>: AnyColumn {
@@ -47,6 +49,16 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return TypedColumn<T>(name: name, values: result)
     }
 
+    public func gathered(at indices: [Int]) -> any AnyColumn {
+        var result: [T?] = []
+        result.reserveCapacity(indices.count)
+        let vals = values
+        for i in indices {
+            result.append(vals[i])
+        }
+        return TypedColumn<T>(name: name, values: result)
+    }
+
     public func value(at index: Int) -> Any? {
         guard index >= 0 && index < count else { return nil }
         return values[index] as Any?
@@ -69,22 +81,64 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     }
 
     public func sortedIndices(ascending: Bool) -> [Int] {
-        let allIndices = Array(0..<values.count)
-        return allIndices.sorted(by: { i, j in
-            switch (values[i], values[j]) {
-            case (nil, nil): return false
-            case (nil, _):   return false   // nulls last
-            case (_, nil):   return true    // nulls last
-            case let (l?, r?):
-                // Numeric fast path
-                if let ld = l.doubleValue, let rd = r.doubleValue {
-                    return ascending ? ld < rd : rd < ld
-                }
-                // Lexicographic fallback (String, Date, Bool)
-                let ls = "\(l)", rs = "\(r)"
-                return ascending ? ls < rs : rs < ls
+        var indices = Array(0..<values.count)
+        let vals = values
+
+        // Specialize common Comparable element types without constraining SupportedType
+        // (Bool is Hashable but not Comparable).
+        if T.self == Double.self {
+            let doubles = vals as! [Double?]
+            sortIndices(&indices, ascending: ascending) { doubles[$0] }
+            return indices
+        }
+        if T.self == Float.self {
+            let floats = vals as! [Float?]
+            sortIndices(&indices, ascending: ascending) { floats[$0] }
+            return indices
+        }
+        if T.self == Int64.self {
+            let ints = vals as! [Int64?]
+            sortIndices(&indices, ascending: ascending) { ints[$0] }
+            return indices
+        }
+        if T.self == Int32.self {
+            let ints = vals as! [Int32?]
+            sortIndices(&indices, ascending: ascending) { ints[$0] }
+            return indices
+        }
+        if T.self == String.self {
+            let strings = vals as! [String?]
+            sortIndices(&indices, ascending: ascending) { strings[$0] }
+            return indices
+        }
+        if T.self == Date.self {
+            let dates = vals as! [Date?]
+            sortIndices(&indices, ascending: ascending) { dates[$0] }
+            return indices
+        }
+        if T.self == Bool.self {
+            let bools = vals as! [Bool?]
+            sortIndices(&indices, ascending: ascending) { i -> Int? in
+                bools[i].map { $0 ? 1 : 0 }
             }
-        })
+            return indices
+        }
+
+        // Fallback: numeric promotion then string
+        indices.sort { i, j in
+            switch (vals[i], vals[j]) {
+            case (nil, nil): return false
+            case (nil, _):   return false
+            case (_, nil):   return true
+            case let (l?, r?):
+                if let ld = l.doubleValue, let rd = r.doubleValue {
+                    return ascending ? ld < rd : ld > rd
+                }
+                let ls = "\(l)", rs = "\(r)"
+                return ascending ? ls < rs : ls > rs
+            }
+        }
+        return indices
     }
 
     // MARK: – TypedColumn-specific operations
@@ -131,6 +185,29 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     /// Returns non-null values as a plain array.
     public var nonNullValues: [T] { values.compactMap { $0 } }
+}
+
+/// Nulls-last index sort over optional Comparable keys.
+private func sortIndices<C: Comparable>(_ indices: inout [Int], ascending: Bool, key: (Int) -> C?) {
+    if ascending {
+        indices.sort { i, j in
+            switch (key(i), key(j)) {
+            case (nil, nil): return false
+            case (nil, _):   return false
+            case (_, nil):   return true
+            case let (l?, r?): return l < r
+            }
+        }
+    } else {
+        indices.sort { i, j in
+            switch (key(i), key(j)) {
+            case (nil, nil): return false
+            case (nil, _):   return false
+            case (_, nil):   return true
+            case let (l?, r?): return l > r
+            }
+        }
+    }
 }
 
 // MARK: – Double column filter fast path

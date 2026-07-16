@@ -15,6 +15,9 @@ public protocol AnyColumn: Sendable {
     /// - Throws: `DataFrameError.columnLengthMismatch` if mask length differs.
     func filtered(by mask: [Bool]) throws -> any AnyColumn
 
+    /// Returns a new column with values gathered in `indices` order.
+    func gathered(at indices: [Int]) -> any AnyColumn
+
     /// Returns the element at the given index as `Any?` (nil = null).
     func value(at index: Int) -> Any?
 

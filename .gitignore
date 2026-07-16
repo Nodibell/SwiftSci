@@ -6,3 +6,7 @@ DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+ROADMAP/
+
+# Generated benchmark outputs (keep README)
+Benchmarks/Results/*.json

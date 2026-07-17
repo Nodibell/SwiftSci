@@ -13,9 +13,11 @@ concurrency:
 env:
   SWIFT_PACKAGE_DIR: "."
   MACOSX_DEPLOYMENT_TARGET: "14.0"
+  # Надійне вимкнення GPU для CI
   MLX_DEVICE: cpu
   MLX_FORCE_CPU: "1"
   MLX_METAL_DISABLE: "1"
+  METAL_DEVICE_WRAPPER_TYPE: cpu
 
 jobs:
   build:
@@ -44,9 +46,13 @@ jobs:
           path: .build
           key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       
+      - name: Create Metal shims to prevent assertion crash
+        run: |
+          BUILD_DIR=$(swift build --show-bin-path -c debug)
+          mkdir -p "$BUILD_DIR"
+          touch "$BUILD_DIR/default.metallib" "$BUILD_DIR/mlx.metallib"
+      
       - name: Run tests
-        env:
-          METAL_DEVICE_WRAPPER_TYPE: cpu
         run: swift test --enable-code-coverage -v --skip SwiftLLMTests
         
       - name: Export coverage
@@ -75,15 +81,19 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11", cache: "pip", cache-dependency-path: Benchmarks/Python/requirements.txt }
       - run: pip install -r Benchmarks/Python/requirements.txt
+      
       - name: Run Benchmarks
-        env:
-          METAL_DEVICE_WRAPPER_TYPE: cpu
         run: |
+          BUILD_DIR=$(swift build -c release --show-bin-path)
+          mkdir -p "$BUILD_DIR"
+          touch "$BUILD_DIR/default.metallib" "$BUILD_DIR/mlx.metallib"
+          
           swift build -c release --product SwiftAnalyticsBenchmarks
           mkdir -p Benchmarks/Results
           swift run -c release SwiftAnalyticsBenchmarks --json Benchmarks/Results/swift_results.json
           python3 Benchmarks/Python/benchmarks.py --json Benchmarks/Results/python_results.json
           python3 Benchmarks/Python/compare.py Benchmarks/Results/swift_results.json Benchmarks/Results/python_results.json --regression-threshold 1.2
+          
       - uses: actions/upload-artifact@v4
         if: always()
         with:

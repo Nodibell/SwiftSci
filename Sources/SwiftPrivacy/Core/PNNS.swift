@@ -93,7 +93,7 @@ public struct PNNSServer: Sendable {
     /// - Parameters:
     ///   - encryptedQuery: Encrypted q vector coordinate-wise.
     ///   - encryptedQuerySquared: Encrypted q^2 vector coordinate-wise.
-    ///   - key: The client's public metadata (e.g. key structure containing scaling factor delta).
+    ///   - clientKey: The client's public metadata (e.g. key structure containing scaling factor delta).
     /// - Returns: A list of encrypted squared Euclidean distances.
     public func computeSecureEuclideanDistances(
         encryptedQuery: [LWECiphertext],

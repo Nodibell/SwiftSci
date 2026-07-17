@@ -14,6 +14,7 @@ env:
   SWIFT_PACKAGE_DIR: "."
   MACOSX_DEPLOYMENT_TARGET: "14.0"
   MLX_DEVICE: cpu
+  MLX_METAL_DISABLE: "1"
 
 jobs:
   # 1. Build

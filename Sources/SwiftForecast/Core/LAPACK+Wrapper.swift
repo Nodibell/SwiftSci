@@ -1,90 +1,126 @@
 import Foundation
 import Accelerate
-
-#if ACCELERATE_LAPACK_ILP64
-typealias LAPACKInteger = Int
-#else
 typealias LAPACKInteger = Int32
-#endif
 
-// Wrappers to avoid deprecation warnings
+// MARK: - BLAS
+
+@inline(__always)
 func forecast_dgemm(
-    _ Order: CBLAS_ORDER, _ TransA: CBLAS_TRANSPOSE, _ TransB: CBLAS_TRANSPOSE,
-    _ M: Int, _ N: Int, _ K: Int,
-    _ alpha: Double, _ A: [Double], _ lda: Int,
-    _ B: [Double], _ ldb: Int,
-    _ beta: Double, _ C: inout [Double], _ ldc: Int
+    _ order: CBLAS_ORDER,
+    _ transA: CBLAS_TRANSPOSE,
+    _ transB: CBLAS_TRANSPOSE,
+    _ m: Int,
+    _ n: Int,
+    _ k: Int,
+    _ alpha: Double,
+    _ A: [Double],
+    _ lda: Int,
+    _ B: [Double],
+    _ ldb: Int,
+    _ beta: Double,
+    _ C: inout [Double],
+    _ ldc: Int
 ) {
     cblas_dgemm(
-        Order, TransA, TransB,
-        M, N, K,
-        alpha, A, lda,
-        B, ldb,
-        beta, &C, ldc
+        order,
+        transA,
+        transB,
+        Int32(m),
+        Int32(n),
+        Int32(k),
+        alpha,
+        A,
+        Int32(lda),
+        B,
+        Int32(ldb),
+        beta,
+        &C,
+        Int32(ldc)
     )
 }
 
+@inline(__always)
 func forecast_dgemv(
-    _ Order: CBLAS_ORDER, _ TransA: CBLAS_TRANSPOSE,
-    _ M: Int, _ N: Int,
-    _ alpha: Double, _ A: [Double], _ lda: Int,
-    _ X: [Double], _ incX: Int,
-    _ beta: Double, _ Y: inout [Double], _ incY: Int
+    _ order: CBLAS_ORDER,
+    _ trans: CBLAS_TRANSPOSE,
+    _ m: Int,
+    _ n: Int,
+    _ alpha: Double,
+    _ A: [Double],
+    _ lda: Int,
+    _ X: [Double],
+    _ incX: Int,
+    _ beta: Double,
+    _ Y: inout [Double],
+    _ incY: Int
 ) {
     cblas_dgemv(
-        Order, TransA,
-        M, N,
-        alpha, A, lda,
-        X, incX,
-        beta, &Y, incY
+        order,
+        trans,
+        Int32(m),
+        Int32(n),
+        alpha,
+        A,
+        Int32(lda),
+        X,
+        Int32(incX),
+        beta,
+        &Y,
+        Int32(incY)
     )
 }
 
+// MARK: - LAPACK
+
+@inline(__always)
 func dgesv_wrapper(
-    _ n: UnsafeMutablePointer<LAPACKInteger>,
-    _ nrhs: UnsafeMutablePointer<LAPACKInteger>,
+    _ n: inout LAPACKInteger,
+    _ nrhs: inout LAPACKInteger,
     _ a: UnsafeMutablePointer<Double>,
-    _ lda: UnsafeMutablePointer<LAPACKInteger>,
+    _ lda: inout LAPACKInteger,
     _ ipiv: UnsafeMutablePointer<LAPACKInteger>,
     _ b: UnsafeMutablePointer<Double>,
-    _ ldb: UnsafeMutablePointer<LAPACKInteger>,
-    _ info: UnsafeMutablePointer<LAPACKInteger>
+    _ ldb: inout LAPACKInteger,
+    _ info: inout LAPACKInteger
 ) {
-    dgesv_(n, nrhs, a, lda, ipiv, b, ldb, info)
+    dgesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info)
 }
 
+@inline(__always)
 func dgels_wrapper(
     _ trans: UnsafeMutablePointer<Int8>,
-    _ m: UnsafeMutablePointer<LAPACKInteger>,
-    _ n: UnsafeMutablePointer<LAPACKInteger>,
-    _ nrhs: UnsafeMutablePointer<LAPACKInteger>,
+    _ m: inout LAPACKInteger,
+    _ n: inout LAPACKInteger,
+    _ nrhs: inout LAPACKInteger,
     _ a: UnsafeMutablePointer<Double>,
-    _ lda: UnsafeMutablePointer<LAPACKInteger>,
+    _ lda: inout LAPACKInteger,
     _ b: UnsafeMutablePointer<Double>,
-    _ ldb: UnsafeMutablePointer<LAPACKInteger>,
+    _ ldb: inout LAPACKInteger,
     _ work: UnsafeMutablePointer<Double>,
-    _ lwork: UnsafeMutablePointer<LAPACKInteger>,
-    _ info: UnsafeMutablePointer<LAPACKInteger>
+    _ lwork: inout LAPACKInteger,
+    _ info: inout LAPACKInteger
 ) {
-    dgels_(trans, m, n, nrhs, a, lda, b, ldb, work, lwork, info)
+    dgels_(trans, &m, &n, &nrhs, a, &lda, b, &ldb, work, &lwork, &info)
 }
 
+@inline(__always)
 func dpotrf_wrapper(
     _ uplo: UnsafeMutablePointer<Int8>,
-    _ n: UnsafeMutablePointer<LAPACKInteger>,
+    _ n: inout LAPACKInteger,
     _ a: UnsafeMutablePointer<Double>,
-    _ lda: UnsafeMutablePointer<LAPACKInteger>,
-    _ info: UnsafeMutablePointer<LAPACKInteger>
+    _ lda: inout LAPACKInteger,
+    _ info: inout LAPACKInteger
 ) {
-    dpotrf_(uplo, n, a, lda, info)
+    dpotrf_(uplo, &n, a, &lda, &info)
 }
 
+@inline(__always)
 func dpotri_wrapper(
     _ uplo: UnsafeMutablePointer<Int8>,
-    _ n: UnsafeMutablePointer<LAPACKInteger>,
+    _ n: inout LAPACKInteger,
     _ a: UnsafeMutablePointer<Double>,
-    _ lda: UnsafeMutablePointer<LAPACKInteger>,
-    _ info: UnsafeMutablePointer<LAPACKInteger>
+    _ lda: inout LAPACKInteger,
+    _ info: inout LAPACKInteger
 ) {
-    dpotri_(uplo, n, a, lda, info)
+    dpotri_(uplo, &n, a, &lda, &info)
 }

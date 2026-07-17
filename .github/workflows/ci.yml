@@ -19,7 +19,7 @@ jobs:
   # ── Job 1: Build + Unit Tests ───────────────────────────────────────────────
   build-and-test:
     name: Build & Test (macOS / Apple Silicon)
-    runs-on: macos-15          # Apple Silicon M1 – required for Accelerate & Metal
+    runs-on: macos-14          # Apple Silicon M1 – required for Accelerate & Metal
 
     steps:
       - name: Checkout repository
@@ -37,6 +37,15 @@ jobs:
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: ${{ runner.os }}-spm-
 
+      - name: Setup Metal libraries
+        run: |
+          # Preload Metal libraries in the environment
+          xcrun metal -v 2>&1 | head -5 || true
+          # Build a minimal Metal library to ensure framework is loaded
+          mkdir -p /tmp/metal_test
+          echo "kernel void test(device float* p [[buffer(0)]], uint id [[thread_index_in_grid]]) { p[id] = 1.0; }" > /tmp/metal_test/test.metal
+          xcrun metal -c /tmp/metal_test/test.metal -o /tmp/metal_test/test.ir 2>&1 || true
+      
       - name: Build (debug)
         run: swift build -v
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
@@ -74,7 +83,7 @@ jobs:
   # ── Job 2: Performance Benchmarks ─────────────────────────────────────────
   performance-check:
     name: Performance Regression Check
-    runs-on: macos-15
+    runs-on: macos-14
     needs: build-and-test          # only run if tests pass
 
     steps:

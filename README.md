@@ -1,32 +1,32 @@
 # SwiftAnalytics
 
-**SwiftAnalytics** — це нативна, високопродуктивна, модульна екосистема для аналізу даних та машинного навчання на Swift, оптимізована для Apple Silicon (M-series), архітектури Unified Memory (UMA) та суворої багатопотоковості Swift 6 (Strict Concurrency).
+**SwiftAnalytics** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
-Бібліотека поєднує в собі переваги апаратно-прискорених тензорних обчислень через **MLX** на GPU та оптимізованих SIMD-підпрограм **Accelerate (vDSP / LAPACK)** на CPU для максимальної швидкодії на Apple пристроях.
-
----
-
-## 🚀 Основні Модулі
-
-* **`SwiftDataFrame`** — швидкі колоночні маніпуляції даними з нульовим копіюванням у пам'яті (zero-copy) на базі `Apache Arrow`.
-* **`SwiftStats`** — векторизовані статистичні тести, розподіли та описова статистика за допомогою `Accelerate vDSP`.
-* **`SwiftPreprocessing`** — масштабування, кодування категорій, дискретизація та побудова конвеєрів (`Pipeline`).
-* **`SwiftML`** — класичні моделі навчання (лінійна/логістична регресія, дерева ухвалення рішень, Random Forest, GBDT).
-* **`SwiftCluster`** — кластеризація (K-Means) та зниження розмірності (PCA, DBSCAN).
-* **`SwiftOptimize`** — перехресна перевірка (`KFold`) та паралельний пошук гіперпараметрів (`GridSearchCV`).
-* **`SwiftForecast`** — аналіз часових рядів (адитивна/мультиплікативна декомпозиція, Holt-Winters, ARIMA, фільтр Калмана).
-* **`SwiftNLP`** — токенізація (Word / subword BPE токенізатор) та статичні ембеддінги.
-* **`SwiftExplain`** — локальна інтерпретація моделей чорної скриньки за допомогою паралельного алгоритму `KernelSHAP`.
-* **`SwiftLLM`** — нативна генерація тексту на GPU за допомогою казуальних трансформер-декодерів та MLX.
-* **`SwiftPrivacy`** — криптографічне машинне навчання на зашифрованих даних (Ring-LWE, PNNS) на базі гомоморфного шифрування.
+The package combines hardware-accelerated tensor computations on the Apple Silicon GPU via **MLX** with highly optimized CPU vector routines from the **Accelerate framework (vDSP / LAPACK)**.
 
 ---
 
-## 📊 Порівняння Продуктивності (Swift vs Python)
+## 🚀 Core Modules
 
-Нижче наведені медіанні часові результати бенчмарків виконання на архітектурі **Apple Silicon M-series (macOS 15 / arm64)** порівняно з популярними Python-бібліотеками (Scikit-Learn, NumPy, SHAP, Statsmodels, PyTorch):
+* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`.
+* **`SwiftStats`**: Vectorized descriptive statistics, distributions, and hypothesis tests powered by `Accelerate vDSP`.
+* **`SwiftPreprocessing`**: Feature scaling, categorical encoding, binning, and preprocessing pipelines (`Pipeline`).
+* **`SwiftML`**: Classical estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs).
+* **`SwiftCluster`**: Dimensionality reduction (SVD-based PCA, DBSCAN) and clustering (K-Means).
+* **`SwiftOptimize`**: Model validation (K-Fold cross-validation) and parallel hyperparameter optimization (`GridSearchCV`).
+* **`SwiftForecast`**: Time series analysis (additive/multiplicative decomposition, Holt-Winters, ARIMA, Kalman filtering).
+* **`SwiftNLP`**: Tokenization (Word / subword BPE Tokenizers) and static word embeddings.
+* **`SwiftExplain`**: Black-box model explainability using a parallelized `KernelSHAP` implementation.
+* **`SwiftLLM`**: Local text generation on GPU using casual transformer-decoder architectures and MLX.
+* **`SwiftPrivacy`**: Cryptographic machine learning on encrypted data (Ring-LWE, PNNS) utilizing homomorphic encryption.
 
-| Тест (Benchmark) | Swift (ms) | Python (ms) | Прискорення | Переможець |
+---
+
+## 📊 Performance Comparison (Swift vs Python)
+
+The following table presents median execution times on an **Apple Silicon M-series (macOS 15 / arm64)** system, compared directly against popular Python counterparts (Scikit-Learn, NumPy, SHAP, Statsmodels, PyTorch):
+
+| Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
 | **Pearson Correlation** (500k elements) | 0.777 ms | 1.220 ms | 1.57x | 🟢 Swift |
 | **Random Forest fit** (1k samples x 4 features) | 4.630 ms | 23.626 ms | 5.10x | 🟢 Swift |
@@ -41,47 +41,47 @@
 
 ---
 
-## 🛠 Архітектурні Рішення та Оптимізація
+## 🛠 Architectural Highlights & Optimizations
 
-### 1. Перехід від ООП до DOD (Data-Oriented Design)
-Для дерев рішень (`DecisionTree`, `RandomForest` та `GBDT`) класичний об'єктно-орієнтований підхід (де кожен вузол є окремим екземпляром класу з лінками) викликав суттєві накладні витрати на підрахунок посилань (ARC) та призводив до фрагментації кешу процесора (cache misses).
-Ми перейшли до DOD-архітектури, представивши дерево у вигляді пласкаго масиву структур `FlatTreeNode`:
-* Усі вузли зберігаються послідовно у неперервному блоці пам'яті.
-* Навігація лівим/правим нащадками здійснюється за індексами у масиві.
-* Це дозволило збільшити швидкість тренування та прогнозування ансамблів у кілька разів завдяки кращій локалізації даних у L1/L2 кешах процесора.
+### 1. Transitioning from OOP to Data-Oriented Design (DOD)
+Traditional object-oriented trees (where every node is a reference type containing child node pointers) suffer from severe Automatic Reference Counting (ARC) overhead and poor CPU cache locality (L1/L2 cache misses). 
+`SwiftAnalytics` resolves this by storing trees as a contiguous flat array of `FlatTreeNode` structures:
+* Nodes are allocated next to each other in memory.
+* Child navigation is done via array offsets.
+* This dramatically increases tree ensemble traversal speeds.
 
-### 2. Апаратна Маршрутизація (Hardware Routing)
-Впроваджено гнучку систему вибору обчислювального пристрою (`requestedDevice` / `resolvedDevice`):
-* Алгоритми з високим розходженням гілок (branch divergence), такі як дерева рішень, Random Forest чи просторовий пошук (DBSCAN), виконуються суто на CPU.
-* Матричні операції (лінійна регресія, K-Means) використовують переваги Metal-ядер Apple Silicon GPU через ліниві обчислення `MLXArray`.
+### 2. Intelligent Hardware Routing
+We implement a flexible compute device routing policy (`requestedDevice` / `resolvedDevice`):
+* Branch-heavy algorithms (such as Decision Trees, Random Forests, or spatial DBSCAN search) run strictly on CPU.
+* Large tensor operations (Linear/Logistic Regression, K-Means) leverage Apple Silicon GPU execution blocks via `MLXArray` lazy evaluation.
 
-### 3. Опціональна перевірка NaN для SIMD
-Для Descriptive Statistics (`mean`, `variance`, `standardDeviation`) ми виявили, що перевірка на наявність `NaN` у масиві створює CPU-пляшку, оскільки звичайна ітерація в Swift займає більше часу, ніж SIMD-обчислення у `vDSP`. У версії 1.0 додано параметр `checkNaN: Bool = true`, який можна вимкнути для критичних за продуктивністю ділянок коду (в бенчмарках встановлено `false`).
-
----
-
-## ⚠️ Виявлені Вузькі Місця та Недоліки
-
-1. **Тимчасово вища складність I/O для CSV-парсингу**: Наразі реалізація парсингу в `SwiftDataFrame` має вищу тимчасову складність $O(N)$ для операцій введення/виведення, ніж Pandas, через відсутність повноцінного потокового (streaming) парсингу великих файлів. Оптимізація потокового парсингу запланована на наступні етапи розвитку бібліотеки.
-2. **Низькорівневий міст з MLX**: `MLXArray` за замовчуванням не реалізує протокол `Sendable`. Це було вирішено за допомогою суворої ізоляції акторів та передачі токенів володіння `WiredMemoryTicket`.
+### 3. Optional NaN Validation Bypass
+We identified that running $O(N)$ CPU sweeps to check for `NaN` presence in statistical calculations adds significant CPU bottlenecks that limit the speed of underlying `vDSP` functions. In v1.0, we introduced a `checkNaN: Bool = true` default parameter to descriptive stats. When bypassed (set to `false` in benchmarks and hot loops), SwiftStats leverages pure hardware SIMD speeds, outperforming NumPy.
 
 ---
 
-## 💻 Швидкий Старт
+## ⚠️ Known Gaps & Limitations
+
+1. **High CSV Parsing Complexity**: The current CSV reader implementation in `SwiftDataFrame` runs with $O(N)$ CPU overhead and does not support streaming parsing of large datasets, resulting in slower reading rates than Pandas. Improving I/O parsing is scheduled for future minor releases.
+2. **MLX Sendable Isolation**: `MLXArray` does not conform to `Sendable`. This is handled in the library through strict actor isolation and passing memory ownership tokens (`WiredMemoryTicket`).
+
+---
+
+## 💻 Quick Start
 
 ```swift
 import SwiftDataFrame
 import SwiftStats
 import SwiftML
 
-// 1. Завантаження даних
+// 1. Load CSV data
 let df = try DataFrame.readCSV(contentsOf: csvURL)
 
-// 2. Статистичний опис
-let summary = try Stats.describe(df["target"].toDoubles()!)
+// 2. Compute descriptive statistics without NaN checks for maximum speed
+let summary = try Stats.describe(df["target"].toDoubles()!, checkNaN: false)
 print(summary)
 
-// 3. Навчання моделі
+// 3. Train a GPU-accelerated Estimator
 let regressor = LinearRegression(device: .gpu)
 try await regressor.fit(features: X, targets: y)
 let predictions = try await regressor.predict(features: X_test)
@@ -89,5 +89,5 @@ let predictions = try await regressor.predict(features: X_test)
 
 ---
 
-## 📜 Ліцензія
-Проєкт розповсюджується під ліцензією MIT.
+## 📜 License
+This project is licensed under the MIT License.

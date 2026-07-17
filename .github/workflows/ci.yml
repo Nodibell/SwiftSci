@@ -50,7 +50,9 @@ jobs:
         run: swift build -v
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
-      - name: Run tests with code coverage
+      - name: Run tests with code coverage (MLX on CPU)
+        env:
+          MLX_DEVICE: cpu
         run: swift test --enable-code-coverage -v
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 

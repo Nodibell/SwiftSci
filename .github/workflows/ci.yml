@@ -13,13 +13,13 @@ concurrency:
 env:
   SWIFT_PACKAGE_DIR: "."
   MACOSX_DEPLOYMENT_TARGET: "14.0"
-  # Надійне вимкнення GPU для CI
   MLX_DEVICE: cpu
   MLX_FORCE_CPU: "1"
   MLX_METAL_DISABLE: "1"
   METAL_DEVICE_WRAPPER_TYPE: cpu
 
 jobs:
+  # 1. Build
   build:
     name: Build
     runs-on: macos-latest
@@ -33,6 +33,7 @@ jobs:
           key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       - run: swift build -v
 
+  # 2. Test
   test:
     name: Unit Tests
     needs: build
@@ -45,12 +46,6 @@ jobs:
         with:
           path: .build
           key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
-      
-      - name: Create Metal shims to prevent assertion crash
-        run: |
-          BUILD_DIR=$(swift build --show-bin-path -c debug)
-          mkdir -p "$BUILD_DIR"
-          touch "$BUILD_DIR/default.metallib" "$BUILD_DIR/mlx.metallib"
       
       - name: Run tests
         run: swift test --enable-code-coverage -v --skip SwiftLLMTests
@@ -66,6 +61,7 @@ jobs:
           file: coverage.lcov
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  # 3. Benchmark
   performance-check:
     name: Performance Regression Check
     needs: test
@@ -84,10 +80,6 @@ jobs:
       
       - name: Run Benchmarks
         run: |
-          BUILD_DIR=$(swift build -c release --show-bin-path)
-          mkdir -p "$BUILD_DIR"
-          touch "$BUILD_DIR/default.metallib" "$BUILD_DIR/mlx.metallib"
-          
           swift build -c release --product SwiftAnalyticsBenchmarks
           mkdir -p Benchmarks/Results
           swift run -c release SwiftAnalyticsBenchmarks --json Benchmarks/Results/swift_results.json

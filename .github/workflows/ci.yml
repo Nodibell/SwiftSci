@@ -13,6 +13,7 @@ concurrency:
 
 env:
   SWIFT_PACKAGE_DIR: "."
+  MACOSX_DEPLOYMENT_TARGET: "14.0"
 
 jobs:
   # ── Job 1: Build + Unit Tests ───────────────────────────────────────────────

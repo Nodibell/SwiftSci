@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SwiftAnalytics — High-performance modular data science and GenAI framework for Apple Silicon.">
-    <title>SwiftAnalytics — Engineering Documentation & Guide</title>
-    <!-- Outfit & JetBrains Mono Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>SwiftAnalytics — Engineering Documentation</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --bg-dark: #09090b;
@@ -16,16 +15,18 @@
             --bg-card-hover: rgba(30, 30, 39, 0.85);
             --border-glow: rgba(99, 102, 241, 0.15);
             --border-translucent: rgba(255, 255, 255, 0.08);
-            
-            --accent-primary: #6366f1; /* Indigo */
+
+            --accent-primary: #6366f1;
+            /* Indigo */
             --accent-primary-rgb: 99, 102, 241;
-            --accent-secondary: #a855f7; /* Purple */
+            --accent-secondary: #a855f7;
+            /* Purple */
             --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            
+
             --text-main: #f4f4f5;
             --text-muted: #a1a1aa;
             --text-highlight: #ffffff;
-            
+
             --winner-green: #10b981;
             --loser-red: #ef4444;
             --sidebar-width: 280px;
@@ -55,6 +56,7 @@
             opacity: 0.22;
             pointer-events: none;
         }
+
         .orb-1 {
             width: 400px;
             height: 400px;
@@ -62,6 +64,7 @@
             top: -100px;
             right: -100px;
         }
+
         .orb-2 {
             width: 500px;
             height: 500px;
@@ -131,7 +134,8 @@
             gap: 0.75rem;
         }
 
-        .nav-item:hover, .nav-item.active {
+        .nav-item:hover,
+        .nav-item.active {
             color: var(--text-highlight);
             background: rgba(255, 255, 255, 0.05);
             box-shadow: inset 1px 1px 0px var(--border-translucent);
@@ -413,8 +417,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Responsive Layout adjustments */
@@ -422,30 +433,71 @@
             aside {
                 display: none;
             }
+
             main {
                 margin-left: 0;
                 padding: 2rem 1.5rem;
             }
         }
+
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 200;
+            background: var(--bg-card);
+            border: 1px solid var(--border-translucent);
+            padding: 0.5rem;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            .menu-toggle {
+                display: block;
+            }
+
+            aside.mobile-open {
+                display: flex;
+                width: 100%;
+            }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 4rem;
+            padding: 2rem 0;
+            border-top: 1px solid var(--border-translucent);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
     </style>
 </head>
-<body>
-    <div class="glow-orb orb-1"></div>
-    <div class="glow-orb orb-2"></div>
 
-    <!-- Sidebar Navigation -->
-    <aside>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">☰ Menu</button>
+
+    <aside id="sidebar">
         <div class="logo-area">
             <h1>SwiftAnalytics</h1>
             <span>v1.1.0 Stable</span>
         </div>
+
+        <!-- Динамічні беджі -->
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <img src="https://img.shields.io/github/actions/workflow/status/Nodibell/SwiftAnalytics/ci.yml?style=flat-square&label=build"
+                alt="Build Status">
+            <img src="https://img.shields.io/codecov/c/github/Nodibell/SwiftAnalytics?style=flat-square" alt="Coverage">
+        </div>
+
         <ul class="nav-links">
-            <li><a href="#hero" class="nav-item active" onclick="showSection('hero')">📌 Overview</a></li>
-            <li><a href="#whats-new" class="nav-item" onclick="showSection('whats-new')">🔥 What's New in v1.1</a></li>
-            <li><a href="#benchmarks" class="nav-item" onclick="showSection('benchmarks')">📊 Benchmarks</a></li>
-            <li><a href="#architecture" class="nav-item" onclick="showSection('architecture')">🛠 Architecture</a></li>
-            <li><a href="#quickstart" class="nav-item" onclick="showSection('quickstart')">💻 Quick Start</a></li>
-            <li><a href="#modules" class="nav-item" onclick="showSection('modules')">🚀 Modules</a></li>
+            <li><a href="#hero" class="nav-item active">📌 Overview</a></li>
+            <li><a href="#benchmarks" class="nav-item">📊 Benchmarks</a></li>
+            <li><a href="https://github.com/Nodibell/SwiftAnalytics" class="nav-item" target="_blank">⭐ GitHub
+                    Repository</a></li>
         </ul>
     </aside>
 
@@ -455,8 +507,9 @@
         <section id="hero" class="hero">
             <h2>High-Performance Modular Data Science for Apple Silicon</h2>
             <p>
-                SwiftAnalytics is a native, high-performance data analysis, modeling, and machine learning framework. 
-                Engineered for Apple Silicon Unified Memory Architecture (UMA) and compliant with Swift 6 Strict Concurrency.
+                SwiftAnalytics is a native, high-performance data analysis, modeling, and machine learning framework.
+                Engineered for Apple Silicon Unified Memory Architecture (UMA) and compliant with Swift 6 Strict
+                Concurrency.
             </p>
             <div class="badge-container">
                 <div class="badge accent">🚀 macOS 15+ & iOS 18+</div>
@@ -469,35 +522,41 @@
         <section id="whats-new" style="margin-bottom: 4rem;">
             <h2 class="section-title">🔥 What's New in v1.1</h2>
             <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
-                Version 1.1 brings dramatic I/O performance improvements, naively decodes AI weights, and expands time-series and cryptographic toolkits.
+                Version 1.1 brings dramatic I/O performance improvements, naively decodes AI weights, and expands
+                time-series and cryptographic toolkits.
             </p>
             <div class="grid">
                 <div class="card">
                     <span class="card-icon">📥</span>
                     <h3>Streaming CSV Parser</h3>
                     <p>
-                        High-performance columnar CSV parser with a chunk-buffered <code>AsyncSequence</code> interface. Offloads row-parsing to a Swift <code>TaskGroup</code> worker thread pool, reducing memory consumption and speeding up loading times.
+                        High-performance columnar CSV parser with a chunk-buffered <code>AsyncSequence</code> interface.
+                        Offloads row-parsing to a Swift <code>TaskGroup</code> worker thread pool, reducing memory
+                        consumption and speeding up loading times.
                     </p>
                 </div>
                 <div class="card">
                     <span class="card-icon">🧠</span>
                     <h3>SafeTensors & GGUF Parser</h3>
                     <p>
-                        Native binary parsers for SafeTensors and GGUF weight files. Directly parses JSON metadata headers and constructs <code>MLXArray</code> GPU buffers using zero-copy memory mapping.
+                        Native binary parsers for SafeTensors and GGUF weight files. Directly parses JSON metadata
+                        headers and constructs <code>MLXArray</code> GPU buffers using zero-copy memory mapping.
                     </p>
                 </div>
                 <div class="card">
                     <span class="card-icon">🔒</span>
                     <h3>CKKS Cryptographic Scheme</h3>
                     <p>
-                        Real-number homomorphic encryption scheme supporting fixed-point polynomial encoding, homomorphic addition, multiplication, and rescale operations modulo cyclotomic polynomials.
+                        Real-number homomorphic encryption scheme supporting fixed-point polynomial encoding,
+                        homomorphic addition, multiplication, and rescale operations modulo cyclotomic polynomials.
                     </p>
                 </div>
                 <div class="card">
                     <span class="card-icon">📈</span>
                     <h3>SARIMA & GARCH Models</h3>
                     <p>
-                        Extends the time-series forecasting suite with seasonal ARIMA model estimators and GARCH conditional variance models with coordinate descent MLE parameter optimization.
+                        Extends the time-series forecasting suite with seasonal ARIMA model estimators and GARCH
+                        conditional variance models with coordinate descent MLE parameter optimization.
                     </p>
                 </div>
             </div>
@@ -507,7 +566,8 @@
         <section id="benchmarks">
             <h2 class="section-title">📊 Median Execution Performance</h2>
             <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
-                Below are comparative benchmarks run on <b>Apple Silicon (M-series, arm64)</b> comparing Swift vDSP/MLX implementations against Python libraries (NumPy, Scikit-Learn, Statsmodels, PyTorch).
+                Below are comparative benchmarks run on <b>Apple Silicon (M-series, arm64)</b> comparing Swift vDSP/MLX
+                implementations against Python libraries (NumPy, Scikit-Learn, Statsmodels, PyTorch).
             </p>
             <div class="benchmark-table-container">
                 <table>
@@ -695,21 +755,25 @@
                     <span class="card-icon">⚡️</span>
                     <h3>OOP to Data-Oriented Design</h3>
                     <p>
-                        Tree ensembles (Random Forests, GBDTs) transition from pointer-linked class instances to contiguous arrays of <code>FlatTreeNode</code> structures. This eliminates ARC overhead and increases CPU cache localization.
+                        Tree ensembles (Random Forests, GBDTs) transition from pointer-linked class instances to
+                        contiguous arrays of <code>FlatTreeNode</code> structures. This eliminates ARC overhead and
+                        increases CPU cache localization.
                     </p>
                 </div>
                 <div class="card">
                     <span class="card-icon">🧠</span>
                     <h3>Intelligent Hardware Routing</h3>
                     <p>
-                        Algorithmic branches (e.g. Decision Trees, DBSCAN) route automatically to high-IPC CPU threads, while heavy matrix mathematics route to MLX GPU-accelerated pipelines.
+                        Algorithmic branches (e.g. Decision Trees, DBSCAN) route automatically to high-IPC CPU threads,
+                        while heavy matrix mathematics route to MLX GPU-accelerated pipelines.
                     </p>
                 </div>
                 <div class="card">
                     <span class="card-icon">🚀</span>
                     <h3>NaN Verification Bypass</h3>
                     <p>
-                        An optional parameter <code>checkNaN: Bool = false</code> is provided in Stats functions to skip O(N) CPU check loops, allowing the raw hardware vector SIMD (vDSP) to run at peak capacity.
+                        An optional parameter <code>checkNaN: Bool = false</code> is provided in Stats functions to skip
+                        O(N) CPU check loops, allowing the raw hardware vector SIMD (vDSP) to run at peak capacity.
                     </p>
                 </div>
             </div>
@@ -722,7 +786,7 @@
                 <button class="tab-btn active" onclick="switchTab('quick-swift')">Swift Package</button>
                 <button class="tab-btn" onclick="switchTab('quick-code')">Example Usage</button>
             </div>
-            
+
             <div id="quick-swift" class="tab-pane active">
                 <p>Add <b>SwiftAnalytics</b> to your <code>Package.swift</code> dependencies:</p>
                 <pre><button class="copy-btn" onclick="copyCode('spm-code')">Copy</button><code id="spm-code">dependencies: [
@@ -756,15 +820,18 @@ let predictions = try await regressor.predict(features: X_test)</code></pre>
             <div class="grid">
                 <div class="card">
                     <h3>SwiftDataFrame</h3>
-                    <p>High-performance columnar data manipulation with zero-copy mappings built on Apache Arrow. Supports parallel streaming CSV parsing.</p>
+                    <p>High-performance columnar data manipulation with zero-copy mappings built on Apache Arrow.
+                        Supports parallel streaming CSV parsing.</p>
                 </div>
                 <div class="card">
                     <h3>SwiftStats</h3>
-                    <p>Vectorized descriptive statistics, correlations, and hypothesis tests using Accelerate vDSP/LAPACK.</p>
+                    <p>Vectorized descriptive statistics, correlations, and hypothesis tests using Accelerate
+                        vDSP/LAPACK.</p>
                 </div>
                 <div class="card">
                     <h3>SwiftPreprocessing</h3>
-                    <p>Pipelines for feature scaling, ordinal encoding, robust normalization, and missing value indicators.</p>
+                    <p>Pipelines for feature scaling, ordinal encoding, robust normalization, and missing value
+                        indicators.</p>
                 </div>
                 <div class="card">
                     <h3>SwiftML</h3>
@@ -772,21 +839,32 @@ let predictions = try await regressor.predict(features: X_test)</code></pre>
                 </div>
                 <div class="card">
                     <h3>SwiftLLM</h3>
-                    <p>GPU causal Transformer-decoders and Sampler interfaces powered by MLX for local AI inference. Supports zero-copy SafeTensors/GGUF parsing.</p>
+                    <p>GPU causal Transformer-decoders and Sampler interfaces powered by MLX for local AI inference.
+                        Supports zero-copy SafeTensors/GGUF parsing.</p>
                 </div>
                 <div class="card">
                     <h3>SwiftPrivacy</h3>
-                    <p>Homomorphic Encryption schemes (Ring-LWE, CKKS, PNNS) for private nearest-neighbor classification and floating-point secure computing.</p>
+                    <p>Homomorphic Encryption schemes (Ring-LWE, CKKS, PNNS) for private nearest-neighbor classification
+                        and floating-point secure computing.</p>
                 </div>
                 <div class="card">
                     <h3>SwiftForecast</h3>
-                    <p>Time series forecasting (decomposition, Holt-Winters, ARIMA, SARIMA, Kalman filtering, and GARCH volatility modeling).</p>
+                    <p>Time series forecasting (decomposition, Holt-Winters, ARIMA, SARIMA, Kalman filtering, and GARCH
+                        volatility modeling).</p>
                 </div>
             </div>
         </section>
+        <footer>
+            <p>© 2026 SwiftAnalytics Framework. Released under the MIT License.</p>
+            <p>Built for Apple Silicon with passion.</p>
+        </footer>
     </main>
 
     <script>
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        }
+
         function showSection(id) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
@@ -795,7 +873,7 @@ let predictions = try await regressor.predict(features: X_test)</code></pre>
         function switchTab(tabId) {
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
+
             document.getElementById(tabId).classList.add('active');
             event.target.classList.add('active');
         }
@@ -808,4 +886,5 @@ let predictions = try await regressor.predict(features: X_test)</code></pre>
         }
     </script>
 </body>
+
 </html>

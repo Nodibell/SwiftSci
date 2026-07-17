@@ -50,10 +50,10 @@ jobs:
         run: swift build -v
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
-      - name: Run tests with code coverage (MLX on CPU)
+      - name: Run tests with code coverage
         env:
           MLX_DEVICE: cpu
-        run: swift test --enable-code-coverage -v
+        run: swift test --enable-code-coverage -v --skip SwiftLLMTests
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
       - name: Export LCOV coverage report

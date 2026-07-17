@@ -19,7 +19,6 @@ env:
   METAL_DEVICE_WRAPPER_TYPE: cpu
 
 jobs:
-  # 1. Build
   build:
     name: Build
     runs-on: macos-latest
@@ -33,7 +32,6 @@ jobs:
           key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       - run: swift build -v
 
-  # 2. Test
   test:
     name: Unit Tests
     needs: build
@@ -47,6 +45,13 @@ jobs:
           path: .build
           key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       
+      - name: Create Metal shims to prevent assertion crash
+        run: |
+          BUILD_DIR=$(swift build --show-bin-path -c debug)
+          mkdir -p "$BUILD_DIR"
+          touch "$BUILD_DIR/default.metallib" "$BUILD_DIR/mlx.metallib"
+          touch .build/default.metallib .build/mlx.metallib
+
       - name: Run tests
         run: swift test --enable-code-coverage -v --skip SwiftLLMTests
         
@@ -61,7 +66,6 @@ jobs:
           file: coverage.lcov
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  # 3. Benchmark
   performance-check:
     name: Performance Regression Check
     needs: test
@@ -80,6 +84,10 @@ jobs:
       
       - name: Run Benchmarks
         run: |
+          RELEASE_DIR=$(swift build -c release --show-bin-path)
+          mkdir -p "$RELEASE_DIR"
+          touch "$RELEASE_DIR/default.metallib" "$RELEASE_DIR/mlx.metallib"
+          
           swift build -c release --product SwiftAnalyticsBenchmarks
           mkdir -p Benchmarks/Results
           swift run -c release SwiftAnalyticsBenchmarks --json Benchmarks/Results/swift_results.json

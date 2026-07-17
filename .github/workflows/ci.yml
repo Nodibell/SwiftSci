@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SWIFT_PACKAGE_DIR: SwiftAnalytics
+  SWIFT_PACKAGE_DIR: "."
 
 jobs:
   # ── Job 1: Build + Unit Tests ───────────────────────────────────────────────

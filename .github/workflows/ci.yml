@@ -15,7 +15,8 @@ env:
   MLX_FORCE_CPU: "1"
   MLX_METAL_DISABLE: "1"
   METAL_DEVICE_WRAPPER_TYPE: cpu
-  SWIFT_PACKAGE_DIR: "."
+  # "Заховати" фреймворки, щоб MLX не міг їх завантажити
+  DYLD_FRAMEWORK_PATH: "/tmp/empty"
 
 jobs:
   build:
@@ -36,15 +37,14 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with: { xcode-version: 'latest' }
       
-      - name: Create Metal shims
+      - name: Run tests with patched environment
+        env:
+          # Примусово ігноруємо всі спроби пошуку Metal
+          DYLD_FRAMEWORK_PATH: "/tmp/empty"
         run: |
-          BUILD_DIR=$(swift build --show-bin-path -c debug)
-          mkdir -p "$BUILD_DIR"
-          touch "$BUILD_DIR/default.metallib" "$BUILD_DIR/mlx.metallib"
-          touch .build/default.metallib .build/mlx.metallib
-      
-      - name: Run tests
-        run: swift test --enable-code-coverage -v --skip SwiftLLMTests
+          # Створюємо фіктивну директорію для DYLD, щоб нічого не знайти
+          mkdir -p /tmp/empty
+          swift test --enable-code-coverage -v --skip SwiftLLMTests
         
       - name: Export coverage
         run: |
@@ -57,3 +57,23 @@ jobs:
           file: coverage.lcov
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+  performance-check:
+    name: Performance Regression Check
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with: { xcode-version: 'latest' }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      
+      - name: Run Benchmarks
+        env:
+          DYLD_FRAMEWORK_PATH: "/tmp/empty"
+        run: |
+          mkdir -p /tmp/empty
+          swift build -c release --product SwiftAnalyticsBenchmarks
+          swift run -c release SwiftAnalyticsBenchmarks --json benchmarks.json
+          python3 Benchmarks/Python/compare.py benchmarks.json --regression-threshold 1.2

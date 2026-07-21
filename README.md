@@ -18,7 +18,6 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 * **`SwiftNLP`**: Tokenization (Word / subword BPE Tokenizers) and static word embeddings.
 * **`SwiftExplain`**: Black-box model explainability using a parallelized `KernelSHAP` implementation.
 * **`SwiftLLM`**: Local text generation on GPU using casual transformer-decoder architectures and MLX. Supports zero-copy SafeTensors and GGUF weight parsing.
-* **`SwiftPrivacy`**: Cryptographic machine learning on encrypted data (Ring-LWE, CKKS, PNNS) utilizing homomorphic encryption.
 
 ---
 
@@ -49,8 +48,6 @@ The following table presents median execution times on an **Apple Silicon M-seri
 | **LLM Forward Pass** (seqLen=64) | 0.436 ms | 0.499 ms | 1.14x | 🟢 Swift |
 | **LLM Generate** (10 tokens) | 6.072 ms | 3.363 ms | 0.55x | 🔴 Python |
 | **KernelSHAP Explain** (5 features, 100 coalitions) | 0.153 ms | 0.443 ms | 2.89x | 🟢 Swift |
-| **RingLWE Encrypt/Decrypt** (vector size=64) | 0.017 ms | 0.250 ms | 14.66x | 🟢 Swift |
-| **PNNS Classify** (50 DB vectors, size=64) | 0.195 ms | 2.866 ms | 14.69x | 🟢 Swift |
 
 ---
 

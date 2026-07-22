@@ -67,3 +67,49 @@ public final class RollingWindow: Sendable {
         return (rollingMean: means, rollingStd: stds)
     }
 }
+
+/// ExpandingWindow computes cumulative expanding statistics (expanding mean and expanding std dev) over a time series.
+public final class ExpandingWindow: Sendable {
+    public let minPeriods: Int
+
+    public init(minPeriods: Int = 1) {
+        self.minPeriods = max(1, minPeriods)
+    }
+
+    /// Computes expanding mean and expanding standard deviation series.
+    public func transform(series: [Double]) -> (expandingMean: [Double], expandingStd: [Double]) {
+        guard !series.isEmpty else {
+            return (expandingMean: [], expandingStd: [])
+        }
+
+        var means = [Double](repeating: 0.0, count: series.count)
+        var stds = [Double](repeating: 0.0, count: series.count)
+
+        var sum = 0.0
+        var sumSq = 0.0
+
+        for i in 0..<series.count {
+            let val = series[i]
+            sum += val
+            sumSq += val * val
+            let count = Double(i + 1)
+
+            if (i + 1) >= minPeriods {
+                let mean = sum / count
+                means[i] = mean
+
+                if count > 1 {
+                    let varUnbiased = (sumSq - (sum * sum) / count) / (count - 1.0)
+                    stds[i] = sqrt(max(0.0, varUnbiased))
+                } else {
+                    stds[i] = 0.0
+                }
+            } else {
+                means[i] = Double.nan
+                stds[i] = Double.nan
+            }
+        }
+
+        return (expandingMean: means, expandingStd: stds)
+    }
+}

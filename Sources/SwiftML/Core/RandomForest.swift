@@ -33,6 +33,29 @@ public actor RandomForestClassifier: ClassifierEstimator {
     // DOD Architecture: the forest is stored as an array of flat node arrays
     private var trees: [[FlatTreeNode]] = []
     private var numClasses: Int = 0
+    private var numFeatures: Int = 0
+
+    public var featureImportances: [Double]? {
+        guard numFeatures > 0, !trees.isEmpty else { return nil }
+        var aggregated = [Double](repeating: 0.0, count: numFeatures)
+        var validTrees = 0
+
+        for tree in trees {
+            if let treeImp = computeFeatureImportances(nodes: tree, numFeatures: numFeatures) {
+                for i in 0..<numFeatures {
+                    aggregated[i] += treeImp[i]
+                }
+                validTrees += 1
+            }
+        }
+
+        guard validTrees > 0 else { return nil }
+        let total = aggregated.reduce(0.0, +)
+        if total > 0 {
+            return aggregated.map { $0 / total }
+        }
+        return aggregated
+    }
 
     public init(
         nEstimators: Int = 100,
@@ -56,6 +79,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         }
 
         numClasses = Int(targets.max() ?? 0) + 1
+        numFeatures = features[0].count
         let maxDepth = self.maxDepth
         let maxFeatures = self.maxFeatures
         let minSamplesSplit = self.minSamplesSplit
@@ -133,26 +157,32 @@ public actor RandomForestClassifier: ClassifierEstimator {
         let majority = labels.mostFrequent()
 
         if depth >= maxDepth || indices.count < minSamplesSplit || Set(labels).count == 1 {
-            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true))
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, criterion: criterion, maxFeatures: maxFeatures) else {
-            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true))
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
         }
 
         let currentIndex = nodes.count
-        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
+        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let left = buildTreeSync(X: X, y: y, indices: split.leftIndices, depth: depth + 1,
-                                  maxDepth: maxDepth, minSamplesSplit: minSamplesSplit,
-                                  criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
-        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1,
-                                   maxDepth: maxDepth, minSamplesSplit: minSamplesSplit,
-                                   criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
-                                   
-        nodes[currentIndex] = FlatTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, leftChild: left, rightChild: right, value: majority, isLeaf: false)
+        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
+        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
+
+        let nodeGain = split.gain * Double(indices.count)
+        nodes[currentIndex] = FlatTreeNode(
+            featureIndex: split.featureIndex,
+            threshold: split.threshold,
+            leftChild: leftIndex,
+            rightChild: rightIndex,
+            value: majority,
+            isLeaf: false,
+            impurityGain: nodeGain
+        )
+
         return currentIndex
     }
 
@@ -182,6 +212,29 @@ public actor RandomForestRegressor: RegressorEstimator {
     public let minSamplesSplit: Int
 
     private var trees: [[FlatTreeNode]] = []
+    private var numFeatures: Int = 0
+
+    public var featureImportances: [Double]? {
+        guard numFeatures > 0, !trees.isEmpty else { return nil }
+        var aggregated = [Double](repeating: 0.0, count: numFeatures)
+        var validTrees = 0
+
+        for tree in trees {
+            if let treeImp = computeFeatureImportances(nodes: tree, numFeatures: numFeatures) {
+                for i in 0..<numFeatures {
+                    aggregated[i] += treeImp[i]
+                }
+                validTrees += 1
+            }
+        }
+
+        guard validTrees > 0 else { return nil }
+        let total = aggregated.reduce(0.0, +)
+        if total > 0 {
+            return aggregated.map { $0 / total }
+        }
+        return aggregated
+    }
 
     public init(
         nEstimators: Int = 100,
@@ -202,6 +255,7 @@ public actor RandomForestRegressor: RegressorEstimator {
             throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
 
+        numFeatures = features[0].count
         let maxDepth = self.maxDepth
         let maxFeatures = self.maxFeatures
         let minSamplesSplit = self.minSamplesSplit
@@ -255,31 +309,40 @@ public actor RandomForestRegressor: RegressorEstimator {
         let mean = values.mean()
 
         if depth >= maxDepth || indices.count < minSamplesSplit {
-            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true))
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, criterion: .mse, maxFeatures: maxFeatures),
               split.gain > 0 else {
-            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true))
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
         }
 
         let currentIndex = nodes.count
-        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
+        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let left = buildTreeSync(X: X, y: y, indices: split.leftIndices, depth: depth + 1,
-                                  maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
-        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1,
-                                   maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
-                                   
-        nodes[currentIndex] = FlatTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, leftChild: left, rightChild: right, value: mean, isLeaf: false)
+        let left  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
+        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
+
+        let nodeGain = split.gain * Double(indices.count)
+        nodes[currentIndex] = FlatTreeNode(
+            featureIndex: split.featureIndex,
+            threshold: split.threshold,
+            leftChild: left,
+            rightChild: right,
+            value: mean,
+            isLeaf: false,
+            impurityGain: nodeGain
+        )
+
         return currentIndex
     }
 
     private static func predictSample(_ x: [Double], nodes: [FlatTreeNode]) -> Double {
         guard !nodes.isEmpty else { return 0 }
         var curr = 0
+
         while !nodes[curr].isLeaf {
             let node = nodes[curr]
             if x[node.featureIndex] <= node.threshold {

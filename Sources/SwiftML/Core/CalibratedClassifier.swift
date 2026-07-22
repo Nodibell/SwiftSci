@@ -2,7 +2,7 @@ import Foundation
 
 /// CalibratedClassifier wraps a base ClassifierEstimator and applies Platt Scaling (logistic sigmoid calibration)
 /// to produce well-calibrated class probabilities.
-public final class CalibratedClassifier: ClassifierEstimator, @unchecked Sendable {
+public actor CalibratedClassifier: ClassifierEstimator {
     public let baseEstimator: any ClassifierEstimator
     private var a: Double = 1.0
     private var b: Double = 0.0

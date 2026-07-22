@@ -16,6 +16,16 @@ public actor LogisticRegression: ClassifierEstimator {
     public init(device: ExecutionDevice = .auto) {
         self.requestedDevice = device
     }
+
+    public init(weights: [Double], bias: Double, device: ExecutionDevice = .auto) {
+        self.requestedDevice = device
+        self.cpuWeights = weights
+        self.cpuBias = bias
+    }
+
+    public func getWeightsAndBias() -> (weights: [Double]?, bias: Double?) {
+        return (cpuWeights, cpuBias)
+    }
     
     /// Fits the classifier model on the provided features and targets (ClassifierEstimator protocol).
     public func fit(features: [[Double]], targets: [Double]) async throws {

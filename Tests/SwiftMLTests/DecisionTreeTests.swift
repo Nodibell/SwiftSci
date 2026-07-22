@@ -20,6 +20,30 @@ struct DecisionTreeTests {
         let preds = try await tree.predict(features: features)
 
         #expect(preds == [0, 0, 0, 1, 1, 1])
+
+        let importances = await tree.featureImportances
+        #expect(importances != nil)
+        #expect(importances!.count == 2)
+        let sumImp = importances!.reduce(0, +)
+        #expect(abs(sumImp - 1.0) < 1e-5)
+    }
+
+    @Test("RandomForestClassifier computes feature importances")
+    func testRandomForestFeatureImportances() async throws {
+        let features: [[Double]] = [
+            [1.0, 100.0], [1.5, 105.0], [2.0, 102.0],
+            [8.0, 101.0], [8.5, 103.0], [9.0, 104.0]
+        ]
+        let targets: [Double] = [0, 0, 0, 1, 1, 1]
+
+        let rf = try RandomForestClassifier(nEstimators: 10, maxDepth: 3)
+        try await rf.fit(features: features, targets: targets)
+
+        let importances = await rf.featureImportances
+        #expect(importances != nil)
+        #expect(importances!.count == 2)
+        let sumImp = importances!.reduce(0, +)
+        #expect(abs(sumImp - 1.0) < 1e-5)
     }
 
     @Test("DecisionTreeClassifier classifies XOR-like non-linear data")

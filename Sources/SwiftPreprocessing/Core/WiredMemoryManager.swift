@@ -2,8 +2,8 @@ import Foundation
 
 /// Actor-based manager that controls concurrent allocations and tasks in Apple Silicon Unified Memory.
 public actor WiredMemoryManager {
-    /// Global shared memory manager with a default limit of concurrent tasks.
-    public static let shared = WiredMemoryManager(maxConcurrentTasks: 2)
+    /// Global shared memory manager with a default limit scaling with active processor count.
+    public static let shared = WiredMemoryManager(maxConcurrentTasks: max(2, ProcessInfo.processInfo.activeProcessorCount))
     
     private let maxConcurrentTasks: Int
     private var activeTasksCount = 0

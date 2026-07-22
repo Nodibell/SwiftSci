@@ -20,7 +20,7 @@ struct SplitResult: Sendable {
 
 // MARK: - Flat Decision Tree Node (DOD Architecture)
 
-public struct FlatTreeNode: Sendable {
+public struct FlatTreeNode: Sendable, Codable {
     public let featureIndex: Int
     public let threshold: Double
     public let leftChild: Int
@@ -28,6 +28,25 @@ public struct FlatTreeNode: Sendable {
     /// Leaf value: predicted class (classifier) or mean (regressor)
     public let value: Double
     public let isLeaf: Bool
+    public let impurityGain: Double
+
+    public init(
+        featureIndex: Int,
+        threshold: Double,
+        leftChild: Int,
+        rightChild: Int,
+        value: Double,
+        isLeaf: Bool,
+        impurityGain: Double = 0.0
+    ) {
+        self.featureIndex = featureIndex
+        self.threshold = threshold
+        self.leftChild = leftChild
+        self.rightChild = rightChild
+        self.value = value
+        self.isLeaf = isLeaf
+        self.impurityGain = impurityGain
+    }
 }
 
 // MARK: - Shared helpers
@@ -188,6 +207,19 @@ func bestSplit(
 
     return best
 }
+func computeFeatureImportances(nodes: [FlatTreeNode], numFeatures: Int) -> [Double]? {
+    guard numFeatures > 0, !nodes.isEmpty else { return nil }
+    var importances = [Double](repeating: 0.0, count: numFeatures)
+    for node in nodes where !node.isLeaf && node.featureIndex >= 0 && node.featureIndex < numFeatures {
+        importances[node.featureIndex] += node.impurityGain
+    }
+    let totalGain = importances.reduce(0.0, +)
+    if totalGain > 0 {
+        return importances.map { $0 / totalGain }
+    }
+    return importances
+}
+
 // MARK: - Decision Tree Classifier
 
 /// A pure Swift Decision Tree Classifier using Gini or Entropy splitting.
@@ -197,6 +229,11 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     public let criterion: SplitCriterion
 
     private var nodes: [FlatTreeNode] = []
+    private var numFeatures: Int = 0
+
+    public var featureImportances: [Double]? {
+        computeFeatureImportances(nodes: nodes, numFeatures: numFeatures)
+    }
 
     public init(maxDepth: Int = 5, minSamplesSplit: Int = 2, criterion: SplitCriterion = .gini) {
         self.maxDepth = maxDepth
@@ -209,6 +246,7 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         guard features.count == targets.count else {
             throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
+        numFeatures = features[0].count
         nodes = []
         _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), depth: 0, nodes: &nodes)
     }
@@ -242,31 +280,33 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
 
         // Leaf: max depth, too few samples, or pure node
         if depth >= maxDepth || indices.count < minSamplesSplit || Set(labels).count == 1 {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0)
             nodes.append(leaf)
             return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, criterion: criterion, maxFeatures: nil) else {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0)
             nodes.append(leaf)
             return nodes.count - 1
         }
 
         let currentIndex = nodes.count
         // Placeholder to maintain index stability during recursion
-        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
+        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
         let leftIndex  = buildTree(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, nodes: &nodes)
         let rightIndex = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1, nodes: &nodes)
         
+        let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(
             featureIndex: split.featureIndex,
             threshold: split.threshold,
             leftChild: leftIndex,
             rightChild: rightIndex,
             value: majority,
-            isLeaf: false
+            isLeaf: false,
+            impurityGain: nodeGain
         )
 
         return currentIndex
@@ -296,6 +336,11 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     public let minSamplesSplit: Int
 
     private var nodes: [FlatTreeNode] = []
+    private var numFeatures: Int = 0
+
+    public var featureImportances: [Double]? {
+        computeFeatureImportances(nodes: nodes, numFeatures: numFeatures)
+    }
 
     public init(maxDepth: Int = 5, minSamplesSplit: Int = 2) {
         self.maxDepth = maxDepth
@@ -308,6 +353,7 @@ public actor DecisionTreeRegressor: RegressorEstimator {
             throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
         
+        numFeatures = features[0].count
         nodes = []
         _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), depth: 0, nodes: &nodes)
     }
@@ -326,31 +372,33 @@ public actor DecisionTreeRegressor: RegressorEstimator {
         let mean = values.mean()
 
         if depth >= maxDepth || indices.count < minSamplesSplit {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0)
             nodes.append(leaf)
             return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, criterion: .mse, maxFeatures: nil) else {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0)
             nodes.append(leaf)
             return nodes.count - 1
         }
 
         let currentIndex = nodes.count
         // Placeholder
-        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
+        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
         let leftIndex  = buildTree(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, nodes: &nodes)
         let rightIndex = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1, nodes: &nodes)
         
+        let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(
             featureIndex: split.featureIndex,
             threshold: split.threshold,
             leftChild: leftIndex,
             rightChild: rightIndex,
             value: mean,
-            isLeaf: false
+            isLeaf: false,
+            impurityGain: nodeGain
         )
 
         return currentIndex

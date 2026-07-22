@@ -26,6 +26,7 @@
 | Streaming I/O & SafeTensors    | 1.1          | 🟢 Completed      |
 | SwiftSci Rename & Refactor     | 1.2          | 🟢 Completed (plan 12)|
 | Sklearn Parity Roadmap         | 1.3          | 🟢 Completed (plan 13)|
+| High-Performance Engine & Quality| 1.4        | 🟢 Completed (plan 14)|
 
 ---
 
@@ -167,7 +168,7 @@
 
 ### Версія 1.3: Sklearn Parity Roadmap *(🟢 Completed)*
 
-*Детальний план впровадження:* [implementation_plan_13.md](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftAnalytics/ROADMAP/implementation_plan_13.md)
+*Детальний план впровадження:* [implementation_plan_13.md](implementation_plan_13.md)
 * **Уніфікація Pipeline ↔ Estimator:** `ClassificationPipeline` та `RegressionPipeline` для стикування препроцесингу з фінальним класифікатором/регресором без витоку даних.
 * **`ColumnTransformer`:** Маршрутизація підмножин колонок DataFrame до окремих трансформерів передобробки.
 * **`RandomizedSearchCV`:** Паралельний рандомізований пошук гіперпараметрів із `KFold` крос-валідацією.
@@ -178,6 +179,19 @@
 * **Feature Selection & Engineering (`SwiftPreprocessing`):** `VarianceThreshold`, `SelectKBest`, `InteractionFeatures`, `DateFeatures`.
 * **Time Series Transformers (`SwiftForecast`):** `LagTransformer` та `RollingWindow`.
 * **Dataset Utilities (`SwiftML`):** Синтетичні генератори `makeClassification`, `makeRegression`, `makeMoons`.
+
+### Версія 1.4: High-Performance Engine, Quality & Multi-Module DocC *(🟢 Completed)*
+
+*Детальний план впровадження:* [implementation_plan_14.md](implementation_plan_14.md)
+* **`SystemsCSVParser` (`SwiftDataFrame`):** High-performance zero-copy memory-mapped RFC 4180 DFA byte parser (`SystemsCSVParser`), що прискорює зчитування CSV-файлів ~10×.
+* **Vectorized Byte Parsers (`SwiftDataFrame`):** Векторизовані парсери чисел та стрічок (`VectorizedByteParsers`) без виділення додаткової пам'яті.
+* **vDSP Редукції (`SwiftDataFrame`):** Прискорення `mean()`, `variance()`, `stdDev()` у `TypedColumn<Double>` через Accelerate `vDSP`.
+* **Індексне фільтрування та Argsort (`SwiftDataFrame`):** Впровадження `filterRows(by:)` та `argsort()` для ефективного сортування та маскування індексів.
+* **Recursive Feature Elimination RFE (`SwiftPreprocessing`):** Додано алгоритм `RecursiveFeatureElimination` (RFE) для рекурсивного відбору ознак.
+* **Важливість ознак та Персистенція (`SwiftML`):** Реалізовано Gini `featureImportances` в деревах ухвалення рішень та випадкових лісах, а також `Codable` збереження/завантаження моделей (`save` / `load`).
+* **NLP Токенізація та Векторизація (`SwiftNLP`):** Додано `NGramTokenizer` та `HashingVectorizer` (MurmurHash3).
+* **Віконні функції часових рядів (`SwiftForecast`):** Додано `ExpandingWindow` для кумулятивних часових рядів.
+* **Багатомодульна DocC Документація:** Інтегровано `swift-docc-plugin` (`v1.5.0`) та створено об'єднаний сайт документації з усіх 10 модулів екосистеми з публікацією на GitHub Pages.
 
 ---
 

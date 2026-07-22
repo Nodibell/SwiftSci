@@ -21,6 +21,12 @@ extension Int32: SupportedType {
     public var doubleValue: Double? { Double(self) }
 }
 
+extension Int: SupportedType {
+    public static var columnDType: ColumnDType { .int64 }
+    public static func parse(from string: String) -> Int? { Int(string.trimmingCharacters(in: .whitespaces)) }
+    public var doubleValue: Double? { Double(self) }
+}
+
 extension Int64: SupportedType {
     public static var columnDType: ColumnDType { .int64 }
     public static func parse(from string: String) -> Int64? { Int64(string.trimmingCharacters(in: .whitespaces)) }

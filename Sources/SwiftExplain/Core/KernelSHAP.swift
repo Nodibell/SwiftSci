@@ -13,7 +13,7 @@ public actor KernelSHAP {
     ///   - numCoalitions: Number of coalition masks to sample.
     /// - Returns: An array of SHAP values (one for each feature) indicating feature contributions.
     public func explain(
-        model: @escaping @Sendable ([Double]) -> Double,
+        model: @escaping @Sendable ([Double]) async -> Double,
         instance: [Double],
         background: [[Double]],
         numCoalitions: Int = 200
@@ -29,8 +29,8 @@ public actor KernelSHAP {
         }
         let bgMean = tempBgMean
         
-        let fEmpty = model(bgMean)
-        let fFull = model(instance)
+        let fEmpty = await model(bgMean)
+        let fFull = await model(instance)
         
         // 2. Generate coalition masks and their Shapley weights
         var masks = [[Double]]()
@@ -86,7 +86,7 @@ public actor KernelSHAP {
                         xMapped[i] = (mask[i] == 1.0) ? instance[i] : bgMean[i]
                     }
                     
-                    let y = model(xMapped)
+                    let y = await model(xMapped)
                     let target = y - fEmpty
                     
                     return (mask, weight, target)

@@ -17,9 +17,8 @@ public enum GGUFParser {
     
     private static func readInt<T: FixedWidthInteger>(_ type: T.Type, from data: Data, offset: inout Int) -> T {
         let size = MemoryLayout<T>.size
-        var val: T = 0
-        withUnsafeMutableBytes(of: &val) { valPtr in
-            _ = data.copyBytes(to: valPtr, from: offset..<(offset + size))
+        let val = data.withUnsafeBytes { ptr -> T in
+            ptr.loadUnaligned(fromByteOffset: offset, as: T.self)
         }
         offset += size
         return T(littleEndian: val)
@@ -159,13 +158,7 @@ public enum GGUFParser {
                 let tensorData = fileData.subdata(in: start..<end)
                 array = MLXArray(tensorData, info.shape, dtype: .float16)
             default:
-                typeSize = 4
-                let end = start + elementCount * typeSize
-                guard end <= fileData.count else {
-                    throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' offset out of bounds")
-                }
-                let tensorData = fileData.subdata(in: start..<end)
-                array = MLXArray(tensorData, info.shape, dtype: .float32)
+                throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' uses unsupported quantization type \(info.type) (only unquantized Float32 and Float16 supported).")
             }
             
             tensors[info.name] = array

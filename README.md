@@ -31,10 +31,10 @@ The following table presents median execution times on an **Apple Silicon M-seri
 | **StdDev** (1M elements) | 0.486 ms | 0.502 ms | 1.03x | 🟢 Swift |
 | **Variance** (1M elements) | 0.467 ms | 0.506 ms | 1.08x | 🟢 Swift |
 | **Pearson Correlation** (500k elements) | 0.790 ms | 1.165 ms | 1.47x | 🟢 Swift |
-| **CSV Read** (100k rows, 5 cols) | 163.315 ms | 18.035 ms | 0.11x | 🔴 Python |
-| **CSV Stream Read** (chunk=10k) | 238.009 ms | n/a | n/a | ⚡ Stream |
-| **CSV Stream + Filter** | 240.945 ms | n/a | n/a | ⚡ Stream |
-| **CSV Stream + GroupBy** | 230.476 ms | n/a | n/a | ⚡ Stream |
+| **CSV Read** (100k rows, 5 cols) | 163.315 ms | 18.148 ms | 0.11x | 🔴 Python |
+| **CSV Stream Read** (chunk=10k) | 238.009 ms | 20.444 ms | 0.09x | 🔴 Python |
+| **CSV Stream + Filter** | 240.945 ms | 22.460 ms | 0.09x | 🔴 Python |
+| **CSV Stream + GroupBy** | 230.476 ms | 25.282 ms | 0.11x | 🔴 Python |
 | **Filter rows** (100k rows) | 30.608 ms | 0.537 ms | 0.02x | 🔴 Python |
 | **GroupBy + sum/mean** (4 groups) | 2.375 ms | 1.580 ms | 0.67x | 🔴 Python |
 | **SortBy double column** (100k rows) | 77.727 ms | 6.434 ms | 0.08x | 🔴 Python |

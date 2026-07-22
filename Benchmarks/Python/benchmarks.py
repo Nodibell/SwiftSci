@@ -123,6 +123,21 @@ def bench_dataframe():
         warmup=1, iterations=5
     ))
     results.append(run_benchmark(
+        "CSV Stream Read (chunk=10k)", "Pandas",
+        lambda: sum(len(c) for c in pd.read_csv(csv_path, chunksize=10000)),
+        warmup=1, iterations=5
+    ))
+    results.append(run_benchmark(
+        "CSV Stream + Filter", "Pandas",
+        lambda: sum(len(c[c["value_a"] > 50.0]) for c in pd.read_csv(csv_path, chunksize=10000)),
+        warmup=1, iterations=5
+    ))
+    results.append(run_benchmark(
+        "CSV Stream + GroupBy", "Pandas",
+        lambda: [c.groupby("category").agg({"value_a": "sum", "value_b": "mean"}) for c in pd.read_csv(csv_path, chunksize=10000)],
+        warmup=1, iterations=5
+    ))
+    results.append(run_benchmark(
         "Filter rows (predicate, 100k rows)", "Pandas",
         lambda: df_full[df_full["value_a"] > 50.0],
         iterations=7

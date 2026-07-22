@@ -21,13 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 📊 Benchmark Performance Summary (v1.3.0 vs Python)
 | Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
-| **ARIMA(1,1,1) Fit** (50k pts) | 2.280 ms | 197.800 ms | 86.75x | 🟢 Swift |
+| **ARIMA(1,1,1) Fit** (50k pts) | 2.280 ms | 215.527 ms | 94.53x | 🟢 Swift |
 | **Holt-Winters Fit** (50k pts, period=12) | 6.811 ms | 148.627 ms | 21.82x | 🟢 Swift |
-| **Random Forest Fit** (1k×4, 50 trees) | 4.516 ms | 25.475 ms | 5.63x | 🟢 Swift |
 | **KernelSHAP Explain** (5 feats, 100 coalitions) | 0.075 ms | 0.426 ms | 5.68x | 🟢 Swift |
-| **Pearson Correlation** (500k elements) | 0.871 ms | 1.256 ms | 1.45x | 🟢 Swift |
+| **Random Forest Fit** (1k×4, 50 trees) | 4.516 ms | 25.475 ms | 5.64x | 🟢 Swift |
+| **Mean** (vDSP, 1M elements) | 0.081 ms | 0.121 ms | 1.49x | 🟢 Swift |
+| **Pearson Correlation** (500k elements) | 0.856 ms | 1.256 ms | 1.47x | 🟢 Swift |
 | **Isolation Forest Fit** (1k×10, 100 trees) | 14.048 ms | 16.510 ms | 1.18x | 🟢 Swift |
-| **Mean** (vDSP, 1M elements) | 0.255 ms | 0.121 ms | 0.47x | 🔴 NumPy |
+| **StdDev** (vDSP, 1M elements) | 0.477 ms | 0.539 ms | 1.13x | 🟢 Swift |
+| **Variance** (vDSP, 1M elements) | 0.501 ms | 0.520 ms | 1.04x | 🟢 Swift |
 
 * **CI Gate Status**: **PASSED** ✅ (*0 gated regressions detected*).
 

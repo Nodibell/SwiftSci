@@ -82,6 +82,125 @@ public enum Metrics {
         )
     }
 
+    /// Balanced Accuracy: average recall per class.
+    public static func balancedAccuracy(yTrue: [Int], yPred: [Int]) -> Double {
+        let report = classificationReport(yTrue: yTrue, yPred: yPred)
+        guard !report.perClass.isEmpty else { return 0 }
+        let sumRecall = report.perClass.map(\.recall).reduce(0, +)
+        return sumRecall / Double(report.perClass.count)
+    }
+
+    /// Matthews Correlation Coefficient (MCC) for binary classification.
+    public static func matthewsCorrelationCoefficient(yTrue: [Int], yPred: [Int]) -> Double {
+        guard yTrue.count == yPred.count, !yTrue.isEmpty else { return 0 }
+        var tp = 0.0, tn = 0.0, fp = 0.0, fn = 0.0
+        for (t, p) in zip(yTrue, yPred) {
+            if t == 1 && p == 1 { tp += 1 }
+            else if t == 0 && p == 0 { tn += 1 }
+            else if t == 0 && p == 1 { fp += 1 }
+            else if t == 1 && p == 0 { fn += 1 }
+        }
+        let num = (tp * tn) - (fp * fn)
+        let den = sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        return den == 0 ? 0 : num / den
+    }
+
+    /// Cohen's Kappa score for inter-rater agreement.
+    public static func cohenKappa(yTrue: [Int], yPred: [Int]) -> Double {
+        guard yTrue.count == yPred.count, !yTrue.isEmpty else { return 0 }
+        let po = accuracy(yTrue: yTrue, yPred: yPred)
+        let labels = Array(Set(yTrue + yPred)).sorted()
+        let n = Double(yTrue.count)
+        
+        var pe = 0.0
+        for label in labels {
+            let actualCount = Double(yTrue.filter { $0 == label }.count)
+            let predCount = Double(yPred.filter { $0 == label }.count)
+            pe += (actualCount / n) * (predCount / n)
+        }
+        
+        let den = 1.0 - pe
+        return den == 0 ? 1.0 : (po - pe) / den
+    }
+
+    // MARK: Probability & Curve Metrics
+
+    /// Logarithmic Loss (Binary Cross-Entropy).
+    public static func logLoss(yTrue: [Int], yScore: [Double], eps: Double = 1e-15) -> Double {
+        guard yTrue.count == yScore.count, !yTrue.isEmpty else { return 0 }
+        var loss = 0.0
+        for (y, s) in zip(yTrue, yScore) {
+            let p = max(eps, min(1.0 - eps, s))
+            let yD = Double(y)
+            loss += -(yD * log(p) + (1.0 - yD) * log(1.0 - p))
+        }
+        return loss / Double(yTrue.count)
+    }
+
+    /// Brier Score: Mean Squared Error between true binary labels and predicted probabilities.
+    public static func brierScore(yTrue: [Int], yScore: [Double]) -> Double {
+        guard yTrue.count == yScore.count, !yTrue.isEmpty else { return 0 }
+        let sumSq = zip(yTrue, yScore).map { pow(Double($0) - $1, 2) }.reduce(0, +)
+        return sumSq / Double(yTrue.count)
+    }
+
+    /// Computes False Positive Rate (FPR), True Positive Rate (TPR), and thresholds for ROC curve.
+    public static func rocCurve(yTrue: [Int], yScore: [Double]) -> [(fpr: Double, tpr: Double, threshold: Double)] {
+        guard yTrue.count == yScore.count, !yTrue.isEmpty else { return [] }
+        let paired = zip(yTrue, yScore).sorted { $0.1 > $1.1 }
+        
+        let totalP = Double(yTrue.filter { $0 == 1 }.count)
+        let totalN = Double(yTrue.filter { $0 == 0 }.count)
+        guard totalP > 0, totalN > 0 else { return [] }
+
+        var points: [(fpr: Double, tpr: Double, threshold: Double)] = [(0.0, 0.0, Double.infinity)]
+        var tp = 0.0, fp = 0.0
+
+        for i in 0..<paired.count {
+            if paired[i].0 == 1 { tp += 1 } else { fp += 1 }
+            
+            if i == paired.count - 1 || paired[i].1 != paired[i + 1].1 {
+                points.append((fpr: fp / totalN, tpr: tp / totalP, threshold: paired[i].1))
+            }
+        }
+        return points
+    }
+
+    /// Computes Area Under the ROC Curve (ROC-AUC) via trapezoidal integration.
+    public static func rocAUC(yTrue: [Int], yScore: [Double]) -> Double {
+        let points = rocCurve(yTrue: yTrue, yScore: yScore)
+        guard points.count >= 2 else { return 0 }
+        var auc = 0.0
+        for i in 1..<points.count {
+            let dx = points[i].fpr - points[i - 1].fpr
+            let avgY = (points[i].tpr + points[i - 1].tpr) / 2.0
+            auc += dx * avgY
+        }
+        return auc
+    }
+
+    /// Computes Precision, Recall, and thresholds for Precision-Recall curve.
+    public static func prCurve(yTrue: [Int], yScore: [Double]) -> [(precision: Double, recall: Double, threshold: Double)] {
+        guard yTrue.count == yScore.count, !yTrue.isEmpty else { return [] }
+        let paired = zip(yTrue, yScore).sorted { $0.1 > $1.1 }
+        let totalP = Double(yTrue.filter { $0 == 1 }.count)
+        guard totalP > 0 else { return [] }
+
+        var points: [(precision: Double, recall: Double, threshold: Double)] = []
+        var tp = 0.0, fp = 0.0
+
+        for i in 0..<paired.count {
+            if paired[i].0 == 1 { tp += 1 } else { fp += 1 }
+            
+            if i == paired.count - 1 || paired[i].1 != paired[i + 1].1 {
+                let p = tp / (tp + fp)
+                let r = tp / totalP
+                points.append((precision: p, recall: r, threshold: paired[i].1))
+            }
+        }
+        return points
+    }
+
     // MARK: Regression
 
     /// Mean Squared Error.

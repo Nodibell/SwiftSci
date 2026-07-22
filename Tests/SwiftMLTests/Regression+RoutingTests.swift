@@ -71,6 +71,6 @@ struct RegressionRoutingTests {
         
         let probsCPU = try await lrCPU.predictProbability(features: features)
         let probsGPU = try await lrGPU.predictProbability(features: features)
-        #expect(abs(probsCPU[0] - probsGPU[0]) < 0.1)
+        #expect(abs(probsCPU[0][1] - probsGPU[0][1]) < 0.1)
     }
 }

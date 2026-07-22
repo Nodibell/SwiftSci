@@ -173,7 +173,7 @@ public actor LogisticRegression: ClassifierEstimator {
     }
     
     /// Predicts target probabilities of class 1 for the given features matrix (Sendable interface).
-    public func predictProbability(features: [[Double]]) throws -> [Double] {
+    public func predictProbability1D(features: [[Double]]) throws -> [Double] {
         guard !features.isEmpty else {
             return []
         }
@@ -196,6 +196,12 @@ public actor LogisticRegression: ClassifierEstimator {
         let probs = try predictProbability(X: X)
         
         return probs.asArray(Float.self).map { Double($0) }
+    }
+
+    /// Predicts class probabilities [[prob_class_0, prob_class_1]] for the given features matrix (ClassifierEstimator protocol).
+    public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
+        let p1 = try predictProbability1D(features: features)
+        return p1.map { [1.0 - $0, $0] }
     }
     
     /// Predicts target probabilities of class 1 for the given features X.
@@ -230,7 +236,7 @@ public actor LogisticRegression: ClassifierEstimator {
             return []
         }
         
-        let probs = try predictProbability(features: features)
+        let probs = try predictProbability1D(features: features)
         return probs.map { $0 > Double(threshold) ? 1 : 0 }
     }
     

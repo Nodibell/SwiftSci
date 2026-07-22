@@ -22,8 +22,8 @@ struct LogisticRegressionTests {
         
         let testFeatures: [[Double]] = [[-3.0], [3.0]]
         let probs = try await model.predictProbability(features: testFeatures)
-        #expect(probs[0] < 0.2) // Prob of class 1 for -3.0 should be very small
-        #expect(probs[1] > 0.8) // Prob of class 1 for 3.0 should be very high
+        #expect(probs[0][1] < 0.2) // Prob of class 1 for -3.0 should be very small
+        #expect(probs[1][1] > 0.8) // Prob of class 1 for 3.0 should be very high
         
         let classes = try await model.predict(features: testFeatures)
         #expect(classes[0] == 0)

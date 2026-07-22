@@ -217,6 +217,20 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         guard !nodes.isEmpty else { throw MLError.notFitted }
         return features.map { predictSample($0, nodes: nodes) }
     }
+
+    public func predictProbability(features: [[Double]]) throws -> [[Double]] {
+        guard !nodes.isEmpty else { throw MLError.notFitted }
+        let maxLabel = nodes.map { Int($0.value) }.max() ?? 0
+        let numClasses = maxLabel + 1
+        return features.map { sample in
+            let predClass = predictSample(sample, nodes: nodes)
+            var probs = [Double](repeating: 0.0, count: numClasses)
+            if predClass < probs.count {
+                probs[predClass] = 1.0
+            }
+            return probs
+        }
+    }
     
     public func getTreeNodes() -> [FlatTreeNode] {
         return nodes

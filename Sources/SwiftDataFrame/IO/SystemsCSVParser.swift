@@ -19,12 +19,15 @@ public struct CSVFieldOffset: Sendable {
 /// to scan CSV byte blocks without string heap allocations. Correctly handles embedded
 /// commas, newlines, and escaped double quotes (`""`).
 public final class SystemsCSVParser: Sendable {
-    private let delimiterByte: UInt8 = 44  // ASCII ','
-    private let quoteByte: UInt8 = 34      // ASCII '"'
+    private let delimiterByte: UInt8
+    private let quoteByte: UInt8
     private let lfByte: UInt8 = 10         // ASCII '\n'
     private let crByte: UInt8 = 13         // ASCII '\r'
 
-    public init() {}
+    public init(delimiterByte: UInt8 = 44, quoteByte: UInt8 = 34) {
+        self.delimiterByte = delimiterByte
+        self.quoteByte = quoteByte
+    }
 
     /// Parses an un-copied raw byte buffer into a grid of field offsets.
     public func parse(buffer: UnsafeBufferPointer<UInt8>) -> [[CSVFieldOffset]] {

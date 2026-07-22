@@ -9,8 +9,70 @@ internal enum CSVReader {
             throw DataFrameError.fileNotFound(url)
         }
 
-        let raw = try String(contentsOf: url, encoding: .utf8)
-        return try parse(raw, options: options)
+        let mappedData = try Data(contentsOf: url, options: .alwaysMapped)
+        var records: [[CSVFieldOffset]] = []
+        let delimByte = UInt8(options.delimiter.utf8.first ?? 44)
+
+        mappedData.withUnsafeBytes { rawBuffer in
+            guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
+            let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+            let parser = SystemsCSVParser(delimiterByte: delimByte)
+            records = parser.parse(buffer: bufferPointer)
+        }
+
+        guard !records.isEmpty else { return DataFrame.empty }
+
+        var headers: [String] = []
+        var startRowIdx = 0
+
+        mappedData.withUnsafeBytes { rawBuffer in
+            guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
+            let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+            if options.hasHeader {
+                headers = records[0].map { VectorizedByteParsers.parseString(buffer: bufferPointer, offset: $0) }
+                startRowIdx = 1
+            } else {
+                headers = records[0].indices.map { "col\($0)" }
+                startRowIdx = 0
+            }
+        }
+
+        let dataRowCount = records.count - startRowIdx
+        guard dataRowCount > 0, !headers.isEmpty else { return DataFrame.empty }
+
+        let dataRowsToRead: Int
+        if let maxRows = options.maxRows {
+            dataRowsToRead = min(dataRowCount, maxRows)
+        } else {
+            dataRowsToRead = dataRowCount
+        }
+
+        let colCount = headers.count
+        var rawCells: [[String?]] = Array(repeating: Array(repeating: nil, count: dataRowsToRead), count: colCount)
+
+        mappedData.withUnsafeBytes { rawBuffer in
+            guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
+            let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+
+            for r in 0..<dataRowsToRead {
+                let rec = records[startRowIdx + r]
+                for c in 0..<min(colCount, rec.count) {
+                    let str = VectorizedByteParsers.parseString(buffer: bufferPointer, offset: rec[c]).trimmingCharacters(in: .whitespaces)
+                    rawCells[c][r] = options.nullValues.contains(str) ? nil : str
+                }
+            }
+        }
+
+        var columns: [any AnyColumn] = []
+        for (ci, name) in headers.enumerated() {
+            let cells = rawCells[ci]
+            let col = options.inferTypes
+                ? inferColumn(name: name, cells: cells)
+                : TypedColumn<String>(name: name, values: cells)
+            columns.append(col)
+        }
+
+        return try DataFrame(columns: columns)
     }
 
     // MARK: – Core parser

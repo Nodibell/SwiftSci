@@ -38,6 +38,10 @@ let package = Package(
             url: "https://github.com/ml-explore/mlx-swift.git",
             exact: "0.31.6"
         ),
+        .package(
+            url: "https://github.com/swiftlang/swift-docc-plugin",
+            from: "1.3.0"
+        ),
     ],
     targets: [
         // ── SwiftDataFrame ──────────────────────────────────────────────

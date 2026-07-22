@@ -495,9 +495,10 @@
 
         <ul class="nav-links">
             <li><a href="#hero" class="nav-item active">📌 Overview</a></li>
+            <li><a href="#whats-new" class="nav-item">🔥 What's New</a></li>
+            <li><a href="#changelog" class="nav-item">📜 Release Notes</a></li>
             <li><a href="#benchmarks" class="nav-item">📊 Benchmarks</a></li>
-            <li><a href="https://github.com/Nodibell/SwiftAnalytics" class="nav-item" target="_blank">⭐ GitHub
-                    Repository</a></li>
+            <li><a href="https://github.com/Nodibell/SwiftSci" class="nav-item" target="_blank">⭐ GitHub Repository</a></li>
         </ul>
     </aside>
 
@@ -553,6 +554,58 @@
                         Added per-row closure builder <code>addColumn(_:as:using:)</code>, fast-path type casting, and <code>DataFrameError.partialCastFailure</code> protection against silent data loss.
                     </p>
                 </div>
+            </div>
+        </section>
+
+        <!-- Release Changelog Section -->
+        <section id="changelog" style="margin-bottom: 4rem;">
+            <h2 class="section-title">📜 Release History & Changelog</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
+                Complete version history and milestone highlights for the SwiftSci framework.
+            </p>
+
+            <div class="changelog-timeline" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <!-- Release v1.2.0 -->
+                <div class="card" style="border-left: 4px solid var(--accent-primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h3 style="font-size: 1.3rem; color: var(--text-highlight);">v1.2.0 — SwiftSci Rename & Stabilization</h3>
+                        <span class="badge accent">July 2026 · Latest Stable Release</span>
+                    </div>
+                    <ul style="padding-left: 1.25rem; color: var(--text-muted); line-height: 1.8;">
+                        <li><b>🏷️ Package Rename</b>: Renamed main Swift Package to <code>SwiftSci</code> for ecosystem clarity while preserving target modules (<code>SwiftDataFrame</code>, <code>SwiftStats</code>, <code>SwiftML</code>, <code>SwiftForecast</code>, <code>SwiftNLP</code>, <code>SwiftExplain</code>, <code>SwiftCluster</code>, <code>SwiftOptimize</code>).</li>
+                        <li><b>📐 Joseph Form Kalman Filter</b>: Updated covariance matrix updates in <code>filter()</code> and <code>smooth()</code> to the Joseph form <code>P = (I - KH) P_pred (I - KH)ᵀ + K R Kᵀ</code>, preventing loss of positive-definiteness.</li>
+                        <li><b>🔤 UTF-8 Byte BPE Tokenizer</b>: Refactored <code>BPETokenizer</code> to split words on UTF-8 bytes mapped via GPT-2 byte-to-unicode character encoding (<code>makeByteEncoder</code>), enabling non-ASCII text subword tokenization.</li>
+                        <li><b>📊 DataFrame Enhancements</b>: Added row-closure builder <code>addColumn(_:as:using:)</code>, <code>DataFrameError.partialCastFailure</code> protection, invariant checks on <code>gathered(at:)</code>, and default randomized sampling in <code>sample(n:seed:ordered:)</code>.</li>
+                    </ul>
+                </div>
+
+                <!-- Release v1.1.0 -->
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h3 style="font-size: 1.3rem; color: var(--text-highlight);">v1.1.0 — Streaming I/O & Model Loaders</h3>
+                        <span class="badge">July 2026</span>
+                    </div>
+                    <ul style="padding-left: 1.25rem; color: var(--text-muted); line-height: 1.8;">
+                        <li><b>📥 Streaming CSV Parser</b>: High-performance columnar CSV parser with a chunk-buffered <code>AsyncSequence</code> interface (<code>readCSVStream</code>).</li>
+                        <li><b>🧠 SafeTensors & GGUF Parser</b>: Native binary parsers for SafeTensors and GGUF weight files with zero-copy memory mapping into <code>MLXArray</code> GPU buffers.</li>
+                        <li><b>📈 SARIMA & GARCH Models</b>: Added seasonal ARIMA estimators and GARCH conditional variance models to <code>SwiftForecast</code>.</li>
+                    </ul>
+                </div>
+
+                <!-- Release v1.0.0 -->
+                <div class="card" style="border-left: 4px solid var(--border-translucent);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h3 style="font-size: 1.3rem; color: var(--text-highlight);">v1.0.0 — Public Launch & Generative AI</h3>
+                        <span class="badge">July 2026</span>
+                    </div>
+                    <ul style="padding-left: 1.25rem; color: var(--text-muted); line-height: 1.8;">
+                        <li><b>🤖 SwiftLLM Causal Transformer</b>: Native causal Transformer Decoder built on top of <code>MLXArray</code> with greedy, Top-K, and temperature logit sampling.</li>
+                        <li><b>🔍 SwiftExplain KernelSHAP</b>: Concurrent black-box model interpretability using Shapley values computed via Gauss-Jordan linear solver.</li>
+                        <li><b>⚡ Apple Silicon UMA Integration</b>: Hardware routing for vDSP CPU SIMD and Metal GPU operations across Apple M-series chips.</li>
+                    </ul>
+                </div>
+
             </div>
         </section>
 

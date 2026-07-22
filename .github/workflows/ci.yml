@@ -65,9 +65,12 @@ jobs:
             --skip SwiftForecastTests \
             --skip SwiftPrivacyTests \
             --skip SwiftExplainTests \
-            --skip SwiftNLPTests
-          # SwiftLLMTests re-enabled: ParserTests.swift compile errors fixed
-          # Remaining skips: GPU-dependent tests (no hardware on CI runners)
+            --skip SwiftNLPTests \
+            --skip SwiftPreprocessingTests \
+            --skip SwiftOptimizeTests
+          # Skipped: GPU-dependent tests (MLX requires Metal; no GPU on CI runners)
+          # SwiftPreprocessingTests: SwiftPreprocessing links MLX directly → crashes at load
+          # SwiftOptimizeTests:      SwiftOptimize → SwiftML → SwiftPreprocessing → MLX
         
       - name: Export coverage
         run: |

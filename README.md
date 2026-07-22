@@ -11,16 +11,18 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 
 ## 🚀 Core Modules
 
-* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. Now supports parallel chunk-buffered streaming CSV parsing.
+## 🚀 Core Modules
+
+* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. Features `SystemsCSVParser` (zero-copy memory-mapped RFC 4180 DFA byte scanner) and parallel chunk-buffered streaming.
 * **`SwiftStats`**: Vectorized descriptive statistics, distributions, and hypothesis tests powered by `Accelerate vDSP`.
-* **`SwiftPreprocessing`**: Feature scaling, categorical encoding, binning, and preprocessing pipelines (`Pipeline`).
-* **`SwiftML`**: Classical estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs).
-* **`SwiftCluster`**: Dimensionality reduction (SVD-based PCA, DBSCAN) and clustering (K-Means).
-* **`SwiftOptimize`**: Model validation (K-Fold cross-validation) and parallel hyperparameter optimization (`GridSearchCV`).
-* **`SwiftForecast`**: Time series analysis (decomposition, Holt-Winters, ARIMA, SARIMA seasonal models, GARCH volatility, Kalman filtering).
-* **`SwiftNLP`**: Tokenization (Word / subword BPE Tokenizers) and static word embeddings.
+* **`SwiftPreprocessing`**: Feature scaling, categorical encoding, binning, feature selection (`SelectKBest`, `VarianceThreshold`, `RecursiveFeatureElimination` RFE), and preprocessing pipelines (`Pipeline`).
+* **`SwiftML`**: Classical estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs) with Gini `featureImportances` and `Codable` model persistence (`save`/`load`).
+* **`SwiftCluster`**: Dimensionality reduction (SVD-based PCA, DBSCAN), outlier detection (`IsolationForest`, `LocalOutlierFactor`), and clustering (`KMeans` with KMeans++ init).
+* **`SwiftOptimize`**: Model validation (`KFold` cross-validation), evaluation metrics, and parallel hyperparameter optimization (`GridSearchCV`).
+* **`SwiftForecast`**: Time series analysis (decomposition, Holt-Winters, ARIMA, SARIMA seasonal models, GARCH volatility, Kalman filtering, `ExpandingWindow`).
+* **`SwiftNLP`**: Tokenization (Word, subword BPE, `NGramTokenizer`), feature extraction (`HashingVectorizer`, `CountVectorizer`, `TFIDFVectorizer`), and static word embeddings.
 * **`SwiftExplain`**: Black-box model explainability using a parallelized `KernelSHAP` implementation.
-* **`SwiftLLM`**: Local text generation on GPU using casual transformer-decoder architectures and MLX. Supports zero-copy SafeTensors and GGUF weight parsing.
+* **`SwiftLLM`**: Local text generation on GPU using causal transformer-decoder architectures and MLX. Supports SafeTensors and GGUF weight parsing.
 
 ---
 
@@ -30,30 +32,30 @@ The following table presents median execution times on an **Apple Silicon M-seri
 
 | Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
-| **Mean** (1M elements) | 0.082 ms | 0.121 ms | 1.47x | 🟢 Swift |
-| **StdDev** (1M elements) | 0.509 ms | 0.539 ms | 1.06x | 🟢 Swift |
-| **Variance** (1M elements) | 0.498 ms | 0.520 ms | 1.04x | 🟢 Swift |
-| **Pearson Correlation** (500k elements) | 0.868 ms | 1.256 ms | 1.45x | 🟢 Swift |
-| **CSV Read** (100k rows, 5 cols) | 177.509 ms | 19.340 ms | 0.11x | 🔴 Python |
-| **CSV Stream Read** (chunk=10k) | 238.699 ms | 22.525 ms | 0.09x | 🔴 Python |
-| **CSV Stream + Filter** | 243.814 ms | 24.656 ms | 0.10x | 🔴 Python |
-| **CSV Stream + GroupBy** | 241.305 ms | 27.899 ms | 0.12x | 🔴 Python |
-| **Filter rows** (100k rows) | 30.674 ms | 0.610 ms | 0.02x | 🔴 Python |
-| **GroupBy + sum/mean** (4 groups) | 2.357 ms | 1.644 ms | 0.70x | 🔴 Python |
-| **SortBy double column** (100k rows) | 83.506 ms | 7.234 ms | 0.09x | 🔴 Python |
-| **LinearRegression fit** (10k×10, 100 epochs) | 25.122 ms | 25.062 ms | 1.00x | 🔴 Python |
-| **Random Forest fit** (1k x 4 features, 50 trees) | 5.025 ms | 25.475 ms | 5.07x | 🟢 Swift |
-| **GBDT Regressor fit** (1k x 4, 50 estimators) | 35.423 ms | 32.905 ms | 0.93x | 🔴 Python |
-| **KMeans fit** (10k x 4, 3 clusters) | 62.132 ms | 10.159 ms | 0.16x | 🔴 Python |
-| **PCA SVD fit** (1k×100 → 10 components) | 2.019 ms | 0.737 ms | 0.36x | 🔴 Python |
-| **Holt-Winters fit** (50k points, period=12) | 6.841 ms | 148.627 ms | 21.73x | 🟢 Swift |
-| **ARIMA fit** (50k points) | 2.323 ms | 215.527 ms | 92.78x | 🟢 Swift |
-| **ARIMA forecast horizon=24** (50k points) | 2.456 ms | 211.880 ms | 86.26x | 🟢 Swift |
-| **Kalman Filter 1D** (10k observations, Joseph Form) | 62.349 ms | 85.547 ms | 1.37x | 🟢 Swift |
-| **TS Decomposition additive** (1k points) | 0.459 ms | 0.102 ms | 0.22x | 🔴 Python |
-| **LLM Forward Pass** (seqLen=64) | 0.636 ms | 0.528 ms | 0.83x | 🔴 Python |
-| **LLM Generate** (10 tokens) | 5.590 ms | 3.366 ms | 0.60x | 🔴 Python |
-| **KernelSHAP Explain** (5 features, 100 coalitions) | 0.192 ms | 0.426 ms | 2.22x | 🟢 Swift |
+| **Mean** (1M elements) | 0.081 ms | 0.123 ms | 1.52x | 🟢 Swift |
+| **StdDev** (1M elements) | 0.452 ms | 0.499 ms | 1.10x | 🟢 Swift |
+| **Variance** (1M elements) | 0.476 ms | 0.500 ms | 1.05x | 🟢 Swift |
+| **Pearson Correlation** (500k elements) | 0.765 ms | 1.159 ms | 1.52x | 🟢 Swift |
+| **CSV Read** (100k rows, 5 cols) | 69.143 ms | 18.053 ms | 0.26x | 🔴 Python |
+| **CSV Stream Read** (chunk=10k) | 239.801 ms | 20.368 ms | 0.08x | 🔴 Python |
+| **CSV Stream + Filter** | 244.250 ms | 22.597 ms | 0.09x | 🔴 Python |
+| **CSV Stream + GroupBy** | 244.690 ms | 25.488 ms | 0.10x | 🔴 Python |
+| **Filter rows** (100k rows) | 29.606 ms | 0.537 ms | 0.02x | 🔴 Python |
+| **GroupBy + sum/mean** (4 groups) | 2.324 ms | 1.593 ms | 0.69x | 🔴 Python |
+| **SortBy double column** (100k rows) | 76.556 ms | 6.506 ms | 0.08x | 🔴 Python |
+| **LinearRegression fit** (10k×10, 100 epochs) | 27.538 ms | 23.542 ms | 0.85x | 🔴 Python |
+| **Random Forest fit** (1k x 4 features, 50 trees) | 4.781 ms | 24.030 ms | 5.03x | 🟢 Swift |
+| **GBDT Regressor fit** (1k x 4, 50 estimators) | 32.803 ms | 30.839 ms | 0.94x | 🔴 Python |
+| **KMeans fit** (10k x 4, 3 clusters) | 50.827 ms | 11.877 ms | 0.23x | 🔴 Python |
+| **PCA SVD fit** (1k×100 → 10 components) | 2.024 ms | 0.787 ms | 0.39x | 🔴 Python |
+| **Holt-Winters fit** (50k points, period=12) | 6.310 ms | 133.764 ms | 21.20x | 🟢 Swift |
+| **ARIMA fit** (50k points, Hannan-Rissanen) | 2.274 ms | 201.623 ms | 88.68x | 🟢 Swift |
+| **ARIMA forecast horizon=24** (50k points) | 2.322 ms | 202.574 ms | 87.23x | 🟢 Swift |
+| **Kalman Filter 1D** (10k observations) | 58.323 ms | 80.455 ms | 1.38x | 🟢 Swift |
+| **TS Decomposition additive** (1k points) | 0.437 ms | 0.093 ms | 0.21x | 🔴 Python |
+| **LLM Forward Pass** (seqLen=64) | 0.739 ms | 0.457 ms | 0.62x | 🔴 Python |
+| **LLM Generate** (10 tokens) | 5.394 ms | 3.540 ms | 0.66x | 🔴 Python |
+| **KernelSHAP Explain** (5 features, 100 coalitions) | 0.176 ms | 0.426 ms | 2.42x | 🟢 Swift |
 
 ---
 

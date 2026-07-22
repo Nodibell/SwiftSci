@@ -483,7 +483,7 @@
     <aside id="sidebar">
         <div class="logo-area">
             <h1>SwiftSci</h1>
-            <span>v1.2.0 Stable</span>
+            <span>v1.3.0 Stable</span>
         </div>
 
         <!-- Динамічні беджі -->
@@ -523,28 +523,28 @@
         <section id="whats-new" style="margin-bottom: 4rem;">
             <h2 class="section-title">🔥 What's New in v1.3</h2>
             <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
-                Version 1.3 introduces Phase 1 of the Sklearn Parity Roadmap: Estimator pipelines, ColumnTransformer subset routing, RandomizedSearchCV parameter tuning, 2D class probabilities, and extended classification & ROC metrics.
+                Version 1.3 completes the full Sklearn Parity Roadmap: Estimator pipelines, ColumnTransformer subset routing, RandomizedSearchCV hyperparameter search, Outlier Detection, Imbalanced Learning, Probability Calibration, and Time-Series Transformers.
             </p>
             <div class="grid">
                 <div class="card">
                     <span class="card-icon">🔗</span>
-                    <h3>Estimator Pipelines</h3>
+                    <h3>Estimator Pipelines & ColumnTransformer</h3>
                     <p>
-                        Chains zero or more preprocessing transformers (e.g. <code>StandardScaler</code>, <code>MinMaxScaler</code>) directly into <code>ClassificationPipeline</code> or <code>RegressionPipeline</code> for leak-free model fitting.
+                        Chains zero or more preprocessing transformers into <code>ClassificationPipeline</code> or <code>RegressionPipeline</code> for leak-free fitting, with <code>ColumnTransformer</code> column subset routing.
                     </p>
                 </div>
                 <div class="card">
-                    <span class="card-icon">🔀</span>
-                    <h3>ColumnTransformer Routing</h3>
+                    <span class="card-icon">🌲</span>
+                    <h3>Outlier Detection & Imbalanced Learning</h3>
                     <p>
-                        Applies separate preprocessing pipelines to independent subsets of DataFrame column indices via <code>ColumnTransformer</code> and concatenates transformed outputs.
+                        Added <code>IsolationForest</code> and <code>LocalOutlierFactor</code> in <code>SwiftCluster</code> alongside <code>SMOTE</code> over-sampling and <code>RandomUndersampler</code> in <code>SwiftPreprocessing</code>.
                     </p>
                 </div>
                 <div class="card">
                     <span class="card-icon">🎲</span>
-                    <h3>RandomizedSearchCV</h3>
+                    <h3>RandomizedSearchCV & Calibration</h3>
                     <p>
-                        Parallel randomized hyperparameter search across parameter distributions integrated with <code>KFold</code> cross-validation in <code>SwiftOptimize</code>.
+                        Parallel randomized hyperparameter search across parameter distributions in <code>SwiftOptimize</code>, plus <code>CalibratedClassifier</code> Platt scaling probability calibration.
                     </p>
                 </div>
                 <div class="card">
@@ -569,14 +569,16 @@
                 <!-- Release v1.3.0 -->
                 <div class="card" style="border-left: 4px solid var(--accent-primary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-                        <h3 style="font-size: 1.3rem; color: var(--text-highlight);">v1.3.0 — Sklearn Parity Phase 1</h3>
+                        <h3 style="font-size: 1.3rem; color: var(--text-highlight);">v1.3.0 — Sklearn Parity Roadmap</h3>
                         <span class="badge accent">July 2026 · Latest Release</span>
                     </div>
                     <ul style="padding-left: 1.25rem; color: var(--text-muted); line-height: 1.8;">
-                        <li><b>🔗 Estimator Pipelines</b>: Introduced <code>ClassificationPipeline</code> and <code>RegressionPipeline</code> for seamless preprocessing-to-estimator chaining without data leakage.</li>
-                        <li><b>🔀 ColumnTransformer</b>: Introduced <code>ColumnTransformer</code> in <code>SwiftPreprocessing</code> for routing specific column subsets to separate transformers.</li>
-                        <li><b>🎲 RandomizedSearchCV</b>: Added <code>RandomizedSearchCV</code> in <code>SwiftOptimize</code> for randomized hyperparameter tuning with <code>KFold</code> cross-validation.</li>
+                        <li><b>🔗 Estimator Pipelines & ColumnTransformer</b>: Introduced <code>ClassificationPipeline</code>, <code>RegressionPipeline</code>, and <code>ColumnTransformer</code> for seamless preprocessing-to-estimator chaining without data leakage.</li>
+                        <li><b>🌲 Outlier Detection</b>: Introduced <code>IsolationForest</code> and <code>LocalOutlierFactor</code> (LOF) in <code>SwiftCluster</code> for fast anomaly detection.</li>
+                        <li><b>⚖️ Imbalanced Learning</b>: Added <code>SMOTE</code> over-sampling and <code>RandomUndersampler</code> in <code>SwiftPreprocessing</code>.</li>
+                        <li><b>🎲 RandomizedSearchCV & Probability Calibration</b>: Added <code>RandomizedSearchCV</code> with <code>KFold</code> CV in <code>SwiftOptimize</code> and <code>CalibratedClassifier</code> Platt scaling in <code>SwiftML</code>.</li>
                         <li><b>📈 Class Probabilities & Extended Metrics</b>: Added 2D matrix class probability interface <code>predictProbability</code> to <code>ClassifierEstimator</code> protocol, and implemented <code>balancedAccuracy</code>, <code>matthewsCorrelationCoefficient</code> (MCC), <code>cohenKappa</code>, <code>logLoss</code>, <code>brierScore</code>, <code>rocCurve</code>, <code>rocAUC</code>, and <code>prCurve</code> in <code>Metrics.swift</code>.</li>
+                        <li><b>⏱️ Feature Selection & Time Series Transformers</b>: Added <code>VarianceThreshold</code>, <code>SelectKBest</code>, <code>InteractionFeatures</code>, <code>DateFeatures</code>, <code>LagTransformer</code>, <code>RollingWindow</code>, and <code>CountVectorizer</code>.</li>
                     </ul>
                 </div>
 
@@ -753,6 +755,13 @@
                             <td>0.737 ms</td>
                             <td><span class="speedup-badge loser">0.36x</span></td>
                             <td>🔴 Python</td>
+                        </tr>
+                        <tr>
+                            <td><b>Isolation Forest Fit</b> (1k×10, 100 trees)</td>
+                            <td>14.048 ms</td>
+                            <td>16.510 ms</td>
+                            <td><span class="speedup-badge winner">1.18x</span></td>
+                            <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>Holt-Winters Fit</b> (50k points, period=12)</td>

@@ -105,6 +105,18 @@ struct MLBenchmarks: BenchmarkSuite {
         }
         results.append(pcaResult)
 
+        // ── 6. Isolation Forest (SwiftCluster) ────────────────────────────
+        let isoData = MLBenchmarks.makeCluster(rows: 1_000, cols: 10, seed: 99)
+        let isoResult = await BenchmarkRunner.run(
+            name: "IsolationForest fit (1k×10, 100 trees)",
+            module: "SwiftCluster",
+            warmup: 1,
+            iterations: 5
+        ) {
+            _ = try IsolationForest.fit(data: isoData, nEstimators: 100)
+        }
+        results.append(isoResult)
+
         return results
     }
 }

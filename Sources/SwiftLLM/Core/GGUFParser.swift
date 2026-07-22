@@ -149,7 +149,7 @@ public enum GGUFParser {
                     throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' offset out of bounds")
                 }
                 let tensorData = fileData.subdata(in: start..<end)
-                array = MLXArray(tensorData, info.shape, type: Float.self)
+                array = MLXArray(tensorData, info.shape, dtype: .float32)
             case 1: // Float16
                 typeSize = 2
                 let end = start + elementCount * typeSize
@@ -157,7 +157,7 @@ public enum GGUFParser {
                     throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' offset out of bounds")
                 }
                 let tensorData = fileData.subdata(in: start..<end)
-                array = MLXArray(tensorData, info.shape, type: Float16.self)
+                array = MLXArray(tensorData, info.shape, dtype: .float16)
             default:
                 typeSize = 4
                 let end = start + elementCount * typeSize
@@ -165,7 +165,7 @@ public enum GGUFParser {
                     throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' offset out of bounds")
                 }
                 let tensorData = fileData.subdata(in: start..<end)
-                array = MLXArray(tensorData, info.shape, type: Float.self)
+                array = MLXArray(tensorData, info.shape, dtype: .float32)
             }
             
             tensors[info.name] = array

@@ -1,4 +1,4 @@
-name: SwiftAnalytics CI
+name: SwiftSci CI
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .build
-          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
+          key: ${{ runner.os }}-swiftsci-spm-v3-${{ hashFiles('**/Package.resolved') }}
       - run: swift build -v
 
   # 2. Test
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .build
-          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
+          key: ${{ runner.os }}-swiftsci-spm-v3-${{ hashFiles('**/Package.resolved') }}
       
       - name: Run safe unit tests
         run: |

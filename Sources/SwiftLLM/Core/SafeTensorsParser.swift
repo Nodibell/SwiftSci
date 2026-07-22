@@ -61,15 +61,15 @@ public enum SafeTensorsParser {
             let array: MLXArray
             switch dtype {
             case "F32":
-                array = MLXArray(tensorData, shape, type: Float.self)
+                array = MLXArray(tensorData, shape, dtype: .float32)
             case "F16":
-                array = MLXArray(tensorData, shape, type: Float16.self)
+                array = MLXArray(tensorData, shape, dtype: .float16)
             case "I32":
-                array = MLXArray(tensorData, shape, type: Int32.self)
+                array = MLXArray(tensorData, shape, dtype: .int32)
             case "I64":
-                array = MLXArray(tensorData, shape, type: Int64.self)
+                array = MLXArray(tensorData, shape, dtype: .int64)
             default:
-                array = MLXArray(tensorData, shape, type: Float.self)
+                array = MLXArray(tensorData, shape, dtype: .float32)
             }
             
             tensors[name] = array

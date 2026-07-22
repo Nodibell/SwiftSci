@@ -123,6 +123,7 @@ let package = Package(
             name: "SwiftCluster",
             dependencies: [
                 "SwiftDataFrame",
+                "SwiftStats",
                 "SwiftPreprocessing",
                 .product(name: "MLX", package: "mlx-swift"),
             ],

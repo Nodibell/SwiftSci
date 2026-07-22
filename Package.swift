@@ -28,7 +28,6 @@ let package = Package(
         .library(name: "SwiftForecast",      targets: ["SwiftForecast"]),
         .library(name: "SwiftLLM",           targets: ["SwiftLLM"]),
         .library(name: "SwiftExplain",       targets: ["SwiftExplain"]),
-        .library(name: "SwiftPrivacy",       targets: ["SwiftPrivacy"]),
     ],
     dependencies: [
         .package(
@@ -245,25 +244,6 @@ let package = Package(
             swiftSettings: globalSwiftSettings
         ),
 
-        // ── SwiftPrivacy ─────────────────────────────────────────────────
-        .target(
-            name: "SwiftPrivacy",
-            dependencies: [
-                "SwiftDataFrame",
-                "SwiftStats",
-            ],
-            path: "Sources/SwiftPrivacy",
-            cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
-        ),
-        .testTarget(
-            name: "SwiftPrivacyTests",
-            dependencies: ["SwiftPrivacy"],
-            path: "Tests/SwiftPrivacyTests",
-            cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
-        ),
-
         // ── SwiftAnalyticsBenchmarks ──────────────────────────────────────
         .executableTarget(
             name: "SwiftAnalyticsBenchmarks",
@@ -278,7 +258,6 @@ let package = Package(
                 "SwiftForecast",
                 "SwiftLLM",
                 "SwiftExplain",
-                "SwiftPrivacy",
             ],
             path: "Benchmarks/Swift",
             cSettings: globalCSettings,

@@ -67,7 +67,6 @@ struct BenchmarkEntryPoint {
             ForecastBenchmarks(),
             LLMBenchmarks(),
             ExplainBenchmarks(),
-            PrivacyBenchmarks(),
         ]
 
         var allResults: [BenchmarkResult] = []

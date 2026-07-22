@@ -288,7 +288,7 @@ def bench_forecast():
 
 
 def bench_advanced():
-    print("▶ Running SwiftLLM/SwiftExplain/SwiftPrivacy (Python) benchmarks …")
+    print("▶ Running SwiftLLM/SwiftExplain (Python) benchmarks …")
     
     # ── 1. LLM Benchmark (PyTorch) ──
     vocab_size = 1000
@@ -363,63 +363,12 @@ def bench_advanced():
     def explain_fn():
         _ = explainer.shap_values(instance, nsamples=num_coalitions, l1_reg=False)
 
-    # ── 3. RingLWE & PNNS Benchmark (NumPy) ──
-    q = 1048583
-    t = 1000
-    d = 8
-    delta = q // t
     
-    s_key = np.random.randint(0, t, size=d)
-    
-    # Ring-LWE Encrypt/Decrypt (vector size 64)
-    plain_vector = np.random.randint(0, 10, size=64)
-    
-    def encrypt_vector(v):
-        encrypted = []
-        for val in v:
-            a = np.random.randint(0, q, size=d)
-            e = np.random.randint(-3, 4)
-            b = (np.dot(a, s_key) + e + val * delta) % q
-            encrypted.append((a, b))
-        return encrypted
-        
-    def decrypt_vector(encrypted):
-        decrypted = []
-        for a, b in encrypted:
-            diff = (b - np.dot(a, s_key)) % q
-            m = int(round(diff / delta)) % t
-            decrypted.append(m)
-        return decrypted
-        
-    def crypt_fn():
-        enc = encrypt_vector(plain_vector)
-        _ = decrypt_vector(enc)
-        
-    # PNNS Classify (50 DB vectors, size 64)
-    db = np.random.randint(0, 10, size=(50, 64))
-    
-    def pnns_fn():
-        enc_query = encrypt_vector(plain_vector)
-        results_dots = []
-        for row in db:
-            sum_a = np.zeros(d, dtype=int)
-            sum_b = 0
-            for j in range(64):
-                a_j, b_j = enc_query[j]
-                x_j = row[j]
-                sum_a = (sum_a + a_j * x_j) % q
-                sum_b = (sum_b + b_j * x_j) % q
-            results_dots.append((sum_a, sum_b))
-            
-        dots = decrypt_vector(results_dots)
-        _ = np.argmax(dots)
 
     results = []
     results.append(run_benchmark("LLM Forward Pass (seqLen=64)", "PyTorch", forward_fn, warmup=2, iterations=5))
     results.append(run_benchmark("LLM Generate (10 tokens)", "PyTorch", generate_fn, warmup=1, iterations=3))
     results.append(run_benchmark("KernelSHAP Explain (5 feats, 100 coalitions)", "SHAP", explain_fn, warmup=2, iterations=5))
-    results.append(run_benchmark("RingLWE Encrypt/Decrypt (vector size=64)", "Python LWE", crypt_fn, warmup=2, iterations=5))
-    results.append(run_benchmark("PNNS Classify (50 DB vectors, size=64)", "Python LWE", pnns_fn, warmup=2, iterations=5))
     
     return results
 

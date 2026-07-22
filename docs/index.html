@@ -582,149 +582,170 @@
                     <tbody>
                         <tr>
                             <td><b>Mean</b> (1M elements)</td>
-                            <td>0.071 ms</td>
-                            <td>0.118 ms</td>
-                            <td><span class="speedup-badge winner">1.67x</span></td>
+                            <td>0.081 ms</td>
+                            <td>0.119 ms</td>
+                            <td><span class="speedup-badge winner">1.47x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>StdDev</b> (1M elements)</td>
-                            <td>0.481 ms</td>
-                            <td>0.499 ms</td>
-                            <td><span class="speedup-badge winner">1.04x</span></td>
+                            <td>0.486 ms</td>
+                            <td>0.502 ms</td>
+                            <td><span class="speedup-badge winner">1.03x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>Variance</b> (1M elements)</td>
-                            <td>0.442 ms</td>
-                            <td>0.499 ms</td>
-                            <td><span class="speedup-badge winner">1.13x</span></td>
+                            <td>0.467 ms</td>
+                            <td>0.506 ms</td>
+                            <td><span class="speedup-badge winner">1.08x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>Pearson Correlation</b> (500k elements)</td>
-                            <td>0.781 ms</td>
-                            <td>1.162 ms</td>
-                            <td><span class="speedup-badge winner">1.49x</span></td>
+                            <td>0.790 ms</td>
+                            <td>1.165 ms</td>
+                            <td><span class="speedup-badge winner">1.47x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>CSV Read</b> (100k rows, 5 cols)</td>
-                            <td>166.866 ms</td>
-                            <td>17.748 ms</td>
+                            <td>163.315 ms</td>
+                            <td>18.035 ms</td>
                             <td><span class="speedup-badge loser">0.11x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
+                            <td><b>CSV Stream Read</b> (chunk=10k)</td>
+                            <td>238.009 ms</td>
+                            <td>n/a</td>
+                            <td><span class="speedup-badge winner">1.00x</span></td>
+                            <td>⚡ Stream</td>
+                        </tr>
+                        <tr>
+                            <td><b>CSV Stream + Filter</b></td>
+                            <td>240.945 ms</td>
+                            <td>n/a</td>
+                            <td><span class="speedup-badge winner">1.00x</span></td>
+                            <td>⚡ Stream</td>
+                        </tr>
+                        <tr>
+                            <td><b>CSV Stream + GroupBy</b></td>
+                            <td>230.476 ms</td>
+                            <td>n/a</td>
+                            <td><span class="speedup-badge winner">1.00x</span></td>
+                            <td>⚡ Stream</td>
+                        </tr>
+                        <tr>
                             <td><b>Filter Rows</b> (100k rows)</td>
-                            <td>28.006 ms</td>
-                            <td>0.541 ms</td>
+                            <td>30.608 ms</td>
+                            <td>0.537 ms</td>
                             <td><span class="speedup-badge loser">0.02x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>GroupBy + sum/mean</b> (4 groups)</td>
-                            <td>2.258 ms</td>
-                            <td>1.538 ms</td>
-                            <td><span class="speedup-badge loser">0.68x</span></td>
+                            <td>2.375 ms</td>
+                            <td>1.580 ms</td>
+                            <td><span class="speedup-badge loser">0.67x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>SortBy Double Column</b> (100k rows)</td>
-                            <td>71.059 ms</td>
-                            <td>6.242 ms</td>
-                            <td><span class="speedup-badge loser">0.09x</span></td>
+                            <td>77.727 ms</td>
+                            <td>6.434 ms</td>
+                            <td><span class="speedup-badge loser">0.08x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>LinearRegression Fit</b> (10k×10, 100 epochs)</td>
-                            <td>27.554 ms</td>
-                            <td>23.827 ms</td>
-                            <td><span class="speedup-badge loser">0.86x</span></td>
+                            <td>24.914 ms</td>
+                            <td>24.228 ms</td>
+                            <td><span class="speedup-badge loser">0.97x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>Random Forest Fit</b> (1k x 4 features, 50 trees)</td>
-                            <td>4.462 ms</td>
-                            <td>23.096 ms</td>
-                            <td><span class="speedup-badge winner">5.18x</span></td>
+                            <td>4.440 ms</td>
+                            <td>24.371 ms</td>
+                            <td><span class="speedup-badge winner">5.49x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>GBDT Regressor Fit</b> (1k x 4, 50 estimators)</td>
-                            <td>33.323 ms</td>
-                            <td>29.273 ms</td>
-                            <td><span class="speedup-badge loser">0.88x</span></td>
+                            <td>34.072 ms</td>
+                            <td>29.810 ms</td>
+                            <td><span class="speedup-badge loser">0.87x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>KMeans Fit</b> (10k x 4, 3 clusters)</td>
-                            <td>43.779 ms</td>
-                            <td>11.497 ms</td>
-                            <td><span class="speedup-badge loser">0.26x</span></td>
+                            <td>39.499 ms</td>
+                            <td>11.548 ms</td>
+                            <td><span class="speedup-badge loser">0.29x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>PCA SVD Fit</b> (1k×100 → 10 components)</td>
-                            <td>1.962 ms</td>
-                            <td>0.744 ms</td>
-                            <td><span class="speedup-badge loser">0.38x</span></td>
+                            <td>1.977 ms</td>
+                            <td>0.733 ms</td>
+                            <td><span class="speedup-badge loser">0.37x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>Holt-Winters Fit</b> (50k points, period=12)</td>
-                            <td>6.503 ms</td>
-                            <td>134.049 ms</td>
-                            <td><span class="speedup-badge winner">20.61x</span></td>
+                            <td>6.454 ms</td>
+                            <td>136.864 ms</td>
+                            <td><span class="speedup-badge winner">21.21x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>ARIMA Fit</b> (50k points)</td>
-                            <td>2.304 ms</td>
-                            <td>201.441 ms</td>
-                            <td><span class="speedup-badge winner">87.41x</span></td>
+                            <td>2.229 ms</td>
+                            <td>204.534 ms</td>
+                            <td><span class="speedup-badge winner">91.76x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>ARIMA Forecast Horizon=24</b> (50k points)</td>
-                            <td>2.273 ms</td>
-                            <td>202.966 ms</td>
-                            <td><span class="speedup-badge winner">89.29x</span></td>
+                            <td>2.293 ms</td>
+                            <td>203.017 ms</td>
+                            <td><span class="speedup-badge winner">88.52x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>Kalman Filter 1D</b> (10k observations)</td>
-                            <td>39.565 ms</td>
-                            <td>76.823 ms</td>
-                            <td><span class="speedup-badge winner">1.94x</span></td>
+                            <td>45.275 ms</td>
+                            <td>81.305 ms</td>
+                            <td><span class="speedup-badge winner">1.80x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>TS Decomposition Additive</b> (1k points)</td>
-                            <td>0.448 ms</td>
-                            <td>0.089 ms</td>
+                            <td>0.453 ms</td>
+                            <td>0.093 ms</td>
                             <td><span class="speedup-badge loser">0.20x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>LLM Forward Pass</b> (seqLen=64)</td>
-                            <td>0.436 ms</td>
-                            <td>0.499 ms</td>
-                            <td><span class="speedup-badge winner">1.14x</span></td>
+                            <td>0.449 ms</td>
+                            <td>0.768 ms</td>
+                            <td><span class="speedup-badge winner">1.71x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>LLM Generate</b> (10 tokens)</td>
-                            <td>6.072 ms</td>
-                            <td>3.363 ms</td>
-                            <td><span class="speedup-badge loser">0.55x</span></td>
-                            <td>🔴 Python</td>
+                            <td>4.283 ms</td>
+                            <td>4.377 ms</td>
+                            <td><span class="speedup-badge winner">1.02x</span></td>
+                            <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>KernelSHAP Explain</b> (5 features, 100 coalitions)</td>
-                            <td>0.153 ms</td>
-                            <td>0.443 ms</td>
-                            <td><span class="speedup-badge winner">2.89x</span></td>
+                            <td>0.208 ms</td>
+                            <td>0.450 ms</td>
+                            <td><span class="speedup-badge winner">2.16x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                     </tbody>

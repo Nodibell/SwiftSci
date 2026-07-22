@@ -27,27 +27,30 @@ The following table presents median execution times on an **Apple Silicon M-seri
 
 | Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
-| **Mean** (1M elements) | 0.071 ms | 0.118 ms | 1.67x | 🟢 Swift |
-| **StdDev** (1M elements) | 0.481 ms | 0.499 ms | 1.04x | 🟢 Swift |
-| **Variance** (1M elements) | 0.442 ms | 0.499 ms | 1.13x | 🟢 Swift |
-| **Pearson Correlation** (500k elements) | 0.781 ms | 1.162 ms | 1.49x | 🟢 Swift |
-| **CSV Read** (100k rows, 5 cols) | 166.866 ms | 17.748 ms | 0.11x | 🔴 Python |
-| **Filter rows** (100k rows) | 28.006 ms | 0.541 ms | 0.02x | 🔴 Python |
-| **GroupBy + sum/mean** (4 groups) | 2.258 ms | 1.538 ms | 0.68x | 🔴 Python |
-| **SortBy double column** (100k rows) | 71.059 ms | 6.242 ms | 0.09x | 🔴 Python |
-| **LinearRegression fit** (10k×10, 100 epochs) | 27.554 ms | 23.827 ms | 0.86x | 🔴 Python |
-| **Random Forest fit** (1k x 4 features, 50 trees) | 4.462 ms | 23.096 ms | 5.18x | 🟢 Swift |
-| **GBDT Regressor fit** (1k x 4, 50 estimators) | 33.323 ms | 29.273 ms | 0.88x | 🔴 Python |
-| **KMeans fit** (10k x 4, 3 clusters) | 43.779 ms | 11.497 ms | 0.26x | 🔴 Python |
-| **PCA SVD fit** (1k×100 → 10 components) | 1.962 ms | 0.744 ms | 0.38x | 🔴 Python |
-| **Holt-Winters fit** (50k points, period=12) | 6.503 ms | 134.049 ms | 20.61x | 🟢 Swift |
-| **ARIMA fit** (50k points) | 2.304 ms | 201.441 ms | 87.41x | 🟢 Swift |
-| **ARIMA forecast horizon=24** (50k points) | 2.273 ms | 202.966 ms | 89.29x | 🟢 Swift |
-| **Kalman Filter 1D** (10k observations) | 39.565 ms | 76.823 ms | 1.94x | 🟢 Swift |
-| **TS Decomposition additive** (1k points) | 0.448 ms | 0.089 ms | 0.20x | 🔴 Python |
-| **LLM Forward Pass** (seqLen=64) | 0.436 ms | 0.499 ms | 1.14x | 🟢 Swift |
-| **LLM Generate** (10 tokens) | 6.072 ms | 3.363 ms | 0.55x | 🔴 Python |
-| **KernelSHAP Explain** (5 features, 100 coalitions) | 0.153 ms | 0.443 ms | 2.89x | 🟢 Swift |
+| **Mean** (1M elements) | 0.081 ms | 0.119 ms | 1.47x | 🟢 Swift |
+| **StdDev** (1M elements) | 0.486 ms | 0.502 ms | 1.03x | 🟢 Swift |
+| **Variance** (1M elements) | 0.467 ms | 0.506 ms | 1.08x | 🟢 Swift |
+| **Pearson Correlation** (500k elements) | 0.790 ms | 1.165 ms | 1.47x | 🟢 Swift |
+| **CSV Read** (100k rows, 5 cols) | 163.315 ms | 18.035 ms | 0.11x | 🔴 Python |
+| **CSV Stream Read** (chunk=10k) | 238.009 ms | n/a | n/a | ⚡ Stream |
+| **CSV Stream + Filter** | 240.945 ms | n/a | n/a | ⚡ Stream |
+| **CSV Stream + GroupBy** | 230.476 ms | n/a | n/a | ⚡ Stream |
+| **Filter rows** (100k rows) | 30.608 ms | 0.537 ms | 0.02x | 🔴 Python |
+| **GroupBy + sum/mean** (4 groups) | 2.375 ms | 1.580 ms | 0.67x | 🔴 Python |
+| **SortBy double column** (100k rows) | 77.727 ms | 6.434 ms | 0.08x | 🔴 Python |
+| **LinearRegression fit** (10k×10, 100 epochs) | 24.914 ms | 24.228 ms | 0.97x | 🔴 Python |
+| **Random Forest fit** (1k x 4 features, 50 trees) | 4.440 ms | 24.371 ms | 5.49x | 🟢 Swift |
+| **GBDT Regressor fit** (1k x 4, 50 estimators) | 34.072 ms | 29.810 ms | 0.87x | 🔴 Python |
+| **KMeans fit** (10k x 4, 3 clusters) | 39.499 ms | 11.548 ms | 0.29x | 🔴 Python |
+| **PCA SVD fit** (1k×100 → 10 components) | 1.977 ms | 0.733 ms | 0.37x | 🔴 Python |
+| **Holt-Winters fit** (50k points, period=12) | 6.454 ms | 136.864 ms | 21.21x | 🟢 Swift |
+| **ARIMA fit** (50k points) | 2.229 ms | 204.534 ms | 91.76x | 🟢 Swift |
+| **ARIMA forecast horizon=24** (50k points) | 2.293 ms | 203.017 ms | 88.52x | 🟢 Swift |
+| **Kalman Filter 1D** (10k observations) | 45.275 ms | 81.305 ms | 1.80x | 🟢 Swift |
+| **TS Decomposition additive** (1k points) | 0.453 ms | 0.093 ms | 0.20x | 🔴 Python |
+| **LLM Forward Pass** (seqLen=64) | 0.449 ms | 0.768 ms | 1.71x | 🟢 Swift |
+| **LLM Generate** (10 tokens) | 4.283 ms | 4.377 ms | 1.02x | 🟢 Swift |
+| **KernelSHAP Explain** (5 features, 100 coalitions) | 0.208 ms | 0.450 ms | 2.16x | 🟢 Swift |
 
 ---
 

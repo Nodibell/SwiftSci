@@ -54,11 +54,30 @@ public struct BPETokenizer: Tokenizer, Sendable {
     
     // MARK: - Helper BPE Algorithm
     
+    private static let byteEncoder: [UInt8: Character] = Self.makeByteEncoder()
+    
+    private static func makeByteEncoder() -> [UInt8: Character] {
+        let bytes = Array(UInt8(ascii: "!")...UInt8(ascii: "~"))
+            + Array(UInt8(0xA1)...UInt8(0xAC))
+            + Array(UInt8(0xAE)...UInt8(0xFF))
+        var mapping = [UInt8: Character]()
+        var n: UInt32 = 0
+        for b in UInt8.min...UInt8.max {
+            if bytes.contains(b) {
+                mapping[b] = Character(UnicodeScalar(UInt32(b))!)
+            } else {
+                mapping[b] = Character(UnicodeScalar(256 + n)!)
+                n += 1
+            }
+        }
+        return mapping
+    }
+    
     private func bpe(_ word: String) -> [String] {
         guard !word.isEmpty else { return [] }
         
-        // Split word into characters and append </w> to the last character
-        var chars = word.map { String($0) }
+        // Split word into UTF-8 bytes and encode via GPT-2 byteEncoder, appending </w> to the last byte
+        var chars = word.utf8.map { String(Self.byteEncoder[$0]!) }
         chars[chars.count - 1] += "</w>"
         
         var currentWord = chars

@@ -1,6 +1,6 @@
 import Foundation
 
-/// A unified, consolidated error type for all modules in the SwiftAnalytics ecosystem.
+/// A unified, consolidated error type for all modules in the SwiftSci ecosystem.
 public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStringConvertible {
     
     // MARK: - Validation & Input Errors (Global & Preprocessing)
@@ -33,6 +33,7 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
     case invalidSampleSize(requested: Int, available: Int)
     case emptyDataFrame(operation: String)
     case castFailed(column: String, targetType: String)
+    case partialCastFailure(column: String, targetType: String, failed: Int, total: Int)
     
     // MARK: - Statistics & Numerical Errors
     case insufficientData(minimum: Int, got: Int)
@@ -73,7 +74,7 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
     public static var notFitted: SwiftMLError { .modelNotFitted }
     
     public var description: String {
-        return errorDescription ?? "Unknown SwiftAnalytics error."
+        return errorDescription ?? "Unknown SwiftSci error."
     }
     
     public var errorDescription: String? {
@@ -124,6 +125,8 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
             return "Cannot perform '\(op)' on an empty DataFrame."
         case .castFailed(let col, let type):
             return "Cannot cast column '\(col)' to \(type)."
+        case .partialCastFailure(let col, let type, let failed, let total):
+            return "Partial cast failure in column '\(col)' to \(type): \(failed) of \(total) values could not be cast."
         case .insufficientData(let min, let got):
             return "Insufficient data: at least \(min) elements required, got \(got)."
         case .sizeMismatch(let a, let b):

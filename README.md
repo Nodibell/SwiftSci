@@ -1,6 +1,6 @@
-# SwiftAnalytics
+# SwiftSci
 
-**SwiftAnalytics** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
+**SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
 The package combines hardware-accelerated tensor computations on the Apple Silicon GPU via **MLX** with highly optimized CPU vector routines from the **Accelerate framework (vDSP / LAPACK)**.
 
@@ -27,30 +27,30 @@ The following table presents median execution times on an **Apple Silicon M-seri
 
 | Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
-| **Mean** (1M elements) | 0.081 ms | 0.119 ms | 1.47x | 🟢 Swift |
-| **StdDev** (1M elements) | 0.486 ms | 0.502 ms | 1.03x | 🟢 Swift |
-| **Variance** (1M elements) | 0.467 ms | 0.506 ms | 1.08x | 🟢 Swift |
-| **Pearson Correlation** (500k elements) | 0.790 ms | 1.165 ms | 1.47x | 🟢 Swift |
-| **CSV Read** (100k rows, 5 cols) | 163.315 ms | 18.148 ms | 0.11x | 🔴 Python |
-| **CSV Stream Read** (chunk=10k) | 238.009 ms | 20.444 ms | 0.09x | 🔴 Python |
-| **CSV Stream + Filter** | 240.945 ms | 22.460 ms | 0.09x | 🔴 Python |
-| **CSV Stream + GroupBy** | 230.476 ms | 25.282 ms | 0.11x | 🔴 Python |
-| **Filter rows** (100k rows) | 30.608 ms | 0.537 ms | 0.02x | 🔴 Python |
-| **GroupBy + sum/mean** (4 groups) | 2.375 ms | 1.580 ms | 0.67x | 🔴 Python |
-| **SortBy double column** (100k rows) | 77.727 ms | 6.434 ms | 0.08x | 🔴 Python |
-| **LinearRegression fit** (10k×10, 100 epochs) | 24.914 ms | 24.228 ms | 0.97x | 🔴 Python |
-| **Random Forest fit** (1k x 4 features, 50 trees) | 4.440 ms | 24.371 ms | 5.49x | 🟢 Swift |
-| **GBDT Regressor fit** (1k x 4, 50 estimators) | 34.072 ms | 29.810 ms | 0.87x | 🔴 Python |
-| **KMeans fit** (10k x 4, 3 clusters) | 39.499 ms | 11.548 ms | 0.29x | 🔴 Python |
-| **PCA SVD fit** (1k×100 → 10 components) | 1.977 ms | 0.733 ms | 0.37x | 🔴 Python |
-| **Holt-Winters fit** (50k points, period=12) | 6.454 ms | 136.864 ms | 21.21x | 🟢 Swift |
-| **ARIMA fit** (50k points) | 2.229 ms | 204.534 ms | 91.76x | 🟢 Swift |
-| **ARIMA forecast horizon=24** (50k points) | 2.293 ms | 203.017 ms | 88.52x | 🟢 Swift |
-| **Kalman Filter 1D** (10k observations) | 45.275 ms | 81.305 ms | 1.80x | 🟢 Swift |
-| **TS Decomposition additive** (1k points) | 0.453 ms | 0.093 ms | 0.20x | 🔴 Python |
-| **LLM Forward Pass** (seqLen=64) | 0.449 ms | 0.768 ms | 1.71x | 🟢 Swift |
-| **LLM Generate** (10 tokens) | 4.283 ms | 4.377 ms | 1.02x | 🟢 Swift |
-| **KernelSHAP Explain** (5 features, 100 coalitions) | 0.208 ms | 0.450 ms | 2.16x | 🟢 Swift |
+| **Mean** (1M elements) | 0.082 ms | 0.121 ms | 1.47x | 🟢 Swift |
+| **StdDev** (1M elements) | 0.509 ms | 0.539 ms | 1.06x | 🟢 Swift |
+| **Variance** (1M elements) | 0.498 ms | 0.520 ms | 1.04x | 🟢 Swift |
+| **Pearson Correlation** (500k elements) | 0.868 ms | 1.256 ms | 1.45x | 🟢 Swift |
+| **CSV Read** (100k rows, 5 cols) | 177.509 ms | 19.340 ms | 0.11x | 🔴 Python |
+| **CSV Stream Read** (chunk=10k) | 238.699 ms | 22.525 ms | 0.09x | 🔴 Python |
+| **CSV Stream + Filter** | 243.814 ms | 24.656 ms | 0.10x | 🔴 Python |
+| **CSV Stream + GroupBy** | 241.305 ms | 27.899 ms | 0.12x | 🔴 Python |
+| **Filter rows** (100k rows) | 30.674 ms | 0.610 ms | 0.02x | 🔴 Python |
+| **GroupBy + sum/mean** (4 groups) | 2.357 ms | 1.644 ms | 0.70x | 🔴 Python |
+| **SortBy double column** (100k rows) | 83.506 ms | 7.234 ms | 0.09x | 🔴 Python |
+| **LinearRegression fit** (10k×10, 100 epochs) | 25.122 ms | 25.062 ms | 1.00x | 🔴 Python |
+| **Random Forest fit** (1k x 4 features, 50 trees) | 5.025 ms | 25.475 ms | 5.07x | 🟢 Swift |
+| **GBDT Regressor fit** (1k x 4, 50 estimators) | 35.423 ms | 32.905 ms | 0.93x | 🔴 Python |
+| **KMeans fit** (10k x 4, 3 clusters) | 62.132 ms | 10.159 ms | 0.16x | 🔴 Python |
+| **PCA SVD fit** (1k×100 → 10 components) | 2.019 ms | 0.737 ms | 0.36x | 🔴 Python |
+| **Holt-Winters fit** (50k points, period=12) | 6.841 ms | 148.627 ms | 21.73x | 🟢 Swift |
+| **ARIMA fit** (50k points) | 2.323 ms | 215.527 ms | 92.78x | 🟢 Swift |
+| **ARIMA forecast horizon=24** (50k points) | 2.456 ms | 211.880 ms | 86.26x | 🟢 Swift |
+| **Kalman Filter 1D** (10k observations, Joseph Form) | 62.349 ms | 85.547 ms | 1.37x | 🟢 Swift |
+| **TS Decomposition additive** (1k points) | 0.459 ms | 0.102 ms | 0.22x | 🔴 Python |
+| **LLM Forward Pass** (seqLen=64) | 0.636 ms | 0.528 ms | 0.83x | 🔴 Python |
+| **LLM Generate** (10 tokens) | 5.590 ms | 3.366 ms | 0.60x | 🔴 Python |
+| **KernelSHAP Explain** (5 features, 100 coalitions) | 0.192 ms | 0.426 ms | 2.22x | 🟢 Swift |
 
 ---
 
@@ -58,7 +58,7 @@ The following table presents median execution times on an **Apple Silicon M-seri
 
 ### 1. Transitioning from OOP to Data-Oriented Design (DOD)
 Traditional object-oriented trees (where every node is a reference type containing child node pointers) suffer from severe Automatic Reference Counting (ARC) overhead and poor CPU cache locality (L1/L2 cache misses). 
-`SwiftAnalytics` resolves this by storing trees as a contiguous flat array of `FlatTreeNode` structures:
+`SwiftSci` resolves this by storing trees as a contiguous flat array of `FlatTreeNode` structures:
 * Nodes are allocated next to each other in memory.
 * Child navigation is done via array offsets.
 * This dramatically increases tree ensemble traversal speeds.
@@ -106,7 +106,7 @@ let predictions = try await regressor.predict(features: X_test)
 
 For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftAnalytics/ROADMAP/ROADMAP.md) directory:
 * **v1.1 (Completed 🟢)**: Streaming CSV Parser, SafeTensors & GGUF model loader, SARIMA & GARCH models.
-* **v1.2 (Planned 📋)**: Package renaming (`SwiftSci`), Kalman filter Joseph form fix, byte-level BPE, `addColumn`.
+* **v1.2 (Completed 🟢)**: Package renaming (`SwiftSci`), Kalman filter Joseph form fix, byte-level BPE, `addColumn`.
 * **v1.3 (Planned 📋)**: Sklearn parity (`ClassificationPipeline`/`RegressionPipeline`, `ColumnTransformer`, `RandomizedSearchCV`, extended metrics, outlier detection).
 
 ---

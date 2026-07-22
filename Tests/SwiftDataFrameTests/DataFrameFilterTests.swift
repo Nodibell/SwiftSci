@@ -115,4 +115,32 @@ struct DataFrameFilterTests {
         #expect(colLead2?.values[3] == nil)
         #expect(colLead2?.values[4] == nil)
     }
+
+    @Test("castColumn throws partialCastFailure on invalid numeric string")
+    func castColumnPartialFailure() throws {
+        let nameCol = TypedColumn<String>(name: "str_val", values: ["10", "invalid_number", "30"])
+        let df = try DataFrame(columns: [nameCol])
+        #expect(throws: DataFrameError.self) {
+            _ = try df.castColumn("str_val", to: Int64.self)
+        }
+    }
+
+    @Test("addColumn computes column values from row closure")
+    func addColumnRowClosure() throws {
+        let df = try makeDF()
+        let res = try df.addColumn("is_adult", as: Bool.self) { row in
+            guard let age = row.value(column: "age", as: Int64.self) else { return nil }
+            return age >= 18
+        }
+        #expect(res.columnNames.contains("is_adult"))
+        let isAdults = res[column: "is_adult", as: Bool.self]?.values
+        #expect(isAdults == [true, true, true, true, nil])
+    }
+
+    @Test("sample with ordered parameter preserves index sequence")
+    func sampleOrdered() throws {
+        let df = try makeDF()
+        let sampledOrdered = df.sample(n: 3, seed: 42, ordered: true)
+        #expect(sampledOrdered.shape.rows == 3)
+    }
 }

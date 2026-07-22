@@ -1,0 +1,271 @@
+{
+  "platform" : "Apple Silicon (arm64)",
+  "results" : [
+    {
+      "iterations" : 7,
+      "maxMs" : 0.0875,
+      "meanMs" : 0.08322028571428572,
+      "medianMs" : 0.082333,
+      "minMs" : 0.080583,
+      "module" : "SwiftStats",
+      "name" : "Mean (vDSP, 1M elements)",
+      "stdMs" : 0.0021732857095904798,
+      "warmup" : 2
+    },
+    {
+      "iterations" : 7,
+      "maxMs" : 0.5785,
+      "meanMs" : 0.5177022857142858,
+      "medianMs" : 0.508833,
+      "minMs" : 0.49475,
+      "module" : "SwiftStats",
+      "name" : "StdDev (vDSP, 1M elements)",
+      "stdMs" : 0.027128057087578886,
+      "warmup" : 2
+    },
+    {
+      "iterations" : 7,
+      "maxMs" : 0.679792,
+      "meanMs" : 0.5281964285714286,
+      "medianMs" : 0.498084,
+      "minMs" : 0.491458,
+      "module" : "SwiftStats",
+      "name" : "Variance (vDSP, 1M elements)",
+      "stdMs" : 0.06318939383621078,
+      "warmup" : 2
+    },
+    {
+      "iterations" : 7,
+      "maxMs" : 1.134459,
+      "meanMs" : 0.9374227142857142,
+      "medianMs" : 0.868458,
+      "minMs" : 0.83925,
+      "module" : "SwiftStats",
+      "name" : "Pearson Correlation (500k)",
+      "stdMs" : 0.1128142463163158,
+      "warmup" : 2
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 178.634375,
+      "meanMs" : 176.44064200000003,
+      "medianMs" : 177.509084,
+      "minMs" : 173.694542,
+      "module" : "SwiftDataFrame",
+      "name" : "CSV Read (100k rows)",
+      "stdMs" : 2.140176354452032,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 245.564417,
+      "meanMs" : 239.2865668,
+      "medianMs" : 238.699417,
+      "minMs" : 233.308959,
+      "module" : "SwiftDataFrame",
+      "name" : "CSV Stream Read (chunk=10k)",
+      "stdMs" : 3.9294300793583,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 248.462,
+      "meanMs" : 244.49963319999998,
+      "medianMs" : 243.814333,
+      "minMs" : 239.408583,
+      "module" : "SwiftDataFrame",
+      "name" : "CSV Stream + Filter",
+      "stdMs" : 3.2269729733945636,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 242.887291,
+      "meanMs" : 240.55127499999998,
+      "medianMs" : 241.304625,
+      "minMs" : 235.656459,
+      "module" : "SwiftDataFrame",
+      "name" : "CSV Stream + GroupBy",
+      "stdMs" : 2.5929348863734254,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 7,
+      "maxMs" : 32.035792,
+      "meanMs" : 30.78233342857143,
+      "medianMs" : 30.673542,
+      "minMs" : 30.14625,
+      "module" : "SwiftDataFrame",
+      "name" : "Filter rows (100k)",
+      "stdMs" : 0.5578192965426959,
+      "warmup" : 2
+    },
+    {
+      "iterations" : 7,
+      "maxMs" : 2.444541,
+      "meanMs" : 2.3636664285714284,
+      "medianMs" : 2.356958,
+      "minMs" : 2.306291,
+      "module" : "SwiftDataFrame",
+      "name" : "GroupBy + Aggregation",
+      "stdMs" : 0.0407786645716225,
+      "warmup" : 2
+    },
+    {
+      "iterations" : 7,
+      "maxMs" : 85.037208,
+      "meanMs" : 82.97965485714285,
+      "medianMs" : 83.506292,
+      "minMs" : 80.234708,
+      "module" : "SwiftDataFrame",
+      "name" : "SortBy double column",
+      "stdMs" : 1.3968771165416962,
+      "warmup" : 2
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 25.459958,
+      "meanMs" : 25.137474599999997,
+      "medianMs" : 25.122458,
+      "minMs" : 24.857583,
+      "module" : "SwiftML",
+      "name" : "LinearRegression fit (10k×10, 100 epochs)",
+      "stdMs" : 0.2168495386258405,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 6.036583,
+      "meanMs" : 5.146208400000001,
+      "medianMs" : 5.024625,
+      "minMs" : 4.632,
+      "module" : "SwiftML",
+      "name" : "RandomForest fit (1k×4, 50 trees)",
+      "stdMs" : 0.4805600300460288,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 36.599417,
+      "meanMs" : 35.6716416,
+      "medianMs" : 35.422833,
+      "minMs" : 35.30175,
+      "module" : "SwiftML",
+      "name" : "GBDT Regressor fit (1k×4, 50 est.)",
+      "stdMs" : 0.4746073658381642,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 66.986834,
+      "meanMs" : 57.3577502,
+      "medianMs" : 62.132042,
+      "minMs" : 41.440875,
+      "module" : "SwiftCluster",
+      "name" : "KMeans fit (10k×4, 3 clusters)",
+      "stdMs" : 9.000980499878276,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 2.067167,
+      "meanMs" : 2.0258002,
+      "medianMs" : 2.0195,
+      "minMs" : 1.997667,
+      "module" : "SwiftCluster",
+      "name" : "PCA SVD fit (1k×100 → 10 comps)",
+      "stdMs" : 0.024856102135290617,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 6.965166,
+      "meanMs" : 6.813507999999999,
+      "medianMs" : 6.841166,
+      "minMs" : 6.6745,
+      "module" : "SwiftForecast",
+      "name" : "Holt-Winters fit (50k pts, period=12)",
+      "stdMs" : 0.11065421556542696,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 2.423375,
+      "meanMs" : 2.350025,
+      "medianMs" : 2.323,
+      "minMs" : 2.284375,
+      "module" : "SwiftForecast",
+      "name" : "ARIMA(1,1,1) fit (50k pts)",
+      "stdMs" : 0.05211785922311092,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 2.559958,
+      "meanMs" : 2.45175,
+      "medianMs" : 2.456333,
+      "minMs" : 2.339875,
+      "module" : "SwiftForecast",
+      "name" : "ARIMA(1,1,1) forecast horizon=24 (50k pts)",
+      "stdMs" : 0.08300263379435607,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 62.9815,
+      "meanMs" : 62.260808399999995,
+      "medianMs" : 62.349333,
+      "minMs" : 61.41175,
+      "module" : "SwiftForecast",
+      "name" : "Kalman Filter 1D (10k obs)",
+      "stdMs" : 0.5055130097271878,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 7,
+      "maxMs" : 0.480291,
+      "meanMs" : 0.46299985714285713,
+      "medianMs" : 0.459208,
+      "minMs" : 0.454917,
+      "module" : "SwiftForecast",
+      "name" : "TS Decomposition additive (1k pts)",
+      "stdMs" : 0.007802607685503459,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 0.735542,
+      "meanMs" : 0.6225834,
+      "medianMs" : 0.635917,
+      "minMs" : 0.469916,
+      "module" : "SwiftLLM",
+      "name" : "LLM Forward Pass (seqLen=64)",
+      "stdMs" : 0.08554931378474057,
+      "warmup" : 2
+    },
+    {
+      "iterations" : 3,
+      "maxMs" : 5.856584,
+      "meanMs" : 5.574542,
+      "medianMs" : 5.589667,
+      "minMs" : 5.277375,
+      "module" : "SwiftLLM",
+      "name" : "LLM Generate (10 tokens)",
+      "stdMs" : 0.23670282442900129,
+      "warmup" : 1
+    },
+    {
+      "iterations" : 5,
+      "maxMs" : 0.204083,
+      "meanMs" : 0.1919164,
+      "medianMs" : 0.191708,
+      "minMs" : 0.180333,
+      "module" : "SwiftExplain",
+      "name" : "KernelSHAP Explain (5 feats, 100 coalitions)",
+      "stdMs" : 0.00951487111000459,
+      "warmup" : 2
+    }
+  ],
+  "swiftVersion" : "Swift 6.x",
+  "timestamp" : "2026-07-22T13:10:51Z"
+}

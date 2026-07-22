@@ -84,11 +84,14 @@ public actor KalmanFilter {
             // updated state estimate: x = x_pred + K * y
             self.x = vecAdd(xPred, matMul(K, y))
             
-            // updated covariance: P = (I - K * H) * P_pred
+            // updated covariance (Joseph form): P = (I - K*H) * P_pred * (I - K*H)^T + K * R * K^T
             let I = identityMatrix(stateSize)
             let KH = matMul(K, H)
             let IMinusKH = matSub(I, KH)
-            self.P = matMul(IMinusKH, PPred)
+            let IMinusKHT = transpose(IMinusKH)
+            let term1 = matMul(matMul(IMinusKH, PPred), IMinusKHT)
+            let term2 = matMul(matMul(K, R), transpose(K))
+            self.P = matAdd(term1, term2)
             
             states.append(KalmanState(mean: self.x, covariance: self.P))
         }
@@ -124,8 +127,12 @@ public actor KalmanFilter {
             
             self.x = vecAdd(xp, matMul(K, y))
             let I = identityMatrix(stateSize)
-            let IMinusKH = matSub(I, matMul(K, H))
-            self.P = matMul(IMinusKH, Pp)
+            let KH = matMul(K, H)
+            let IMinusKH = matSub(I, KH)
+            let IMinusKHT = transpose(IMinusKH)
+            let term1 = matMul(matMul(IMinusKH, Pp), IMinusKHT)
+            let term2 = matMul(matMul(K, R), transpose(K))
+            self.P = matAdd(term1, term2)
             
             xFilt.append(self.x)
             PFilt.append(self.P)

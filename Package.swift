@@ -11,7 +11,7 @@ let globalCSettings: [CSetting] = [
 ]
 
 let package = Package(
-    name: "SwiftAnalytics",
+    name: "SwiftSci",
     platforms: [
         .macOS(.v14),
         .iOS(.v18),

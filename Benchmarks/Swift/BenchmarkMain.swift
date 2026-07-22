@@ -1,5 +1,5 @@
 // BenchmarkMain.swift
-// Entry point for the SwiftAnalytics benchmark runner.
+// Entry point for the SwiftSci benchmark runner.
 //
 // Usage:
 //   swift run -c release SwiftAnalyticsBenchmarks                  # console output only
@@ -46,7 +46,7 @@ struct BenchmarkEntryPoint {
         let args = BenchmarkArgs.parse()
 
         print("╔════════════════════════════════════════════════════╗")
-        print("║      SwiftAnalytics Benchmark Suite — v1.0         ║")
+        print("║        SwiftSci Benchmark Suite — v1.0             ║")
         print("╚════════════════════════════════════════════════════╝")
         print("Platform : \(platformString())")
         print("Swift    : \(swiftVersion())")

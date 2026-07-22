@@ -1,0 +1,271 @@
+{
+  "platform": "arm64 (Darwin)",
+  "pythonVersion": "3.11.9",
+  "timestamp": "2026-07-22T13:11:03.378078+00:00",
+  "results": [
+    {
+      "name": "Mean (NumPy, 1M elements)",
+      "module": "NumPy",
+      "meanMs": 0.12116057041566819,
+      "medianMs": 0.12137500016251579,
+      "minMs": 0.11937499948544428,
+      "maxMs": 0.12399999832268804,
+      "stdMs": 0.0015673259107211416,
+      "iterations": 7,
+      "warmup": 2
+    },
+    {
+      "name": "StdDev (NumPy, 1M elements)",
+      "module": "NumPy",
+      "meanMs": 0.5403868573401789,
+      "medianMs": 0.5392079983721487,
+      "minMs": 0.5222499967203476,
+      "maxMs": 0.5600000004051253,
+      "stdMs": 0.011539164024114177,
+      "iterations": 7,
+      "warmup": 2
+    },
+    {
+      "name": "Variance (NumPy, 1M elements)",
+      "module": "NumPy",
+      "meanMs": 0.5233991417169038,
+      "medianMs": 0.5200829982641153,
+      "minMs": 0.5174589969101362,
+      "maxMs": 0.5334169982234016,
+      "stdMs": 0.0059198477982560106,
+      "iterations": 7,
+      "warmup": 2
+    },
+    {
+      "name": "Pearson Correlation (NumPy, 500k)",
+      "module": "NumPy",
+      "meanMs": 1.2499467130900095,
+      "medianMs": 1.2558340022224002,
+      "minMs": 1.2328340017120354,
+      "maxMs": 1.2638330008485354,
+      "stdMs": 0.010620115884763952,
+      "iterations": 7,
+      "warmup": 2
+    },
+    {
+      "name": "CSV Read (100k rows, 5 cols)",
+      "module": "Pandas",
+      "meanMs": 19.392283199704252,
+      "medianMs": 19.340457998623606,
+      "minMs": 19.17154099646723,
+      "maxMs": 19.763374999456573,
+      "stdMs": 0.2188674622949325,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "CSV Stream Read (chunk=10k)",
+      "module": "Pandas",
+      "meanMs": 22.541283202008344,
+      "medianMs": 22.524792002514005,
+      "minMs": 22.200749997864477,
+      "maxMs": 23.025916001643054,
+      "stdMs": 0.2915663698476032,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "CSV Stream + Filter",
+      "module": "Pandas",
+      "meanMs": 24.58897480100859,
+      "medianMs": 24.656000001414213,
+      "minMs": 24.21650000178488,
+      "maxMs": 24.949708000349347,
+      "stdMs": 0.25627266933459836,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "CSV Stream + GroupBy",
+      "module": "Pandas",
+      "meanMs": 27.97479999862844,
+      "medianMs": 27.899332999368198,
+      "minMs": 27.31070900335908,
+      "maxMs": 28.75754200067604,
+      "stdMs": 0.4698286314032466,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "Filter rows (predicate, 100k rows)",
+      "module": "Pandas",
+      "meanMs": 0.6115237151139549,
+      "medianMs": 0.6098750018281862,
+      "minMs": 0.6076659992686473,
+      "maxMs": 0.6207090045791119,
+      "stdMs": 0.004104862863675552,
+      "iterations": 7,
+      "warmup": 2
+    },
+    {
+      "name": "GroupBy + sum/mean (4 groups)",
+      "module": "Pandas",
+      "meanMs": 1.694714286713861,
+      "medianMs": 1.644375006435439,
+      "minMs": 1.594083005329594,
+      "maxMs": 1.9596249985625036,
+      "stdMs": 0.11981058684361594,
+      "iterations": 7,
+      "warmup": 2
+    },
+    {
+      "name": "SortBy double column (100k rows)",
+      "module": "Pandas",
+      "meanMs": 7.2302141416003,
+      "medianMs": 7.23445800394984,
+      "minMs": 7.1264999933191575,
+      "maxMs": 7.368999999016523,
+      "stdMs": 0.07763086897773826,
+      "iterations": 7,
+      "warmup": 2
+    },
+    {
+      "name": "LinearRegression fit (10k\u00d710, 100 epochs)",
+      "module": "Scikit-Learn",
+      "meanMs": 24.997966601222288,
+      "medianMs": 25.0616249977611,
+      "minMs": 24.607125000329688,
+      "maxMs": 25.24120800080709,
+      "stdMs": 0.2258706521096855,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "RandomForest fit (1k\u00d74, 50 trees)",
+      "module": "Scikit-Learn",
+      "meanMs": 25.46436660049949,
+      "medianMs": 25.475041999015957,
+      "minMs": 25.015166000230238,
+      "maxMs": 25.7313330002944,
+      "stdMs": 0.24697657604979337,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "GBDT Regressor fit (1k\u00d74, 50 est.)",
+      "module": "Scikit-Learn",
+      "meanMs": 32.784600197919644,
+      "medianMs": 32.90529199875891,
+      "minMs": 32.24424999643816,
+      "maxMs": 33.138957995106466,
+      "stdMs": 0.32783539016051955,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "KMeans fit (10k\u00d74, 3 clusters)",
+      "module": "Scikit-Learn",
+      "meanMs": 10.118357997271232,
+      "medianMs": 10.159457997360732,
+      "minMs": 8.813624997856095,
+      "maxMs": 10.903665999649093,
+      "stdMs": 0.7241987261263106,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "PCA SVD fit (1k\u00d7100 \u2192 10 comps)",
+      "module": "Scikit-Learn",
+      "meanMs": 0.7500166015233845,
+      "medianMs": 0.7367500002146699,
+      "minMs": 0.734041997930035,
+      "maxMs": 0.7903750010882504,
+      "stdMs": 0.021385924663052308,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "Holt-Winters fit (50k pts, period=12)",
+      "module": "Statsmodels",
+      "meanMs": 148.1399752010475,
+      "medianMs": 148.62704199913424,
+      "minMs": 145.01216699864017,
+      "maxMs": 149.51012499659555,
+      "stdMs": 1.6062805140590504,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "ARIMA(1,1,1) fit (50k pts)",
+      "module": "Statsmodels",
+      "meanMs": 215.34824160044082,
+      "medianMs": 215.52725000219652,
+      "minMs": 212.1251660064445,
+      "maxMs": 217.34450000076322,
+      "stdMs": 1.9418241401655518,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "ARIMA(1,1,1) forecast horizon=24 (50k pts)",
+      "module": "Statsmodels",
+      "meanMs": 214.90986660064664,
+      "medianMs": 211.88016700034495,
+      "minMs": 211.3348330021836,
+      "maxMs": 225.2862079985789,
+      "stdMs": 5.28810664935729,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "Kalman Filter 1D (10k obs)",
+      "module": "NumPy",
+      "meanMs": 85.54381639842177,
+      "medianMs": 85.54699999513105,
+      "minMs": 84.43179100140696,
+      "maxMs": 86.41020800132537,
+      "stdMs": 0.6544352780296205,
+      "iterations": 5,
+      "warmup": 1
+    },
+    {
+      "name": "TS Decomposition additive (1k pts)",
+      "module": "Statsmodels",
+      "meanMs": 0.10532728733129001,
+      "medianMs": 0.10154200572287664,
+      "minMs": 0.09387500176671892,
+      "maxMs": 0.12441600119927898,
+      "stdMs": 0.010247351485574064,
+      "iterations": 7,
+      "warmup": 1
+    },
+    {
+      "name": "LLM Forward Pass (seqLen=64)",
+      "module": "PyTorch",
+      "meanMs": 0.5313914007274434,
+      "medianMs": 0.5284159997245297,
+      "minMs": 0.4751670057885349,
+      "maxMs": 0.6080410021240823,
+      "stdMs": 0.0493844925694352,
+      "iterations": 5,
+      "warmup": 2
+    },
+    {
+      "name": "LLM Generate (10 tokens)",
+      "module": "PyTorch",
+      "meanMs": 3.4034446653095074,
+      "medianMs": 3.3657499952823855,
+      "minMs": 3.3062090005842037,
+      "maxMs": 3.538375000061933,
+      "stdMs": 0.09845787234383864,
+      "iterations": 3,
+      "warmup": 1
+    },
+    {
+      "name": "KernelSHAP Explain (5 feats, 100 coalitions)",
+      "module": "SHAP",
+      "meanMs": 0.43420020228950307,
+      "medianMs": 0.42550000216579065,
+      "minMs": 0.41929200233425945,
+      "maxMs": 0.45766700350213796,
+      "stdMs": 0.015955004550398742,
+      "iterations": 5,
+      "warmup": 2
+    }
+  ]
+}

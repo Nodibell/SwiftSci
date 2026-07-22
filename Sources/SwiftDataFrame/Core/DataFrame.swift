@@ -168,7 +168,11 @@ public struct DataFrame: Sendable {
     }
 
     /// Returns a random sample of `n` rows.
-    public func sample(n: Int, seed: UInt64? = nil) -> DataFrame {
+    /// - Parameters:
+    ///   - n: Number of rows to sample.
+    ///   - seed: Optional random seed for reproducible sampling.
+    ///   - ordered: If `true`, returns sampled rows in their original index order. If `false` (default), returns rows in randomized shuffle order.
+    public func sample(n: Int, seed: UInt64? = nil, ordered: Bool = false) -> DataFrame {
         let total = shape.rows
         guard n > 0 && total > 0 else { return DataFrame.empty }
         let actualN = Swift.min(n, total)
@@ -180,8 +184,9 @@ public struct DataFrame: Sendable {
             let j = i + Int(rng.next() % UInt64(total - i))
             indices.swapAt(i, j)
         }
-        let selected = Array(indices.prefix(actualN)).sorted()
-        return rows(at: selected)
+        let selectedPrefix = Array(indices.prefix(actualN))
+        let selected = ordered ? selectedPrefix.sorted() : selectedPrefix
+        return gathered(at: selected)
     }
 
     // MARK: – Filtering
@@ -261,22 +266,48 @@ public struct DataFrame: Sendable {
         return DataFrame(_columns: newMap, _columnOrder: newOrder)
     }
 
+    /// Adds a new column computed using a row-level closure.
+    public func addColumn<T: SupportedType>(_ name: String, as type: T.Type = T.self, using closure: (DataFrameRow) -> T?) throws -> DataFrame {
+        let names = columnNames
+        let map = _columns
+        let total = shape.rows
+        var values = [T?]()
+        values.reserveCapacity(total)
+        
+        for i in 0..<total {
+            let row = DataFrameRow(columnNames: names, index: i, columnMap: map)
+            values.append(closure(row))
+        }
+        
+        let newCol = TypedColumn<T>(name: name, values: values)
+        return try withColumn(name, column: newCol)
+    }
+
     /// Casts a column to a new type.
-    public func castColumn<T: SupportedType>(_ name: String, to type: T.Type) throws -> DataFrame {
+    public func castColumn<T: SupportedType>(_ name: String, to type: T.Type = T.self) throws -> DataFrame {
         guard let col = _columns[name] else { throw DataFrameError.columnNotFound(name) }
 
-        // Try to re-parse each value via SupportedType.parse(from:)
+        var failedCount = 0
+        var sourceNonNull = 0
+
         let newValues: [T?] = (0..<col.count).map { i in
             guard let v = col.value(at: i) else { return nil }
+            sourceNonNull += 1
+            if let direct = v as? T { return direct }
             let str = "\(v)"
-            return T.parse(from: str)
+            if let parsed = T.parse(from: str) {
+                return parsed
+            } else {
+                failedCount += 1
+                return nil
+            }
         }
 
-        // Validate at least one succeeded if source had non-null values
-        let sourceNonNull = col.count - col.nullCount
-        let castNonNull   = newValues.filter { $0 != nil }.count
-        if sourceNonNull > 0 && castNonNull == 0 {
+        if sourceNonNull > 0 && failedCount == sourceNonNull {
             throw DataFrameError.castFailed(column: name, targetType: "\(T.self)")
+        }
+        if failedCount > 0 {
+            throw DataFrameError.partialCastFailure(column: name, targetType: "\(T.self)", failed: failedCount, total: sourceNonNull)
         }
 
         let newCol = TypedColumn<T>(name: name, values: newValues)
@@ -287,7 +318,7 @@ public struct DataFrame: Sendable {
     public func sortBy(_ column: String, ascending: Bool = true) throws -> DataFrame {
         guard let col = _columns[column] else { throw DataFrameError.columnNotFound(column) }
         let indices = col.sortedIndices(ascending: ascending)
-        return rows(at: indices)
+        return gathered(at: indices)
     }
 
     /// Returns a `GroupedDataFrame` for aggregation.
@@ -341,17 +372,17 @@ public struct DataFrame: Sendable {
         guard total > 0, n > 0 else { return DataFrame.empty }
         let upper  = Swift.min(start + n, total)
         let indices = Array(start..<upper)
-        return rows(at: indices)
+        return gathered(at: indices)
     }
 
     public func gathered(at indices: [Int]) -> DataFrame {
-        return rows(at: indices)
-    }
-
-    private func rows(at indices: [Int]) -> DataFrame {
         guard !indices.isEmpty else { return DataFrame.empty }
         let newCols: [any AnyColumn] = columns.map { $0.gathered(at: indices) }
-        return (try? DataFrame(columns: newCols)) ?? DataFrame.empty
+        do {
+            return try DataFrame(columns: newCols)
+        } catch {
+            preconditionFailure("Failed to gather rows for indices: \(error)")
+        }
     }
 
     private func applyMask(_ mask: [Bool]) -> DataFrame {
@@ -361,7 +392,7 @@ public struct DataFrame: Sendable {
             indices.append(i)
         }
         guard !indices.isEmpty else { return DataFrame.empty }
-        return rows(at: indices)
+        return gathered(at: indices)
     }
 }
 

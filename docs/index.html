@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwiftAnalytics — Engineering Documentation</title>
+    <title>SwiftSci — Engineering Documentation</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
         rel="stylesheet">
@@ -482,8 +482,8 @@
 
     <aside id="sidebar">
         <div class="logo-area">
-            <h1>SwiftAnalytics</h1>
-            <span>v1.1.0 Stable</span>
+            <h1>SwiftSci</h1>
+            <span>v1.2.0 Stable</span>
         </div>
 
         <!-- Динамічні беджі -->
@@ -507,7 +507,7 @@
         <section id="hero" class="hero">
             <h2>High-Performance Modular Data Science for Apple Silicon</h2>
             <p>
-                SwiftAnalytics is a native, high-performance data analysis, modeling, and machine learning framework.
+                SwiftSci is a native, high-performance data analysis, modeling, and machine learning framework.
                 Engineered for Apple Silicon Unified Memory Architecture (UMA) and compliant with Swift 6 Strict
                 Concurrency.
             </p>
@@ -518,44 +518,39 @@
             </div>
         </section>
 
-        <!-- What's New in v1.1 Section -->
+        <!-- What's New in v1.2 Section -->
         <section id="whats-new" style="margin-bottom: 4rem;">
-            <h2 class="section-title">🔥 What's New in v1.1</h2>
+            <h2 class="section-title">🔥 What's New in v1.2</h2>
             <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
-                Version 1.1 brings dramatic I/O performance improvements, naively decodes AI weights, and expands
-                time-series and cryptographic toolkits.
+                Version 1.2 introduces the main package rename to SwiftSci, Joseph form numerical stabilization for Kalman filtering, byte-level BPE tokenization, and safe DataFrame cast enhancements.
             </p>
             <div class="grid">
                 <div class="card">
-                    <span class="card-icon">📥</span>
-                    <h3>Streaming CSV Parser</h3>
+                    <span class="card-icon">🏷️</span>
+                    <h3>SwiftSci Package Branding</h3>
                     <p>
-                        High-performance columnar CSV parser with a chunk-buffered <code>AsyncSequence</code> interface.
-                        Offloads row-parsing to a Swift <code>TaskGroup</code> worker thread pool, reducing memory
-                        consumption and speeding up loading times.
+                        Renamed main Swift Package to <code>SwiftSci</code> for clean ecosystem branding while preserving target module names (<code>SwiftDataFrame</code>, <code>SwiftStats</code>, <code>SwiftML</code>, <code>SwiftForecast</code>, etc.).
                     </p>
                 </div>
                 <div class="card">
-                    <span class="card-icon">🧠</span>
-                    <h3>SafeTensors & GGUF Parser</h3>
+                    <span class="card-icon">📐</span>
+                    <h3>Joseph Form Kalman Filter</h3>
                     <p>
-                        Native binary parsers for SafeTensors and GGUF weight files. Directly parses JSON metadata
-                        headers and constructs <code>MLXArray</code> GPU buffers using zero-copy memory mapping.
+                        Updated covariance matrix updates in <code>filter()</code> and <code>smooth()</code> to the Joseph form <code>P = (I - KH) P_pred (I - KH)ᵀ + K R Kᵀ</code>, preventing symmetry and positive-definiteness loss.
                     </p>
                 </div>
                 <div class="card">
-                    <span class="card-icon">⚡</span>
-                    <h3>Swift 6 Strict Concurrency</h3>
+                    <span class="card-icon">🔤</span>
+                    <h3>UTF-8 Byte BPE Tokenizer</h3>
                     <p>
-                        Fully verified under <code>-strict-concurrency=complete</code>. Package settings refactored to use standard SwiftPM configuration, enabling seamless integration as a dependency.
+                        Refactored <code>BPETokenizer</code> to split words on UTF-8 bytes mapped via GPT-2 byte-to-unicode character encoding, fixing subword tokenization for non-ASCII text.
                     </p>
                 </div>
                 <div class="card">
-                    <span class="card-icon">📈</span>
-                    <h3>SARIMA & GARCH Models</h3>
+                    <span class="card-icon">📊</span>
+                    <h3>DataFrame Row Closure & Safe Cast</h3>
                     <p>
-                        Extends the time-series forecasting suite with seasonal ARIMA model estimators and GARCH
-                        conditional variance models with coordinate descent MLE parameter optimization.
+                        Added per-row closure builder <code>addColumn(_:as:using:)</code>, fast-path type casting, and <code>DataFrameError.partialCastFailure</code> protection against silent data loss.
                     </p>
                 </div>
             </div>
@@ -582,157 +577,157 @@
                     <tbody>
                         <tr>
                             <td><b>Mean</b> (1M elements)</td>
-                            <td>0.081 ms</td>
-                            <td>0.119 ms</td>
+                            <td>0.082 ms</td>
+                            <td>0.121 ms</td>
                             <td><span class="speedup-badge winner">1.47x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>StdDev</b> (1M elements)</td>
-                            <td>0.486 ms</td>
-                            <td>0.502 ms</td>
-                            <td><span class="speedup-badge winner">1.03x</span></td>
+                            <td>0.509 ms</td>
+                            <td>0.539 ms</td>
+                            <td><span class="speedup-badge winner">1.06x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>Variance</b> (1M elements)</td>
-                            <td>0.467 ms</td>
-                            <td>0.506 ms</td>
-                            <td><span class="speedup-badge winner">1.08x</span></td>
+                            <td>0.498 ms</td>
+                            <td>0.520 ms</td>
+                            <td><span class="speedup-badge winner">1.04x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>Pearson Correlation</b> (500k elements)</td>
-                            <td>0.790 ms</td>
-                            <td>1.165 ms</td>
-                            <td><span class="speedup-badge winner">1.47x</span></td>
+                            <td>0.868 ms</td>
+                            <td>1.256 ms</td>
+                            <td><span class="speedup-badge winner">1.45x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>CSV Read</b> (100k rows, 5 cols)</td>
-                            <td>163.315 ms</td>
-                            <td>18.148 ms</td>
+                            <td>177.509 ms</td>
+                            <td>19.340 ms</td>
                             <td><span class="speedup-badge loser">0.11x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>CSV Stream Read</b> (chunk=10k)</td>
-                            <td>238.009 ms</td>
-                            <td>20.444 ms</td>
+                            <td>238.699 ms</td>
+                            <td>22.525 ms</td>
                             <td><span class="speedup-badge loser">0.09x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>CSV Stream + Filter</b></td>
-                            <td>240.945 ms</td>
-                            <td>22.460 ms</td>
-                            <td><span class="speedup-badge loser">0.09x</span></td>
+                            <td>243.814 ms</td>
+                            <td>24.656 ms</td>
+                            <td><span class="speedup-badge loser">0.10x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>CSV Stream + GroupBy</b></td>
-                            <td>230.476 ms</td>
-                            <td>25.282 ms</td>
-                            <td><span class="speedup-badge loser">0.11x</span></td>
+                            <td>241.305 ms</td>
+                            <td>27.899 ms</td>
+                            <td><span class="speedup-badge loser">0.12x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>Filter Rows</b> (100k rows)</td>
-                            <td>30.608 ms</td>
-                            <td>0.537 ms</td>
+                            <td>30.674 ms</td>
+                            <td>0.610 ms</td>
                             <td><span class="speedup-badge loser">0.02x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>GroupBy + sum/mean</b> (4 groups)</td>
-                            <td>2.375 ms</td>
-                            <td>1.580 ms</td>
-                            <td><span class="speedup-badge loser">0.67x</span></td>
+                            <td>2.357 ms</td>
+                            <td>1.644 ms</td>
+                            <td><span class="speedup-badge loser">0.70x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>SortBy Double Column</b> (100k rows)</td>
-                            <td>77.727 ms</td>
-                            <td>6.434 ms</td>
-                            <td><span class="speedup-badge loser">0.08x</span></td>
+                            <td>83.506 ms</td>
+                            <td>7.234 ms</td>
+                            <td><span class="speedup-badge loser">0.09x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>LinearRegression Fit</b> (10k×10, 100 epochs)</td>
-                            <td>24.914 ms</td>
-                            <td>24.228 ms</td>
-                            <td><span class="speedup-badge loser">0.97x</span></td>
+                            <td>25.122 ms</td>
+                            <td>25.062 ms</td>
+                            <td><span class="speedup-badge loser">1.00x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>Random Forest Fit</b> (1k x 4 features, 50 trees)</td>
-                            <td>4.440 ms</td>
-                            <td>24.371 ms</td>
-                            <td><span class="speedup-badge winner">5.49x</span></td>
+                            <td>5.025 ms</td>
+                            <td>25.475 ms</td>
+                            <td><span class="speedup-badge winner">5.07x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>GBDT Regressor Fit</b> (1k x 4, 50 estimators)</td>
-                            <td>34.072 ms</td>
-                            <td>29.810 ms</td>
-                            <td><span class="speedup-badge loser">0.87x</span></td>
+                            <td>35.423 ms</td>
+                            <td>32.905 ms</td>
+                            <td><span class="speedup-badge loser">0.93x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>KMeans Fit</b> (10k x 4, 3 clusters)</td>
-                            <td>39.499 ms</td>
-                            <td>11.548 ms</td>
-                            <td><span class="speedup-badge loser">0.29x</span></td>
+                            <td>62.132 ms</td>
+                            <td>10.159 ms</td>
+                            <td><span class="speedup-badge loser">0.16x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>PCA SVD Fit</b> (1k×100 → 10 components)</td>
-                            <td>1.977 ms</td>
-                            <td>0.733 ms</td>
-                            <td><span class="speedup-badge loser">0.37x</span></td>
+                            <td>2.019 ms</td>
+                            <td>0.737 ms</td>
+                            <td><span class="speedup-badge loser">0.36x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>Holt-Winters Fit</b> (50k points, period=12)</td>
-                            <td>6.454 ms</td>
-                            <td>136.864 ms</td>
-                            <td><span class="speedup-badge winner">21.21x</span></td>
+                            <td>6.841 ms</td>
+                            <td>148.627 ms</td>
+                            <td><span class="speedup-badge winner">21.73x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>ARIMA Fit</b> (50k points)</td>
-                            <td>2.229 ms</td>
-                            <td>204.534 ms</td>
-                            <td><span class="speedup-badge winner">91.76x</span></td>
+                            <td>2.323 ms</td>
+                            <td>215.527 ms</td>
+                            <td><span class="speedup-badge winner">92.78x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>ARIMA Forecast Horizon=24</b> (50k points)</td>
-                            <td>2.293 ms</td>
-                            <td>203.017 ms</td>
-                            <td><span class="speedup-badge winner">88.52x</span></td>
+                            <td>2.456 ms</td>
+                            <td>211.880 ms</td>
+                            <td><span class="speedup-badge winner">86.26x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
-                            <td><b>Kalman Filter 1D</b> (10k observations)</td>
-                            <td>45.275 ms</td>
-                            <td>81.305 ms</td>
-                            <td><span class="speedup-badge winner">1.80x</span></td>
+                            <td><b>Kalman Filter 1D</b> (10k observations, Joseph Form)</td>
+                            <td>62.349 ms</td>
+                            <td>85.547 ms</td>
+                            <td><span class="speedup-badge winner">1.37x</span></td>
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
                             <td><b>TS Decomposition Additive</b> (1k points)</td>
-                            <td>0.453 ms</td>
-                            <td>0.093 ms</td>
-                            <td><span class="speedup-badge loser">0.20x</span></td>
+                            <td>0.459 ms</td>
+                            <td>0.102 ms</td>
+                            <td><span class="speedup-badge loser">0.22x</span></td>
                             <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>LLM Forward Pass</b> (seqLen=64)</td>
-                            <td>0.449 ms</td>
-                            <td>0.768 ms</td>
-                            <td><span class="speedup-badge winner">1.71x</span></td>
-                            <td>🟢 Swift</td>
+                            <td>0.636 ms</td>
+                            <td>0.528 ms</td>
+                            <td><span class="speedup-badge loser">0.83x</span></td>
+                            <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>LLM Generate</b> (10 tokens)</td>

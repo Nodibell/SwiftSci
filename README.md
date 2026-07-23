@@ -11,14 +11,14 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 
 ## 🚀 Core Modules
 
-* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. Features `SystemsCSVParser` (zero-copy memory-mapped RFC 4180 DFA byte scanner), parallel column construction, bitmap-free `filteredIndices`, vectorized `vGather` index matching, `DataFrame.join` (inner, left, right, outer hash joins), and `DataFrame.pivot` / `melt` matrix reshaping.
+* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. Features `SystemsCSVParser` (zero-copy memory-mapped RFC 4180 DFA byte scanner with `columnTypeOverrides`), parallel column construction, bitmap-free `filteredIndices`, vectorized `vGather` index matching, `DataFrame.toFeatureMatrix` / `toTargetVector` ML extraction, `DataFrame.join` (inner, left, right, outer hash joins), and `DataFrame.pivot` / `melt` matrix reshaping.
 * **`SwiftStats`**: Vectorized descriptive statistics, distributions, and hypothesis tests powered by `Accelerate vDSP`.
-* **`SwiftPreprocessing`**: Feature scaling (`StandardScaler`, `MinMaxScaler`, `RobustScaler`), categorical encoding (`OneHotEncoder`, `OrdinalEncoder`), discretization (`KBinsDiscretizer`), feature selection (`SelectKBest`, `VarianceThreshold`, `RecursiveFeatureElimination` RFE), and composable pipelines (`Pipeline`, `ColumnTransformer`).
-* **`SwiftML`**: Supervised learning estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs, `MLPClassifier` / `MLPRegressor` Multi-Layer Perceptrons) with Gini `featureImportances` and `Codable` model persistence (`save`/`load`).
+* **`SwiftPreprocessing`**: Feature scaling (`StandardScaler`, `MinMaxScaler`, `RobustScaler`), categorical encoding (`OneHotEncoder`, `OrdinalEncoder`), discretization (`KBinsDiscretizer`), feature selection (`SelectKBest`, `VarianceThreshold`, `RecursiveFeatureElimination` RFE), and composable pipelines (`Pipeline`, `ColumnTransformer`) with direct `DataFrame` `fit`/`transform` extensions.
+* **`SwiftML`**: Supervised learning estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs, `MLPClassifier` / `MLPRegressor` Multi-Layer Perceptrons) with native `DataFrame` `fit`/`predict` extensions, synthetic dataset generators (`makeClusters`, `makeCircles`, `makeClassification`, `makeRegression`, `makeMoons`), Gini `featureImportances`, and `Codable` model persistence (`save`/`load`).
 * **`SwiftCluster`**: Dimensionality reduction (SVD-based PCA, DBSCAN), outlier detection (`IsolationForest`, `LocalOutlierFactor`), and clustering (`KMeans` with KMeans++ init and vectorized CPU accumulation).
 * **`SwiftOptimize`**: Model validation (`KFold` cross-validation), evaluation metrics (ROC-AUC, Precision, Recall, F1), and parallel hyperparameter optimization (`GridSearchCV`, `RandomizedSearchCV`).
 * **`SwiftForecast`**: Time series analysis (vectorized additive/multiplicative decomposition, Holt-Winters, ARIMA, SARIMA seasonal models, GARCH volatility, Kalman filtering, `ExpandingWindow`).
-* **`SwiftNLP`**: Tokenization (Word, subword BPE, `NGramTokenizer`), feature extraction (`HashingVectorizer`, `CountVectorizer`, `TFIDFVectorizer`), and static word embeddings.
+* **`SwiftNLP`**: Preprocessing (`StopWords` filtering, `TextNormalizer` Unicode NFKC normalization), tokenization (Word, subword BPE, `NGramTokenizer`), feature extraction (`HashingVectorizer`, `CountVectorizer`, `TFIDFVectorizer`), and static word embeddings.
 * **`SwiftExplain`**: Black-box model explainability using a parallelized `KernelSHAP` implementation.
 * **`SwiftLLM`**: Local text generation on GPU using causal transformer-decoder architectures and MLX. Supports SafeTensors and GGUF weight parsing.
 
@@ -81,20 +81,23 @@ We identified that running $O(N)$ CPU sweeps to check for `NaN` presence in stat
 ```swift
 import Foundation
 import SwiftDataFrame
+import SwiftPreprocessing
 import SwiftML
 
-// 1. Load CSV data via zero-copy memory-mapped parser
-let fileURL = URL(filePath: "/path/to/data.csv")
-let df = try await DataFrame(csv: fileURL)
+// 1. Load CSV data with explicit column type overrides
+var options = CSVReadOptions()
+options.columnTypeOverrides["Survived"] = .int64
+let df = try await DataFrame(csv: fileURL, options: options)
 
-// 2. Perform DataFrame hash joins & column transformations
-let joined = try df1.join(df2, on: "id", how: .inner)
-let pivoted = try joined.pivot(index: "date", columns: "city", values: "sales")
+// 2. Perform DataFrame operations & extract matrix directly
+let cleaned = try df.drop(["PassengerId", "Name", "Ticket", "Cabin"])
+let X = try cleaned.toFeatureMatrix(["Pclass", "Age", "Fare"])
+let y = try cleaned.toTargetVector("Survived")
 
-// 3. Train Multi-Layer Perceptron (MLP) Neural Network
+// 3. Train Multi-Layer Perceptron (MLP) Neural Network directly on DataFrame
 let mlp = MLPClassifier(hiddenLayerSizes: [64, 32], maxIter: 200, learningRate: 0.01, seed: 42)
-try await mlp.fit(features: X_train, targets: y_train)
-let predictions = try await mlp.predict(features: X_test)
+try await mlp.fit(cleaned, features: ["Age", "Fare"], target: "Survived")
+let predictions = try await mlp.predict(cleaned, features: ["Age", "Fare"])
 ```
 
 ---
@@ -107,6 +110,7 @@ For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](ROADM
 * **v1.3 (Completed 🟢)**: Scikit-Learn Parity (`Pipeline`, `ColumnTransformer`, `RandomizedSearchCV`, `IsolationForest`, `LocalOutlierFactor`, `SMOTE`, `SelectKBest`, `Gini` feature importances).
 * **v1.4 (Completed 🟢)**: High-Performance Engine & Quality (`SystemsCSVParser` zero-copy memory-mapped DFA, `RecursiveFeatureElimination` RFE, `Codable` model persistence, `NGramTokenizer`, `HashingVectorizer`, `ExpandingWindow`, `swift-docc-plugin`).
 * **v1.5 (Completed 🟢)**: Engine Overhaul & DocC Sprint (Column-parallel CSV reader, `DataFrame.join` hash joins, `pivot`/`melt` matrix reshaping, `MLPClassifier`/`MLPRegressor`, bitmap-free filtering, DocC articles & catalog landing page).
+* **v1.6 (Completed 🟢)**: DataFrame ↔ ML Bridge & Hygiene (`toFeatureMatrix`, `toTargetVector`, `columnTypeOverrides`, `StopWords`, `TextNormalizer`, `makeClusters`, `makeCircles`, SPM dependency cleanup).
 
 ---
 

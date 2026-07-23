@@ -79,6 +79,7 @@ internal enum CSVReader {
         let optionsBox = OptionsBox(options: options)
         let headersBox = HeadersBox(headers: headers)
 
+        let readStartRowIdx = startRowIdx
         columns.withUnsafeMutableBufferPointer { colBuf in
             guard let baseColPtr = colBuf.baseAddress else { return }
             let sendableColPtr = SendableColumnPointer(pointer: baseColPtr)
@@ -88,7 +89,7 @@ internal enum CSVReader {
                 let col = buildColumn(
                     buffer: sendableBuf.pointer,
                     records: recordsBox.records,
-                    startRowIdx: startRowIdx,
+                    startRowIdx: readStartRowIdx,
                     dataRowsToRead: dataRowsToRead,
                     colIndex: c,
                     name: colName,

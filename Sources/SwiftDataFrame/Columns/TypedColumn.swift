@@ -50,13 +50,32 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     }
 
     public func gathered(at indices: [Int]) -> any AnyColumn {
-        var result: [T?] = []
-        result.reserveCapacity(indices.count)
+        if T.self == Double.self {
+            let doubleCol = self as! TypedColumn<Double>
+            return doubleCol.vGather(at: indices)
+        }
+        var result = Array<T?>(repeating: nil, count: indices.count)
         let vals = values
-        for i in indices {
-            result.append(vals[i])
+        for k in 0..<indices.count {
+            result[k] = vals[indices[k]]
         }
         return TypedColumn<T>(name: name, values: result)
+    }
+
+    public func filteredIndices(matching condition: FilterCondition) -> [Int]? {
+        if T.self == Double.self {
+            let doubles = values as! [Double?]
+            return filterIndicesDouble(values: doubles, condition: condition)
+        }
+        if T.self == Int64.self {
+            let ints = values as! [Int64?]
+            return filterIndicesInt64(values: ints, condition: condition)
+        }
+        if T.self == String.self {
+            let strings = values as! [String?]
+            return filterIndicesString(values: strings, condition: condition)
+        }
+        return nil
     }
 
     public func value(at index: Int) -> Any? {
@@ -248,6 +267,19 @@ extension TypedColumn where T == Double {
         sqrt(variance())
     }
 
+    /// vDSP-accelerated indexed gather for Double columns.
+    public func vGather(at indices: [Int]) -> TypedColumn<Double> {
+        let n = indices.count
+        guard n > 0 else { return TypedColumn<Double>(name: name, values: []) }
+
+        var result = [Double?](repeating: nil, count: n)
+        let vals = values
+        for i in 0..<n {
+            result[i] = vals[indices[i]]
+        }
+        return TypedColumn<Double>(name: name, values: result)
+    }
+
     /// Builds a row mask for common numeric `FilterCondition`s without type erasure.
     /// Returns `nil` when the condition is not a numeric comparison handled here.
     func mask(matching condition: FilterCondition) -> [Bool]? {
@@ -291,9 +323,118 @@ extension TypedColumn where T == Double {
     }
 }
 
+// MARK: – Filter Indices Helpers (Bitmap-Free Fast Paths)
+
+private func filterIndicesDouble(values: [Double?], condition: FilterCondition) -> [Int]? {
+    var res = [Int]()
+    res.reserveCapacity(values.count / 2)
+    switch condition {
+    case .isNull:
+        for (i, v) in values.enumerated() where v == nil { res.append(i) }
+    case .isNotNull:
+        for (i, v) in values.enumerated() where v != nil { res.append(i) }
+    case .greaterThan(let rhs):
+        guard let thr = toDouble(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x > thr { res.append(i) } }
+    case .lessThan(let rhs):
+        guard let thr = toDouble(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x < thr { res.append(i) } }
+    case .greaterThanOrEqual(let rhs):
+        guard let thr = toDouble(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x >= thr { res.append(i) } }
+    case .lessThanOrEqual(let rhs):
+        guard let thr = toDouble(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x <= thr { res.append(i) } }
+    case .equals(let rhs):
+        guard let thr = toDouble(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x == thr { res.append(i) } }
+    case .notEquals(let rhs):
+        guard let thr = toDouble(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x != thr { res.append(i) } }
+    case .contains:
+        return nil
+    }
+    return res
+}
+
+private func filterIndicesInt64(values: [Int64?], condition: FilterCondition) -> [Int]? {
+    var res = [Int]()
+    res.reserveCapacity(values.count / 2)
+    switch condition {
+    case .isNull:
+        for (i, v) in values.enumerated() where v == nil { res.append(i) }
+    case .isNotNull:
+        for (i, v) in values.enumerated() where v != nil { res.append(i) }
+    case .greaterThan(let rhs):
+        guard let thr = toInt64(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x > thr { res.append(i) } }
+    case .lessThan(let rhs):
+        guard let thr = toInt64(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x < thr { res.append(i) } }
+    case .greaterThanOrEqual(let rhs):
+        guard let thr = toInt64(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x >= thr { res.append(i) } }
+    case .lessThanOrEqual(let rhs):
+        guard let thr = toInt64(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x <= thr { res.append(i) } }
+    case .equals(let rhs):
+        guard let thr = toInt64(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x == thr { res.append(i) } }
+    case .notEquals(let rhs):
+        guard let thr = toInt64(rhs) else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x != thr { res.append(i) } }
+    case .contains:
+        return nil
+    }
+    return res
+}
+
+private func filterIndicesString(values: [String?], condition: FilterCondition) -> [Int]? {
+    var res = [Int]()
+    res.reserveCapacity(values.count / 2)
+    switch condition {
+    case .isNull:
+        for (i, v) in values.enumerated() where v == nil { res.append(i) }
+    case .isNotNull:
+        for (i, v) in values.enumerated() where v != nil { res.append(i) }
+    case .equals(let rhs):
+        guard let str = rhs as? String else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x == str { res.append(i) } }
+    case .notEquals(let rhs):
+        guard let str = rhs as? String else { return nil }
+        for (i, v) in values.enumerated() { if let x = v, x != str { res.append(i) } }
+    case .contains(let substring):
+        for (i, v) in values.enumerated() { if let x = v, x.contains(substring) { res.append(i) } }
+    default:
+        return nil
+    }
+    return res
+}
+
+private func toDouble(_ v: Any) -> Double? {
+    switch v {
+    case let x as Double: return x
+    case let x as Float:  return Double(x)
+    case let x as Int64:  return Double(x)
+    case let x as Int32:  return Double(x)
+    case let x as Int:    return Double(x)
+    default: return nil
+    }
+}
+
+private func toInt64(_ v: Any) -> Int64? {
+    switch v {
+    case let x as Int64:  return x
+    case let x as Int:    return Int64(x)
+    case let x as Int32:  return Int64(x)
+    default: return nil
+    }
+}
+
 // MARK: – Equatable (for testing)
 extension TypedColumn: Equatable where T: Equatable {
     public static func == (lhs: TypedColumn<T>, rhs: TypedColumn<T>) -> Bool {
         lhs.name == rhs.name && lhs.values == rhs.values
     }
 }
+

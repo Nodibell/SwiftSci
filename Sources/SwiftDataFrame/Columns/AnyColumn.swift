@@ -34,4 +34,12 @@ public protocol AnyColumn: Sendable {
 
     /// Returns a new column shifted by `by` rows, filled with nulls at the edges.
     func lagged(by offset: Int) -> any AnyColumn
+
+    /// Fast path: returns array of row indices matching the given condition directly without building a [Bool] mask.
+    func filteredIndices(matching condition: FilterCondition) -> [Int]?
 }
+
+extension AnyColumn {
+    public func filteredIndices(matching condition: FilterCondition) -> [Int]? { nil }
+}
+

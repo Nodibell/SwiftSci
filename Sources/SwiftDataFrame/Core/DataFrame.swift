@@ -227,12 +227,12 @@ public struct DataFrame: Sendable {
             throw DataFrameError.columnNotFound(name)
         }
 
-        // Numeric vectorized fast path for Double columns (common benchmark / pandas case).
-        if let typed = col as? TypedColumn<Double>,
-           let mask = typed.mask(matching: condition) {
-            return applyMask(mask)
+        // Bitmap-free fast path for direct index filtering
+        if let indices = col.filteredIndices(matching: condition) {
+            return gathered(at: indices)
         }
 
+        // Fallback mask path
         var mask = [Bool](repeating: false, count: shape.rows)
         for i in 0..<shape.rows {
             mask[i] = condition.evaluate(value: col.value(at: i))

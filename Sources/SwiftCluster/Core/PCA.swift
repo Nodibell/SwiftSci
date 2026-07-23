@@ -97,6 +97,80 @@ public actor PCA {
     // MARK: - CPU Backend (LAPACK SVD)
     
     private func fitCPU(_ X: [[Double]]) throws {
+        try fitCPUSVD(X)
+    }
+
+    private func fitCPUCov(_ X: [[Double]]) throws {
+        let numSamples = X.count
+        let numFeatures = X[0].count
+
+        var colMeans = [Double](repeating: 0.0, count: numFeatures)
+        for row in X {
+            guard row.count == numFeatures else {
+                throw ClusterError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
+            for c in 0..<numFeatures { colMeans[c] += row[c] }
+        }
+        for c in 0..<numFeatures { colMeans[c] /= Double(numSamples) }
+
+        var xCent = [Double](repeating: 0.0, count: numSamples * numFeatures)
+        for r in 0..<numSamples {
+            for c in 0..<numFeatures {
+                xCent[r * numFeatures + c] = X[r][c] - colMeans[c]
+            }
+        }
+
+        var cov = [Double](repeating: 0.0, count: numFeatures * numFeatures)
+        let alpha = 1.0 / Double(max(1, numSamples - 1))
+        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans,
+                    Int32(numFeatures), Int32(numSamples),
+                    alpha, xCent, Int32(numFeatures),
+                    0.0, &cov, Int32(numFeatures))
+
+        var jobz: Int8 = 86 // 'V'
+        var uplo: Int8 = 85 // 'U'
+        var n = LAPACKInteger(numFeatures)
+        var lda = n
+        var w = [Double](repeating: 0.0, count: numFeatures)
+        var info = LAPACKInteger(0)
+
+        var workQuery = [Double](repeating: 0.0, count: 1)
+        var lwork = LAPACKInteger(-1)
+        var iworkQuery = [LAPACKInteger](repeating: 0, count: 1)
+        var liwork = LAPACKInteger(-1)
+
+        dsyevd_(&jobz, &uplo, &n, &cov, &lda, &w, &workQuery, &lwork, &iworkQuery, &liwork, &info)
+        lwork = LAPACKInteger(workQuery[0])
+        liwork = iworkQuery[0]
+        var work = [Double](repeating: 0.0, count: Int(lwork))
+        var iwork = [LAPACKInteger](repeating: 0, count: Int(liwork))
+
+        dsyevd_(&jobz, &uplo, &n, &cov, &lda, &w, &work, &lwork, &iwork, &liwork, &info)
+        guard info == 0 else {
+            throw ClusterError.svdFailed(info: Int32(info))
+        }
+
+        var comp = [[Double]]()
+        comp.reserveCapacity(nComponents)
+        var expVar = [Double]()
+        expVar.reserveCapacity(nComponents)
+
+        for k in 0..<nComponents {
+            let idx = numFeatures - 1 - k
+            expVar.append(max(0.0, w[idx]))
+            var row = [Double](repeating: 0.0, count: numFeatures)
+            for c in 0..<numFeatures {
+                row[c] = cov[c * numFeatures + idx]
+            }
+            comp.append(row)
+        }
+
+        self.mean = colMeans
+        self.components = comp
+        self.explainedVariance = expVar
+    }
+
+    private func fitCPUSVD(_ X: [[Double]]) throws {
         let numSamples = X.count
         let numFeatures = X[0].count
         

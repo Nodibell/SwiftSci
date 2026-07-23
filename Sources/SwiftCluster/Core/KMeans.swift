@@ -238,16 +238,13 @@ public actor KMeans {
                 }
             }
 
-            // Update centroids
+            // Update centroids using vDSP
             var sums = Array(repeating: [Double](repeating: 0, count: m), count: nClusters)
             var counts = [Int](repeating: 0, count: nClusters)
             for i in 0..<n {
                 let k = labels[i]
                 counts[k] += 1
-                let row = features[i]
-                for j in 0..<m {
-                    sums[k][j] += row[j]
-                }
+                vDSP_vaddD(sums[k], 1, features[i], 1, &sums[k], 1, vDSP_Length(m))
             }
 
             var newCentroids = centroidsLocal
@@ -255,10 +252,8 @@ public actor KMeans {
             for k in 0..<nClusters {
                 guard counts[k] > 0 else { continue }
                 var updated = [Double](repeating: 0, count: m)
-                let inv = 1.0 / Double(counts[k])
-                for j in 0..<m {
-                    updated[j] = sums[k][j] * inv
-                }
+                var inv = 1.0 / Double(counts[k])
+                vDSP_vsmulD(sums[k], 1, &inv, &updated, 1, vDSP_Length(m))
                 maxShift = max(maxShift, Self.distanceSquared(centroidsLocal[k], updated).squareRoot())
                 newCentroids[k] = updated
             }

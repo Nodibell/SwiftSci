@@ -23,7 +23,7 @@ public actor HardwareRouter {
         let cells = sampleCount * featureCount
         switch algorithm {
         case "KMeans":
-            return cells < 4_000 ? .cpu : .gpu
+            return cells < 500_000 ? .cpu : .gpu
         case "PCA":
             return (sampleCount < 2_000 && featureCount < 500) ? .cpu : .gpu
         case "LinearRegression", "LogisticRegression":

@@ -65,24 +65,22 @@ public enum TimeSeriesDecomposition {
         
         // 2. Compute Detrended Series
         var detrended = [Double](repeating: Double.nan, count: n)
-        for i in 0..<n {
-            if !trend[i].isNaN {
-                if model == .additive {
-                    detrended[i] = series[i] - trend[i]
-                } else {
-                    detrended[i] = series[i] / trend[i]
-                }
-            }
+        if model == .additive {
+            vDSP.subtract(series, trend, result: &detrended)
+        } else {
+            vDSP.divide(series, trend, result: &detrended)
         }
-        
+
         // 3. Compute Seasonal Component (average detrended for each period position)
         var seasonalCycle = [Double](repeating: 0.0, count: period)
         for p in 0..<period {
             var valuesAtPos: [Double] = []
+            valuesAtPos.reserveCapacity(n / period + 1)
             var idx = p
             while idx < n {
-                if !detrended[idx].isNaN {
-                    valuesAtPos.append(detrended[idx])
+                let v = detrended[idx]
+                if !v.isNaN {
+                    valuesAtPos.append(v)
                 }
                 idx += period
             }
@@ -90,43 +88,34 @@ public enum TimeSeriesDecomposition {
                 seasonalCycle[p] = vDSP.mean(valuesAtPos)
             }
         }
-        
+
         // Normalize seasonal cycle so that:
         // - Additive: sum of cycle values == 0
         // - Multiplicative: mean of cycle values == 1
         let cycleMean = vDSP.mean(seasonalCycle)
         if model == .additive {
-            for p in 0..<period {
-                seasonalCycle[p] -= cycleMean
-            }
+            vDSP.add(-cycleMean, seasonalCycle, result: &seasonalCycle)
         } else {
             guard cycleMean > 0 else {
                 throw ForecastError.convergenceFailed(iterations: 0)
             }
-            for p in 0..<period {
-                seasonalCycle[p] /= cycleMean
-            }
+            vDSP.divide(seasonalCycle, cycleMean, result: &seasonalCycle)
         }
-        
+
         // Tile the seasonal cycle to fill the seasonal array
         var seasonal = [Double](repeating: 0.0, count: n)
         for i in 0..<n {
             seasonal[i] = seasonalCycle[i % period]
         }
-        
+
         // 4. Compute Residual Component
         var residual = [Double](repeating: Double.nan, count: n)
-        for i in 0..<n {
-            if !trend[i].isNaN {
-                if model == .additive {
-                    residual[i] = series[i] - trend[i] - seasonal[i]
-                } else {
-                    let divisor = trend[i] * seasonal[i]
-                    if abs(divisor) > 1e-15 {
-                        residual[i] = series[i] / divisor
-                    }
-                }
-            }
+        if model == .additive {
+            vDSP.subtract(detrended, seasonal, result: &residual)
+        } else {
+            var trendSeasonal = [Double](repeating: 0.0, count: n)
+            vDSP.multiply(trend, seasonal, result: &trendSeasonal)
+            vDSP.divide(series, trendSeasonal, result: &residual)
         }
         
         return DecompositionResult(

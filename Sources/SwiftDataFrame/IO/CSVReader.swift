@@ -1,5 +1,25 @@
 import Foundation
 
+private struct UnsafeSendableBuffer: @unchecked Sendable {
+    let pointer: UnsafeBufferPointer<UInt8>
+}
+
+private struct RecordsBox: @unchecked Sendable {
+    let records: [[CSVFieldOffset]]
+}
+
+private struct SendableColumnPointer: @unchecked Sendable {
+    let pointer: UnsafeMutablePointer<any AnyColumn>
+}
+
+private struct OptionsBox: @unchecked Sendable {
+    let options: CSVReadOptions
+}
+
+private struct HeadersBox: @unchecked Sendable {
+    let headers: [String]
+}
+
 /// Reads CSV files into a `DataFrame`.
 /// Uses Foundation for file I/O and performs Swift-native type inference.
 internal enum CSVReader {
@@ -48,28 +68,34 @@ internal enum CSVReader {
         }
 
         let colCount = headers.count
-        var rawCells: [[String?]] = Array(repeating: Array(repeating: nil, count: dataRowsToRead), count: colCount)
+        var columns: [any AnyColumn] = Array(repeating: TypedColumn<String>(name: "", values: []), count: colCount)
 
-        mappedData.withUnsafeBytes { rawBuffer in
-            guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
-            let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
-
-            for r in 0..<dataRowsToRead {
-                let rec = records[startRowIdx + r]
-                for c in 0..<min(colCount, rec.count) {
-                    let str = VectorizedByteParsers.parseString(buffer: bufferPointer, offset: rec[c]).trimmingCharacters(in: .whitespaces)
-                    rawCells[c][r] = options.nullValues.contains(str) ? nil : str
-                }
-            }
+        guard let basePtr = mappedData.withUnsafeBytes({ $0.baseAddress?.assumingMemoryBound(to: UInt8.self) }) else {
+            return DataFrame.empty
         }
+        let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+        let sendableBuf = UnsafeSendableBuffer(pointer: bufferPointer)
+        let recordsBox = RecordsBox(records: records)
+        let optionsBox = OptionsBox(options: options)
+        let headersBox = HeadersBox(headers: headers)
 
-        var columns: [any AnyColumn] = []
-        for (ci, name) in headers.enumerated() {
-            let cells = rawCells[ci]
-            let col = options.inferTypes
-                ? inferColumn(name: name, cells: cells)
-                : TypedColumn<String>(name: name, values: cells)
-            columns.append(col)
+        columns.withUnsafeMutableBufferPointer { colBuf in
+            guard let baseColPtr = colBuf.baseAddress else { return }
+            let sendableColPtr = SendableColumnPointer(pointer: baseColPtr)
+
+            DispatchQueue.concurrentPerform(iterations: colCount) { c in
+                let colName = headersBox.headers[c]
+                let col = buildColumn(
+                    buffer: sendableBuf.pointer,
+                    records: recordsBox.records,
+                    startRowIdx: startRowIdx,
+                    dataRowsToRead: dataRowsToRead,
+                    colIndex: c,
+                    name: colName,
+                    options: optionsBox.options
+                )
+                sendableColPtr.pointer[c] = col
+            }
         }
 
         return try DataFrame(columns: columns)
@@ -155,32 +181,288 @@ internal enum CSVReader {
     internal static func inferColumn(name: String, cells: [String?]) -> any AnyColumn {
         let nonNull = cells.compactMap { $0 }
         guard !nonNull.isEmpty else {
-            // All null → default to String
             return TypedColumn<String>(name: name, values: cells)
         }
 
-        // Try Bool first (before Int, since "1"/"0" parse as both)
         if nonNull.allSatisfy({ Bool.parse(from: $0) != nil }) {
             return TypedColumn<Bool>(name: name, values: cells.map { $0.flatMap(Bool.parse) })
         }
 
-        // Int64
         if nonNull.allSatisfy({ Int64.parse(from: $0) != nil }) {
             return TypedColumn<Int64>(name: name, values: cells.map { $0.flatMap(Int64.parse) })
         }
 
-        // Double
         if nonNull.allSatisfy({ Double.parse(from: $0) != nil }) {
             return TypedColumn<Double>(name: name, values: cells.map { $0.flatMap(Double.parse) })
         }
 
-        // Date (ISO 8601)
         if nonNull.allSatisfy({ Date.parse(from: $0) != nil }) {
             return TypedColumn<Date>(name: name, values: cells.map { $0.flatMap(Date.parse) })
         }
 
-        // Fallback: String
         return TypedColumn<String>(name: name, values: cells)
+    }
+
+    // MARK: – Column Builder (Column-Parallel)
+
+    internal static func buildColumn(
+        buffer: UnsafeBufferPointer<UInt8>,
+        records: [[CSVFieldOffset]],
+        startRowIdx: Int,
+        dataRowsToRead: Int,
+        colIndex: Int,
+        name: String,
+        options: CSVReadOptions
+    ) -> any AnyColumn {
+        if !options.inferTypes {
+            var values = [String?]()
+            values.reserveCapacity(dataRowsToRead)
+            for r in 0..<dataRowsToRead {
+                let rowIdx = startRowIdx + r
+                if rowIdx < records.count && colIndex < records[rowIdx].count {
+                    let offset = records[rowIdx][colIndex]
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    values.append(options.nullValues.contains(str) ? nil : str)
+                } else {
+                    values.append(nil)
+                }
+            }
+            return TypedColumn<String>(name: name, values: values)
+        }
+
+        var isBool = true
+        var isInt64 = true
+        var isDouble = true
+        var isDate = true
+        var nonNullCount = 0
+
+        for r in 0..<dataRowsToRead {
+            let rowIdx = startRowIdx + r
+            guard rowIdx < records.count && colIndex < records[rowIdx].count else { continue }
+            let offset = records[rowIdx][colIndex]
+            if offset.length == 0 { continue }
+            let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+            if options.nullValues.contains(str) { continue }
+
+            nonNullCount += 1
+
+            if isBool && Bool.parse(from: str) == nil { isBool = false }
+            if isInt64 && Int64.parse(from: str) == nil { isInt64 = false }
+            if isDouble && VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) == nil && Double.parse(from: str) == nil { isDouble = false }
+            if isDate && Date.parse(from: str) == nil { isDate = false }
+
+            if !isBool && !isInt64 && !isDouble && !isDate {
+                break
+            }
+        }
+
+        if nonNullCount == 0 {
+            var values = [String?]()
+            values.reserveCapacity(dataRowsToRead)
+            for r in 0..<dataRowsToRead {
+                let rowIdx = startRowIdx + r
+                if rowIdx < records.count && colIndex < records[rowIdx].count {
+                    let offset = records[rowIdx][colIndex]
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    values.append(options.nullValues.contains(str) ? nil : str)
+                } else {
+                    values.append(nil)
+                }
+            }
+            return TypedColumn<String>(name: name, values: values)
+        }
+
+        if isBool {
+            var values = [Bool?]()
+            values.reserveCapacity(dataRowsToRead)
+            for r in 0..<dataRowsToRead {
+                let rowIdx = startRowIdx + r
+                if rowIdx < records.count && colIndex < records[rowIdx].count {
+                    let offset = records[rowIdx][colIndex]
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
+                } else {
+                    values.append(nil)
+                }
+            }
+            return TypedColumn<Bool>(name: name, values: values)
+        }
+
+        if isInt64 {
+            var values = [Int64?]()
+            values.reserveCapacity(dataRowsToRead)
+            for r in 0..<dataRowsToRead {
+                let rowIdx = startRowIdx + r
+                if rowIdx < records.count && colIndex < records[rowIdx].count {
+                    let offset = records[rowIdx][colIndex]
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    if options.nullValues.contains(str) {
+                        values.append(nil)
+                    } else if let val = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
+                        values.append(Int64(val))
+                    } else {
+                        values.append(Int64.parse(from: str))
+                    }
+                } else {
+                    values.append(nil)
+                }
+            }
+            return TypedColumn<Int64>(name: name, values: values)
+        }
+
+        if isDouble {
+            var values = [Double?]()
+            values.reserveCapacity(dataRowsToRead)
+            for r in 0..<dataRowsToRead {
+                let rowIdx = startRowIdx + r
+                if rowIdx < records.count && colIndex < records[rowIdx].count {
+                    let offset = records[rowIdx][colIndex]
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    if options.nullValues.contains(str) {
+                        values.append(nil)
+                    } else if let val = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
+                        values.append(val)
+                    } else {
+                        values.append(Double.parse(from: str))
+                    }
+                } else {
+                    values.append(nil)
+                }
+            }
+            return TypedColumn<Double>(name: name, values: values)
+        }
+
+        if isDate {
+            var values = [Date?]()
+            values.reserveCapacity(dataRowsToRead)
+            for r in 0..<dataRowsToRead {
+                let rowIdx = startRowIdx + r
+                if rowIdx < records.count && colIndex < records[rowIdx].count {
+                    let offset = records[rowIdx][colIndex]
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    values.append(options.nullValues.contains(str) ? nil : Date.parse(from: str))
+                } else {
+                    values.append(nil)
+                }
+            }
+            return TypedColumn<Date>(name: name, values: values)
+        }
+
+        var values = [String?]()
+        values.reserveCapacity(dataRowsToRead)
+        for r in 0..<dataRowsToRead {
+            let rowIdx = startRowIdx + r
+            if rowIdx < records.count && colIndex < records[rowIdx].count {
+                let offset = records[rowIdx][colIndex]
+                let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                values.append(options.nullValues.contains(str) ? nil : str)
+            } else {
+                values.append(nil)
+            }
+        }
+        return TypedColumn<String>(name: name, values: values)
+    }
+
+    // MARK: – Streaming CSV Reader (v1.5 mmap-backed)
+
+    static func readStream(url: URL, options: CSVReadOptions, chunkSize: Int) -> AsyncThrowingStream<DataFrame, any Error> {
+        AsyncThrowingStream(DataFrame.self) { continuation in
+            let task = Task {
+                do {
+                    guard FileManager.default.fileExists(atPath: url.path) else {
+                        throw DataFrameError.fileNotFound(url)
+                    }
+
+                    let mappedData = try Data(contentsOf: url, options: .alwaysMapped)
+                    let delimByte = UInt8(options.delimiter.utf8.first ?? 44)
+
+                    var records: [[CSVFieldOffset]] = []
+                    mappedData.withUnsafeBytes { rawBuffer in
+                        guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
+                        let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+                        let parser = SystemsCSVParser(delimiterByte: delimByte)
+                        records = parser.parse(buffer: bufferPointer)
+                    }
+
+                    guard !records.isEmpty else {
+                        continuation.finish()
+                        return
+                    }
+
+                    var headers: [String] = []
+                    var startRowIdx = 0
+
+                    mappedData.withUnsafeBytes { rawBuffer in
+                        guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
+                        let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+                        if options.hasHeader {
+                            headers = records[0].map { VectorizedByteParsers.parseString(buffer: bufferPointer, offset: $0) }
+                            startRowIdx = 1
+                        } else {
+                            headers = records[0].indices.map { "col\($0)" }
+                            startRowIdx = 0
+                        }
+                    }
+
+                    let totalDataRows = records.count - startRowIdx
+                    guard totalDataRows > 0, !headers.isEmpty else {
+                        continuation.finish()
+                        return
+                    }
+
+                    let colCount = headers.count
+                    var currentOffset = startRowIdx
+
+                    while currentOffset < records.count && !Task.isCancelled {
+                        let rowsInChunk = min(chunkSize, records.count - currentOffset)
+                        let offset = currentOffset
+
+                        var columns: [any AnyColumn] = Array(repeating: TypedColumn<String>(name: "", values: []), count: colCount)
+
+                        guard let basePtr = mappedData.withUnsafeBytes({ $0.baseAddress?.assumingMemoryBound(to: UInt8.self) }) else { break }
+                        let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+                        let sendableBuf = UnsafeSendableBuffer(pointer: bufferPointer)
+                        let recordsBox = RecordsBox(records: records)
+                        let optionsBox = OptionsBox(options: options)
+                        let headersBox = HeadersBox(headers: headers)
+
+                        columns.withUnsafeMutableBufferPointer { colBuf in
+                            guard let baseColPtr = colBuf.baseAddress else { return }
+                            let sendableColPtr = SendableColumnPointer(pointer: baseColPtr)
+
+                            DispatchQueue.concurrentPerform(iterations: colCount) { c in
+                                let colName = headersBox.headers[c]
+                                let col = buildColumn(
+                                    buffer: sendableBuf.pointer,
+                                    records: recordsBox.records,
+                                    startRowIdx: offset,
+                                    dataRowsToRead: rowsInChunk,
+                                    colIndex: c,
+                                    name: colName,
+                                    options: optionsBox.options
+                                )
+                                sendableColPtr.pointer[c] = col
+                            }
+                        }
+
+                        let chunkDF = try DataFrame(columns: columns)
+                        continuation.yield(chunkDF)
+
+                        currentOffset += rowsInChunk
+                    }
+
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+
+            continuation.onTermination = { termination in
+                if case .cancelled = termination {
+                    task.cancel()
+                }
+            }
+        }
     }
 
     // MARK: – CSV row parser (RFC 4180 compliant)
@@ -199,7 +481,6 @@ internal enum CSVReader {
                 if inQuotes {
                     let next = line.index(after: i)
                     if next < line.endIndex && line[next] == "\"" {
-                        // Escaped quote ""
                         current.append("\"")
                         i = line.index(after: next)
                         continue
@@ -230,10 +511,10 @@ internal enum CSVReader {
         var currentLine = ""
         var inQuotes = false
         var i = raw.startIndex
-        
+
         while i < raw.endIndex {
             let c = raw[i]
-            
+
             if c == "\"" {
                 inQuotes.toggle()
                 currentLine.append(c)
@@ -249,176 +530,14 @@ internal enum CSVReader {
             } else {
                 currentLine.append(c)
             }
-            
+
             i = raw.index(after: i)
         }
-        
+
         if !currentLine.isEmpty || raw.hasSuffix("\n") || raw.hasSuffix("\r") {
             lines.append(currentLine)
         }
-        
+
         return lines
-    }
-
-    // MARK: – Streaming CSV Reader (v1.1)
-
-    static func readStream(url: URL, options: CSVReadOptions, chunkSize: Int) -> AsyncThrowingStream<DataFrame, any Error> {
-        AsyncThrowingStream(DataFrame.self) { continuation in
-            let task = Task {
-                do {
-                    guard FileManager.default.fileExists(atPath: url.path) else {
-                        throw DataFrameError.fileNotFound(url)
-                    }
-                    
-                    let fileHandle = try FileHandle(forReadingFrom: url)
-                    defer { try? fileHandle.close() }
-                    
-                    var remainder = ""
-                    var headers: [String]? = nil
-                    var isFirstChunk = true
-                    let delim = options.delimiter
-                    
-                    var pendingRows: [String] = []
-                    let bufferSize = 256 * 1024
-                    
-                    while !Task.isCancelled {
-                        let data: Data
-                        if #available(macOS 10.15.4, iOS 13.4, watchOS 6.2, tvOS 13.4, *) {
-                            guard let chunkData = try fileHandle.read(upToCount: bufferSize) else { break }
-                            data = chunkData
-                        } else {
-                            data = fileHandle.readData(ofLength: bufferSize)
-                        }
-                        if data.isEmpty { break }
-                        
-                        guard let str = String(data: data, encoding: .utf8) else {
-                            throw DataFrameError.parseError(line: 0, description: "Invalid UTF-8 encoding in chunk")
-                        }
-                        
-                        let combined = remainder + str
-                        var lines = splitLines(combined)
-                        
-                        if !combined.hasSuffix("\n") && !combined.hasSuffix("\r") {
-                            if let last = lines.popLast() {
-                                remainder = last
-                            } else {
-                                remainder = ""
-                            }
-                        } else {
-                            remainder = ""
-                        }
-                        
-                        for line in lines {
-                            let trimmed = line.trimmingCharacters(in: .whitespaces)
-                            if trimmed.isEmpty { continue }
-                            
-                            if isFirstChunk && options.hasHeader {
-                                headers = parseRow(line, delimiter: delim)
-                                isFirstChunk = false
-                                continue
-                            } else if isFirstChunk {
-                                let firstRow = parseRow(line, delimiter: delim)
-                                headers = firstRow.indices.map { "col\($0)" }
-                                isFirstChunk = false
-                                pendingRows.append(line)
-                                continue
-                            }
-                            
-                            pendingRows.append(line)
-                            
-                            if pendingRows.count >= chunkSize {
-                                if let h = headers {
-                                    let chunkDF = try await parseLines(pendingRows, headers: h, options: options)
-                                    continuation.yield(chunkDF)
-                                }
-                                pendingRows.removeAll(keepingCapacity: true)
-                            }
-                        }
-                    }
-                    
-                    if !remainder.isEmpty && !Task.isCancelled {
-                        let trimmed = remainder.trimmingCharacters(in: .whitespaces)
-                        if !trimmed.isEmpty {
-                            pendingRows.append(remainder)
-                        }
-                    }
-                    
-                    if !pendingRows.isEmpty && !Task.isCancelled {
-                        if let h = headers {
-                            let chunkDF = try await parseLines(pendingRows, headers: h, options: options)
-                            continuation.yield(chunkDF)
-                        }
-                    }
-                    
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            
-            continuation.onTermination = { termination in
-                if case .cancelled = termination {
-                    task.cancel()
-                }
-            }
-        }
-    }
-
-    private static func parseLines(_ lines: [String], headers: [String], options: CSVReadOptions) async throws -> DataFrame {
-        let colCount = headers.count
-        let rowCount = lines.count
-        let delim = options.delimiter
-        
-        let numPartitions = min(8, max(1, ProcessInfo.processInfo.activeProcessorCount))
-        let partitionSize = (rowCount + numPartitions - 1) / numPartitions
-        
-        var rawCells: [[String?]] = Array(repeating: Array(repeating: nil, count: rowCount), count: colCount)
-        
-        try await withThrowingTaskGroup(of: (Int, [[String?]]).self) { group in
-            for part in 0..<numPartitions {
-                let startIdx = part * partitionSize
-                let endIdx = min(rowCount, startIdx + partitionSize)
-                if startIdx >= endIdx { continue }
-                
-                group.addTask {
-                    var segmentCells: [[String?]] = Array(repeating: Array(repeating: nil, count: endIdx - startIdx), count: colCount)
-                    for rIdx in startIdx..<endIdx {
-                        let row = parseRow(lines[rIdx], delimiter: delim)
-                        guard row.count == colCount else {
-                            throw DataFrameError.parseError(
-                                line: rIdx + 1,
-                                description: "Expected \(colCount) columns, found \(row.count)."
-                            )
-                        }
-                        let localIdx = rIdx - startIdx
-                        for (cIdx, cell) in row.enumerated() {
-                            let trimmed = cell.trimmingCharacters(in: .whitespaces)
-                            segmentCells[cIdx][localIdx] = options.nullValues.contains(trimmed) ? nil : trimmed
-                        }
-                    }
-                    return (startIdx, segmentCells)
-                }
-            }
-            
-            for try await (startIdx, segmentCells) in group {
-                let segmentLen = segmentCells[0].count
-                for cIdx in 0..<colCount {
-                    for localIdx in 0..<segmentLen {
-                        rawCells[cIdx][startIdx + localIdx] = segmentCells[cIdx][localIdx]
-                    }
-                }
-            }
-        }
-        
-        var columns: [any AnyColumn] = []
-        for (ci, name) in headers.enumerated() {
-            let cells = rawCells[ci]
-            let col = options.inferTypes
-                ? inferColumn(name: name, cells: cells)
-                : TypedColumn<String>(name: name, values: cells)
-            columns.append(col)
-        }
-        
-        return try DataFrame(columns: columns)
     }
 }

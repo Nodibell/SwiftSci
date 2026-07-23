@@ -51,6 +51,9 @@ let package = Package(
                 .product(name: "Arrow", package: "arrow-swift")
             ],
             path: "Sources/SwiftDataFrame",
+            resources: [
+                .process("SwiftDataFrame.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),

@@ -6,22 +6,25 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 
 [![Swift Version](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FNodibell%2FSwiftSci%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/Nodibell/SwiftSci)
 [![Platform Compatibility](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FNodibell%2FSwiftSci%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/Nodibell/SwiftSci)
+[![Documentation](https://img.shields.io/badge/docs-DocC-blue)](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/)
 
 ---
 
 ## 🚀 Core Modules
 
-* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. Features `SystemsCSVParser` (zero-copy memory-mapped RFC 4180 DFA byte scanner with `columnTypeOverrides`), parallel column construction, bitmap-free `filteredIndices`, vectorized `vGather` index matching, `DataFrame.toFeatureMatrix` / `toTargetVector` ML extraction, `DataFrame.join` (inner, left, right, outer hash joins), and `DataFrame.pivot` / `melt` matrix reshaping.
-* **`SwiftStats`**: Vectorized descriptive statistics, distributions, and hypothesis tests powered by `Accelerate vDSP`.
-* **`SwiftPreprocessing`**: Feature scaling (`StandardScaler`, `MinMaxScaler`, `RobustScaler`), categorical encoding (`OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `FrequencyEncoder`), missing value imputation (`Imputer`, `KNNImputer`), discretization (`KBinsDiscretizer`), feature selection (`SelectKBest`, `VarianceThreshold`, `RecursiveFeatureElimination` RFE), and composable pipelines (`Pipeline`, `ColumnTransformer`) with direct `DataFrame` `fit`/`transform` extensions.
-* **`SwiftML`**: Supervised learning estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs, `MLPClassifier` / `MLPRegressor` Multi-Layer Perceptrons) with native `DataFrame` `fit`/`predict` extensions, synthetic dataset generators (`makeClusters`, `makeCircles`, `makeClassification`, `makeRegression`, `makeMoons`), Gini `featureImportances`, and `Codable` model persistence (`save`/`load`).
-* **`SwiftCluster`**: Dimensionality reduction (SVD-based PCA, DBSCAN), outlier detection (`IsolationForest`, `LocalOutlierFactor`), and clustering (`KMeans` with KMeans++ init and vectorized CPU accumulation).
-* **`SwiftOptimize`**: Model validation (`KFold` cross-validation), evaluation metrics (ROC-AUC, Precision, Recall, F1), and parallel hyperparameter optimization (`GridSearchCV`, `RandomizedSearchCV`).
-* **`SwiftForecast`**: Time series analysis (vectorized additive/multiplicative decomposition, Holt-Winters, ARIMA, SARIMA seasonal models, GARCH volatility, Kalman filtering, `ExpandingWindow`).
-* **`SwiftNLP`**: Preprocessing (`StopWords` filtering, `TextNormalizer` Unicode NFKC normalization), tokenization (Word, subword BPE, `NGramTokenizer`), feature extraction (`HashingVectorizer`, `CountVectorizer`, `TFIDFVectorizer`), and static word embeddings.
-* **`SwiftExplain`**: Black-box model explainability using a parallelized `KernelSHAP` implementation.
-* **`SwiftLLM`**: Local text generation on GPU using causal transformer-decoder architectures and MLX. Supports SafeTensors and GGUF weight parsing.
-* **`SwiftVisualization`**: Interactive HTML chart exporters (`plotCorrelationHeatmap`, `plotROCCurve`, `plotFeatureImportances`, `plotConfusionMatrix`) with embedded Plotly.js charts.
+| Module | Description | Docs |
+| :--- | :--- | :---: |
+| **`SwiftDataFrame`** | High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. `SystemsCSVParser`, `DataFrame.join`, `pivot`/`melt`, `toFeatureMatrix`/`toTargetVector`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/) |
+| **`SwiftStats`** | Vectorized descriptive statistics, distributions, and hypothesis tests powered by `Accelerate vDSP`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftstats/) |
+| **`SwiftPreprocessing`** | Feature scaling, categorical encoding (`OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `FrequencyEncoder`), imputation (`Imputer`, `KNNImputer`), feature selection, `Pipeline`, `ColumnTransformer`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
+| **`SwiftML`** | Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs, `MLPClassifier`/`MLPRegressor`, synthetic generators, Gini importances, `Codable` persistence. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftml/) |
+| **`SwiftCluster`** | SVD-based PCA, DBSCAN, `IsolationForest`, `LocalOutlierFactor`, `KMeans` with KMeans++ init. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/) |
+| **`SwiftOptimize`** | `KFold` cross-validation, ROC-AUC, Precision, Recall, F1, `GridSearchCV`, `RandomizedSearchCV`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftoptimize/) |
+| **`SwiftForecast`** | Holt-Winters, ARIMA, SARIMA, GARCH, Kalman filter, `ExpandingWindow`, additive/multiplicative decomposition. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/) |
+| **`SwiftNLP`** | `StopWords`, `TextNormalizer`, BPE tokenizer, `NGramTokenizer`, `HashingVectorizer`, `TFIDFVectorizer`, embeddings. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/) |
+| **`SwiftExplain`** | Black-box explainability via parallelized `KernelSHAP`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftexplain/) |
+| **`SwiftLLM`** | Local GPU text generation via causal transformer-decoder. SafeTensors & GGUF weight parsing. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftllm/) |
+| **`SwiftVisualization`** | Interactive HTML chart exporters: `plotCorrelationHeatmap`, `plotROCCurve`, `plotFeatureImportances`, `plotConfusionMatrix`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvisualization/) |
 
 ---
 
@@ -112,6 +115,7 @@ For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](ROADM
 * **v1.4 (Completed 🟢)**: High-Performance Engine & Quality (`SystemsCSVParser` zero-copy memory-mapped DFA, `RecursiveFeatureElimination` RFE, `Codable` model persistence, `NGramTokenizer`, `HashingVectorizer`, `ExpandingWindow`, `swift-docc-plugin`).
 * **v1.5 (Completed 🟢)**: Engine Overhaul & DocC Sprint (Column-parallel CSV reader, `DataFrame.join` hash joins, `pivot`/`melt` matrix reshaping, `MLPClassifier`/`MLPRegressor`, bitmap-free filtering, DocC articles & catalog landing page).
 * **v1.6 (Completed 🟢)**: DataFrame ↔ ML Bridge & Hygiene (`toFeatureMatrix`, `toTargetVector`, `columnTypeOverrides`, `StopWords`, `TextNormalizer`, `makeClusters`, `makeCircles`, SPM dependency cleanup).
+* **v1.7 (Completed 🟢)**: Performance Sprint, Advanced Encoders & Visualization (`TargetEncoder`, `FrequencyEncoder`, `KNNImputer`, `SwiftVisualization` HTML chart exporters, KMeans 13.8× speedup, CSV Read 1.7× speedup, LLM restored, full DocC site for all 11 modules).
 
 ---
 

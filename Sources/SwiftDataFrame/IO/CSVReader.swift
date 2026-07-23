@@ -338,8 +338,8 @@ internal enum CSVReader {
         var isDouble = true
         var isDate = true
         var nonNullCount = 0
-
-        for r in 0..<dataRowsToRead {
+        let sampleRows = min(dataRowsToRead, 1000)
+        for r in 0..<sampleRows {
             let rowIdx = startRowIdx + r
             guard rowIdx < records.count && colIndex < records[rowIdx].count else { continue }
             let offset = records[rowIdx][colIndex]

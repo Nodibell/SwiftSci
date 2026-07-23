@@ -228,13 +228,19 @@ public actor KMeans {
         let tol = Double(tolerance)
 
         for _ in 0..<maxIterations {
-            // Assign labels (parallel over points)
+            // Assign labels (chunked parallel over points to avoid GCD scheduling overhead)
             let cents = centroidsLocal
+            let chunkSize = 512
+            let numChunks = (n + chunkSize - 1) / chunkSize
             labels.withUnsafeMutableBufferPointer { buf in
                 guard let base = buf.baseAddress else { return }
                 let sendableBase = SendablePointer(pointer: base)
-                DispatchQueue.concurrentPerform(iterations: n) { i in
-                    sendableBase.pointer[i] = Self.nearestCentroid(point: features[i], centroids: cents)
+                DispatchQueue.concurrentPerform(iterations: numChunks) { chunkIdx in
+                    let start = chunkIdx * chunkSize
+                    let end = min(start + chunkSize, n)
+                    for i in start..<end {
+                        sendableBase.pointer[i] = Self.nearestCentroid(point: features[i], centroids: cents)
+                    }
                 }
             }
 
@@ -263,17 +269,22 @@ public actor KMeans {
         }
 
         cpuCentroids = centroidsLocal
-        let flat = centroidsLocal.flatMap { $0.map { Float($0) } }
-        centroids = MLXArray(flat).reshaped([nClusters, m])
     }
 
     private func predictCPU(features: [[Double]], centroids: [[Double]]) -> [Int] {
-        var labels = [Int](repeating: 0, count: features.count)
+        let n = features.count
+        var labels = [Int](repeating: 0, count: n)
+        let chunkSize = 512
+        let numChunks = (n + chunkSize - 1) / chunkSize
         labels.withUnsafeMutableBufferPointer { buf in
             guard let base = buf.baseAddress else { return }
             let sendableBase = SendablePointer(pointer: base)
-            DispatchQueue.concurrentPerform(iterations: features.count) { i in
-                sendableBase.pointer[i] = Self.nearestCentroid(point: features[i], centroids: centroids)
+            DispatchQueue.concurrentPerform(iterations: numChunks) { chunkIdx in
+                let start = chunkIdx * chunkSize
+                let end = min(start + chunkSize, n)
+                for i in start..<end {
+                    sendableBase.pointer[i] = Self.nearestCentroid(point: features[i], centroids: centroids)
+                }
             }
         }
         return labels
@@ -293,9 +304,24 @@ public actor KMeans {
     }
 
     private static func distanceSquared(_ a: [Double], _ b: [Double]) -> Double {
-        precondition(a.count == b.count)
+        let count = a.count
+        if count == 4 {
+            let d0 = a[0] - b[0]
+            let d1 = a[1] - b[1]
+            let d2 = a[2] - b[2]
+            let d3 = a[3] - b[3]
+            return d0*d0 + d1*d1 + d2*d2 + d3*d3
+        }
+        if count <= 16 {
+            var sum = 0.0
+            for i in 0..<count {
+                let diff = a[i] - b[i]
+                sum += diff * diff
+            }
+            return sum
+        }
         var dist = 0.0
-        vDSP_distancesqD(a, 1, b, 1, &dist, vDSP_Length(a.count))
+        vDSP_distancesqD(a, 1, b, 1, &dist, vDSP_Length(count))
         return dist
     }
 

@@ -29,6 +29,9 @@ let package = Package(
         .library(name: "SwiftLLM",           targets: ["SwiftLLM"]),
         .library(name: "SwiftExplain",       targets: ["SwiftExplain"]),
         .library(name: "SwiftVisualization", targets: ["SwiftVisualization"]),
+        .library(name: "SwiftVision",        targets: ["SwiftVision"]),
+        .library(name: "SwiftDatabase",      targets: ["SwiftDatabase"]),
+        .library(name: "SwiftAgent",         targets: ["SwiftAgent"]),
     ],
     dependencies: [
         .package(
@@ -71,6 +74,9 @@ let package = Package(
             name: "SwiftStats",
             dependencies: ["SwiftDataFrame"],
             path: "Sources/SwiftStats",
+            resources: [
+                .process("SwiftStats.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings,
             linkerSettings: [
@@ -95,9 +101,11 @@ let package = Package(
                 .product(name: "MLX", package: "mlx-swift"),
             ],
             path: "Sources/SwiftPreprocessing",
+            resources: [
+                .process("SwiftPreprocessing.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
-            
         ),
         .testTarget(
             name: "SwiftPreprocessingTests",
@@ -117,6 +125,9 @@ let package = Package(
                 .product(name: "MLXNN", package: "mlx-swift"),
             ],
             path: "Sources/SwiftML",
+            resources: [
+                .process("SwiftML.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),
@@ -138,6 +149,9 @@ let package = Package(
                 .product(name: "MLX", package: "mlx-swift"),
             ],
             path: "Sources/SwiftCluster",
+            resources: [
+                .process("SwiftCluster.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings,
             linkerSettings: [
@@ -159,6 +173,9 @@ let package = Package(
                 "SwiftDataFrame",
             ],
             path: "Sources/SwiftNLP",
+            resources: [
+                .process("SwiftNLP.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),
@@ -177,6 +194,9 @@ let package = Package(
                 "SwiftML",
             ],
             path: "Sources/SwiftOptimize",
+            resources: [
+                .process("SwiftOptimize.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),
@@ -196,6 +216,9 @@ let package = Package(
                 "SwiftStats",
             ],
             path: "Sources/SwiftForecast",
+            resources: [
+                .process("SwiftForecast.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings,
             linkerSettings: [
@@ -220,9 +243,11 @@ let package = Package(
                 .product(name: "MLXNN", package: "mlx-swift"),
             ],
             path: "Sources/SwiftLLM",
+            resources: [
+                .process("SwiftLLM.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
-            
         ),
         .testTarget(
             name: "SwiftLLMTests",
@@ -242,6 +267,9 @@ let package = Package(
                 "SwiftPreprocessing",
             ],
             path: "Sources/SwiftExplain",
+            resources: [
+                .process("SwiftExplain.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),
@@ -261,6 +289,9 @@ let package = Package(
                 "SwiftStats",
             ],
             path: "Sources/SwiftVisualization",
+            resources: [
+                .process("SwiftVisualization.docc")
+            ],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),
@@ -268,6 +299,71 @@ let package = Package(
             name: "SwiftVisualizationTests",
             dependencies: ["SwiftVisualization"],
             path: "Tests/SwiftVisualizationTests",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+
+        // ── SwiftVision ──────────────────────────────────────────────────
+        .target(
+            name: "SwiftVision",
+            dependencies: [
+                "SwiftDataFrame",
+                "SwiftML",
+            ],
+            path: "Sources/SwiftVision",
+            resources: [
+                .process("SwiftVision.docc")
+            ],
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftVisionTests",
+            dependencies: ["SwiftVision"],
+            path: "Tests/SwiftVisionTests",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+
+        // ── SwiftDatabase ────────────────────────────────────────────────
+        .target(
+            name: "SwiftDatabase",
+            dependencies: [
+                "SwiftDataFrame",
+            ],
+            path: "Sources/SwiftDatabase",
+            resources: [
+                .process("SwiftDatabase.docc")
+            ],
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftDatabaseTests",
+            dependencies: ["SwiftDatabase"],
+            path: "Tests/SwiftDatabaseTests",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+
+        // ── SwiftAgent ───────────────────────────────────────────────────
+        .target(
+            name: "SwiftAgent",
+            dependencies: [
+                "SwiftDataFrame",
+                "SwiftLLM",
+            ],
+            path: "Sources/SwiftAgent",
+            resources: [
+                .process("SwiftAgent.docc")
+            ],
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftAgentTests",
+            dependencies: ["SwiftAgent"],
+            path: "Tests/SwiftAgentTests",
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),
@@ -286,6 +382,9 @@ let package = Package(
                 "SwiftForecast",
                 "SwiftLLM",
                 "SwiftExplain",
+                "SwiftVision",
+                "SwiftDatabase",
+                "SwiftAgent",
             ],
             path: "Benchmarks/Swift",
             cSettings: globalCSettings,

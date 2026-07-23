@@ -55,6 +55,23 @@ struct DataFrameIOTests {
         #expect(actives == [true, false, true])
     }
 
+    @Test("Read DataFrame from File URL via readURL")
+    func testReadURL() async throws {
+        let name = TypedColumn<String>(name: "category", values: ["News", "Sports"])
+        let score = TypedColumn<Double>(name: "score", values: [0.95, 0.88])
+        let df = try DataFrame(columns: [name, score])
+
+        let fm = FileManager.default
+        let fileURL = URL(fileURLWithPath: fm.currentDirectoryPath).appendingPathComponent("test_url_df.csv")
+        defer { try? fm.removeItem(at: fileURL) }
+
+        try await df.writeCSV(to: fileURL)
+        let readDF = try await DataFrame.readURL(fileURL)
+
+        #expect(readDF.shape.rows == 2)
+        #expect(readDF.shape.columns == 2)
+    }
+
     @Test("Read JSON Array of Objects")
     func testJSONRead() async throws {
         let jsonContent = """

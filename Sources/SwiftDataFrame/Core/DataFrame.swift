@@ -22,6 +22,12 @@ public struct DataFrame: Sendable {
 
     // MARK: – Initialisation
 
+    /// Creates an empty DataFrame.
+    public init() {
+        self._columns = [:]
+        self._columnOrder = []
+    }
+
     /// Creates a DataFrame from an ordered list of columns.
     /// - Throws: `DataFrameError.emptySchema` if `columns` is empty.
     ///           `DataFrameError.columnLengthMismatch` if columns differ in length.
@@ -71,12 +77,52 @@ public struct DataFrame: Sendable {
         self = df
     }
 
+    /// Downloads a dataset directly from an HTTP/HTTPS URL into a DataFrame.
+    /// - Parameters:
+    ///   - url: Remote URL pointing to a CSV or JSON dataset.
+    ///   - options: CSV reading options.
+    /// - Returns: Ingested DataFrame.
+    public static func readURL(_ url: URL, options: CSVReadOptions = .default) async throws -> DataFrame {
+        if url.isFileURL {
+            if url.pathExtension.lowercased() == "json" {
+                return try await DataFrame(json: url)
+            }
+            return try await DataFrame(csv: url, options: options)
+        }
+        let (data, response) = try await URLSession.shared.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw DataFrameError.parseError(line: 0, description: "Failed to download dataset from URL: \(url.absoluteString)")
+        }
+        
+        let isJSON = url.pathExtension.lowercased() == "json" || (httpResponse.mimeType?.contains("json") ?? false)
+        let ext = isJSON ? ".json" : ".csv"
+        
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempFile = tempDir.appendingPathComponent(UUID().uuidString + ext)
+        try data.write(to: tempFile)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+        
+        if isJSON {
+            return try await DataFrame(json: tempFile)
+        } else {
+            return try await DataFrame(csv: tempFile, options: options)
+        }
+    }
+
+    /// Creates a DataFrame by downloading dataset content directly from a remote HTTP/HTTPS URL.
+    public init(remoteURL url: URL, options: CSVReadOptions = .default) async throws {
+        let df = try await DataFrame.readURL(url, options: options)
+        self = df
+    }
+
     // MARK: – Metadata
 
     public var shape: (rows: Int, columns: Int) {
         (rows: _columns.first.map { $0.value.count } ?? 0,
          columns: _columnOrder.count)
     }
+
+    public var rowCount: Int { shape.rows }
 
     public var columnNames: [String] { _columnOrder }
 

@@ -4,6 +4,16 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-23 (Official Stable Release 🚀)
+
+### Added
+- **Direct Remote Dataset Loading (`SwiftDataFrame`)**: `DataFrame.readURL(_ url: URL)` and `DataFrame(remoteURL: URL)` for streaming and parsing remote CSV/JSON datasets directly into zero-copy DataFrames over HTTP/HTTPS.
+- **Ukrainian News NLP Benchmark (`FIdo-AI/ua-news`)**: Added `19_UkrainianNewsClassification.swift` tutorial demonstrating Ukrainian text normalization, TF-IDF vectorization, and multi-class classification (`OneVsRestClassifier`). Added Ukrainian NLP parity requirements spec to `implementation_plan_20.md`.
+- **LLM Architecture & Sampling Tutorial (`SwiftLLM`)**: Fully populated `13_LLM.swift` with `BPETokenizer`, `TransformerDecoder` forward pass, `Sampler` (greedy argmax & top-K temperature sampling), and zero-copy `GGUFParser` / `SafeTensorsParser` demonstrations.
+- **Tutorial Suite Expansion (`SwiftAnalyticsDemo`)**: Added interactive tutorials 14-19 covering Computer Vision (`SwiftVision`), Relational Database Connectors (`SwiftDatabase`), Execution Sandbox (`SwiftAgent`), AutoML & Explainability (`SwiftExplain`), and Versioning & Diffs (`SwiftDataFrame`).
+
+---
+
 ## [1.7.0] - 2026-07-23
 
 ### Added

@@ -84,9 +84,12 @@ let cleanedTexts = texts.map { normalizer.normalize($0) }
 let vectorizer = TFIDFVectorizer()
 let tfidfMatrix = try await vectorizer.fitTransform(cleanedTexts)
 
-// 3. Train Multi-Class OneVsRestClassifier Model
+// 3. Encode Category Targets & Train Multi-Class Model
+let labels: [String] = (df[column: "category", as: String.self]?.values ?? []).compactMap { $0 }
+let categoryMap: [String: Double] = ["політика": 0, "економіка": 1, "спорт": 2, "технології": 3, "світ": 4]
+let targets = labels.map { categoryMap[$0] ?? 0.0 }
+
 let classifier = OneVsRestClassifier(numClasses: 5)
-let targets = Array(repeating: 1.0, count: tfidfMatrix.count)
 try await classifier.fit(features: tfidfMatrix, targets: targets)
 ```
 

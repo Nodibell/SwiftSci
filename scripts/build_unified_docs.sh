@@ -37,8 +37,18 @@ done
 
 # 2. Use the web frontend templates from the first target (SwiftDataFrame)
 BASE_TARGET="SwiftDataFrame"
+
+# Preserve main landing page if it exists
+if [ -f "docs/index.html" ]; then
+  cp "docs/index.html" "$TMP_DIR/landing_index.html"
+fi
+
 rm -rf docs
-mkdir -p docs/data/documentation docs/documentation docs/images docs/downloads docs/videos
+mkdir -p docs/data/documentation docs/documentation docs/images docs/downloads docs/videos docs/index
+
+if [ -f "$TMP_DIR/landing_index.html" ]; then
+  cp "$TMP_DIR/landing_index.html" docs/index.html
+fi
 
 cp -R "$TMP_DIR/$BASE_TARGET/css" docs/
 cp -R "$TMP_DIR/$BASE_TARGET/js" docs/
@@ -63,6 +73,10 @@ for target in "${TARGETS[@]}"; do
     cp -R "$TMP_DIR/$target/images/"* docs/images/ 2>/dev/null || true
   fi
 done
+
+# 4. Merge sidebar navigation index.json for all targets
+echo "🗂️ Merging unified navigation index for all targets..."
+python3 scripts/merge_docc_indexes.py "$TMP_DIR" "./docs/index/index.json" "./docs/metadata.json"
 
 # Clean up temp dir
 rm -rf "$TMP_DIR"

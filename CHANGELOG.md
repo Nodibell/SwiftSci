@@ -4,7 +4,23 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-07-24
+
+### Added
+- **Core API Freeze & Governance**: Formalized public protocols (`AnyColumn`, `SupportedType`, `Estimator`, `Transformer`, `Classifier`, `Regressor`, `MetricEvaluator`), added `@available(*, deprecated, message: "...")` warnings for older v1.x unversioned APIs, and guaranteed Swift 6 `Sendable` strict concurrency compliance.
+- **Unsupervised Learning & Clustering Metrics (`SwiftCluster`)**: Added `SilhouetteScore.swift` (Cohesion/Separation score with vDSP acceleration), `ClusteringMetrics.swift` (`inertia`, `calinskiHarabaszIndex`, `daviesBouldinIndex`, `contaminationRatio`, `adjustedRandIndex`), and DataFrame extensions (`computeSilhouetteScore`, `computeClusteringMetrics`).
+- **Supervised Evaluation Metrics (`SwiftOptimize`)**: Extended `Metrics.swift` with `fBetaScore`, `prAUC` (Area under PR curve), `adjustedR2Score`, `mape` (Mean Absolute Percentage Error), and `explainedVarianceScore`.
+- **Advanced Cross-Validation Folds (`SwiftOptimize`)**: Added `StratifiedKFold` (class ratio preserving), `TimeSeriesSplit` (expanding-window time-series split), and `GroupKFold` (group-isolated fold generator).
+- **Time Series Features (`SwiftPreprocessing`)**: Added `withRollingMean`, `withRollingStd`, and `withEWMA` (Exponentially Weighted Moving Average) methods to `DataFrame`.
+- **Probability Calibration (`SwiftML`)**: Added `PlattScaling` (sigmoid logit calibration) and `IsotonicRegression` (PAVA non-parametric calibration).
+- **Survival Analysis (`SwiftStats`)**: Added `KaplanMeier` survival estimator and `CoxProportionalHazards` semi-parametric regression model.
+- **MLOps Exporters (`SwiftML`)**: Added `CoreMLExporter` (.mlmodel bundle exporter) and `ONNXExporter` (ONNX model graph builder).
+- **SPI Platform Compatibility**: Updated `.spi.yml` with explicit `platform_compatibility` for macOS, iOS, and visionOS.
+
+---
+
 ## [2.0.0] - 2026-07-23 (Official Stable Release 🚀)
+
 
 ### Added
 - **Direct Remote Dataset Loading (`SwiftDataFrame`)**: `DataFrame.readURL(_ url: URL)` and `DataFrame(remoteURL: URL)` for streaming and parsing remote CSV/JSON datasets directly into zero-copy DataFrames over HTTP/HTTPS.

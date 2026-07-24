@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Probability Calibration (`SwiftML`)**: Added `PlattScaling` (sigmoid logit calibration) and `IsotonicRegression` (PAVA non-parametric calibration).
 - **Survival Analysis (`SwiftStats`)**: Added `KaplanMeier` survival estimator and `CoxProportionalHazards` semi-parametric regression model.
 - **MLOps Exporters (`SwiftML`)**: Added `CoreMLExporter` (.mlmodel bundle exporter) and `ONNXExporter` (ONNX model graph builder).
+- **Automatic CSV Header Deduplication (`SwiftDataFrame`)**: Added `CSVReader.deduplicateHeaders` to automatically resolve duplicate or blank CSV column headers into unique column names (`col_1`, `col_2`, `col_N`) without throwing column collision errors.
 - **SPI Platform Compatibility**: Updated `.spi.yml` with explicit `platform_compatibility` for macOS, iOS, and visionOS.
+
 
 ---
 

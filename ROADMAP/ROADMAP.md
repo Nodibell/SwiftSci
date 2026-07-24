@@ -266,6 +266,9 @@
    - `CoreMLExporter` (.mlmodel package), `ONNXExporter`, прискорення `TaskGroup`.
 7. **Saura UI integration**
    - Динамічний вибір колонок метрик у `ModelLeaderboardView.swift`.
+8. **DataFrame Engine**
+   - Автоматична дедуплікація дубльованих та порожніх колонок під час зчитування CSV (`CSVReader.deduplicateHeaders`).
+
 
 
 ---

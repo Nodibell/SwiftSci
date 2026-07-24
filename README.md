@@ -136,7 +136,9 @@ For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](ROADM
   - Time Series Features: Added `withRollingMean`, `withRollingStd`, `withEWMA`.
   - Probability Calibration & Survival Analysis: Added `PlattScaling`, `IsotonicRegression`, `KaplanMeier`, `CoxProportionalHazards`.
   - MLOps Serialization: Added `CoreMLExporter` (.mlmodel package) and `ONNXExporter` (ONNX graph specification).
+  - DataFrame Engine: Automatic CSV header deduplication and blank column renaming (`CSVReader.deduplicateHeaders`).
 * **v2.0.0 Stable (Completed 🟢)**:
+
 
   - Architecture freeze: 14 core targets with Swift 6 strict concurrency compliance.
   - Streaming HTTP/HTTPS dataset reader (`DataFrame.readURL`).

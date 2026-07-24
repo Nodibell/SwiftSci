@@ -1,4 +1,4 @@
-# SwiftSci 2.0
+# SwiftSci 2.1
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -128,7 +128,6 @@ try await classifier.fit(features: tfidfMatrix, targets: targets)
 ## 🗺 Roadmap & Version History
 
 For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](ROADMAP/ROADMAP.md) directory:
-* **v1.7 (Completed 🟢)**: Advanced Encoders & Visualization (`TargetEncoder`, `FrequencyEncoder`, `KNNImputer`, `SwiftVisualization` HTML exporters).
 * **v2.1.0 (Completed 🟢)**:
   - Core API Freeze: Formalized public protocols (`AnyColumn`, `SupportedType`, `Estimator`, `Transformer`, `Classifier`, `Regressor`, `MetricEvaluator`) with Swift 6 strict concurrency compliance.
   - Evaluation Metrics: Added `SilhouetteScore`, `ClusteringMetrics` (`inertia`, `calinskiHarabasz`, `daviesBouldin`, `contaminationRatio`, `ARI`), `fBetaScore`, `prAUC`, `adjustedR2Score`, `mape`, `explainedVarianceScore`.
@@ -137,9 +136,7 @@ For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](ROADM
   - Probability Calibration & Survival Analysis: Added `PlattScaling`, `IsotonicRegression`, `KaplanMeier`, `CoxProportionalHazards`.
   - MLOps Serialization: Added `CoreMLExporter` (.mlmodel package) and `ONNXExporter` (ONNX graph specification).
   - DataFrame Engine: Automatic CSV header deduplication and blank column renaming (`CSVReader.deduplicateHeaders`).
-* **v2.0.0 Stable (Completed 🟢)**:
-
-
+* **v2.0.0 (Completed 🟢)**:
   - Architecture freeze: 14 core targets with Swift 6 strict concurrency compliance.
   - Streaming HTTP/HTTPS dataset reader (`DataFrame.readURL`).
   - Multiclass solver (`OneVsRestClassifier`).

@@ -1,9 +1,9 @@
 # SwiftSci Codeowners
 # Global default code owners
-* @oleksiichumak
+* @Nodibell
 
 # Target-specific maintainer groups
-/Sources/SwiftDataFrame/ @oleksiichumak
-/Sources/SwiftML/ @oleksiichumak
-/Sources/SwiftLLM/ @oleksiichumak
-/Sources/SwiftForecast/ @oleksiichumak
+/Sources/SwiftDataFrame/ @Nodibell
+/Sources/SwiftML/ @Nodibell
+/Sources/SwiftLLM/ @Nodibell
+/Sources/SwiftForecast/ @Nodibell

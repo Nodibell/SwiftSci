@@ -6,7 +6,11 @@
 
 The architecture combines two hardware engines:
 1. **CPU Engine**: SIMD vectorization via Apple **Accelerate (`vDSP`, `BLAS`, `LAPACK`)**.
-2. **GPU Engine**: Native Apple Silicon GPU execution via **`MLX`** (lazy graph evaluation, Metal runtime).
+
+### 🌐 Platform Compatibility & Multi-Target Deployment
+
+- **macOS 14+ (Apple Silicon M-Series)**: Full support for all 14 modules leveraging Accelerate (CPU) and MLX Metal (GPU).
+- **iOS 18+ & visionOS 2+**: Pure CPU vector modules (`SwiftDataFrame`, `SwiftStats`, `SwiftNLP`, `SwiftForecast`, `SwiftVisualization`, `SwiftDatabase`). MLX-dependent targets are conditionally built on macOS via `.when(platforms: [.macOS])`.
 
 ---
 

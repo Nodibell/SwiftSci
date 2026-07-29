@@ -9,6 +9,16 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 [![Documentation](https://img.shields.io/badge/docs-DocC-blue)](https://nodibell.github.io/SwiftSci/)
 
 
+
+---
+
+## 🌐 Platform Support & SPI Compatibility
+
+SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosystems:
+
+* **macOS 14+ (Apple Silicon M-Series)**: Supports all **14 core modules**, leveraging Accelerate (vDSP/LAPACK/BLAS) and MLX Metal GPU acceleration (`SwiftPreprocessing`, `SwiftML`, `SwiftCluster`, `SwiftLLM`, `SwiftExplain`, `SwiftVision`, `SwiftAgent`).
+* **iOS 18+ & visionOS 2+**: Supports all pure CPU vector analytics modules (`SwiftDataFrame`, `SwiftStats`, `SwiftNLP`, `SwiftForecast`, `SwiftVisualization`, `SwiftDatabase`). MLX-dependent targets are conditionally built on macOS via `.when(platforms: [.macOS])`.
+
 ---
 
 ## 🚀 Core Modules (14 Targets)

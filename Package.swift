@@ -132,7 +132,10 @@ let package = Package(
                 .process("SwiftML.docc")
             ],
             cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            linkerSettings: [
+                .linkedFramework("Accelerate"),
+            ]
         ),
         .testTarget(
             name: "SwiftMLTests",

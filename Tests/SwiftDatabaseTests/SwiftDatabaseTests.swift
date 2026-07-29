@@ -36,15 +36,12 @@ struct SwiftDatabaseTests {
         }
     }
 
-    @Test("Test PostgreSQL query execution and DataFrame ingestion")
+    @Test("Test PostgreSQL query throws notImplemented error")
     func testPostgreSQLIngestion() async throws {
         let conn = PostgreSQLConnection(connectionURL: "postgres://user:pass@localhost:5432/testdb")
-        _ = try await conn.executeQuery("CREATE TABLE users (id INTEGER PRIMARY KEY, score REAL);")
-        _ = try await conn.executeQuery("INSERT INTO users (id, score) VALUES (101, 98.5);")
-
-        let df = try await DataFrame.fromSQL("SELECT id, score FROM users", connection: conn)
-        #expect(df.rowCount == 1)
-        #expect(df.columnNames.contains("score"))
+        await #expect(throws: DatabaseError.self) {
+            _ = try await conn.executeQuery("CREATE TABLE users (id INTEGER PRIMARY KEY, score REAL);")
+        }
     }
 
     @Test("Test PostgreSQL query error handling")

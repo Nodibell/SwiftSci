@@ -167,25 +167,17 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
 public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable {
     /// The connection URL.
     public let connectionURL: String
-    private let backingConnection: SQLiteConnection
 
     /// Creates a new instance.
     /// - Parameters:
     ///   - connectionURL: The connection URL.
     public init(connectionURL: String) {
         self.connectionURL = connectionURL
-        let sanitized = connectionURL.components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
-        let dbPath = NSTemporaryDirectory() + "pg_\(sanitized)_\(UUID().uuidString).sqlite"
-        self.backingConnection = SQLiteConnection(databasePath: dbPath)
-    }
-
-    deinit {
-        try? FileManager.default.removeItem(atPath: backingConnection.databasePath)
     }
 
     /// Executes a SQL query against PostgreSQL database connection.
     /// - Parameter sql: The SQL query statement.
-    /// - Throws: DatabaseError if the connection or query fails.
+    /// - Throws: DatabaseError.notImplemented for PostgreSQL driver integration.
     /// - Returns: A SQLQueryResult tabular result.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
         guard !connectionURL.isEmpty else {
@@ -194,7 +186,7 @@ public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable
         guard !sql.isEmpty else {
             throw DatabaseError.queryFailed("SQL query cannot be empty")
         }
-        return try await backingConnection.executeQuery(sql)
+        throw DatabaseError.notImplemented("PostgreSQL native wire protocol driver requires libpq integration. Use SQLiteConnection for local embedded SQL databases or export models via CoreML/ONNX exporters.")
     }
 }
 

@@ -4,6 +4,16 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-07-30
+
+### Fixed & Refactored
+- **`PostgreSQLConnection` (`SwiftDatabase`)**: Resolved critical silent fallback where PostgreSQL queries executed against a temporary local SQLite database. `PostgreSQLConnection.executeQuery(_:)` now throws `DatabaseError.notImplemented` with a clear explanation that `libpq` integration is required for native PostgreSQL wire protocol connections.
+- **`YOLOv8Detector` & `UNetSegmentationModel` (`SwiftVision`)**: Updated DocC documentation to explicitly state their heuristic adaptive spatial placeholder scope (simulating NMS and grid predictions without neural network weights), guiding users to `CoreMLExporter`/`ONNXExporter` for deep learning models.
+- **`Package.swift`**: Added explicit `linkerSettings: [.linkedFramework("Accelerate")]` to `SwiftML` target for robust LAPACK `dgels_` linking across all build environments.
+- **`ExponentialSmoothing` (`SwiftForecast`)**: Cleaned up empty `catch {}` blocks in grid search routines, replacing with explicit `catch { continue }`.
+
+---
+
 ## [2.2.0] - 2026-07-29
 
 ### Fixed

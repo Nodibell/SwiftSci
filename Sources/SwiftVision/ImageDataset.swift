@@ -167,7 +167,10 @@ public enum VisionError: Error, LocalizedError, Equatable {
     }
 }
 
-/// Simple U-Net Segmentation model implementation.
+/// Heuristic adaptive spatial segmentation model placeholder.
+///
+/// - Note: This implementation provides lightweight pixel-brightness spatial segmentation simulating U-Net output masks.
+///   For deep learning U-Net inference with trained weights, export models via `CoreMLExporter` or `ONNXExporter`.
 public actor UNetSegmentationModel {
     /// The input channels.
     public let inputChannels: Int
@@ -226,7 +229,10 @@ public actor UNetSegmentationModel {
     }
 }
 
-/// YOLOv8 object detector wrapper.
+/// Heuristic multi-scale object detector placeholder (simulating anchorless grid NMS).
+///
+/// - Note: This implementation provides lightweight pixel-contrast multi-scale bounding box detection with Non-Maximum Suppression (NMS).
+///   For deep learning YOLOv8 neural network inference with trained weights, export models via `CoreMLExporter` or `ONNXExporter`.
 public actor YOLOv8Detector {
     /// The confidence threshold.
     public let confidenceThreshold: Double

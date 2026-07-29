@@ -163,7 +163,9 @@ public actor ExponentialSmoothing {
                         minMse = mse
                         bestAlpha = a
                     }
-                } catch {}
+                } catch {
+                    continue
+                }
             }
             self.alpha = bestAlpha
         }
@@ -194,7 +196,9 @@ public actor ExponentialSmoothing {
                         minMse = mse
                         bestAlpha = a
                     }
-                } catch {}
+                } catch {
+                    continue
+                }
             }
             self.alpha = bestAlpha
         }
@@ -229,7 +233,9 @@ public actor ExponentialSmoothing {
                         minMse = mse
                         bestAlpha = a
                     }
-                } catch {}
+                } catch {
+                    continue
+                }
             }
             self.alpha = bestAlpha
         }

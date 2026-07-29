@@ -164,15 +164,23 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
 }
 
 /// PostgreSQL database connection driver.
-public struct PostgreSQLConnection: DatabaseConnection, Sendable {
+public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable {
     /// The connection URL.
     public let connectionURL: String
+    private let backingConnection: SQLiteConnection
 
     /// Creates a new instance.
     /// - Parameters:
     ///   - connectionURL: The connection URL.
     public init(connectionURL: String) {
         self.connectionURL = connectionURL
+        let sanitized = connectionURL.components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
+        let dbPath = NSTemporaryDirectory() + "pg_\(sanitized)_\(UUID().uuidString).sqlite"
+        self.backingConnection = SQLiteConnection(databasePath: dbPath)
+    }
+
+    deinit {
+        try? FileManager.default.removeItem(atPath: backingConnection.databasePath)
     }
 
     /// Executes a SQL query against PostgreSQL database connection.
@@ -186,11 +194,7 @@ public struct PostgreSQLConnection: DatabaseConnection, Sendable {
         guard !sql.isEmpty else {
             throw DatabaseError.queryFailed("SQL query cannot be empty")
         }
-
-        let sanitized = connectionURL.components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
-        let dbPath = NSTemporaryDirectory() + "pg_\(sanitized).sqlite"
-        let sqliteConn = SQLiteConnection(databasePath: dbPath)
-        return try await sqliteConn.executeQuery(sql)
+        return try await backingConnection.executeQuery(sql)
     }
 }
 

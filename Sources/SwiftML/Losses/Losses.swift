@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import MLX
 
@@ -17,3 +18,4 @@ internal enum Losses {
         return mean(maxLogits - logits * targets + log(1.0 + exp(-absLogits)))
     }
 }
+#endif // os(macOS)

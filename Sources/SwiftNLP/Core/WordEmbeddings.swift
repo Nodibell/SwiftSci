@@ -2,7 +2,9 @@ import Foundation
 
 /// A representation of pre-trained word embeddings (e.g. Word2Vec/GloVe).
 public struct WordEmbeddings: Sendable {
+    /// The embeddings.
     public let embeddings: [String: [Double]]
+    /// The vector size.
     public let vectorSize: Int
     
     /// Initializes WordEmbeddings by parsing a pre-trained vector file.

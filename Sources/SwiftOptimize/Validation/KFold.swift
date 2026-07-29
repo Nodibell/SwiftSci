@@ -5,9 +5,13 @@ import SwiftML
 
 /// A single train/validation split.
 public struct Fold: Sendable {
+    /// The train features.
     public let trainFeatures: [[Double]]
+    /// The train targets.
     public let trainTargets: [Double]
+    /// The val features.
     public let valFeatures: [[Double]]
+    /// The val targets.
     public let valTargets: [Double]
 }
 
@@ -15,10 +19,18 @@ public struct Fold: Sendable {
 
 /// Splits a dataset into K folds for cross-validation.
 public struct KFold: Sendable {
+    /// The n splits.
     public let nSplits: Int
+    /// The shuffle.
     public let shuffle: Bool
+    /// The seed.
     public let seed: Int
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nSplits: The n splits.
+    ///   - shuffle: The shuffle.
+    ///   - seed: The seed.
     public init(nSplits: Int = 5, shuffle: Bool = true, seed: Int = 42) {
         precondition(nSplits >= 2, "KFold requires at least 2 splits")
         self.nSplits = nSplits
@@ -68,11 +80,18 @@ public struct KFold: Sendable {
 
 // MARK: - Cross Validation Result
 
+/// Represents cross validation result.
 public struct CrossValidationResult: Sendable {
+    /// The scores.
     public let scores: [Double]
+    /// The mean.
     public let mean: Double
+    /// The std.
     public let std: Double
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - scores: The scores.
     public init(scores: [Double]) {
         self.scores = scores
         let mean = scores.reduce(0, +) / Double(scores.count)

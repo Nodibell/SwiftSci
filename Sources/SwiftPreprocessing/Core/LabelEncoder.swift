@@ -2,8 +2,10 @@ import Foundation
 
 /// Encodes categorical values into integer labels [0, C-1].
 public final class LabelEncoder: @unchecked Sendable {
+    /// The classes.
     public private(set) var classes: [String] = []
     
+    /// Creates a new instance.
     public init() {}
     
     /// Fits the LabelEncoder on the input categories.

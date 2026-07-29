@@ -13,5 +13,5 @@ High-performance vectorized statistical analysis and distributions powered by Ap
 
 ## Topics
 
-### Statistical Reductions
-- ``vDSP``
+### Statistical Calculations
+- ``Stats``

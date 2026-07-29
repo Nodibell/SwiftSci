@@ -1,28 +1,43 @@
+#if os(macOS)
 import Foundation
 import MLX
 import SwiftPreprocessing
 
 /// Binary Logistic Regression model using sigmoid activation.
 public actor LogisticRegression: ClassifierEstimator {
+    /// The weights.
     public private(set) var weights: MLXArray?
+    /// The bias.
     public private(set) var bias: MLXArray?
     
+    /// The requested device.
     public let requestedDevice: ExecutionDevice
+    /// The resolved device.
     public private(set) var resolvedDevice: ExecutionDevice?
     
     private var cpuWeights: [Double]?
     private var cpuBias: Double?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - device: The device.
     public init(device: ExecutionDevice = .auto) {
         self.requestedDevice = device
     }
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - weights: The weights.
+    ///   - bias: The bias.
+    ///   - device: The device.
     public init(weights: [Double], bias: Double, device: ExecutionDevice = .auto) {
         self.requestedDevice = device
         self.cpuWeights = weights
         self.cpuBias = bias
     }
 
+    /// Get weights and bias.
+    /// - Returns: A `(weights: [Double]?, bias: Double?)` result.
     public func getWeightsAndBias() -> (weights: [Double]?, bias: Double?) {
         return (cpuWeights, cpuBias)
     }
@@ -271,3 +286,4 @@ public actor LogisticRegression: ClassifierEstimator {
         return nil
     }
 }
+#endif // os(macOS)

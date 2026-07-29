@@ -69,14 +69,19 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
     case svdFailed(info: Int32)
     
     // MARK: - Backward Compatibility Aliases
+    /// The fit not called.
     public static var fitNotCalled: SwiftMLError { .modelNotFitted }
+    /// The fitting required.
     public static var fittingRequired: SwiftMLError { .modelNotFitted }
+    /// The not fitted.
     public static var notFitted: SwiftMLError { .modelNotFitted }
     
+    /// The description.
     public var description: String {
         return errorDescription ?? "Unknown SwiftSci error."
     }
     
+    /// The error description.
     public var errorDescription: String? {
         switch self {
         case .invalidInput(let reason):
@@ -182,10 +187,17 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
 }
 
 // MARK: - Compatibility Typealiases
+/// Represents data frame error.
 public typealias DataFrameError = SwiftMLError
+/// Represents m l error.
 public typealias MLError = SwiftMLError
+/// Represents preprocessing error.
 public typealias PreprocessingError = SwiftMLError
+/// Represents forecast error.
 public typealias ForecastError = SwiftMLError
+/// Represents stats error.
 public typealias StatsError = SwiftMLError
+/// Represents cluster error.
 public typealias ClusterError = SwiftMLError
+/// Represents n l p error.
 public typealias NLPError = SwiftMLError

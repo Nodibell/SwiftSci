@@ -136,6 +136,28 @@ public struct GroupedDataFrame: Sendable {
         return (try? DataFrame(columns: resultColumns)) ?? DataFrame.empty
     }
 
+    /// Applies aggregations per group and expands the aggregated values back to match the original DataFrame row count.
+    public func transform(_ aggregations: [String: Aggregation]) -> DataFrame {
+        let groups = buildGroups()
+        var df = dataFrame
+
+        for (colName, agg) in aggregations {
+            guard let col = dataFrame[column: colName], col.dtype.isNumeric else { continue }
+            let aggValues = aggregateNumeric(col: col, groups: groups, agg: agg)
+
+            var expanded = [Double?](repeating: nil, count: dataFrame.shape.rows)
+            for (groupIdx, indices) in groups.enumerated() {
+                for rowIdx in indices {
+                    expanded[rowIdx] = aggValues[groupIdx]
+                }
+            }
+            let newName = "\(colName)_group_\(aggLabel(agg))"
+            let newCol = TypedColumn<Double>(name: newName, values: expanded)
+            df = (try? df.withColumn(newName, column: newCol)) ?? df
+        }
+        return df
+    }
+
     // MARK: – Private helpers
 
     /// Groups row indices by the unique combination of groupColumn values.

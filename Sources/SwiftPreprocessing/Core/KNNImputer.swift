@@ -8,12 +8,18 @@ public enum KNNWeightStrategy: Sendable {
 
 /// k-Nearest Neighbors missing value imputer for numerical feature matrices.
 public final class KNNImputer: PreprocessingTransformer, @unchecked Sendable {
+    /// The n neighbors.
     public let nNeighbors: Int
+    /// The weights.
     public let weights: KNNWeightStrategy
     
     private var trainMatrix: [[Double]] = []
     private var isFitted: Bool = false
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nNeighbors: The n neighbors.
+    ///   - weights: The weights.
     public init(nNeighbors: Int = 5, weights: KNNWeightStrategy = .uniform) {
         self.nNeighbors = max(1, nNeighbors)
         self.weights = weights

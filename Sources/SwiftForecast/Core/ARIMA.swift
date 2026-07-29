@@ -5,6 +5,7 @@ import SwiftStats
 
 
 public actor ARIMAModel {
+    /// The order.
     public let order: (p: Int, d: Int, q: Int)
     
     private var arCoefficients: [Double] = []
@@ -22,6 +23,12 @@ public actor ARIMAModel {
     private var residuals: [Double] = []
     private var isFitted = false
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - p: The p.
+    ///   - d: The d.
+    ///   - q: The q.
+    /// - Throws: An error if the operation fails.
     public init(p: Int, d: Int, q: Int) throws {
         guard p >= 0 else { throw ForecastError.invalidAROrder(p) }
         guard d >= 0 else { throw ForecastError.invalidDifferencing(d) }
@@ -315,6 +322,9 @@ public actor ARIMAModel {
         )
     }
     
+    /// Aic.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `Double` result.
     public func aic() throws -> Double {
         guard isFitted else { throw ForecastError.notFitted }
         let mse = vDSP.sumOfSquares(residuals) / Double(residuals.count)

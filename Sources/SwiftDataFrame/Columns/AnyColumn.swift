@@ -40,6 +40,8 @@ public protocol AnyColumn: Sendable {
 }
 
 extension AnyColumn {
+    /// Filtered indices.
+    /// - Returns: A `[Int]?` result.
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? { nil }
 }
 

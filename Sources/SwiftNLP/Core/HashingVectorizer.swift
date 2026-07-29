@@ -3,10 +3,19 @@ import Foundation
 /// HashingVectorizer converts text documents directly into fixed-size numeric feature vectors
 /// using the hashing trick (FNV-1a 64-bit hash modulo nFeatures).
 public final class HashingVectorizer: @unchecked Sendable {
+    /// The n features.
     public let nFeatures: Int
+    /// The ngram range.
     public let ngramRange: (min: Int, max: Int)
+    /// The lowercase.
     public let lowercase: Bool
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nFeatures: The n features.
+    ///   - ngramRange: The ngram range.
+    ///   - max: The max.
+    ///   - lowercase: The lowercase.
     public init(nFeatures: Int = 1024, ngramRange: (min: Int, max: Int) = (1, 1), lowercase: Bool = true) {
         self.nFeatures = max(1, nFeatures)
         self.ngramRange = (max(1, ngramRange.min), max(ngramRange.min, ngramRange.max))

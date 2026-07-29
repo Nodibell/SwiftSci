@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import MLX
 import MLXNN
@@ -5,14 +6,22 @@ import SwiftNLP
 
 /// A basic local Decoder-only Transformer model using MLX.
 public class TransformerDecoder: Module, @unchecked Sendable {
+    /// The embedding.
     public let embedding: Embedding
+    /// The pos embedding.
     public let posEmbedding: Embedding
+    /// The attention.
     public let attention: MultiHeadAttention
+    /// The norm.
     public let norm: RMSNorm
+    /// The output projection.
     public let outputProjection: Linear
     
+    /// The tokenizer.
     public let tokenizer: any Tokenizer
+    /// The dimensions.
     public let dimensions: Int
+    /// The max seq len.
     public let maxSeqLen: Int
     
     /// Initializes the Transformer Decoder model.
@@ -123,3 +132,4 @@ public class TransformerDecoder: Module, @unchecked Sendable {
         }
     }
 }
+#endif // os(macOS)

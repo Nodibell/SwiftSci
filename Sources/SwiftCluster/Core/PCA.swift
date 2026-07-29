@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import Accelerate
 import MLX
@@ -204,28 +205,28 @@ public actor PCA {
             }
         }
         
-        // 3. Setup SVD parameters for dgesvd_
-        var jobu: Int8 = 78  // 'N' (do not compute U)
-        var jobvt: Int8 = 83 // 'S' (compute first min(M, N) singular vectors of V^T)
+        // 3. Setup SVD parameters for dgesdd_ (divide-and-conquer fast SVD)
+        var jobz: Int8 = 83 // 'S' (compute first min(M, N) singular vectors of V^T)
         
         var m = LAPACKInteger(numSamples)
         var n = LAPACKInteger(numFeatures)
         var lda = m
-        var ldu = LAPACKInteger(1)
+        var ldu = m
         
         let minDim = min(numSamples, numFeatures)
         var ldvt = LAPACKInteger(minDim)
         
         var s = [Double](repeating: 0.0, count: minDim)
-        var u = [Double](repeating: 0.0, count: 1) // Dummy
+        var u = [Double](repeating: 0.0, count: numSamples * minDim)
         var vt = [Double](repeating: 0.0, count: minDim * numFeatures)
         
         var info = LAPACKInteger(0)
         var workQuery = [Double](repeating: 0.0, count: 1)
         var lwork = LAPACKInteger(-1)
+        var iwork = [LAPACKInteger](repeating: 0, count: 8 * minDim)
         
         // Workspace query
-        dgesvd_wrapper(&jobu, &jobvt, &m, &n, &a, &lda, &s, &u, &ldu, &vt, &ldvt, &workQuery, &lwork, &info)
+        dgesdd_(&jobz, &m, &n, &a, &lda, &s, &u, &ldu, &vt, &ldvt, &workQuery, &lwork, &iwork, &info)
         guard info == 0 else {
             throw ClusterError.svdFailed(info: Int32(info))
         }
@@ -233,8 +234,8 @@ public actor PCA {
         lwork = LAPACKInteger(workQuery[0])
         var work = [Double](repeating: 0.0, count: Int(lwork))
         
-        // Run actual SVD
-        dgesvd_wrapper(&jobu, &jobvt, &m, &n, &a, &lda, &s, &u, &ldu, &vt, &ldvt, &work, &lwork, &info)
+        // Run actual divide-and-conquer SVD
+        dgesdd_(&jobz, &m, &n, &a, &lda, &s, &u, &ldu, &vt, &ldvt, &work, &lwork, &iwork, &info)
         guard info == 0 else {
             throw ClusterError.svdFailed(info: Int32(info))
         }
@@ -352,3 +353,4 @@ public actor PCA {
         return try transform(X)
     }
 }
+#endif // os(macOS)

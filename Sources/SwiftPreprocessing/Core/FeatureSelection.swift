@@ -3,13 +3,19 @@ import SwiftStats
 
 /// Feature selector that removes all features whose variance does not meet a threshold.
 public final class VarianceThreshold: PreprocessingTransformer, @unchecked Sendable {
+    /// The threshold.
     public let threshold: Double
     private var selectedIndices: [Int] = []
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - threshold: The threshold.
     public init(threshold: Double = 0.0) {
         self.threshold = threshold
     }
     
+    /// Fit.
+    /// - Throws: An error if the operation fails.
     public func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
@@ -29,6 +35,9 @@ public final class VarianceThreshold: PreprocessingTransformer, @unchecked Senda
         self.selectedIndices = selected
     }
     
+    /// Transform.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let indices = selectedIndices.isEmpty ? Array(0..<data[0].count) : selectedIndices
@@ -44,17 +53,28 @@ public final class VarianceThreshold: PreprocessingTransformer, @unchecked Senda
 /// by ANOVA F-value (supervised selection). When targets are `nil`, falls back
 /// to variance-based ranking (unsupervised).
 public final class SelectKBest: PreprocessingTransformer, @unchecked Sendable {
+    /// The k.
     public let k: Int
     private var selectedIndices: [Int] = []
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - k: The k.
     public init(k: Int) {
         self.k = k
     }
     
+    /// Fit.
+    /// - Throws: An error if the operation fails.
     public func fit(_ data: [[Double]]) throws {
         try fit(features: data, targets: nil)
     }
     
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]?) throws {
         guard !features.isEmpty, !features[0].isEmpty else {
             throw PreprocessingError.emptyInput
@@ -103,6 +123,9 @@ public final class SelectKBest: PreprocessingTransformer, @unchecked Sendable {
         self.selectedIndices = scores.prefix(kActual).map { $0.index }.sorted()
     }
     
+    /// Transform.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let indices = selectedIndices.isEmpty ? Array(0..<min(k, data[0].count)) : selectedIndices
@@ -116,21 +139,36 @@ public final class SelectKBest: PreprocessingTransformer, @unchecked Sendable {
 /// Iteratively fits feature importance/variance scores and eliminates low-ranking features
 /// until the target `nFeaturesToSelect` features remain.
 public final class RecursiveFeatureElimination: PreprocessingTransformer, @unchecked Sendable {
+    /// The n features to select.
     public let nFeaturesToSelect: Int
+    /// The step.
     public let step: Int
     private var selectedIndices: [Int] = []
+    /// The ranking.
     public private(set) var ranking: [Int] = []
+    /// The support.
     public private(set) var support: [Bool] = []
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nFeaturesToSelect: The n features to select.
+    ///   - step: The step.
     public init(nFeaturesToSelect: Int, step: Int = 1) {
         self.nFeaturesToSelect = max(1, nFeaturesToSelect)
         self.step = max(1, step)
     }
 
+    /// Fit.
+    /// - Throws: An error if the operation fails.
     public func fit(_ data: [[Double]]) throws {
         try fit(features: data, featureImportances: nil)
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - featureImportances: The feature importances.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], featureImportances: [Double]? = nil) throws {
         guard !features.isEmpty, !features[0].isEmpty else {
             throw PreprocessingError.emptyInput
@@ -171,6 +209,9 @@ public final class RecursiveFeatureElimination: PreprocessingTransformer, @unche
         self.selectedIndices = activeIndices.sorted()
     }
 
+    /// Transform.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let indices = selectedIndices.isEmpty ? Array(0..<min(nFeaturesToSelect, data[0].count)) : selectedIndices

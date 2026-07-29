@@ -1,5 +1,3 @@
-Т
-
 # ``SwiftVision``
 
 Computer Vision Framework for Swift on Apple Silicon.

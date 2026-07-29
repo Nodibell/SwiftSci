@@ -3,7 +3,9 @@ import Accelerate
 import SwiftStats
 
 public actor SARIMAModel {
+    /// The order.
     public let order: (p: Int, d: Int, q: Int)
+    /// The seasonal order.
     public let seasonalOrder: (P: Int, D: Int, Q: Int, s: Int)
     
     private var arCoefficients: [Double] = []
@@ -18,6 +20,16 @@ public actor SARIMAModel {
     private var residuals: [Double] = []
     private var isFitted = false
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - p: The p.
+    ///   - d: The d.
+    ///   - q: The q.
+    ///   - P: The p.
+    ///   - D: The d.
+    ///   - Q: The q.
+    ///   - s: The s.
+    /// - Throws: An error if the operation fails.
     public init(p: Int, d: Int, q: Int, P: Int, D: Int, Q: Int, s: Int) throws {
         guard p >= 0 else { throw ForecastError.invalidAROrder(p) }
         guard d >= 0 else { throw ForecastError.invalidDifferencing(d) }
@@ -31,6 +43,10 @@ public actor SARIMAModel {
         self.seasonalOrder = (P, D, Q, s)
     }
     
+    /// Fit.
+    /// - Parameters:
+    ///   - series: The series.
+    /// - Throws: An error if the operation fails.
     public func fit(series: [Double]) throws {
         let n = series.count
         guard n > 0 else { throw ForecastError.emptyTimeSeries }
@@ -177,6 +193,11 @@ public actor SARIMAModel {
         self.isFitted = true
     }
     
+    /// Forecast.
+    /// - Parameters:
+    ///   - steps: The steps.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Double]` result.
     public func forecast(steps: Int) throws -> [Double] {
         guard isFitted else { throw ForecastError.notFitted }
         guard steps > 0 else { return [] }

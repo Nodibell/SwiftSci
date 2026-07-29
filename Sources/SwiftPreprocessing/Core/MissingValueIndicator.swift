@@ -2,15 +2,22 @@ import Foundation
 
 /// MissingValueIndicator generates a binary mask indicating the presence of missing values (NaNs).
 public final class MissingValueIndicator: PreprocessingTransformer, @unchecked Sendable {
+    /// Represents features option.
     public enum FeaturesOption: String, Sendable, Codable {
         case all
         case missingOnly = "missing-only"
     }
     
+    /// The features.
     public let features: FeaturesOption
+    /// The indicator indices.
     public private(set) var indicatorIndices: [Int]?
+    /// The fit feature count.
     public private(set) var fitFeatureCount: Int?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - features: The features.
     public init(features: FeaturesOption = .missingOnly) {
         self.features = features
     }

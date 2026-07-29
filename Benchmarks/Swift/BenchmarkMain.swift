@@ -67,7 +67,7 @@ struct BenchmarkEntryPoint {
             ForecastBenchmarks(),
             LLMBenchmarks(),
             ExplainBenchmarks(),
-            SauraBenchmarks(),
+            ExtensionBenchmarks(),
         ]
 
         var allResults: [BenchmarkResult] = []

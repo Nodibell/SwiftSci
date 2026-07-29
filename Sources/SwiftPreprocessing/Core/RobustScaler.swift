@@ -2,13 +2,23 @@ import Foundation
 
 /// RobustScaler scales features using statistics that are robust to outliers.
 public final class RobustScaler: PreprocessingTransformer, @unchecked Sendable {
+    /// The with centering.
     public let withCentering: Bool
+    /// The with scaling.
     public let withScaling: Bool
+    /// The quantile range.
     public let quantileRange: (Double, Double)
     
+    /// The center.
     public private(set) var center: [Double]?
+    /// The scale.
     public private(set) var scale: [Double]?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - withCentering: The with centering.
+    ///   - withScaling: The with scaling.
+    ///   - quantileRange: The quantile range.
     public init(withCentering: Bool = true, withScaling: Bool = true, quantileRange: (Double, Double) = (25.0, 75.0)) {
         self.withCentering = withCentering
         self.withScaling = withScaling

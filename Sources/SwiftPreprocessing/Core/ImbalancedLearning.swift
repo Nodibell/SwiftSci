@@ -2,8 +2,14 @@ import Foundation
 
 /// Container for resampled dataset features and targets.
 public struct ResampledDataset: Sendable {
+    /// The features.
     public let features: [[Double]]
+    /// The targets.
     public let targets: [Double]
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
     public init(features: [[Double]], targets: [Double]) {
         self.features = features
         self.targets = targets
@@ -12,9 +18,15 @@ public struct ResampledDataset: Sendable {
 
 /// Synthetic Minority Over-sampling Technique (SMOTE) for imbalanced classification datasets.
 public final class SMOTE: Sendable {
+    /// The k neighbors.
     public let kNeighbors: Int
+    /// The seed.
     public let seed: UInt64
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - kNeighbors: The k neighbors.
+    ///   - seed: The seed.
     public init(kNeighbors: Int = 5, seed: UInt64 = 42) {
         self.kNeighbors = max(1, kNeighbors)
         self.seed = seed
@@ -89,12 +101,22 @@ public final class SMOTE: Sendable {
 
 /// Random Undersampler for balancing class distribution by random sub-sampling of majority classes.
 public final class RandomUndersampler: Sendable {
+    /// The seed.
     public let seed: UInt64
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - seed: The seed.
     public init(seed: UInt64 = 42) {
         self.seed = seed
     }
     
+    /// Fit resample.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `ResampledDataset` result.
     public func fitResample(features: [[Double]], targets: [Double]) throws -> ResampledDataset {
         guard !features.isEmpty, features.count == targets.count else {
             throw PreprocessingError.emptyInput

@@ -7,6 +7,7 @@ import SwiftML
 /// best hyperparameter combination via K-Fold Cross-Validation.
 public struct GridSearchCV: Sendable {
 
+    /// Represents result.
     public struct Result: Sendable, Comparable {
         public let maxDepth: Int
         public let criterion: SplitCriterion
@@ -18,11 +19,21 @@ public struct GridSearchCV: Sendable {
         }
     }
 
+    /// The max depth values.
     public let maxDepthValues: [Int]
+    /// The criterion values.
     public let criterionValues: [SplitCriterion]
+    /// The n splits.
     public let nSplits: Int
+    /// The seed.
     public let seed: Int
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - maxDepthValues: The max depth values.
+    ///   - criterionValues: The criterion values.
+    ///   - nSplits: The n splits.
+    ///   - seed: The seed.
     public init(
         maxDepthValues: [Int] = [3, 5, 7, 10],
         criterionValues: [SplitCriterion] = [.gini, .entropy],

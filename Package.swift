@@ -98,7 +98,8 @@ let package = Package(
             dependencies: [
                 "SwiftDataFrame",
                 "SwiftStats",
-                .product(name: "MLX", package: "mlx-swift"),
+                .product(name: "MLX", package: "mlx-swift",
+                         condition: .when(platforms: [.macOS])),
             ],
             path: "Sources/SwiftPreprocessing",
             resources: [
@@ -121,8 +122,10 @@ let package = Package(
             dependencies: [
                 "SwiftDataFrame",
                 "SwiftPreprocessing",
-                .product(name: "MLX", package: "mlx-swift"),
-                .product(name: "MLXNN", package: "mlx-swift"),
+                .product(name: "MLX",   package: "mlx-swift",
+                         condition: .when(platforms: [.macOS])),
+                .product(name: "MLXNN", package: "mlx-swift",
+                         condition: .when(platforms: [.macOS])),
             ],
             path: "Sources/SwiftML",
             resources: [
@@ -146,7 +149,8 @@ let package = Package(
                 "SwiftDataFrame",
                 "SwiftStats",
                 "SwiftPreprocessing",
-                .product(name: "MLX", package: "mlx-swift"),
+                .product(name: "MLX", package: "mlx-swift",
+                         condition: .when(platforms: [.macOS])),
             ],
             path: "Sources/SwiftCluster",
             resources: [
@@ -239,8 +243,10 @@ let package = Package(
             name: "SwiftLLM",
             dependencies: [
                 "SwiftNLP",
-                .product(name: "MLX", package: "mlx-swift"),
-                .product(name: "MLXNN", package: "mlx-swift"),
+                .product(name: "MLX",   package: "mlx-swift",
+                         condition: .when(platforms: [.macOS])),
+                .product(name: "MLXNN", package: "mlx-swift",
+                         condition: .when(platforms: [.macOS])),
             ],
             path: "Sources/SwiftLLM",
             resources: [
@@ -336,7 +342,10 @@ let package = Package(
                 .process("SwiftDatabase.docc")
             ],
             cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            linkerSettings: [
+                .linkedLibrary("sqlite3")
+            ]
         ),
         .testTarget(
             name: "SwiftDatabaseTests",

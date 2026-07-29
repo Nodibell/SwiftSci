@@ -4,6 +4,29 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-07-29
+
+### Fixed
+- **`toFeatureMatrix`**: Bool `nil` values now correctly map to `Double.nan` instead of `0.0`, preventing silent data corruption in ML pipelines.
+- **`withRollingMean`, `withRollingStd`, `withEWMA`**: `nil` values are now propagated correctly instead of being silently replaced with `0.0`.
+- **`withEWMA`**: Replaced `precondition` with a throwing `DataFrameError` for invalid `alpha` values — prevents crashes in production.
+- **`labelEncode`**: Now accepts `Int64` and `Double` columns in addition to `String`, with a clear error message on unsupported types.
+
+### Added
+- **`DataFrame.mapColumn(_:as:transform:)`**: Functional column transformation.
+- **`DataFrameRow` typed subscripts**: `.double(_:)`, `.string(_:)`, `.int(_:)` for ergonomic multi-column filtering.
+- **`GroupedDataFrame.transform(_:)`**: Group-aware aggregation that preserves original DataFrame row count (analogous to pandas `.transform()`).
+- **`HardwareRouter` expansion**: Added hardware routing rules for `DecisionTree`, `RandomForest`, `GradientBoostedTrees`, `MLP`, `IsolationForest`.
+
+### Changed
+- **`MLPClassifier` / `MLPRegressor`**: Weights now stored as flat `LayerWeights` (`[Double]` row-major buffer); forward pass uses `cblas_dgemm` via Accelerate BLAS. `solver: .adam` now implements true Adam with $\beta_1, \beta_2, \epsilon$ parameters and bias-corrected moment estimates. Integrated `HardwareRouter` device resolution (`requestedDevice` / `resolvedDevice`).
+- **`LinearRegression` CPU backend**: Replaced gradient descent with exact OLS via LAPACK `dgels_` — analytical 1-pass solution with fallback to GD.
+- **`Stats.median`**: Now uses Accelerate `vDSP.sort` instead of Swift `.sorted()`, and added `Float` overload.
+- **`Stats.norm(.l1)`**: Now uses Accelerate BLAS `cblas_dasum` instead of `.reduce`.
+- **`DecisionTree` pre-sorting**: Added `createPresortedIndices(X:)` and $O(N)$ filtering in `bestSplit` to avoid $O(N \log N)$ sorting at every node in `DecisionTree`, `RandomForest`, and `GradientBoosting`.
+
+---
+
 ## [2.1.0] - 2026-07-24
 
 ### Added

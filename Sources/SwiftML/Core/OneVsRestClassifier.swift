@@ -2,9 +2,13 @@ import Foundation
 
 /// Multi-class One-Vs-Rest classification wrapper.
 public actor OneVsRestClassifier: Sendable {
+    /// The num classes.
     public let numClasses: Int
     private var estimators: [LogisticRegression] = []
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - numClasses: The num classes.
     public init(numClasses: Int) {
         self.numClasses = numClasses
     }

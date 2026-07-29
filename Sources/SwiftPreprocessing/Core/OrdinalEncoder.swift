@@ -2,9 +2,14 @@ import Foundation
 
 /// OrdinalEncoder encodes 2D categorical features (strings) as integer ordinals (Double).
 public final class OrdinalEncoder: @unchecked Sendable {
+    /// The categories.
     public private(set) var categories: [[String]] = []
+    /// The unknown value.
     public let unknownValue: Double?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - unknownValue: The unknown value.
     public init(unknownValue: Double? = nil) {
         self.unknownValue = unknownValue
     }

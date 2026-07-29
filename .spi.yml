@@ -3,8 +3,6 @@ builder:
   configs:
     - platform_compatibility:
         - macos
-        - ios
-        - visionos
       documentation_targets:
         - SwiftDataFrame
         - SwiftStats
@@ -20,3 +18,13 @@ builder:
         - SwiftVision
         - SwiftDatabase
         - SwiftAgent
+    - platform_compatibility:
+        - ios
+        - visionos
+      documentation_targets:
+        - SwiftDataFrame
+        - SwiftStats
+        - SwiftNLP
+        - SwiftForecast
+        - SwiftVisualization
+        - SwiftDatabase

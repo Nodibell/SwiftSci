@@ -3,13 +3,23 @@ import SwiftPreprocessing
 
 /// DBSCAN (Density-Based Spatial Clustering of Applications with Noise) clustering on CPU.
 public actor DBSCAN {
+    /// The eps.
     public let eps: Double
+    /// The min samples.
     public let minSamples: Int
+    /// The requested device.
     public let requestedDevice: ExecutionDevice
     
+    /// The resolved device.
     public private(set) var resolvedDevice: ExecutionDevice?
+    /// The labels.
     public private(set) var labels: [Int]?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - eps: The eps.
+    ///   - minSamples: The min samples.
+    ///   - device: The device.
     public init(eps: Double = 0.5, minSamples: Int = 5, device: ExecutionDevice = .cpu) {
         self.eps = eps
         self.minSamples = minSamples

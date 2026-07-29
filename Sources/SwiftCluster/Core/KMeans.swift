@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import Accelerate
 import MLX
@@ -7,11 +8,19 @@ private struct SendablePointer<T>: @unchecked Sendable {
     let pointer: UnsafeMutablePointer<T>
 }
 
+private struct SendableBufferPointer<T>: @unchecked Sendable {
+    let pointer: UnsafeBufferPointer<T>
+}
+
 /// K-Means clustering with CPU (vDSP) and GPU (MLX) backends via hardware routing.
 public actor KMeans {
+    /// The n clusters.
     public let nClusters: Int
+    /// The max iterations.
     public let maxIterations: Int
+    /// The tolerance.
     public let tolerance: Float
+    /// The requested device.
     public let requestedDevice: ExecutionDevice
 
     /// Device actually used for the last `fit` (after `.auto` resolution).
@@ -23,8 +32,17 @@ public actor KMeans {
     /// CPU-side centroid matrix (source of truth after a CPU fit).
     private var cpuCentroids: [[Double]]?
 
+    /// The seed.
     public let seed: Int
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nClusters: The n clusters.
+    ///   - maxIterations: The max iterations.
+    ///   - tolerance: The tolerance.
+    ///   - seed: The seed.
+    ///   - device: The device.
+    /// - Throws: An error if the operation fails.
     public init(
         nClusters: Int,
         maxIterations: Int = 300,
@@ -131,6 +149,11 @@ public actor KMeans {
         cpuCentroids = getCentroids()
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) throws -> [Int] {
         guard !features.isEmpty else { return [] }
         if let cpuCentroids, resolvedDevice == .cpu {
@@ -144,6 +167,11 @@ public actor KMeans {
         return labels.asArray(Int32.self).map { Int($0) }
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - X: The x.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `MLXArray` result.
     public func predict(X: MLXArray) throws -> MLXArray {
         guard let centroids = self.centroids else {
             throw ClusterError.fittingRequired
@@ -163,6 +191,8 @@ public actor KMeans {
         return argMin(dists, axis: -1)
     }
 
+    /// Get centroids.
+    /// - Returns: A `[[Double]]?` result.
     public func getCentroids() -> [[Double]]? {
         if let cpuCentroids { return cpuCentroids }
         guard let centroids = centroids else { return nil }
@@ -222,24 +252,36 @@ public actor KMeans {
     private func fitCPU(features: [[Double]]) throws {
         let n = features.count
         let m = features[0].count
-        var centroidsLocal = kmeansPlusPlusInitCPU(features: features, nClusters: nClusters, seed: seed)
 
+        // Flatten [[Double]] → [Double] row-major to eliminate per-row heap dereferences
+        var flat = [Double](repeating: 0.0, count: n * m)
+        for i in 0..<n {
+            for j in 0..<m {
+                flat[i * m + j] = features[i][j]
+            }
+        }
+
+        var centroidsLocal = kmeansPlusPlusInitCPU(features: features, nClusters: nClusters, seed: seed)
         var labels = [Int](repeating: 0, count: n)
         let tol = Double(tolerance)
 
         for _ in 0..<maxIterations {
-            // Assign labels (chunked parallel over points to avoid GCD scheduling overhead)
+            // Assign labels using flat buffer — no per-row pointer dereference
             let cents = centroidsLocal
             let chunkSize = 512
             let numChunks = (n + chunkSize - 1) / chunkSize
             labels.withUnsafeMutableBufferPointer { buf in
                 guard let base = buf.baseAddress else { return }
                 let sendableBase = SendablePointer(pointer: base)
-                DispatchQueue.concurrentPerform(iterations: numChunks) { chunkIdx in
-                    let start = chunkIdx * chunkSize
-                    let end = min(start + chunkSize, n)
-                    for i in start..<end {
-                        sendableBase.pointer[i] = Self.nearestCentroid(point: features[i], centroids: cents)
+                flat.withUnsafeBufferPointer { flatBuf in
+                    let sendableFlat = SendableBufferPointer(pointer: flatBuf)
+                    DispatchQueue.concurrentPerform(iterations: numChunks) { chunkIdx in
+                        let start = chunkIdx * chunkSize
+                        let end = min(start + chunkSize, n)
+                        for i in start..<end {
+                            let row = UnsafeBufferPointer(start: sendableFlat.pointer.baseAddress! + i * m, count: m)
+                            sendableBase.pointer[i] = Self.nearestCentroidFlat(row: row, centroids: cents)
+                        }
                     }
                 }
             }
@@ -250,7 +292,9 @@ public actor KMeans {
             for i in 0..<n {
                 let k = labels[i]
                 counts[k] += 1
-                vDSP_vaddD(sums[k], 1, features[i], 1, &sums[k], 1, vDSP_Length(m))
+                flat.withUnsafeBufferPointer { flatBuf in
+                    vDSP_vaddD(flatBuf.baseAddress! + i * m, 1, sums[k], 1, &sums[k], 1, vDSP_Length(m))
+                }
             }
 
             var newCentroids = centroidsLocal
@@ -273,21 +317,47 @@ public actor KMeans {
 
     private func predictCPU(features: [[Double]], centroids: [[Double]]) -> [Int] {
         let n = features.count
+        let m = features[0].count
+
+        var flat = [Double](repeating: 0.0, count: n * m)
+        for i in 0..<n {
+            for j in 0..<m {
+                flat[i * m + j] = features[i][j]
+            }
+        }
+
         var labels = [Int](repeating: 0, count: n)
         let chunkSize = 512
         let numChunks = (n + chunkSize - 1) / chunkSize
         labels.withUnsafeMutableBufferPointer { buf in
             guard let base = buf.baseAddress else { return }
             let sendableBase = SendablePointer(pointer: base)
-            DispatchQueue.concurrentPerform(iterations: numChunks) { chunkIdx in
-                let start = chunkIdx * chunkSize
-                let end = min(start + chunkSize, n)
-                for i in start..<end {
-                    sendableBase.pointer[i] = Self.nearestCentroid(point: features[i], centroids: centroids)
+            flat.withUnsafeBufferPointer { flatBuf in
+                let sendableFlat = SendableBufferPointer(pointer: flatBuf)
+                DispatchQueue.concurrentPerform(iterations: numChunks) { chunkIdx in
+                    let start = chunkIdx * chunkSize
+                    let end = min(start + chunkSize, n)
+                    for i in start..<end {
+                        let row = UnsafeBufferPointer(start: sendableFlat.pointer.baseAddress! + i * m, count: m)
+                        sendableBase.pointer[i] = Self.nearestCentroidFlat(row: row, centroids: centroids)
+                    }
                 }
             }
         }
         return labels
+    }
+
+    private static func nearestCentroidFlat(row: UnsafeBufferPointer<Double>, centroids: [[Double]]) -> Int {
+        var best = 0
+        var bestDist = Double.greatestFiniteMagnitude
+        for (k, c) in centroids.enumerated() {
+            let d = distanceSquaredFlat(row: row, centroid: c)
+            if d < bestDist {
+                bestDist = d
+                best = k
+            }
+        }
+        return best
     }
 
     private static func nearestCentroid(point: [Double], centroids: [[Double]]) -> Int {
@@ -301,6 +371,28 @@ public actor KMeans {
             }
         }
         return best
+    }
+
+    private static func distanceSquaredFlat(row: UnsafeBufferPointer<Double>, centroid: [Double]) -> Double {
+        let count = centroid.count
+        if count == 4 {
+            let d0 = row[0] - centroid[0]
+            let d1 = row[1] - centroid[1]
+            let d2 = row[2] - centroid[2]
+            let d3 = row[3] - centroid[3]
+            return d0*d0 + d1*d1 + d2*d2 + d3*d3
+        }
+        if count <= 16 {
+            var sum = 0.0
+            for i in 0..<count {
+                let diff = row[i] - centroid[i]
+                sum += diff * diff
+            }
+            return sum
+        }
+        var dist = 0.0
+        vDSP_distancesqD(row.baseAddress!, 1, centroid, 1, &dist, vDSP_Length(count))
+        return dist
     }
 
     private static func distanceSquared(_ a: [Double], _ b: [Double]) -> Double {
@@ -372,3 +464,4 @@ public actor KMeans {
         return sampledCentroids
     }
 }
+#endif // os(macOS)

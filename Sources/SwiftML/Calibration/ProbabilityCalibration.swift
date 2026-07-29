@@ -5,12 +5,22 @@ import Foundation
 /// Calibrates uncalibrated raw scores / logits into probabilities using sigmoid (Platt) scaling.
 /// Fits parameters A and B in P(y=1|f) = 1 / (1 + exp(A * f + B)) via logistic OLS/Newton optimization.
 public final class PlattScaling: @unchecked Sendable {
+    /// The a.
     public private(set) var a: Double = -1.0
+    /// The b.
     public private(set) var b: Double = 0.0
+    /// is fitted.
     public private(set) var isFitted: Bool = false
 
+    /// Creates a new instance.
     public init() {}
 
+    /// Fit.
+    /// - Parameters:
+    ///   - scores: The scores.
+    ///   - targets: The targets.
+    ///   - maxIterations: The max iterations.
+    ///   - lr: The lr.
     public func fit(scores: [Double], targets: [Int], maxIterations: Int = 100, lr: Double = 0.05) {
         guard !scores.isEmpty, scores.count == targets.count else { return }
 
@@ -40,12 +50,20 @@ public final class PlattScaling: @unchecked Sendable {
         self.isFitted = true
     }
 
+    /// Predict probability.
+    /// - Parameters:
+    ///   - score: The score.
+    /// - Returns: A `Double` result.
     public func predictProbability(score: Double) -> Double {
         guard isFitted else { return 1.0 / (1.0 + exp(-score)) }
         let logit = a * score + b
         return 1.0 / (1.0 + exp(-logit))
     }
 
+    /// Predict probabilities.
+    /// - Parameters:
+    ///   - scores: The scores.
+    /// - Returns: A `[Double]` result.
     public func predictProbabilities(scores: [Double]) -> [Double] {
         return scores.map { predictProbability(score: $0) }
     }
@@ -57,10 +75,16 @@ public final class PlattScaling: @unchecked Sendable {
 public final class IsotonicRegression: @unchecked Sendable {
     private var thresholds: [Double] = []
     private var probabilities: [Double] = []
+    /// is fitted.
     public private(set) var isFitted: Bool = false
 
+    /// Creates a new instance.
     public init() {}
 
+    /// Fit.
+    /// - Parameters:
+    ///   - scores: The scores.
+    ///   - targets: The targets.
     public func fit(scores: [Double], targets: [Int]) {
         guard !scores.isEmpty, scores.count == targets.count else { return }
 
@@ -93,6 +117,10 @@ public final class IsotonicRegression: @unchecked Sendable {
         self.isFitted = true
     }
 
+    /// Predict probability.
+    /// - Parameters:
+    ///   - score: The score.
+    /// - Returns: A `Double` result.
     public func predictProbability(score: Double) -> Double {
         guard isFitted, !thresholds.isEmpty else { return 0.5 }
         if score <= thresholds[0] { return probabilities[0] }
@@ -113,6 +141,10 @@ public final class IsotonicRegression: @unchecked Sendable {
         return probabilities.last ?? 0.5
     }
 
+    /// Predict probabilities.
+    /// - Parameters:
+    ///   - scores: The scores.
+    /// - Returns: A `[Double]` result.
     public func predictProbabilities(scores: [Double]) -> [Double] {
         return scores.map { predictProbability(score: $0) }
     }

@@ -2,22 +2,33 @@ import Foundation
 
 /// KBinsDiscretizer bins continuous data into intervals.
 public final class KBinsDiscretizer: PreprocessingTransformer, @unchecked Sendable {
+    /// Represents strategy.
     public enum Strategy: String, Sendable, Codable {
         case uniform
         case quantile
     }
     
+    /// Represents encode.
     public enum Encode: String, Sendable, Codable {
         case ordinal
         case oneHot = "onehot"
     }
     
+    /// The n bins.
     public let nBins: Int
+    /// The strategy.
     public let strategy: Strategy
+    /// The encode.
     public let encode: Encode
     
+    /// The bin edges.
     public private(set) var binEdges: [[Double]]?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nBins: The n bins.
+    ///   - strategy: The strategy.
+    ///   - encode: The encode.
     public init(nBins: Int = 5, strategy: Strategy = .uniform, encode: Encode = .ordinal) {
         self.nBins = nBins
         self.strategy = strategy

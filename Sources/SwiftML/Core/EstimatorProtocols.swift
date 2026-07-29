@@ -3,10 +3,18 @@ import Foundation
 
 /// Standardized output structure for model predictions.
 public struct PredictionResult: Sendable, Codable {
+    /// The values.
     public let values: [Double]
+    /// The probabilities.
     public let probabilities: [[Double]]?
+    /// The labels.
     public let labels: [String]?
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - values: The values.
+    ///   - probabilities: The probabilities.
+    ///   - labels: The labels.
     public init(values: [Double], probabilities: [[Double]]? = nil, labels: [String]? = nil) {
         self.values = values
         self.probabilities = probabilities
@@ -16,9 +24,15 @@ public struct PredictionResult: Sendable, Codable {
 
 /// Standardized evaluation metrics report.
 public struct EvaluationReport: Sendable, Codable {
+    /// The metrics.
     public let metrics: [String: Double]
+    /// The confusion matrix.
     public let confusionMatrix: [[Int]]?
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - metrics: The metrics.
+    ///   - confusionMatrix: The confusion matrix.
     public init(metrics: [String: Double], confusionMatrix: [[Int]]? = nil) {
         self.metrics = metrics
         self.confusionMatrix = confusionMatrix
@@ -27,10 +41,18 @@ public struct EvaluationReport: Sendable, Codable {
 
 /// Feature schema description.
 public struct FeatureSchema: Sendable, Codable {
+    /// The columns.
     public let columns: [String]
+    /// The types.
     public let types: [String]
+    /// The target column.
     public let targetColumn: String?
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - columns: The columns.
+    ///   - types: The types.
+    ///   - targetColumn: The target column.
     public init(columns: [String], types: [String], targetColumn: String? = nil) {
         self.columns = columns
         self.types = types

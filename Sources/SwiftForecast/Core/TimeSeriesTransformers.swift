@@ -3,8 +3,12 @@ import SwiftStats
 
 /// LagTransformer constructs lagged feature columns for time-series supervised learning.
 public final class LagTransformer: Sendable {
+    /// The lags.
     public let lags: [Int]
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - lags: The lags.
     public init(lags: [Int]) {
         self.lags = lags.filter { $0 > 0 }.sorted()
     }
@@ -34,8 +38,12 @@ public final class LagTransformer: Sendable {
 
 /// RollingWindow computes sliding rolling window statistics (mean and std dev) over a time series.
 public final class RollingWindow: Sendable {
+    /// The window size.
     public let windowSize: Int
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - windowSize: The window size.
     public init(windowSize: Int) {
         self.windowSize = max(1, windowSize)
     }
@@ -70,8 +78,12 @@ public final class RollingWindow: Sendable {
 
 /// ExpandingWindow computes cumulative expanding statistics (expanding mean and expanding std dev) over a time series.
 public final class ExpandingWindow: Sendable {
+    /// The min periods.
     public let minPeriods: Int
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - minPeriods: The min periods.
     public init(minPeriods: Int = 1) {
         self.minPeriods = max(1, minPeriods)
     }

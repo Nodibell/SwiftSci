@@ -2,6 +2,7 @@ import Foundation
 
 /// Imputer fills missing values (represented by `Double.nan`) using a specified strategy.
 public final class Imputer: PreprocessingTransformer, @unchecked Sendable {
+    /// Represents strategy.
     public enum Strategy: Sendable, Equatable {
         case mean
         case median
@@ -9,9 +10,14 @@ public final class Imputer: PreprocessingTransformer, @unchecked Sendable {
         case constant(Double)
     }
     
+    /// The strategy.
     public let strategy: Strategy
+    /// The statistics.
     public private(set) var statistics: [Double]?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - strategy: The strategy.
     public init(strategy: Strategy = .mean) {
         self.strategy = strategy
     }

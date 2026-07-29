@@ -5,15 +5,26 @@ import Foundation
 /// A native Swift GBDT Regressor using Flat Arrays (DOD).
 /// Sequentially trains shallow regression trees on the residuals (pseudo-gradients) of the previous ensemble.
 public actor GradientBoostedTreesRegressor: RegressorEstimator {
+    /// The n estimators.
     public let nEstimators: Int
+    /// The learning rate.
     public let learningRate: Double
+    /// The max depth.
     public let maxDepth: Int
+    /// The min samples split.
     public let minSamplesSplit: Int
     
     // Forest stored as an array of flat tree node arrays (Data-Oriented Design)
     private var trees: [[FlatTreeNode]] = []
     private var initialPrediction: Double = 0.0
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nEstimators: The n estimators.
+    ///   - learningRate: The learning rate.
+    ///   - maxDepth: The max depth.
+    ///   - minSamplesSplit: The min samples split.
+    /// - Throws: An error if the operation fails.
     public init(
         nEstimators: Int = 100,
         learningRate: Double = 0.1,
@@ -42,6 +53,8 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         var trainedTrees = [[FlatTreeNode]]()
         trainedTrees.reserveCapacity(nEstimators)
         
+        let presorted = createPresortedIndices(X: features)
+        
         for _ in 0..<nEstimators {
             let residuals = zip(targets, currentPredictions).map { $0 - $1 }
             
@@ -50,6 +63,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
                 X: features,
                 y: residuals,
                 indices: Array(0..<n),
+                presortedIndices: presorted,
                 depth: 0,
                 maxDepth: maxDepth,
                 minSamplesSplit: minSamplesSplit,
@@ -73,12 +87,31 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         
         let lr = learningRate
         let base = initialPrediction
-        return features.map { sample in
-            var pred = base
-            for treeNodes in trees {
-                pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
+        let count = features.count
+        
+        if count >= 1000 {
+            var results = [Double](repeating: base, count: count)
+            let localTrees = trees
+            results.withUnsafeMutableBufferPointer { buf in
+                guard let ptr = buf.baseAddress else { return }
+                DispatchQueue.concurrentPerform(iterations: count) { i in
+                    let sample = features[i]
+                    var pred = base
+                    for treeNodes in localTrees {
+                        pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
+                    }
+                    ptr[i] = pred
+                }
             }
-            return pred
+            return results
+        } else {
+            return features.map { sample in
+                var pred = base
+                for treeNodes in trees {
+                    pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
+                }
+                return pred
+            }
         }
     }
     
@@ -88,6 +121,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         X: [[Double]],
         y: [Double],
         indices: [Int],
+        presortedIndices: [[Int]],
         depth: Int,
         maxDepth: Int,
         minSamplesSplit: Int,
@@ -102,7 +136,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
             return nodes.count - 1
         }
         
-        guard let split = bestSplit(X: X, y: y, indices: indices, criterion: .mse, maxFeatures: nil) else {
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: nil) else {
             let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true)
             nodes.append(leaf)
             return nodes.count - 1
@@ -111,9 +145,9 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         let currentIndex = nodes.count
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
         
-        let left = buildTree(X: X, y: y, indices: split.leftIndices, depth: depth + 1,
+        let left = buildTree(X: X, y: y, indices: split.leftIndices, presortedIndices: presortedIndices, depth: depth + 1,
                              maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, nodes: &nodes)
-        let right = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1,
+        let right = buildTree(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1,
                               maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, nodes: &nodes)
         
         nodes[currentIndex] = FlatTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, leftChild: left, rightChild: right, value: mean, isLeaf: false)

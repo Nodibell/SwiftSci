@@ -2,9 +2,15 @@ import Foundation
 
 /// Utilities for standard text normalization.
 public struct TextNormalizer: Sendable {
+    /// The lowercase.
     public var lowercase: Bool
+    /// The remove punctuation.
     public var removePunctuation: Bool
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - lowercase: The lowercase.
+    ///   - removePunctuation: The remove punctuation.
     public init(lowercase: Bool = true, removePunctuation: Bool = true) {
         self.lowercase = lowercase
         self.removePunctuation = removePunctuation

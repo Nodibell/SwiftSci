@@ -2,19 +2,32 @@
 
 /// Summary statistics for a numeric array.
 public struct DescriptiveStats: Sendable, CustomStringConvertible {
+    /// The count.
     public let count: Int
+    /// The mean.
     public let mean: Double
+    /// The standard deviation.
     public let standardDeviation: Double
+    /// The variance.
     public let variance: Double
+    /// The min.
     public let min: Double
+    /// The q1.
     public let q1: Double       // 25th percentile
+    /// The median.
     public let median: Double
+    /// The q3.
     public let q3: Double       // 75th percentile
+    /// The max.
     public let max: Double
+    /// The skewness.
     public let skewness: Double
+    /// The kurtosis.
     public let kurtosis: Double
+    /// The null count.
     public let nullCount: Int
 
+    /// The description.
     public var description: String {
         """
         count   \(count)
@@ -50,6 +63,7 @@ public struct TTestResult: Sendable, CustomStringConvertible {
     /// Whether the result is significant at α = 0.05.
     public var isSignificant: Bool { pValue < 0.05 }
 
+    /// The description.
     public var description: String {
         "t(\(String(format: "%.2f", degreesOfFreedom))) = \(String(format: "%.4f", statistic)), p = \(String(format: "%.4f", pValue)), d = \(String(format: "%.4f", effectSize))"
     }
@@ -68,8 +82,10 @@ public struct ANOVAResult: Sendable, CustomStringConvertible {
     /// η² (eta-squared) effect size.
     public let etaSquared: Double
 
+    /// is significant.
     public var isSignificant: Bool { pValue < 0.05 }
 
+    /// The description.
     public var description: String {
         "F(\(dfBetween), \(dfWithin)) = \(String(format: "%.4f", fStatistic)), p = \(String(format: "%.4f", pValue)), η² = \(String(format: "%.4f", etaSquared))"
     }
@@ -77,12 +93,17 @@ public struct ANOVAResult: Sendable, CustomStringConvertible {
 
 /// Result of a chi-square goodness-of-fit test.
 public struct ChiSquareResult: Sendable, CustomStringConvertible {
+    /// The statistic.
     public let statistic: Double
+    /// The p value.
     public let pValue: Double
+    /// The degrees of freedom.
     public let degreesOfFreedom: Int
 
+    /// is significant.
     public var isSignificant: Bool { pValue < 0.05 }
 
+    /// The description.
     public var description: String {
         "χ²(\(degreesOfFreedom)) = \(String(format: "%.4f", statistic)), p = \(String(format: "%.4f", pValue))"
     }
@@ -90,11 +111,14 @@ public struct ChiSquareResult: Sendable, CustomStringConvertible {
 
 /// Result of a normality test (Shapiro-Wilk or KS).
 public struct NormalityTestResult: Sendable, CustomStringConvertible {
+    /// The statistic.
     public let statistic: Double
+    /// The p value.
     public let pValue: Double
     /// True if p ≥ 0.05 (fail to reject normality at α = 0.05).
     public var isNormal: Bool { pValue >= 0.05 }
 
+    /// The description.
     public var description: String {
         "W = \(String(format: "%.4f", statistic)), p = \(String(format: "%.4f", pValue)) → \(isNormal ? "normal" : "not normal")"
     }
@@ -104,10 +128,14 @@ public struct NormalityTestResult: Sendable, CustomStringConvertible {
 
 /// A symmetric confidence interval.
 public struct ConfidenceInterval: Sendable, CustomStringConvertible {
+    /// The lower.
     public let lower: Double
+    /// The upper.
     public let upper: Double
+    /// The confidence.
     public let confidence: Double // e.g. 0.95
 
+    /// The description.
     public var description: String {
         "[\(String(format: "%.4f", lower)), \(String(format: "%.4f", upper))]"
     }

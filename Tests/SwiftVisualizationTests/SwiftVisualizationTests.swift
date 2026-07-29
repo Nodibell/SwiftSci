@@ -1,4 +1,5 @@
 import Testing
+import SwiftDataFrame
 @testable import SwiftVisualization
 
 @Suite("SwiftVisualization Tests")
@@ -22,5 +23,13 @@ struct SwiftVisualizationTests {
         
         let cmHTML = ChartExporter.plotConfusionMatrix(matrix: [[10, 2], [1, 15]], labels: ["Class 0", "Class 1"])
         #expect(cmHTML.contains("Confusion Matrix"))
+    }
+
+    @Test("ChartExporter computes real AUC for perfect ROC classifier")
+    func testROCAUCComputation() {
+        let yTrue = [1, 1, 0, 0]
+        let yScores = [0.9, 0.8, 0.2, 0.1]
+        let html = ChartExporter.plotROCCurve(yTrue: yTrue, yScores: yScores)
+        #expect(html.contains("AUC = 1.0000"))
     }
 }

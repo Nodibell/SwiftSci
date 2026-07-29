@@ -1,28 +1,44 @@
+#if os(macOS)
 import Foundation
+import Accelerate
 import MLX
 import SwiftPreprocessing
 
-/// Ordinary Least Squares linear regression using gradient descent.
+/// Ordinary Least Squares linear regression using LAPACK analytical OLS or gradient descent.
 public actor LinearRegression: RegressorEstimator {
+    /// The weights.
     public private(set) var weights: MLXArray?
+    /// The bias.
     public private(set) var bias: MLXArray?
     
+    /// The requested device.
     public let requestedDevice: ExecutionDevice
+    /// The resolved device.
     public private(set) var resolvedDevice: ExecutionDevice?
     
     private var cpuWeights: [Double]?
     private var cpuBias: Double?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - device: The device.
     public init(device: ExecutionDevice = .auto) {
         self.requestedDevice = device
     }
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - weights: The weights.
+    ///   - bias: The bias.
+    ///   - device: The device.
     public init(weights: [Double], bias: Double, device: ExecutionDevice = .auto) {
         self.requestedDevice = device
         self.cpuWeights = weights
         self.cpuBias = bias
     }
 
+    /// Get weights and bias.
+    /// - Returns: A `(weights: [Double]?, bias: Double?)` result.
     public func getWeightsAndBias() -> (weights: [Double]?, bias: Double?) {
         return (cpuWeights, cpuBias)
     }
@@ -66,9 +82,82 @@ public actor LinearRegression: RegressorEstimator {
         }
     }
     
-    // MARK: - CPU Backend
+    // MARK: - CPU Backend (LAPACK OLS & Fallback GD)
     
     private func fitCPU(features: [[Double]], targets: [Double], learningRate lr: Double, epochs: Int) throws {
+        do {
+            try fitCPUAnalytical(features: features, targets: targets)
+        } catch {
+            try fitCPUGradientDescent(features: features, targets: targets, learningRate: lr, epochs: epochs)
+        }
+    }
+
+    /// Analytical OLS linear regression solver using LAPACK dgels_.
+    private func fitCPUAnalytical(features: [[Double]], targets: [Double]) throws {
+        let numSamples = features.count
+        let numFeatures = features[0].count
+        let cols = numFeatures + 1
+        let rows = numSamples
+
+        guard rows >= cols else {
+            throw MLError.trainingFailed("OLS requires numSamples >= numFeatures + 1.")
+        }
+
+        var trans = Int8(78) // 'N'
+        var r = Int32(rows)
+        var c = Int32(cols)
+        var nrhs = Int32(1)
+        var ldb = Int32(max(rows, cols))
+        var info = Int32(0)
+
+        // Column-major matrix A (features + 1.0 bias column)
+        var AColMajor = [Double](repeating: 0.0, count: rows * cols)
+        for row in 0..<rows {
+            for col in 0..<numFeatures {
+                AColMajor[col * rows + row] = features[row][col]
+            }
+            AColMajor[numFeatures * rows + row] = 1.0
+        }
+
+        var bVec = [Double](repeating: 0.0, count: Int(ldb))
+        for i in 0..<rows {
+            bVec[i] = targets[i]
+        }
+
+        var lwork = Int32(-1)
+        var workQuery = [Double](repeating: 0.0, count: 1)
+        var lda = r
+        dgels_(&trans, &r, &c, &nrhs, &AColMajor, &lda, &bVec, &ldb, &workQuery, &lwork, &info)
+
+        guard info == 0 else {
+            throw MLError.trainingFailed("LAPACK dgels_ workspace query failed.")
+        }
+
+        lwork = Int32(workQuery[0])
+        var work = [Double](repeating: 0.0, count: Int(lwork))
+        dgels_(&trans, &r, &c, &nrhs, &AColMajor, &lda, &bVec, &ldb, &work, &lwork, &info)
+
+        guard info == 0 else {
+            throw MLError.trainingFailed("LAPACK dgels_ solve failed with info = \(info)")
+        }
+
+        let w = Array(bVec[0..<numFeatures])
+        let b = bVec[numFeatures]
+
+        if b.isNaN || b.isInfinite || w.contains(where: { $0.isNaN || $0.isInfinite }) {
+            throw MLError.trainingFailed("OLS solution contains NaN or Infinity.")
+        }
+
+        self.cpuWeights = w
+        self.cpuBias = b
+
+        // Sync to MLXArray variables for public API compatibility
+        self.weights = MLXArray(w.map { Float($0) }).reshaped([numFeatures, 1])
+        self.bias = MLXArray([Float(b)])
+    }
+
+    /// Explicit Gradient Descent CPU backend.
+    public func fitCPUGradientDescent(features: [[Double]], targets: [Double], learningRate lr: Double = 0.01, epochs: Int = 1000) throws {
         let numSamples = features.count
         let numFeatures = features[0].count
         
@@ -238,3 +327,4 @@ public actor LinearRegression: RegressorEstimator {
         return nil
     }
 }
+#endif // os(macOS)

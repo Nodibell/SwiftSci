@@ -13,6 +13,7 @@ public struct DataFrame: Sendable {
 
     // MARK: – Static helpers
 
+    /// The empty.
     public static let empty = DataFrame(_columns: [:], _columnOrder: [])
 
     private init(_columns: [String: any AnyColumn], _columnOrder: [String]) {
@@ -117,15 +118,19 @@ public struct DataFrame: Sendable {
 
     // MARK: – Metadata
 
+    /// The shape.
     public var shape: (rows: Int, columns: Int) {
         (rows: _columns.first.map { $0.value.count } ?? 0,
          columns: _columnOrder.count)
     }
 
+    /// The row count.
     public var rowCount: Int { shape.rows }
 
+    /// The column names.
     public var columnNames: [String] { _columnOrder }
 
+    /// The dtypes.
     public var dtypes: [String: ColumnDType] {
         _columns.mapValues { $0.dtype }
     }
@@ -135,6 +140,8 @@ public struct DataFrame: Sendable {
         _columnOrder.compactMap { _columns[$0] }
     }
 
+    /// Schema.
+    /// - Returns: A `Schema` result.
     public func schema() -> Schema {
         Schema(fields: columns.map { col in
             Schema.Field(name: col.name, dtype: col.dtype, nullable: col.nullCount > 0)
@@ -143,10 +150,12 @@ public struct DataFrame: Sendable {
 
     // MARK: – Subscript access
 
+    /// Accesses the element at the given index.
     public subscript(column name: String) -> (any AnyColumn)? {
         _columns[name]
     }
 
+    /// Accesses the element at the given index.
     public subscript<T: SupportedType>(column name: String, as type: T.Type) -> TypedColumn<T>? {
         _columns[name] as? TypedColumn<T>
     }
@@ -166,6 +175,9 @@ public struct DataFrame: Sendable {
         try selectArray(names)
     }
 
+    /// Select.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `DataFrame` result.
     public func select(_ names: [String]) throws -> DataFrame {
         try selectArray(names)
     }
@@ -186,6 +198,9 @@ public struct DataFrame: Sendable {
         try dropArray(names)
     }
 
+    /// Drop.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `DataFrame` result.
     public func drop(_ names: [String]) throws -> DataFrame {
         try dropArray(names)
     }
@@ -260,8 +275,9 @@ public struct DataFrame: Sendable {
         let map = _columns
         let names = columnNames
         var mask = [Bool](repeating: false, count: shape.rows)
+        var row = DataFrameRow(columnNames: names, index: 0, columnMap: map)
         for i in 0..<shape.rows {
-            let row = DataFrameRow(columnNames: names, index: i, columnMap: map)
+            row.index = i
             mask[i] = predicate(row)
         }
         return applyMask(mask)
@@ -435,13 +451,31 @@ public struct DataFrame: Sendable {
         return gathered(at: indices)
     }
 
+    /// Gathered.
+    /// - Returns: A `DataFrame` result.
     public func gathered(at indices: [Int]) -> DataFrame {
         guard !indices.isEmpty else { return DataFrame.empty }
-        let newCols: [any AnyColumn] = columns.map { $0.gathered(at: indices) }
-        do {
-            return try DataFrame(columns: newCols)
-        } catch {
-            preconditionFailure("Failed to gather rows for indices: \(error)")
+        let numCols = columns.count
+        if numCols >= 4 && indices.count >= 10_000 {
+            // Each iteration writes to a unique index — no data race.
+            var newCols: [(any AnyColumn)?] = Array(repeating: nil, count: numCols)
+            newCols.withUnsafeMutableBufferPointer { buf in
+                DispatchQueue.concurrentPerform(iterations: numCols) { colIdx in
+                    buf[colIdx] = self.columns[colIdx].gathered(at: indices)
+                }
+            }
+            do {
+                return try DataFrame(columns: newCols.compactMap { $0 })
+            } catch {
+                preconditionFailure("Failed to gather rows concurrently: \(error)")
+            }
+        } else {
+            let newCols: [any AnyColumn] = columns.map { $0.gathered(at: indices) }
+            do {
+                return try DataFrame(columns: newCols)
+            } catch {
+                preconditionFailure("Failed to gather rows for indices: \(error)")
+            }
         }
     }
 
@@ -453,6 +487,19 @@ public struct DataFrame: Sendable {
         }
         guard !indices.isEmpty else { return DataFrame.empty }
         return gathered(at: indices)
+    }
+
+    /// Transforms values of a typed column functional-style, returning a new DataFrame.
+    public func mapColumn<T: SupportedType>(
+        _ name: String,
+        as type: T.Type = T.self,
+        transform: (T?) -> T?
+    ) throws -> DataFrame {
+        guard let col = _columns[name] as? TypedColumn<T> else {
+            throw DataFrameError.columnNotFound(name)
+        }
+        let newValues = col.values.map { transform($0) }
+        return try withColumn(name, column: TypedColumn<T>(name: name, values: newValues))
     }
 }
 

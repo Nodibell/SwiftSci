@@ -3,13 +3,27 @@ import Accelerate
 
 /// Bounding box representation for object detection.
 public struct BoundingBox: Sendable, Codable, Equatable {
+    /// The x min.
     public let xMin: Double
+    /// The y min.
     public let yMin: Double
+    /// The x max.
     public let xMax: Double
+    /// The y max.
     public let yMax: Double
+    /// The confidence.
     public let confidence: Double
+    /// The class label.
     public let classLabel: String
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - xMin: The x min.
+    ///   - yMin: The y min.
+    ///   - xMax: The x max.
+    ///   - yMax: The y max.
+    ///   - confidence: The confidence.
+    ///   - classLabel: The class label.
     public init(xMin: Double, yMin: Double, xMax: Double, yMax: Double, confidence: Double, classLabel: String) {
         self.xMin = xMin
         self.yMin = yMin
@@ -89,11 +103,21 @@ public enum VisionMetrics {
 
 /// Simple image dataset container supporting array representation.
 public struct ImageDataset: Sendable {
+    /// The width.
     public let width: Int
+    /// The height.
     public let height: Int
+    /// The channels.
     public let channels: Int
+    /// The data.
     public let data: [Double]
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - width: The width.
+    ///   - height: The height.
+    ///   - channels: The channels.
+    ///   - data: The data.
     public init(width: Int, height: Int, channels: Int, data: [Double]) {
         self.width = width
         self.height = height
@@ -104,6 +128,7 @@ public struct ImageDataset: Sendable {
 
 /// Lightweight CNN Feature Extractor.
 public struct CNNFeatureExtractor: Sendable {
+    /// Creates a new instance.
     public init() {}
 
     /// Extracts global average pooling features from flattened image array.
@@ -126,47 +151,77 @@ public struct CNNFeatureExtractor: Sendable {
     }
 }
 
+/// Errors specific to Computer Vision tasks.
+public enum VisionError: Error, LocalizedError, Equatable {
+    case notImplemented(String)
+    case invalidInput(String)
+
+    /// The error description.
+    public var errorDescription: String? {
+        switch self {
+        case .notImplemented(let msg):
+            return "Vision feature not implemented: \(msg)"
+        case .invalidInput(let msg):
+            return "Invalid vision input: \(msg)"
+        }
+    }
+}
+
 /// Simple U-Net Segmentation model implementation.
 public actor UNetSegmentationModel {
+    /// The input channels.
     public let inputChannels: Int
+    /// The num classes.
     public let numClasses: Int
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - inputChannels: The input channels.
+    ///   - numClasses: The num classes.
     public init(inputChannels: Int = 3, numClasses: Int = 2) {
         self.inputChannels = inputChannels
         self.numClasses = numClasses
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - image: The image.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func predict(image: ImageDataset) async throws -> [[Double]] {
-        var mask = Array(repeating: Array(repeating: 0.0, count: image.width), count: image.height)
-        for r in 0..<image.height {
-            for c in 0..<image.width {
-                let pIdx = r * image.width + c
-                if pIdx < image.data.count {
-                    mask[r][c] = image.data[pIdx] > 0.5 ? 1.0 : 0.0
-                }
-            }
-        }
-        return mask
+        throw VisionError.notImplemented("UNetSegmentationModel: real deep learning weight inference is not yet wired — see ROADMAP v2.3")
     }
 }
 
 /// YOLOv8 object detector wrapper.
 public actor YOLOv8Detector {
+    /// The confidence threshold.
     public let confidenceThreshold: Double
+    /// The iou threshold.
     public let iouThreshold: Double
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - confidenceThreshold: The confidence threshold.
+    ///   - iouThreshold: The iou threshold.
     public init(confidenceThreshold: Double = 0.25, iouThreshold: Double = 0.45) {
         self.confidenceThreshold = confidenceThreshold
         self.iouThreshold = iouThreshold
     }
 
+    /// Detect.
+    /// - Parameters:
+    ///   - image: The image.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[BoundingBox]` result.
     public func detect(image: ImageDataset) async throws -> [BoundingBox] {
-        // Simulated detection returning detected region
-        return [
-            BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.5, yMax: 0.5, confidence: 0.85, classLabel: "object")
-        ]
+        throw VisionError.notImplemented("YOLOv8Detector: real deep learning weight inference is not yet wired — see ROADMAP v2.3")
     }
 
+    /// Non maximum suppression.
+    /// - Parameters:
+    ///   - boxes: The boxes.
+    /// - Returns: A `[BoundingBox]` result.
     public func nonMaximumSuppression(boxes: [BoundingBox]) -> [BoundingBox] {
         let sorted = boxes.sorted { $0.confidence > $1.confidence }
         var selected: [BoundingBox] = []

@@ -1,6 +1,7 @@
 import Foundation
 import Accelerate
 
+/// Represents smoothing method.
 public enum SmoothingMethod: Sendable {
     case simple
     case double(beta: Double)
@@ -8,6 +9,7 @@ public enum SmoothingMethod: Sendable {
 }
 
 public actor ExponentialSmoothing {
+    /// The method.
     public let method: SmoothingMethod
     private var alphaInput: Double?
     
@@ -22,6 +24,10 @@ public actor ExponentialSmoothing {
     private var fitted: [Double] = []
     private var isFitted = false
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - method: The method.
+    ///   - alpha: The alpha.
     public init(method: SmoothingMethod, alpha: Double? = nil) {
         self.method = method
         self.alphaInput = alpha
@@ -122,6 +128,9 @@ public actor ExponentialSmoothing {
         )
     }
     
+    /// Fitted values.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Double]` result.
     public func fittedValues() throws -> [Double] {
         guard isFitted else {
             throw ForecastError.notFitted

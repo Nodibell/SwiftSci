@@ -16,13 +16,38 @@ struct SwiftAgentTests {
         #expect(summary.contains("Rows: 3"))
     }
 
-    @Test("Test Agent Evaluator")
-    func testAgentEvaluator() async throws {
-        let col = TypedColumn(name: "A", values: [1.0, 2.0, 3.0])
-        let df = try DataFrame(columns: [col])
+    @Test("Test Agent Evaluator filter and sample commands")
+    func testAgentEvaluatorFilterAndSample() async throws {
+        let ageCol = TypedColumn(name: "age", values: [20.0, 35.0, 50.0])
+        let scoreCol = TypedColumn(name: "score", values: [80.0, 90.0, 95.0])
+        let df = try DataFrame(columns: [ageCol, scoreCol])
         let eval = SwiftAgentEvaluator()
-        let result = try await eval.evaluate(command: "sample", on: df)
 
-        #expect(result.rowCount <= 3)
+        // 1. Filter age > 30
+        let filtered = try await eval.evaluate(command: "filter age > 30", on: df)
+        #expect(filtered.rowCount == 2)
+
+        // 2. Select age
+        let selected = try await eval.evaluate(command: "select age", on: df)
+        #expect(selected.columnNames == ["age"])
+
+        // 3. Head 2
+        let headDF = try await eval.evaluate(command: "head 2", on: df)
+        #expect(headDF.rowCount == 2)
+
+        // 4. Sample 2
+        let sampled = try await eval.evaluate(command: "sample 2", on: df)
+        #expect(sampled.rowCount == 2)
+    }
+
+    @Test("Test Agent Evaluator unparseable command throws error")
+    func testUnparseableCommandThrows() async {
+        let col = TypedColumn(name: "A", values: [1.0, 2.0, 3.0])
+        guard let df = try? DataFrame(columns: [col]) else { return }
+        let eval = SwiftAgentEvaluator()
+
+        await #expect(throws: AgentError.self) {
+            _ = try await eval.evaluate(command: "invalid_gibberish_command", on: df)
+        }
     }
 }

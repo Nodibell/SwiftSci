@@ -15,6 +15,8 @@ public struct CSVReadOptions: Sendable {
     /// Type overrides for specific columns by name.
     public var columnTypeOverrides: [String: ColumnDType] = [:]
 
+    /// Creates a new instance.
     public init() {}
+    /// A public declaration.
     public static let `default` = CSVReadOptions()
 }

@@ -20,6 +20,6 @@ Machine Learning Framework for Swift on Apple Silicon.
 - ``LogisticRegression``
 - ``DecisionTreeClassifier``
 - ``RandomForestClassifier``
-- ``GradientBoostedTreesClassifier``
+- ``GradientBoostedTreesRegressor``
 - ``MLPClassifier``
 - ``OneVsRestClassifier``

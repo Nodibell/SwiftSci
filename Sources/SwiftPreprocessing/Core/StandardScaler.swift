@@ -2,9 +2,12 @@ import Foundation
 
 /// Standardize features by removing the mean and scaling to unit variance.
 public final class StandardScaler: PreprocessingTransformer, @unchecked Sendable {
+    /// The mean.
     public private(set) var mean: [Double]?
+    /// The std.
     public private(set) var std: [Double]?
     
+    /// Creates a new instance.
     public init() {}
     
     /// Fits the scaler to the 2D input dataset.

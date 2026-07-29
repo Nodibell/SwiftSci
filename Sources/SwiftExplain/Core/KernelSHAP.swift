@@ -3,6 +3,7 @@ import Foundation
 /// Model interpretation using the KernelSHAP algorithm.
 public actor KernelSHAP {
     
+    /// Creates a new instance.
     public init() {}
     
     /// Computes SHAP values explaining the model prediction for the given instance.

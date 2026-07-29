@@ -16,5 +16,5 @@ Time series forecasting, decomposition, and volatility modeling for statistical 
 
 ### Time Series Forecasting
 - ``ARIMA``
-- ``HoltWinters``
+- ``ExponentialSmoothing``
 - ``GARCH``

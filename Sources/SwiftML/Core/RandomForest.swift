@@ -24,10 +24,15 @@ func bootstrapSample(features: [[Double]], targets: [Double], seed: Int) -> ([[D
 /// Actor-isolated Random Forest Classifier.
 /// Each tree is trained concurrently in a TaskGroup on a bootstrapped sample.
 public actor RandomForestClassifier: ClassifierEstimator {
+    /// The n estimators.
     public let nEstimators: Int
+    /// The max depth.
     public let maxDepth: Int
+    /// The max features.
     public let maxFeatures: Int?
+    /// The min samples split.
     public let minSamplesSplit: Int
+    /// The criterion.
     public let criterion: SplitCriterion
 
     // DOD Architecture: the forest is stored as an array of flat node arrays
@@ -35,6 +40,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
     private var numClasses: Int = 0
     private var numFeatures: Int = 0
 
+    /// The feature importances.
     public var featureImportances: [Double]? {
         guard numFeatures > 0, !trees.isEmpty else { return nil }
         var aggregated = [Double](repeating: 0.0, count: numFeatures)
@@ -57,6 +63,14 @@ public actor RandomForestClassifier: ClassifierEstimator {
         return aggregated
     }
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nEstimators: The n estimators.
+    ///   - maxDepth: The max depth.
+    ///   - maxFeatures: The max features.
+    ///   - minSamplesSplit: The min samples split.
+    ///   - criterion: The criterion.
+    /// - Throws: An error if the operation fails.
     public init(
         nEstimators: Int = 100,
         maxDepth: Int = 10,
@@ -72,6 +86,11 @@ public actor RandomForestClassifier: ClassifierEstimator {
         self.criterion = criterion
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
@@ -89,10 +108,12 @@ public actor RandomForestClassifier: ClassifierEstimator {
             for i in 0..<nEstimators {
                 group.addTask {
                     let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i)
+                    let presorted = createPresortedIndices(X: bX)
                     var nodes = [FlatTreeNode]()
                     _ = RandomForestClassifier.buildTreeSync(
                         X: bX, y: bY,
                         indices: Array(0..<bX.count),
+                        presortedIndices: presorted,
                         depth: 0,
                         maxDepth: maxDepth,
                         minSamplesSplit: minSamplesSplit,
@@ -113,6 +134,11 @@ public actor RandomForestClassifier: ClassifierEstimator {
         self.trees = trainedTrees
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) async throws -> [Int] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
@@ -125,6 +151,11 @@ public actor RandomForestClassifier: ClassifierEstimator {
         }
     }
 
+    /// Predict probability.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
@@ -146,6 +177,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         X: [[Double]],
         y: [Double],
         indices: [Int],
+        presortedIndices: [[Int]],
         depth: Int,
         maxDepth: Int,
         minSamplesSplit: Int,
@@ -161,7 +193,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
             return nodes.count - 1
         }
 
-        guard let split = bestSplit(X: X, y: y, indices: indices, criterion: criterion, maxFeatures: maxFeatures) else {
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: criterion, maxFeatures: maxFeatures) else {
             nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
         }
@@ -169,8 +201,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
         let currentIndex = nodes.count
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
-        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
+        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
+        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
 
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(
@@ -206,14 +238,19 @@ public actor RandomForestClassifier: ClassifierEstimator {
 /// Actor-isolated Random Forest Regressor.
 /// Each tree is trained concurrently in a TaskGroup on a bootstrapped sample.
 public actor RandomForestRegressor: RegressorEstimator {
+    /// The n estimators.
     public let nEstimators: Int
+    /// The max depth.
     public let maxDepth: Int
+    /// The max features.
     public let maxFeatures: Int?
+    /// The min samples split.
     public let minSamplesSplit: Int
 
     private var trees: [[FlatTreeNode]] = []
     private var numFeatures: Int = 0
 
+    /// The feature importances.
     public var featureImportances: [Double]? {
         guard numFeatures > 0, !trees.isEmpty else { return nil }
         var aggregated = [Double](repeating: 0.0, count: numFeatures)
@@ -236,6 +273,13 @@ public actor RandomForestRegressor: RegressorEstimator {
         return aggregated
     }
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nEstimators: The n estimators.
+    ///   - maxDepth: The max depth.
+    ///   - maxFeatures: The max features.
+    ///   - minSamplesSplit: The min samples split.
+    /// - Throws: An error if the operation fails.
     public init(
         nEstimators: Int = 100,
         maxDepth: Int = 10,
@@ -249,6 +293,11 @@ public actor RandomForestRegressor: RegressorEstimator {
         self.minSamplesSplit = minSamplesSplit
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
@@ -264,10 +313,12 @@ public actor RandomForestRegressor: RegressorEstimator {
             for i in 0..<nEstimators {
                 group.addTask {
                     let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i)
+                    let presorted = createPresortedIndices(X: bX)
                     var nodes = [FlatTreeNode]()
                     _ = RandomForestRegressor.buildTreeSync(
                         X: bX, y: bY,
                         indices: Array(0..<bX.count),
+                        presortedIndices: presorted,
                         depth: 0,
                         maxDepth: maxDepth,
                         minSamplesSplit: minSamplesSplit,
@@ -287,6 +338,11 @@ public actor RandomForestRegressor: RegressorEstimator {
         self.trees = trainedTrees
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
@@ -299,6 +355,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         X: [[Double]],
         y: [Double],
         indices: [Int],
+        presortedIndices: [[Int]],
         depth: Int,
         maxDepth: Int,
         minSamplesSplit: Int,
@@ -313,7 +370,7 @@ public actor RandomForestRegressor: RegressorEstimator {
             return nodes.count - 1
         }
 
-        guard let split = bestSplit(X: X, y: y, indices: indices, criterion: .mse, maxFeatures: maxFeatures),
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: maxFeatures),
               split.gain > 0 else {
             nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
@@ -322,8 +379,8 @@ public actor RandomForestRegressor: RegressorEstimator {
         let currentIndex = nodes.count
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let left  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
-        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
+        let left  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
+        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
 
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(

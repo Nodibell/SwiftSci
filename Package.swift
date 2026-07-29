@@ -336,7 +336,10 @@ let package = Package(
                 .process("SwiftDatabase.docc")
             ],
             cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            linkerSettings: [
+                .linkedLibrary("sqlite3")
+            ]
         ),
         .testTarget(
             name: "SwiftDatabaseTests",

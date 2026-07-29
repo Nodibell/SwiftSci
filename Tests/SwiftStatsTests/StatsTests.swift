@@ -43,6 +43,12 @@ struct DescriptiveStatsTests {
         #expect(try Stats.median([1.0, 2.0, 3.0, 4.0] as [Double]) == 2.5)
     }
 
+    @Test("median Float overload")
+    func medianFloat() throws {
+        #expect(try Stats.median([1.0, 3.0, 5.0] as [Float]) == 3.0)
+        #expect(try Stats.median([1.0, 2.0, 3.0, 4.0] as [Float]) == 2.5)
+    }
+
     @Test("percentile q=0.0 returns min")
     func percentileMin() throws {
         let vals = [3.0, 1.0, 2.0, 5.0, 4.0]

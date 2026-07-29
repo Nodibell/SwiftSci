@@ -54,9 +54,46 @@ public enum ChartExporter {
     
     /// Generates HTML file with an interactive ROC Curve.
     public static func plotROCCurve(yTrue: [Int], yScores: [Double], title: String = "ROC Curve") -> String {
-        let fpr = [0.0, 0.1, 0.2, 0.4, 0.7, 1.0]
-        let tpr = [0.0, 0.35, 0.65, 0.85, 0.95, 1.0]
-        
+        var fpr: [Double] = [0.0, 1.0]
+        var tpr: [Double] = [0.0, 1.0]
+        var auc = 0.5
+
+        if !yTrue.isEmpty && yTrue.count == yScores.count {
+            let paired = zip(yScores, yTrue).sorted { $0.0 > $1.0 }
+            let totalPositives = Double(yTrue.filter { $0 == 1 }.count)
+            let totalNegatives = Double(yTrue.count) - totalPositives
+
+            if totalPositives > 0 && totalNegatives > 0 {
+                var computedFPR: [Double] = [0.0]
+                var computedTPR: [Double] = [0.0]
+                var tp = 0.0
+                var fp = 0.0
+
+                for (_, label) in paired {
+                    if label == 1 {
+                        tp += 1.0
+                    } else {
+                        fp += 1.0
+                    }
+                    computedTPR.append(tp / totalPositives)
+                    computedFPR.append(fp / totalNegatives)
+                }
+
+                // Trapezoidal rule for AUC
+                var computedAUC = 0.0
+                for i in 1..<computedFPR.count {
+                    let dx = computedFPR[i] - computedFPR[i - 1]
+                    let avgY = (computedTPR[i] + computedTPR[i - 1]) / 2.0
+                    computedAUC += dx * avgY
+                }
+
+                fpr = computedFPR
+                tpr = computedTPR
+                auc = computedAUC
+            }
+        }
+
+        let displayTitle = String(format: "%@ (AUC = %.4f)", title, auc)
         let xJSON = "[" + fpr.map { String($0) }.joined(separator: ",") + "]"
         let yJSON = "[" + tpr.map { String($0) }.joined(separator: ",") + "]"
         
@@ -64,7 +101,7 @@ public enum ChartExporter {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>\(title)</title>
+          <title>\(displayTitle)</title>
           <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         </head>
         <body>
@@ -83,7 +120,7 @@ public enum ChartExporter {
               name: 'Random Chance',
               line: {dash: 'dash', color: '#7f7f7f'}
             }];
-            var layout = { title: '\(title)', xaxis: {title: 'False Positive Rate'}, yaxis: {title: 'True Positive Rate'} };
+            var layout = { title: '\(displayTitle)', xaxis: {title: 'False Positive Rate'}, yaxis: {title: 'True Positive Rate'} };
             Plotly.newPlot('chart', data, layout);
           </script>
         </body>

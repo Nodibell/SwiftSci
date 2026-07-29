@@ -86,12 +86,24 @@ extension DataFrame {
         return (scaledDf, scaler)
     }
 
-    /// Fits a LabelEncoder and encodes a category column into integers.
+    /// Fits a LabelEncoder and encodes a category column into integers. Supports String, Int64, and Double columns.
     public func labelEncode(column name: String) throws -> (encoded: DataFrame, encoder: LabelEncoder) {
-        guard let col = self[column: name, as: String.self] else {
-            throw DataFrameError.columnNotFound(name)
+        let rawValues: [String]
+
+        if let col = self[column: name, as: String.self] {
+            rawValues = col.values.map { $0 ?? "" }
+        } else if let col = self[column: name, as: Int64.self] {
+            rawValues = col.values.map { $0.map { String($0) } ?? "" }
+        } else if let col = self[column: name, as: Double.self] {
+            rawValues = col.values.map { $0.map { String($0) } ?? "" }
+        } else {
+            if self[column: name] == nil {
+                throw DataFrameError.columnNotFound(name)
+            } else {
+                throw DataFrameError.castFailed(column: name, targetType: "String | Int64 | Double")
+            }
         }
-        let rawValues = col.values.map { $0 ?? "" }
+
         let encoder = LabelEncoder()
         encoder.fit(rawValues)
         let labels = try encoder.transform(rawValues)
@@ -268,15 +280,14 @@ extension DataFrame {
         guard let col = self[column: name, as: Double.self] else {
             throw DataFrameError.columnNotFound(name)
         }
-        let values = col.values.map { $0 ?? 0.0 }
+        let values = col.values
         let n = values.count
         var rolling = [Double?](repeating: nil, count: n)
 
         for i in 0..<n {
             let start = max(0, i - window + 1)
-            let slice = values[start...i]
-            let sum = slice.reduce(0, +)
-            rolling[i] = sum / Double(slice.count)
+            let slice = values[start...i].compactMap { $0 }
+            rolling[i] = slice.isEmpty ? nil : slice.reduce(0, +) / Double(slice.count)
         }
 
         let newName = "\(name)_rolling_mean_\(window)"
@@ -289,15 +300,15 @@ extension DataFrame {
         guard let col = self[column: name, as: Double.self] else {
             throw DataFrameError.columnNotFound(name)
         }
-        let values = col.values.map { $0 ?? 0.0 }
+        let values = col.values
         let n = values.count
         var rolling = [Double?](repeating: nil, count: n)
 
         for i in 0..<n {
             let start = max(0, i - window + 1)
-            let slice = Array(values[start...i])
+            let slice = values[start...i].compactMap { $0 }
             if slice.count <= 1 {
-                rolling[i] = 0.0
+                rolling[i] = slice.isEmpty ? nil : 0.0
             } else {
                 let mean = slice.reduce(0, +) / Double(slice.count)
                 let variance = slice.map { pow($0 - mean, 2) }.reduce(0, +) / Double(slice.count - 1)
@@ -312,19 +323,29 @@ extension DataFrame {
 
     /// Adds an Exponentially Weighted Moving Average (EWMA) column for the specified numeric column.
     public func withEWMA(column name: String, alpha: Double) throws -> DataFrame {
-        precondition(alpha > 0 && alpha <= 1.0, "Alpha must be in (0, 1]")
+        guard alpha > 0 && alpha <= 1.0 else {
+            throw DataFrameError.invalidParameter("alpha must be in (0, 1], got \(alpha)")
+        }
         guard let col = self[column: name, as: Double.self] else {
             throw DataFrameError.columnNotFound(name)
         }
-        let values = col.values.map { $0 ?? 0.0 }
+        let values = col.values
         let n = values.count
         var ewma = [Double?](repeating: nil, count: n)
 
-        if n > 0 {
-            ewma[0] = values[0]
-            for i in 1..<n {
-                let prev = ewma[i - 1] ?? 0.0
-                ewma[i] = alpha * values[i] + (1.0 - alpha) * prev
+        var prev: Double? = nil
+        for i in 0..<n {
+            if let val = values[i] {
+                if let currentPrev = prev {
+                    let current = alpha * val + (1.0 - alpha) * currentPrev
+                    ewma[i] = current
+                    prev = current
+                } else {
+                    ewma[i] = val
+                    prev = val
+                }
+            } else {
+                ewma[i] = nil
             }
         }
 

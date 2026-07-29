@@ -1,15 +1,34 @@
 import Foundation
 import SwiftML
 
-/// Fast TreeSHAP explainer for decision tree ensembles.
+/// SHAP explainer delegating to KernelSHAP model interpretations.
 public struct TreeSHAP: Sendable {
     public init() {}
 
-    /// Explains predictions of a tree model by calculating exact Shapley values.
-    public func explain(features: [[Double]]) async throws -> [[Double]] {
+    /// Explains predictions of a model by calculating Shapley values for each instance against background data via KernelSHAP.
+    public func explain(
+        model: @escaping @Sendable ([Double]) async -> Double,
+        features: [[Double]],
+        background: [[Double]]? = nil,
+        numCoalitions: Int = 100
+    ) async -> [[Double]] {
         guard !features.isEmpty else { return [] }
-        let numCols = features[0].count
-        return features.map { _ in Array(repeating: 0.1, count: numCols) }
+        let bg = background ?? features
+        let kernelSHAP = KernelSHAP()
+
+        var results: [[Double]] = []
+        results.reserveCapacity(features.count)
+
+        for instance in features {
+            let shapValues = await kernelSHAP.explain(
+                model: model,
+                instance: instance,
+                background: bg,
+                numCoalitions: numCoalitions
+            )
+            results.append(shapValues)
+        }
+        return results
     }
 }
 
@@ -17,12 +36,31 @@ public struct TreeSHAP: Sendable {
 public struct PermutationImportance: Sendable {
     public init() {}
 
-    /// Computes feature importance by shuffling each feature column.
-    public func computeImportance(features: [[Double]], targets: [Double]) async throws -> [String: Double] {
-        guard !features.isEmpty else { return [:] }
+    /// Computes feature importance by measuring decrease in model performance (MSE) when each feature column is shuffled.
+    public func computeImportance(
+        features: [[Double]],
+        targets: [Double],
+        predict: @escaping @Sendable ([[Double]]) async throws -> [Double]
+    ) async throws -> [String: Double] {
+        guard !features.isEmpty, features.count == targets.count else { return [:] }
+        let numRows = features.count
+        let numCols = features[0].count
+
+        let baselinePreds = try await predict(features)
+        guard baselinePreds.count == numRows else { return [:] }
+
+        let baselineMSE = zip(baselinePreds, targets).reduce(0.0) { $0 + pow($1.0 - $1.1, 2) } / Double(numRows)
+
         var result: [String: Double] = [:]
-        for c in 0..<features[0].count {
-            result["feature_\(c)"] = Double(c + 1) * 0.15
+        for c in 0..<numCols {
+            var shuffled = features
+            let perm = (0..<numRows).shuffled()
+            for i in 0..<numRows {
+                shuffled[i][c] = features[perm[i]][c]
+            }
+            let shuffledPreds = try await predict(shuffled)
+            let shuffledMSE = zip(shuffledPreds, targets).reduce(0.0) { $0 + pow($1.0 - $1.1, 2) } / Double(numRows)
+            result["feature_\(c)"] = max(0.0, shuffledMSE - baselineMSE)
         }
         return result
     }
@@ -32,10 +70,37 @@ public struct PermutationImportance: Sendable {
 public struct PartialDependencePlot: Sendable {
     public init() {}
 
-    /// Calculates PDP grid values for a specified feature index.
-    public func calculatePDP(features: [[Double]], featureIndex: Int, gridPoints: Int = 10) -> (grid: [Double], values: [Double]) {
-        let grid = (0..<gridPoints).map { Double($0) / Double(gridPoints - 1) }
-        let values = grid.map { $0 * 0.5 + 0.1 }
-        return (grid: grid, values: values)
+    /// Calculates PDP grid values for a specified feature index by replacing feature column values with grid points.
+    public func calculatePDP(
+        features: [[Double]],
+        featureIndex: Int,
+        gridPoints: Int = 10,
+        predict: @escaping @Sendable ([[Double]]) async throws -> [Double]
+    ) async throws -> (grid: [Double], values: [Double]) {
+        guard !features.isEmpty, featureIndex >= 0, featureIndex < features[0].count else {
+            return (grid: [], values: [])
+        }
+
+        let colValues = features.map { $0[featureIndex] }
+        let minVal = colValues.min() ?? 0.0
+        let maxVal = colValues.max() ?? 1.0
+
+        let step = (gridPoints > 1 && maxVal > minVal) ? (maxVal - minVal) / Double(gridPoints - 1) : 0.0
+        let grid = (0..<gridPoints).map { minVal + Double($0) * step }
+
+        var pdpValues: [Double] = []
+        pdpValues.reserveCapacity(gridPoints)
+
+        for val in grid {
+            var modifiedFeatures = features
+            for r in 0..<features.count {
+                modifiedFeatures[r][featureIndex] = val
+            }
+            let preds = try await predict(modifiedFeatures)
+            let meanPred = preds.isEmpty ? 0.0 : preds.reduce(0.0, +) / Double(preds.count)
+            pdpValues.append(meanPred)
+        }
+
+        return (grid: grid, values: pdpValues)
     }
 }

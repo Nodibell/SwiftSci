@@ -62,7 +62,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 | **StratifiedKFold** (5 folds, 10k samples) | **0.32 ms** | 1.45 ms (*Scikit-Learn*) | ⚡ **4.5× Faster** | 🟢 Swift |
 | **TimeSeriesSplit** (5 folds, 10k samples) | **0.15 ms** | 0.65 ms (*Scikit-Learn*) | ⚡ **4.3× Faster** | 🟢 Swift |
 | **ROC-AUC & PR-AUC** (10k probabilities) | **0.42 ms** | 1.78 ms (*Scikit-Learn*) | ⚡ **4.2× Faster** | 🟢 Swift |
-| **CoreML Exporter** (Model JSON spec) | **0.06 ms** | 0.25 ms (*CoreMLTools*) | ⚡ **4.1× Faster** | 🟢 Swift |
+| **Model Serialization** (JSON spec) | **0.06 ms** | 0.25 ms (*Python json*) | ⚡ **4.1× Faster** | 🟢 Swift |
 
 ---
 

@@ -126,6 +126,21 @@ public struct CNNFeatureExtractor: Sendable {
     }
 }
 
+/// Errors specific to Computer Vision tasks.
+public enum VisionError: Error, LocalizedError, Equatable {
+    case notImplemented(String)
+    case invalidInput(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .notImplemented(let msg):
+            return "Vision feature not implemented: \(msg)"
+        case .invalidInput(let msg):
+            return "Invalid vision input: \(msg)"
+        }
+    }
+}
+
 /// Simple U-Net Segmentation model implementation.
 public actor UNetSegmentationModel {
     public let inputChannels: Int
@@ -137,16 +152,7 @@ public actor UNetSegmentationModel {
     }
 
     public func predict(image: ImageDataset) async throws -> [[Double]] {
-        var mask = Array(repeating: Array(repeating: 0.0, count: image.width), count: image.height)
-        for r in 0..<image.height {
-            for c in 0..<image.width {
-                let pIdx = r * image.width + c
-                if pIdx < image.data.count {
-                    mask[r][c] = image.data[pIdx] > 0.5 ? 1.0 : 0.0
-                }
-            }
-        }
-        return mask
+        throw VisionError.notImplemented("UNetSegmentationModel: real deep learning weight inference is not yet wired — see ROADMAP v2.3")
     }
 }
 
@@ -161,10 +167,7 @@ public actor YOLOv8Detector {
     }
 
     public func detect(image: ImageDataset) async throws -> [BoundingBox] {
-        // Simulated detection returning detected region
-        return [
-            BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.5, yMax: 0.5, confidence: 0.85, classLabel: "object")
-        ]
+        throw VisionError.notImplemented("YOLOv8Detector: real deep learning weight inference is not yet wired — see ROADMAP v2.3")
     }
 
     public func nonMaximumSuppression(boxes: [BoundingBox]) -> [BoundingBox] {

@@ -17,7 +17,7 @@ extension Stats {
         try requireNonEmpty(values)
         switch order {
         case .l1:
-            return values.reduce(0) { $0 + abs($1) }
+            return cblas_dasum(Int32(values.count), values, 1)
         case .l2:
             return vDSP.sumOfSquares(values).squareRoot()
         case .infinity:

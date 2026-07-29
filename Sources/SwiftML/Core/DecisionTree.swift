@@ -76,10 +76,26 @@ func mseImpurity(_ values: [Double]) -> Double {
     return values.reduce(0.0) { $0 + pow($1 - mean, 2) } / Double(values.count)
 }
 
+// MARK: - Pre-sorted Feature Matrix Helper
+
+func createPresortedIndices(X: [[Double]]) -> [[Int]] {
+    guard !X.isEmpty else { return [] }
+    let numFeatures = X[0].count
+    let numSamples = X.count
+    var presorted = [[Int]]()
+    presorted.reserveCapacity(numFeatures)
+    for f in 0..<numFeatures {
+        let sortedF = (0..<numSamples).sorted { X[$0][f] < X[$1][f] }
+        presorted.append(sortedF)
+    }
+    return presorted
+}
+
 func bestSplit(
     X: [[Double]],
     y: [Double],
     indices: [Int],
+    presortedIndices: [[Int]]? = nil,
     criterion: SplitCriterion,
     maxFeatures: Int?
 ) -> SplitResult? {
@@ -96,13 +112,27 @@ func bestSplit(
     var best: SplitResult? = nil
     let n = Double(indices.count)
 
+    let inNodeMask: [Bool]?
+    if presortedIndices != nil {
+        var mask = [Bool](repeating: false, count: X.count)
+        for idx in indices { mask[idx] = true }
+        inNodeMask = mask
+    } else {
+        inNodeMask = nil
+    }
+
     if criterion == .mse {
         var totalSum = 0.0
         for idx in indices { totalSum += y[idx] }
         let baseTerm = (totalSum * totalSum) / n
 
         for fi in featureRange {
-            let sortedIndices = indices.sorted { X[$0][fi] < X[$1][fi] }
+            let sortedIndices: [Int]
+            if let presorted = presortedIndices, let mask = inNodeMask {
+                sortedIndices = presorted[fi].filter { mask[$0] }
+            } else {
+                sortedIndices = indices.sorted { X[$0][fi] < X[$1][fi] }
+            }
 
             var leftSum = 0.0
             var leftCount = 0.0
@@ -126,7 +156,6 @@ func bestSplit(
                             featureIndex: fi,
                             threshold: threshold,
                             gain: gain,
-                            // Створення підмасивів відбувається ЛИШЕ коли знайдено кращий спліт
                             leftIndices: Array(sortedIndices[0...i]),
                             rightIndices: Array(sortedIndices[(i+1)...])
                         )
@@ -150,7 +179,12 @@ func bestSplit(
         }
 
         for fi in featureRange {
-            let sortedIndices = indices.sorted { X[$0][fi] < X[$1][fi] }
+            let sortedIndices: [Int]
+            if let presorted = presortedIndices, let mask = inNodeMask {
+                sortedIndices = presorted[fi].filter { mask[$0] }
+            } else {
+                sortedIndices = indices.sorted { X[$0][fi] < X[$1][fi] }
+            }
 
             var leftCounts = [Double: Int]()
             var rightCounts = totalCounts
@@ -248,7 +282,8 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         }
         numFeatures = features[0].count
         nodes = []
-        _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), depth: 0, nodes: &nodes)
+        let presorted = createPresortedIndices(X: features)
+        _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), presortedIndices: presorted, depth: 0, nodes: &nodes)
     }
 
     public func predict(features: [[Double]]) throws -> [Int] {
@@ -274,7 +309,7 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         return nodes
     }
 
-    private func buildTree(X: [[Double]], y: [Double], indices: [Int], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
+    private func buildTree(X: [[Double]], y: [Double], indices: [Int], presortedIndices: [[Int]], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
         let labels = indices.map { y[$0] }
         let majority = labels.mostFrequent()
 
@@ -285,7 +320,7 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
             return nodes.count - 1
         }
 
-        guard let split = bestSplit(X: X, y: y, indices: indices, criterion: criterion, maxFeatures: nil) else {
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: criterion, maxFeatures: nil) else {
             let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0)
             nodes.append(leaf)
             return nodes.count - 1
@@ -295,8 +330,8 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         // Placeholder to maintain index stability during recursion
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let leftIndex  = buildTree(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, nodes: &nodes)
-        let rightIndex = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1, nodes: &nodes)
+        let leftIndex  = buildTree(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, nodes: &nodes)
+        let rightIndex = buildTree(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, nodes: &nodes)
         
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(
@@ -355,7 +390,8 @@ public actor DecisionTreeRegressor: RegressorEstimator {
         
         numFeatures = features[0].count
         nodes = []
-        _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), depth: 0, nodes: &nodes)
+        let presorted = createPresortedIndices(X: features)
+        _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), presortedIndices: presorted, depth: 0, nodes: &nodes)
     }
 
     public func predict(features: [[Double]]) throws -> [Double] {
@@ -367,7 +403,7 @@ public actor DecisionTreeRegressor: RegressorEstimator {
         return nodes
     }
 
-    private func buildTree(X: [[Double]], y: [Double], indices: [Int], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
+    private func buildTree(X: [[Double]], y: [Double], indices: [Int], presortedIndices: [[Int]], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
         let values = indices.map { y[$0] }
         let mean = values.mean()
 
@@ -377,7 +413,7 @@ public actor DecisionTreeRegressor: RegressorEstimator {
             return nodes.count - 1
         }
 
-        guard let split = bestSplit(X: X, y: y, indices: indices, criterion: .mse, maxFeatures: nil) else {
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: nil) else {
             let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0)
             nodes.append(leaf)
             return nodes.count - 1
@@ -387,8 +423,8 @@ public actor DecisionTreeRegressor: RegressorEstimator {
         // Placeholder
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let leftIndex  = buildTree(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, nodes: &nodes)
-        let rightIndex = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1, nodes: &nodes)
+        let leftIndex  = buildTree(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, nodes: &nodes)
+        let rightIndex = buildTree(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, nodes: &nodes)
         
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(

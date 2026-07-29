@@ -260,8 +260,9 @@ public struct DataFrame: Sendable {
         let map = _columns
         let names = columnNames
         var mask = [Bool](repeating: false, count: shape.rows)
+        var row = DataFrameRow(columnNames: names, index: 0, columnMap: map)
         for i in 0..<shape.rows {
-            let row = DataFrameRow(columnNames: names, index: i, columnMap: map)
+            row.index = i
             mask[i] = predicate(row)
         }
         return applyMask(mask)
@@ -437,11 +438,24 @@ public struct DataFrame: Sendable {
 
     public func gathered(at indices: [Int]) -> DataFrame {
         guard !indices.isEmpty else { return DataFrame.empty }
-        let newCols: [any AnyColumn] = columns.map { $0.gathered(at: indices) }
-        do {
-            return try DataFrame(columns: newCols)
-        } catch {
-            preconditionFailure("Failed to gather rows for indices: \(error)")
+        let numCols = columns.count
+        if numCols >= 4 && indices.count >= 10_000 {
+            var newCols = [any AnyColumn?](repeating: nil, count: numCols)
+            DispatchQueue.concurrentPerform(iterations: numCols) { colIdx in
+                newCols[colIdx] = self.columns[colIdx].gathered(at: indices)
+            }
+            do {
+                return try DataFrame(columns: newCols.compactMap { $0 })
+            } catch {
+                preconditionFailure("Failed to gather rows concurrently: \(error)")
+            }
+        } else {
+            let newCols: [any AnyColumn] = columns.map { $0.gathered(at: indices) }
+            do {
+                return try DataFrame(columns: newCols)
+            } catch {
+                preconditionFailure("Failed to gather rows for indices: \(error)")
+            }
         }
     }
 
@@ -453,6 +467,19 @@ public struct DataFrame: Sendable {
         }
         guard !indices.isEmpty else { return DataFrame.empty }
         return gathered(at: indices)
+    }
+
+    /// Transforms values of a typed column functional-style, returning a new DataFrame.
+    public func mapColumn<T: SupportedType>(
+        _ name: String,
+        as type: T.Type = T.self,
+        transform: (T?) -> T?
+    ) throws -> DataFrame {
+        guard let col = _columns[name] as? TypedColumn<T> else {
+            throw DataFrameError.columnNotFound(name)
+        }
+        let newValues = col.values.map { transform($0) }
+        return try withColumn(name, column: TypedColumn<T>(name: name, values: newValues))
     }
 }
 

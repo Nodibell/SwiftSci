@@ -1,6 +1,7 @@
 import Foundation
 
-/// Exporter for serializing SwiftML linear, tree, and ensemble models into Apple CoreML `.mlmodel` metadata specs.
+/// Exporter for serializing SwiftML linear, tree, and ensemble models into CoreML JSON graph specifications.
+/// Note: Produces a JSON representation of the model specification, not a binary .mlmodel or .mlpackage bundle.
 public enum CoreMLExporter {
     
     public struct CoreMLModelSpec: Codable, Sendable {

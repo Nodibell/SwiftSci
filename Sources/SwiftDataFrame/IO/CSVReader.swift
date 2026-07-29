@@ -240,7 +240,7 @@ internal enum CSVReader {
                     let rowIdx = startRowIdx + r
                     if rowIdx < records.count && colIndex < records[rowIdx].count {
                         let offset = records[rowIdx][colIndex]
-                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         if options.nullValues.contains(str) {
                             values.append(nil)
                         } else if let val = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
@@ -260,7 +260,7 @@ internal enum CSVReader {
                     let rowIdx = startRowIdx + r
                     if rowIdx < records.count && colIndex < records[rowIdx].count {
                         let offset = records[rowIdx][colIndex]
-                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         if options.nullValues.contains(str) {
                             values.append(nil)
                         } else if let val = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
@@ -280,7 +280,7 @@ internal enum CSVReader {
                     let rowIdx = startRowIdx + r
                     if rowIdx < records.count && colIndex < records[rowIdx].count {
                         let offset = records[rowIdx][colIndex]
-                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
                     } else {
                         values.append(nil)
@@ -294,7 +294,7 @@ internal enum CSVReader {
                     let rowIdx = startRowIdx + r
                     if rowIdx < records.count && colIndex < records[rowIdx].count {
                         let offset = records[rowIdx][colIndex]
-                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         values.append(options.nullValues.contains(str) ? nil : str)
                     } else {
                         values.append(nil)
@@ -308,7 +308,7 @@ internal enum CSVReader {
                     let rowIdx = startRowIdx + r
                     if rowIdx < records.count && colIndex < records[rowIdx].count {
                         let offset = records[rowIdx][colIndex]
-                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         values.append(options.nullValues.contains(str) ? nil : Date.parse(from: str))
                     } else {
                         values.append(nil)
@@ -325,7 +325,7 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if rowIdx < records.count && colIndex < records[rowIdx].count {
                     let offset = records[rowIdx][colIndex]
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     values.append(options.nullValues.contains(str) ? nil : str)
                 } else {
                     values.append(nil)
@@ -345,7 +345,7 @@ internal enum CSVReader {
             guard rowIdx < records.count && colIndex < records[rowIdx].count else { continue }
             let offset = records[rowIdx][colIndex]
             if offset.length == 0 { continue }
-            let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+            let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
             if options.nullValues.contains(str) { continue }
 
             nonNullCount += 1
@@ -367,7 +367,7 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if rowIdx < records.count && colIndex < records[rowIdx].count {
                     let offset = records[rowIdx][colIndex]
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     values.append(options.nullValues.contains(str) ? nil : str)
                 } else {
                     values.append(nil)
@@ -383,7 +383,7 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if rowIdx < records.count && colIndex < records[rowIdx].count {
                     let offset = records[rowIdx][colIndex]
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
                 } else {
                     values.append(nil)
@@ -399,7 +399,7 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if rowIdx < records.count && colIndex < records[rowIdx].count {
                     let offset = records[rowIdx][colIndex]
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     if options.nullValues.contains(str) {
                         values.append(nil)
                     } else if let val = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
@@ -421,7 +421,7 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if rowIdx < records.count && colIndex < records[rowIdx].count {
                     let offset = records[rowIdx][colIndex]
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     if options.nullValues.contains(str) {
                         values.append(nil)
                     } else if let val = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
@@ -443,7 +443,7 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if rowIdx < records.count && colIndex < records[rowIdx].count {
                     let offset = records[rowIdx][colIndex]
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     values.append(options.nullValues.contains(str) ? nil : Date.parse(from: str))
                 } else {
                     values.append(nil)
@@ -458,7 +458,7 @@ internal enum CSVReader {
             let rowIdx = startRowIdx + r
             if rowIdx < records.count && colIndex < records[rowIdx].count {
                 let offset = records[rowIdx][colIndex]
-                let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                 values.append(options.nullValues.contains(str) ? nil : str)
             } else {
                 values.append(nil)

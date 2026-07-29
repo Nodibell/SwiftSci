@@ -124,6 +124,15 @@ public enum VectorizedByteParsers {
             length -= 2
         }
 
+        // Trim leading and trailing whitespace / control characters at byte level
+        while length > 0 && (buffer[start] == 32 || buffer[start] == 9 || buffer[start] == 13 || buffer[start] == 10) {
+            start += 1
+            length -= 1
+        }
+        while length > 0 && (buffer[start + length - 1] == 32 || buffer[start + length - 1] == 9 || buffer[start + length - 1] == 13 || buffer[start + length - 1] == 10) {
+            length -= 1
+        }
+
         if length <= 0 { return "" }
 
         if offset.escapedQuotesPresent {

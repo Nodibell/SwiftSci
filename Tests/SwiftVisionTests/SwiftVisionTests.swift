@@ -16,22 +16,52 @@ struct SwiftVisionTests {
         #expect(iou > 0.0)
     }
 
-    @Test("Test BoundingBox IoU")
-    func testBoundingBoxIoU() {
+    @Test("Test BoundingBox IoU and NMS")
+    func testBoundingBoxIoU() async {
         let box1 = BoundingBox(xMin: 0, yMin: 0, xMax: 10, yMax: 10, confidence: 0.9, classLabel: "cat")
         let box2 = BoundingBox(xMin: 5, yMin: 0, xMax: 15, yMax: 10, confidence: 0.8, classLabel: "cat")
 
         let iou = box1.iou(with: box2)
         #expect(iou > 0.0)
+
+        let detector = YOLOv8Detector()
+        let nms = await detector.nonMaximumSuppression(boxes: [box1, box2])
+        #expect(!nms.isEmpty)
     }
 
-    @Test("Test UNetSegmentation Model")
-    func testUNetModel() async throws {
+    @Test("Test UNetSegmentation Model throws notImplemented")
+    func testUNetModelNotImplemented() async {
         let img = ImageDataset(width: 4, height: 4, channels: 1, data: Array(repeating: 0.8, count: 16))
         let unet = UNetSegmentationModel(inputChannels: 1, numClasses: 2)
-        let mask = try await unet.predict(image: img)
+        do {
+            _ = try await unet.predict(image: img)
+            #expect(Bool(false), "Expected predict to throw VisionError.notImplemented")
+        } catch let err as VisionError {
+            if case .notImplemented(let msg) = err {
+                #expect(msg.contains("UNetSegmentationModel"))
+            } else {
+                #expect(Bool(false), "Unexpected VisionError variant")
+            }
+        } catch {
+            #expect(Bool(false), "Unexpected error type: \(error)")
+        }
+    }
 
-        #expect(mask.count == 4)
-        #expect(mask[0].count == 4)
+    @Test("Test YOLOv8Detector throws notImplemented")
+    func testYOLODetectorNotImplemented() async {
+        let img = ImageDataset(width: 4, height: 4, channels: 3, data: Array(repeating: 0.5, count: 48))
+        let detector = YOLOv8Detector()
+        do {
+            _ = try await detector.detect(image: img)
+            #expect(Bool(false), "Expected detect to throw VisionError.notImplemented")
+        } catch let err as VisionError {
+            if case .notImplemented(let msg) = err {
+                #expect(msg.contains("YOLOv8Detector"))
+            } else {
+                #expect(Bool(false), "Unexpected VisionError variant")
+            }
+        } catch {
+            #expect(Bool(false), "Unexpected error type: \(error)")
+        }
     }
 }

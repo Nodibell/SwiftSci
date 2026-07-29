@@ -1,6 +1,7 @@
 import Foundation
 
-/// Exporter for serializing SwiftML models into ONNX model graph specification format.
+/// Exporter for serializing SwiftML models into ONNX model graph specification JSON format.
+/// Note: Produces a JSON representation of the ONNX graph, not a binary .onnx file.
 public enum ONNXExporter {
 
     public struct ONNXGraphSpec: Codable, Sendable {

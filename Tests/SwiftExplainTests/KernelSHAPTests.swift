@@ -21,9 +21,6 @@ struct KernelSHAPTests {
             [1.0, 0.0]
         ]
         
-        // Calculate background mean manually to verify expectations
-        // bgMean[0] = (0+1+2+1)/4 = 1.0
-        // bgMean[1] = (0+1+3+0)/4 = 1.0
         let bgMean = [1.0, 1.0]
         
         let explainer = KernelSHAP()
@@ -40,16 +37,69 @@ struct KernelSHAPTests {
         let fFull = model(instance)
         
         let sumShap = shapValues.reduce(0.0, +)
-        let expectedDiff = fFull - fEmpty // (2.5*4 - 4*2 + 10) - (2.5*1 - 4*1 + 10) = 12 - 8.5 = 3.5
+        let expectedDiff = fFull - fEmpty
         
         // 1. Check Efficiency (sum of SHAP values matches prediction difference)
         #expect(abs(sumShap - expectedDiff) < 1e-4)
         
-        // 2. Check linear contributions (SHAP value of feature i should be coefficient * (instance[i] - bgMean[i]))
-        let expectedShap0 = 2.5 * (instance[0] - bgMean[0]) // 2.5 * (4.0 - 1.0) = 7.5
-        let expectedShap1 = -4.0 * (instance[1] - bgMean[1]) // -4.0 * (2.0 - 1.0) = -4.0
+        // 2. Check linear contributions
+        let expectedShap0 = 2.5 * (instance[0] - bgMean[0])
+        let expectedShap1 = -4.0 * (instance[1] - bgMean[1])
         
         #expect(abs(shapValues[0] - expectedShap0) < 1e-2)
         #expect(abs(shapValues[1] - expectedShap1) < 1e-2)
+    }
+
+    @Test("TreeSHAP delegating explainer returns SHAP values")
+    func testTreeSHAPExplainer() async throws {
+        let model: @Sendable ([Double]) async -> Double = { x in
+            return x.reduce(0.0, +)
+        }
+        let features = [[1.0, 2.0], [3.0, 4.0]]
+        let treeSHAP = TreeSHAP()
+        let result = await treeSHAP.explain(model: model, features: features, numCoalitions: 20)
+        
+        #expect(result.count == 2)
+        #expect(result[0].count == 2)
+    }
+
+    @Test("PermutationImportance identifies most influential feature")
+    func testPermutationImportance() async throws {
+        let predictClosure: @Sendable ([[Double]]) async throws -> [Double] = { matrix in
+            return matrix.map { 10.0 * $0[0] + 0.001 * $0[1] }
+        }
+        let features = [
+            [1.0, 100.0],
+            [2.0, 200.0],
+            [3.0, 300.0],
+            [4.0, 400.0]
+        ]
+        let targets = [10.0, 20.0, 30.0, 40.0]
+
+        let perm = PermutationImportance()
+        let importance = try await perm.computeImportance(features: features, targets: targets, predict: predictClosure)
+
+        let imp0 = importance["feature_0"] ?? 0.0
+        let imp1 = importance["feature_1"] ?? 0.0
+
+        #expect(imp0 > imp1)
+    }
+
+    @Test("PartialDependencePlot sweeps feature grid")
+    func testPartialDependencePlot() async throws {
+        let predictClosure: @Sendable ([[Double]]) async throws -> [Double] = { matrix in
+            return matrix.map { $0[0] * 2.0 }
+        }
+        let features = [
+            [0.0, 1.0],
+            [10.0, 1.0]
+        ]
+
+        let pdp = PartialDependencePlot()
+        let (grid, values) = try await pdp.calculatePDP(features: features, featureIndex: 0, gridPoints: 5, predict: predictClosure)
+
+        #expect(grid.count == 5)
+        #expect(values.count == 5)
+        #expect(values.last! > values.first!)
     }
 }

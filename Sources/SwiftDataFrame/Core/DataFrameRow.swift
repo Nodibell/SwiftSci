@@ -8,7 +8,7 @@ public struct DataFrameRow: @unchecked Sendable {
     /// Ordered column names for this row.
     public let columnNames: [String]
 
-    private let index: Int
+    public internal(set) var index: Int
     private let columnMap: [String: any AnyColumn]
 
     init(columnNames: [String], index: Int, columnMap: [String: any AnyColumn]) {
@@ -26,6 +26,21 @@ public struct DataFrameRow: @unchecked Sendable {
     public subscript(column: String) -> Any? {
         columnMap[column]?.value(at: index)
     }
+
+    /// Returns the typed value for `column`, or nil if null / wrong type.
+    public subscript<T: SupportedType>(_ name: String, as type: T.Type) -> T? {
+        guard let col = columnMap[name] as? TypedColumn<T> else { return nil }
+        return col[index]
+    }
+
+    /// Convenience typed accessor for Double columns.
+    public func double(_ name: String) -> Double? { self[name, as: Double.self] }
+
+    /// Convenience typed accessor for String columns.
+    public func string(_ name: String) -> String? { self[name, as: String.self] }
+
+    /// Convenience typed accessor for Int64 columns.
+    public func int(_ name: String) -> Int64?     { self[name, as: Int64.self] }
 
     /// Whether the value for `column` is null.
     public func isNull(column: String) -> Bool {

@@ -24,7 +24,11 @@ extension DataFrame {
                 }
             } else if let col = self[column: name, as: Bool.self] {
                 for row in 0..<rowCount {
-                    matrix[row][colIdx] = (col[row] == true) ? 1.0 : 0.0
+                    if let val = col[row] {
+                        matrix[row][colIdx] = val ? 1.0 : 0.0
+                    } else {
+                        matrix[row][colIdx] = .nan
+                    }
                 }
             } else {
                 throw DataFrameError.castFailed(column: name, targetType: "Double")

@@ -89,10 +89,12 @@ public actor RandomForestClassifier: ClassifierEstimator {
             for i in 0..<nEstimators {
                 group.addTask {
                     let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i)
+                    let presorted = createPresortedIndices(X: bX)
                     var nodes = [FlatTreeNode]()
                     _ = RandomForestClassifier.buildTreeSync(
                         X: bX, y: bY,
                         indices: Array(0..<bX.count),
+                        presortedIndices: presorted,
                         depth: 0,
                         maxDepth: maxDepth,
                         minSamplesSplit: minSamplesSplit,
@@ -146,6 +148,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         X: [[Double]],
         y: [Double],
         indices: [Int],
+        presortedIndices: [[Int]],
         depth: Int,
         maxDepth: Int,
         minSamplesSplit: Int,
@@ -161,7 +164,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
             return nodes.count - 1
         }
 
-        guard let split = bestSplit(X: X, y: y, indices: indices, criterion: criterion, maxFeatures: maxFeatures) else {
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: criterion, maxFeatures: maxFeatures) else {
             nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
         }
@@ -169,8 +172,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
         let currentIndex = nodes.count
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
-        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
+        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
+        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
 
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(
@@ -264,10 +267,12 @@ public actor RandomForestRegressor: RegressorEstimator {
             for i in 0..<nEstimators {
                 group.addTask {
                     let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i)
+                    let presorted = createPresortedIndices(X: bX)
                     var nodes = [FlatTreeNode]()
                     _ = RandomForestRegressor.buildTreeSync(
                         X: bX, y: bY,
                         indices: Array(0..<bX.count),
+                        presortedIndices: presorted,
                         depth: 0,
                         maxDepth: maxDepth,
                         minSamplesSplit: minSamplesSplit,
@@ -299,6 +304,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         X: [[Double]],
         y: [Double],
         indices: [Int],
+        presortedIndices: [[Int]],
         depth: Int,
         maxDepth: Int,
         minSamplesSplit: Int,
@@ -313,7 +319,7 @@ public actor RandomForestRegressor: RegressorEstimator {
             return nodes.count - 1
         }
 
-        guard let split = bestSplit(X: X, y: y, indices: indices, criterion: .mse, maxFeatures: maxFeatures),
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: maxFeatures),
               split.gain > 0 else {
             nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
@@ -322,8 +328,8 @@ public actor RandomForestRegressor: RegressorEstimator {
         let currentIndex = nodes.count
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let left  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
-        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
+        let left  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
+        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
 
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(

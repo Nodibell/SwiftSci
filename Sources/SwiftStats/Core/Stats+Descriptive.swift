@@ -8,8 +8,9 @@ extension Stats {
     /// Arithmetic mean using vDSP.mean.
     public static func mean(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
-        if checkNaN { try requireNoNaN(values) }
-        return vDSP.mean(values)
+        let result = vDSP.mean(values)
+        if checkNaN && result.isNaN { try requireNoNaN(values) }
+        return result
     }
 
     /// Float overload.
@@ -18,22 +19,27 @@ extension Stats {
         return vDSP.mean(values)
     }
 
-    /// Sample or population variance.
+    /// Sample or population variance using Accelerate vDSP without temporary allocations.
     /// - Parameter ddof: Delta degrees of freedom (1 = sample, 0 = population).
     public static func variance(_ values: [Double], ddof: Int = 1, checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
-        if checkNaN { try requireNoNaN(values) }
         guard ddof >= 0 else { throw StatsError.invalidDDOF(ddof) }
         let n = Double(values.count)
         guard n > Double(ddof) else { throw StatsError.insufficientData(minimum: ddof + 1, got: values.count) }
 
-        let mu  = vDSP.mean(values)
-        // Σ(x - μ)²
-        var centered = [Double](repeating: 0, count: values.count)
-        vDSP.add(-mu, values, result: &centered)
-        let ssq = vDSP.sumOfSquares(centered)
-        let v = ssq / (n - Double(ddof))
-        guard v >= 0 else { throw StatsError.negativeVariance }
+        var meanVal = 0.0
+        var meanSquareVal = 0.0
+        let len = vDSP_Length(values.count)
+        vDSP_meanvD(values, 1, &meanVal, len)
+        vDSP_measqvD(values, 1, &meanSquareVal, len)
+
+        if checkNaN && (meanVal.isNaN || meanSquareVal.isNaN) {
+            try requireNoNaN(values)
+        }
+
+        let popVariance = meanSquareVal - (meanVal * meanVal)
+        let besselCorrection = n / (n - Double(ddof))
+        let v = Swift.max(0.0, popVariance * besselCorrection)
         return v
     }
 
@@ -42,16 +48,30 @@ extension Stats {
         try variance(values, ddof: ddof, checkNaN: checkNaN).squareRoot()
     }
 
-    /// Median via sorted linear interpolation.
+    /// Median via vDSP.sort.
     public static func median(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         if checkNaN { try requireNoNaN(values) }
-        let sorted = values.sorted()
-        let n = sorted.count
+        var copy = values
+        vDSP.sort(&copy, sortOrder: .ascending)
+        let n = copy.count
         if n % 2 == 1 {
-            return sorted[n / 2]
+            return copy[n / 2]
         } else {
-            return (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+            return (copy[n / 2 - 1] + copy[n / 2]) / 2.0
+        }
+    }
+
+    /// Float overload for median using vDSP.sort.
+    public static func median(_ values: [Float]) throws -> Float {
+        guard !values.isEmpty else { throw StatsError.emptyInput }
+        var copy = values
+        vDSP.sort(&copy, sortOrder: .ascending)
+        let n = copy.count
+        if n % 2 == 1 {
+            return copy[n / 2]
+        } else {
+            return (copy[n / 2 - 1] + copy[n / 2]) / 2.0
         }
     }
 

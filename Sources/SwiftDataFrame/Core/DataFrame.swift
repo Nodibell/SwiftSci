@@ -457,9 +457,12 @@ public struct DataFrame: Sendable {
         guard !indices.isEmpty else { return DataFrame.empty }
         let numCols = columns.count
         if numCols >= 4 && indices.count >= 10_000 {
-            var newCols = [any AnyColumn?](repeating: nil, count: numCols)
-            DispatchQueue.concurrentPerform(iterations: numCols) { colIdx in
-                newCols[colIdx] = self.columns[colIdx].gathered(at: indices)
+            // Each iteration writes to a unique index — no data race.
+            var newCols: [(any AnyColumn)?] = Array(repeating: nil, count: numCols)
+            newCols.withUnsafeMutableBufferPointer { buf in
+                DispatchQueue.concurrentPerform(iterations: numCols) { colIdx in
+                    buf[colIdx] = self.columns[colIdx].gathered(at: indices)
+                }
             }
             do {
                 return try DataFrame(columns: newCols.compactMap { $0 })

@@ -13,6 +13,8 @@ Local GPU Large Language Model architecture, weight parsers, and sampling algori
 
 ## Topics
 
-### Large Language Models
+### Large Language Models & Parsers
 - ``TransformerDecoder``
-- ``BPETokenizer``
+- ``GGUFParser``
+- ``SafeTensorsParser``
+- ``LLMOptions``

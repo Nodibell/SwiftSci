@@ -15,4 +15,4 @@ Interactive HTML and SVG chart exporters for data visualization and model evalua
 ## Topics
 
 ### Chart Exporters
-- ``HTMLChartExporter``
+- ``ChartExporter``

@@ -460,8 +460,9 @@ public struct DataFrame: Sendable {
             // Each iteration writes to a unique index — no data race.
             var newCols: [(any AnyColumn)?] = Array(repeating: nil, count: numCols)
             newCols.withUnsafeMutableBufferPointer { buf in
+                guard let base = buf.baseAddress else { return }
                 DispatchQueue.concurrentPerform(iterations: numCols) { colIdx in
-                    buf[colIdx] = self.columns[colIdx].gathered(at: indices)
+                    base[colIdx] = self.columns[colIdx].gathered(at: indices)
                 }
             }
             do {

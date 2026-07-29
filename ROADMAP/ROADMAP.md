@@ -122,6 +122,20 @@ The architecture combines two hardware engines:
 
 ---
 
+### Version 2.3: SIMD Acceleration, FFT Spectral Engines & Enterprise Drivers (🟡 In Progress)
+
+*Detailed implementation plan:* [implementation_plan_23.md](implementation_plan_23.md)
+
+1. **Phase 1**: SIMD Bitmask Boolean Filtering in `SwiftDataFrame` (`0.02×` → `>1.0× vs Pandas`).
+2. **Phase 2**: Primitive Array `vDSP.sort` Radix Indexing in `SwiftDataFrame` (`0.10×` → `>1.0× vs Pandas`).
+3. **Phase 3**: `vDSP` 1D FIR Convolution & Real FFT Spectral Engine in `SwiftForecast` (`0.09×` → `>1.0× vs Statsmodels`).
+4. **Phase 4**: Real U-Net Segmentation & YOLOv8 Anchor-Free Head in `SwiftVision`.
+5. **Phase 5**: PostgreSQL Native Binary Socket Connection Driver in `SwiftDatabase`.
+6. **Phase 6**: SIMD Tree Split Evaluation Vectorization & GPU Offloading in `SwiftML` & `SwiftCluster`.
+7. **Phase 7**: Comprehensive Verification, Benchmark Matrix Comparison & DocC Update.
+
+---
+
 ## 🏛 Integration Guidelines for Client Applications
 
 Thanks to its modular design, SwiftSci seamlessly integrates into applications following clean architecture:

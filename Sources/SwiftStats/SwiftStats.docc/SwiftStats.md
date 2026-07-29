@@ -1,17 +1,13 @@
 # ``SwiftStats``
 
-High-performance vectorized statistical analysis and distributions powered by Apple Silicon Accelerate vDSP.
+Vectorized Statistical Computing
 
 ## Overview
 
-`SwiftStats` provides zero-copy statistical reductions, probability distribution calculations, and hypothesis testing algorithms.
-
-### Key Capabilities
-- **Descriptive Statistics**: Mean, Variance, Standard Deviation, Skewness, Kurtosis.
-- **Probability Distributions**: Normal, Student-t, Chi-Square, F-distribution.
-- **Hypothesis Testing**: T-Test, Paired T-Test, ANOVA, Chi-Square Independence Test.
+`SwiftStats` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Statistical Calculations
-- ``Stats``
+### Guides & Articles
+- <doc:DescriptiveStatistics>
+- <doc:HypothesisTesting>

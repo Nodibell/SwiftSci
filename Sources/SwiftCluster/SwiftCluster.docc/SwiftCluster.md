@@ -1,19 +1,13 @@
 # ``SwiftCluster``
 
-Unsupervised clustering, dimensionality reduction, and density outlier detection algorithms.
+PCA & Unsupervised Clustering Engines
 
 ## Overview
 
-`SwiftCluster` implements high-performance unsupervised learning tools with hardware routing (CPU vs MLX GPU).
-
-### Key Algorithms
-- **Clustering**: `KMeans` (K-Means++ init), `DBSCAN`.
-- **Dimensionality Reduction**: `PCA` (SVD-based decomposition).
-- **Outlier Detection**: `IsolationForest`, `LocalOutlierFactor`.
+`SwiftCluster` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Clustering Models
-- ``KMeans``
-- ``DBSCAN``
-- ``PCA``
+### Guides & Articles
+- <doc:DimensionalityReduction>
+- <doc:ClusteringAndOutliers>

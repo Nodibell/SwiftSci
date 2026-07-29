@@ -1,18 +1,13 @@
 # ``SwiftPreprocessing``
 
-Feature scaling, categorical encoding, and imputation pipeline transformers for machine learning.
+Feature Scaling and Categorical Encoders
 
 ## Overview
 
-`SwiftPreprocessing` delivers scikit-learn parity transformers optimized for Apple Silicon Unified Memory Architecture.
-
-### Key Capabilities
-- **Feature Scalers**: `StandardScaler`, `MinMaxScaler`, `RobustScaler`, `Normalizer`.
-- **Categorical Encoders**: `OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `FrequencyEncoder`.
-- **Imputers**: `Imputer` (mean/median/most_frequent), `KNNImputer`.
-- **Pipelines**: `Pipeline`, `ColumnTransformer`.
+`SwiftPreprocessing` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Transformers
-- ``PreprocessingTransformer``
+### Guides & Articles
+- <doc:FeatureScaling>
+- <doc:EncodersAndImputers>

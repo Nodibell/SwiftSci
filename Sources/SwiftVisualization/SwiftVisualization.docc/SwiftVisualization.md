@@ -1,18 +1,12 @@
 # ``SwiftVisualization``
 
-Interactive HTML and SVG chart exporters for data visualization and model evaluation.
+Interactive HTML Chart Exporters
 
 ## Overview
 
-`SwiftVisualization` generates standalone, interactive HTML visualizations with zero external web dependencies.
-
-### Available Plots
-- **Correlation Heatmap**: `plotCorrelationHeatmap`
-- **ROC Curve**: `plotROCCurve`
-- **Feature Importances**: `plotFeatureImportances`
-- **Confusion Matrix**: `plotConfusionMatrix`
+`SwiftVisualization` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Chart Exporters
-- ``ChartExporter``
+### Guides & Articles
+- <doc:ChartExporters>

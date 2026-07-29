@@ -1,18 +1,13 @@
 # ``SwiftNLP``
 
-Natural Language Processing text normalizers, tokenizers, and vectorizers.
+Natural Language Processing Engine
 
 ## Overview
 
-`SwiftNLP` provides high-speed text preprocessing tools supporting Ukrainian and multilingual corpora.
-
-### Key Tools
-- **Text Normalization**: `TextNormalizer`, `StopWords`.
-- **Tokenization**: `BPETokenizer`, `NGramTokenizer`.
-- **Vectorizers**: `TFIDFVectorizer`, `HashingVectorizer`.
+`SwiftNLP` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Text Preprocessing
-- ``TextNormalizer``
-- ``TFIDFVectorizer``
+### Guides & Articles
+- <doc:TextNormalizationAndTokenization>
+- <doc:VectorizationAndEmbeddings>

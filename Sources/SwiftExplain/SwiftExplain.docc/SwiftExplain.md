@@ -1,15 +1,13 @@
 # ``SwiftExplain``
 
-Model Explainability & Feature Attribution Framework for Swift.
+Model Explainability & SHAP Attributions
 
 ## Overview
 
-`SwiftExplain` provides exact, fast feature attribution methods including TreeSHAP, KernelSHAP, Permutation Importance, and Partial Dependence Plots (PDP/ICE).
+`SwiftExplain` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Feature Attribution
-- ``TreeSHAP``
-- ``KernelSHAP``
-- ``PermutationImportance``
-- ``PartialDependencePlot``
+### Guides & Articles
+- <doc:ShapleyAttributions>
+- <doc:ModelInterpretability>

@@ -1,16 +1,13 @@
 # ``SwiftOptimize``
 
-Hyperparameter Optimization & AutoML Engine for Swift.
+AutoML & Cross-Validation Framework
 
 ## Overview
 
-`SwiftOptimize` provides automated hyperparameter tuning including Grid Search, Random Search, Bayesian Optimization, Hyperband, and Cross-Validation.
+`SwiftOptimize` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### AutoML & Tuning
-- ``AutoML``
-- ``AutoMLStrategy``
-- ``GridSearchCV``
-- ``RandomizedSearchCV``
-- ``KFold``
+### Guides & Articles
+- <doc:CrossValidationFolds>
+- <doc:HyperparameterTuning>

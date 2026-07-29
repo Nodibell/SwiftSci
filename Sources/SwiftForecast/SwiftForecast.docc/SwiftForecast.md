@@ -1,20 +1,13 @@
 # ``SwiftForecast``
 
-Time series forecasting, decomposition, and volatility modeling for statistical & financial analytics.
+Time Series & Volatility Forecasting
 
 ## Overview
 
-`SwiftForecast` provides high-speed implementations of state-space and autoregressive time series algorithms.
-
-### Supported Models
-- **Smoothing & State-Space**: `ExponentialSmoothing`, `HoltWinters`, `KalmanFilter`.
-- **Autoregressive**: `ARIMA`, `SARIMA`.
-- **Volatility**: `GARCH`.
-- **Decomposition**: Additive and Multiplicative Time Series Decomposition.
+`SwiftForecast` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Time Series Forecasting
-- ``ARIMA``
-- ``ExponentialSmoothing``
-- ``GARCH``
+### Guides & Articles
+- <doc:ArimaAndSarima>
+- <doc:SmoothingAndDecomposition>

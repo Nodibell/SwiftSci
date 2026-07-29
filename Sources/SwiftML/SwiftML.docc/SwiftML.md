@@ -1,25 +1,13 @@
 # ``SwiftML``
 
-Machine Learning Framework for Swift on Apple Silicon.
+Supervised Machine Learning Estimators
 
 ## Overview
 
-`SwiftML` provides vectorized linear, logistic, decision tree, random forest, gradient boosted trees, MLP neural networks, and multi-label classification algorithms leveraging Apple Accelerate (`vDSP`, `BLAS`, `LAPACK`).
+`SwiftML` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Protocols & Core
-- ``Estimator``
-- ``Predictor``
-- ``PredictionResult``
-- ``EvaluationReport``
-- ``FeatureSchema``
-
-### Supervised Learning
-- ``LinearRegression``
-- ``LogisticRegression``
-- ``DecisionTreeClassifier``
-- ``RandomForestClassifier``
-- ``GradientBoostedTreesRegressor``
-- ``MLPClassifier``
-- ``OneVsRestClassifier``
+### Guides & Articles
+- <doc:SupervisedClassifiers>
+- <doc:SupervisedRegressors>

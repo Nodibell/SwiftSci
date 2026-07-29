@@ -1,13 +1,12 @@
 # ``SwiftAgent``
 
-Agentic Analytics Sandbox & LLM RAG Context Generator for Swift.
+Agentic REPL Sandbox & RAG Summary Engine
 
 ## Overview
 
-`SwiftAgent` provides structured RAG context generation for DataFrames and a safe execution sandbox for executing agentic analytics loops using Swift DSLs.
+`SwiftAgent` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Agent Evaluation
-- ``RAGContextGenerator``
-- ``SwiftAgentEvaluator``
+### Guides & Articles
+- <doc:AgenticReplAndRAG>

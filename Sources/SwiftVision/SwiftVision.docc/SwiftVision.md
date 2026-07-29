@@ -1,18 +1,12 @@
 # ``SwiftVision``
 
-Computer Vision Framework for Swift on Apple Silicon.
+Computer Vision & Image Datasets
 
 ## Overview
 
-`SwiftVision` provides high-performance computer vision algorithms, including U-Net image segmentation with Dice/IoU metrics, YOLOv8 object detection, `.npz` binary array datasets, and CNN feature extraction using Accelerate and Metal.
+`SwiftVision` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Vision Models & Datasets
-
-- ``ImageDataset``
-- ``UNetSegmentationModel``
-- ``YOLOv8Detector``
-- ``BoundingBox``
-- ``VisionMetrics``
-- ``CNNFeatureExtractor``
+### Guides & Articles
+- <doc:ImageDatasetsAndSegmentation>

@@ -1,20 +1,13 @@
 # ``SwiftLLM``
 
-Local GPU Large Language Model architecture, weight parsers, and sampling algorithms.
+Causal LLM Decoder & Weight Parsers
 
 ## Overview
 
-`SwiftLLM` enables local inference of causal language models on Apple Silicon GPU.
-
-### Architecture Features
-- **Transformer Decoder**: Causal Multi-Head Attention, RoPE (Rotary Position Embeddings), SwiGLU.
-- **Weight Parsers**: Zero-copy `GGUFParser` and `SafeTensorsParser`.
-- **Sampling Strategies**: Greedy argmax, Temperature, Top-K, Top-P sampling.
+`SwiftLLM` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Large Language Models & Parsers
-- ``TransformerDecoder``
-- ``GGUFParser``
-- ``SafeTensorsParser``
-- ``LLMOptions``
+### Guides & Articles
+- <doc:TransformerDecoderArchitecture>
+- <doc:WeightParsingAndSampling>

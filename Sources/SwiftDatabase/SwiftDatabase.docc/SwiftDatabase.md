@@ -1,15 +1,12 @@
 # ``SwiftDatabase``
 
-Native SQL Database Driver & Data Ingestion Framework for SwiftDataFrame.
+Direct SQL Database Connectors
 
 ## Overview
 
-`SwiftDatabase` provides high-speed, zero-copy database connectors for SQLite and PostgreSQL databases, allowing seamless ingestion of SQL queries into native `SwiftDataFrame` instances.
+`SwiftDatabase` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
 
 ## Topics
 
-### Database Connections
-- ``DatabaseConnection``
-- ``SQLiteConnection``
-- ``PostgreSQLConnection``
-- ``SQLQueryResult``
+### Guides & Articles
+- <doc:DatabaseConnectors>

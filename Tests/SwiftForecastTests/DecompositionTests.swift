@@ -131,4 +131,29 @@ struct DecompositionTests {
         // Unit root series should have high p-value (fail to reject non-stationarity)
         #expect(rwP > 0.05)
     }
+
+    @Test("vDSP_convD 1D FIR moving average convolution")
+    func testMovingAverageFIR() throws {
+        let series = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let ma = TimeSeriesDecomposition.movingAverageFIR(series, period: 3)
+        #expect(ma.count == 3)
+        #expect(abs(ma[0] - 2.0) < 1e-7) // (1+2+3)/3 = 2.0
+        #expect(abs(ma[1] - 3.0) < 1e-7) // (2+3+4)/3 = 3.0
+        #expect(abs(ma[2] - 4.0) < 1e-7) // (3+4+5)/3 = 4.0
+    }
+
+    @Test("Accelerate FFT spectral decomposition (fftDecompose)")
+    func testFFTDecomposition() throws {
+        let series: [Double] = (0..<32).map { t in
+            let trend = Double(t) * 0.1
+            let seasonal = sin(2.0 * .pi * Double(t) / 8.0)
+            return trend + seasonal
+        }
+
+        let result = try TimeSeriesDecomposition.fftDecompose(series: series, topKComponents: 2)
+        #expect(result.trend.count == 32)
+        #expect(result.seasonal.count == 32)
+        #expect(result.residual.count == 32)
+        #expect(result.original.count == 32)
+    }
 }

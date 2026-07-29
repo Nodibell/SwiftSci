@@ -41,30 +41,25 @@ public enum TimeSeriesDecomposition {
             throw ForecastError.containsInfinity
         }
         
-        // 1. Compute Trend via Centered Moving Average
+        // 1. Compute Trend via Accelerate 1D FIR Convolution (vDSP_convD)
         var trend = [Double](repeating: Double.nan, count: n)
-        
+
         if period % 2 == 1 {
-            // Odd period: symmetric window of size p
             let half = period / 2
-            for i in half..<(n - half) {
-                let slice = series[i - half...i + half]
-                trend[i] = vDSP.mean(slice)
+            let ma = movingAverageFIR(series, period: period)
+            for i in 0..<ma.count {
+                trend[i + half] = ma[i]
             }
         } else {
-            // Even period: 2x period centered moving average
             let half = period / 2
-            var ma = [Double](repeating: 0.0, count: n - period + 1)
-            for i in 0...(n - period) {
-                let slice = series[i..<(i + period)]
-                ma[i] = vDSP.mean(slice)
-            }
-            for i in 0..<(n - period) {
-                let idx = i + half
-                trend[idx] = (ma[i] + ma[i + 1]) / 2.0
+            let ma = movingAverageFIR(series, period: period)
+            if ma.count >= 2 {
+                for i in 0..<(ma.count - 1) {
+                    trend[i + half] = (ma[i] + ma[i + 1]) / 2.0
+                }
             }
         }
-        
+
         // 2. Compute Detrended Series
         var detrended = [Double](repeating: Double.nan, count: n)
         if model == .additive {
@@ -378,5 +373,110 @@ public enum TimeSeriesDecomposition {
         }
         
         return (tStat, Swift.max(0.0, Swift.min(1.0, pVal)))
+    }
+
+    /// Computes moving average using Accelerate 1D FIR Convolution (vDSP_convD).
+    public static func movingAverageFIR(_ series: [Double], period: Int) -> [Double] {
+        let n = series.count
+        guard n >= period, period > 0 else { return [] }
+        let filter = [Double](repeating: 1.0 / Double(period), count: period)
+        let resultCount = n - period + 1
+        var result = [Double](repeating: 0.0, count: resultCount)
+
+        filter.withUnsafeBufferPointer { filterBuf in
+            series.withUnsafeBufferPointer { seriesBuf in
+                vDSP_convD(
+                    seriesBuf.baseAddress!, 1,
+                    filterBuf.baseAddress!, 1,
+                    &result, 1,
+                    vDSP_Length(resultCount),
+                    vDSP_Length(period)
+                )
+            }
+        }
+        return result
+    }
+
+    /// Spectral Fast Fourier Transform (FFT) Decomposition using Accelerate vDSP.
+    /// Decomposes time series into trend, dominant seasonal components, and residual noise in the frequency domain.
+    public static func fftDecompose(
+        series: [Double],
+        topKComponents: Int = 3
+    ) throws -> DecompositionResult {
+        let n = series.count
+        guard n >= 8 else { throw ForecastError.insufficientLength(minimum: 8, got: n) }
+
+        // Pad to power of 2 for optimal FFT
+        let log2n = vDSP_Length(ceil(log2(Double(n))))
+        let fftSize = 1 << Int(log2n)
+
+        var realInput = series + [Double](repeating: 0.0, count: fftSize - n)
+        var imagInput = [Double](repeating: 0.0, count: fftSize)
+
+        guard let setup = vDSP_create_fftsetupD(log2n, FFTRadix(kFFTRadix2)) else {
+            throw ForecastError.convergenceFailed(iterations: 0)
+        }
+        defer { vDSP_destroy_fftsetupD(setup) }
+
+        var magnitudes = [Double](repeating: 0.0, count: fftSize / 2)
+        realInput.withUnsafeMutableBufferPointer { realBuf in
+            imagInput.withUnsafeMutableBufferPointer { imagBuf in
+                var splitComplex = DSPDoubleSplitComplex(
+                    realp: realBuf.baseAddress!,
+                    imagp: imagBuf.baseAddress!
+                )
+                vDSP_fft_zipD(setup, &splitComplex, 1, log2n, FFTDirection(kFFTDirection_Forward))
+
+                for i in 0..<(fftSize / 2) {
+                    let r = realBuf[i]
+                    let im = imagBuf[i]
+                    magnitudes[i] = sqrt(r * r + im * im)
+                }
+            }
+        }
+
+        // Reconstruct seasonal signal from top K spectral peaks
+        var seasonalReal = [Double](repeating: 0.0, count: fftSize)
+        var seasonalImag = [Double](repeating: 0.0, count: fftSize)
+
+        let sortedIndices = (1..<(fftSize / 2)).sorted { magnitudes[$0] > magnitudes[$1] }
+        let topIndices = Set(sortedIndices.prefix(topKComponents))
+
+        seasonalReal.withUnsafeMutableBufferPointer { sRealBuf in
+            seasonalImag.withUnsafeMutableBufferPointer { sImagBuf in
+                for i in 0..<(fftSize / 2) {
+                    if topIndices.contains(i) {
+                        sRealBuf[i] = realInput[i]
+                        sImagBuf[i] = imagInput[i]
+                    }
+                }
+
+                var seasonalComplex = DSPDoubleSplitComplex(
+                    realp: sRealBuf.baseAddress!,
+                    imagp: sImagBuf.baseAddress!
+                )
+                vDSP_fft_zipD(setup, &seasonalComplex, 1, log2n, FFTDirection(kFFTDirection_Inverse))
+            }
+        }
+
+        let scale = 1.0 / Double(fftSize)
+        var seasonal = [Double](repeating: 0.0, count: n)
+        for i in 0..<n {
+            seasonal[i] = seasonalReal[i] * scale
+        }
+
+        let trend = movingAverageFIR(series, period: max(2, n / 10))
+        let paddedTrend = Array(trend.prefix(n)) + [Double](repeating: series.last ?? 0.0, count: max(0, n - trend.count))
+
+        var residual = [Double](repeating: 0.0, count: n)
+        vDSP.subtract(series, paddedTrend, result: &residual)
+        vDSP.subtract(residual, seasonal, result: &residual)
+
+        return DecompositionResult(
+            trend: paddedTrend,
+            seasonal: seasonal,
+            residual: residual,
+            original: series
+        )
     }
 }

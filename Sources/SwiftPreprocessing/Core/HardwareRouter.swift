@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import MLX
 
@@ -38,3 +39,4 @@ public actor HardwareRouter {
     }
 
 }
+#endif // os(macOS)

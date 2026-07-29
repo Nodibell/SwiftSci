@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import Accelerate
 import MLX
@@ -352,3 +353,4 @@ public actor PCA {
         return try transform(X)
     }
 }
+#endif // os(macOS)

@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import Accelerate
 import MLX
@@ -312,3 +313,4 @@ public actor LinearRegression: RegressorEstimator {
         return nil
     }
 }
+#endif // os(macOS)

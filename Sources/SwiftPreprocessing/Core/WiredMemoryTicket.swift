@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import os
 import MLX
@@ -47,3 +48,4 @@ public final class WiredMemoryTicket: Sendable {
         }
     }
 }
+#endif // os(macOS)

@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import Accelerate
 import MLX
@@ -438,3 +439,4 @@ public actor KMeans {
         return sampledCentroids
     }
 }
+#endif // os(macOS)

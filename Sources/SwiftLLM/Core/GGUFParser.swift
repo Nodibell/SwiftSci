@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import MLX
 #if canImport(SwiftDataFrame)
@@ -167,3 +168,4 @@ public enum GGUFParser {
         return tensors
     }
 }
+#endif // os(macOS)

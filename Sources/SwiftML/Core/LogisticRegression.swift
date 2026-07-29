@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import MLX
 import SwiftPreprocessing
@@ -271,3 +272,4 @@ public actor LogisticRegression: ClassifierEstimator {
         return nil
     }
 }
+#endif // os(macOS)

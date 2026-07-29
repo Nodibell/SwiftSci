@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import MLX
 #if canImport(SwiftDataFrame)
@@ -78,3 +79,4 @@ public enum SafeTensorsParser {
         return tensors
     }
 }
+#endif // os(macOS)

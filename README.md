@@ -64,6 +64,8 @@ The following table presents median execution times for benchmark scenarios on A
 | **CSV Read** (100k rows) | **16.53 ms** | 20.11 ms (*Pandas*) | ⚡ **1.22×** | 🟢 Swift |
 | **CSV Stream + GroupBy** (100k rows) | **22.88 ms** | 30.05 ms (*Pandas*) | ⚡ **1.31×** | 🟢 Swift |
 
+> ℹ️ **Transparent Reporting**: For the complete 25-benchmark matrix (including Python wins such as C-indexed DataFrame row filtering, matrix sorting, and analysis of performance gaps tracked for v2.3), see [PERFORMANCE.md](PERFORMANCE.md).
+
 ---
 
 ## 🛠 Architectural Highlights & Optimizations

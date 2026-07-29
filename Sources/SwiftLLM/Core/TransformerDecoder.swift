@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import MLX
 import MLXNN
@@ -123,3 +124,4 @@ public class TransformerDecoder: Module, @unchecked Sendable {
         }
     }
 }
+#endif // os(macOS)

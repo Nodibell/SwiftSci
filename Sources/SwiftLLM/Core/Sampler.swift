@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import MLX
 
@@ -33,3 +34,4 @@ public struct Sampler: Sendable {
         return sampled.item(Int.self)
     }
 }
+#endif // os(macOS)

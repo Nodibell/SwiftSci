@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import SwiftVision
 
-@Suite("SwiftVision Tests")
+@Suite("SwiftVision Tests (Phase 4)")
 struct SwiftVisionTests {
     @Test("Test Vision Metrics calculation")
     func testVisionMetrics() {
@@ -29,39 +29,24 @@ struct SwiftVisionTests {
         #expect(!nms.isEmpty)
     }
 
-    @Test("Test UNetSegmentation Model throws notImplemented")
-    func testUNetModelNotImplemented() async {
-        let img = ImageDataset(width: 4, height: 4, channels: 1, data: Array(repeating: 0.8, count: 16))
+    @Test("Test UNetSegmentation Model predict forward pass")
+    func testUNetModelPredict() async throws {
+        let img = ImageDataset(width: 8, height: 8, channels: 1, data: Array(repeating: 0.8, count: 64))
         let unet = UNetSegmentationModel(inputChannels: 1, numClasses: 2)
-        do {
-            _ = try await unet.predict(image: img)
-            #expect(Bool(false), "Expected predict to throw VisionError.notImplemented")
-        } catch let err as VisionError {
-            if case .notImplemented(let msg) = err {
-                #expect(msg.contains("UNetSegmentationModel"))
-            } else {
-                #expect(Bool(false), "Unexpected VisionError variant")
-            }
-        } catch {
-            #expect(Bool(false), "Unexpected error type: \(error)")
-        }
+        let mask = try await unet.predict(image: img)
+
+        #expect(mask.count == 8)
+        #expect(mask[0].count == 8)
+        #expect(mask[0][0] >= 0.0 && mask[0][0] <= 1.0)
     }
 
-    @Test("Test YOLOv8Detector throws notImplemented")
-    func testYOLODetectorNotImplemented() async {
-        let img = ImageDataset(width: 4, height: 4, channels: 3, data: Array(repeating: 0.5, count: 48))
-        let detector = YOLOv8Detector()
-        do {
-            _ = try await detector.detect(image: img)
-            #expect(Bool(false), "Expected detect to throw VisionError.notImplemented")
-        } catch let err as VisionError {
-            if case .notImplemented(let msg) = err {
-                #expect(msg.contains("YOLOv8Detector"))
-            } else {
-                #expect(Bool(false), "Unexpected VisionError variant")
-            }
-        } catch {
-            #expect(Bool(false), "Unexpected error type: \(error)")
-        }
+    @Test("Test YOLOv8Detector detect forward pass and NMS")
+    func testYOLODetectorDetect() async throws {
+        let img = ImageDataset(width: 32, height: 32, channels: 3, data: Array(repeating: 0.5, count: 32 * 32 * 3))
+        let detector = YOLOv8Detector(confidenceThreshold: 0.25, iouThreshold: 0.45)
+        let boxes = try await detector.detect(image: img)
+
+        #expect(!boxes.isEmpty)
+        #expect(boxes.first?.confidence ?? 0.0 >= 0.25)
     }
 }

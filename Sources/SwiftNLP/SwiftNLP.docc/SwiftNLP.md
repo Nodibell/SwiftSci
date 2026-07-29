@@ -1,13 +1,29 @@
 # ``SwiftNLP``
 
-Natural Language Processing Engine
+Natural Language Processing & Text Feature Extraction.
 
 ## Overview
 
-`SwiftNLP` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
+`SwiftNLP` provides Ukrainian and English text normalization, tokenizers, stopword filtering, and n-gram vectorization pipelines.
+
+### Key Capabilities
+
+- **Text Normalization**: `TextNormalizer` with lowercasing, punctuation stripping, and stopword removal.
+- **Subword Tokenization**: `BPETokenizer` (Byte-Pair Encoding) and `NGramTokenizer`.
+- **Vectorization Pipelines**: `CountVectorizer`, `HashingVectorizer`, and `TFIDFVectorizer`.
+- **Multilingual Datasets**: Pre-built Ukrainian (`ua-news`) and English stopword lexicons.
+
+### Example Usage
+
+```swift
+import SwiftNLP
+
+let vectorizer = TFIDFVectorizer(ngramRange: (1, 2))
+let X_text = try vectorizer.fitTransform(corpus)
+```
 
 ## Topics
 
-### Guides & Articles
+### Guides & Tutorials
 - <doc:TextNormalizationAndTokenization>
 - <doc:VectorizationAndEmbeddings>

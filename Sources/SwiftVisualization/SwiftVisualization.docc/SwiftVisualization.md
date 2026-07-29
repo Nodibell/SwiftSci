@@ -1,12 +1,26 @@
 # ``SwiftVisualization``
 
-Interactive HTML Chart Exporters
+Standalone Interactive HTML Chart Exporters.
 
 ## Overview
 
-`SwiftVisualization` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
+`SwiftVisualization` generates standalone, interactive HTML chart diagnostic visualizers viewable directly in web browsers.
+
+### Key Capabilities
+
+- **Correlation Heatmaps**: Interactive correlation matrix heatmaps exported directly from `DataFrame`.
+- **Evaluation Visuals**: `ROCCurve` plots with AUC metrics and `ConfusionMatrix` displays.
+- **Feature Diagnostics**: `FeatureImportance` bar charts and partial dependence visualizers.
+
+### Example Usage
+
+```swift
+import SwiftVisualization
+
+let html = try df.exportCorrelationHeatmapHTML()
+```
 
 ## Topics
 
-### Guides & Articles
+### Guides & Tutorials
 - <doc:ChartExporters>

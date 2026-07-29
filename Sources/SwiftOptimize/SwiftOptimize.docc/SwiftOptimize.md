@@ -1,13 +1,29 @@
 # ``SwiftOptimize``
 
-AutoML & Cross-Validation Framework
+AutoML, Cross-Validation Folds & Hyperparameter Tuning.
 
 ## Overview
 
-`SwiftOptimize` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
+`SwiftOptimize` enables automated model selection, advanced cross-validation splitters, and systematic hyperparameter search strategies.
+
+### Key Capabilities
+
+- **Cross-Validation Splitters**: `KFold`, `StratifiedKFold`, `GroupKFold`, and `TimeSeriesSplit`.
+- **Hyperparameter Search**: `GridSearchCV` and `RandomizedSearchCV` with parallel fold evaluation.
+- **Automated Machine Learning**: `AutoML` model selector with automatic cross-validation tuning.
+- **Evaluation Metrics**: `fBetaScore`, `prAUC`, `adjustedR2Score`, `mape`, and `explainedVarianceScore`.
+
+### Example Usage
+
+```swift
+import SwiftOptimize
+
+let skf = StratifiedKFold(nSplits: 5)
+let gridSearch = GridSearchCV(estimator: DecisionTreeClassifier(), paramGrid: grid, cv: 5)
+```
 
 ## Topics
 
-### Guides & Articles
+### Guides & Tutorials
 - <doc:CrossValidationFolds>
 - <doc:HyperparameterTuning>

@@ -1,13 +1,29 @@
 # ``SwiftCluster``
 
-PCA & Unsupervised Clustering Engines
+PCA Dimensionality Reduction & Unsupervised Clustering.
 
 ## Overview
 
-`SwiftCluster` is a core module in the **SwiftSci** ecosystem designed for Apple Silicon UMA and modern Swift 6 strict concurrency.
+`SwiftCluster` provides fast SVD-based dimensionality reduction, density-based clustering, and anomaly detection algorithms.
+
+### Key Capabilities
+
+- **Dimensionality Reduction**: SVD-based `PCA` with hardware auto-routing between CPU and UMA GPU.
+- **Clustering**: Accelerated `KMeans` with KMeans++ initialization and `DBSCAN` density-based clustering.
+- **Anomaly Detection**: `IsolationForest` and `LocalOutlierFactor` (LOF) density outlier identification.
+- **Clustering Metrics**: `SilhouetteScore`, Calinski-Harabasz Index, and Davies-Bouldin Index.
+
+### Example Usage
+
+```swift
+import SwiftCluster
+
+let pca = PCA(nComponents: 2)
+let X_pca = try await pca.fitTransform(X)
+```
 
 ## Topics
 
-### Guides & Articles
+### Guides & Tutorials
 - <doc:DimensionalityReduction>
 - <doc:ClusteringAndOutliers>

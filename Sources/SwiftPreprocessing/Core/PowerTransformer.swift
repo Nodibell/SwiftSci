@@ -2,18 +2,28 @@ import Foundation
 
 /// PowerTransformer applies a power transform feature-wise to stabilize variance and make data more Gaussian-like.
 public final class PowerTransformer: PreprocessingTransformer, @unchecked Sendable {
+    /// Represents method.
     public enum Method: String, Sendable, Codable {
         case boxCox = "box-cox"
         case yeoJohnson = "yeo-johnson"
     }
     
+    /// The method.
     public let method: Method
+    /// The standardize.
     public let standardize: Bool
     
+    /// The lambdas.
     public private(set) var lambdas: [Double]?
+    /// The means.
     public private(set) var means: [Double]?
+    /// The stds.
     public private(set) var stds: [Double]?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - method: The method.
+    ///   - standardize: The standardize.
     public init(method: Method = .yeoJohnson, standardize: Bool = true) {
         self.method = method
         self.standardize = standardize

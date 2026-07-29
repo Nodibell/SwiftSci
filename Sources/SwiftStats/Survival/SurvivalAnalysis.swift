@@ -4,6 +4,7 @@ import Foundation
 
 /// Kaplan-Meier non-parametric statistic used to estimate the survival function from life-tables or right-censored data.
 public struct KaplanMeier: Sendable {
+    /// Represents survival point.
     public struct SurvivalPoint: Sendable {
         public let time: Double
         public let atRisk: Int
@@ -11,8 +12,13 @@ public struct KaplanMeier: Sendable {
         public let survivalProbability: Double
     }
 
+    /// The timeline.
     public let timeline: [SurvivalPoint]
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - durations: The durations.
+    ///   - events: The events.
     public init(durations: [Double], events: [Int]) {
         precondition(durations.count == events.count, "Durations and events counts must match")
 
@@ -86,11 +92,21 @@ public struct KaplanMeier: Sendable {
 
 /// Cox Proportional Hazards model for semi-parametric survival time regression.
 public final class CoxProportionalHazards: @unchecked Sendable {
+    /// The coefficients.
     public private(set) var coefficients: [Double] = []
+    /// is fitted.
     public private(set) var isFitted: Bool = false
 
+    /// Creates a new instance.
     public init() {}
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - durations: The durations.
+    ///   - events: The events.
+    ///   - maxIterations: The max iterations.
+    ///   - lr: The lr.
     public func fit(features: [[Double]], durations: [Double], events: [Int], maxIterations: Int = 50, lr: Double = 0.01) {
         let n = features.count
         guard n > 0 && n == durations.count && n == events.count else { return }

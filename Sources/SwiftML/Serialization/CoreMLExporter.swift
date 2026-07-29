@@ -4,6 +4,7 @@ import Foundation
 /// Note: Produces a JSON representation of the model specification, not a binary .mlmodel or .mlpackage bundle.
 public enum CoreMLExporter {
     
+    /// Represents core m l model spec.
     public struct CoreMLModelSpec: Codable, Sendable {
         public let modelName: String
         public let author: String

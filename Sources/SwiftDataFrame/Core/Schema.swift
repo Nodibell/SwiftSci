@@ -1,6 +1,7 @@
 /// Describes the structure of a DataFrame: column names and their types.
 public struct Schema: Sendable, CustomStringConvertible {
 
+    /// Represents field.
     public struct Field: Sendable {
         public let name: String
         public let dtype: ColumnDType
@@ -13,8 +14,12 @@ public struct Schema: Sendable, CustomStringConvertible {
         }
     }
 
+    /// The fields.
     public let fields: [Field]
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - fields: The fields.
     public init(fields: [Field]) {
         self.fields = fields
     }
@@ -27,10 +32,14 @@ public struct Schema: Sendable, CustomStringConvertible {
         Dictionary(uniqueKeysWithValues: fields.map { ($0.name, $0.dtype) })
     }
 
+    /// Accesses the element at the given index.
+    /// - Parameters:
+    ///   - name: The name.
     public subscript(name: String) -> Field? {
         fields.first { $0.name == name }
     }
 
+    /// The description.
     public var description: String {
         let rows = fields.map { f in
             "  \(f.name): \(f.dtype)\(f.nullable ? "?" : "")"

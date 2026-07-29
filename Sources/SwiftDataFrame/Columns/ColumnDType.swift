@@ -8,6 +8,7 @@ public enum ColumnDType: Sendable, Hashable, CustomStringConvertible {
     case utf8
     case date32     // Days since Unix epoch (1970-01-01)
 
+    /// The description.
     public var description: String {
         switch self {
         case .int32:   return "Int32"

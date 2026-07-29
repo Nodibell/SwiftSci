@@ -11,9 +11,15 @@ public enum AutoMLStrategy: Sendable {
 
 /// Automated Machine Learning (AutoML) controller.
 public actor AutoML {
+    /// The time budget seconds.
     public private(set) var timeBudgetSeconds: Double
+    /// The strategy.
     public private(set) var strategy: AutoMLStrategy
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - timeBudgetSeconds: The time budget seconds.
+    ///   - strategy: The strategy.
     public init(timeBudgetSeconds: Double = 60.0, strategy: AutoMLStrategy = .bayesian) {
         self.timeBudgetSeconds = timeBudgetSeconds
         self.strategy = strategy

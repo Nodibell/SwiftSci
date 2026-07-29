@@ -5,15 +5,26 @@ import Foundation
 /// A native Swift GBDT Regressor using Flat Arrays (DOD).
 /// Sequentially trains shallow regression trees on the residuals (pseudo-gradients) of the previous ensemble.
 public actor GradientBoostedTreesRegressor: RegressorEstimator {
+    /// The n estimators.
     public let nEstimators: Int
+    /// The learning rate.
     public let learningRate: Double
+    /// The max depth.
     public let maxDepth: Int
+    /// The min samples split.
     public let minSamplesSplit: Int
     
     // Forest stored as an array of flat tree node arrays (Data-Oriented Design)
     private var trees: [[FlatTreeNode]] = []
     private var initialPrediction: Double = 0.0
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nEstimators: The n estimators.
+    ///   - learningRate: The learning rate.
+    ///   - maxDepth: The max depth.
+    ///   - minSamplesSplit: The min samples split.
+    /// - Throws: An error if the operation fails.
     public init(
         nEstimators: Int = 100,
         learningRate: Double = 0.1,

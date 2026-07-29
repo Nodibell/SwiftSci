@@ -6,7 +6,9 @@ import Arrow
 internal struct ArrowDataBuffer<Element: Sendable>: DataBuffer, @unchecked Sendable {
     
     private let rawPointer: UnsafeRawPointer
+    /// The byte count.
     public let byteCount: Int
+    /// The element count.
     public let elementCount: Int
     
     init(rawPointer: UnsafeRawPointer, byteCount: Int, elementCount: Int) {

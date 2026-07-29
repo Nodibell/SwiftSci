@@ -5,10 +5,15 @@ import SwiftDataFrame
 public struct SeedableRandomNumberGenerator: RandomNumberGenerator {
     private var state: UInt64
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - seed: The seed.
     public init(seed: Int) {
         self.state = seed == 0 ? 123456789 : UInt64(abs(seed))
     }
     
+    /// Next.
+    /// - Returns: A `UInt64` result.
     public mutating func next() -> UInt64 {
         state = state.multipliedReportingOverflow(by: 6364136223846793005).partialValue &+ 1442695040888963407
         return state

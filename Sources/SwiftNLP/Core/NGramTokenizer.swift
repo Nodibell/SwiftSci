@@ -2,10 +2,18 @@ import Foundation
 
 /// Generates n-gram token sequences from input string texts.
 public struct NGramTokenizer: Sendable {
+    /// The min n.
     public let minN: Int
+    /// The max n.
     public let maxN: Int
+    /// The lowercase.
     public let lowercase: Bool
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - minN: The min n.
+    ///   - maxN: The max n.
+    ///   - lowercase: The lowercase.
     public init(minN: Int = 1, maxN: Int = 2, lowercase: Bool = true) {
         self.minN = max(1, minN)
         self.maxN = max(self.minN, maxN)

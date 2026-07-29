@@ -2,10 +2,18 @@ import Foundation
 
 /// Coordinates of a CSV field within an un-copied byte buffer.
 public struct CSVFieldOffset: Sendable {
+    /// The start offset.
     public let startOffset: Int
+    /// The length.
     public let length: Int
+    /// The escaped quotes present.
     public let escapedQuotesPresent: Bool
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - startOffset: The start offset.
+    ///   - length: The length.
+    ///   - escapedQuotesPresent: The escaped quotes present.
     public init(startOffset: Int, length: Int, escapedQuotesPresent: Bool) {
         self.startOffset = startOffset
         self.length = length
@@ -24,6 +32,10 @@ public final class SystemsCSVParser: Sendable {
     private let lfByte: UInt8 = 10         // ASCII '\n'
     private let crByte: UInt8 = 13         // ASCII '\r'
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - delimiterByte: The delimiter byte.
+    ///   - quoteByte: The quote byte.
     public init(delimiterByte: UInt8 = 44, quoteByte: UInt8 = 34) {
         self.delimiterByte = delimiterByte
         self.quoteByte = quoteByte

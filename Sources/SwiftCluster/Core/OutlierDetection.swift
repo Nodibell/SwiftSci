@@ -24,8 +24,11 @@ public struct AnomalyPrediction: Sendable {
 
 /// Isolation Forest algorithm for anomaly detection using random partitions.
 public final class IsolationForest: Sendable {
+    /// The n estimators.
     public let nEstimators: Int
+    /// The max samples.
     public let maxSamples: Int?
+    /// The contamination.
     public let contamination: Double
     
     private final class Node: @unchecked Sendable {
@@ -45,6 +48,11 @@ public final class IsolationForest: Sendable {
     private let trees: [IsolationTree]
     private let thresholdScore: Double
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nEstimators: The n estimators.
+    ///   - maxSamples: The max samples.
+    ///   - contamination: The contamination.
     public init(nEstimators: Int = 100, maxSamples: Int? = nil, contamination: Double = 0.1) {
         self.nEstimators = nEstimators
         self.maxSamples = maxSamples
@@ -179,9 +187,15 @@ public final class IsolationForest: Sendable {
 
 /// Local Outlier Factor (LOF) algorithm for local density-based anomaly detection.
 public final class LocalOutlierFactor: Sendable {
+    /// The k.
     public let k: Int
+    /// The contamination.
     public let contamination: Double
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - k: The k.
+    ///   - contamination: The contamination.
     public init(k: Int = 20, contamination: Double = 0.1) {
         self.k = k
         self.contamination = max(0.0, min(0.5, contamination))

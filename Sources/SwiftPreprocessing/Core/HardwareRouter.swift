@@ -4,6 +4,7 @@ import MLX
 
 /// Serializes device selection and MLX default-device changes (global MLX state).
 public actor HardwareRouter {
+    /// The shared.
     public static let shared = HardwareRouter()
 
     private init() {}

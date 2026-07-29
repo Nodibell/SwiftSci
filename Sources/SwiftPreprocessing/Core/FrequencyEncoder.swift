@@ -5,6 +5,7 @@ public final class FrequencyEncoder: PreprocessingTransformer, @unchecked Sendab
     private var frequencies: [String: Double] = [:]
     private var isFitted: Bool = false
     
+    /// Creates a new instance.
     public init() {}
     
     /// Fits FrequencyEncoder on categorical string values.
@@ -26,6 +27,8 @@ public final class FrequencyEncoder: PreprocessingTransformer, @unchecked Sendab
         self.isFitted = true
     }
     
+    /// Fit.
+    /// - Throws: An error if the operation fails.
     public func fit(_ data: [[Double]]) throws {
         let categories = data.map { String($0.first ?? 0.0) }
         try fit(categories: categories)
@@ -37,12 +40,20 @@ public final class FrequencyEncoder: PreprocessingTransformer, @unchecked Sendab
         return categories.map { frequencies[$0] ?? 0.0 }
     }
     
+    /// Transform.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         let categories = data.map { String($0.first ?? 0.0) }
         let encoded = try transform(categories: categories)
         return encoded.map { [$0] }
     }
     
+    /// Fit transform.
+    /// - Parameters:
+    ///   - categories: The categories.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Double]` result.
     public func fitTransform(categories: [String]) throws -> [Double] {
         try fit(categories: categories)
         return try transform(categories: categories)

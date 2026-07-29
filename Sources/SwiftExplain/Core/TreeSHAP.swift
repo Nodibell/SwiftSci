@@ -3,6 +3,7 @@ import SwiftML
 
 /// SHAP explainer delegating to KernelSHAP model interpretations.
 public struct TreeSHAP: Sendable {
+    /// Creates a new instance.
     public init() {}
 
     /// Explains predictions of a model by calculating Shapley values for each instance against background data via KernelSHAP.
@@ -34,6 +35,7 @@ public struct TreeSHAP: Sendable {
 
 /// Permutation Feature Importance calculator.
 public struct PermutationImportance: Sendable {
+    /// Creates a new instance.
     public init() {}
 
     /// Computes feature importance by measuring decrease in model performance (MSE) when each feature column is shuffled.
@@ -68,6 +70,7 @@ public struct PermutationImportance: Sendable {
 
 /// Partial Dependence Plot (PDP) and Individual Conditional Expectation (ICE) calculator.
 public struct PartialDependencePlot: Sendable {
+    /// Creates a new instance.
     public init() {}
 
     /// Calculates PDP grid values for a specified feature index by replacing feature column values with grid points.

@@ -2,10 +2,19 @@ import Foundation
 import SwiftDataFrame
 
 extension PreprocessingTransformer {
+    /// Fit.
+    /// - Parameters:
+    ///   - columns: The columns.
+    /// - Throws: An error if the operation fails.
     public func fit(_ df: DataFrame, columns: [String]) throws {
         try fit(df.toFeatureMatrix(columns))
     }
 
+    /// Transform.
+    /// - Parameters:
+    ///   - columns: The columns.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `DataFrame` result.
     public func transform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
         let result = try transform(df.toFeatureMatrix(columns))
         var out = df
@@ -17,6 +26,11 @@ extension PreprocessingTransformer {
         return out
     }
 
+    /// Fit transform.
+    /// - Parameters:
+    ///   - columns: The columns.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `DataFrame` result.
     public func fitTransform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
         try fit(df, columns: columns)
         return try transform(df, columns: columns)

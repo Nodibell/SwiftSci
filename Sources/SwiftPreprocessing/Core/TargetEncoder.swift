@@ -2,12 +2,16 @@ import Foundation
 
 /// Target encoder for categorical features using Empirical Bayes smoothing.
 public final class TargetEncoder: PreprocessingTransformer, @unchecked Sendable {
+    /// The smoothing.
     public let smoothing: Double
     
     private var targetMeans: [String: Double] = [:]
     private var globalMean: Double = 0.0
     private var isFitted: Bool = false
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - smoothing: The smoothing.
     public init(smoothing: Double = 10.0) {
         self.smoothing = max(0.0, smoothing)
     }

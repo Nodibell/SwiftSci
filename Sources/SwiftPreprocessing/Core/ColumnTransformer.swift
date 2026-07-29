@@ -3,6 +3,7 @@ import SwiftDataFrame
 
 /// Applies separate preprocessing transformers to specified subsets of columns.
 public final class ColumnTransformer: PreprocessingTransformer, @unchecked Sendable {
+    /// Represents route.
     public struct Route {
         public let name: String
         public let transformer: any PreprocessingTransformer
@@ -15,13 +16,19 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
         }
     }
 
+    /// The routes.
     public let routes: [Route]
     private var isFitted: Bool = false
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - routes: The routes.
     public init(routes: [Route]) {
         self.routes = routes
     }
 
+    /// Fit.
+    /// - Throws: An error if the operation fails.
     public func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty else { throw PreprocessingError.invalidInput("Data cannot be empty") }
         let numCols = data[0].count
@@ -38,6 +45,9 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
         isFitted = true
     }
 
+    /// Transform.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard isFitted else { throw PreprocessingError.notFitted }
         guard !data.isEmpty else { throw PreprocessingError.invalidInput("Data cannot be empty") }

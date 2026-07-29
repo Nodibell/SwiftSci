@@ -2,9 +2,17 @@ import Foundation
 
 // MARK: - Split Criteria
 
+/// The impurity criterion used to evaluate candidate splits in a decision tree.
+///
+/// - ``gini``: Gini impurity — minimizes class mixing probability.
+/// - ``entropy``: Information gain — minimizes Shannon entropy.
+/// - ``mse``: Mean Squared Error — used for regression trees.
 public enum SplitCriterion: Sendable {
+    /// Gini impurity criterion for classification trees.
     case gini
+    /// Entropy / information gain criterion for classification trees.
     case entropy
+    /// Mean Squared Error criterion for regression trees.
     case mse
 }
 
@@ -20,16 +28,35 @@ struct SplitResult: Sendable {
 
 // MARK: - Flat Decision Tree Node (DOD Architecture)
 
+/// A flat, cache-friendly representation of a decision tree node.
+///
+/// Stores all tree structure in a contiguous array rather than pointer-linked objects,
+/// eliminating ARC overhead and maximizing CPU cache locality (Data-Oriented Design).
 public struct FlatTreeNode: Sendable, Codable {
+    /// Index of the feature to split on. `-1` for leaf nodes.
     public let featureIndex: Int
+    /// Threshold value for the binary split condition (`feature[i] <= threshold`).
     public let threshold: Double
+    /// Index of the left child node in the flat tree array (`feature <= threshold`).
     public let leftChild: Int
+    /// Index of the right child node in the flat tree array (`feature > threshold`).
     public let rightChild: Int
-    /// Leaf value: predicted class (classifier) or mean (regressor)
+    /// Leaf value: predicted class label (classifier) or predicted mean (regressor).
     public let value: Double
+    /// `true` if this node is a leaf with no further splits.
     public let isLeaf: Bool
+    /// Impurity reduction achieved by this split.
     public let impurityGain: Double
 
+    /// Creates a new flat tree node.
+    /// - Parameters:
+    ///   - featureIndex: Index of the feature used to split. Use `-1` for leaf nodes.
+    ///   - threshold: Split threshold value.
+    ///   - leftChild: Index of the left child node in the flat tree array.
+    ///   - rightChild: Index of the right child node in the flat tree array.
+    ///   - value: Predicted value at a leaf node.
+    ///   - isLeaf: Whether this node is a terminal leaf.
+    ///   - impurityGain: Impurity reduction achieved by this split.
     public init(
         featureIndex: Int,
         threshold: Double,
@@ -258,23 +285,37 @@ func computeFeatureImportances(nodes: [FlatTreeNode], numFeatures: Int) -> [Doub
 
 /// A pure Swift Decision Tree Classifier using Gini or Entropy splitting.
 public actor DecisionTreeClassifier: ClassifierEstimator {
+    /// The max depth.
     public let maxDepth: Int
+    /// The min samples split.
     public let minSamplesSplit: Int
+    /// The criterion.
     public let criterion: SplitCriterion
 
     private var nodes: [FlatTreeNode] = []
     private var numFeatures: Int = 0
 
+    /// The feature importances.
     public var featureImportances: [Double]? {
         computeFeatureImportances(nodes: nodes, numFeatures: numFeatures)
     }
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - maxDepth: The max depth.
+    ///   - minSamplesSplit: The min samples split.
+    ///   - criterion: The criterion.
     public init(maxDepth: Int = 5, minSamplesSplit: Int = 2, criterion: SplitCriterion = .gini) {
         self.maxDepth = maxDepth
         self.minSamplesSplit = minSamplesSplit
         self.criterion = criterion
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
@@ -286,11 +327,21 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), presortedIndices: presorted, depth: 0, nodes: &nodes)
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) throws -> [Int] {
         guard !nodes.isEmpty else { throw MLError.notFitted }
         return features.map { predictSample($0, nodes: nodes) }
     }
 
+    /// Predict probability.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func predictProbability(features: [[Double]]) throws -> [[Double]] {
         guard !nodes.isEmpty else { throw MLError.notFitted }
         let maxLabel = nodes.map { Int($0.value) }.max() ?? 0
@@ -305,6 +356,8 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         }
     }
     
+    /// Get tree nodes.
+    /// - Returns: A `[FlatTreeNode]` result.
     public func getTreeNodes() -> [FlatTreeNode] {
         return nodes
     }
@@ -367,21 +420,33 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
 
 /// A pure Swift Decision Tree Regressor using MSE splitting.
 public actor DecisionTreeRegressor: RegressorEstimator {
+    /// The max depth.
     public let maxDepth: Int
+    /// The min samples split.
     public let minSamplesSplit: Int
 
     private var nodes: [FlatTreeNode] = []
     private var numFeatures: Int = 0
 
+    /// The feature importances.
     public var featureImportances: [Double]? {
         computeFeatureImportances(nodes: nodes, numFeatures: numFeatures)
     }
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - maxDepth: The max depth.
+    ///   - minSamplesSplit: The min samples split.
     public init(maxDepth: Int = 5, minSamplesSplit: Int = 2) {
         self.maxDepth = maxDepth
         self.minSamplesSplit = minSamplesSplit
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
@@ -394,11 +459,18 @@ public actor DecisionTreeRegressor: RegressorEstimator {
         _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), presortedIndices: presorted, depth: 0, nodes: &nodes)
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) throws -> [Double] {
         guard !nodes.isEmpty else { throw MLError.notFitted }
         return features.map { predictSample($0, nodes: nodes) }
     }
 
+    /// Get tree nodes.
+    /// - Returns: A `[FlatTreeNode]` result.
     public func getTreeNodes() -> [FlatTreeNode] {
         return nodes
     }

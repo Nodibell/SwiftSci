@@ -2,11 +2,17 @@ import Foundation
 
 /// CountVectorizer converts a collection of text documents to a matrix of token counts.
 public final class CountVectorizer: @unchecked Sendable {
+    /// The max features.
     public let maxFeatures: Int?
+    /// The lowercase.
     public let lowercase: Bool
     
     private var vocabulary: [String: Int] = [:]
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - maxFeatures: The max features.
+    ///   - lowercase: The lowercase.
     public init(maxFeatures: Int? = nil, lowercase: Bool = true) {
         self.maxFeatures = maxFeatures
         self.lowercase = lowercase

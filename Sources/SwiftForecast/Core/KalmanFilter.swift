@@ -16,6 +16,11 @@ public actor KalmanFilter {
     private var P: [[Double]] = [] // State estimate covariance (n x n)
     private var isInitialized = false
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - stateSize: The state size.
+    ///   - observationSize: The observation size.
+    /// - Throws: An error if the operation fails.
     public init(stateSize: Int, observationSize: Int) throws {
         guard stateSize > 0 else { throw ForecastError.invalidAROrder(stateSize) }
         guard observationSize > 0 else { throw ForecastError.invalidMAOrder(observationSize) }
@@ -23,26 +28,39 @@ public actor KalmanFilter {
         self.observationSize = observationSize
     }
     
+    /// Set transition matrix.
+    /// - Throws: An error if the operation fails.
     public func setTransitionMatrix(_ F: [[Double]]) throws {
         try validateMatrixDimensions(F, expectedRows: stateSize, expectedCols: stateSize)
         self.F = F
     }
     
+    /// Set observation matrix.
+    /// - Throws: An error if the operation fails.
     public func setObservationMatrix(_ H: [[Double]]) throws {
         try validateMatrixDimensions(H, expectedRows: observationSize, expectedCols: stateSize)
         self.H = H
     }
     
+    /// Set process noise.
+    /// - Throws: An error if the operation fails.
     public func setProcessNoise(_ Q: [[Double]]) throws {
         try validateMatrixDimensions(Q, expectedRows: stateSize, expectedCols: stateSize)
         self.Q = Q
     }
     
+    /// Set measurement noise.
+    /// - Throws: An error if the operation fails.
     public func setMeasurementNoise(_ R: [[Double]]) throws {
         try validateMatrixDimensions(R, expectedRows: observationSize, expectedCols: observationSize)
         self.R = R
     }
     
+    /// Set initial state.
+    /// - Parameters:
+    ///   - mean: The mean.
+    ///   - covariance: The covariance.
+    /// - Throws: An error if the operation fails.
     public func setInitialState(mean: [Double], covariance: [[Double]]) throws {
         guard mean.count == stateSize else {
             throw ForecastError.matrixDimensionMismatch(expectedRows: stateSize, expectedCols: 1, gotRows: mean.count, gotCols: 1)

@@ -2,13 +2,23 @@ import Foundation
 
 /// PolynomialFeatures generates polynomial and interaction features.
 public final class PolynomialFeatures: PreprocessingTransformer, @unchecked Sendable {
+    /// The degree.
     public let degree: Int
+    /// The interaction only.
     public let interactionOnly: Bool
+    /// The include bias.
     public let includeBias: Bool
     
+    /// The combinations.
     public private(set) var combinations: [[Int]]?
+    /// The input feature count.
     public private(set) var inputFeatureCount: Int?
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - degree: The degree.
+    ///   - interactionOnly: The interaction only.
+    ///   - includeBias: The include bias.
     public init(degree: Int = 2, interactionOnly: Bool = false, includeBias: Bool = true) {
         self.degree = degree
         self.interactionOnly = interactionOnly

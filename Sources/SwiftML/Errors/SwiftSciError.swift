@@ -10,6 +10,7 @@ public enum SwiftSciError: Error, CustomStringConvertible, Sendable {
     case hardwareError(String)
     case pipelineError(String)
 
+    /// The description.
     public var description: String {
         switch self {
         case .dataError(let msg): return "[SwiftSci Data Error] \(msg)"

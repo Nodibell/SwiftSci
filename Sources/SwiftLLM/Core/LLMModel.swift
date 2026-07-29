@@ -2,11 +2,21 @@ import Foundation
 
 /// Options configuring generative text inference.
 public struct LLMOptions: Sendable {
+    /// The temperature.
     public var temperature: Double
+    /// The top p.
     public var topP: Double
+    /// The top k.
     public var topK: Int
+    /// The max tokens.
     public var maxTokens: Int
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - temperature: The temperature.
+    ///   - topP: The top p.
+    ///   - topK: The top k.
+    ///   - maxTokens: The max tokens.
     public init(
         temperature: Double = 0.7,
         topP: Double = 0.9,

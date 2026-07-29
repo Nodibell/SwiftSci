@@ -2,8 +2,12 @@ import Foundation
 
 /// Pipeline chains multiple PreprocessingTransformers sequentially.
 public final class Pipeline: PreprocessingTransformer, @unchecked Sendable {
+    /// The steps.
     public let steps: [any PreprocessingTransformer]
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - steps: The steps.
     public init(steps: [any PreprocessingTransformer]) {
         self.steps = steps
     }

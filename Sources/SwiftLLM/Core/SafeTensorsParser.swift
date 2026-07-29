@@ -9,6 +9,11 @@ import SwiftDataFrame
 /// Parses the JSON header and maps the binary data to MLXArrays.
 public enum SafeTensorsParser {
     
+    /// Parse.
+    /// - Parameters:
+    ///   - url: The url.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[String: MLXArray]` result.
     public static func parse(url: URL) throws -> [String: MLXArray] {
         let fileData = try Data(contentsOf: url, options: .mappedIfSafe)
         

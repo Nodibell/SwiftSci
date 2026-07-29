@@ -2,10 +2,12 @@ import Foundation
 
 /// Provides static stop-words sets for text filtering.
 public enum StopWords {
+    /// Represents language.
     public enum Language: String, Sendable {
         case english
     }
 
+    /// The english.
     public static let english: Set<String> = [
         "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",
         "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",

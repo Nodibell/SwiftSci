@@ -4,6 +4,7 @@ import Foundation
 
 /// Summary of per-class Precision, Recall, and F1 for a classifier.
 public struct ClassificationReport: Sendable {
+    /// Represents class metrics.
     public struct ClassMetrics: Sendable {
         public let label: Int
         public let precision: Double
@@ -12,10 +13,15 @@ public struct ClassificationReport: Sendable {
         public let support: Int
     }
 
+    /// The per class.
     public let perClass: [ClassMetrics]
+    /// The accuracy.
     public let accuracy: Double
+    /// The macro precision.
     public let macroPrecision: Double
+    /// The macro recall.
     public let macroRecall: Double
+    /// The macro f1.
     public let macroF1: Double
 }
 
@@ -293,6 +299,7 @@ public enum Metrics {
 // MARK: - Pretty Printing Helper
 
 extension ClassificationReport {
+    /// Pretty print.
     public func prettyPrint() {
         let labelHeader = "Label".padding(toLength: 10, withPad: " ", startingAt: 0)
         let precisionHeader = "Precision".padding(toLength: 10, withPad: " ", startingAt: 0)

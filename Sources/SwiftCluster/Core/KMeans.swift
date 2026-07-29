@@ -14,9 +14,13 @@ private struct SendableBufferPointer<T>: @unchecked Sendable {
 
 /// K-Means clustering with CPU (vDSP) and GPU (MLX) backends via hardware routing.
 public actor KMeans {
+    /// The n clusters.
     public let nClusters: Int
+    /// The max iterations.
     public let maxIterations: Int
+    /// The tolerance.
     public let tolerance: Float
+    /// The requested device.
     public let requestedDevice: ExecutionDevice
 
     /// Device actually used for the last `fit` (after `.auto` resolution).
@@ -28,8 +32,17 @@ public actor KMeans {
     /// CPU-side centroid matrix (source of truth after a CPU fit).
     private var cpuCentroids: [[Double]]?
 
+    /// The seed.
     public let seed: Int
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nClusters: The n clusters.
+    ///   - maxIterations: The max iterations.
+    ///   - tolerance: The tolerance.
+    ///   - seed: The seed.
+    ///   - device: The device.
+    /// - Throws: An error if the operation fails.
     public init(
         nClusters: Int,
         maxIterations: Int = 300,
@@ -136,6 +149,11 @@ public actor KMeans {
         cpuCentroids = getCentroids()
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) throws -> [Int] {
         guard !features.isEmpty else { return [] }
         if let cpuCentroids, resolvedDevice == .cpu {
@@ -149,6 +167,11 @@ public actor KMeans {
         return labels.asArray(Int32.self).map { Int($0) }
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - X: The x.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `MLXArray` result.
     public func predict(X: MLXArray) throws -> MLXArray {
         guard let centroids = self.centroids else {
             throw ClusterError.fittingRequired
@@ -168,6 +191,8 @@ public actor KMeans {
         return argMin(dists, axis: -1)
     }
 
+    /// Get centroids.
+    /// - Returns: A `[[Double]]?` result.
     public func getCentroids() -> [[Double]]? {
         if let cpuCentroids { return cpuCentroids }
         guard let centroids = centroids else { return nil }

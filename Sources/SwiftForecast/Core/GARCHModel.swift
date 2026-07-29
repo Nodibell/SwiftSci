@@ -3,11 +3,16 @@ import Accelerate
 import SwiftStats
 
 public actor GARCHModel {
+    /// The order.
     public let order: (p: Int, q: Int) // p = GARCH order (lagged variance), q = ARCH order (lagged residuals squared)
     
+    /// The omega.
     public private(set) var omega: Double = 0.0
+    /// The alpha.
     public private(set) var alpha: [Double] = []
+    /// The beta.
     public private(set) var beta: [Double] = []
+    /// The mu.
     public private(set) var mu: Double = 0.0
     
     private var series: [Double] = []
@@ -15,6 +20,11 @@ public actor GARCHModel {
     private var initialVar: Double = 1.0
     private var isFitted = false
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - p: The p.
+    ///   - q: The q.
+    /// - Throws: An error if the operation fails.
     public init(p: Int, q: Int) throws {
         guard p >= 0 else { throw ForecastError.invalidAROrder(p) }
         guard q >= 0 else { throw ForecastError.invalidMAOrder(q) }

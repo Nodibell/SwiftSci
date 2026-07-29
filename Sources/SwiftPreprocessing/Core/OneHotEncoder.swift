@@ -5,6 +5,7 @@ public final class OneHotEncoder: @unchecked Sendable {
     /// Categorical levels for each feature column.
     public private(set) var categories: [[String]] = []
     
+    /// Creates a new instance.
     public init() {}
     
     /// Fits the OneHotEncoder to a 2D categorical dataset of shape [rows, cols].

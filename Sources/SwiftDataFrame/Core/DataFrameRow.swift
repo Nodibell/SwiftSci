@@ -8,6 +8,7 @@ public struct DataFrameRow: @unchecked Sendable {
     /// Ordered column names for this row.
     public let columnNames: [String]
 
+    /// The index.
     public internal(set) var index: Int
     private let columnMap: [String: any AnyColumn]
 

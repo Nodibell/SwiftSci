@@ -6,6 +6,7 @@ public enum AgentError: Error, LocalizedError, Equatable {
     case unparseable(String)
     case executionFailed(String)
 
+    /// The error description.
     public var errorDescription: String? {
         switch self {
         case .unparseable(let cmd):
@@ -27,6 +28,7 @@ public enum AgentCommand: Sendable {
 
 /// RAG Context summary generator for dataframes.
 public struct RAGContextGenerator: Sendable {
+    /// Creates a new instance.
     public init() {}
 
     /// Generates token-efficient Markdown summary of DataFrame for AI Analyst system prompt.
@@ -40,6 +42,7 @@ public struct RAGContextGenerator: Sendable {
 
 /// Agentic Swift Execution Sandbox Evaluator.
 public actor SwiftAgentEvaluator {
+    /// Creates a new instance.
     public init() {}
 
     /// Evaluates dynamic DataFrame transformation expressions in a sandboxed environment.

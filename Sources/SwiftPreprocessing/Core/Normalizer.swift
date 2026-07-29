@@ -2,14 +2,19 @@ import Foundation
 
 /// Normalizer scales individual samples (rows) to have unit norm.
 public final class Normalizer: PreprocessingTransformer, @unchecked Sendable {
+    /// Represents norm type.
     public enum NormType: Sendable {
         case l1
         case l2
         case max
     }
     
+    /// The norm.
     public let norm: NormType
     
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - norm: The norm.
     public init(norm: NormType = .l2) {
         self.norm = norm
     }

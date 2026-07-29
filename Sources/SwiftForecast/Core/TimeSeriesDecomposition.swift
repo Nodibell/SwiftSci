@@ -4,11 +4,13 @@ import SwiftStats
 
 // LAPACK functions and types are defined in LAPACK+Wrapper.swift
 
+/// Represents decomposition model.
 public enum DecompositionModel: Sendable {
     case additive
     case multiplicative
 }
 
+/// Represents time series decomposition.
 public enum TimeSeriesDecomposition {
     
     /// Classical additive/multiplicative decomposition of a time series.

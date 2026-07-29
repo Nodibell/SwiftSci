@@ -24,10 +24,15 @@ func bootstrapSample(features: [[Double]], targets: [Double], seed: Int) -> ([[D
 /// Actor-isolated Random Forest Classifier.
 /// Each tree is trained concurrently in a TaskGroup on a bootstrapped sample.
 public actor RandomForestClassifier: ClassifierEstimator {
+    /// The n estimators.
     public let nEstimators: Int
+    /// The max depth.
     public let maxDepth: Int
+    /// The max features.
     public let maxFeatures: Int?
+    /// The min samples split.
     public let minSamplesSplit: Int
+    /// The criterion.
     public let criterion: SplitCriterion
 
     // DOD Architecture: the forest is stored as an array of flat node arrays
@@ -35,6 +40,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
     private var numClasses: Int = 0
     private var numFeatures: Int = 0
 
+    /// The feature importances.
     public var featureImportances: [Double]? {
         guard numFeatures > 0, !trees.isEmpty else { return nil }
         var aggregated = [Double](repeating: 0.0, count: numFeatures)
@@ -57,6 +63,14 @@ public actor RandomForestClassifier: ClassifierEstimator {
         return aggregated
     }
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nEstimators: The n estimators.
+    ///   - maxDepth: The max depth.
+    ///   - maxFeatures: The max features.
+    ///   - minSamplesSplit: The min samples split.
+    ///   - criterion: The criterion.
+    /// - Throws: An error if the operation fails.
     public init(
         nEstimators: Int = 100,
         maxDepth: Int = 10,
@@ -72,6 +86,11 @@ public actor RandomForestClassifier: ClassifierEstimator {
         self.criterion = criterion
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
@@ -115,6 +134,11 @@ public actor RandomForestClassifier: ClassifierEstimator {
         self.trees = trainedTrees
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) async throws -> [Int] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
@@ -127,6 +151,11 @@ public actor RandomForestClassifier: ClassifierEstimator {
         }
     }
 
+    /// Predict probability.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
@@ -209,14 +238,19 @@ public actor RandomForestClassifier: ClassifierEstimator {
 /// Actor-isolated Random Forest Regressor.
 /// Each tree is trained concurrently in a TaskGroup on a bootstrapped sample.
 public actor RandomForestRegressor: RegressorEstimator {
+    /// The n estimators.
     public let nEstimators: Int
+    /// The max depth.
     public let maxDepth: Int
+    /// The max features.
     public let maxFeatures: Int?
+    /// The min samples split.
     public let minSamplesSplit: Int
 
     private var trees: [[FlatTreeNode]] = []
     private var numFeatures: Int = 0
 
+    /// The feature importances.
     public var featureImportances: [Double]? {
         guard numFeatures > 0, !trees.isEmpty else { return nil }
         var aggregated = [Double](repeating: 0.0, count: numFeatures)
@@ -239,6 +273,13 @@ public actor RandomForestRegressor: RegressorEstimator {
         return aggregated
     }
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - nEstimators: The n estimators.
+    ///   - maxDepth: The max depth.
+    ///   - maxFeatures: The max features.
+    ///   - minSamplesSplit: The min samples split.
+    /// - Throws: An error if the operation fails.
     public init(
         nEstimators: Int = 100,
         maxDepth: Int = 10,
@@ -252,6 +293,11 @@ public actor RandomForestRegressor: RegressorEstimator {
         self.minSamplesSplit = minSamplesSplit
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
@@ -292,6 +338,11 @@ public actor RandomForestRegressor: RegressorEstimator {
         self.trees = trainedTrees
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in

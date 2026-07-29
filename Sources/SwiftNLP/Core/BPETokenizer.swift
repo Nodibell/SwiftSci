@@ -2,11 +2,16 @@ import Foundation
 
 /// A Byte Pair Encoding (BPE) subword tokenizer.
 public struct BPETokenizer: Tokenizer, Sendable {
+    /// The vocab.
     public let vocab: [String: Int]
+    /// The merges.
     public let merges: [String: Int]
+    /// The decoder.
     public let decoder: [Int: String]
     
+    /// The unk token.
     public let unkToken = "<unk>"
+    /// The unk token id.
     public let unkTokenId: Int
     
     /// Initializes the BPE tokenizer.

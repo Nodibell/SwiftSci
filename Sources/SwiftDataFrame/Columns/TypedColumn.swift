@@ -6,9 +6,13 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     // MARK: – AnyColumn
 
+    /// The name.
     public let name: String
+    /// The dtype.
     public let dtype: ColumnDType
+    /// The count.
     public var count: Int     { values.count }
+    /// The null count.
     public var nullCount: Int { _nullCount }
 
     // MARK: – Storage
@@ -20,6 +24,10 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     // MARK: – Init
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - name: The name.
+    ///   - values: The values.
     public init(name: String, values: [T?]) {
         self.name       = name
         self.dtype      = T.columnDType
@@ -29,10 +37,16 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     // MARK: – Subscript
 
+    /// Accesses the element at the given index.
+    /// - Parameters:
+    ///   - index: The index.
     public subscript(index: Int) -> T? { values[index] }
 
     // MARK: – AnyColumn conformance
 
+    /// Filtered.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `any AnyColumn` result.
     public func filtered(by mask: [Bool]) throws -> any AnyColumn {
         guard mask.count == count else {
             throw DataFrameError.columnLengthMismatch(
@@ -49,6 +63,8 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return TypedColumn<T>(name: name, values: result)
     }
 
+    /// Gathered.
+    /// - Returns: A `any AnyColumn` result.
     public func gathered(at indices: [Int]) -> any AnyColumn {
         if T.self == Double.self {
             let doubleCol = self as! TypedColumn<Double>
@@ -62,6 +78,8 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return TypedColumn<T>(name: name, values: result)
     }
 
+    /// Filtered indices.
+    /// - Returns: A `[Int]?` result.
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? {
         if T.self == Double.self {
             let doubles = values as! [Double?]
@@ -78,16 +96,22 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return nil
     }
 
+    /// Value.
+    /// - Returns: A `Any?` result.
     public func value(at index: Int) -> Any? {
         guard index >= 0 && index < count else { return nil }
         return values[index] as Any?
     }
 
+    /// To doubles.
+    /// - Returns: A `[Double]?` result.
     public func toDoubles() -> [Double]? {
         guard dtype.isNumeric else { return nil }
         return values.compactMap { $0?.doubleValue }
     }
 
+    /// To strings.
+    /// - Returns: A `[String]` result.
     public func toStrings() -> [String] {
         values.map { v in
             guard let v else { return "null" }
@@ -95,10 +119,16 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         }
     }
 
+    /// Renamed.
+    /// - Returns: A `any AnyColumn` result.
     public func renamed(to newName: String) -> any AnyColumn {
         TypedColumn<T>(name: newName, values: values)
     }
 
+    /// Sorted indices.
+    /// - Parameters:
+    ///   - ascending: The ascending.
+    /// - Returns: A `[Int]` result.
     public func sortedIndices(ascending: Bool) -> [Int] {
         var indices = Array(0..<values.count)
         let vals = values
@@ -171,6 +201,8 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     public func compactMap<U: SupportedType>(_ transform: (T) -> U?) -> TypedColumn<U> {
         TypedColumn<U>(name: name, values: values.map { $0.flatMap(transform) })
     }
+    /// Lagged.
+    /// - Returns: A `any AnyColumn` result.
     public func lagged(by offset: Int) -> any AnyColumn {
         var newValues = [T?](repeating: nil, count: count)
         if offset > 0 {
@@ -433,6 +465,7 @@ private func toInt64(_ v: Any) -> Int64? {
 
 // MARK: – Equatable (for testing)
 extension TypedColumn: Equatable where T: Equatable {
+    /// A public declaration.
     public static func == (lhs: TypedColumn<T>, rhs: TypedColumn<T>) -> Bool {
         lhs.name == rhs.name && lhs.values == rhs.values
     }

@@ -8,6 +8,7 @@ public enum DatabaseError: Error, LocalizedError {
     case queryFailed(String)
     case notImplemented(String)
 
+    /// The error description.
     public var errorDescription: String? {
         switch self {
         case .connectionFailed(let msg):
@@ -27,9 +28,15 @@ public protocol DatabaseConnection: Sendable {
 
 /// Structure representing SQL query result tabular data.
 public struct SQLQueryResult: Sendable {
+    /// The columns.
     public let columns: [String]
+    /// The rows.
     public let rows: [[AnySendableValue]]
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - columns: The columns.
+    ///   - rows: The rows.
     public init(columns: [String], rows: [[AnySendableValue]]) {
         self.columns = columns
         self.rows = rows
@@ -43,6 +50,7 @@ public enum AnySendableValue: Sendable, CustomStringConvertible {
     case string(String)
     case null
 
+    /// The description.
     public var description: String {
         switch self {
         case .double(let v): return "\(v)"
@@ -55,9 +63,13 @@ public enum AnySendableValue: Sendable, CustomStringConvertible {
 
 /// Embedded SQLite database driver executing real SQL statements using SQLite C library.
 public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
+    /// The database path.
     public let databasePath: String
     private let actualPath: String
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - databasePath: The database path.
     public init(databasePath: String) {
         self.databasePath = databasePath
         if databasePath == ":memory:" || databasePath.contains("mode=memory") {
@@ -73,6 +85,9 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
         }
     }
 
+    /// Execute query.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `SQLQueryResult` result.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
         var db: OpaquePointer?
         let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI
@@ -147,12 +162,19 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
 
 /// PostgreSQL database connection driver.
 public struct PostgreSQLConnection: DatabaseConnection {
+    /// The connection u r l.
     public let connectionURL: String
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - connectionURL: The connection u r l.
     public init(connectionURL: String) {
         self.connectionURL = connectionURL
     }
 
+    /// Execute query.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `SQLQueryResult` result.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
         throw DatabaseError.notImplemented("PostgreSQLConnection libpq driver bridging is not yet wired.")
     }

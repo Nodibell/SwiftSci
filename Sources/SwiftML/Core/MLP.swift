@@ -17,11 +17,21 @@ public enum MLPSolver: String, Sendable, Codable {
 
 /// A flat row-major layer weight representation for high-performance matrix operations.
 public struct LayerWeights: Sendable, Codable {
+    /// The w.
     public var W: [Double]   // row-major flat buffer: inDim x outDim
+    /// The b.
     public var b: [Double]   // outDim
+    /// The in dim.
     public let inDim: Int
+    /// The out dim.
     public let outDim: Int
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - W: The w.
+    ///   - b: The b.
+    ///   - inDim: The in dim.
+    ///   - outDim: The out dim.
     public init(W: [Double], b: [Double], inDim: Int, outDim: Int) {
         self.W = W
         self.b = b
@@ -48,22 +58,47 @@ private struct LayerAdamState: Sendable {
 
 /// Multi-Layer Perceptron Classifier.
 public actor MLPClassifier: ClassifierEstimator {
+    /// The hidden layer sizes.
     public let hiddenLayerSizes: [Int]
+    /// The activation.
     public let activation: ActivationFunction
+    /// The solver.
     public let solver: MLPSolver
+    /// The max iter.
     public let maxIter: Int
+    /// The learning rate.
     public let learningRate: Double
+    /// The beta1.
     public let beta1: Double
+    /// The beta2.
     public let beta2: Double
+    /// The epsilon.
     public let epsilon: Double
+    /// The batch size.
     public let batchSize: Int
+    /// The seed.
     public let seed: Int
+    /// The requested device.
     public let requestedDevice: ExecutionDevice
+    /// The resolved device.
     public private(set) var resolvedDevice: ExecutionDevice = .cpu
 
     private var layers: [LayerWeights]?
     private var classes: [Double]?
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - hiddenLayerSizes: The hidden layer sizes.
+    ///   - activation: The activation.
+    ///   - solver: The solver.
+    ///   - maxIter: The max iter.
+    ///   - learningRate: The learning rate.
+    ///   - beta1: The beta1.
+    ///   - beta2: The beta2.
+    ///   - epsilon: The epsilon.
+    ///   - batchSize: The batch size.
+    ///   - seed: The seed.
+    ///   - requestedDevice: The requested device.
     public init(
         hiddenLayerSizes: [Int] = [100],
         activation: ActivationFunction = .relu,
@@ -90,6 +125,11 @@ public actor MLPClassifier: ClassifierEstimator {
         self.requestedDevice = requestedDevice
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
             throw MLError.emptyInput
@@ -237,6 +277,11 @@ public actor MLPClassifier: ClassifierEstimator {
         self.layers = layers
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) async throws -> [Int] {
         let probs = try await predictProbability(features: features)
         guard let classes = self.classes else { return [] }
@@ -250,6 +295,11 @@ public actor MLPClassifier: ClassifierEstimator {
         }
     }
 
+    /// Predict probability.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard let layers = layers, let classes = classes else {
             throw MLError.modelNotFitted
@@ -298,21 +348,46 @@ public actor MLPClassifier: ClassifierEstimator {
 
 /// Multi-Layer Perceptron Regressor.
 public actor MLPRegressor: RegressorEstimator {
+    /// The hidden layer sizes.
     public let hiddenLayerSizes: [Int]
+    /// The activation.
     public let activation: ActivationFunction
+    /// The solver.
     public let solver: MLPSolver
+    /// The max iter.
     public let maxIter: Int
+    /// The learning rate.
     public let learningRate: Double
+    /// The beta1.
     public let beta1: Double
+    /// The beta2.
     public let beta2: Double
+    /// The epsilon.
     public let epsilon: Double
+    /// The batch size.
     public let batchSize: Int
+    /// The seed.
     public let seed: Int
+    /// The requested device.
     public let requestedDevice: ExecutionDevice
+    /// The resolved device.
     public private(set) var resolvedDevice: ExecutionDevice = .cpu
 
     private var layers: [LayerWeights]?
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - hiddenLayerSizes: The hidden layer sizes.
+    ///   - activation: The activation.
+    ///   - solver: The solver.
+    ///   - maxIter: The max iter.
+    ///   - learningRate: The learning rate.
+    ///   - beta1: The beta1.
+    ///   - beta2: The beta2.
+    ///   - epsilon: The epsilon.
+    ///   - batchSize: The batch size.
+    ///   - seed: The seed.
+    ///   - requestedDevice: The requested device.
     public init(
         hiddenLayerSizes: [Int] = [100],
         activation: ActivationFunction = .relu,
@@ -339,6 +414,11 @@ public actor MLPRegressor: RegressorEstimator {
         self.requestedDevice = requestedDevice
     }
 
+    /// Fit.
+    /// - Parameters:
+    ///   - features: The features.
+    ///   - targets: The targets.
+    /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
             throw MLError.emptyInput
@@ -468,6 +548,11 @@ public actor MLPRegressor: RegressorEstimator {
         self.layers = layers
     }
 
+    /// Predict.
+    /// - Parameters:
+    ///   - features: The features.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard let layers = layers else {
             throw MLError.modelNotFitted

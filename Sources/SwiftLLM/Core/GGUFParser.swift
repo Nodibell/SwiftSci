@@ -9,6 +9,7 @@ import SwiftDataFrame
 /// Decodes the metadata headers and maps the binary tensor blocks directly into MLXArrays.
 public enum GGUFParser {
     
+    /// Represents tensor info.
     public struct TensorInfo {
         public let name: String
         public let shape: [Int]
@@ -25,6 +26,11 @@ public enum GGUFParser {
         return T(littleEndian: val)
     }
     
+    /// Parse.
+    /// - Parameters:
+    ///   - url: The url.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[String: MLXArray]` result.
     public static func parse(url: URL) throws -> [String: MLXArray] {
         let fileData = try Data(contentsOf: url, options: .mappedIfSafe)
         

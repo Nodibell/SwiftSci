@@ -5,6 +5,9 @@ import Foundation
 public struct SeededRandom: Sendable {
     private var state: UInt64
 
+    /// Creates a new instance.
+    /// - Parameters:
+    ///   - seed: The seed.
     public init(seed: Int) {
         self.state = UInt64(bitPattern: Int64(seed &+ 1))
     }

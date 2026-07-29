@@ -2,12 +2,18 @@ import Foundation
 
 /// Generates interaction features $x_i \cdot x_j$ for numerical feature matrices.
 public final class InteractionFeatures: PreprocessingTransformer, Sendable {
+    /// Creates a new instance.
     public init() {}
     
+    /// Fit.
+    /// - Throws: An error if the operation fails.
     public func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
     }
     
+    /// Transform.
+    /// - Throws: An error if the operation fails.
+    /// - Returns: A `[[Double]]` result.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let numFeatures = data[0].count
@@ -26,6 +32,7 @@ public final class InteractionFeatures: PreprocessingTransformer, Sendable {
 
 /// Feature transformer that extracts calendar date components (year, month, day, dayOfWeek, isWeekend) from Date objects.
 public final class DateFeatures: Sendable {
+    /// Creates a new instance.
     public init() {}
     
     /// Transforms array of Date objects into numerical feature matrix [year, month, day, dayOfWeek, isWeekend].

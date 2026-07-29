@@ -4,6 +4,7 @@ import Foundation
 /// Note: Produces a JSON representation of the ONNX graph, not a binary .onnx file.
 public enum ONNXExporter {
 
+    /// Represents o n n x graph spec.
     public struct ONNXGraphSpec: Codable, Sendable {
         public let irVersion: Int
         public let producerName: String

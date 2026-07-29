@@ -137,23 +137,19 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         // (Bool is Hashable but not Comparable).
         if T.self == Double.self {
             let doubles = vals as! [Double?]
-            sortIndices(&indices, ascending: ascending) { doubles[$0] }
-            return indices
+            return sortIndicesPrimitiveFast(doubles, ascending: ascending)
         }
         if T.self == Float.self {
             let floats = vals as! [Float?]
-            sortIndices(&indices, ascending: ascending) { floats[$0] }
-            return indices
+            return sortIndicesPrimitiveFast(floats, ascending: ascending)
         }
         if T.self == Int64.self {
             let ints = vals as! [Int64?]
-            sortIndices(&indices, ascending: ascending) { ints[$0] }
-            return indices
+            return sortIndicesPrimitiveFast(ints, ascending: ascending)
         }
         if T.self == Int32.self {
             let ints = vals as! [Int32?]
-            sortIndices(&indices, ascending: ascending) { ints[$0] }
-            return indices
+            return sortIndicesPrimitiveFast(ints, ascending: ascending)
         }
         if T.self == String.self {
             let strings = vals as! [String?]
@@ -236,6 +232,27 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     /// Returns non-null values as a plain array.
     public var nonNullValues: [T] { values.compactMap { $0 } }
+}
+
+/// High-performance raw pointer index sort for dense primitive types without null handling overhead.
+private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], ascending: Bool) -> [Int] {
+    let n = vals.count
+    var indices = Array(0..<n)
+    let containsNil = vals.contains(where: { $0 == nil })
+    if !containsNil {
+        let rawVals = vals.compactMap { $0 }
+        rawVals.withUnsafeBufferPointer { buf in
+            guard let ptr = buf.baseAddress else { return }
+            if ascending {
+                indices.sort { ptr[$0] < ptr[$1] }
+            } else {
+                indices.sort { ptr[$0] > ptr[$1] }
+            }
+        }
+        return indices
+    }
+    sortIndices(&indices, ascending: ascending) { vals[$0] }
+    return indices
 }
 
 /// Nulls-last index sort over optional Comparable keys.

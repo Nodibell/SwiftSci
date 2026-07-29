@@ -8,9 +8,6 @@ struct DecompositionTests {
     
     @Test("Classical additive decomposition on clean trend + seasonal + noise")
     func testAdditiveDecomposition() throws {
-        // period = 4
-        // trend: t * 0.5
-        // seasonal: [1.0, -2.0, 3.0, -2.0]
         let seasonalPattern = [1.0, -2.0, 3.0, -2.0]
         var series: [Double] = []
         for t in 0..<16 {
@@ -21,34 +18,38 @@ struct DecompositionTests {
         
         let result = try TimeSeriesDecomposition.decompose(series: series, period: 4, model: .additive)
         
-        // Check array sizes
         #expect(result.trend.count == 16)
         #expect(result.seasonal.count == 16)
         #expect(result.residual.count == 16)
         
-        // Edge elements of trend should be NaN (2 elements at each side for period=4 centered MA)
         #expect(result.trend[0].isNaN)
         #expect(result.trend[1].isNaN)
         #expect(result.trend[14].isNaN)
         #expect(result.trend[15].isNaN)
         
-        // Center values of trend should be close to actual trend values
         for i in 2...13 {
             let expectedTrend = Double(i) * 0.5
             #expect(abs(result.trend[i] - expectedTrend) < 1e-7)
         }
         
-        // Check seasonal pattern matching (should sum to 0)
         let cycle = Array(result.seasonal.prefix(4))
         let cycleSum = cycle.reduce(0.0, +)
         #expect(abs(cycleSum) < 1e-7)
         
-        // Check residuals are close to 0 (since noise was 0)
         for i in 2...13 {
             #expect(abs(result.residual[i]) < 1e-7)
         }
     }
     
+    @Test("Classical additive decomposition with odd period (period = 3)")
+    func testAdditiveDecompositionOddPeriod() throws {
+        let series = [1.0, 4.0, 2.0, 2.0, 5.0, 3.0, 3.0, 6.0, 4.0]
+        let result = try TimeSeriesDecomposition.decompose(series: series, period: 3, model: .additive)
+        #expect(result.trend.count == 9)
+        #expect(result.seasonal.count == 9)
+        #expect(result.residual.count == 9)
+    }
+
     @Test("Classical multiplicative decomposition")
     func testMultiplicativeDecomposition() throws {
         let seasonalPattern = [1.2, 0.8, 1.5, 0.5]
@@ -61,12 +62,10 @@ struct DecompositionTests {
         
         let result = try TimeSeriesDecomposition.decompose(series: series, period: 4, model: .multiplicative)
         
-        // Center values of residuals should be close to 1.0 (no noise)
         for i in 2...13 {
             #expect(abs(result.residual[i] - 1.0) < 0.02)
         }
         
-        // Seasonal cycle mean should be close to 1.0
         let cycle = Array(result.seasonal.prefix(4))
         let cycleMean = vDSP.mean(cycle)
         #expect(abs(cycleMean - 1.0) < 1e-7)
@@ -88,6 +87,11 @@ struct DecompositionTests {
         #expect(throws: ForecastError.self) {
             try TimeSeriesDecomposition.decompose(series: nanSeries, period: 2)
         }
+
+        let infSeries = [1.0, Double.infinity, 3.0, 4.0, 5.0, 6.0]
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.decompose(series: infSeries, period: 2)
+        }
     }
     
     @Test("Autocorrelation function (ACF)")
@@ -95,7 +99,7 @@ struct DecompositionTests {
         let series = [1.0, 2.0, 3.0, 4.0, 5.0]
         let result = try TimeSeriesDecomposition.acf(series: series, maxLag: 2)
         #expect(result.count == 3)
-        #expect(result[0] == 1.0) // Lag 0 correlation is always 1.0
+        #expect(result[0] == 1.0)
         #expect(result[1] < 1.0)
     }
     
@@ -109,17 +113,14 @@ struct DecompositionTests {
     
     @Test("Augmented Dickey-Fuller (ADF) test stationarity calculations")
     func testADFTest() throws {
-        // Stationary series (mean-reverting around 5)
         let stationary: [Double] = [
             5.1, 4.9, 5.2, 4.8, 5.0, 5.1, 4.9, 5.2, 4.8, 5.0,
             5.1, 4.9, 5.2, 4.8, 5.0, 5.1, 4.9, 5.2, 4.8, 5.0
         ]
         let (statStat, statP) = try TimeSeriesDecomposition.adfTest(series: stationary, maxLag: 1)
-        // Stationary series should have low (negative) statistic and low p-value
         #expect(statStat < 0.0)
         #expect(statP < 0.3)
 
-        // Non-stationary random walk series
         var randomWalk = [Double](repeating: 0.0, count: 25)
         randomWalk[0] = 100.0
         var rng = SimpleRNG(seed: 42)
@@ -127,8 +128,6 @@ struct DecompositionTests {
             randomWalk[i] = randomWalk[i-1] + rng.nextGaussian()
         }
         let (_, rwP) = try TimeSeriesDecomposition.adfTest(series: randomWalk, maxLag: 1)
-        
-        // Unit root series should have high p-value (fail to reject non-stationarity)
         #expect(rwP > 0.05)
     }
 
@@ -137,9 +136,15 @@ struct DecompositionTests {
         let series = [1.0, 2.0, 3.0, 4.0, 5.0]
         let ma = TimeSeriesDecomposition.movingAverageFIR(series, period: 3)
         #expect(ma.count == 3)
-        #expect(abs(ma[0] - 2.0) < 1e-7) // (1+2+3)/3 = 2.0
-        #expect(abs(ma[1] - 3.0) < 1e-7) // (2+3+4)/3 = 3.0
-        #expect(abs(ma[2] - 4.0) < 1e-7) // (3+4+5)/3 = 4.0
+        #expect(abs(ma[0] - 2.0) < 1e-7)
+        #expect(abs(ma[1] - 3.0) < 1e-7)
+        #expect(abs(ma[2] - 4.0) < 1e-7)
+
+        let invalidPeriod = TimeSeriesDecomposition.movingAverageFIR(series, period: 10)
+        #expect(invalidPeriod.isEmpty)
+
+        let zeroPeriod = TimeSeriesDecomposition.movingAverageFIR(series, period: 0)
+        #expect(zeroPeriod.isEmpty)
     }
 
     @Test("Accelerate FFT spectral decomposition (fftDecompose)")
@@ -155,5 +160,9 @@ struct DecompositionTests {
         #expect(result.seasonal.count == 32)
         #expect(result.residual.count == 32)
         #expect(result.original.count == 32)
+
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.fftDecompose(series: [1.0, 2.0], topKComponents: 1)
+        }
     }
 }

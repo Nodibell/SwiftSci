@@ -14,6 +14,10 @@ struct SwiftVisionTests {
 
         #expect(dice > 0.0)
         #expect(iou > 0.0)
+
+        // Edge case: empty input
+        #expect(VisionMetrics.diceCoefficient(predicted: [], groundTruth: []) == 0.0)
+        #expect(VisionMetrics.iouScore(predicted: [], groundTruth: []) == 0.0)
     }
 
     @Test("Test BoundingBox IoU and NMS")
@@ -29,7 +33,7 @@ struct SwiftVisionTests {
         #expect(!nms.isEmpty)
     }
 
-    @Test("Test UNetSegmentation Model predict forward pass")
+    @Test("Test UNetSegmentation Model predict forward pass and error handling")
     func testUNetModelPredict() async throws {
         let img = ImageDataset(width: 8, height: 8, channels: 1, data: Array(repeating: 0.8, count: 64))
         let unet = UNetSegmentationModel(inputChannels: 1, numClasses: 2)
@@ -38,9 +42,14 @@ struct SwiftVisionTests {
         #expect(mask.count == 8)
         #expect(mask[0].count == 8)
         #expect(mask[0][0] >= 0.0 && mask[0][0] <= 1.0)
+
+        let invalidImg = ImageDataset(width: 0, height: 0, channels: 1, data: [])
+        await #expect(throws: VisionError.self) {
+            _ = try await unet.predict(image: invalidImg)
+        }
     }
 
-    @Test("Test YOLOv8Detector detect forward pass and NMS")
+    @Test("Test YOLOv8Detector detect forward pass and error handling")
     func testYOLODetectorDetect() async throws {
         let img = ImageDataset(width: 32, height: 32, channels: 3, data: Array(repeating: 0.5, count: 32 * 32 * 3))
         let detector = YOLOv8Detector(confidenceThreshold: 0.25, iouThreshold: 0.45)
@@ -48,5 +57,10 @@ struct SwiftVisionTests {
 
         #expect(!boxes.isEmpty)
         #expect(boxes.first?.confidence ?? 0.0 >= 0.25)
+
+        let invalidImg = ImageDataset(width: 0, height: 0, channels: 3, data: [])
+        await #expect(throws: VisionError.self) {
+            _ = try await detector.detect(image: invalidImg)
+        }
     }
 }

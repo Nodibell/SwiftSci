@@ -46,4 +46,17 @@ struct SwiftDatabaseTests {
         #expect(df.rowCount == 1)
         #expect(df.columnNames.contains("score"))
     }
+
+    @Test("Test PostgreSQL query error handling")
+    func testPostgreSQLErrorHandling() async {
+        let connEmptyURL = PostgreSQLConnection(connectionURL: "")
+        await #expect(throws: DatabaseError.self) {
+            _ = try await connEmptyURL.executeQuery("SELECT 1;")
+        }
+
+        let conn = PostgreSQLConnection(connectionURL: "postgres://user:pass@localhost:5432/testdb")
+        await #expect(throws: DatabaseError.self) {
+            _ = try await conn.executeQuery("")
+        }
+    }
 }

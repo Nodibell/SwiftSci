@@ -141,6 +141,15 @@ struct RandomForestTests {
             _ = try RandomForestClassifier(nEstimators: 0)
         }
     }
+
+    @Test("mseImpurity calculates exact vector mean square variance")
+    func testMSEImpurityCalculations() {
+        #expect(mseImpurity([]) == 0.0)
+        #expect(mseImpurity([5.0]) == 0.0)
+        #expect(mseImpurity([3.0, 3.0, 3.0]) == 0.0)
+        let vals = [1.0, 2.0, 3.0, 4.0]
+        #expect(abs(mseImpurity(vals) - 1.25) < 1e-7)
+    }
 }
 
 @Suite("GradientBoosting Tests")

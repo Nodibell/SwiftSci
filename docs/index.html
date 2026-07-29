@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 2.2 — Native Swift Data Science & Machine Learning Ecosystem</title>
+  <title>SwiftSci 2.3 — Native Swift Data Science & Machine Learning Ecosystem</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -203,20 +203,19 @@
       font-size: 0.75rem;
       font-weight: 600;
       padding: 4px 10px;
-      border-radius: 9999px;
+      border-radius: 6px;
       background: rgba(255, 255, 255, 0.06);
       color: var(--text-muted);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .card-title {
       font-size: 1.25rem;
       font-weight: 700;
-      margin-bottom: 10px;
-      color: #ffffff;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
     }
 
     .card-title .arrow {
@@ -224,7 +223,7 @@
       opacity: 0;
       transform: translateX(-4px);
       transition: all 0.2s ease;
-      color: #818cf8;
+      color: var(--primary);
     }
 
     .card:hover .card-title .arrow {
@@ -236,17 +235,17 @@
       font-size: 0.925rem;
       color: var(--text-muted);
       line-height: 1.55;
-      flex: 1;
       margin-bottom: 20px;
+      flex: 1;
     }
 
     .card-footer {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.825rem;
+      font-weight: 600;
       color: #818cf8;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
 
     footer {
@@ -272,7 +271,7 @@
 <body>
 
   <header>
-    <div class="badge">🚀 SwiftSci v2.2.0</div>
+    <div class="badge">🚀 SwiftSci v2.3.0</div>
     <h1>Apple Silicon Data Science & ML</h1>
     <p class="subtitle">
       Native, modular, high-performance data analytics framework built for Swift 6, Apple Silicon Unified Memory

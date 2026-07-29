@@ -42,39 +42,40 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## 📊 Complete Performance Comparison (SwiftSci 2.2 vs Python)
+## 📊 Complete Performance Comparison (SwiftSci 2.3 vs Python)
 
 The following table presents median execution times for benchmark scenarios on Apple Silicon (M-series / macOS 15 arm64), compared directly against popular Python counterparts (**Scikit-Learn, NumPy, Pandas, SHAP, Statsmodels, PyTorch**). See [PERFORMANCE.md](PERFORMANCE.md) for full benchmark methodology.
 
 ### 📈 1. Time Series Forecasting & Volatility
-| Benchmark Scenario | SwiftSci 2.2 (Swift) | Python Baseline | Swift Speedup | Winner |
+| Benchmark Scenario | SwiftSci 2.3 (Swift) | Python Baseline | Swift Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
-| **ARIMA(1,1,1) Fit** (50k pts) | **2.48 ms** | 227.34 ms (*Statsmodels*) | ⚡ **91.6×** | 🟢 Swift |
-| **ARIMA(1,1,1) Forecast** (horizon=24) | **2.49 ms** | 224.57 ms (*Statsmodels*) | ⚡ **90.3×** | 🟢 Swift |
-| **Holt-Winters Fit** (50k pts, period=12) | **7.42 ms** | 144.90 ms (*Statsmodels*) | ⚡ **19.5×** | 🟢 Swift |
+| **ARIMA(1,1,1) Fit** (50k pts) | **2.35 ms** | 227.34 ms (*Statsmodels*) | ⚡ **96.7×** | 🟢 Swift |
+| **ARIMA(1,1,1) Forecast** (horizon=24) | **2.44 ms** | 224.57 ms (*Statsmodels*) | ⚡ **92.0×** | 🟢 Swift |
+| **Holt-Winters Fit** (50k pts, period=12) | **7.01 ms** | 144.90 ms (*Statsmodels*) | ⚡ **20.7×** | 🟢 Swift |
 
 ### 🤖 2. Machine Learning & Clustering
-| Benchmark Scenario | SwiftSci 2.2 (Swift) | Python Baseline | Swift Speedup | Winner |
+| Benchmark Scenario | SwiftSci 2.3 (Swift) | Python Baseline | Swift Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
-| **RandomForest Fit** (1k×4, 50 trees) | **4.63 ms** | 27.10 ms (*Scikit-Learn*) | ⚡ **5.86×** | 🟢 Swift |
-| **GBDT Regressor Fit** (1k×4, 50 est) | **8.51 ms** | 34.80 ms (*Scikit-Learn*) | ⚡ **4.09×** | 🟢 Swift |
+| **RandomForest Fit** (1k×4, 50 trees) | **3.82 ms** | 27.10 ms (*Scikit-Learn*) | ⚡ **7.09×** | 🟢 Swift |
+| **GBDT Regressor Fit** (1k×4, 50 est) | **8.03 ms** | 34.80 ms (*Scikit-Learn*) | ⚡ **4.33×** | 🟢 Swift |
 
 ### 📝 3. Natural Language & Explainability
-| Benchmark Scenario | SwiftSci 2.2 (Swift) | Python Baseline | Swift Speedup | Winner |
+| Benchmark Scenario | SwiftSci 2.3 (Swift) | Python Baseline | Swift Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
-| **KernelSHAP Explain** (100 coalitions) | **0.18 ms** | 0.46 ms (*SHAP*) | ⚡ **2.57×** | 🟢 Swift |
-| **LLM Forward Pass** (seqLen=64) | **0.51 ms** | 0.67 ms (*PyTorch*) | ⚡ **1.31×** | 🟢 Swift |
+| **KernelSHAP Explain** (100 coalitions) | **0.18 ms** | 0.46 ms (*SHAP*) | ⚡ **2.56×** | 🟢 Swift |
+| **LLM Forward Pass** (seqLen=64) | **0.64 ms** | 0.67 ms (*PyTorch*) | ⚡ **1.05×** | 🟢 Swift |
 
 ### 📊 4. Core Data Engines & Vector Stats
-| Benchmark Scenario | SwiftSci 2.2 (Swift) | Python Baseline | Swift Speedup | Winner |
+| Benchmark Scenario | SwiftSci 2.3 (Swift) | Python Baseline | Swift Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
-| **Mean Reduction** (vDSP 1M elements) | **0.082 ms** | 0.118 ms (*NumPy*) | ⚡ **1.44×** | 🟢 Swift |
-| **StdDev Reduction** (vDSP 1M elements) | **0.311 ms** | 0.516 ms (*NumPy*) | ⚡ **1.66×** | 🟢 Swift |
-| **Pearson Correlation** (500k pairs) | **0.866 ms** | 1.233 ms (*NumPy*) | ⚡ **1.42×** | 🟢 Swift |
-| **CSV Read** (100k rows) | **16.53 ms** | 20.11 ms (*Pandas*) | ⚡ **1.22×** | 🟢 Swift |
-| **CSV Stream + GroupBy** (100k rows) | **22.88 ms** | 30.05 ms (*Pandas*) | ⚡ **1.31×** | 🟢 Swift |
+| **Mean Reduction** (vDSP 1M elements) | **0.080 ms** | 0.118 ms (*NumPy*) | ⚡ **1.48×** | 🟢 Swift |
+| **StdDev Reduction** (vDSP 1M elements) | **0.299 ms** | 0.516 ms (*NumPy*) | ⚡ **1.73×** | 🟢 Swift |
+| **Pearson Correlation** (500k pairs) | **0.797 ms** | 1.233 ms (*NumPy*) | ⚡ **1.54×** | 🟢 Swift |
+| **Kalman Filter 1D** (10k obs) | **61.76 ms** | 87.78 ms (*NumPy*) | ⚡ **1.42×** | 🟢 Swift |
+| **CSV Read** (100k rows) | **15.11 ms** | 20.11 ms (*Pandas*) | ⚡ **1.30×** | 🟢 Swift |
+| **CSV Stream + GroupBy** (100k rows) | **21.49 ms** | 30.05 ms (*Pandas*) | ⚡ **1.40×** | 🟢 Swift |
 
-> ℹ️ **Transparent Reporting**: For the complete 25-benchmark matrix (including Python wins such as C-indexed DataFrame row filtering, matrix sorting, and analysis of performance gaps tracked for v2.3), see [PERFORMANCE.md](PERFORMANCE.md).
+> ℹ️ **Transparent Reporting**: For the complete 25-benchmark matrix, see [PERFORMANCE.md](PERFORMANCE.md).
 
 ---
 

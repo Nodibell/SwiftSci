@@ -97,10 +97,13 @@ func entropy(_ labels: [Double]) -> Double {
     }
 }
 
+import Accelerate
+
 func mseImpurity(_ values: [Double]) -> Double {
-    guard !values.isEmpty else { return 0 }
-    let mean = values.reduce(0, +) / Double(values.count)
-    return values.reduce(0.0) { $0 + pow($1 - mean, 2) } / Double(values.count)
+    guard values.count > 1 else { return 0.0 }
+    let meanVal = vDSP.mean(values)
+    let sqMean = vDSP.meanSquare(values)
+    return max(0.0, sqMean - (meanVal * meanVal))
 }
 
 // MARK: - Pre-sorted Feature Matrix Helper

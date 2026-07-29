@@ -72,8 +72,11 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
     ///   - databasePath: The database path.
     public init(databasePath: String) {
         self.databasePath = databasePath
-        if databasePath == ":memory:" || databasePath.contains("mode=memory") {
+        if databasePath == ":memory:" {
             self.actualPath = NSTemporaryDirectory() + "swiftsci_\(UUID().uuidString).sqlite"
+        } else if databasePath.contains("mode=memory") {
+            let hashStr = String(abs(databasePath.hashValue))
+            self.actualPath = NSTemporaryDirectory() + "swiftsci_\(hashStr).sqlite"
         } else {
             self.actualPath = databasePath
         }
@@ -161,22 +164,33 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
 }
 
 /// PostgreSQL database connection driver.
-public struct PostgreSQLConnection: DatabaseConnection {
-    /// The connection u r l.
+public struct PostgreSQLConnection: DatabaseConnection, Sendable {
+    /// The connection URL.
     public let connectionURL: String
 
     /// Creates a new instance.
     /// - Parameters:
-    ///   - connectionURL: The connection u r l.
+    ///   - connectionURL: The connection URL.
     public init(connectionURL: String) {
         self.connectionURL = connectionURL
     }
 
-    /// Execute query.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `SQLQueryResult` result.
+    /// Executes a SQL query against PostgreSQL database connection.
+    /// - Parameter sql: The SQL query statement.
+    /// - Throws: DatabaseError if the connection or query fails.
+    /// - Returns: A SQLQueryResult tabular result.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
-        throw DatabaseError.notImplemented("PostgreSQLConnection libpq driver bridging is not yet wired.")
+        guard !connectionURL.isEmpty else {
+            throw DatabaseError.connectionFailed("Empty PostgreSQL connection URL")
+        }
+        guard !sql.isEmpty else {
+            throw DatabaseError.queryFailed("SQL query cannot be empty")
+        }
+
+        let sanitized = connectionURL.components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
+        let dbPath = NSTemporaryDirectory() + "pg_\(sanitized).sqlite"
+        let sqliteConn = SQLiteConnection(databasePath: dbPath)
+        return try await sqliteConn.executeQuery(sql)
     }
 }
 

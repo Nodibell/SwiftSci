@@ -48,8 +48,9 @@ public struct RandomForestModelState: Codable, Sendable {
 // MARK: - Model Persistence Extensions
 
 extension LinearRegression {
-    /// Save.
-    /// - Throws: An error if the operation fails.
+    /// Saves trained Linear Regression model parameters to a JSON file URL.
+    /// - Parameter url: Target file `URL`.
+    /// - Throws: `MLError.notFitted` if model is not fitted, or I/O encoding errors.
     public func save(to url: URL) async throws {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else {
@@ -60,11 +61,12 @@ extension LinearRegression {
         try data.write(to: url)
     }
 
-    /// Load.
+    /// Loads a trained Linear Regression model from a JSON file URL.
     /// - Parameters:
-    ///   - device: The device.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `LinearRegression` result.
+    ///   - url: Source file `URL`.
+    ///   - device: Preferred execution device (`.auto`, `.cpu`, or `.metal`).
+    /// - Throws: I/O decoding errors if file is invalid.
+    /// - Returns: A restored `LinearRegression` model instance.
     public static func load(from url: URL, device: ExecutionDevice = .auto) throws -> LinearRegression {
         let data = try Data(contentsOf: url)
         let state = try JSONDecoder().decode(LinearRegressionModelState.self, from: data)
@@ -73,8 +75,9 @@ extension LinearRegression {
 }
 
 extension LogisticRegression {
-    /// Save.
-    /// - Throws: An error if the operation fails.
+    /// Saves trained Logistic Regression model parameters to a JSON file URL.
+    /// - Parameter url: Target file `URL`.
+    /// - Throws: `MLError.notFitted` if model is not fitted, or I/O encoding errors.
     public func save(to url: URL) async throws {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else {
@@ -85,11 +88,12 @@ extension LogisticRegression {
         try data.write(to: url)
     }
 
-    /// Load.
+    /// Loads a trained Logistic Regression model from a JSON file URL.
     /// - Parameters:
-    ///   - device: The device.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `LogisticRegression` result.
+    ///   - url: Source file `URL`.
+    ///   - device: Preferred execution device (`.auto`, `.cpu`, or `.metal`).
+    /// - Throws: I/O decoding errors if file is invalid.
+    /// - Returns: A restored `LogisticRegression` model instance.
     public static func load(from url: URL, device: ExecutionDevice = .auto) throws -> LogisticRegression {
         let data = try Data(contentsOf: url)
         let state = try JSONDecoder().decode(LogisticRegressionModelState.self, from: data)

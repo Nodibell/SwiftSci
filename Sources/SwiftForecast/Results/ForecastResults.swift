@@ -90,16 +90,14 @@ public struct ARIMAResult: Sendable {
     /// The forecast.
     public let forecast: ForecastResult
     
-    /// Creates a new instance.
+    /// Creates a new instance of ARIMAForecastResult.
     /// - Parameters:
-    ///   - order: The order.
-    ///   - d: The d.
-    ///   - q: The q.
-    ///   - arCoefficients: The ar coefficients.
-    ///   - maCoefficients: The ma coefficients.
-    ///   - intercept: The intercept.
-    ///   - exogCoefficients: The exog coefficients.
-    ///   - forecast: The forecast.
+    ///   - order: ARIMA (p, d, q) order tuple.
+    ///   - arCoefficients: Fitted Autoregressive (AR) coefficients.
+    ///   - maCoefficients: Fitted Moving Average (MA) coefficients.
+    ///   - intercept: Model intercept parameter.
+    ///   - exogCoefficients: Exogenous variable regression coefficients.
+    ///   - forecast: Forecast result containing predictions and confidence intervals.
     public init(
         order: (p: Int, d: Int, q: Int),
         arCoefficients: [Double],

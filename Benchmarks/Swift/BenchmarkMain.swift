@@ -2,8 +2,8 @@
 // Entry point for the SwiftSci benchmark runner.
 //
 // Usage:
-//   swift run -c release SwiftAnalyticsBenchmarks                  # console output only
-//   swift run -c release SwiftAnalyticsBenchmarks --json results.json # + write JSON file
+//   swift run -c release SwiftSciBenchmarks                  # console output only
+//   swift run -c release SwiftSciBenchmarks --json results.json # + write JSON file
 //
 // The JSON file can be compared against Benchmarks/Python/python_results.json
 // using the compare.py script.

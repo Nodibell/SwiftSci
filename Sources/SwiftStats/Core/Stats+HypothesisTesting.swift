@@ -38,7 +38,12 @@ extension Stats {
     // MARK: Two-sample t-test (Welch by default)
 
     /// Two-sample t-test.
-    /// - Parameter equalVariances: If true, uses pooled variance (Student). Default false (Welch).
+    /// - Parameters:
+    ///   - sample1: First numeric sample array.
+    ///   - sample2: Second numeric sample array.
+    ///   - equalVariances: If true, uses pooled variance (Student). Default false (Welch).
+    /// - Throws: `StatsError.emptyInput` if input is insufficient or contains NaN.
+    /// - Returns: `TTestResult` struct containing t-statistic, degrees of freedom, and p-value.
     public static func tTest(sample1: [Double], sample2: [Double],
                              equalVariances: Bool = false) throws -> TTestResult {
         try requireNonEmpty(sample1, minimum: 2)

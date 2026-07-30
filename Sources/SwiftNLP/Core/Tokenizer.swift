@@ -17,4 +17,16 @@ public protocol Tokenizer: Sendable {
     /// - Parameter tokens: An array of token ID integers.
     /// - Returns: The reconstructed string.
     func decode(tokens: [Int]) -> String
+
+    /// Splits text into sentence tokens.
+    /// - Parameter text: Input text string.
+    /// - Returns: Array of sentence strings.
+    func tokenizeSentences(text: String) -> [String]
 }
+
+extension Tokenizer {
+    public func tokenizeSentences(text: String) -> [String] {
+        return SentenceTokenizer().tokenize(text: text)
+    }
+}
+

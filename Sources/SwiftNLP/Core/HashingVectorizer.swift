@@ -14,7 +14,6 @@ public final class HashingVectorizer: @unchecked Sendable {
     /// - Parameters:
     ///   - nFeatures: The n features.
     ///   - ngramRange: The ngram range.
-    ///   - max: The max.
     ///   - lowercase: The lowercase.
     public init(nFeatures: Int = 1024, ngramRange: (min: Int, max: Int) = (1, 1), lowercase: Bool = true) {
         self.nFeatures = max(1, nFeatures)

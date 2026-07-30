@@ -175,9 +175,10 @@ public struct DataFrame: Sendable {
         try selectArray(names)
     }
 
-    /// Select.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `DataFrame` result.
+    /// Selects specified columns by an array of column names.
+    /// - Parameter names: Array of column names to select.
+    /// - Throws: `DataFrameError.columnNotFound` if any column is missing.
+    /// - Returns: A new `DataFrame` containing only the requested columns.
     public func select(_ names: [String]) throws -> DataFrame {
         try selectArray(names)
     }
@@ -198,9 +199,10 @@ public struct DataFrame: Sendable {
         try dropArray(names)
     }
 
-    /// Drop.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `DataFrame` result.
+    /// Drops specified columns by an array of column names.
+    /// - Parameter names: Array of column names to drop.
+    /// - Throws: `DataFrameError.columnNotFound` if any column is missing.
+    /// - Returns: A new `DataFrame` without the specified columns.
     public func drop(_ names: [String]) throws -> DataFrame {
         try dropArray(names)
     }
@@ -451,8 +453,9 @@ public struct DataFrame: Sendable {
         return gathered(at: indices)
     }
 
-    /// Gathered.
-    /// - Returns: A `DataFrame` result.
+    /// Gathers rows at specified row indices (supports concurrent parallel gather for large datasets).
+    /// - Parameter indices: Array of row indices to include in the resulting DataFrame.
+    /// - Returns: A new `DataFrame` containing the gathered rows in the given index order.
     public func gathered(at indices: [Int]) -> DataFrame {
         guard !indices.isEmpty else { return DataFrame.empty }
         let numCols = columns.count

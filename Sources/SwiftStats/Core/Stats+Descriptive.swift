@@ -20,7 +20,12 @@ extension Stats {
     }
 
     /// Sample or population variance using Accelerate vDSP without temporary allocations.
-    /// - Parameter ddof: Delta degrees of freedom (1 = sample, 0 = population).
+    /// - Parameters:
+    ///   - values: Input numeric sample array.
+    ///   - ddof: Delta degrees of freedom (1 = sample, 0 = population).
+    ///   - checkNaN: If `true`, checks for NaN/Infinity values.
+    /// - Throws: `StatsError.emptyInput` or `StatsError.invalidDDOF` if invalid.
+    /// - Returns: Variance value.
     public static func variance(_ values: [Double], ddof: Int = 1, checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         guard ddof >= 0 else { throw StatsError.invalidDDOF(ddof) }

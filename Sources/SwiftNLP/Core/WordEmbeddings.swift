@@ -1,6 +1,10 @@
 import Foundation
+#if canImport(Accelerate)
+import Accelerate
+#endif
 
 /// A representation of pre-trained word embeddings (e.g. Word2Vec/GloVe).
+
 public struct WordEmbeddings: Sendable {
     /// The embeddings.
     public let embeddings: [String: [Double]]
@@ -61,7 +65,7 @@ public struct WordEmbeddings: Sendable {
         // Fallback to lowercase
         return embeddings[word.lowercased()]
     }
-    
+
     /// Computes the cosine similarity between two words.
     public func cosineSimilarity(_ word1: String, _ word2: String) -> Double? {
         guard let v1 = vector(for: word1), let v2 = vector(for: word2) else {
@@ -71,7 +75,22 @@ public struct WordEmbeddings: Sendable {
         guard v1.count == v2.count, v1.count > 0 else {
             return nil
         }
-        
+
+        #if canImport(Accelerate)
+        var dotProduct = 0.0
+        var normA = 0.0
+        var normB = 0.0
+        let n = vDSP_Length(v1.count)
+
+        vDSP_dotprD(v1, 1, v2, 1, &dotProduct, n)
+        vDSP_svesqD(v1, 1, &normA, n)
+        vDSP_svesqD(v2, 1, &normB, n)
+
+        guard normA > 0.0, normB > 0.0 else {
+            return nil
+        }
+        return dotProduct / (sqrt(normA) * sqrt(normB))
+        #else
         var dotProduct = 0.0
         var normA = 0.0
         var normB = 0.0
@@ -87,7 +106,9 @@ public struct WordEmbeddings: Sendable {
         }
         
         return dotProduct / (sqrt(normA) * sqrt(normB))
+        #endif
     }
+
     
     /// Finds the top K most similar words to the given word.
     public func mostSimilar(to word: String, topK: Int = 10) -> [(word: String, similarity: Double)]? {

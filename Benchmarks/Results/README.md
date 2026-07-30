@@ -9,7 +9,7 @@ Files in this directory are generated at runtime and should **not** be committed
 # from SwiftAnalytics/SwiftAnalytics (package root)
 mkdir -p Benchmarks/Results
 
-swift run -c release SwiftAnalyticsBenchmarks \
+swift run -c release SwiftSciBenchmarks \
   --json Benchmarks/Results/swift_results.json
 
 python3 Benchmarks/Python/benchmarks.py \

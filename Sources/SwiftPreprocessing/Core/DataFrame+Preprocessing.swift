@@ -2,19 +2,21 @@ import Foundation
 import SwiftDataFrame
 
 extension PreprocessingTransformer {
-    /// Fit.
+    /// Fits transformer parameters on the specified DataFrame columns.
     /// - Parameters:
-    ///   - columns: The columns.
-    /// - Throws: An error if the operation fails.
+    ///   - df: Target input `DataFrame`.
+    ///   - columns: Array of column names to compute parameters from.
+    /// - Throws: `PreprocessingError` if feature extraction or fitting fails.
     public func fit(_ df: DataFrame, columns: [String]) throws {
         try fit(df.toFeatureMatrix(columns))
     }
 
-    /// Transform.
+    /// Transforms specified columns of a DataFrame using fitted transformer parameters.
     /// - Parameters:
-    ///   - columns: The columns.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `DataFrame` result.
+    ///   - df: Target input `DataFrame`.
+    ///   - columns: Array of column names to transform.
+    /// - Throws: `PreprocessingError` if transformation fails.
+    /// - Returns: A new `DataFrame` with transformed numeric column values.
     public func transform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
         let result = try transform(df.toFeatureMatrix(columns))
         var out = df
@@ -26,11 +28,12 @@ extension PreprocessingTransformer {
         return out
     }
 
-    /// Fit transform.
+    /// Fits transformer parameters on specified DataFrame columns and transforms them in a single step.
     /// - Parameters:
-    ///   - columns: The columns.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `DataFrame` result.
+    ///   - df: Target input `DataFrame`.
+    ///   - columns: Array of column names to fit and transform.
+    /// - Throws: `PreprocessingError` if fitting or transformation fails.
+    /// - Returns: A new `DataFrame` with transformed numeric column values.
     public func fitTransform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
         try fit(df, columns: columns)
         return try transform(df, columns: columns)

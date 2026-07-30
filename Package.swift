@@ -380,9 +380,9 @@ let package = Package(
             swiftSettings: globalSwiftSettings
         ),
 
-        // ── SwiftAnalyticsBenchmarks ──────────────────────────────────────
+        // ── SwiftSciBenchmarks ───────────────────────────────────────────
         .executableTarget(
-            name: "SwiftAnalyticsBenchmarks",
+            name: "SwiftSciBenchmarks",
             dependencies: [
                 "SwiftDataFrame",
                 "SwiftStats",

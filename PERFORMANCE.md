@@ -62,7 +62,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 Run native Swift release benchmarks:
 ```bash
-swift run -c release SwiftAnalyticsBenchmarks --json Benchmarks/Results/swift_results.json
+swift run -c release SwiftSciBenchmarks --json Benchmarks/Results/swift_results.json
 ```
 
 Run Python comparison suite:

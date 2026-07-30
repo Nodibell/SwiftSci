@@ -291,7 +291,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.0] - 2026-07-15
 
 ### Added
-- Created Swift benchmark suite `SwiftAnalyticsBenchmarks` with real-time test progress indicators.
+- Created Swift benchmark suite `SwiftSciBenchmarks` with real-time test progress indicators.
 - Created Python baseline benchmark suite (Pandas/Scikit-Learn/Statsmodels).
 - Built unified benchmark comparer script `compare.py` for CI gate checks.
 

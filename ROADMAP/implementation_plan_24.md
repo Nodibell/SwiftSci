@@ -18,6 +18,7 @@ Key architectural principles for `SwiftNLP 2.4.0`:
 5. **Zero-External-Dependency Storage (VADER Lexicon)**: VADER sentiment valence lexicon (~200KB) is statically embedded as pre-sorted key-value arrays in `VADERLexicon.swift` (via a build helper script to ensure zero type-checker overhead during Swift compilation).
 6. **Accelerate SIMD Vector Operations**: Accelerate (`vDSP_dotprD`, `vDSP_svesqD`) for high-speed embedding similarity calculations and sparse vectorization.
 7. **Fluent `DataFrame` NLP Pipeline**: Zero-copy tokenization, sentiment scoring, entity extraction, and vectorization directly on `SwiftDataFrame` columns.
+8. **Ecosystem Integration Extensions**: Seamless extensions bridging `SwiftNLP` with `SwiftML`, `SwiftCluster`, `SwiftLLM`, `SwiftExplain`, `SwiftVisualization`, and `SwiftDatabase`.
 
 ---
 
@@ -32,6 +33,7 @@ Key architectural principles for `SwiftNLP 2.4.0`:
 | **Phase 5** | **Language Detection & Embedding Vector Search** | `AppleLanguageDetector` & `AppleNLEmbedding` with Accelerate SIMD Cosine Distance | Apple (`NLEmbedding`) + All Platforms (`WordEmbeddings`) |
 | **Phase 6** | **Text Classification Engine (Naive Bayes Classifiers)** | `MultinomialNaiveBayes` & `ComplementNaiveBayes` with text pipeline integration | Pure Swift (All Platforms) |
 | **Phase 7** | **Fluent `DataFrame + NLP` Extensions & Verification** | Complete column operations (`tokenizeColumn`, `extractEntities`) & Benchmark Suite | Complete test & empirical benchmark suite |
+| **Phase 8** | **Ecosystem Inter-Module Extensions** | Extensions for `SwiftML`, `SwiftCluster`, `SwiftLLM`, `SwiftExplain`, `SwiftVisualization`, `SwiftDatabase` | Full SwiftSci Ecosystem Integration |
 
 ---
 
@@ -132,19 +134,51 @@ Key architectural principles for `SwiftNLP 2.4.0`:
 
 ---
 
+### Phase 8: Inter-Module Integration Extensions
+
+- **Target Files**:
+  - [NEW] `Sources/SwiftNLP/Extensions/SwiftML+NLP.swift`
+  - [NEW] `Sources/SwiftNLP/Extensions/SwiftCluster+NLP.swift`
+  - [NEW] `Sources/SwiftNLP/Extensions/SwiftLLM+NLP.swift`
+  - [NEW] `Sources/SwiftNLP/Extensions/SwiftExplain+NLP.swift`
+  - [NEW] `Sources/SwiftNLP/Extensions/SwiftVisualization+NLP.swift`
+  - [NEW] `Sources/SwiftNLP/Extensions/SwiftDatabase+NLP.swift`
+
+- **Integration Capabilities**:
+  1. **`SwiftML + SwiftNLP`**:
+     - Direct extraction of `TFIDFVectorizer` matrices into `SwiftML.FeatureMatrix` for training `LogisticRegression`, `RandomForestClassifier`, or `GradientBoostedTrees`.
+     - High-level `TextPipeline`: End-to-end chaining of `Tokenizer` → `TFIDFVectorizer` → `SwiftML` Classifier with unified `fit()` / `predict()` methods.
+  2. **`SwiftCluster + SwiftNLP`**:
+     - `df.clusterDocuments(column: "text", k: 5)`: Automated document topic clustering combining TF-IDF / `AppleNLEmbedding` features with `KMeans` or `DBSCAN`.
+     - `df.projectTextEmbeddings2D(column: "text")`: Reducing multi-dimensional text vectors into 2D coordinates via `PCA` for visual semantic map generation.
+  3. **`SwiftLLM + SwiftNLP`**:
+     - `LLMContextWindow`: Token counting and prompt sliding-window truncation helper using `BPETokenizer` / `AppleWordTokenizer` prior to feeding LLM context.
+     - `TextVectorStore`: Converting document text chunks + `AppleNLEmbedding` vectors into a vector index for RAG (Retrieval-Augmented Generation).
+  4. **`SwiftExplain + SwiftNLP`**:
+     - `TextExplainer`: Permutation feature importance for text classification and sentiment analysis — identifying and highlighting specific tokens that influenced model decisions.
+  5. **`SwiftVisualization + SwiftNLP`**:
+     - `df.plotTermFrequencies(column: "text", topK: 20)`: Generating interactive bar charts for top terms.
+     - `df.plotDocumentClusters2D(textColumn: "text", labelColumn: "cluster")`: Rendering 2D semantic maps of document clusters.
+  6. **`SwiftDatabase + SwiftNLP`**:
+     - Ingesting tokenized/vectorized DataFrame columns into PostgreSQL `tsvector` or `pgvector` columns for native Full-Text Search.
+
+---
+
 ## 🛠️ Implementation Dependencies & API Compatibility Table
 
-| NLTK Feature / Capability | Apple Native API | SwiftSci 2.4.0 Type Name | Linux Support Status |
-| :--- | :--- | :--- | :--- |
-| `word_tokenize` | `NLTokenizer(.word)` | `AppleWordTokenizer` | Supported (Pure Swift Regex fallback) |
-| `sent_tokenize` | `NLTokenizer(.sentence)` | `SentenceTokenizer` | Supported (Pure Swift Regex fallback) |
-| `pos_tag` | `NLTagger(.lexicalClass)` | `POSTagger` | Apple Native + Rule Fallback |
-| `PorterStemmer` | N/A | `PorterStemmer` | Pure Swift (All Platforms) |
-| `WordNetLemmatizer` (Lemma only) | `NLTagger(.lemma)` | `AppleLemmaTagger` | Apple Native (Throws `.unavailableOnPlatform` on Linux) |
-| WordNet Synset Graph | N/A | *Explicit Non-Goal in 2.4* | N/A |
-| `ne_chunk` (NER) | `NLTagger(.nameType)` | `AppleNamedEntityRecognizer` | Apple Native (Throws `.unavailableOnPlatform` on Linux) |
-| `VADER Sentiment` | N/A | `VADERSentimentAnalyzer` | Pure Swift (Static 200KB Lexicon, All Platforms) |
-| OS ML Sentiment | `NLTagger(.sentimentScore)` | `NLSentimentAnalyzer` | Apple Native |
-| `langid` | `NLLanguageRecognizer` | `AppleLanguageDetector` | Apple Native (Throws `.unavailableOnPlatform` on Linux) |
-| `word2vec` / Vector Search | `NLEmbedding` | `AppleNLEmbedding` + `WordEmbeddings` | `WordEmbeddings` (All Platforms) / `AppleNLEmbedding` (Apple) |
-| `NaiveBayesClassifier` | N/A | `MultinomialNaiveBayes`, `ComplementNaiveBayes` | Pure Swift (All Platforms) |
+| NLTK / Ecosystem Feature | Apple Native API | SwiftSci 2.4.0 Type Name | Linux Support Status | Inter-Module Integration |
+| :--- | :--- | :--- | :--- | :--- |
+| `word_tokenize` | `NLTokenizer(.word)` | `AppleWordTokenizer` | Supported (Pure Swift Regex fallback) | `SwiftDataFrame` |
+| `sent_tokenize` | `NLTokenizer(.sentence)` | `SentenceTokenizer` | Supported (Pure Swift Regex fallback) | `SwiftDataFrame`, `SwiftLLM` |
+| `pos_tag` | `NLTagger(.lexicalClass)` | `POSTagger` | Apple Native + Rule Fallback | `SwiftDataFrame` |
+| `PorterStemmer` | N/A | `PorterStemmer` | Pure Swift (All Platforms) | `SwiftDataFrame` |
+| `WordNetLemmatizer` (Lemma only) | `NLTagger(.lemma)` | `AppleLemmaTagger` | Apple Native (`.unavailableOnPlatform` on Linux) | `SwiftDataFrame` |
+| WordNet Synset Graph | N/A | *Explicit Non-Goal in 2.4* | N/A | N/A |
+| `ne_chunk` (NER) | `NLTagger(.nameType)` | `AppleNamedEntityRecognizer` | Apple Native (`.unavailableOnPlatform` on Linux) | `SwiftDataFrame`, `SwiftExplain` |
+| `VADER Sentiment` | N/A | `VADERSentimentAnalyzer` | Pure Swift (Static 200KB Lexicon, All Platforms) | `SwiftDataFrame`, `SwiftVisualization` |
+| OS ML Sentiment | `NLTagger(.sentimentScore)` | `NLSentimentAnalyzer` | Apple Native | `SwiftDataFrame`, `SwiftML` |
+| `langid` | `NLLanguageRecognizer` | `AppleLanguageDetector` | Apple Native (`.unavailableOnPlatform` on Linux) | `SwiftDataFrame` |
+| `word2vec` / Vector Search | `NLEmbedding` | `AppleNLEmbedding` + `WordEmbeddings` | `WordEmbeddings` (All) / `AppleNLEmbedding` (Apple) | `SwiftCluster`, `SwiftLLM`, `SwiftDatabase` |
+| `NaiveBayesClassifier` | N/A | `MultinomialNaiveBayes`, `ComplementNaiveBayes` | Pure Swift (All Platforms) | `SwiftML`, `SwiftExplain` |
+| Document Topic Clustering | N/A | `clusterDocuments`, `projectTextEmbeddings2D` | Pure Swift + Apple NLEmbedding | `SwiftCluster`, `SwiftVisualization` |
+| RAG Vector Indexing | N/A | `TextVectorStore`, `LLMContextWindow` | Pure Swift + Apple NLEmbedding | `SwiftLLM`, `SwiftAgent` |

@@ -65,7 +65,6 @@ jobs:
             --skip SwiftForecastTests \
             --skip SwiftPrivacyTests \
             --skip SwiftExplainTests \
-            --skip SwiftNLPTests \
             --skip SwiftPreprocessingTests \
             --skip SwiftOptimizeTests \
             --skip SwiftLLMTests

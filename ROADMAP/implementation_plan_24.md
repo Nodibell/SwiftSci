@@ -1,184 +1,203 @@
-# SwiftSci 2.4.0 Implementation Plan: Performant Swift NLP Engine (Apple NaturalLanguage Integration & NLTK-Inspired APIs)
+# SwiftSci 2.4.0 Implementation Plan: Complete 14-Module DocC Documentation & SwiftNLP Engine
 
 ---
 
 ## 🎯 Strategic Goals & Architecture
 
-**SwiftSci 2.4.0** focuses on delivering a production-grade, highly performant Natural Language Processing framework for Swift (`SwiftNLP`), providing **NLTK-inspired APIs** for developer familiarity while deeply integrating Apple's hardware-accelerated **`NaturalLanguage`** and **`Accelerate`** frameworks.
+**SwiftSci 2.4.0** delivers complete **100% DocC Documentation Coverage** across all **14 modules** in the SwiftSci ecosystem, paired with the newly implemented production-grade **`SwiftNLP`** engine and inter-module extensions.
 
-Key architectural principles for `SwiftNLP 2.4.0`:
-1. **NLTK-Inspired Functional API**: Familiar high-level interfaces for tokenization, stemming, lemmatization, sentiment analysis, entity extraction, and text classification. (Note: Focus is on practical NLP pipelines rather than replicating NLTK's heavy WordNet synset graph taxonomy).
-2. **Apple `NaturalLanguage` Framework Integration**: Direct use of Apple's multi-lingual `NLTokenizer`, `NLTagger`, `NLLanguageRecognizer`, and `NLEmbedding` on macOS/iOS/visionOS.
-3. **Deterministic Naming Rule for `Apple` Prefix**:
-   - Apply the `Apple` prefix **only** when a plain name creates ambiguity or autocomplete collisions with Apple's `NaturalLanguage` framework (e.g., `AppleWordTokenizer`, `AppleLemmaTagger`, `AppleNamedEntityRecognizer`, `AppleNLEmbedding`).
-   - Domain types with no collision risk use clean, un-prefixed names (`SentenceTokenizer`, `POSTagger`, `PorterStemmer`, `VADERSentimentAnalyzer`).
-4. **Explicit Cross-Platform & Linux Compatibility**:
-   - Components with pure Swift fallbacks (`PorterStemmer`, `VADERSentimentAnalyzer`, `MultinomialNaiveBayes`) run on all platforms (Apple + Linux).
-   - Apple OS-bound features (`AppleNamedEntityRecognizer`, `AppleLanguageDetector`, `AppleNLEmbedding`) are guarded via `#if canImport(NaturalLanguage)` and throw `NLPError.unavailableOnPlatform` on Linux.
-5. **Zero-External-Dependency Storage (VADER Lexicon)**: VADER sentiment valence lexicon (~200KB) is statically embedded as pre-sorted key-value arrays in `VADERLexicon.swift` (via a build helper script to ensure zero type-checker overhead during Swift compilation).
-6. **Accelerate SIMD Vector Operations**: Accelerate (`vDSP_dotprD`, `vDSP_svesqD`) for high-speed embedding similarity calculations and sparse vectorization.
-7. **Fluent `DataFrame` NLP Pipeline**: Zero-copy tokenization, sentiment scoring, entity extraction, and vectorization directly on `SwiftDataFrame` columns.
-8. **Ecosystem Integration Extensions**: Seamless extensions bridging `SwiftNLP` with `SwiftML`, `SwiftCluster`, `SwiftLLM`, `SwiftExplain`, `SwiftVisualization`, and `SwiftDatabase`.
+Key architectural goals for Version 2.4.0:
+1. **Module-by-Module DocC Completeness**: Every public protocol, struct, class, enum, method, property, and initializer across all 14 workspace targets has comprehensive triple-slash (`///`) DocC documentation comments with parameter (`- Parameter`), return (`- Returns`), and throws (`- Throws`) annotations.
+2. **Dedicated `.docc` Catalog Articles**: Each of the 14 targets maintains a rich `.docc` bundle with topic groups, guides, code examples, and API navigation catalogs.
+3. **NLTK-Inspired SwiftNLP Engine**: Full 2.4.0 NLP feature suite (`AppleWordTokenizer`, `SentenceTokenizer`, `RegexTokenizer`, `PorterStemmer`, `POSTagger`, `AppleLemmaTagger`, `AppleNamedEntityRecognizer`, `VADERSentimentAnalyzer`, `NLSentimentAnalyzer`, `AppleLanguageDetector`, `AppleNLEmbedding`, `MultinomialNaiveBayes`, `TextPipeline`).
+4. **Deterministic Naming Rule for `Apple` Prefix**:
+   - Apply `Apple` prefix **only** when plain names collide with Apple's `NaturalLanguage` framework (`AppleWordTokenizer`, `AppleLemmaTagger`, `AppleNamedEntityRecognizer`, `AppleNLEmbedding`).
+   - Pure domain types without collision risk keep clean names (`SentenceTokenizer`, `POSTagger`, `PorterStemmer`, `VADERSentimentAnalyzer`).
+5. **Zero-Warning Unified DocC Site**: Executing `./scripts/build_unified_docs.sh` generates a zero-warning unified static HTML documentation website for all 14 targets in `./docs`.
 
 ---
 
-## 📅 Version 2.4.0 Phases Overview
+## 📅 Version 2.4.0 Phases Overview (Module by Module)
 
-| Phase | Target Feature / Component | Scope & Objectives | Key Platform Support |
+| Phase | Target Module | Scope & Objectives | DocC & API Goal |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | **Tokenizer & Text Segmentation Engine** | `AppleWordTokenizer`, `SentenceTokenizer`, `RegexTokenizer`, `NGramTokenizer` | Apple Native + Pure Swift |
-| **Phase 2** | **Linguistic Processing: POS Tagging & Stemming/Lemmatization** | `POSTagger` (`NLTagger` + Rule fallback), `PorterStemmer`, `AppleLemmaTagger` | Apple Native + Pure Swift Fallback |
-| **Phase 3** | **Named Entity Recognition (NER)** | `AppleNamedEntityRecognizer` for Person, Location, Org with character spans | macOS/iOS/visionOS (`.unavailableOnPlatform` on Linux) |
-| **Phase 4** | **Dual Sentiment Analysis Engine** | `VADERSentimentAnalyzer` (static 200KB lexicon) & `NLSentimentAnalyzer` | All Platforms (VADER) / Apple (NLSentiment) |
-| **Phase 5** | **Language Detection & Embedding Vector Search** | `AppleLanguageDetector` & `AppleNLEmbedding` with Accelerate SIMD Cosine Distance | Apple (`NLEmbedding`) + All Platforms (`WordEmbeddings`) |
-| **Phase 6** | **Text Classification Engine (Naive Bayes Classifiers)** | `MultinomialNaiveBayes` & `ComplementNaiveBayes` with text pipeline integration | Pure Swift (All Platforms) |
-| **Phase 7** | **Fluent `DataFrame + NLP` Extensions & Verification** | Complete column operations (`tokenizeColumn`, `extractEntities`) & Benchmark Suite | Complete test & empirical benchmark suite |
-| **Phase 8** | **Ecosystem Inter-Module Extensions** | Extensions for `SwiftML`, `SwiftCluster`, `SwiftLLM`, `SwiftExplain`, `SwiftVisualization`, `SwiftDatabase` | Full SwiftSci Ecosystem Integration |
+| **Phase 1** | **`SwiftDataFrame`** | DocC docstrings for columnar storage, CSV/JSON/Arrow IO, SIMD filtering, Radix sort, joins | 100% DocC coverage + `SwiftDataFrame.docc` catalog |
+| **Phase 2** | **`SwiftStats`** | DocC docstrings for probability distributions, t-test, Chi-square, ANOVA, vDSP reductions | 100% DocC coverage + `SwiftStats.docc` catalog |
+| **Phase 3** | **`SwiftPreprocessing`** | DocC docstrings for `StandardScaler`, `MinMaxScaler`, `OneHotEncoder`, `PolynomialFeatures` | 100% DocC coverage + `SwiftPreprocessing.docc` catalog |
+| **Phase 4** | **`SwiftML`** | DocC docstrings for Linear/Logistic Regression, Decision Trees, Random Forests, GBDT | 100% DocC coverage + `SwiftML.docc` catalog |
+| **Phase 5** | **`SwiftCluster`** | DocC docstrings for KMeans, DBSCAN, PCA, IsolationForest, LocalOutlierFactor | 100% DocC coverage + `SwiftCluster.docc` catalog |
+| **Phase 6** | **`SwiftNLP`** | DocC docstrings for Tokenizers, POS Tagger, PorterStemmer, VADER, NaiveBayes, `TextPipeline` | 100% DocC coverage + `SwiftNLP.docc` catalog |
+| **Phase 7** | **`SwiftOptimize`** | DocC docstrings for L-BFGS, SGD, Adam optimizers, `GridSearchCV` hyperparameter tuning | 100% DocC coverage + `SwiftOptimize.docc` catalog |
+| **Phase 8** | **`SwiftForecast`** | DocC docstrings for Exponential Smoothing, ARIMA, vDSP FFT & 1D Convolution decomposition | 100% DocC coverage + `SwiftForecast.docc` catalog |
+| **Phase 9** | **`SwiftLLM`** | DocC docstrings for LLM inference, `LLMContextWindow`, BPE tokenizer, vector stores | 100% DocC coverage + `SwiftLLM.docc` catalog |
+| **Phase 10** | **`SwiftExplain`** | DocC docstrings for `SHAPExplainer`, permutation feature importance, `TextExplainer` | 100% DocC coverage + `SwiftExplain.docc` catalog |
+| **Phase 11** | **`SwiftVisualization`** | DocC docstrings for LinePlot, ScatterPlot, BarChart, Heatmap, `HTMLRenderer` | 100% DocC coverage + `SwiftVisualization.docc` catalog |
+| **Phase 12** | **`SwiftVision`** | DocC docstrings for `ImageDataset`, Conv2D layers, U-Net segmentation, YOLOv8 detector | 100% DocC coverage + `SwiftVision.docc` catalog |
+| **Phase 13** | **`SwiftDatabase`** | DocC docstrings for `PostgreSQLConnection`, `SQLiteConnection`, binary protocol parser | 100% DocC coverage + `SwiftDatabase.docc` catalog |
+| **Phase 14** | **`SwiftAgent`** | DocC docstrings for `AgentEvaluator`, tool registry, RAG summary generation | 100% DocC coverage + `SwiftAgent.docc` catalog |
+| **Phase 15** | **Unified DocC Site & Verification** | Run `./scripts/build_unified_docs.sh` & verify zero-warning build for all 14 targets | Verified zero-warning unified DocC site in `./docs` |
 
 ---
 
-## 🔍 Detailed Plan by Phase
+## 🔍 Detailed Plan by Module Phase
 
-### Phase 1: Tokenizer & Text Segmentation Engines (`SwiftNLP`)
+### Phase 1: `SwiftDataFrame` Module DocC & API Polish
 
-- **Target Files**:
-  - `Sources/SwiftNLP/Core/Tokenizer.swift`
-  - [NEW] `Sources/SwiftNLP/Core/AppleWordTokenizer.swift`
-  - [NEW] `Sources/SwiftNLP/Core/SentenceTokenizer.swift`
-  - [NEW] `Sources/SwiftNLP/Core/RegexTokenizer.swift`
-- **Design Details**:
-  - `AppleWordTokenizer` wraps Apple's `NLTokenizer(unit: .word)`. Uses `Apple` prefix to avoid collision with `NLTokenizer`.
-  - `SentenceTokenizer` provides sentence boundary splitting using `NLTokenizer(unit: .sentence)` on Apple platforms and regex rule-based sentence splitting on Linux.
-  - `RegexTokenizer` provides configurable regex token splitting (equivalent to NLTK's `RegexpTokenizer`).
+- **Target Directory**: `Sources/SwiftDataFrame/`
+- **DocC Catalog**: `Sources/SwiftDataFrame/SwiftDataFrame.docc/`
+- **Scope**:
+  - Add missing parameter and return docstrings to `DataFrame.swift`, `TypedColumn.swift`, `CSVReader.swift`, `JSONReader.swift`, `DataFrame+Join.swift`, `DataFrame+Pivot.swift`, `DataFrame+Matrix.swift`.
+  - Document SIMD bitmask filtering methods (`evaluatedIndices(where:)`, `gathered(atIndices:)`) and vDSP radix sorting.
+  - Update `SwiftDataFrame.docc` catalog topic groups and tutorial guides.
 
 ---
 
-### Phase 2: POS Tagging, Stemming & Lemmatization (`SwiftNLP`)
+### Phase 2: `SwiftStats` Module DocC & API Polish
 
-- **Target Files**:
-  - [NEW] `Sources/SwiftNLP/Core/POSTagger.swift`
-  - [NEW] `Sources/SwiftNLP/Core/PorterStemmer.swift`
-  - [NEW] `Sources/SwiftNLP/Core/AppleLemmaTagger.swift`
-- **Design Details**:
-  - **`POSTagger`**: Uses `NLTagger(tagSchemes: [.lexicalClass])` on Apple platforms, with basic rule-based POS tagging fallback for Linux.
-  - **`PorterStemmer`**: Pure Swift implementation of the classic Porter Stemming algorithm for suffix stripping (`running` → `run`). Works on all platforms.
-  - **`AppleLemmaTagger`**: Uses `NLTagger(tagSchemes: [.lemma])` for dictionary canonical form extraction without requiring external 100MB+ WordNet database files.
-  - *Explicit Scope Note*: WordNet synset taxonomy trees (hypernyms/hyponyms, Wu-Palmer distance) are explicitly non-goals for 2.4.0 to keep memory footprint light and zero-dependency.
+- **Target Directory**: `Sources/SwiftStats/`
+- **DocC Catalog**: `Sources/SwiftStats/SwiftStats.docc/`
+- **Scope**:
+  - Add missing docstrings for `NormalDistribution`, `TDistribution`, `ChiSquareDistribution`, `FDistribution`, `PoissonDistribution`.
+  - Document hypothesis testing methods (`tTest`, `chiSquareTest`, `anova`) and vDSP summary statistics reductions (`mean`, `variance`, `stdDev`, `skewness`, `kurtosis`).
+  - Update `SwiftStats.docc` catalog.
 
 ---
 
-### Phase 3: Named Entity Recognition (NER) (`SwiftNLP`)
+### Phase 3: `SwiftPreprocessing` Module DocC & API Polish
 
-- **Target Files**:
-  - [NEW] `Sources/SwiftNLP/Core/AppleNamedEntityRecognizer.swift`
-  - [NEW] `Sources/SwiftNLP/Models/NamedEntity.swift`
-- **Design Details**:
-  - Data model `NamedEntity` (`text: String`, `category: EntityCategory`, `range: Range<String.Index>`).
-  - `AppleNamedEntityRecognizer` wraps `NLTagger(tagSchemes: [.nameTypeOrLexicalClass])` on Apple platforms.
-  - **Linux Behavior**: On Linux (`#if !canImport(NaturalLanguage)`), calling entity recognition throws `NLPError.unavailableOnPlatform(feature: "Named Entity Recognition")` rather than failing silently.
-
----
-
-### Phase 4: Dual Sentiment Analysis Engine (VADER & Native OS ML) (`SwiftNLP`)
-
-- **Target Files**:
-  - [NEW] `Sources/SwiftNLP/Sentiment/VADERSentimentAnalyzer.swift`
-  - [NEW] `Sources/SwiftNLP/Sentiment/NLSentimentAnalyzer.swift`
-  - [NEW] `Sources/SwiftNLP/Sentiment/VADERLexicon.swift`
-  - [NEW] `Sources/SwiftNLP/Sentiment/SentimentScore.swift`
-- **Design Details**:
-  - **`VADERLexicon.swift`**: Generated pre-sorted array lookup or flat binary layout representing the ~200KB VADER valence lexicon to avoid Swift compiler dictionary literal type-checker slowness.
-  - **`VADERSentimentAnalyzer`**: Pure Swift rule-based analyzer (ALL CAPS booster, exclamation marks, negations `not`/`never`, idioms). Runs everywhere (macOS, iOS, Linux).
-  - **`NLSentimentAnalyzer`**: Wraps `NLTagger(tagSchemes: [.sentimentScore])` for Apple OS ML model sentiment analysis.
+- **Target Directory**: `Sources/SwiftPreprocessing/`
+- **DocC Catalog**: `Sources/SwiftPreprocessing/SwiftPreprocessing.docc/`
+- **Scope**:
+  - Document `StandardScaler`, `MinMaxScaler`, `RobustScaler`, `MaxAbsScaler`, `Normalizer`.
+  - Document categorical encoders (`OneHotEncoder`, `LabelEncoder`, `OrdinalEncoder`, `TargetEncoder`) and `PolynomialFeatures`.
+  - Update `SwiftPreprocessing.docc` catalog.
 
 ---
 
-### Phase 5: Language Identification & `NLEmbedding` Vector Search (`SwiftNLP`)
+### Phase 4: `SwiftML` Module DocC & API Polish
 
-- **Target Files**:
-  - [NEW] `Sources/SwiftNLP/Core/AppleLanguageDetector.swift`
-  - [NEW] `Sources/SwiftNLP/Core/AppleNLEmbedding.swift`
-  - [MODIFY] `Sources/SwiftNLP/Core/WordEmbeddings.swift`
-- **Design Details**:
-  - **`AppleLanguageDetector`**: Wraps `NLLanguageRecognizer` on Apple platforms; throws `.unavailableOnPlatform` on Linux.
-  - **`AppleNLEmbedding`**: Wraps Apple OS built-in word & sentence vector spaces (`NLEmbedding`).
-  - **SIMD Vector Acceleration**: Accelerate `vDSP_dotprD` and `vDSP_svesqD` for batch embedding similarity matrix computation in `WordEmbeddings`. Performance will be empirically measured in Phase 7 benchmarks.
+- **Target Directory**: `Sources/SwiftML/`
+- **DocC Catalog**: `Sources/SwiftML/SwiftML.docc/`
+- **Scope**:
+  - Document supervised learning models: `LinearRegression`, `RidgeRegression`, `LassoRegression`, `LogisticRegression`, `DecisionTree`, `RandomForestClassifier`, `GradientBoostedTreesClassifier`.
+  - Document evaluation metrics (`accuracy`, `precision`, `recall`, `f1Score`, `rocAUC`, `mse`, `r2Score`) and model selection (`trainTestSplit`, `kFoldCrossValidation`).
+  - Update `SwiftML.docc` catalog.
 
 ---
 
-### Phase 6: Text Classification Engine (Naive Bayes Classifiers) (`SwiftNLP`)
+### Phase 5: `SwiftCluster` Module DocC & API Polish
 
-- **Target Files**:
-  - [NEW] `Sources/SwiftNLP/Classification/MultinomialNaiveBayes.swift`
-  - [NEW] `Sources/SwiftNLP/Classification/ComplementNaiveBayes.swift`
-  - [NEW] `Sources/SwiftNLP/Classification/TextClassifierPipeline.swift`
-- **Design Details**:
-  - Pure Swift implementations of `MultinomialNaiveBayes` and `ComplementNaiveBayes` (for imbalanced corpora).
-  - Works seamlessly across Apple and Linux platforms.
-
----
-
-### Phase 7: Fluent `DataFrame + NLP` API & Verification Suite (`SwiftNLP`)
-
-- **Target Files**:
-  - [MODIFY] [DataFrame+NLP.swift](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftNLP/Core/DataFrame+NLP.swift)
-  - [NEW] `Tests/SwiftNLPTests/POSTaggerTests.swift`
-  - [NEW] `Tests/SwiftNLPTests/VADERSentimentTests.swift`
-  - [NEW] `Tests/SwiftNLPTests/AppleNamedEntityRecognizerTests.swift`
-  - [NEW] `Tests/SwiftNLPTests/NaiveBayesClassifierTests.swift`
-- **Design Details**:
-  - `df.tokenizeColumn("text", targetColumn: "tokens", tokenizer: AppleWordTokenizer())`
-  - `df.stemColumn("tokens", targetColumn: "stemmed")`
-  - `df.analyzeSentiment(column: "text", targetColumn: "sentiment")`
-  - Benchmark execution vs Python baseline script to record measured runtime performance.
+- **Target Directory**: `Sources/SwiftCluster/`
+- **DocC Catalog**: `Sources/SwiftCluster/SwiftCluster.docc/`
+- **Scope**:
+  - Document clustering algorithms: `KMeans`, `DBSCAN`, `HierarchicalClustering`.
+  - Document dimensionality reduction & anomaly detection: `PCA`, `IsolationForest`, `LocalOutlierFactor`.
+  - Update `SwiftCluster.docc` catalog.
 
 ---
 
-### Phase 8: Inter-Module Integration Extensions
+### Phase 6: `SwiftNLP` Module DocC & API Polish
 
-- **Target Files**:
-  - [NEW] `Sources/SwiftNLP/Extensions/SwiftML+NLP.swift`
-  - [NEW] `Sources/SwiftNLP/Extensions/SwiftCluster+NLP.swift`
-  - [NEW] `Sources/SwiftNLP/Extensions/SwiftLLM+NLP.swift`
-  - [NEW] `Sources/SwiftNLP/Extensions/SwiftExplain+NLP.swift`
-  - [NEW] `Sources/SwiftNLP/Extensions/SwiftVisualization+NLP.swift`
-  - [NEW] `Sources/SwiftNLP/Extensions/SwiftDatabase+NLP.swift`
-
-- **Integration Capabilities**:
-  1. **`SwiftML + SwiftNLP`**:
-     - Direct extraction of `TFIDFVectorizer` matrices into `SwiftML.FeatureMatrix` for training `LogisticRegression`, `RandomForestClassifier`, or `GradientBoostedTrees`.
-     - High-level `TextPipeline`: End-to-end chaining of `Tokenizer` → `TFIDFVectorizer` → `SwiftML` Classifier with unified `fit()` / `predict()` methods.
-  2. **`SwiftCluster + SwiftNLP`**:
-     - `df.clusterDocuments(column: "text", k: 5)`: Automated document topic clustering combining TF-IDF / `AppleNLEmbedding` features with `KMeans` or `DBSCAN`.
-     - `df.projectTextEmbeddings2D(column: "text")`: Reducing multi-dimensional text vectors into 2D coordinates via `PCA` for visual semantic map generation.
-  3. **`SwiftLLM + SwiftNLP`**:
-     - `LLMContextWindow`: Token counting and prompt sliding-window truncation helper using `BPETokenizer` / `AppleWordTokenizer` prior to feeding LLM context.
-     - `TextVectorStore`: Converting document text chunks + `AppleNLEmbedding` vectors into a vector index for RAG (Retrieval-Augmented Generation).
-  4. **`SwiftExplain + SwiftNLP`**:
-     - `TextExplainer`: Permutation feature importance for text classification and sentiment analysis — identifying and highlighting specific tokens that influenced model decisions.
-  5. **`SwiftVisualization + SwiftNLP`**:
-     - `df.plotTermFrequencies(column: "text", topK: 20)`: Generating interactive bar charts for top terms.
-     - `df.plotDocumentClusters2D(textColumn: "text", labelColumn: "cluster")`: Rendering 2D semantic maps of document clusters.
-  6. **`SwiftDatabase + SwiftNLP`**:
-     - Ingesting tokenized/vectorized DataFrame columns into PostgreSQL `tsvector` or `pgvector` columns for native Full-Text Search.
+- **Target Directory**: `Sources/SwiftNLP/`
+- **DocC Catalog**: `Sources/SwiftNLP/SwiftNLP.docc/`
+- **Scope**:
+  - Document tokenizers: `AppleWordTokenizer`, `SentenceTokenizer`, `RegexTokenizer`, `BPETokenizer`, `NGramTokenizer`.
+  - Document linguistic processors & sentiment: `PorterStemmer`, `POSTagger`, `AppleLemmaTagger`, `AppleNamedEntityRecognizer`, `VADERSentimentAnalyzer`, `NLSentimentAnalyzer`.
+  - Document classifiers & extensions: `MultinomialNaiveBayes`, `ComplementNaiveBayes`, `TextPipeline`, `DataFrame+NLP`, and inter-module extensions.
+  - Update `SwiftNLP.docc` catalog overview and guides.
 
 ---
 
-## 🛠️ Implementation Dependencies & API Compatibility Table
+### Phase 7: `SwiftOptimize` Module DocC & API Polish
 
-| NLTK / Ecosystem Feature | Apple Native API | SwiftSci 2.4.0 Type Name | Linux Support Status | Inter-Module Integration |
-| :--- | :--- | :--- | :--- | :--- |
-| `word_tokenize` | `NLTokenizer(.word)` | `AppleWordTokenizer` | Supported (Pure Swift Regex fallback) | `SwiftDataFrame` |
-| `sent_tokenize` | `NLTokenizer(.sentence)` | `SentenceTokenizer` | Supported (Pure Swift Regex fallback) | `SwiftDataFrame`, `SwiftLLM` |
-| `pos_tag` | `NLTagger(.lexicalClass)` | `POSTagger` | Apple Native + Rule Fallback | `SwiftDataFrame` |
-| `PorterStemmer` | N/A | `PorterStemmer` | Pure Swift (All Platforms) | `SwiftDataFrame` |
-| `WordNetLemmatizer` (Lemma only) | `NLTagger(.lemma)` | `AppleLemmaTagger` | Apple Native (`.unavailableOnPlatform` on Linux) | `SwiftDataFrame` |
-| WordNet Synset Graph | N/A | *Explicit Non-Goal in 2.4* | N/A | N/A |
-| `ne_chunk` (NER) | `NLTagger(.nameType)` | `AppleNamedEntityRecognizer` | Apple Native (`.unavailableOnPlatform` on Linux) | `SwiftDataFrame`, `SwiftExplain` |
-| `VADER Sentiment` | N/A | `VADERSentimentAnalyzer` | Pure Swift (Static 200KB Lexicon, All Platforms) | `SwiftDataFrame`, `SwiftVisualization` |
-| OS ML Sentiment | `NLTagger(.sentimentScore)` | `NLSentimentAnalyzer` | Apple Native | `SwiftDataFrame`, `SwiftML` |
-| `langid` | `NLLanguageRecognizer` | `AppleLanguageDetector` | Apple Native (`.unavailableOnPlatform` on Linux) | `SwiftDataFrame` |
-| `word2vec` / Vector Search | `NLEmbedding` | `AppleNLEmbedding` + `WordEmbeddings` | `WordEmbeddings` (All) / `AppleNLEmbedding` (Apple) | `SwiftCluster`, `SwiftLLM`, `SwiftDatabase` |
-| `NaiveBayesClassifier` | N/A | `MultinomialNaiveBayes`, `ComplementNaiveBayes` | Pure Swift (All Platforms) | `SwiftML`, `SwiftExplain` |
-| Document Topic Clustering | N/A | `clusterDocuments`, `projectTextEmbeddings2D` | Pure Swift + Apple NLEmbedding | `SwiftCluster`, `SwiftVisualization` |
-| RAG Vector Indexing | N/A | `TextVectorStore`, `LLMContextWindow` | Pure Swift + Apple NLEmbedding | `SwiftLLM`, `SwiftAgent` |
+- **Target Directory**: `Sources/SwiftOptimize/`
+- **DocC Catalog**: `Sources/SwiftOptimize/SwiftOptimize.docc/`
+- **Scope**:
+  - Document mathematical optimization solvers: `LBFGS`, `SGD`, `Adam`, `NelderMead`, `GradientDescent`.
+  - Document hyperparameter tuning: `GridSearchCV`, `RandomSearchCV`.
+  - Update `SwiftOptimize.docc` catalog.
+
+---
+
+### Phase 8: `SwiftForecast` Module DocC & API Polish
+
+- **Target Directory**: `Sources/SwiftForecast/`
+- **DocC Catalog**: `Sources/SwiftForecast/SwiftForecast.docc/`
+- **Scope**:
+  - Document time series models: `SimpleExponentialSmoothing`, `HoltsLinearSmoothing`, `HoltWintersSmoothing`, `ARIMA`.
+  - Document decomposition and Fourier spectral engines: `TSDecomposition`, vDSP FFT frequency extraction, 1D FIR moving average convolution.
+  - Update `SwiftForecast.docc` catalog.
+
+---
+
+### Phase 9: `SwiftLLM` Module DocC & API Polish
+
+- **Target Directory**: `Sources/SwiftLLM/`
+- **DocC Catalog**: `Sources/SwiftLLM/SwiftLLM.docc/`
+- **Scope**:
+  - Document LLM inference engines, token generation, prompt templates, `LLMContextWindow`, vector store retrieval, and Metal/MLX accelerated matrix multiplication.
+  - Update `SwiftLLM.docc` catalog.
+
+---
+
+### Phase 10: `SwiftExplain` Module DocC & API Polish
+
+- **Target Directory**: `Sources/SwiftExplain/`
+- **DocC Catalog**: `Sources/SwiftExplain/SwiftExplain.docc/`
+- **Scope**:
+  - Document model explainability types: `SHAPExplainer` (Kernel SHAP, Tree SHAP), `PermutationImportance`, `TextExplainer` token importance scoring.
+  - Update `SwiftExplain.docc` catalog.
+
+---
+
+### Phase 11: `SwiftVisualization` Module DocC & API Polish
+
+- **Target Directory**: `Sources/SwiftVisualization/`
+- **DocC Catalog**: `Sources/SwiftVisualization/SwiftVisualization.docc/`
+- **Scope**:
+  - Document chart types: `LinePlot`, `ScatterPlot`, `BarChart`, `Histogram`, `Heatmap`, `BoxPlot`.
+  - Document rendering backends: `HTMLRenderer`, SVG generator, theme customization.
+  - Update `SwiftVisualization.docc` catalog.
+
+---
+
+### Phase 12: `SwiftVision` Module DocC & API Polish
+
+- **Target Directory**: `Sources/SwiftVision/`
+- **DocC Catalog**: `Sources/SwiftVision/SwiftVision.docc/`
+- **Scope**:
+  - Document image datasets, image pre-processing (`resize`, `normalize`, `crop`), convolutional neural network layers (`Conv2D`, `BatchNorm`, `MaxPool2D`).
+  - Document deep learning models: `UNetSegmentationModel`, `YOLOv8Detector` with Non-Maximum Suppression (NMS).
+  - Update `SwiftVision.docc` catalog.
+
+---
+
+### Phase 13: `SwiftDatabase` Module DocC & API Polish
+
+- **Target Directory**: `Sources/SwiftDatabase/`
+- **DocC Catalog**: `Sources/SwiftDatabase/SwiftDatabase.docc/`
+- **Scope**:
+  - Document database drivers: `PostgreSQLConnection`, `SQLiteConnection`, binary protocol query parsers, and zero-copy DataFrame ingestion.
+  - Update `SwiftDatabase.docc` catalog.
+
+---
+
+### Phase 14: `SwiftAgent` Module DocC & API Polish
+
+- **Target Directory**: `Sources/SwiftAgent/`
+- **DocC Catalog**: `Sources/SwiftAgent/SwiftAgent.docc/`
+- **Scope**:
+  - Document AI agent execution: `AgentEvaluator`, `ToolRegistry`, tool parsing, prompt execution loops, and RAG document summary generation.
+  - Update `SwiftAgent.docc` catalog.
+
+---
+
+### Phase 15: Unified DocC Site Generation & Verification
+
+- **Script**: `./scripts/build_unified_docs.sh`
+- **Target Output**: `./docs/`
+- **Verification Steps**:
+  1. Build DocC archives for all 14 targets into `.build/docc_tmp/`.
+  2. Merge data, documentation, images, metadata, and index for all 14 targets into `./docs`.
+  3. Execute `python3 scripts/merge_docc_indexes.py` to generate unified sidebar navigation.
+  4. Verify zero compiler doc warnings across all 14 modules.

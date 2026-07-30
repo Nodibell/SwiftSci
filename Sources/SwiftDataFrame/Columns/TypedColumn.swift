@@ -44,9 +44,10 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     // MARK: – AnyColumn conformance
 
-    /// Filtered.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `any AnyColumn` result.
+    /// Returns a new column containing elements where the boolean mask is `true`.
+    /// - Parameter mask: Array of boolean flags indicating which rows to keep.
+    /// - Throws: `DataFrameError.columnLengthMismatch` if the mask length does not match column count.
+    /// - Returns: A new `AnyColumn` filtered by the mask.
     public func filtered(by mask: [Bool]) throws -> any AnyColumn {
         guard mask.count == count else {
             throw DataFrameError.columnLengthMismatch(
@@ -63,8 +64,9 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return TypedColumn<T>(name: name, values: result)
     }
 
-    /// Gathered.
-    /// - Returns: A `any AnyColumn` result.
+    /// Gathers elements at the specified row indices (uses SIMD/vDSP vectorization for `Double` columns).
+    /// - Parameter indices: Array of row indices to gather.
+    /// - Returns: A new `AnyColumn` containing elements at the requested indices.
     public func gathered(at indices: [Int]) -> any AnyColumn {
         if T.self == Double.self {
             let doubleCol = self as! TypedColumn<Double>
@@ -78,8 +80,9 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return TypedColumn<T>(name: name, values: result)
     }
 
-    /// Filtered indices.
-    /// - Returns: A `[Int]?` result.
+    /// Evaluates SIMD bitmask filter conditions returning matching row indices.
+    /// - Parameter condition: Filter condition comparison operator and threshold.
+    /// - Returns: Array of row indices matching the condition, or `nil` if unsupported.
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? {
         if T.self == Double.self {
             let doubles = values as! [Double?]
@@ -96,22 +99,23 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return nil
     }
 
-    /// Value.
-    /// - Returns: A `Any?` result.
+    /// Accesses raw value at the specified row index as `Any?`.
+    /// - Parameter index: Row index to inspect.
+    /// - Returns: Value at row index or `nil` if null or out of bounds.
     public func value(at index: Int) -> Any? {
         guard index >= 0 && index < count else { return nil }
         return values[index] as Any?
     }
 
-    /// To doubles.
-    /// - Returns: A `[Double]?` result.
+    /// Converts numeric column values into an array of non-null `Double` values.
+    /// - Returns: Array of `Double` values or `nil` if column is non-numeric.
     public func toDoubles() -> [Double]? {
         guard dtype.isNumeric else { return nil }
         return values.compactMap { $0?.doubleValue }
     }
 
-    /// To strings.
-    /// - Returns: A `[String]` result.
+    /// Converts column values into an array of string representations.
+    /// - Returns: Array of string values with `"null"` for missing values.
     public func toStrings() -> [String] {
         values.map { v in
             guard let v else { return "null" }
@@ -119,16 +123,16 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         }
     }
 
-    /// Renamed.
-    /// - Returns: A `any AnyColumn` result.
+    /// Returns a new column instance with a renamed identifier.
+    /// - Parameter newName: Target column name.
+    /// - Returns: Renamed column instance.
     public func renamed(to newName: String) -> any AnyColumn {
         TypedColumn<T>(name: newName, values: values)
     }
 
-    /// Sorted indices.
-    /// - Parameters:
-    ///   - ascending: The ascending.
-    /// - Returns: A `[Int]` result.
+    /// Computes row indices sorted by column values (uses vDSP radix sort for primitive types).
+    /// - Parameter ascending: Sort order direction (`true` for ascending, `false` for descending).
+    /// - Returns: Array of row indices sorted by column values.
     public func sortedIndices(ascending: Bool) -> [Int] {
         var indices = Array(0..<values.count)
         let vals = values

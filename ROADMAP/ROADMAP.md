@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.2+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.4+)
 
 ## 📌 Vision & Architecture
 
@@ -6,6 +6,7 @@
 
 The architecture combines two hardware engines:
 1. **CPU Engine**: SIMD vectorization via Apple **Accelerate (`vDSP`, `BLAS`, `LAPACK`)**.
+2. **GPU Engine**: Unified Memory Architecture (UMA) tensor evaluation via **MLX Metal**.
 
 ### 🌐 Platform Compatibility & Multi-Target Deployment
 
@@ -122,7 +123,7 @@ The architecture combines two hardware engines:
 
 ---
 
-### Version 2.3: SIMD Acceleration, FFT Spectral Engines & Enterprise Drivers (🟢 Completed)
+### Version 2.3: SIMD Acceleration, FFT Spectral Engines & Enterprise Drivers *(🟢 Completed)*
 
 *Detailed implementation plan:* [implementation_plan_23.md](implementation_plan_23.md)
 
@@ -133,6 +134,38 @@ The architecture combines two hardware engines:
 5. **Phase 5**: PostgreSQL Connection Driver in `SwiftDatabase`.
 6. **Phase 6**: SIMD Tree Split Evaluation Vectorization with Accelerate `vDSP` in `SwiftML`.
 7. **Phase 7**: Comprehensive Verification, Benchmark Suite & DocC Documentation Update.
+
+---
+
+### Version 2.3.1: Maintenance, Stability & SwiftNotebook Compatibility *(🟢 Completed)*
+
+1. **Core Type Governance**: Fixed typealias ambiguity between `SwiftDataFrame.NLPError` and `SwiftNLP.NLPError`.
+2. **Ecosystem Compatibility**: Full compatibility update for `SwiftNotebook` integration (`DataFrame+Plot.swift`).
+3. **Memory Safety & Performance**: Optimized zero-copy column buffer passes and SIMD bitmask filter memory bounds.
+
+---
+
+### Version 2.4.0: Complete 14-Module DocC Documentation & NLTK-Equivalent SwiftNLP Engine *(🟢 Completed)*
+
+*Detailed implementation plan:* [implementation_plan_24.md](implementation_plan_24.md)
+
+1. **NLTK-Equivalent SwiftNLP Engine**:
+   - **Tokenizers**: `AppleWordTokenizer` (Apple OS multi-lingual boundary detection), `SentenceTokenizer`, `RegexTokenizer`, `BPETokenizer`, `NGramTokenizer`.
+   - **Linguistic Processing**: `PorterStemmer` (morphological suffix stripping), `POSTagger` (part-of-speech tagging), `AppleLemmaTagger` (canonical base form lemmatization).
+   - **Entity Extraction**: `AppleNamedEntityRecognizer` (Person, Place, Organization).
+   - **Sentiment Analysis**: Pure Swift `VADERSentimentAnalyzer` (backed by zero-latency pre-sorted `VADERLexicon` binary search), `NLSentimentAnalyzer` (Apple OS ML model).
+   - **Language & Embeddings**: `AppleLanguageDetector`, `AppleNLEmbedding`, `WordEmbeddings` (SIMD Accelerate `vDSP_dotprD` dot product optimization).
+   - **Text Classification**: `MultinomialNaiveBayes` & `ComplementNaiveBayes`.
+2. **Ecosystem Inter-Module Integration Extensions**:
+   - `TextPipeline` (SwiftML actor pipeline).
+   - `df.vectorizeTextColumn` (SwiftCluster text clustering).
+   - `LLMContextWindow` (SwiftLLM token counting & prompt truncation).
+   - `TextExplainer` (SwiftExplain token importance scoring).
+3. **Module-by-Module DocC Documentation (100% Coverage across 14 Targets)**:
+   - Added comprehensive triple-slash (`///`) docstrings to all 14 targets (`SwiftDataFrame`, `SwiftStats`, `SwiftPreprocessing`, `SwiftML`, `SwiftCluster`, `SwiftNLP`, `SwiftOptimize`, `SwiftForecast`, `SwiftLLM`, `SwiftExplain`, `SwiftVisualization`, `SwiftVision`, `SwiftDatabase`, `SwiftAgent`).
+   - Achieved **0 compiler documentation warnings** across all 14 workspace targets.
+4. **Unified Static HTML DocC Website**:
+   - Executed `./scripts/build_unified_docs.sh` compiling zero-warning static HTML documentation in `./docs/` with unified navigation index (`docs/index/index.json`).
 
 ---
 

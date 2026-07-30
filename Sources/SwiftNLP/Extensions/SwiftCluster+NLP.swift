@@ -4,7 +4,7 @@ import SwiftDataFrame
 extension DataFrame {
     /// Vectorizes text documents in a DataFrame column using TF-IDF for clustering.
     /// - Parameters:
-    ///   - column: Input text column name.
+    ///   - name: Input text column name.
     /// - Returns: 2D array of TF-IDF feature vectors [numDocuments, numFeatures].
     public func vectorizeTextColumn(column name: String) async throws -> (matrix: [[Double]], vocabulary: [String: Int]) {
         guard let col = self[column: name, as: String.self] else {

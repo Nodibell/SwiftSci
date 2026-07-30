@@ -199,5 +199,4 @@ public typealias ForecastError = SwiftMLError
 public typealias StatsError = SwiftMLError
 /// Represents cluster error.
 public typealias ClusterError = SwiftMLError
-/// Represents n l p error.
-public typealias NLPError = SwiftMLError
+

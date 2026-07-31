@@ -441,9 +441,46 @@
 <span class="kw">try await</span> kmeans.fit(features: points)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Compiled Terminal Output (stdout)</span></div>
+          <div class="card-header"><span class="card-title">Compiled Terminal Output & Visualization</span></div>
           <pre><span class="out-text">PCA Reduced Dimension: 6x1</span>
-<span class="out-text">KMeans 2 Clusters Fit Completed Successfully</span></pre>
+<span class="out-text">KMeans 2 Clusters Fit Completed Successfully</span>
+<span class="out-text">Centroid 0: [1.00, 2.00] | Centroid 1: [10.00, 12.00]</span></pre>
+
+          <!-- SVG Cluster Scatter Plot -->
+          <div style="margin-top: 1rem; padding: 0.8rem; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-bottom: 0.4rem; display: flex; justify-content: space-between;">
+              <span>K-Means 2D Scatter Plot</span>
+              <span style="color: var(--accent-green);">● Cluster 0  ● Cluster 1</span>
+            </div>
+            <svg viewBox="0 0 320 140" style="width: 100%; height: 130px; display: block;">
+              <!-- Grid lines -->
+              <line x1="30" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <line x1="30" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <line x1="30" y1="100" x2="300" y2="100" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+              <!-- PCA Projection Vector -->
+              <line x1="40" y1="115" x2="280" y2="25" stroke="rgba(41, 151, 255, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+              <text x="170" y="80" fill="rgba(41, 151, 255, 0.7)" font-size="10" font-family="sans-serif">PCA 1D Axis</text>
+
+              <!-- Cluster 0 Points (Cyan/Blue) -->
+              <circle cx="60" cy="110" r="6" fill="#2997ff" opacity="0.9"/>
+              <circle cx="72" cy="118" r="5" fill="#2997ff" opacity="0.8"/>
+              <circle cx="50" cy="102" r="5" fill="#2997ff" opacity="0.8"/>
+              <circle cx="60" cy="110" r="12" fill="none" stroke="#2997ff" stroke-width="1.5" opacity="0.5"/>
+
+              <!-- Cluster 1 Points (Purple/Pink) -->
+              <circle cx="260" cy="30" r="6" fill="#bf5af2" opacity="0.9"/>
+              <circle cx="272" cy="38" r="5" fill="#bf5af2" opacity="0.8"/>
+              <circle cx="248" cy="22" r="5" fill="#bf5af2" opacity="0.8"/>
+              <circle cx="260" cy="30" r="12" fill="none" stroke="#bf5af2" stroke-width="1.5" opacity="0.5"/>
+
+              <!-- Centroids -->
+              <polygon points="60,103 64,110 60,117 56,110" fill="#30d158"/>
+              <polygon points="260,23 264,30 260,37 256,30" fill="#30d158"/>
+              <text x="75" y="114" fill="#f5f5f7" font-size="10" font-family="monospace">C0 (1.0, 2.0)</text>
+              <text x="180" y="34" fill="#f5f5f7" font-size="10" font-family="monospace">C1 (10.0, 12.0)</text>
+            </svg>
+          </div>
         </div>
       </div>
     </div>

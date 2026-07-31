@@ -120,6 +120,23 @@ try await kmeans.fit(features: points)
 ```text
   PCA Reduced Dimension: 6x1
   KMeans 2 Clusters Fit Completed Successfully
+  Centroid 0: [1.00, 2.00] | Centroid 1: [10.00, 12.00]
+```
+
+**2D Cluster Scatter Visualization:**
+```text
+  Y ▲
+ 12 ┼                                      ● (10.2, 11.8)
+    │                                  ✦ C1 (10.0, 12.0)
+ 10 ┼                               ● (9.8, 12.2)
+    │                             /
+  8 ┼               PCA 1D Vector / 
+    │                           /   
+  4 ┼                         /     
+    │       ● (0.8, 2.2)    /
+  2 ┼    ✦ C0 (1.0, 2.0)  /
+  0 ┼────● (1.2, 1.8)─────────────────────────────────► X
+    0    1    2    3    4    5    6    7    8    9   10
 ```
 
 ---

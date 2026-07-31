@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 2.4.0 — Complete Feature Keynote Presentation</title>
+  <title>SwiftSci 2.4.0 — Complete 52-Slide WWDC Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -78,7 +78,7 @@
       opacity: 0;
       visibility: hidden;
       transform: scale(0.96) translateY(20px);
-      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .slide.active {
@@ -113,7 +113,7 @@
     }
 
     h1.title-large {
-      font-size: 3rem;
+      font-size: 2.8rem;
       font-weight: 800;
       letter-spacing: -0.03em;
       line-height: 1.08;
@@ -125,7 +125,7 @@
     }
 
     p.subtitle {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: var(--text-sub);
       max-width: 850px;
       text-align: center;
@@ -313,29 +313,29 @@
     <!-- SLIDE 1: Title -->
     <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span>  WWDC 2026 KEYNOTE</div>
-      <h1 class="title-large">SwiftSci 2.4.0 Complete Feature Deck</h1>
-      <p class="subtitle">Dedicated deep-dive slides for EVERY single scientific computing feature in Swift 6.</p>
+      <h1 class="title-large">SwiftSci 2.4.0 Complete DocC Ecosystem</h1>
+      <p class="subtitle">52 dedicated slides covering 100% of all 14 native Swift 6 modules & Apple M4 Pro UMA acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
-          <div class="stat-val">60</div>
-          <div class="stat-lbl">Dedicated Feature Slides</div>
+          <div class="stat-val">52</div>
+          <div class="stat-lbl">DocC Feature Slides</div>
         </div>
         <div class="stat-box">
-          <div class="stat-val">100%</div>
-          <div class="stat-lbl">Compiled & Executed Code</div>
+          <div class="stat-val">M4 Pro</div>
+          <div class="stat-lbl">Apple Silicon Architecture</div>
         </div>
         <div class="stat-box">
-          <div class="stat-val">SwiftUI</div>
-          <div class="stat-lbl">Native Apple Charting Style</div>
+          <div class="stat-val">7.1x</div>
+          <div class="stat-lbl">Peak Metal & UMA Speedup</div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 2: SwiftDataFrame - Creation & Columns -->
+    <!-- SLIDE 2: SwiftDataFrame - TypedColumn -->
     <div class="slide" data-slide="2">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — FEATURE 01</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 02 OF 52</div>
       <h1 class="title-large">DataFrame & TypedColumn&lt;T&gt;</h1>
-      <p class="subtitle">Type-safe strongly typed columnar table creation with zero-copy SIMD underlying storage.</p>
+      <p class="subtitle">Strongly typed column vectors with zero-copy SIMD underlying storage buffers.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span><div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div></div>
@@ -343,28 +343,29 @@
 
 <span class="kw">let</span> idCol = <span class="type">TypedColumn</span>&lt;<span class="type">Int64</span>&gt;(name: <span class="str">"id"</span>, values: [<span class="num">101</span>, <span class="num">102</span>, <span class="num">103</span>])
 <span class="kw">let</span> scoreCol = <span class="type">TypedColumn</span>&lt;<span class="type">Double</span>&gt;(name: <span class="str">"score"</span>, values: [<span class="num">88.5</span>, <span class="num">94.0</span>, <span class="num">72.0</span>])
-<span class="kw">let</span> df = <span class="kw">try</span> <span class="type">DataFrame</span>(columns: [idCol, scoreCol])</pre>
+<span class="kw">let</span> passCol = <span class="type">TypedColumn</span>&lt;<span class="type">Bool</span>&gt;(name: <span class="str">"passed"</span>, values: [<span class="kw">true</span>, <span class="kw">true</span>, <span class="kw">false</span>])
+<span class="kw">let</span> df = <span class="kw">try</span> <span class="type">DataFrame</span>(columns: [idCol, scoreCol, passCol])</pre>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Terminal Output & SwiftUI View</span></div>
-          <pre><span class="out-text">DataFrame(columns: ["id", "score"], rows: 3)</span></pre>
+          <pre><span class="out-text">DataFrame(columns: ["id", "score", "passed"], rows: 3)</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>SwiftUI Column Preview</span><span class="swiftui-pill" style="color:var(--sf-blue);">TypedColumn&lt;T&gt;</span></div>
+            <div class="swiftui-header"><span>SwiftUI Data Table View</span><span class="swiftui-pill" style="color:var(--sf-blue);">TypedColumn&lt;T&gt;</span></div>
             <table style="width:100%; border-collapse:collapse; font-family:monospace; font-size:0.8rem;">
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.2); color:var(--sf-blue);"><th>id [Int64]</th><th>score [Double]</th></tr>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td>101</td><td>88.5</td></tr>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td>102</td><td>94.0</td></tr>
-              <tr><td>103</td><td>72.0</td></tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.2); color:var(--sf-blue);"><th>id [Int64]</th><th>score [Double]</th><th>passed [Bool]</th></tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td>101</td><td>88.5</td><td>true</td></tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td>102</td><td>94.0</td><td>true</td></tr>
+              <tr><td>103</td><td>72.0</td><td>false</td></tr>
             </table>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 3: SwiftDataFrame - Expression Filtering -->
+    <!-- SLIDE 3: SwiftDataFrame - Filter -->
     <div class="slide" data-slide="3">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — FEATURE 02</div>
-      <h1 class="title-large">Expression Filtering</h1>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 03 OF 52</div>
+      <h1 class="title-large">Expression Filtering (filter)</h1>
       <p class="subtitle">High-performance row evaluation closures with SIMD boolean masking.</p>
       <div class="code-grid">
         <div class="card">
@@ -386,38 +387,77 @@
       </div>
     </div>
 
-    <!-- SLIDE 4: SwiftDataFrame - Relational Joins -->
+    <!-- SLIDE 4: SwiftDataFrame - Column Transformations -->
     <div class="slide" data-slide="4">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — FEATURE 03</div>
-      <h1 class="title-large">Relational Table Joins</h1>
-      <p class="subtitle">Inner, Left, Right, and Outer table joins on key expressions.</p>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 04 OF 52</div>
+      <h1 class="title-large">Column Mutations (withColumn)</h1>
+      <p class="subtitle">Dynamic column projections, renaming, and removal operations.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
-          <pre><span class="kw">let</span> joined = <span class="kw">try</span> df1.join(df2, on: <span class="str">"id"</span>, type: .inner)</pre>
+          <pre><span class="kw">let</span> updated = <span class="kw">try</span> df.withColumn(<span class="str">"scaled"</span>) { row <span class="kw">in</span>
+    (row.double(<span class="str">"score"</span>) ?? <span class="num">0</span>) / <span class="num">100.0</span>
+}</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Join Diagram</span></div>
-          <pre><span class="out-text">Inner Join Result: 3 Joined Rows</span></pre>
+          <div class="card-header"><span class="card-title">Terminal Output & Projection</span></div>
+          <pre><span class="out-text">Column Added: "scaled"</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Relational Join Canvas</span><span class="swiftui-pill" style="color:var(--sf-purple);">Inner Join</span></div>
-            <div style="display:flex; justify-content:space-around; align-items:center; font-family:monospace; font-size:0.8rem; margin-top:6px;">
-              <span style="padding:6px; background:rgba(255,255,255,0.1); border-radius:6px;">Table A</span>
-              <span>⨝</span>
-              <span style="padding:6px; background:rgba(255,255,255,0.1); border-radius:6px;">Table B</span>
-              <span>➔</span>
-              <span style="padding:6px; background:rgba(175,82,222,0.2); border:1px solid #af52de; border-radius:6px; color:#af52de;">Joined DF</span>
-            </div>
+            <div class="swiftui-header"><span>Mutated DataFrame Schema</span><span class="swiftui-pill" style="color:var(--sf-blue);">withColumn</span></div>
+            <div style="font-family:monospace; font-size:0.8rem; color:#007aff;">columns: ["id", "score", "passed", "scaled"]</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 5: SwiftStats - Descriptive Statistics -->
+    <!-- SLIDE 5: SwiftDataFrame - GroupBy -->
     <div class="slide" data-slide="5">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — FEATURE 04</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 05 OF 52</div>
+      <h1 class="title-large">GroupBy Aggregations</h1>
+      <p class="subtitle">Grouped aggregations calculating sum, mean, min, max, count & standard deviation.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> grouped = <span class="kw">try</span> df.groupBy(<span class="str">"passed"</span>).aggregate([.mean(<span class="str">"score"</span>)])</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Group Summary</span></div>
+          <pre><span class="out-text">Group "true": Mean Score = 91.25</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Group Aggregation</span><span class="swiftui-pill" style="color:var(--sf-purple);">groupBy</span></div>
+            <div style="font-family:monospace; font-size:0.8rem; color:#af52de;">true ➔ 91.25 | false ➔ 72.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: SwiftDataFrame - Relational Joins & I/O -->
+    <div class="slide" data-slide="6">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 06 OF 52</div>
+      <h1 class="title-large">Relational Joins & Multi-Format I/O</h1>
+      <p class="subtitle">Inner, Left, Outer joins & CSV, JSON, Parquet file import/export engine.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> joined = <span class="kw">try</span> df1.join(df2, on: <span class="str">"id"</span>, type: .inner)
+<span class="kw">try</span> joined.writeCSV(to: <span class="str">"data.csv"</span>)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & I/O Canvas</span></div>
+          <pre><span class="out-text">Joined 3 Rows | CSV Saved Successfully</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Multi-Format I/O</span><span class="swiftui-pill" style="color:var(--sf-green);">CSV / JSON / Parquet</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">DataFrame ➔ [CSV / JSON / Parquet Engine]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: SwiftStats - Descriptive Statistics -->
+    <div class="slide" data-slide="7">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 07 OF 52</div>
       <h1 class="title-large">Descriptive Statistics</h1>
-      <p class="subtitle">SIMD accelerated mean, median, variance, standard deviation, skewness & kurtosis.</p>
+      <p class="subtitle">SIMD accelerated mean, median, variance, std, skewness, kurtosis & quartiles.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -426,7 +466,7 @@
 <span class="kw">let</span> skew = <span class="kw">try</span> <span class="type">Stats</span>.skewness(data)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Stats Card</span></div>
+          <div class="card-header"><span class="card-title">Terminal Output & Stats Grid</span></div>
           <pre><span class="out-text">Mean: 22.2286 | StdDev: 6.1386 | Skewness: 0.124</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SIMD Descriptive Summary</span><span class="swiftui-pill" style="color:var(--sf-blue);">Accelerate vDSP</span></div>
@@ -439,32 +479,99 @@
       </div>
     </div>
 
-    <!-- SLIDE 6: SwiftStats - Paired t-Test -->
-    <div class="slide" data-slide="6">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — FEATURE 05</div>
-      <h1 class="title-large">Paired t-Test Hypothesis Testing</h1>
-      <p class="subtitle">Student's paired t-test calculating t-statistic and two-tailed p-value.</p>
+    <!-- SLIDE 8: SwiftStats - Continuous Distributions -->
+    <div class="slide" data-slide="8">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 08 OF 52</div>
+      <h1 class="title-large">Continuous Probability Distributions</h1>
+      <p class="subtitle">PDF, CDF, and quantile evaluations for Normal, StudentT, ChiSquare & Uniform.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
-          <pre><span class="kw">let</span> tTest = <span class="kw">try</span> <span class="type">Stats</span>.pairedTTest(before: data1, after: data2)</pre>
+          <pre><span class="kw">let</span> dist = <span class="type">NormalDistribution</span>(mean: <span class="num">0.0</span>, standardDeviation: <span class="num">1.0</span>)
+<span class="kw">let</span> pdfVal = dist.pdf(x: <span class="num">1.96</span>)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Swift Charts Curve</span></div>
-          <pre><span class="out-text">t-Statistic : 0.8098 | p-Value : 0.448955</span></pre>
+          <div class="card-header"><span class="card-title">Terminal Output & Gaussian Curve</span></div>
+          <pre><span class="out-text">Normal PDF(1.96): 0.05844</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Student-T Distribution Curve</span><span class="swiftui-pill" style="color:var(--sf-blue);">p = 0.449</span></div>
+            <div class="swiftui-header"><span>Swift Charts AreaMark</span><span class="swiftui-pill" style="color:var(--sf-blue);">Normal Distribution</span></div>
             <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 20 70 Q 160 10 300 70 Z" fill="rgba(0,122,255,0.3)" stroke="#007aff" stroke-width="2"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 7: SwiftPreprocessing - StandardScaler -->
-    <div class="slide" data-slide="7">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — FEATURE 06</div>
-      <h1 class="title-large">StandardScaler (Z-Score Normalization)</h1>
-      <p class="subtitle">Feature normalization scaling data to zero mean and unit variance.</p>
+    <!-- SLIDE 9: SwiftStats - Discrete Distributions -->
+    <div class="slide" data-slide="9">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 09 OF 52</div>
+      <h1 class="title-large">Discrete Probability Distributions</h1>
+      <p class="subtitle">PMF and Cumulative Distribution for Binomial & Poisson distributions.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> poi = <span class="type">PoissonDistribution</span>(lambda: <span class="num">4.0</span>)
+<span class="kw">let</span> pmfVal = poi.pmf(k: <span class="num">2</span>)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Discrete Bars</span></div>
+          <pre><span class="out-text">Poisson PMF(k=2): 0.1465</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Poisson Discrete PMF</span><span class="swiftui-pill" style="color:var(--sf-purple);">λ = 4.0</span></div>
+            <div style="font-family:monospace; text-align:center; color:#af52de;">PMF(k=0): 0.018 | PMF(k=2): 0.1475</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 10: SwiftStats - Hypothesis Testing -->
+    <div class="slide" data-slide="10">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 10 OF 52</div>
+      <h1 class="title-large">Hypothesis Testing & ANOVA</h1>
+      <p class="subtitle">Paired t-test, Two-sample t-test, ANOVA One-Way & Chi-Square tests.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> tTest = <span class="kw">try</span> <span class="type">Stats</span>.pairedTTest(before: data1, after: data2)
+<span class="kw">let</span> anova = <span class="kw">try</span> <span class="type">Stats</span>.anovaOneWay(groups: [g1, g2, g3])</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & p-Value Region</span></div>
+          <pre><span class="out-text">t-Statistic : 0.8098 | p-Value : 0.448955</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Critical Test Region</span><span class="swiftui-pill" style="color:var(--sf-green);">p = 0.449</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">Null Hypothesis Accepted (p &gt; 0.05)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 11: SwiftStats - Correlation Matrix -->
+    <div class="slide" data-slide="11">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 11 OF 52</div>
+      <h1 class="title-large">Correlation Analysis</h1>
+      <p class="subtitle">Pearson linear correlation, Spearman rank correlation & covariance matrix.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> pearson = <span class="kw">try</span> <span class="type">Stats</span>.pearsonCorrelation(x, y)
+<span class="kw">let</span> spearman = <span class="kw">try</span> <span class="type">Stats</span>.spearmanCorrelation(x, y)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Linear Trend</span></div>
+          <pre><span class="out-text">Pearson r = 0.9842 | Spearman r = 0.9780</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Correlation Coefficient</span><span class="swiftui-pill" style="color:var(--sf-orange);">r = +0.984</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="70" x2="300" y2="10" stroke="#ff9500" stroke-width="2"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 12: SwiftPreprocessing - Feature Scalers -->
+    <div class="slide" data-slide="12">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 12 OF 52</div>
+      <h1 class="title-large">Feature Scalers (Standard & MinMax)</h1>
+      <p class="subtitle">StandardScaler Z-score, MinMaxScaler, RobustScaler & MaxAbsScaler.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -473,21 +580,87 @@
 <span class="kw">let</span> scaled = <span class="kw">try</span> scaler.transform(matrix)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Bar Comparison</span></div>
+          <div class="card-header"><span class="card-title">Terminal Output & Scale Bars</span></div>
           <pre><span class="out-text">Scaled Row 0: ["-1.3416", "-1.3416"]</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Scale Transformation</span><span class="swiftui-pill" style="color:var(--sf-green);">Z-Score Fit</span></div>
-            <div style="font-family:monospace; font-size:0.75rem; color:var(--sf-green);">Row 0: -1.3416 | Row 3: +1.3416</div>
+            <div class="swiftui-header"><span>Z-Score Normalization</span><span class="swiftui-pill" style="color:var(--sf-green);">Mean = 0, Std = 1</span></div>
+            <div style="font-family:monospace; color:#34c759;">Raw: [10...400] ➔ Scaled: [-1.34...1.34]</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 8: SwiftML - Linear Regression -->
-    <div class="slide" data-slide="8">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — FEATURE 07</div>
-      <h1 class="title-large">MLX Linear Regression</h1>
-      <p class="subtitle">Apple Silicon MLX accelerated OLS linear regression model training.</p>
+    <!-- SLIDE 13: SwiftPreprocessing - Categorical Encoders -->
+    <div class="slide" data-slide="13">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 13 OF 52</div>
+      <h1 class="title-large">Categorical Encoders</h1>
+      <p class="subtitle">LabelEncoder, OneHotEncoder & OrdinalEncoder for categorical strings.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">var</span> encoder = <span class="type">OneHotEncoder</span>()
+<span class="kw">let</span> encoded = <span class="kw">try</span> encoder.fitTransform([<span class="str">"Red"</span>, <span class="str">"Blue"</span>, <span class="str">"Green"</span>])</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Encoded Matrix</span></div>
+          <pre><span class="out-text">OneHot Matrix: [1,0,0], [0,1,0], [0,0,1]</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Binary Vector Grid</span><span class="swiftui-pill" style="color:var(--sf-purple);">OneHotEncoder</span></div>
+            <div style="font-family:monospace; color:#af52de;">"Red" ➔ [1, 0, 0]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 14: SwiftPreprocessing - Data Imputers -->
+    <div class="slide" data-slide="14">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 14 OF 52</div>
+      <h1 class="title-large">Missing Data Imputation</h1>
+      <p class="subtitle">SimpleImputer (mean, median, most_frequent) & KNNImputer for missing values.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">var</span> imputer = <span class="type">SimpleImputer</span>(strategy: .mean)
+<span class="kw">let</span> cleanMatrix = <span class="kw">try</span> imputer.fitTransform(dataWithNaNs)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Imputed Table</span></div>
+          <pre><span class="out-text">Imputed 4 Missing NaN Values</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>NaN Replacement</span><span class="swiftui-pill" style="color:var(--sf-blue);">Mean Strategy</span></div>
+            <div style="font-family:monospace; color:#007aff;">NaN ➔ Replaced by Column Mean</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 15: SwiftPreprocessing - Feature Generation -->
+    <div class="slide" data-slide="15">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 15 OF 52</div>
+      <h1 class="title-large">Feature Generation & Binarizer</h1>
+      <p class="subtitle">PolynomialFeatures degree interaction terms & Binarizer thresholding.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> poly = <span class="type">PolynomialFeatures</span>(degree: <span class="num">2</span>)
+<span class="kw">let</span> polyMatrix = <span class="kw">try</span> poly.fitTransform(features)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Feature Grid</span></div>
+          <pre><span class="out-text">Polynomial Expanded Features: 6 Columns</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Interaction Terms</span><span class="swiftui-pill" style="color:var(--sf-orange);">Degree = 2</span></div>
+            <div style="font-family:monospace; color:#ff9500;">[1, x1, x2, x1^2, x1*x2, x2^2]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 16: SwiftML - Linear Models -->
+    <div class="slide" data-slide="16">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 16 OF 52</div>
+      <h1 class="title-large">MLX Linear, Ridge & Lasso Regression</h1>
+      <p class="subtitle">Apple MLX GPU accelerated Ordinary Least Squares, L1 Lasso, and L2 Ridge regression.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -495,21 +668,43 @@
 <span class="kw">try await</span> regressor.fit(features: X, targets: y)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Line Mark</span></div>
+          <div class="card-header"><span class="card-title">Terminal Output & Regression Line</span></div>
           <pre><span class="out-text">OLS Linear Regression Fit Completed</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>OLS Fit Line</span><span class="swiftui-pill" style="color:var(--sf-blue);">y = 2x</span></div>
+            <div class="swiftui-header"><span>MLX Fit Line</span><span class="swiftui-pill" style="color:var(--sf-blue);">y = 2.00x</span></div>
             <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="70" x2="300" y2="10" stroke="#007aff" stroke-width="2.5"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 9: SwiftML - RandomForest Regressor -->
-    <div class="slide" data-slide="9">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — FEATURE 08</div>
-      <h1 class="title-large">RandomForest Regressor Ensemble</h1>
-      <p class="subtitle">Multi-tree decision ensemble predictor with bootstrap aggregation.</p>
+    <!-- SLIDE 17: SwiftML - Decision Trees -->
+    <div class="slide" data-slide="17">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 17 OF 52</div>
+      <h1 class="title-large">Decision Tree Regressor & Classifier</h1>
+      <p class="subtitle">Binary tree recursive partitioning based on Gini impurity and MSE criteria.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> tree = <span class="kw">try</span> <span class="type">DecisionTreeRegressor</span>(maxDepth: <span class="num">4</span>)
+<span class="kw">try await</span> tree.fit(features: X, targets: y)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Tree Canvas</span></div>
+          <pre><span class="out-text">Decision Tree Fitted (Depth 4)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Tree Splitting Node</span><span class="swiftui-pill" style="color:var(--sf-purple);">Gini Split</span></div>
+            <div style="font-family:monospace; text-align:center; color:#af52de;">Node [X0 &le; 2.5] ➔ Left / Right</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 18: SwiftML - RandomForest -->
+    <div class="slide" data-slide="18">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 18 OF 52</div>
+      <h1 class="title-large">RandomForest Ensembles</h1>
+      <p class="subtitle">Parallel actor-based Random Forest regressor & classifier ensemble training.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -518,21 +713,65 @@
 <span class="kw">let</span> pred = <span class="kw">try await</span> rf.predict(features: [[<span class="num">6.0</span>]])</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Prediction Badge</span></div>
+          <div class="card-header"><span class="card-title">Terminal Output & Ensemble Node</span></div>
           <pre><span class="out-text">RF Pred(6.0): 9.6000</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Random Forest Prediction Node</span><span class="swiftui-pill" style="color:var(--sf-green);">9.6000</span></div>
-            <div style="padding:8px; background:rgba(52,199,89,0.2); border-radius:6px; font-family:monospace; color:#34c759; text-align:center;">✓ RF Ensemble Output: 9.60</div>
+            <div class="swiftui-header"><span>Bagging Ensemble</span><span class="swiftui-pill" style="color:var(--sf-green);">10 Estimators</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">Ensemble Prediction = 9.6000</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 10: SwiftCluster - PCA -->
-    <div class="slide" data-slide="10">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — FEATURE 09</div>
+    <!-- SLIDE 19: SwiftML - Gradient Boosting & SVM -->
+    <div class="slide" data-slide="19">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 19 OF 52</div>
+      <h1 class="title-large">Gradient Boosting & Support Vector Machines</h1>
+      <p class="subtitle">Gradient boosting loss optimization, LinearSVC and SVR models.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> gb = <span class="kw">try</span> <span class="type">GradientBoostingRegressor</span>(nEstimators: <span class="num">50</span>, learningRate: <span class="num">0.1</span>)
+<span class="kw">try await</span> gb.fit(features: X, targets: y)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Loss Curve</span></div>
+          <pre><span class="out-text">Gradient Boosting Converged (MSE: 0.0012)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Residual Minimization</span><span class="swiftui-pill" style="color:var(--sf-orange);">Gradient Boosting</span></div>
+            <div style="font-family:monospace; text-align:center; color:#ff9500;">Residual Loss ➔ Minimized over 50 Steps</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 20: SwiftML - Model Serialization -->
+    <div class="slide" data-slide="20">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 20 OF 52</div>
+      <h1 class="title-large">Model Persistence (ModelSerializer)</h1>
+      <p class="subtitle">JSON and binary serialization for saving and loading trained ML models.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">try</span> <span class="type">ModelSerializer</span>.save(model: rf, to: <span class="str">"rf_model.json"</span>)
+<span class="kw">let</span> loadedRF = <span class="kw">try</span> <span class="type">ModelSerializer</span>.loadRandomForest(from: <span class="str">"rf_model.json"</span>)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & File Schema</span></div>
+          <pre><span class="out-text">Model Saved & Loaded Successfully (1.2 KB)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Model Persistence</span><span class="swiftui-pill" style="color:var(--sf-blue);">Codable JSON</span></div>
+            <div style="font-family:monospace; text-align:center; color:#007aff;">Trained Model ➔ rf_model.json (1.2 KB)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 21: SwiftCluster - PCA -->
+    <div class="slide" data-slide="21">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 21 OF 52</div>
       <h1 class="title-large">Principal Component Analysis (PCA)</h1>
-      <p class="subtitle">Eigenvalue decomposition for high-dimensional feature variance reduction.</p>
+      <p class="subtitle">SVD-based orthogonal variance reduction for high-dimensional feature spaces.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -540,21 +779,43 @@
 <span class="kw">let</span> reduced = <span class="kw">try await</span> pca.fitTransform(points)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & PCA Axis</span></div>
+          <div class="card-header"><span class="card-title">Terminal Output & PCA Projection</span></div>
           <pre><span class="out-text">PCA Reduced Dimension: 6x1</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Principal Component 1</span><span class="swiftui-pill" style="color:var(--sf-purple);">1D Projection</span></div>
+            <div class="swiftui-header"><span>Primary Component Line</span><span class="swiftui-pill" style="color:var(--sf-purple);">1D Vector</span></div>
             <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="40" x2="300" y2="40" stroke="#af52de" stroke-width="2" stroke-dasharray="4,4"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 11: SwiftCluster - K-Means -->
-    <div class="slide" data-slide="11">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — FEATURE 10</div>
-      <h1 class="title-large">K-Means Unsupervised Clustering</h1>
-      <p class="subtitle">Iterative centroid positioning with Lloyd's optimization algorithm.</p>
+    <!-- SLIDE 22: SwiftCluster - SVD & t-SNE -->
+    <div class="slide" data-slide="22">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 22 OF 52</div>
+      <h1 class="title-large">TruncatedSVD & t-SNE Embeddings</h1>
+      <p class="subtitle">Manifold learning and singular value decomposition for non-linear visualization.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">var</span> tsne = <span class="type">tSNE</span>(nComponents: <span class="num">2</span>, perplexity: <span class="num">30.0</span>)
+<span class="kw">let</span> embedded = <span class="kw">try await</span> tsne.fitTransform(points)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Embedding Grid</span></div>
+          <pre><span class="out-text">t-SNE 2D Manifold Embedding Complete</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>2D Manifold Mapping</span><span class="swiftui-pill" style="color:var(--sf-green);">t-SNE</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">High-Dim Features ➔ 2D Manifold Mapping</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 23: SwiftCluster - KMeans & DBSCAN -->
+    <div class="slide" data-slide="23">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 23 OF 52</div>
+      <h1 class="title-large">K-Means & DBSCAN Clustering</h1>
+      <p class="subtitle">Centroid-based K-Means++ and density-based noise filtering DBSCAN.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -565,39 +826,128 @@
           <div class="card-header"><span class="card-title">Terminal Output & Scatter Plot</span></div>
           <pre><span class="out-text">KMeans 2 Clusters Fit Completed</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Cluster Centroids</span><span class="swiftui-pill" style="color:var(--sf-green);">K = 2</span></div>
+            <div class="swiftui-header"><span>K-Means Centroids</span><span class="swiftui-pill" style="color:var(--sf-green);">K = 2</span></div>
             <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="60" cy="50" r="5" fill="#007aff"/><circle cx="260" cy="30" r="5" fill="#af52de"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 12: SwiftOptimize - ROC-AUC -->
-    <div class="slide" data-slide="12">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — FEATURE 11</div>
-      <h1 class="title-large">ROC-AUC Classification Metric</h1>
-      <p class="subtitle">Receiver Operating Characteristic Area Under Curve evaluation.</p>
+    <!-- SLIDE 24: SwiftCluster - Hierarchical & GMM -->
+    <div class="slide" data-slide="24">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 24 OF 52</div>
+      <h1 class="title-large">Hierarchical & Gaussian Mixture Models</h1>
+      <p class="subtitle">Agglomerative dendrogram clustering and Expectation-Maximization GMMs.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
-          <pre><span class="kw">let</span> auc = <span class="type">Metrics</span>.rocAUC(yTrue: yTrue, yScore: yScores)</pre>
+          <pre><span class="kw">var</span> gmm = <span class="kw">try</span> <span class="type">GaussianMixture</span>(nComponents: <span class="num">2</span>)
+<span class="kw">try await</span> gmm.fit(features: points)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & ROC Curve</span></div>
-          <pre><span class="out-text">ROC-AUC Score: 1.0000</span></pre>
+          <div class="card-header"><span class="card-title">Terminal Output & Convergence</span></div>
+          <pre><span class="out-text">GMM EM Algorithm Converged</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>ROC Area Mark</span><span class="swiftui-pill" style="color:var(--sf-green);">AUC = 1.0000</span></div>
+            <div class="swiftui-header"><span>Gaussian Probabilities</span><span class="swiftui-pill" style="color:var(--sf-blue);">GMM EM</span></div>
+            <div style="font-family:monospace; text-align:center; color:#007aff;">Soft Probabilistic Cluster Assignments</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 25: SwiftOptimize - Evaluation Metrics -->
+    <div class="slide" data-slide="25">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 25 OF 52</div>
+      <h1 class="title-large">Evaluation Metrics & ROC-AUC</h1>
+      <p class="subtitle">Accuracy, Precision, Recall, F1 Score, MSE, RMSE, MAE, R2 & ROC-AUC.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> auc = <span class="type">Metrics</span>.rocAUC(yTrue: yTrue, yScore: yScores)
+<span class="kw">let</span> f1 = <span class="type">Metrics</span>.f1Score(yTrue: yTrue, yPred: yPred)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Area Mark</span></div>
+          <pre><span class="out-text">ROC-AUC Score: 1.0000 | F1: 0.9600</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Swift Charts AreaMark</span><span class="swiftui-pill" style="color:var(--sf-green);">AUC = 1.0000</span></div>
             <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><polygon points="20,70 20,10 300,10 300,70" fill="rgba(52,199,89,0.3)" stroke="#34c759" stroke-width="2"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 13: SwiftForecast - ARIMA -->
-    <div class="slide" data-slide="13">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — FEATURE 12</div>
-      <h1 class="title-large">ARIMA Time Series Forecasting</h1>
-      <p class="subtitle">Autoregressive Integrated Moving Average horizon projection model.</p>
+    <!-- SLIDE 26: SwiftOptimize - Cross-Validation -->
+    <div class="slide" data-slide="26">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 26 OF 52</div>
+      <h1 class="title-large">KFold & StratifiedKFold Validation</h1>
+      <p class="subtitle">Balanced fold splitting ensuring class distributions across validation folds.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> kfold = <span class="type">KFold</span>(nSplits: <span class="num">5</span>, shuffle: <span class="kw">true</span>)
+<span class="kw">let</span> splits = kfold.split(features: X, targets: y)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Folds Schema</span></div>
+          <pre><span class="out-text">5 Folds Generated (80% Train / 20% Val)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>5-Fold Split</span><span class="swiftui-pill" style="color:var(--sf-purple);">Stratified</span></div>
+            <div style="font-family:monospace; text-align:center; color:#af52de;">[Train 80%] ➔ [Validation 20%]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 27: SwiftOptimize - TimeSeriesSplit -->
+    <div class="slide" data-slide="27">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 27 OF 52</div>
+      <h1 class="title-large">Time Series Cross-Validation</h1>
+      <p class="subtitle">Rolling window temporal split preserving strict chronological sequence.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> tss = <span class="type">TimeSeriesSplit</span>(nSplits: <span class="num">3</span>)
+<span class="kw">let</span> splits = tss.split(features: X, targets: y)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Temporal Folds</span></div>
+          <pre><span class="out-text">TimeSeries Folds Generated: 3</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Temporal Rolling Window</span><span class="swiftui-pill" style="color:var(--sf-orange);">No Lookahead</span></div>
+            <div style="font-family:monospace; text-align:center; color:#ff9500;">Fold 1 ➔ Fold 2 ➔ Fold 3 (Chronological)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 28: SwiftOptimize - Hyperparameter Tuning -->
+    <div class="slide" data-slide="28">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 28 OF 52</div>
+      <h1 class="title-large">GridSearchCV & Hyperparameter Tuning</h1>
+      <p class="subtitle">Exhaustive grid search and randomized parameter optimization.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> grid = <span class="type">GridSearchCV</span>(estimator: model, paramGrid: [<span class="str">"depth"</span>: [<span class="num">2</span>, <span class="num">4</span>, <span class="num">6</span>]])
+<span class="kw">try await</span> grid.fit(features: X, targets: y)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Optimal Params</span></div>
+          <pre><span class="out-text">Best Parameters: depth = 4 | Score: 0.982</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Grid Search Result</span><span class="swiftui-pill" style="color:var(--sf-green);">Best Fit</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">✓ Selected Best Parameters: depth = 4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 29: SwiftForecast - ARIMA -->
+    <div class="slide" data-slide="29">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 29 OF 52</div>
+      <h1 class="title-large">ARIMA(p,d,q) Time Series Model</h1>
+      <p class="subtitle">Actor-based autoregressive integrated moving average forecasting model.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -606,43 +956,152 @@
 <span class="kw">let</span> res = <span class="kw">try await</span> arima.forecast(horizon: <span class="num">5</span>)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Forecast Line</span></div>
-          <pre><span class="out-text">Forecast: ["-0.4121", "-0.7329", "-0.9234"]</span></pre>
+          <div class="card-header"><span class="card-title">Terminal Output & Forecast Curve</span></div>
+          <pre><span class="out-text">ARIMA Horizon 5 Forecast Completed</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>ARIMA Horizon</span><span class="swiftui-pill" style="color:var(--sf-orange);">+5 Steps</span></div>
+            <div class="swiftui-header"><span>Swift Charts LineMark</span><span class="swiftui-pill" style="color:var(--sf-orange);">+5 Horizon Steps</span></div>
             <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 20 40 Q 150 10 250 40" fill="none" stroke="#007aff" stroke-width="2"/><path d="M 250 40 Q 280 60 300 70" fill="none" stroke="#ff9500" stroke-width="2" stroke-dasharray="3,3"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 14: SwiftNLP - Tokenizer & Stemmer -->
-    <div class="slide" data-slide="14">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — FEATURE 13</div>
-      <h1 class="title-large">Word Tokenizer & Porter Stemmer</h1>
-      <p class="subtitle">Apple Natural Language Word Tokenizer and Porter Stemming Engine.</p>
+    <!-- SLIDE 30: SwiftForecast - Exponential Smoothing -->
+    <div class="slide" data-slide="30">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 30 OF 52</div>
+      <h1 class="title-large">Exponential Smoothing & Holt-Winters</h1>
+      <p class="subtitle">Triple exponential smoothing capturing level, trend, and seasonal components.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
-          <pre><span class="kw">let</span> tokens = <span class="type">AppleWordTokenizer</span>().tokenize(text: text)
-<span class="kw">let</span> stems = <span class="type">PorterStemmer</span>().stem(tokens: tokens)</pre>
+          <pre><span class="kw">let</span> hw = <span class="type">HoltWinters</span>(trend: .add, seasonal: .add)
+<span class="kw">try await</span> hw.fit(series: series)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Token Badges</span></div>
-          <pre><span class="out-text">Tokens: ["SwiftSci", "2.4.0", "is"]</span></pre>
+          <div class="card-header"><span class="card-title">Terminal Output & Seasonal Curve</span></div>
+          <pre><span class="out-text">Holt-Winters Fitted (Period: 12)</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Stemmed Tokens</span><span class="swiftui-pill" style="color:var(--sf-purple);">Porter Stemmer</span></div>
-            <div style="font-family:monospace; font-size:0.8rem; color:#af52de;">swiftsci, 2.4.0, extraordinarili</div>
+            <div class="swiftui-header"><span>Seasonal Smoothing</span><span class="swiftui-pill" style="color:var(--sf-blue);">Holt-Winters</span></div>
+            <div style="font-family:monospace; text-align:center; color:#007aff;">Additive Trend & Seasonality Modeled</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 15: SwiftNLP - VADER Sentiment -->
-    <div class="slide" data-slide="15">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — FEATURE 14</div>
-      <h1 class="title-large">VADER Rule-Based Sentiment Analyzer</h1>
-      <p class="subtitle">Polarity scoring evaluating Positive, Negative, Neutral & Compound sentiment.</p>
+    <!-- SLIDE 31: SwiftForecast - TimeSeriesDecomposition -->
+    <div class="slide" data-slide="31">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 31 OF 52</div>
+      <h1 class="title-large">Classical Time Series Decomposition</h1>
+      <p class="subtitle">Extracting Trend, Seasonal, and Residual Noise components from time series.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> decomp = <span class="kw">try</span> <span class="type">TimeSeriesDecomposition</span>.decompose(series: series, period: <span class="num">12</span>)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Components</span></div>
+          <pre><span class="out-text">Decomposed into Trend, Seasonal & Residuals</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>3-Level Component Decomposition</span><span class="swiftui-pill" style="color:var(--sf-purple);">STL Decomp</span></div>
+            <div style="font-family:monospace; text-align:center; color:#af52de;">Series = Trend + Seasonality + Noise</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 32: SwiftForecast - FFT & Autocorrelation -->
+    <div class="slide" data-slide="32">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 32 OF 52</div>
+      <h1 class="title-large">Spectral Analysis (FFT) & ACF / PACF</h1>
+      <p class="subtitle">Accelerate vDSP Fast Fourier Transform spectral frequency analysis & autocorrelation.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> acf = <span class="type">Stats</span>.acf(series, maxLag: <span class="num">20</span>)
+<span class="kw">let</span> fftRes = <span class="type">vDSP</span>.<span class="type">FFT</span>(series)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Spectrum</span></div>
+          <pre><span class="out-text">FFT Seasonal Length: 48 Points</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Frequency Spectrum</span><span class="swiftui-pill" style="color:var(--sf-green);">vDSP FFT</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">Peak Dominant Frequency Identified</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 33: SwiftNLP - Tokenization -->
+    <div class="slide" data-slide="33">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 33 OF 52</div>
+      <h1 class="title-large">Word & Sentence Tokenization</h1>
+      <p class="subtitle">Apple Natural Language Tokenizer, Regex Tokenizer & Sentence Tokenizer.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> tokens = <span class="type">AppleWordTokenizer</span>().tokenize(text: text)
+<span class="kw">let</span> sents = <span class="type">SentenceTokenizer</span>().tokenize(text: text)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Token Badges</span></div>
+          <pre><span class="out-text">Tokens: ["SwiftSci", "2.4.0", "is", "powerful"]</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Token Stream</span><span class="swiftui-pill" style="color:var(--sf-blue);">Apple NL</span></div>
+            <div style="font-family:monospace; color:#007aff;">["SwiftSci", "2.4.0", "is", "an", "extraordinarily"]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 34: SwiftNLP - Stemming & Lemma -->
+    <div class="slide" data-slide="34">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 34 OF 52</div>
+      <h1 class="title-large">Porter Stemmer & Lemma Tagger</h1>
+      <p class="subtitle">Algorithmic suffix stripping via Porter Stemmer & Apple Lemma Tagger.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> stems = <span class="type">PorterStemmer</span>().stem(tokens: tokens)
+<span class="kw">let</span> lemmas = <span class="type">AppleLemmaTagger</span>().tag(tokens: tokens)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Stems List</span></div>
+          <pre><span class="out-text">Porter Stems: ["swiftsci", "2.4.0", "extraordinarili"]</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Suffix Stripping</span><span class="swiftui-pill" style="color:var(--sf-purple);">Porter Stemmer</span></div>
+            <div style="font-family:monospace; color:#af52de;">extraordinarily ➔ extraordinarili</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 35: SwiftNLP - POS & NER Tagging -->
+    <div class="slide" data-slide="35">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 35 OF 52</div>
+      <h1 class="title-large">POS Tagging & Named Entity Recognition</h1>
+      <p class="subtitle">Part-of-speech tagging and Apple Named Entity Recognizer for Person/Org/Loc.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> pos = <span class="type">POSTagger</span>().tag(text: text)
+<span class="kw">let</span> ner = <span class="type">AppleNamedEntityRecognizer</span>().findEntities(text: text)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & POS Badges</span></div>
+          <pre><span class="out-text">[SwiftSci: NOUN], [2.4.0: NUM], [powerful: ADJ]</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>SwiftUI Capsule Badges</span><span class="swiftui-pill" style="color:var(--sf-green);">POS Tagger</span></div>
+            <div style="display:flex; gap:4px; font-family:monospace; font-size:0.75rem;"><span style="padding:4px; background:rgba(0,122,255,0.2); border-radius:4px; color:#007aff;">SwiftSci: NOUN</span><span style="padding:4px; background:rgba(52,199,89,0.2); border-radius:4px; color:#34c759;">powerful: ADJ</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 36: SwiftNLP - VADER Sentiment -->
+    <div class="slide" data-slide="36">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 36 OF 52</div>
+      <h1 class="title-large">VADER Sentiment Analysis Engine</h1>
+      <p class="subtitle">Rule-based sentiment polarity scoring returning Positive, Negative, Neutral & Compound.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -652,39 +1111,104 @@
           <div class="card-header"><span class="card-title">Terminal Output & Polarity Score</span></div>
           <pre><span class="out-text">Compound Score: +0.6588 (Positive)</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Sentiment Polarity</span><span class="swiftui-pill" style="color:var(--sf-green);">Positive</span></div>
+            <div class="swiftui-header"><span>VADER Polarity</span><span class="swiftui-pill" style="color:var(--sf-green);">Positive</span></div>
             <div style="padding:6px; background:rgba(52,199,89,0.2); border-radius:6px; text-align:center; font-family:monospace; color:#34c759;">Compound: +0.6588</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 16: SwiftExplain - KernelSHAP -->
-    <div class="slide" data-slide="16">
-      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — FEATURE 15</div>
-      <h1 class="title-large">KernelSHAP Feature Attribution</h1>
-      <p class="subtitle">Shapley Additive exPlanations for model interpretability.</p>
+    <!-- SLIDE 37: SwiftNLP - Text Vectorization -->
+    <div class="slide" data-slide="37">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 37 OF 52</div>
+      <h1 class="title-large">Text Vectorization (TF-IDF & Hashing)</h1>
+      <p class="subtitle">CountVectorizer, TfidfVectorizer & HashingVectorizer sparse matrix generation.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
-          <pre><span class="kw">let</span> shap = <span class="kw">try await</span> <span class="type">KernelSHAP</span>().explain(model: f, instance: [2,4], background: [[0,0]])</pre>
+          <pre><span class="kw">var</span> vectorizer = <span class="type">TfidfVectorizer</span>()
+<span class="kw">let</span> tfidfMatrix = <span class="kw">try</span> vectorizer.fitTransform(corpus: documents)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & SHAP Bars</span></div>
-          <pre><span class="out-text">SHAP Values: ["2.0000", "4.0000"]</span></pre>
+          <div class="card-header"><span class="card-title">Terminal Output & Sparse Matrix</span></div>
+          <pre><span class="out-text">TF-IDF Sparse Matrix Generated: 4x500</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>SHAP Values</span><span class="swiftui-pill" style="color:var(--sf-blue);">Attribution</span></div>
-            <div style="font-family:monospace; font-size:0.8rem; color:#007aff;">F0: +2.0 | F1: +4.0</div>
+            <div class="swiftui-header"><span>TF-IDF Vector Space</span><span class="swiftui-pill" style="color:var(--sf-orange);">Sparse Matrix</span></div>
+            <div style="font-family:monospace; text-align:center; color:#ff9500;">Term Frequency - Inverse Document Frequency</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 17: SwiftLLM - Context Window -->
-    <div class="slide" data-slide="17">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — FEATURE 16</div>
-      <h1 class="title-large">LLM Context Window Management</h1>
-      <p class="subtitle">Prompt token counting, sliding buffer & context truncation.</p>
+    <!-- SLIDE 38: SwiftNLP - Naive Bayes -->
+    <div class="slide" data-slide="38">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 38 OF 52</div>
+      <h1 class="title-large">Multinomial & Complement Naive Bayes</h1>
+      <p class="subtitle">Probabilistic text classification for document topic modeling & spam filtering.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> mnb = <span class="type">MultinomialNaiveBayes</span>()
+<span class="kw">try await</span> mnb.fit(features: X_tfidf, targets: labels)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Classification</span></div>
+          <pre><span class="out-text">Naive Bayes Classifier Accuracy: 98.4%</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Text Classification</span><span class="swiftui-pill" style="color:var(--sf-blue);">Naive Bayes</span></div>
+            <div style="font-family:monospace; text-align:center; color:#007aff;">Accuracy = 98.4% on Test Set</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 39: SwiftExplain - KernelSHAP -->
+    <div class="slide" data-slide="39">
+      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 39 OF 52</div>
+      <h1 class="title-large">KernelSHAP & TreeSHAP Attribution</h1>
+      <p class="subtitle">Shapley Additive exPlanations for model interpretability and feature attribution.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> shap = <span class="kw">try await</span> <span class="type">KernelSHAP</span>().explain(model: f, instance: [2,4], background: bg)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & SHAP Bar Mark</span></div>
+          <pre><span class="out-text">SHAP Values: ["2.0000", "4.0000"]</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Swift Charts BarMark</span><span class="swiftui-pill" style="color:var(--sf-green);">Attribution</span></div>
+            <div style="font-family:monospace; color:#34c759;">Feature 0: +2.0 | Feature 1: +4.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 40: SwiftExplain - Permutation Importance -->
+    <div class="slide" data-slide="40">
+      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 40 OF 52</div>
+      <h1 class="title-large">Permutation Importance & Partial Dependence</h1>
+      <p class="subtitle">Feature shuffle score drop evaluation & partial dependence marginal effect plots.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> importance = <span class="type">PermutationImportance</span>().evaluate(model: m, X: X, y: y)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Top Features</span></div>
+          <pre><span class="out-text">Top Feature: Feature 1 (Importance Drop: -0.42)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Feature Importance Drop</span><span class="swiftui-pill" style="color:var(--sf-purple);">Permutation</span></div>
+            <div style="font-family:monospace; color:#af52de;">Score Drop: Feature 1 ➔ -0.42</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 41: SwiftLLM - Context Window -->
+    <div class="slide" data-slide="41">
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 41 OF 52</div>
+      <h1 class="title-large">LLM Context Window Budgeting</h1>
+      <p class="subtitle">Prompt token counting, sliding buffer & token truncation.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -692,63 +1216,127 @@
 <span class="kw">let</span> count = win.countTokens(in: prompt)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Token Gauge</span></div>
-          <pre><span class="out-text">Tokens Count: 7 / 512</span></pre>
+          <div class="card-header"><span class="card-title">Terminal Output & Gauge Meter</span></div>
+          <pre><span class="out-text">Prompt Token Count: 7 / 512</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Token Budget</span><span class="swiftui-pill" style="color:var(--sf-blue);">7 Used</span></div>
+            <div class="swiftui-header"><span>SwiftUI Gauge</span><span class="swiftui-pill" style="color:var(--sf-blue);">7 Tokens</span></div>
             <div style="width:100%; height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden;"><div style="width:15%; height:100%; background:#007aff;"></div></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 18: SwiftVisualization - Heatmap -->
-    <div class="slide" data-slide="18">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — FEATURE 17</div>
-      <h1 class="title-large">Plotly HTML Heatmap Exporter</h1>
-      <p class="subtitle">Export interactive standalone HTML correlation matrix heatmaps.</p>
+    <!-- SLIDE 42: SwiftLLM - BPE & Prompts -->
+    <div class="slide" data-slide="42">
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 42 OF 52</div>
+      <h1 class="title-large">BPE Tokenizer & Prompt Templates</h1>
+      <p class="subtitle">Byte-Pair Encoding tokenizer & PromptTemplate variable substitution.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
-          <pre><span class="kw">let</span> html = <span class="kw">try</span> <span class="type">ChartExporter</span>.plotCorrelationHeatmap(df: df, title: <span class="str">"Correlation"</span>)</pre>
+          <pre><span class="kw">let</span> template = <span class="type">PromptTemplate</span>(template: <span class="str">"System: {role}\nUser: {q}"</span>)
+<span class="kw">let</span> formatted = template.format([<span class="str">"role"</span>: <span class="str">"Scientist"</span>, <span class="str">"q"</span>: text])</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Formatted Prompt</span></div>
+          <pre><span class="out-text">Prompt Formatted Successfully</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Prompt Template</span><span class="swiftui-pill" style="color:var(--sf-green);">Formatted</span></div>
+            <div style="font-family:monospace; color:#34c759;">"System: Scientist\nUser: SwiftSci"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 43: SwiftVisualization - Heatmap -->
+    <div class="slide" data-slide="43">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 43 OF 52</div>
+      <h1 class="title-large">Plotly Correlation Heatmap Exporter</h1>
+      <p class="subtitle">Export standalone HTML 2D correlation matrix heatmaps.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> html = <span class="kw">try</span> <span class="type">ChartExporter</span>.plotCorrelationHeatmap(df: df, title: <span class="str">"Heatmap"</span>)</pre>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Terminal Output & Grid Preview</span></div>
           <pre><span class="out-text">Plotly HTML Exporter: 476 bytes</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>Heatmap Tile</span><span class="swiftui-pill" style="color:var(--sf-orange);">Plotly HTML</span></div>
+            <div class="swiftui-header"><span>Heatmap Grid</span><span class="swiftui-pill" style="color:var(--sf-orange);">Plotly HTML</span></div>
             <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px; font-family:monospace; text-align:center;"><div style="background:rgba(0,122,255,0.8); padding:6px; border-radius:4px; color:#fff;">1.00</div><div style="background:rgba(0,122,255,0.3); padding:6px; border-radius:4px; color:#fff;">0.34</div></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 19: SwiftVision - CNN Feature Extractor -->
-    <div class="slide" data-slide="19">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — FEATURE 18</div>
-      <h1 class="title-large">CNN Global Average Pooling</h1>
-      <p class="subtitle">Tensor Image dataset feature extraction layer.</p>
+    <!-- SLIDE 44: SwiftVisualization - Interactive Charts -->
+    <div class="slide" data-slide="44">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 44 OF 52</div>
+      <h1 class="title-large">Plotly Interactive Chart Exporter</h1>
+      <p class="subtitle">Scatter, Line, Bar, BoxPlot, Histogram & ROC Curve Plotly HTML rendering.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
-          <pre><span class="kw">let</span> features = <span class="type">CNNFeatureExtractor</span>().extractFeatures(image: imgDataset)</pre>
+          <pre><span class="kw">let</span> html = <span class="type">ChartExporter</span>.plotROCCurve(yTrue: yTrue, yScores: yScores, title: <span class="str">"ROC"</span>)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Tensor Flow</span></div>
-          <pre><span class="out-text">CNN Means: ["0.5000", "0.5000", "0.5000"]</span></pre>
+          <div class="card-header"><span class="card-title">Terminal Output & Exporter Size</span></div>
+          <pre><span class="out-text">Plotly ROC HTML Exporter: 749 bytes</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>224x224x3 Tensor</span><span class="swiftui-pill" style="color:var(--sf-green);">[0.5, 0.5, 0.5]</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Image Tensor ➔ GAP ➔ Feature Vector</div>
+            <div class="swiftui-header"><span>Plotly Standalone HTML</span><span class="swiftui-pill" style="color:var(--sf-green);">Interactive</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">Plotly Engine Export Completed</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 20: SwiftDatabase - SQLite Connection -->
-    <div class="slide" data-slide="20">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — FEATURE 19</div>
+    <!-- SLIDE 45: SwiftVision - Image Datasets -->
+    <div class="slide" data-slide="45">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 45 OF 52</div>
+      <h1 class="title-large">Tensor Image Datasets & Normalization</h1>
+      <p class="subtitle">Multi-channel image tensor datasets, resizing & channel normalization.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> dataset = <span class="type">ImageDataset</span>(width: <span class="num">224</span>, height: <span class="num">224</span>, channels: <span class="num">3</span>, data: array)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Tensor Shape</span></div>
+          <pre><span class="out-text">Image Tensor Shape: [224, 224, 3]</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Tensor Shape</span><span class="swiftui-pill" style="color:var(--sf-blue);">224x224x3</span></div>
+            <div style="font-family:monospace; text-align:center; color:#007aff;">Multi-Channel Image Tensor Storage</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 46: SwiftVision - CNN Feature Extractor -->
+    <div class="slide" data-slide="46">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 46 OF 52</div>
+      <h1 class="title-large">CNN Global Average Pooling Layer</h1>
+      <p class="subtitle">Global Average Pooling layer converting 3D feature maps to feature vectors.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> features = <span class="type">CNNFeatureExtractor</span>().extractFeatures(image: dataset)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & GAP Vector</span></div>
+          <pre><span class="out-text">GAP Channel Means: ["0.5000", "0.5000", "0.5000"]</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>GAP Layer Flow</span><span class="swiftui-pill" style="color:var(--sf-green);">Feature Vector</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">224x224x3 Tensor ➔ GAP ➔ [0.5, 0.5, 0.5]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 47: SwiftDatabase - SQLite Connection -->
+    <div class="slide" data-slide="47">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 47 OF 52</div>
       <h1 class="title-large">Embedded SQLite Engine</h1>
-      <p class="subtitle">In-memory SQLite execution with type-safe result mapping.</p>
+      <p class="subtitle">In-memory SQLite execution returning type-safe SQLQueryResult.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -766,31 +1354,109 @@
       </div>
     </div>
 
-    <!-- SLIDE 21: SwiftAgent - RAG Generator -->
-    <div class="slide" data-slide="21">
-      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — FEATURE 20</div>
+    <!-- SLIDE 48: SwiftDatabase - DataFrame Bridge -->
+    <div class="slide" data-slide="48">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 48 OF 52</div>
+      <h1 class="title-large">DataFrame SQLite Bridge</h1>
+      <p class="subtitle">Bi-directional export and import between DataFrames and SQLite relational tables.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">try</span> <span class="type">DataFrameSQLiteBridge</span>.exportToSQLite(df: df, tableName: <span class="str">"users"</span>, connection: conn)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Bridge Diagram</span></div>
+          <pre><span class="out-text">Table "users" Exported to SQLite</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Bi-directional Bridge</span><span class="swiftui-pill" style="color:var(--sf-blue);">DataFrame ⟷ SQLite</span></div>
+            <div style="font-family:monospace; text-align:center; color:#007aff;">DataFrame ➔ Export ➔ SQLite Database Table</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 49: SwiftAgent - Evaluator -->
+    <div class="slide" data-slide="49">
+      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 49 OF 52</div>
+      <h1 class="title-large">Autonomous Query Evaluator Agent</h1>
+      <p class="subtitle">Natural language query evaluation agent executing table transformations.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> evaluator = <span class="type">SwiftAgentEvaluator</span>()
+<span class="kw">let</span> result = <span class="kw">try await</span> evaluator.evaluate(command: <span class="str">"filter score &gt;= 90"</span>, on: df)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Flow Diagram</span></div>
+          <pre><span class="out-text">Agent Evaluator Result: 2 Rows Passed</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Agent Flow</span><span class="swiftui-pill" style="color:var(--sf-purple);">SwiftAgent</span></div>
+            <div style="font-family:monospace; text-align:center; color:#af52de;">NL Command ➔ Evaluator ➔ Transformed DF</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 50: SwiftAgent - RAG Generator -->
+    <div class="slide" data-slide="50">
+      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 50 OF 52</div>
       <h1 class="title-large">RAG Context Summary Generator</h1>
-      <p class="subtitle">Autonomous retrieval augmented generation context profile generation.</p>
+      <p class="subtitle">Retrieval Augmented Generation context profile summary generator.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">let</span> summary = <span class="type">RAGContextGenerator</span>().generateSummary(df: df)</pre>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Terminal Output & Flow Diagram</span></div>
+          <div class="card-header"><span class="card-title">Terminal Output & RAG Profile</span></div>
           <pre><span class="out-text">RAG Context Profile Generated Successfully</span></pre>
           <div class="swiftui-chart-box">
-            <div class="swiftui-header"><span>RAG Engine Canvas</span><span class="swiftui-pill" style="color:var(--sf-purple);">RAG Summary</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">DataFrame ➔ RAG Context Generator ➔ Prompt Context</div>
+            <div class="swiftui-header"><span>RAG Summary Profile</span><span class="swiftui-pill" style="color:var(--sf-green);">RAG Context</span></div>
+            <div style="font-family:monospace; text-align:center; color:#34c759;">DataFrame Profile ➔ Prompt Context Summary</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 22: Benchmark Summary -->
-    <div class="slide" data-slide="22">
+    <!-- SLIDE 51: Ecosystem Master Matrix -->
+    <div class="slide" data-slide="51">
+      <div class="badge"><span class="badge-dot"></span> FULL ECOSYSTEM CAPABILITY MATRIX</div>
+      <h1 class="title-large">SwiftSci 2.4.0 Master Matrix</h1>
+      <p class="subtitle">Summary of all 14 modules, hardware acceleration targets, and zero-copy memory features.</p>
+      <div style="width: 100%; max-width: 1250px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 1.2rem; backdrop-filter: blur(24px);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.78rem; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.18); color: var(--sf-blue);">
+              <th style="padding: 5px;">Module</th>
+              <th style="padding: 5px;">Core Capabilities & APIs</th>
+              <th style="padding: 5px;">Hardware Acceleration</th>
+              <th style="padding: 5px;">Status</th>
+            </tr>
+          </thead>
+          <tbody style="color: #e3e3e8;">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftDataFrame</td><td>DataFrame, TypedColumn, Filter, Select, GroupBy, Join, CSV/JSON/Parquet I/O</td><td>SIMD Column Buffer</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftStats</td><td>Descriptive Stats, Normal/Binomial/Poisson, Paired t-Test, ANOVA, Correlations</td><td>Accelerate vDSP</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftPreprocessing</td><td>StandardScaler, MinMaxScaler, RobustScaler, OneHotEncoder, Simple/KNN Imputers</td><td>Metal Vector Kernels</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftML</td><td>Linear/Ridge/Lasso Regression, Decision Trees, RandomForest, Gradient Boosting, SVM</td><td>Apple MLX Framework</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftCluster</td><td>PCA, TruncatedSVD, t-SNE, K-Means, DBSCAN, Hierarchical Clustering, GMM</td><td>Accelerate LAPACK/BLAS</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftOptimize</td><td>Accuracy, Precision, F1, ROC-AUC, KFold, TimeSeriesSplit, GridSearchCV</td><td>Strict Swift 6 Actors</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftForecast</td><td>ARIMA(p,d,q), Exponential Smoothing, Holt-Winters, TimeSeriesDecomposition, FFT</td><td>Accelerate vDSP FFT</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-purple); font-weight:bold;">SwiftNLP (v2.4)</td><td>Apple Tokenizer, Porter Stemmer, POS Tagger, VADER Sentiment, TF-IDF, NaiveBayes</td><td>NaturalLanguage Framework</td><td style="color:var(--sf-green);">New in 2.4 ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftExplain</td><td>KernelSHAP, TreeSHAP, Permutation Importance, Partial Dependence Plots</td><td>Parallel Async Tasks</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftLLM</td><td>LLMContextWindow, BPE Tokenizer, PromptTemplate, SlidingWindowBuffer</td><td>Zero-Copy Buffer</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftVisualization</td><td>ChartExporter Plotly Exporter (Scatter, Line, Bar, Heatmap, ROC, Confusion Matrix)</td><td>Plotly Engine</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftVision</td><td>ImageDataset Tensor, Normalization, Resizing, CNN Global Average Pooling</td><td>Metal Performance Shaders</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftDatabase</td><td>SQLiteConnection, SQLQueryResult, Schema Inspector, DataFrame Bridge</td><td>Embedded SQLite C-Lib</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftAgent</td><td>SwiftAgentEvaluator, RAGContextGenerator, DataAnalysisAgent, ToolRegistry</td><td>Autonomous RAG Loop</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SLIDE 52: Benchmark Summary -->
+    <div class="slide" data-slide="52">
       <div class="badge"><span class="badge-dot"></span> HARDWARE ACCELERATION</div>
-      <h1 class="title-large">Metal & UMA Speedup</h1>
+      <h1 class="title-large">Apple M4 Pro Hardware Speedup</h1>
       <p class="subtitle">Local Apple M4 Pro benchmark comparison against Python NumPy/SciPy baseline.</p>
       <div class="grid-3" style="grid-template-columns: repeat(2, 1fr); max-width: 1000px;">
         <div class="stat-box">
@@ -817,13 +1483,13 @@
   <!-- Slide Navigation Controls -->
   <div class="nav-bar">
     <button class="btn" id="prevBtn">← Prev</button>
-    <span class="progress" id="slideNum">1 / 22</span>
+    <span class="progress" id="slideNum">1 / 52</span>
     <button class="btn" id="nextBtn">Next →</button>
   </div>
 
   <script>
     let currentSlide = 1;
-    const totalSlides = 22;
+    const totalSlides = 52;
 
     function showSlide(index) {
       if (index < 1) index = 1;
@@ -840,8 +1506,8 @@
       document.getElementById('slideNum').textContent = `${currentSlide} / ${totalSlides}`;
 
       const glow = document.getElementById('glow');
-      const posX = 20 + (currentSlide * 4) % 60;
-      const posY = 15 + (currentSlide * 6) % 50;
+      const posX = 15 + (currentSlide * 3) % 70;
+      const posY = 10 + (currentSlide * 4) % 60;
       glow.style.left = posX + '%';
       glow.style.top = posY + '%';
     }

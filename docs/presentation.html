@@ -2823,7 +2823,17 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       </div>
     </div>
 
-</div>
+  </div>
+
+  <!-- BOTTOM NAV BAR -->
+  <div class="bottom-nav">
+    <button class="nav-btn" id="prevBtn">← Prev</button>
+    <div style="display:flex; align-items:center; gap:0.8rem; flex:1; justify-content:center;">
+      <span class="footer-pos" id="slideNum">1 / 65</span>
+      <input type="range" id="slideSlider" min="1" max="65" value="1" style="width: min(350px, 40vw);">
+    </div>
+    <button class="nav-btn" id="nextBtn">Next →</button>
+  </div>
 
   <script>
     let currentSlide = 1;
@@ -2831,23 +2841,21 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
 
     // Slide ranges for Top Module Chips
     const moduleRanges = [
-      { name: "Title", start: 1, end: 1 },
-      { name: "Agenda", start: 2, end: 2 },
       { name: "DataFrame", start: 3, end: 8 },
       { name: "Stats", start: 9, end: 13 },
-      { name: "Preprocessing", start: 14, end: 17 },
-      { name: "ML", start: 18, end: 22 },
-      { name: "Cluster", start: 23, end: 26 },
-      { name: "Optimize", start: 27, end: 30 },
-      { name: "Forecast", start: 31, end: 34 },
-      { name: "NLP", start: 35, end: 40 },
-      { name: "Explain", start: 41, end: 42 },
-      { name: "LLM", start: 43, end: 44 },
-      { name: "Viz", start: 45, end: 46 },
-      { name: "Vision", start: 47, end: 48 },
-      { name: "Database", start: 49, end: 50 },
-      { name: "Agent", start: 51, end: 52 },
-      { name: "M4 Pro", start: 53, end: 53 }
+      { name: "Preprocessing", start: 14, end: 19 },
+      { name: "ML", start: 20, end: 27 },
+      { name: "Cluster", start: 28, end: 32 },
+      { name: "Optimize", start: 33, end: 36 },
+      { name: "Forecast", start: 37, end: 44 },
+      { name: "NLP", start: 45, end: 50 },
+      { name: "Explain", start: 51, end: 52 },
+      { name: "LLM", start: 53, end: 56 },
+      { name: "Viz", start: 57, end: 58 },
+      { name: "Vision", start: 59, end: 60 },
+      { name: "Database", start: 61, end: 62 },
+      { name: "Agent", start: 63, end: 64 },
+      { name: "M4 Pro", start: 65, end: 65 }
     ];
 
     function showSlide(index) {

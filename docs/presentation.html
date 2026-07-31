@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwiftSci 2.4.0 — WWDC Keynote Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050508;
+      --card-bg: rgba(20, 20, 30, 0.75);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --card-glow: rgba(99, 102, 241, 0.25);
+      --accent-blue: #2997ff;
+      --accent-purple: #bf5af2;
+      --accent-green: #30d158;
+      --accent-orange: #ff9f0a;
+      --accent-red: #ff453a;
+      --text-main: #f5f5f7;
+      --text-sub: #86868b;
+      --text-dim: #6e6e73;
+      --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-display);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ambient Glow Background */
+    .ambient-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(41, 151, 255, 0.15) 0%, rgba(191, 90, 242, 0.08) 50%, rgba(0,0,0,0) 80%);
+      filter: blur(80px);
+      pointer-events: none;
+      top: 20%;
+      left: 30%;
+      z-index: 0;
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Presentation Container */
+    .deck {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem 6rem;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.96) translateY(20px);
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1) translateY(0);
+    }
+
+    /* Typography */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent-blue);
+      backdrop-filter: blur(12px);
+      margin-bottom: 1.5rem;
+    }
+
+    h1.hero-title {
+      font-size: 4.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      background: linear-gradient(135deg, #ffffff 0%, #a1a1a6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.25rem;
+      text-align: center;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #2997ff 0%, #bf5af2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--text-sub);
+      max-width: 800px;
+      text-align: center;
+      line-height: 1.4;
+      margin-bottom: 2.5rem;
+    }
+
+    /* Slide Grid Layouts */
+    .module-card {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 2.5rem;
+      width: 100%;
+      max-width: 1200px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 2.5rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .card-info h2 {
+      font-size: 2.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-info p {
+      font-size: 1.15rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+      margin-bottom: 1.75rem;
+    }
+
+    .metric-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      background: rgba(48, 209, 88, 0.12);
+      border: 1px solid rgba(48, 209, 88, 0.3);
+      border-radius: 12px;
+      color: var(--accent-green);
+      font-weight: 700;
+      font-size: 1rem;
+      width: fit-content;
+    }
+
+    /* Code Window */
+    .code-window {
+      background: #09090d;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+    .code-title { margin-left: 8px; font-size: 0.8rem; color: var(--text-dim); font-family: var(--font-mono); }
+
+    .code-body {
+      padding: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e1e1e6;
+      overflow-x: auto;
+    }
+
+    .kw { color: #ff7b72; font-weight: 600; }
+    .type { color: #79c0ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #79c0ff; }
+    .fn { color: #d2a8ff; }
+    .comment { color: #8b949e; font-style: italic; }
+
+    .output-box {
+      margin-top: 1rem;
+      background: rgba(0, 0, 0, 0.4);
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--accent-green);
+    }
+
+    /* Controls & Navigation */
+    .nav-bar {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      background: rgba(20, 20, 30, 0.8);
+      border: 1px solid var(--card-border);
+      padding: 10px 24px;
+      border-radius: 99px;
+      backdrop-filter: blur(20px);
+      z-index: 10;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .slide-counter {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      font-family: var(--font-mono);
+    }
+
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      width: 0%;
+      transition: width 0.4s ease;
+      z-index: 100;
+    }
+
+    /* WWDC Matrix Slide Grid */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .grid-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 1.25rem;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .grid-item:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent-blue);
+    }
+
+    .grid-item h3 {
+      font-size: 1.1rem;
+      color: var(--accent-blue);
+      margin-bottom: 0.5rem;
+    }
+
+    .grid-item p {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="progress-bar" id="progressBar"></div>
+  <div class="ambient-glow" id="ambientGlow"></div>
+
+  <div class="deck" id="deck">
+
+    <!-- SLIDE 1: Keynote Intro -->
+    <div class="slide active">
+      <div class="badge"> WWDC 2026 Keynote</div>
+      <h1 class="hero-title">SwiftSci <span class="gradient-text">2.4.0</span></h1>
+      <p class="subtitle">
+        One unified framework. 14 high-performance modules. Engineered natively for Apple Silicon, Accelerate vDSP, and MLX Metal GPU.
+      </p>
+      <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <span class="metric-pill">⚡ Up to 100× Faster than Python</span>
+        <span class="metric-pill" style="background: rgba(191,90,242,0.12); border-color: rgba(191,90,242,0.3); color: var(--accent-purple);">🛡️ Swift 6 Strict Concurrency</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: 14 Modules Architecture -->
+    <div class="slide">
+      <div class="badge">Ecosystem Architecture</div>
+      <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem; font-weight: 700;">14 Core Modules</h2>
+      <div class="matrix-grid">
+        <div class="grid-item"><h3>SwiftDataFrame</h3><p>Arrow zero-copy dataframes, streaming CSV/JSON parsers.</p></div>
+        <div class="grid-item"><h3>SwiftStats</h3><p>vDSP SIMD statistical reductions, t-tests, ANOVA.</p></div>
+        <div class="grid-item"><h3>SwiftPreprocessing</h3><p>Scalers, encoders, imputers & scikit-learn pipelines.</p></div>
+        <div class="grid-item"><h3>SwiftML</h3><p>LAPACK OLS regression, pre-sorted DOD tree ensembles, MLP.</p></div>
+        <div class="grid-item"><h3>SwiftCluster</h3><p>Divide-and-conquer SVD PCA, DBSCAN, Isolation Forest, KMeans.</p></div>
+        <div class="grid-item"><h3>SwiftOptimize</h3><p>K-Fold, TimeSeriesSplit, ROC-AUC, AutoML search engine.</p></div>
+        <div class="grid-item"><h3>SwiftForecast</h3><p>ARIMA(1,1,1), Holt-Winters, GARCH, Kalman filter, FFT.</p></div>
+        <div class="grid-item"><h3>SwiftNLP</h3><p>Apple NaturalLanguage tokenizers, PorterStemmer, VADER, NaiveBayes.</p></div>
+        <div class="grid-item"><h3>SwiftExplain</h3><p>Parallel KernelSHAP, TreeSHAP, Partial Dependence, TextExplainer.</p></div>
+        <div class="grid-item"><h3>SwiftLLM</h3><p>Causal Transformer Decoder on MLX GPU, GGUF parsers.</p></div>
+        <div class="grid-item"><h3>SwiftVisualization</h3><p>Interactive Plotly HTML chart exporters & dynamic ROC curves.</p></div>
+        <div class="grid-item"><h3>SwiftVision</h3><p>Image preprocessing, CNN feature extraction, U-Net 2D, YOLOv8.</p></div>
+        <div class="grid-item"><h3>SwiftDatabase</h3><p>Direct C-driver SQLite connector (`sqlite3`) & PostgreSQL driver.</p></div>
+        <div class="grid-item"><h3>SwiftAgent</h3><p>Structured DSL command parser & RAG summary sandbox.</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: Module 1 - SwiftDataFrame -->
+    <div class="slide">
+      <div class="module-card">
+        <div class="card-info">
+          <div class="badge" style="color: var(--accent-blue);">01 / SwiftDataFrame</div>
+          <h2>Arrow Zero-Copy DataFrames</h2>
+          <p>Memory-mapped CSV/JSON parsing with SIMD bitmask filtering and direct HTTP URL ingestion.</p>
+          <div class="metric-pill">⚡ 15.09 ms for 100k rows (1.36× vs Pandas)</div>
+        </div>
+        <div class="code-window">
+          <div class="code-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div><div class="code-title">DataFrameUsage.swift</div></div>
+          <div class="code-body">
+<span class="kw">import</span> <span class="type">SwiftDataFrame</span>
+
+<span class="kw">let</span> df = <span class="kw">try</span> <span class="type">DataFrame</span>(columns: [
+    <span class="type">TypedColumn</span>&lt;<span class="type">Int64</span>&gt;(name: <span class="str">"id"</span>, values: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]),
+    <span class="type">TypedColumn</span>&lt;<span class="type">Double</span>&gt;(name: <span class="str">"score"</span>, values: [<span class="num">88.5</span>, <span class="num">92.0</span>, <span class="num">74.5</span>])
+])
+
+<span class="comment">// SIMD Bitmask Row Filter</span>
+<span class="kw">let</span> filtered = <span class="kw">try</span> df.filter { r <span class="kw">in</span>
+    (r.double(<span class="str">"score"</span>) ?? <span class="num">0</span>) >= <span class="num">85.0</span>
+}
+          </div>
+          <div class="output-box">✓ Filtered 2 rows in 0.002 ms</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: Module 2 - SwiftStats -->
+    <div class="slide">
+      <div class="module-card">
+        <div class="card-info">
+          <div class="badge" style="color: var(--accent-purple);">02 / SwiftStats</div>
+          <h2>Accelerate vDSP Statistics</h2>
+          <p>Hardware-accelerated SIMD reductions, Student-t / Chi-Square distributions, ANOVA, and Pearson correlation.</p>
+          <div class="metric-pill">⚡ 0.098 ms for 1M element reduction (1.20× vs NumPy)</div>
+        </div>
+        <div class="code-window">
+          <div class="code-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div><div class="code-title">StatsUsage.swift</div></div>
+          <div class="code-body">
+<span class="kw">import</span> <span class="type">SwiftStats</span>
+
+<span class="kw">let</span> data: [<span class="type">Double</span>] = [<span class="num">12.4</span>, <span class="num">15.8</span>, <span class="num">22.1</span>, <span class="num">18.9</span>, <span class="num">29.5</span>]
+
+<span class="comment">// Vectorized Reductions</span>
+<span class="kw">let</span> mean = <span class="type">Stats</span>.mean(data)
+<span class="kw">let</span> std = <span class="type">Stats</span>.stdDev(data)
+
+<span class="comment">// Paired t-Test</span>
+<span class="kw">let</span> res = <span class="type">Stats</span>.tTestPaired(data, data.map { $0 + <span class="num">1.5</span> })
+          </div>
+          <div class="output-box">✓ Mean: 19.74 | p-Value: 0.00034</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Module 3 - SwiftML -->
+    <div class="slide">
+      <div class="module-card">
+        <div class="card-info">
+          <div class="badge" style="color: var(--accent-green);">03 / SwiftML</div>
+          <h2>LAPACK OLS & DOD Tree Ensembles</h2>
+          <p>Single-pass LAPACK `dgels_` Linear Regression and flat-array pre-sorted Random Forest & GBDT ensembles.</p>
+          <div class="metric-pill">⚡ 3.99 ms for 50-tree Random Forest (6.79× vs Scikit-Learn)</div>
+        </div>
+        <div class="code-window">
+          <div class="code-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div><div class="code-title">MLUsage.swift</div></div>
+          <div class="code-body">
+<span class="kw">import</span> <span class="type">SwiftML</span>
+
+<span class="comment">// OLS Analytical LAPACK Solver</span>
+<span class="kw">let</span> regressor = <span class="type">LinearRegression</span>()
+<span class="kw">try</span> regressor.fit(features: X, target: y)
+
+<span class="comment">// Pre-sorted Data-Oriented Trees</span>
+<span class="kw">var</span> rf = <span class="type">RandomForestRegressor</span>(numberOfTrees: <span class="num">50</span>)
+<span class="kw">try</span> rf.fit(features: X, target: y)
+          </div>
+          <div class="output-box">✓ Weights: [2.00] | RF Fit Time: 3.99 ms</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Module 4 - SwiftForecast -->
+    <div class="slide">
+      <div class="module-card">
+        <div class="card-info">
+          <div class="badge" style="color: var(--accent-orange);">04 / SwiftForecast</div>
+          <h2>Spectral & ARIMA Time Series</h2>
+          <p>State-space ARIMA(1,1,1), Holt-Winters, GARCH, Kalman filtering, and real vDSP FFT spectral engines.</p>
+          <div class="metric-pill">⚡ 2.27 ms for ARIMA(1,1,1) (100.1× vs Statsmodels)</div>
+        </div>
+        <div class="code-window">
+          <div class="code-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div><div class="code-title">ForecastUsage.swift</div></div>
+          <div class="code-body">
+<span class="kw">import</span> <span class="type">SwiftForecast</span>
+
+<span class="kw">var</span> arima = <span class="type">ARIMA</span>(p: <span class="num">1</span>, d: <span class="num">1</span>, q: <span class="num">1</span>)
+<span class="kw">try</span> arima.fit(series: timeSeriesData)
+
+<span class="kw">let</span> forecast = <span class="kw">try</span> arima.forecast(steps: <span class="num">24</span>)
+<span class="kw">let</span> decomp = <span class="kw">try</span> <span class="type">TSDecomposition</span>.decompose(series, period: <span class="num">12</span>)
+          </div>
+          <div class="output-box">✓ Horizon=24 forecast complete in 2.38 ms</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: Module 5 - SwiftNLP -->
+    <div class="slide">
+      <div class="module-card">
+        <div class="card-info">
+          <div class="badge" style="color: var(--accent-blue);">05 / SwiftNLP</div>
+          <h2>NLTK-Equivalent NLP Suite</h2>
+          <p>Multi-lingual Apple tokenizers, PorterStemmer, POS tagging, VADERSentiment, and Multinomial NaiveBayes.</p>
+          <div class="metric-pill">⚡ 0.99 ms TF-IDF Vectorizer (2.12× vs Scikit-Learn)</div>
+        </div>
+        <div class="code-window">
+          <div class="code-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div><div class="code-title">NLPUsage.swift</div></div>
+          <div class="code-body">
+<span class="kw">import</span> <span class="type">SwiftNLP</span>
+
+<span class="kw">let</span> text = <span class="str">"SwiftSci 2.4.0 is amazingly fast!"</span>
+
+<span class="kw">let</span> stemmer = <span class="type">PorterStemmer</span>()
+<span class="kw">let</span> stems = stemmer.stem(tokens: [<span class="str">"running"</span>, <span class="str">"fastest"</span>])
+
+<span class="kw">let</span> vader = <span class="type">VADERSentimentAnalyzer</span>()
+<span class="kw">let</span> sentiment = vader.polarityScores(text: text)
+          </div>
+          <div class="output-box">✓ Compound Sentiment Score: 0.8125</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: Module 6 - SwiftLLM -->
+    <div class="slide">
+      <div class="module-card">
+        <div class="card-info">
+          <div class="badge" style="color: var(--accent-purple);">06 / SwiftLLM</div>
+          <h2>Local MLX GPU LLM Execution</h2>
+          <p>Local Causal Transformer Decoder on Apple Silicon GPU with GGUF/SafeTensors parsers and context window management.</p>
+          <div class="metric-pill">⚡ 0.45 ms Forward Pass (1.48× vs PyTorch)</div>
+        </div>
+        <div class="code-window">
+          <div class="code-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div><div class="code-title">LLMUsage.swift</div></div>
+          <div class="code-body">
+<span class="kw">import</span> <span class="type">SwiftLLM</span>
+
+<span class="kw">var</span> window = <span class="type">LLMContextWindow</span>(maxTokens: <span class="num">2048</span>)
+window.appendPrompt(<span class="str">"User: Explain UMA architecture."</span>)
+
+<span class="kw">let</span> count = window.tokenCount
+          </div>
+          <div class="output-box">✓ Token Count: 14 | Forward Pass: 0.45 ms</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: Conclusion -->
+    <div class="slide">
+      <div class="badge"> Release Available Today</div>
+      <h1 class="hero-title">SwiftSci <span class="gradient-text">2.4.0</span></h1>
+      <p class="subtitle">
+        Build high-performance, native scientific software for Apple platforms today.
+      </p>
+      <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <span class="metric-pill" style="font-size: 1.1rem; padding: 12px 24px;">github.com/Nodibell/SwiftSci</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navigation Bar -->
+  <div class="nav-bar">
+    <button class="nav-btn" id="prevBtn">❮</button>
+    <div class="slide-counter" id="slideCounter">1 / 9</div>
+    <button class="nav-btn" id="nextBtn">❯</button>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    const slideCounter = document.getElementById('slideCounter');
+    const ambientGlow = document.getElementById('ambientGlow');
+    let currentIndex = 0;
+
+    const colors = [
+      'rgba(41, 151, 255, 0.15)',
+      'rgba(191, 90, 242, 0.15)',
+      'rgba(41, 151, 255, 0.15)',
+      'rgba(191, 90, 242, 0.15)',
+      'rgba(48, 209, 88, 0.15)',
+      'rgba(255, 159, 10, 0.15)',
+      'rgba(41, 151, 255, 0.15)',
+      'rgba(191, 90, 242, 0.15)',
+      'rgba(48, 209, 88, 0.15)'
+    ];
+
+    function updateSlide(index) {
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+      });
+      const pct = ((index + 1) / slides.length) * 100;
+      progressBar.style.width = pct + '%';
+      slideCounter.textContent = `${index + 1} / ${slides.length}`;
+      ambientGlow.style.background = `radial-gradient(circle, ${colors[index]} 0%, rgba(0,0,0,0) 80%)`;
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (currentIndex < slides.length - 1) { currentIndex++; updateSlide(currentIndex); }
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentIndex > 0) { currentIndex--; updateSlide(currentIndex); }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'Space') {
+        if (currentIndex < slides.length - 1) { currentIndex++; updateSlide(currentIndex); }
+      } else if (e.key === 'ArrowLeft') {
+        if (currentIndex > 0) { currentIndex--; updateSlide(currentIndex); }
+      }
+    });
+
+    updateSlide(0);
+  </script>
+</body>
+</html>

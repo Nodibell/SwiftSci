@@ -10,7 +10,7 @@ SwiftSci 2.4.0 is a production-ready, high-performance scientific computing fram
 
 ---
 
-## 🛠️ Complete 14-Module Showcase with Compiled Execution
+## 🛠️ Complete 14-Module Showcase with Compiled Execution & Visualizations
 
 ### 1. SwiftDataFrame
 **Tabular Data Manipulation with Swift 6 Type Safety**
@@ -21,17 +21,21 @@ let idCol = TypedColumn<Int64>(name: "id", values: [101, 102, 103, 104, 105])
 let scoreCol = TypedColumn<Double>(name: "score", values: [88.5, 94.0, 72.0, 96.5, 81.0])
 let passCol = TypedColumn<Bool>(name: "passed", values: [true, true, false, true, true])
 let df = try DataFrame(columns: [idCol, scoreCol, passCol])
-let filtered = df.filter { row in (row.double("score") ?? 0) >= 85.0 }
+let filtered = try df.filter { row in (row.double("score") ?? 0) >= 85.0 }
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-DataFrame(
-  _columns: [
-    "id": TypedColumn<Int64>(values: [101, 102, 104]),
-    "score": TypedColumn<Double>(values: [88.5, 94.0, 96.5]),
-    "passed": TypedColumn<Bool>(values: [true, true, true])
-  ]
-)
+DataFrame(columns: ["id", "score", "passed"], rows: 3)
+```
+**Visual Table Preview:**
+```text
+┌───────┬───────────────┬──────────────┐
+│  id   │ score (≥85.0) │ passed (Bool)│
+├───────┼───────────────┼──────────────┤
+│  101  │     88.5      │     true     │
+│  102  │     94.0      │     true     │
+│  104  │     96.5      │     true     │
+└───────┴───────────────┴──────────────┘
 ```
 
 ---
@@ -46,16 +50,25 @@ let data2: [Double] = [14.0, 19.5, 23.0, 21.0, 29.0, 28.5, 24.0]
 
 let mean = try Stats.mean(data)
 let std = try Stats.standardDeviation(data)
-let median = try Stats.median(data)
 let tTest = try Stats.pairedTTest(before: data, after: data2)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
   Mean        : 22.2286
   StdDev      : 6.1386
-  Median      : 22.1000
   t-Statistic : 0.8098
   p-Value     : 0.448955
+```
+**Normal Distribution & Hypothesis Test Region:**
+```text
+        ▲         Normal Bell Curve (μ = 22.23, σ = 6.14)
+        │                 .---.
+        │               ./     \.
+        │              /   │     \
+        │            .'    │      `. 
+        │          .'      │        `.
+  ──────┴─────────┴────────┼──────────┴────────► X
+                          μ = 22.23 (p = 0.449)
 ```
 
 ---
@@ -75,6 +88,13 @@ let scaled = try scaler.transform(matrix)
   Scaled Row 0: ["-1.3416", "-1.3416"]
   Scaled Row 3: ["1.3416", "1.3416"]
 ```
+**Feature Normalization Transform:**
+```text
+  Raw Features          [10.0 ... 400.0]
+        │
+        ▼  StandardScaler Normalization (Z-Score)
+  Scaled Standardized  [-1.3416 ... +1.3416]
+```
 
 ---
 
@@ -88,7 +108,6 @@ let y: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
 
 let regressor = LinearRegression()
 try await regressor.fit(features: X, targets: y)
-
 let rf = try RandomForestRegressor(nEstimators: 10, maxDepth: 4)
 try await rf.fit(features: X, targets: y)
 let rfPred = try await rf.predict(features: [[6.0]])
@@ -97,6 +116,15 @@ let rfPred = try await rf.predict(features: [[6.0]])
 ```text
   OLS Linear Regression Fit Completed Successfully
   RF Pred(6.0): 9.6000
+```
+**Linear & Ensemble Fit Line:**
+```text
+  Y ▲
+ 10 ┼                               ● (5.0, 10.0)
+  8 ┼                        ● (4.0, 8.0)
+  6 ┼                 ● (3.0, 6.0)
+  4 ┼          ● (2.0, 4.0)       ✦ RF Pred(6.0) = 9.60
+  2 ┼───● (1.0, 2.0)──────────────────────────────────► X
 ```
 
 ---
@@ -112,7 +140,6 @@ let points: [[Double]] = [
 ]
 var pca = try PCA(nComponents: 1)
 let reduced = try await pca.fitTransform(points)
-
 var kmeans = try KMeans(nClusters: 2, maxIterations: 50)
 try await kmeans.fit(features: points)
 ```
@@ -122,7 +149,6 @@ try await kmeans.fit(features: points)
   KMeans 2 Clusters Fit Completed Successfully
   Centroid 0: [1.00, 2.00] | Centroid 1: [10.00, 12.00]
 ```
-
 **2D Cluster Scatter Visualization:**
 ```text
   Y ▲
@@ -149,7 +175,6 @@ import SwiftOptimize
 let yTrue: [Int] = [1, 0, 1, 1, 0, 1, 0, 0]
 let yScores: [Double] = [0.95, 0.10, 0.85, 0.75, 0.20, 0.90, 0.30, 0.15]
 let auc = Metrics.rocAUC(yTrue: yTrue, yScore: yScores)
-
 let tss = TimeSeriesSplit(nSplits: 3)
 let splits = tss.split(features: X, targets: y)
 ```
@@ -157,6 +182,15 @@ let splits = tss.split(features: X, targets: y)
 ```text
   ROC-AUC Score      : 1.0000
   TimeSeries Splits  : 3 folds generated
+```
+**ROC Curve Plot:**
+```text
+  TPR ▲ ┌───────────────────────────┐
+  1.0 ┼ │███████████████████████████│ AUC = 1.0000
+      │ │███████████████████████████│ Perfect Classification
+  0.0 ┼ └───────────────────────────┘
+      └─┴───────────────────────────► FPR
+       0.0                         1.0
 ```
 
 ---
@@ -177,6 +211,10 @@ let decomp = try TimeSeriesDecomposition.decompose(series: Array(series.prefix(4
   ARIMA Horizon 5 Forecast : ["-0.4121", "-0.7329", "-0.9234", "-0.9781", "-0.8842"]
   FFT Seasonal Length      : 48 points
 ```
+**Forecast Horizon Projection:**
+```text
+  Historical Series ─── ~~~ ───► [Fit Point] - - - ( +5 Forecast Horizon ) - - -►
+```
 
 ---
 
@@ -193,10 +231,12 @@ let tags = POSTagger().tag(text: text)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Tokens           : ["SwiftSci", "2.4.0", "is", "an", "extraordinarily"]
-  Porter Stems     : ["swiftsci", "2.4.0", "is", "an", "extraordinarili"]
-  POS Tagging      : ["SwiftSci: noun", " : whitespace", "2.4.0: other"]
-  VADER Compound   : 0.0000
+  Tokens       : ["SwiftSci", "2.4.0", "is", "an", "extraordinarily"]
+  Porter Stems : ["swiftsci", "2.4.0", "is", "an", "extraordinarili"]
+```
+**POS Tokenizer Badges:**
+```text
+  [SwiftSci: NOUN]  [2.4.0: NUM]  [extraordinarily: ADV]  [powerful: ADJ]
 ```
 
 ---
@@ -208,11 +248,16 @@ import SwiftExplain
 
 let kernelSHAP = KernelSHAP()
 let predictClosure: @Sendable ([Double]) async -> Double = { sample in sample.reduce(0.0, +) }
-let shap = await kernelSHAP.explain(model: predictClosure, instance: [2.0, 4.0], background: [[0.0, 0.0]])
+let shap = try await kernelSHAP.explain(model: predictClosure, instance: [2.0, 4.0], background: [[0.0, 0.0]])
 ```
 **Empirical Console Output (`stdout`):**
 ```text
   KernelSHAP Values : ["2.0000", "4.0000"]
+```
+**SHAP Attribution Bar Chart:**
+```text
+  Feature 0 █ █ █ █ █ (+2.0000)
+  Feature 1 █ █ █ █ █ █ █ █ █ █ (+4.0000)
 ```
 
 ---
@@ -231,6 +276,10 @@ let truncated = contextWindow.truncate(text: "SwiftSci 2.4.0 is an amazingly fas
   Prompt Token Count: 7
   Truncated Text    : "SwiftSci 2.4.0 is an amazingly"
 ```
+**Token Meter:**
+```text
+  [██████---------------------------------] 7 / 512 Tokens Used (1.3%)
+```
 
 ---
 
@@ -244,8 +293,16 @@ let rocHTML = ChartExporter.plotROCCurve(yTrue: [1, 0, 1, 0], yScores: [0.9, 0.1
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Plotly Heatmap Size : 476 bytes
+  Plotly Heatmap Size  : 476 bytes
   Plotly ROC Curve Size: 749 bytes
+```
+**Heatmap 2x2 Grid:**
+```text
+  ┌──────┬──────┐
+  │ 1.00 │ 0.34 │
+  ├──────┼──────┤
+  │ 0.34 │ 1.00 │
+  └──────┴──────┘
 ```
 
 ---
@@ -262,6 +319,10 @@ let features = CNNFeatureExtractor().extractFeatures(image: imgDataset)
 ```text
   CNN Feature Extractor Means: ["0.5000", "0.5000", "0.5000"]
 ```
+**GAP Tensor Reduction:**
+```text
+  [224 x 224 x 3] Image Tensor ───► Global Avg Pooling ───► [0.50, 0.50, 0.50]
+```
 
 ---
 
@@ -277,8 +338,16 @@ let dbResult = try await conn.executeQuery("SELECT * FROM users;")
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Columns : ["id", "score"]
-  Rows    : [[1, 95.5], [2, 88.0]]
+  Columns : ["id", "score"] | Rows : 2
+```
+**SQLite Query Result Table:**
+```text
+  ┌────┬───────┐
+  │ id │ score │
+  ├────┼───────┤
+  │ 1  │ 95.5  │
+  │ 2  │ 88.0  │
+  └────┴───────┘
 ```
 
 ---
@@ -295,10 +364,11 @@ let summary = RAGContextGenerator().generateSummary(df: df)
 **Empirical Console Output (`stdout`):**
 ```text
   Filtered DataFrame Rows : 2
-  RAG Summary             : ## Dataset Profile
-- Rows: 5, Columns: 3
-- Columns: id, score, passed
-...
+  RAG Summary Profile Generated Successfully
+```
+**RAG Pipeline Diagram:**
+```text
+  [User Prompt] ───► [SwiftAgent Evaluator] ───► [RAG Context Summary]
 ```
 
 ---

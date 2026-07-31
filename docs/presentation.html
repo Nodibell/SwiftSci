@@ -57,6 +57,56 @@
       transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    /* Top Module Quick-Jump Pill Bar */
+    .module-chips-bar {
+      position: fixed;
+      top: 0.8rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.4rem;
+      padding: 0.4rem 0.8rem;
+      background: rgba(28, 28, 30, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 99px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 90;
+      max-width: 95vw;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .module-chips-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-sub);
+      padding: 0.25rem 0.65rem;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .chip:hover {
+      background: rgba(0, 122, 255, 0.2);
+      color: var(--sf-blue);
+      border-color: var(--sf-blue);
+    }
+
+    .chip.active {
+      background: var(--sf-blue);
+      color: #ffffff;
+      border-color: var(--sf-blue);
+      box-shadow: 0 0 12px rgba(0, 122, 255, 0.5);
+    }
+
     .deck {
       position: relative;
       width: 100%;
@@ -74,7 +124,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 1.5rem 4rem;
+      padding: 3.5rem 4rem 4.5rem 4rem;
       opacity: 0;
       visibility: hidden;
       transform: scale(0.96) translateY(20px);
@@ -282,33 +332,36 @@
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
+    /* Bottom Navigation Bar with Interactive Slide Range Slider */
     .nav-bar {
       position: fixed;
-      bottom: 1.2rem;
+      bottom: 1rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 1.2rem;
-      padding: 0.6rem 1.3rem;
-      background: rgba(28, 28, 30, 0.85);
+      gap: 1rem;
+      padding: 0.5rem 1.4rem;
+      background: rgba(28, 28, 30, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 99px;
       backdrop-filter: blur(24px);
       box-shadow: 0 10px 30px rgba(0,0,0,0.6);
       z-index: 100;
+      width: min(850px, 92vw);
     }
 
     .btn {
       background: rgba(255, 255, 255, 0.1);
       border: none;
       color: var(--text-main);
-      padding: 0.35rem 1rem;
+      padding: 0.35rem 0.9rem;
       border-radius: 99px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
+      white-space: nowrap;
     }
 
     .btn:hover {
@@ -316,11 +369,48 @@
       color: #fff;
     }
 
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex: 1;
+    }
+
+    .slide-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.15);
+      outline: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .slide-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--sf-blue);
+      box-shadow: 0 0 10px var(--sf-blue);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .slide-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
     .progress {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--text-sub);
       font-family: var(--font-mono);
+      min-width: 55px;
+      text-align: right;
     }
 
     .grid-3 {
@@ -356,6 +446,27 @@
 <body>
 
   <div class="ambient-glow" id="glow"></div>
+
+  <!-- Top Module Quick-Jump Pill Slider Bar -->
+  <div class="module-chips-bar">
+    <div class="chip active" onclick="showSlide(1)">Title</div>
+    <div class="chip" onclick="showSlide(2)">📑 Agenda</div>
+    <div class="chip" onclick="showSlide(3)">DataFrame (3-8)</div>
+    <div class="chip" onclick="showSlide(9)">Stats (9-13)</div>
+    <div class="chip" onclick="showSlide(14)">Preprocessing (14-17)</div>
+    <div class="chip" onclick="showSlide(18)">ML (18-22)</div>
+    <div class="chip" onclick="showSlide(23)">Cluster (23-26)</div>
+    <div class="chip" onclick="showSlide(27)">Optimize (27-30)</div>
+    <div class="chip" onclick="showSlide(31)">Forecast (31-34)</div>
+    <div class="chip" onclick="showSlide(35)">NLP (35-40)</div>
+    <div class="chip" onclick="showSlide(41)">Explain (41-42)</div>
+    <div class="chip" onclick="showSlide(43)">LLM (43-44)</div>
+    <div class="chip" onclick="showSlide(45)">Viz (45-46)</div>
+    <div class="chip" onclick="showSlide(47)">Vision (47-48)</div>
+    <div class="chip" onclick="showSlide(49)">Database (49-50)</div>
+    <div class="chip" onclick="showSlide(51)">Agent (51-52)</div>
+    <div class="chip" onclick="showSlide(53)" style="color:var(--sf-green);">⚡ M4 Pro (53)</div>
+  </div>
 
   <div class="deck">
 
@@ -1585,10 +1696,13 @@
 
   </div>
 
-  <!-- Slide Navigation Controls -->
+  <!-- Bottom Navigation Bar with Interactive Slide Range Slider -->
   <div class="nav-bar">
     <button class="btn" id="prevBtn">← Prev</button>
     <button class="btn" onclick="showSlide(2)" style="background:var(--sf-blue); color:#fff;">📑 Agenda</button>
+    <div class="slider-container">
+      <input type="range" class="slide-slider" id="slideSlider" min="1" max="53" value="1">
+    </div>
     <span class="progress" id="slideNum">1 / 53</span>
     <button class="btn" id="nextBtn">Next →</button>
   </div>
@@ -1596,6 +1710,27 @@
   <script>
     let currentSlide = 1;
     const totalSlides = 53;
+
+    // Slide ranges for Top Module Chips
+    const moduleRanges = [
+      { name: "Title", start: 1, end: 1 },
+      { name: "Agenda", start: 2, end: 2 },
+      { name: "DataFrame", start: 3, end: 8 },
+      { name: "Stats", start: 9, end: 13 },
+      { name: "Preprocessing", start: 14, end: 17 },
+      { name: "ML", start: 18, end: 22 },
+      { name: "Cluster", start: 23, end: 26 },
+      { name: "Optimize", start: 27, end: 30 },
+      { name: "Forecast", start: 31, end: 34 },
+      { name: "NLP", start: 35, end: 40 },
+      { name: "Explain", start: 41, end: 42 },
+      { name: "LLM", start: 43, end: 44 },
+      { name: "Viz", start: 45, end: 46 },
+      { name: "Vision", start: 47, end: 48 },
+      { name: "Database", start: 49, end: 50 },
+      { name: "Agent", start: 51, end: 52 },
+      { name: "M4 Pro", start: 53, end: 53 }
+    ];
 
     function showSlide(index) {
       if (index < 1) index = 1;
@@ -1610,6 +1745,16 @@
       });
 
       document.getElementById('slideNum').textContent = `${currentSlide} / ${totalSlides}`;
+      document.getElementById('slideSlider').value = currentSlide;
+
+      // Update Top Module Chips active highlight
+      document.querySelectorAll('.chip').forEach((chip, i) => {
+        chip.classList.remove('active');
+        if (moduleRanges[i] && currentSlide >= moduleRanges[i].start && currentSlide <= moduleRanges[i].end) {
+          chip.classList.add('active');
+          chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      });
 
       const glow = document.getElementById('glow');
       const posX = 15 + (currentSlide * 3) % 70;
@@ -1620,6 +1765,7 @@
 
     document.getElementById('prevBtn').addEventListener('click', () => showSlide(currentSlide - 1));
     document.getElementById('nextBtn').addEventListener('click', () => showSlide(currentSlide + 1));
+    document.getElementById('slideSlider').addEventListener('input', (e) => showSlide(parseInt(e.target.value)));
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' || e.key === 'Space') showSlide(currentSlide + 1);

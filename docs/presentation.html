@@ -475,19 +475,19 @@
     <div class="chip" onclick="showSlide(2)">📑 Agenda</div>
     <div class="chip" onclick="showSlide(3)">DataFrame (3-8)</div>
     <div class="chip" onclick="showSlide(9)">Stats (9-13)</div>
-    <div class="chip" onclick="showSlide(14)">Preprocessing (14-17)</div>
-    <div class="chip" onclick="showSlide(18)">ML (18-22)</div>
-    <div class="chip" onclick="showSlide(23)">Cluster (23-26)</div>
-    <div class="chip" onclick="showSlide(27)">Optimize (27-30)</div>
-    <div class="chip" onclick="showSlide(31)">Forecast (31-34)</div>
-    <div class="chip" onclick="showSlide(35)">NLP (35-40)</div>
-    <div class="chip" onclick="showSlide(41)">Explain (41-42)</div>
-    <div class="chip" onclick="showSlide(43)">LLM (43-44)</div>
-    <div class="chip" onclick="showSlide(45)">Viz (45-46)</div>
-    <div class="chip" onclick="showSlide(47)">Vision (47-48)</div>
-    <div class="chip" onclick="showSlide(49)">Database (49-50)</div>
-    <div class="chip" onclick="showSlide(51)">Agent (51-52)</div>
-    <div class="chip" onclick="showSlide(53)" style="color:var(--sf-green);">⚡ M4 Pro (53)</div>
+    <div class="chip" onclick="showSlide(14)">Preprocessing (14-19)</div>
+    <div class="chip" onclick="showSlide(20)">ML (20-27)</div>
+    <div class="chip" onclick="showSlide(28)">Cluster (28-32)</div>
+    <div class="chip" onclick="showSlide(33)">Optimize (33-36)</div>
+    <div class="chip" onclick="showSlide(37)">Forecast (37-44)</div>
+    <div class="chip" onclick="showSlide(45)">NLP (45-50)</div>
+    <div class="chip" onclick="showSlide(51)">Explain (51-52)</div>
+    <div class="chip" onclick="showSlide(53)">LLM (53-56)</div>
+    <div class="chip" onclick="showSlide(57)">Viz (57-58)</div>
+    <div class="chip" onclick="showSlide(59)">Vision (59-60)</div>
+    <div class="chip" onclick="showSlide(61)">Database (61-62)</div>
+    <div class="chip" onclick="showSlide(63)">Agent (63-64)</div>
+    <div class="chip" onclick="showSlide(65)" style="color:var(--sf-green);">⚡ M4 Pro (65)</div>
   </div>
 
   <div class="deck">
@@ -2785,21 +2785,23 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
 
     // Slide ranges for Top Module Chips
     const moduleRanges = [
-      { name: "DataFrame", start: 3, end: 8 },
-      { name: "Stats", start: 9, end: 13 },
-      { name: "Preprocessing", start: 14, end: 19 },
-      { name: "ML", start: 20, end: 27 },
-      { name: "Cluster", start: 28, end: 32 },
-      { name: "Optimize", start: 33, end: 36 },
-      { name: "Forecast", start: 37, end: 44 },
-      { name: "NLP", start: 45, end: 50 },
-      { name: "Explain", start: 51, end: 52 },
-      { name: "LLM", start: 53, end: 56 },
-      { name: "Viz", start: 57, end: 58 },
-      { name: "Vision", start: 59, end: 60 },
-      { name: "Database", start: 61, end: 62 },
-      { name: "Agent", start: 63, end: 64 },
-      { name: "M4 Pro", start: 65, end: 65 }
+      { name: "Title",        start: 1,  end: 1  },
+      { name: "Agenda",       start: 2,  end: 2  },
+      { name: "DataFrame",    start: 3,  end: 8  },
+      { name: "Stats",        start: 9,  end: 13 },
+      { name: "Preprocessing",start: 14, end: 19 },
+      { name: "ML",           start: 20, end: 27 },
+      { name: "Cluster",      start: 28, end: 32 },
+      { name: "Optimize",     start: 33, end: 36 },
+      { name: "Forecast",     start: 37, end: 44 },
+      { name: "NLP",          start: 45, end: 50 },
+      { name: "Explain",      start: 51, end: 52 },
+      { name: "LLM",          start: 53, end: 56 },
+      { name: "Viz",          start: 57, end: 58 },
+      { name: "Vision",       start: 59, end: 60 },
+      { name: "Database",     start: 61, end: 62 },
+      { name: "Agent",        start: 63, end: 64 },
+      { name: "M4 Pro",       start: 65, end: 65 }
     ];
 
     function showSlide(index) {

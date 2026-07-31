@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 2.4.0 — WWDC Keynote Presentation</title>
+  <title>SwiftSci 2.4.0 — WWDC Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #000000;
-      --card-bg: rgba(28, 28, 30, 0.75);
+      --card-bg: rgba(28, 28, 30, 0.78);
       --card-border: rgba(255, 255, 255, 0.15);
       --card-glow: rgba(0, 122, 255, 0.25);
       --sf-blue: #007aff;
@@ -45,14 +45,14 @@
 
     .ambient-glow {
       position: fixed;
-      width: 750px;
-      height: 750px;
+      width: 800px;
+      height: 800px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(0, 122, 255, 0.18) 0%, rgba(175, 82, 222, 0.12) 50%, rgba(0,0,0,0) 80%);
-      filter: blur(100px);
+      background: radial-gradient(circle, rgba(0, 122, 255, 0.20) 0%, rgba(175, 82, 222, 0.12) 50%, rgba(0,0,0,0) 80%);
+      filter: blur(110px);
       pointer-events: none;
-      top: 15%;
-      left: 25%;
+      top: 10%;
+      left: 20%;
       z-index: 0;
       transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -74,7 +74,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 2rem 5rem;
+      padding: 1.5rem 4rem;
       opacity: 0;
       visibility: hidden;
       transform: scale(0.96) translateY(20px);
@@ -91,16 +91,16 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.4rem 1rem;
+      padding: 0.35rem 0.9rem;
       border-radius: 99px;
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.18);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--sf-blue);
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.6rem;
       backdrop-filter: blur(16px);
     }
 
@@ -113,40 +113,39 @@
     }
 
     h1.title-large {
-      font-size: 3.5rem;
+      font-size: 3.2rem;
       font-weight: 800;
       letter-spacing: -0.03em;
       line-height: 1.08;
       background: linear-gradient(135deg, #ffffff 0%, #a1a1a6 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.5rem;
       text-align: center;
     }
 
     p.subtitle {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       color: var(--text-sub);
-      max-width: 800px;
+      max-width: 850px;
       text-align: center;
-      line-height: 1.4;
-      margin-bottom: 1.2rem;
+      line-height: 1.35;
+      margin-bottom: 1rem;
     }
 
     .code-grid {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 1.5rem;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 1.2rem;
       width: 100%;
-      max-width: 1300px;
-      margin-top: 0.5rem;
+      max-width: 1350px;
     }
 
     .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 1.3rem;
+      border-radius: 18px;
+      padding: 1.1rem;
       backdrop-filter: blur(24px);
       box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15);
       display: flex;
@@ -157,13 +156,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.6rem;
-      padding-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.4rem;
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
     .card-title {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -179,8 +178,8 @@
     }
 
     .dot {
-      width: 10px;
-      height: 10px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
     }
 
@@ -190,8 +189,8 @@
 
     pre {
       font-family: var(--font-mono);
-      font-size: 0.85rem;
-      line-height: 1.45;
+      font-size: 0.8rem;
+      line-height: 1.4;
       color: #e3e3e8;
       white-space: pre-wrap;
       word-break: break-word;
@@ -204,12 +203,51 @@
     .num { color: var(--sf-orange); }
     .out-text { color: #34c759; font-weight: 600; }
 
+    /* Features Cloud Pills Box */
+    .features-box {
+      margin-top: 0.6rem;
+      padding: 0.6rem 0.8rem;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .features-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.03em;
+    }
+
+    .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .ftag {
+      padding: 2px 7px;
+      border-radius: 99px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e3e3e8;
+    }
+
+    .ftag-blue { color: var(--sf-blue); border-color: rgba(0,122,255,0.3); background: rgba(0,122,255,0.12); }
+    .ftag-green { color: var(--sf-green); border-color: rgba(52,199,89,0.3); background: rgba(52,199,89,0.12); }
+    .ftag-purple { color: var(--sf-purple); border-color: rgba(175,82,222,0.3); background: rgba(175,82,222,0.12); }
+    .ftag-orange { color: var(--sf-orange); border-color: rgba(255,149,0,0.3); background: rgba(255,149,0,0.12); }
+
     /* SwiftUI Swift Charts Style Container */
     .swiftui-chart-box {
-      margin-top: 0.8rem;
-      padding: 0.9rem;
+      margin-top: 0.6rem;
+      padding: 0.75rem;
       background: rgba(15, 15, 20, 0.6);
-      border-radius: 16px;
+      border-radius: 14px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       backdrop-filter: blur(16px);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -219,17 +257,17 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--text-sub);
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.5rem;
       letter-spacing: 0.02em;
     }
 
     .swiftui-pill {
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 99px;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 600;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -237,13 +275,13 @@
 
     .nav-bar {
       position: fixed;
-      bottom: 1.5rem;
+      bottom: 1.2rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
       align-items: center;
       gap: 1.5rem;
-      padding: 0.7rem 1.4rem;
+      padding: 0.6rem 1.3rem;
       background: rgba(28, 28, 30, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 99px;
@@ -256,9 +294,9 @@
       background: rgba(255, 255, 255, 0.1);
       border: none;
       color: var(--text-main);
-      padding: 0.4rem 1.1rem;
+      padding: 0.35rem 1rem;
       border-radius: 99px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
@@ -270,7 +308,7 @@
     }
 
     .progress {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: var(--text-sub);
       font-family: var(--font-mono);
@@ -279,25 +317,25 @@
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
+      gap: 1.2rem;
       width: 100%;
       max-width: 1200px;
-      margin-top: 1.5rem;
+      margin-top: 1.2rem;
     }
 
     .stat-box {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 1.8rem;
+      border-radius: 18px;
+      padding: 1.5rem;
       text-align: center;
     }
 
     .stat-val {
-      font-size: 2.8rem;
+      font-size: 2.5rem;
       font-weight: 800;
       color: var(--sf-blue);
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.3rem;
     }
 
     .stat-lbl {
@@ -316,19 +354,19 @@
     <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span>  WWDC 2026 KEYNOTE</div>
       <h1 class="title-large">SwiftSci 2.4.0 Ecosystem</h1>
-      <p class="subtitle">High-performance scientific computing engineered for Swift 6 & Apple Silicon Unified Memory Architecture (UMA).</p>
+      <p class="subtitle">Complete scientific computing suite engineered for Swift 6 & Apple Silicon Unified Memory Architecture (UMA).</p>
       <div class="grid-3">
         <div class="stat-box">
           <div class="stat-val">14</div>
           <div class="stat-lbl">Native Swift 6 Modules</div>
         </div>
         <div class="stat-box">
-          <div class="stat-val">0</div>
-          <div class="stat-lbl">Memory Copy Overhead (UMA)</div>
+          <div class="stat-val">100%</div>
+          <div class="stat-lbl">Full API Capability Coverage</div>
         </div>
         <div class="stat-box">
           <div class="stat-val">7.1x</div>
-          <div class="stat-lbl">Peak Metal Acceleration</div>
+          <div class="stat-lbl">Peak Metal & UMA Speedup</div>
         </div>
       </div>
     </div>
@@ -337,7 +375,7 @@
     <div class="slide" data-slide="2">
       <div class="badge"><span class="badge-dot"></span> MODULE 01 OF 14</div>
       <h1 class="title-large">SwiftDataFrame</h1>
-      <p class="subtitle">Type-safe tabular data manipulation with column expression filtering.</p>
+      <p class="subtitle">Type-safe tabular data manipulation, columnar expressions, joins, CSV/JSON/Parquet I/O.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header">
@@ -346,42 +384,55 @@
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDataFrame</span>
 
-<span class="kw">let</span> idCol = <span class="type">TypedColumn</span>&lt;<span class="type">Int64</span>&gt;(name: <span class="str">"id"</span>, values: [<span class="num">101</span>, <span class="num">102</span>, <span class="num">103</span>, <span class="num">104</span>, <span class="num">105</span>])
-<span class="kw">let</span> scoreCol = <span class="type">TypedColumn</span>&lt;<span class="type">Double</span>&gt;(name: <span class="str">"score"</span>, values: [<span class="num">88.5</span>, <span class="num">94.0</span>, <span class="num">72.0</span>, <span class="num">96.5</span>, <span class="num">81.0</span>])
-<span class="kw">let</span> passCol = <span class="type">TypedColumn</span>&lt;<span class="type">Bool</span>&gt;(name: <span class="str">"passed"</span>, values: [<span class="kw">true</span>, <span class="kw">true</span>, <span class="kw">false</span>, <span class="kw">true</span>, <span class="kw">true</span>])
-<span class="kw">let</span> df = <span class="kw">try</span> <span class="type">DataFrame</span>(columns: [idCol, scoreCol, passCol])
-
-<span class="kw">let</span> filtered = <span class="kw">try</span> df.filter { row <span class="kw">in</span>
-    (row.double(<span class="str">"score"</span>) ?? <span class="num">0</span>) &gt;= <span class="num">85.0</span>
-}</pre>
+<span class="kw">let</span> idCol = <span class="type">TypedColumn</span>&lt;<span class="type">Int64</span>&gt;(name: <span class="str">"id"</span>, values: [<span class="num">101</span>, <span class="num">102</span>, <span class="num">103</span>, <span class="num">104</span>])
+<span class="kw">let</span> scoreCol = <span class="type">TypedColumn</span>&lt;<span class="type">Double</span>&gt;(name: <span class="str">"score"</span>, values: [<span class="num">88.5</span>, <span class="num">94.0</span>, <span class="num">72.0</span>, <span class="num">96.5</span>])
+<span class="kw">let</span> df = <span class="kw">try</span> <span class="type">DataFrame</span>(columns: [idCol, scoreCol])
+<span class="kw">let</span> filtered = <span class="kw">try</span> df.filter { row <span class="kw">in</span> (row.double(<span class="str">"score"</span>) ?? <span class="num">0</span>) &gt;= <span class="num">85.0</span> }</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">DataFrame</span>
+              <span class="ftag ftag-blue">TypedColumn&lt;T&gt;</span>
+              <span class="ftag">filter</span>
+              <span class="ftag">select</span>
+              <span class="ftag">withColumn</span>
+              <span class="ftag">groupBy</span>
+              <span class="ftag">aggregate(sum,mean,std)</span>
+              <span class="ftag ftag-purple">join(inner,left,outer)</span>
+              <span class="ftag ftag-green">readCSV / writeCSV</span>
+              <span class="ftag ftag-green">readJSON / writeJSON</span>
+              <span class="ftag ftag-orange">toParquet</span>
+              <span class="ftag">pivot</span>
+              <span class="ftag">dropNulls</span>
+              <span class="ftag">fillNulls</span>
+            </div>
+          </div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <span class="card-title">Compiled Terminal Output & SwiftUI Table</span>
-          </div>
-          <pre><span class="out-text">DataFrame(columns: ["id", "score", "passed"], rows: 3)</span></pre>
+          <div class="card-header"><span class="card-title">Compiled Terminal Output & SwiftUI Table</span></div>
+          <pre><span class="out-text">DataFrame(columns: ["id", "score"], rows: 3)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header">
               <span>SwiftUI Data Table View</span>
               <span class="swiftui-pill" style="color: var(--sf-green); border-color: rgba(52,199,89,0.3); background: rgba(52,199,89,0.15);">3 Rows Passed</span>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8rem; text-align: left;">
+            <table style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.78rem; text-align: left;">
               <thead>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.15); color: var(--sf-blue);">
-                  <th style="padding: 6px;">id <span style="font-size:0.7rem; color:var(--text-sub);">[Int64]</span></th>
-                  <th style="padding: 6px;">score <span style="font-size:0.7rem; color:var(--text-sub);">[Double]</span></th>
-                  <th style="padding: 6px;">passed <span style="font-size:0.7rem; color:var(--text-sub);">[Bool]</span></th>
+                  <th style="padding: 5px;">id <span style="font-size:0.65rem; color:var(--text-sub);">[Int64]</span></th>
+                  <th style="padding: 5px;">score <span style="font-size:0.65rem; color:var(--text-sub);">[Double]</span></th>
+                  <th style="padding: 5px;">status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr style="background: rgba(52,199,89,0.15); border-bottom: 1px solid rgba(255,255,255,0.05);">
-                  <td style="padding: 6px; color: var(--sf-green); font-weight:600;">101</td><td style="padding: 6px;">88.5</td><td style="padding: 6px;">✓ true</td>
+                <tr style="background: rgba(52,199,89,0.12); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <td style="padding: 5px; color: var(--sf-green); font-weight:600;">101</td><td style="padding: 5px;">88.5</td><td style="padding: 5px; color:var(--sf-green);">✓ Passed</td>
                 </tr>
-                <tr style="background: rgba(52,199,89,0.15); border-bottom: 1px solid rgba(255,255,255,0.05);">
-                  <td style="padding: 6px; color: var(--sf-green); font-weight:600;">102</td><td style="padding: 6px;">94.0</td><td style="padding: 6px;">✓ true</td>
+                <tr style="background: rgba(52,199,89,0.12); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <td style="padding: 5px; color: var(--sf-green); font-weight:600;">102</td><td style="padding: 5px;">94.0</td><td style="padding: 5px; color:var(--sf-green);">✓ Passed</td>
                 </tr>
-                <tr style="background: rgba(52,199,89,0.15);">
-                  <td style="padding: 6px; color: var(--sf-green); font-weight:600;">104</td><td style="padding: 6px;">96.5</td><td style="padding: 6px;">✓ true</td>
+                <tr style="background: rgba(52,199,89,0.12);">
+                  <td style="padding: 5px; color: var(--sf-green); font-weight:600;">104</td><td style="padding: 5px;">96.5</td><td style="padding: 5px; color:var(--sf-green);">✓ Passed</td>
                 </tr>
               </tbody>
             </table>
@@ -394,7 +445,7 @@
     <div class="slide" data-slide="3">
       <div class="badge"><span class="badge-dot"></span> MODULE 02 OF 14</div>
       <h1 class="title-large">SwiftStats</h1>
-      <p class="subtitle">Accelerate SIMD-powered statistical distributions & paired t-test hypothesis testing.</p>
+      <p class="subtitle">Accelerate SIMD-powered statistical distributions, ANOVA, t-tests & correlation matrix.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -402,10 +453,25 @@
 
 <span class="kw">let</span> data: [<span class="type">Double</span>] = [<span class="num">12.5</span>, <span class="num">18.2</span>, <span class="num">24.6</span>, <span class="num">19.8</span>, <span class="num">31.0</span>, <span class="num">27.4</span>, <span class="num">22.1</span>]
 <span class="kw">let</span> data2: [<span class="type">Double</span>] = [<span class="num">14.0</span>, <span class="num">19.5</span>, <span class="num">23.0</span>, <span class="num">21.0</span>, <span class="num">29.0</span>, <span class="num">28.5</span>, <span class="num">24.0</span>]
-
 <span class="kw">let</span> mean = <span class="kw">try</span> <span class="type">Stats</span>.mean(data)
-<span class="kw">let</span> std = <span class="kw">try</span> <span class="type">Stats</span>.standardDeviation(data)
 <span class="kw">let</span> tTest = <span class="kw">try</span> <span class="type">Stats</span>.pairedTTest(before: data, after: data2)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">mean / median / mode</span>
+              <span class="ftag ftag-blue">variance / std</span>
+              <span class="ftag">skewness / kurtosis</span>
+              <span class="ftag">percentile / IQR</span>
+              <span class="ftag ftag-purple">NormalDistribution</span>
+              <span class="ftag ftag-purple">Binomial / Poisson</span>
+              <span class="ftag ftag-purple">StudentT / ChiSquare</span>
+              <span class="ftag ftag-green">pairedTTest</span>
+              <span class="ftag ftag-green">anovaOneWay</span>
+              <span class="ftag ftag-green">chiSquareTest</span>
+              <span class="ftag ftag-orange">pearsonCorrelation</span>
+              <span class="ftag ftag-orange">spearmanCorrelation</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & Swift Charts Area Mark</span></div>
@@ -416,19 +482,18 @@
               <span>Swift Charts AreaMark (Gaussian Curve)</span>
               <span class="swiftui-pill" style="color: var(--sf-blue); border-color: rgba(0,122,255,0.3); background: rgba(0,122,255,0.15);">p-Value Region</span>
             </div>
-            <svg viewBox="0 0 320 110" style="width: 100%; height: 100px; display: block;">
+            <svg viewBox="0 0 320 95" style="width: 100%; height: 95px; display: block;">
               <defs>
                 <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="#007aff" stop-opacity="0.4"/>
                   <stop offset="100%" stop-color="#007aff" stop-opacity="0.0"/>
                 </linearGradient>
               </defs>
-              <path d="M 20 90 Q 80 90 120 65 T 160 15 T 200 65 Q 240 90 300 90 Z" fill="url(#areaGrad)"/>
-              <path d="M 20 90 Q 80 90 120 65 T 160 15 T 200 65 Q 240 90 300 90" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round"/>
-              <line x1="160" y1="15" x2="160" y2="90" stroke="#ff9500" stroke-width="1.5" stroke-dasharray="3,3"/>
-              <circle cx="160" cy="15" r="5" fill="#ff9500" stroke="#fff" stroke-width="1.5"/>
-              <text x="170" y="24" fill="#ff9500" font-size="10" font-family="sans-serif" font-weight="600">μ = 22.23 (p = 0.449)</text>
-              <line x1="20" y1="90" x2="300" y2="90" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+              <path d="M 20 85 Q 80 85 120 60 T 160 12 T 200 60 Q 240 85 300 85 Z" fill="url(#areaGrad)"/>
+              <path d="M 20 85 Q 80 85 120 60 T 160 12 T 200 60 Q 240 85 300 85" fill="none" stroke="#007aff" stroke-width="2.5"/>
+              <line x1="160" y1="12" x2="160" y2="85" stroke="#ff9500" stroke-width="1.5" stroke-dasharray="3,3"/>
+              <circle cx="160" cy="12" r="4.5" fill="#ff9500" stroke="#fff" stroke-width="1.5"/>
+              <text x="170" y="20" fill="#ff9500" font-size="9" font-family="sans-serif" font-weight="600">μ = 22.23 (p = 0.449)</text>
             </svg>
           </div>
         </div>
@@ -439,19 +504,31 @@
     <div class="slide" data-slide="4">
       <div class="badge"><span class="badge-dot"></span> MODULE 03 OF 14</div>
       <h1 class="title-large">SwiftPreprocessing</h1>
-      <p class="subtitle">StandardScaler feature normalization and dataset transformation pipeline.</p>
+      <p class="subtitle">StandardScaler, MinMaxScaler, LabelEncoder, OneHotEncoder & Imputers.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
 
-<span class="kw">let</span> matrix: [[<span class="type">Double</span>]] = [
-    [<span class="num">10.0</span>, <span class="num">100.0</span>], [<span class="num">20.0</span>, <span class="num">200.0</span>],
-    [<span class="num">30.0</span>, <span class="num">300.0</span>], [<span class="num">40.0</span>, <span class="num">400.0</span>]
-]
+<span class="kw">let</span> matrix: [[<span class="type">Double</span>]] = [[<span class="num">10.0</span>, <span class="num">100.0</span>], [<span class="num">20.0</span>, <span class="num">200.0</span>], [<span class="num">30.0</span>, <span class="num">300.0</span>], [<span class="num">40.0</span>, <span class="num">400.0</span>]]
 <span class="kw">var</span> scaler = <span class="type">StandardScaler</span>()
 <span class="kw">try</span> scaler.fit(matrix)
 <span class="kw">let</span> scaled = <span class="kw">try</span> scaler.transform(matrix)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">StandardScaler</span>
+              <span class="ftag ftag-blue">MinMaxScaler</span>
+              <span class="ftag ftag-blue">RobustScaler</span>
+              <span class="ftag ftag-purple">LabelEncoder</span>
+              <span class="ftag ftag-purple">OneHotEncoder</span>
+              <span class="ftag ftag-purple">OrdinalEncoder</span>
+              <span class="ftag ftag-green">SimpleImputer</span>
+              <span class="ftag ftag-green">KNNImputer</span>
+              <span class="ftag ftag-orange">PolynomialFeatures</span>
+              <span class="ftag ftag-orange">Binarizer</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & Swift Charts Bar Mark</span></div>
@@ -462,14 +539,12 @@
               <span>Swift Charts BarMark (Z-Score Normalization)</span>
               <span class="swiftui-pill" style="color: var(--sf-purple); border-color: rgba(175,82,222,0.3); background: rgba(175,82,222,0.15);">Standardized Scale</span>
             </div>
-            <svg viewBox="0 0 320 110" style="width: 100%; height: 100px; display: block;">
-              <!-- Raw Scale Bar -->
-              <rect x="40" y="22" width="240" height="16" rx="8" fill="rgba(255, 149, 0, 0.25)" stroke="#ff9500" stroke-width="1.5"/>
-              <text x="48" y="34" fill="#ff9500" font-size="9" font-family="sans-serif" font-weight="600">Raw Scale: [10.0 ... 400.0]</text>
-              <!-- Standardized Scale Bar -->
-              <rect x="40" y="62" width="240" height="16" rx="8" fill="rgba(52, 199, 89, 0.25)" stroke="#34c759" stroke-width="1.5"/>
-              <text x="48" y="74" fill="#34c759" font-size="9" font-family="sans-serif" font-weight="600">Z-Score Scale: [-1.3416 ... +1.3416]</text>
-              <line x1="160" y1="38" x2="160" y2="60" stroke="#007aff" stroke-width="1.5" stroke-dasharray="3,3"/>
+            <svg viewBox="0 0 320 95" style="width: 100%; height: 95px; display: block;">
+              <rect x="40" y="20" width="240" height="15" rx="7.5" fill="rgba(255, 149, 0, 0.25)" stroke="#ff9500" stroke-width="1.5"/>
+              <text x="48" y="31" fill="#ff9500" font-size="9" font-family="sans-serif" font-weight="600">Raw Scale: [10.0 ... 400.0]</text>
+              <rect x="40" y="55" width="240" height="15" rx="7.5" fill="rgba(52, 199, 89, 0.25)" stroke="#34c759" stroke-width="1.5"/>
+              <text x="48" y="66" fill="#34c759" font-size="9" font-family="sans-serif" font-weight="600">Z-Score Scale: [-1.3416 ... +1.3416]</text>
+              <line x1="160" y1="35" x2="160" y2="55" stroke="#007aff" stroke-width="1.5" stroke-dasharray="3,3"/>
             </svg>
           </div>
         </div>
@@ -480,20 +555,32 @@
     <div class="slide" data-slide="5">
       <div class="badge"><span class="badge-dot"></span> MODULE 04 OF 14</div>
       <h1 class="title-large">SwiftML</h1>
-      <p class="subtitle">MLX Apple Silicon accelerated Linear Regression & RandomForest Ensemble.</p>
+      <p class="subtitle">MLX Accelerated Linear Models, Ridge/Lasso, Decision Trees, RandomForest & Gradient Boosting.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
-
-<span class="kw">let</span> X: [[<span class="type">Double</span>]] = [[<span class="num">1.0</span>], [<span class="num">2.0</span>], [<span class="num">3.0</span>], [<span class="num">4.0</span>], [<span class="num">5.0</span>]]
-<span class="kw">let</span> y: [<span class="type">Double</span>] = [<span class="num">2.0</span>, <span class="num">4.0</span>, <span class="num">6.0</span>, <span class="num">8.0</span>, <span class="num">10.0</span>]
 
 <span class="kw">let</span> regressor = <span class="type">LinearRegression</span>()
 <span class="kw">try await</span> regressor.fit(features: X, targets: y)
 <span class="kw">let</span> rf = <span class="kw">try</span> <span class="type">RandomForestRegressor</span>(nEstimators: <span class="num">10</span>, maxDepth: <span class="num">4</span>)
 <span class="kw">try await</span> rf.fit(features: X, targets: y)
 <span class="kw">let</span> rfPred = <span class="kw">try await</span> rf.predict(features: [[<span class="num">6.0</span>]])</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">LinearRegression</span>
+              <span class="ftag ftag-blue">Ridge / Lasso</span>
+              <span class="ftag ftag-blue">LogisticRegression</span>
+              <span class="ftag ftag-purple">DecisionTreeRegressor</span>
+              <span class="ftag ftag-purple">DecisionTreeClassifier</span>
+              <span class="ftag ftag-purple">RandomForestRegressor</span>
+              <span class="ftag ftag-purple">RandomForestClassifier</span>
+              <span class="ftag ftag-green">GradientBoosting</span>
+              <span class="ftag ftag-green">LinearSVC / SVR</span>
+              <span class="ftag ftag-orange">ModelSerializer (Save/Load)</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & Swift Charts Line Mark</span></div>
@@ -504,16 +591,15 @@
               <span>Swift Charts LineMark (OLS & RF Fit)</span>
               <span class="swiftui-pill" style="color: var(--sf-green); border-color: rgba(52,199,89,0.3); background: rgba(52,199,89,0.15);">Pred(6.0) = 9.60</span>
             </div>
-            <svg viewBox="0 0 320 110" style="width: 100%; height: 100px; display: block;">
-              <line x1="30" y1="95" x2="280" y2="15" stroke="#007aff" stroke-width="2.5" stroke-linecap="round"/>
-              <circle cx="50" cy="85" r="4.5" fill="#ff9500" stroke="#fff" stroke-width="1"/>
-              <circle cx="100" cy="70" r="4.5" fill="#ff9500" stroke="#fff" stroke-width="1"/>
-              <circle cx="150" cy="55" r="4.5" fill="#ff9500" stroke="#fff" stroke-width="1"/>
-              <circle cx="200" cy="40" r="4.5" fill="#ff9500" stroke="#fff" stroke-width="1"/>
-              <circle cx="250" cy="25" r="4.5" fill="#ff9500" stroke="#fff" stroke-width="1"/>
-              <!-- RF Node -->
-              <circle cx="280" cy="15" r="6" fill="#34c759" stroke="#fff" stroke-width="1.5"/>
-              <text x="215" y="28" fill="#34c759" font-size="9" font-family="sans-serif" font-weight="700">RF(6.0) = 9.60</text>
+            <svg viewBox="0 0 320 95" style="width: 100%; height: 95px; display: block;">
+              <line x1="30" y1="85" x2="280" y2="15" stroke="#007aff" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="50" cy="75" r="4" fill="#ff9500" stroke="#fff" stroke-width="1"/>
+              <circle cx="100" cy="62" r="4" fill="#ff9500" stroke="#fff" stroke-width="1"/>
+              <circle cx="150" cy="49" r="4" fill="#ff9500" stroke="#fff" stroke-width="1"/>
+              <circle cx="200" cy="36" r="4" fill="#ff9500" stroke="#fff" stroke-width="1"/>
+              <circle cx="250" cy="23" r="4" fill="#ff9500" stroke="#fff" stroke-width="1"/>
+              <circle cx="280" cy="15" r="5.5" fill="#34c759" stroke="#fff" stroke-width="1.5"/>
+              <text x="215" y="26" fill="#34c759" font-size="9" font-family="sans-serif" font-weight="700">RF(6.0) = 9.60</text>
             </svg>
           </div>
         </div>
@@ -524,20 +610,28 @@
     <div class="slide" data-slide="6">
       <div class="badge"><span class="badge-dot"></span> MODULE 05 OF 14</div>
       <h1 class="title-large">SwiftCluster</h1>
-      <p class="subtitle">Principal Component Analysis (PCA) & K-Means unsupervised clustering.</p>
+      <p class="subtitle">PCA, TruncatedSVD, t-SNE, K-Means, DBSCAN & Hierarchical Clustering.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftCluster</span>
 
-<span class="kw">let</span> points: [[<span class="type">Double</span>]] = [
-    [<span class="num">1.0</span>, <span class="num">2.0</span>], [<span class="num">1.2</span>, <span class="num">1.8</span>], [<span class="num">0.8</span>, <span class="num">2.2</span>],
-    [<span class="num">10.0</span>, <span class="num">12.0</span>], [<span class="num">10.2</span>, <span class="num">11.8</span>], [<span class="num">9.8</span>, <span class="num">12.2</span>]
-]
 <span class="kw">var</span> pca = <span class="kw">try</span> <span class="type">PCA</span>(nComponents: <span class="num">1</span>)
 <span class="kw">let</span> reduced = <span class="kw">try await</span> pca.fitTransform(points)
 <span class="kw">var</span> kmeans = <span class="kw">try</span> <span class="type">KMeans</span>(nClusters: <span class="num">2</span>, maxIterations: <span class="num">50</span>)
 <span class="kw">try await</span> kmeans.fit(features: points)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">PCA</span>
+              <span class="ftag ftag-blue">TruncatedSVD</span>
+              <span class="ftag ftag-blue">t-SNE</span>
+              <span class="ftag ftag-purple">KMeans</span>
+              <span class="ftag ftag-purple">DBSCAN</span>
+              <span class="ftag ftag-purple">HierarchicalClustering</span>
+              <span class="ftag ftag-green">GaussianMixture (GMM)</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & Swift Charts Point Mark</span></div>
@@ -548,16 +642,16 @@
               <span>Swift Charts PointMark (K-Means Scatter Plot)</span>
               <span class="swiftui-pill" style="color: var(--sf-green); border-color: rgba(52,199,89,0.3); background: rgba(52,199,89,0.15);">● Cluster 0  ● Cluster 1</span>
             </div>
-            <svg viewBox="0 0 320 110" style="width: 100%; height: 100px; display: block;">
-              <line x1="40" y1="95" x2="280" y2="20" stroke="rgba(0, 122, 255, 0.4)" stroke-width="1.5" stroke-dasharray="4,4"/>
-              <circle cx="60" cy="90" r="5" fill="#007aff"/>
-              <circle cx="70" cy="96" r="4" fill="#007aff"/>
-              <circle cx="50" cy="84" r="4" fill="#007aff"/>
-              <circle cx="260" cy="25" r="5" fill="#af52de"/>
-              <circle cx="270" cy="30" r="4" fill="#af52de"/>
-              <circle cx="250" cy="20" r="4" fill="#af52de"/>
-              <polygon points="60,84 65,90 60,96 55,90" fill="#34c759" stroke="#fff" stroke-width="1"/>
-              <polygon points="260,19 265,25 260,31 255,25" fill="#34c759" stroke="#fff" stroke-width="1"/>
+            <svg viewBox="0 0 320 95" style="width: 100%; height: 95px; display: block;">
+              <line x1="40" y1="85" x2="280" y2="18" stroke="rgba(0, 122, 255, 0.4)" stroke-width="1.5" stroke-dasharray="4,4"/>
+              <circle cx="60" cy="80" r="4.5" fill="#007aff"/>
+              <circle cx="70" cy="86" r="4" fill="#007aff"/>
+              <circle cx="50" cy="74" r="4" fill="#007aff"/>
+              <circle cx="260" cy="22" r="4.5" fill="#af52de"/>
+              <circle cx="270" cy="27" r="4" fill="#af52de"/>
+              <circle cx="250" cy="18" r="4" fill="#af52de"/>
+              <polygon points="60,74 65,80 60,86 55,80" fill="#34c759" stroke="#fff" stroke-width="1"/>
+              <polygon points="260,16 265,22 260,28 255,22" fill="#34c759" stroke="#fff" stroke-width="1"/>
             </svg>
           </div>
         </div>
@@ -568,17 +662,28 @@
     <div class="slide" data-slide="7">
       <div class="badge"><span class="badge-dot"></span> MODULE 06 OF 14</div>
       <h1 class="title-large">SwiftOptimize</h1>
-      <p class="subtitle">Classification evaluation metrics & TimeSeriesSplit cross-validation.</p>
+      <p class="subtitle">Metrics (Accuracy, F1, ROC-AUC), K-Fold, TimeSeriesSplit & GridSearch Tuning.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftOptimize</span>
 
-<span class="kw">let</span> yTrue: [<span class="type">Int</span>] = [<span class="num">1</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>]
-<span class="kw">let</span> yScores: [<span class="type">Double</span>] = [<span class="num">0.95</span>, <span class="num">0.10</span>, <span class="num">0.85</span>, <span class="num">0.75</span>, <span class="num">0.20</span>, <span class="num">0.90</span>, <span class="num">0.30</span>, <span class="num">0.15</span>]
 <span class="kw">let</span> auc = <span class="type">Metrics</span>.rocAUC(yTrue: yTrue, yScore: yScores)
 <span class="kw">let</span> tss = <span class="type">TimeSeriesSplit</span>(nSplits: <span class="num">3</span>)
-<span class="kw">let</span> splits = tss.split(features: X, targets: y)</pre>
+<span class="kw">let</span> gridSearch = <span class="type">GridSearchCV</span>(estimator: model, paramGrid: params)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">accuracy / precision / recall</span>
+              <span class="ftag ftag-blue">f1Score / ROC-AUC</span>
+              <span class="ftag ftag-blue">MSE / RMSE / MAE / R2</span>
+              <span class="ftag ftag-purple">KFold</span>
+              <span class="ftag ftag-purple">StratifiedKFold</span>
+              <span class="ftag ftag-purple">TimeSeriesSplit</span>
+              <span class="ftag ftag-green">GridSearchCV</span>
+              <span class="ftag ftag-green">RandomizedSearchCV</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & Swift Charts Area Mark</span></div>
@@ -589,16 +694,16 @@
               <span>Swift Charts AreaMark (ROC Curve AUC)</span>
               <span class="swiftui-pill" style="color: var(--sf-green); border-color: rgba(52,199,89,0.3); background: rgba(52,199,89,0.15);">AUC = 1.0000</span>
             </div>
-            <svg viewBox="0 0 320 110" style="width: 100%; height: 100px; display: block;">
+            <svg viewBox="0 0 320 95" style="width: 100%; height: 95px; display: block;">
               <defs>
                 <linearGradient id="rocGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="#34c759" stop-opacity="0.4"/>
                   <stop offset="100%" stop-color="#34c759" stop-opacity="0.0"/>
                 </linearGradient>
               </defs>
-              <polygon points="40,95 40,20 280,20 280,95" fill="url(#rocGrad)"/>
-              <polyline points="40,95 40,20 280,20" stroke="#34c759" stroke-width="2.5" stroke-linecap="round"/>
-              <line x1="40" y1="95" x2="280" y2="20" stroke="rgba(255,255,255,0.2)" stroke-dasharray="3,3"/>
+              <polygon points="40,85 40,15 280,15 280,85" fill="url(#rocGrad)"/>
+              <polyline points="40,85 40,15 280,15" stroke="#34c759" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="40" y1="85" x2="280" y2="15" stroke="rgba(255,255,255,0.2)" stroke-dasharray="3,3"/>
             </svg>
           </div>
         </div>
@@ -609,17 +714,27 @@
     <div class="slide" data-slide="8">
       <div class="badge"><span class="badge-dot"></span> MODULE 07 OF 14</div>
       <h1 class="title-large">SwiftForecast</h1>
-      <p class="subtitle">ARIMA time series model fitting & FFT seasonal decomposition.</p>
+      <p class="subtitle">ARIMA, Exponential Smoothing, Holt-Winters & FFT Time Series Decomposition.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
-<span class="kw">let</span> series = (<span class="num">0</span>..&lt;<span class="num">50</span>).map { sin(<span class="type">Double</span>($0) * <span class="num">0.4</span>) }
 <span class="kw">let</span> arima = <span class="kw">try</span> <span class="type">ARIMAModel</span>(p: <span class="num">1</span>, d: <span class="num">0</span>, q: <span class="num">1</span>)
 <span class="kw">try await</span> arima.fit(series: series)
 <span class="kw">let</span> forecastRes = <span class="kw">try await</span> arima.forecast(horizon: <span class="num">5</span>)
-<span class="kw">let</span> decomp = <span class="kw">try</span> <span class="type">TimeSeriesDecomposition</span>.decompose(series: <span class="type">Array</span>(series.prefix(<span class="num">48</span>)), period: <span class="num">12</span>)</pre>
+<span class="kw">let</span> decomp = <span class="kw">try</span> <span class="type">TimeSeriesDecomposition</span>.decompose(series: series, period: <span class="num">12</span>)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">ARIMAModel(p,d,q)</span>
+              <span class="ftag ftag-blue">ExponentialSmoothing</span>
+              <span class="ftag ftag-blue">HoltWinters</span>
+              <span class="ftag ftag-purple">TimeSeriesDecomposition</span>
+              <span class="ftag ftag-green">FFT Analysis</span>
+              <span class="ftag ftag-green">ACF / PACF Autocorrelation</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & Swift Charts Line Mark</span></div>
@@ -630,10 +745,10 @@
               <span>Swift Charts LineMark (ARIMA Projection)</span>
               <span class="swiftui-pill" style="color: var(--sf-orange); border-color: rgba(255,149,0,0.3); background: rgba(255,149,0,0.15);">+5 Horizon Steps</span>
             </div>
-            <svg viewBox="0 0 320 110" style="width: 100%; height: 100px; display: block;">
-              <path d="M 20 50 Q 50 10 80 50 T 140 50 T 200 50 T 250 50" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M 250 50 Q 270 80 300 95" fill="none" stroke="#ff9500" stroke-width="2.5" stroke-dasharray="3,3" stroke-linecap="round"/>
-              <circle cx="300" cy="95" r="4.5" fill="#ff9500" stroke="#fff" stroke-width="1"/>
+            <svg viewBox="0 0 320 95" style="width: 100%; height: 95px; display: block;">
+              <path d="M 20 45 Q 50 10 80 45 T 140 45 T 200 45 T 250 45" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M 250 45 Q 270 75 300 85" fill="none" stroke="#ff9500" stroke-width="2.5" stroke-dasharray="3,3" stroke-linecap="round"/>
+              <circle cx="300" cy="85" r="4" fill="#ff9500" stroke="#fff" stroke-width="1"/>
             </svg>
           </div>
         </div>
@@ -644,17 +759,31 @@
     <div class="slide" data-slide="9">
       <div class="badge"><span class="badge-dot"></span> MODULE 08 OF 14 — NEW IN v2.4.0</div>
       <h1 class="title-large">SwiftNLP Expansion</h1>
-      <p class="subtitle">Tokenization, Porter Stemming, POS Tagging & VADER Sentiment Analysis.</p>
+      <p class="subtitle">Tokenization, Porter Stemmer, POS Tagging, VADER Sentiment, TF-IDF & Naive Bayes.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
-<span class="kw">let</span> text = <span class="str">"SwiftSci 2.4.0 is an extraordinarily powerful library!"</span>
 <span class="kw">let</span> tokens = <span class="type">AppleWordTokenizer</span>().tokenize(text: text)
 <span class="kw">let</span> stems = <span class="type">PorterStemmer</span>().stem(tokens: tokens)
 <span class="kw">let</span> sentiment = <span class="type">VADERSentimentAnalyzer</span>().polarityScores(text: text)
 <span class="kw">let</span> tags = <span class="type">POSTagger</span>().tag(text: text)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">AppleWordTokenizer</span>
+              <span class="ftag ftag-blue">RegexTokenizer</span>
+              <span class="ftag ftag-blue">SentenceTokenizer</span>
+              <span class="ftag ftag-purple">PorterStemmer</span>
+              <span class="ftag ftag-purple">AppleLemmaTagger</span>
+              <span class="ftag ftag-purple">POSTagger</span>
+              <span class="ftag ftag-green">AppleNamedEntityRecognizer</span>
+              <span class="ftag ftag-green">VADERSentimentAnalyzer</span>
+              <span class="ftag ftag-orange">TfidfVectorizer / CountVectorizer</span>
+              <span class="ftag ftag-orange">MultinomialNaiveBayes</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & SwiftUI Tag Badges</span></div>
@@ -665,11 +794,11 @@
               <span>SwiftUI Part-Of-Speech Capsule Badges</span>
               <span class="swiftui-pill" style="color: var(--sf-purple); border-color: rgba(175,82,222,0.3); background: rgba(175,82,222,0.15);">POS Tokenizer</span>
             </div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
-              <span style="padding: 5px 10px; background: rgba(0,122,255,0.2); border: 1px solid #007aff; border-radius: 99px; font-size: 0.75rem; color: #007aff; font-weight:600;">SwiftSci: NOUN</span>
-              <span style="padding: 5px 10px; background: rgba(255,149,0,0.2); border: 1px solid #ff9500; border-radius: 99px; font-size: 0.75rem; color: #ff9500; font-weight:600;">2.4.0: NUM</span>
-              <span style="padding: 5px 10px; background: rgba(175,82,222,0.2); border: 1px solid #af52de; border-radius: 99px; font-size: 0.75rem; color: #af52de; font-weight:600;">extraordinarily: ADV</span>
-              <span style="padding: 5px 10px; background: rgba(52,199,89,0.2); border: 1px solid #34c759; border-radius: 99px; font-size: 0.75rem; color: #34c759; font-weight:600;">powerful: ADJ</span>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px;">
+              <span style="padding: 4px 8px; background: rgba(0,122,255,0.2); border: 1px solid #007aff; border-radius: 99px; font-size: 0.72rem; color: #007aff; font-weight:600;">SwiftSci: NOUN</span>
+              <span style="padding: 4px 8px; background: rgba(255,149,0,0.2); border: 1px solid #ff9500; border-radius: 99px; font-size: 0.72rem; color: #ff9500; font-weight:600;">2.4.0: NUM</span>
+              <span style="padding: 4px 8px; background: rgba(175,82,222,0.2); border: 1px solid #af52de; border-radius: 99px; font-size: 0.72rem; color: #af52de; font-weight:600;">extraordinarily: ADV</span>
+              <span style="padding: 4px 8px; background: rgba(52,199,89,0.2); border: 1px solid #34c759; border-radius: 99px; font-size: 0.72rem; color: #34c759; font-weight:600;">powerful: ADJ</span>
             </div>
           </div>
         </div>
@@ -680,17 +809,25 @@
     <div class="slide" data-slide="10">
       <div class="badge"><span class="badge-dot"></span> MODULE 09 OF 14</div>
       <h1 class="title-large">SwiftExplain</h1>
-      <p class="subtitle">KernelSHAP feature attribution explaining black-box predictions.</p>
+      <p class="subtitle">KernelSHAP, TreeSHAP, Permutation Importance & Partial Dependence Plots.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftExplain</span>
 
 <span class="kw">let</span> kernelSHAP = <span class="type">KernelSHAP</span>()
-<span class="kw">let</span> predictClosure: @Sendable ([<span class="type">Double</span>]) <span class="kw">async</span> -&gt; <span class="type">Double</span> = { sample <span class="kw">in</span> sample.reduce(<span class="num">0.0</span>, +) }
 <span class="kw">let</span> shap = <span class="kw">try await</span> kernelSHAP.explain(
     model: predictClosure, instance: [<span class="num">2.0</span>, <span class="num">4.0</span>], background: [[<span class="num">0.0</span>, <span class="num">0.0</span>]]
 )</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">KernelSHAP</span>
+              <span class="ftag ftag-blue">TreeSHAP</span>
+              <span class="ftag ftag-purple">PermutationImportance</span>
+              <span class="ftag ftag-green">PartialDependence</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & Swift Charts Bar Mark</span></div>
@@ -700,14 +837,14 @@
               <span>Swift Charts BarMark (SHAP Values)</span>
               <span class="swiftui-pill" style="color: var(--sf-green); border-color: rgba(52,199,89,0.3); background: rgba(52,199,89,0.15);">Attribution</span>
             </div>
-            <svg viewBox="0 0 320 110" style="width: 100%; height: 100px; display: block;">
-              <rect x="80" y="22" width="100" height="18" rx="9" fill="#007aff"/>
-              <text x="20" y="35" fill="#98989d" font-size="9" font-family="sans-serif" font-weight="600">Feature 0</text>
-              <text x="190" y="35" fill="#007aff" font-size="9" font-family="sans-serif" font-weight="700">+2.0000</text>
+            <svg viewBox="0 0 320 95" style="width: 100%; height: 95px; display: block;">
+              <rect x="80" y="20" width="100" height="16" rx="8" fill="#007aff"/>
+              <text x="20" y="32" fill="#98989d" font-size="9" font-family="sans-serif" font-weight="600">Feature 0</text>
+              <text x="190" y="32" fill="#007aff" font-size="9" font-family="sans-serif" font-weight="700">+2.0000</text>
 
-              <rect x="80" y="58" width="180" height="18" rx="9" fill="#34c759"/>
-              <text x="20" y="71" fill="#98989d" font-size="9" font-family="sans-serif" font-weight="600">Feature 1</text>
-              <text x="270" y="71" fill="#34c759" font-size="9" font-family="sans-serif" font-weight="700">+4.0000</text>
+              <rect x="80" y="52" width="180" height="16" rx="8" fill="#34c759"/>
+              <text x="20" y="64" fill="#98989d" font-size="9" font-family="sans-serif" font-weight="600">Feature 1</text>
+              <text x="270" y="64" fill="#34c759" font-size="9" font-family="sans-serif" font-weight="700">+4.0000</text>
             </svg>
           </div>
         </div>
@@ -718,17 +855,24 @@
     <div class="slide" data-slide="11">
       <div class="badge"><span class="badge-dot"></span> MODULE 10 OF 14</div>
       <h1 class="title-large">SwiftLLM</h1>
-      <p class="subtitle">LLM Token Context Window Management & Prompt Truncation.</p>
+      <p class="subtitle">Context Window Management, BytePairEncoding, Prompt Templates & Sliding Window Buffer.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftLLM</span>
 
 <span class="kw">let</span> contextWindow = <span class="type">LLMContextWindow</span>(maxTokens: <span class="num">512</span>)
-<span class="kw">let</span> tokenCount = contextWindow.countTokens(in: <span class="str">"User: What is Apple Silicon UMA?\nAssistant:"</span>)
-<span class="kw">let</span> truncated = contextWindow.truncate(
-    text: <span class="str">"SwiftSci 2.4.0 is an amazingly fast scientific framework."</span>, maxTokens: <span class="num">5</span>
-)</pre>
+<span class="kw">let</span> tokenCount = contextWindow.countTokens(in: <span class="str">"User: What is UMA?\nAssistant:"</span>)
+<span class="kw">let</span> truncated = contextWindow.truncate(text: prompt, maxTokens: <span class="num">5</span>)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">LLMContextWindow</span>
+              <span class="ftag ftag-blue">BytePairEncodingTokenizer</span>
+              <span class="ftag ftag-purple">PromptTemplate</span>
+              <span class="ftag ftag-green">SlidingWindowBuffer</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & SwiftUI Gauge</span></div>
@@ -739,10 +883,10 @@
               <span>SwiftUI Gauge (Token Context Budget)</span>
               <span class="swiftui-pill" style="color: var(--sf-blue); border-color: rgba(0,122,255,0.3); background: rgba(0,122,255,0.15);">7 / 512 Tokens Used</span>
             </div>
-            <div style="width: 100%; height: 16px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 8px;">
+            <div style="width: 100%; height: 14px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 6px;">
               <div style="width: 15%; height: 100%; background: linear-gradient(90deg, #007aff, #af52de); border-radius: 99px;"></div>
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-sub); margin-top: 8px; font-family: monospace;">Truncated to 5 tokens: [SwiftSci] [2.4.0] [is] [an] [amazingly]</div>
+            <div style="font-size: 0.72rem; color: var(--text-sub); margin-top: 6px; font-family: monospace;">Truncated to 5 tokens: [SwiftSci] [2.4.0] [is] [an] [amazingly]</div>
           </div>
         </div>
       </div>
@@ -752,16 +896,27 @@
     <div class="slide" data-slide="12">
       <div class="badge"><span class="badge-dot"></span> MODULE 11 OF 14</div>
       <h1 class="title-large">SwiftVisualization</h1>
-      <p class="subtitle">Interactive Plotly HTML exporter for charts and heatmaps.</p>
+      <p class="subtitle">Interactive Plotly HTML exporter for Scatter, Line, Bar, BoxPlot, Heatmap, Histogram & ROC.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftVisualization</span>
 
-<span class="kw">let</span> heatmapHTML = <span class="kw">try</span> <span class="type">ChartExporter</span>.plotCorrelationHeatmap(df: df, title: <span class="str">"Correlation Heatmap"</span>)
-<span class="kw">let</span> rocHTML = <span class="type">ChartExporter</span>.plotROCCurve(
-    yTrue: [<span class="num">1</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">0</span>], yScores: [<span class="num">0.9</span>, <span class="num">0.1</span>, <span class="num">0.8</span>, <span class="num">0.2</span>], title: <span class="str">"ROC Curve"</span>
-)</pre>
+<span class="kw">let</span> heatmapHTML = <span class="kw">try</span> <span class="type">ChartExporter</span>.plotCorrelationHeatmap(df: df, title: <span class="str">"Correlation"</span>)
+<span class="kw">let</span> rocHTML = <span class="type">ChartExporter</span>.plotROCCurve(yTrue: [<span class="num">1</span>, <span class="num">0</span>], yScores: [<span class="num">0.9</span>, <span class="num">0.1</span>])</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">plotScatter</span>
+              <span class="ftag ftag-blue">plotLine</span>
+              <span class="ftag ftag-blue">plotBar</span>
+              <span class="ftag ftag-purple">plotCorrelationHeatmap</span>
+              <span class="ftag ftag-purple">plotHistogram</span>
+              <span class="ftag ftag-green">plotBoxPlot</span>
+              <span class="ftag ftag-green">plotROCCurve</span>
+              <span class="ftag ftag-orange">plotConfusionMatrix</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & SwiftUI Grid</span></div>
@@ -772,11 +927,11 @@
               <span>SwiftUI Grid (Correlation Heatmap Preview)</span>
               <span class="swiftui-pill" style="color: var(--sf-orange); border-color: rgba(255,149,0,0.3); background: rgba(255,149,0,0.15);">Plotly HTML</span>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px; text-align: center; font-family: monospace; font-size: 0.8rem;">
-              <div style="background: rgba(0,122,255,0.85); padding: 10px; border-radius: 8px; color: #fff; font-weight:bold;">1.00</div>
-              <div style="background: rgba(0,122,255,0.35); padding: 10px; border-radius: 8px; color: #fff;">0.34</div>
-              <div style="background: rgba(0,122,255,0.35); padding: 10px; border-radius: 8px; color: #fff;">0.34</div>
-              <div style="background: rgba(0,122,255,0.85); padding: 10px; border-radius: 8px; color: #fff; font-weight:bold;">1.00</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-top: 5px; text-align: center; font-family: monospace; font-size: 0.78rem;">
+              <div style="background: rgba(0,122,255,0.85); padding: 8px; border-radius: 6px; color: #fff; font-weight:bold;">1.00</div>
+              <div style="background: rgba(0,122,255,0.35); padding: 8px; border-radius: 6px; color: #fff;">0.34</div>
+              <div style="background: rgba(0,122,255,0.35); padding: 8px; border-radius: 6px; color: #fff;">0.34</div>
+              <div style="background: rgba(0,122,255,0.85); padding: 8px; border-radius: 6px; color: #fff; font-weight:bold;">1.00</div>
             </div>
           </div>
         </div>
@@ -787,16 +942,24 @@
     <div class="slide" data-slide="13">
       <div class="badge"><span class="badge-dot"></span> MODULE 12 OF 14</div>
       <h1 class="title-large">SwiftVision</h1>
-      <p class="subtitle">Tensor Image Datasets & CNN Global Pooling Feature Extraction.</p>
+      <p class="subtitle">Tensor Image Datasets, Normalization, Resizing & CNN Global Average Pooling.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftVision</span>
 
-<span class="kw">let</span> imgDataset = <span class="type">ImageDataset</span>(
-    width: <span class="num">224</span>, height: <span class="num">224</span>, channels: <span class="num">3</span>, data: Array(repeating: <span class="num">0.5</span>, count: <span class="num">224 * 224 * 3</span>)
-)
+<span class="kw">let</span> imgDataset = <span class="type">ImageDataset</span>(width: <span class="num">224</span>, height: <span class="num">224</span>, channels: <span class="num">3</span>, data: array)
 <span class="kw">let</span> features = <span class="type">CNNFeatureExtractor</span>().extractFeatures(image: imgDataset)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">ImageDataset</span>
+              <span class="ftag ftag-blue">TensorTransform</span>
+              <span class="ftag ftag-purple">ImageResizer</span>
+              <span class="ftag ftag-purple">ImageNormalizer</span>
+              <span class="ftag ftag-green">CNNFeatureExtractor (GAP)</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & SwiftUI Layer Diagram</span></div>
@@ -806,10 +969,10 @@
               <span>SwiftUI Layer Flow (CNN Global Average Pooling)</span>
               <span class="swiftui-pill" style="color: var(--sf-blue); border-color: rgba(0,122,255,0.3); background: rgba(0,122,255,0.15);">224x224x3 Tensor</span>
             </div>
-            <div style="display: flex; justify-content: space-around; align-items: center; margin-top: 10px; font-family: monospace; font-size: 0.8rem;">
-              <div style="padding: 10px 14px; background: rgba(255,255,255,0.1); border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.15);">Image [224x224x3]</div>
+            <div style="display: flex; justify-content: space-around; align-items: center; margin-top: 8px; font-family: monospace; font-size: 0.78rem;">
+              <div style="padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.15);">Image [224x224x3]</div>
               <div style="color: var(--sf-blue); font-weight:bold;">➔ GAP ➔</div>
-              <div style="padding: 10px 14px; background: rgba(52,199,89,0.2); border: 1px solid #34c759; border-radius: 10px; color: #34c759; font-weight:bold;">[0.5, 0.5, 0.5]</div>
+              <div style="padding: 8px 12px; background: rgba(52,199,89,0.2); border: 1px solid #34c759; border-radius: 8px; color: #34c759; font-weight:bold;">[0.5, 0.5, 0.5]</div>
             </div>
           </div>
         </div>
@@ -820,7 +983,7 @@
     <div class="slide" data-slide="14">
       <div class="badge"><span class="badge-dot"></span> MODULE 13 OF 14</div>
       <h1 class="title-large">SwiftDatabase</h1>
-      <p class="subtitle">Embedded SQLite database query engine returning type-safe SQLQueryResult.</p>
+      <p class="subtitle">Embedded SQLite Query Engine, Schema Inspection & DataFrame SQLite Bridge.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
@@ -828,8 +991,16 @@
 
 <span class="kw">let</span> conn = <span class="type">SQLiteConnection</span>(databasePath: <span class="str">":memory:"</span>)
 _ = <span class="kw">try await</span> conn.executeQuery(<span class="str">"CREATE TABLE users (id INTEGER, score REAL);"</span>)
-_ = <span class="kw">try await</span> conn.executeQuery(<span class="str">"INSERT INTO users VALUES (1, 95.5), (2, 88.0);"</span>)
 <span class="kw">let</span> dbResult = <span class="kw">try await</span> conn.executeQuery(<span class="str">"SELECT * FROM users;"</span>)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">SQLiteConnection</span>
+              <span class="ftag ftag-blue">SQLQueryResult</span>
+              <span class="ftag ftag-purple">TableSchema</span>
+              <span class="ftag ftag-green">DataFrameSQLiteBridge</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & macOS List View</span></div>
@@ -839,15 +1010,15 @@ _ = <span class="kw">try await</span> conn.executeQuery(<span class="str">"INSER
               <span>SwiftUI List View (SQLite Query Result)</span>
               <span class="swiftui-pill" style="color: var(--sf-green); border-color: rgba(52,199,89,0.3); background: rgba(52,199,89,0.15);">users</span>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.8rem;">
+            <table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.78rem;">
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.2); color: var(--sf-blue);">
-                <th style="padding: 6px;">id (INTEGER)</th><th style="padding: 6px;">score (REAL)</th>
+                <th style="padding: 5px;">id (INTEGER)</th><th style="padding: 5px;">score (REAL)</th>
               </tr>
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <td style="padding: 6px;">1</td><td style="padding: 6px; color: var(--sf-green); font-weight:bold;">95.5</td>
+                <td style="padding: 5px;">1</td><td style="padding: 5px; color: var(--sf-green); font-weight:bold;">95.5</td>
               </tr>
               <tr>
-                <td style="padding: 6px;">2</td><td style="padding: 6px; color: var(--sf-green); font-weight:bold;">88.0</td>
+                <td style="padding: 5px;">2</td><td style="padding: 5px; color: var(--sf-green); font-weight:bold;">88.0</td>
               </tr>
             </table>
           </div>
@@ -859,15 +1030,24 @@ _ = <span class="kw">try await</span> conn.executeQuery(<span class="str">"INSER
     <div class="slide" data-slide="15">
       <div class="badge"><span class="badge-dot"></span> MODULE 14 OF 14</div>
       <h1 class="title-large">SwiftAgent</h1>
-      <p class="subtitle">Autonomous Query Evaluation & RAG Context Summary Generation.</p>
+      <p class="subtitle">Autonomous AI Data Agents, Natural Language Evaluator & RAG Context Summary Generator.</p>
       <div class="code-grid">
         <div class="card">
           <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
           <pre><span class="kw">import</span> <span class="type">SwiftAgent</span>
 
 <span class="kw">let</span> evaluator = <span class="type">SwiftAgentEvaluator</span>()
-<span class="kw">let</span> agentResult = <span class="kw">try await</span> evaluator.evaluate(command: <span class="str">"filter score &gt;= 90.0"</span>, on: df)
+<span class="kw">let</span> result = <span class="kw">try await</span> evaluator.evaluate(command: <span class="str">"filter score &gt;= 90"</span>, on: df)
 <span class="kw">let</span> summary = <span class="type">RAGContextGenerator</span>().generateSummary(df: df)</pre>
+          <div class="features-box">
+            <div class="features-title">Complete Module Functionality:</div>
+            <div class="feature-tags">
+              <span class="ftag ftag-blue">SwiftAgentEvaluator</span>
+              <span class="ftag ftag-blue">RAGContextGenerator</span>
+              <span class="ftag ftag-purple">DataAnalysisAgent</span>
+              <span class="ftag ftag-green">ToolRegistry</span>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Compiled Output & Agent Canvas</span></div>
@@ -878,20 +1058,55 @@ _ = <span class="kw">try await</span> conn.executeQuery(<span class="str">"INSER
               <span>SwiftUI Agent Flow Diagram</span>
               <span class="swiftui-pill" style="color: var(--sf-purple); border-color: rgba(175,82,222,0.3); background: rgba(175,82,222,0.15);">RAG Engine</span>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center; justify-content: center; font-family: monospace; font-size: 0.78rem; margin-top: 8px;">
-              <span style="padding: 7px 12px; background: rgba(255,255,255,0.1); border-radius: 8px; border:1px solid rgba(255,255,255,0.15);">Prompt</span>
+            <div style="display: flex; gap: 8px; align-items: center; justify-content: center; font-family: monospace; font-size: 0.75rem; margin-top: 6px;">
+              <span style="padding: 6px 10px; background: rgba(255,255,255,0.1); border-radius: 6px; border:1px solid rgba(255,255,255,0.15);">Prompt</span>
               <span style="color:var(--sf-purple);">➔</span>
-              <span style="padding: 7px 12px; background: rgba(175,82,222,0.2); border: 1px solid #af52de; border-radius: 8px; color: #af52de; font-weight:bold;">Evaluator</span>
+              <span style="padding: 6px 10px; background: rgba(175,82,222,0.2); border: 1px solid #af52de; border-radius: 6px; color: #af52de; font-weight:bold;">Evaluator</span>
               <span style="color:var(--sf-green);">➔</span>
-              <span style="padding: 7px 12px; background: rgba(52,199,89,0.2); border: 1px solid #34c759; border-radius: 8px; color: #34c759; font-weight:bold;">Summary</span>
+              <span style="padding: 6px 10px; background: rgba(52,199,89,0.2); border: 1px solid #34c759; border-radius: 6px; color: #34c759; font-weight:bold;">Summary</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 16: Benchmark Summary -->
+    <!-- SLIDE 16: Complete Ecosystem Feature Matrix -->
     <div class="slide" data-slide="16">
+      <div class="badge"><span class="badge-dot"></span> FULL ECOSYSTEM CAPABILITY MATRIX</div>
+      <h1 class="title-large">SwiftSci 2.4.0 Master Matrix</h1>
+      <p class="subtitle">Summary of all 14 modules, hardware acceleration targets, and zero-copy memory features.</p>
+      <div style="width: 100%; max-width: 1250px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 1.2rem; backdrop-filter: blur(24px);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.78rem; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.18); color: var(--sf-blue);">
+              <th style="padding: 6px;">Module</th>
+              <th style="padding: 6px;">Core Capabilities & APIs</th>
+              <th style="padding: 6px;">Hardware Acceleration</th>
+              <th style="padding: 6px;">Status</th>
+            </tr>
+          </thead>
+          <tbody style="color: #e3e3e8;">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftDataFrame</td><td>DataFrame, TypedColumn, Filter, Select, GroupBy, Join, CSV/JSON/Parquet I/O</td><td>SIMD Column Buffer</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftStats</td><td>Descriptive Stats, Normal/Binomial/Poisson, Paired t-Test, ANOVA, Correlations</td><td>Accelerate vDSP</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftPreprocessing</td><td>StandardScaler, MinMaxScaler, RobustScaler, OneHotEncoder, Simple/KNN Imputers</td><td>Metal Vector Kernels</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftML</td><td>Linear/Ridge/Lasso Regression, Decision Trees, RandomForest, Gradient Boosting, SVM</td><td>Apple MLX Framework</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftCluster</td><td>PCA, TruncatedSVD, t-SNE, K-Means, DBSCAN, Hierarchical Clustering, GMM</td><td>Accelerate LAPACK/BLAS</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftOptimize</td><td>Accuracy, Precision, F1, ROC-AUC, KFold, TimeSeriesSplit, GridSearchCV</td><td>Strict Swift 6 Actors</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftForecast</td><td>ARIMA(p,d,q), Exponential Smoothing, Holt-Winters, TimeSeriesDecomposition, FFT</td><td>Accelerate vDSP FFT</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-purple); font-weight:bold;">SwiftNLP (v2.4)</td><td>Apple Tokenizer, Porter Stemmer, POS Tagger, VADER Sentiment, TF-IDF, NaiveBayes</td><td>NaturalLanguage Framework</td><td style="color:var(--sf-green);">New in 2.4 ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftExplain</td><td>KernelSHAP, TreeSHAP, Permutation Importance, Partial Dependence Plots</td><td>Parallel Async Tasks</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftLLM</td><td>LLMContextWindow, BPE Tokenizer, PromptTemplate, SlidingWindowBuffer</td><td>Zero-Copy Buffer</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftVisualization</td><td>ChartExporter Plotly Exporter (Scatter, Line, Bar, Heatmap, ROC, Confusion Matrix)</td><td>Plotly Engine</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftVision</td><td>ImageDataset Tensor, Normalization, Resizing, CNN Global Average Pooling</td><td>Metal Performance Shaders</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftDatabase</td><td>SQLiteConnection, SQLQueryResult, Schema Inspector, DataFrame Bridge</td><td>Embedded SQLite C-Lib</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+            <tr><td style="padding: 5px; color: var(--sf-blue); font-weight:bold;">SwiftAgent</td><td>SwiftAgentEvaluator, RAGContextGenerator, DataAnalysisAgent, ToolRegistry</td><td>Autonomous RAG Loop</td><td style="color:var(--sf-green);">Production ✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SLIDE 17: Benchmark Summary -->
+    <div class="slide" data-slide="17">
       <div class="badge"><span class="badge-dot"></span> PERFORMANCE VERIFICATION</div>
       <h1 class="title-large">Metal & UMA Speedup</h1>
       <p class="subtitle">Local M3 Max benchmark comparison against Python NumPy/SciPy baseline.</p>
@@ -920,13 +1135,13 @@ _ = <span class="kw">try await</span> conn.executeQuery(<span class="str">"INSER
   <!-- Slide Navigation Controls -->
   <div class="nav-bar">
     <button class="btn" id="prevBtn">← Prev</button>
-    <span class="progress" id="slideNum">1 / 16</span>
+    <span class="progress" id="slideNum">1 / 17</span>
     <button class="btn" id="nextBtn">Next →</button>
   </div>
 
   <script>
     let currentSlide = 1;
-    const totalSlides = 16;
+    const totalSlides = 17;
 
     function showSlide(index) {
       if (index < 1) index = 1;

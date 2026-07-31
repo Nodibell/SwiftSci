@@ -1,4 +1,4 @@
-#  SwiftSci 2.4.0 — Apple WWDC Keynote Ecosystem Presentation
+#  SwiftSci 2.4.0 — Apple Keynote Ecosystem Presentation
 
 > **Built for Apple Silicon UMA (Unified Memory Architecture) & MLX Acceleration.**
 > Licensed under the MIT License.

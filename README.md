@@ -1,4 +1,4 @@
-# SwiftSci 2.4.0
+SwiftSci 2.4.0
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -21,22 +21,22 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ## 🚀 Core Modules (14 Targets)
 
-| Module | Description | Docs |
-| :--- | :--- | :---: |
-| **`SwiftDataFrame`** | Columnar data frame with Arrow zero-copy semantics, streaming CSV/JSON, `DataFrame.readURL` HTTP ingestion, hash joins, `pivot`/`melt`, `mapColumn`, `parallelGathered(at:)`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/) |
-| **`SwiftStats`** | Vectorized descriptive statistics, SIMD vDSP sorting, Student-t/Chi-Square/F distributions, paired t-test, ANOVA powered by `Accelerate vDSP`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftstats/) |
-| **`SwiftPreprocessing`** | Feature scaling, categorical encoding (`OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `FrequencyEncoder`), imputation (`Imputer`, `KNNImputer`), `Pipeline`, `ColumnTransformer`, `HardwareRouter`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
-| **`SwiftML`** | Linear/Logistic Regression (with LAPACK OLS `dgels_`), Decision Trees (pre-sorted feature splits), Random Forests, GBDTs, `OneVsRestClassifier`, `MLPClassifier`/`MLPRegressor` with Adam optimizer & BLAS `cblas_dgemm`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftml/) |
-| **`SwiftCluster`** | Divide-and-conquer SVD PCA (`dgesdd_`), DBSCAN, `IsolationForest`, `LocalOutlierFactor`, `KMeans` with KMeans++ init. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/) |
-| **`SwiftOptimize`** | `KFold`, `StratifiedKFold`, `TimeSeriesSplit` cross-validation, ROC-AUC, PR-AUC, MCC, `GridSearchCV`, `RandomizedSearchCV`, `AutoML` search engine. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftoptimize/) |
-| **`SwiftForecast`** | Exponential Smoothing, ARIMA, SARIMA, GARCH, Kalman filter, `ExpandingWindow`, additive/multiplicative decomposition. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/) |
-| **`SwiftNLP`** | NLTK-equivalent engine: `AppleWordTokenizer`, `SentenceTokenizer`, `RegexTokenizer`, `PorterStemmer`, `POSTagger`, `AppleLemmaTagger`, `AppleNamedEntityRecognizer`, `VADERSentimentAnalyzer`, `NLSentimentAnalyzer`, `AppleLanguageDetector`, `AppleNLEmbedding`, `MultinomialNaiveBayes`, `TextPipeline`, and `df.vectorizeTextColumn`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/) |
-| **`SwiftExplain`** | Black-box explainability via parallelized `KernelSHAP`, model-aware `TreeSHAP`, `PartialDependencePlot`, `PermutationImportance`, `TextExplainer`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftexplain/) |
-| **`SwiftLLM`** | Local GPU text generation via causal transformer-decoder. SafeTensors & GGUF weight parsing, Top-K/Top-P sampling, `LLMContextWindow`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftllm/) |
-| **`SwiftVisualization`** | Standalone interactive Plotly HTML chart exporters with dynamic ROC & trapezoidal AUC score: `plotCorrelationHeatmap`, `plotROCCurve`, `plotFeatureImportances`, `plotConfusionMatrix`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvisualization/) |
-| **`SwiftVision`** | Computer vision pipeline: `ImageDataset`, U-Net Segmentation, object detection wrappers, CNN feature extraction, `VisionError`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvision/) |
-| **`SwiftDatabase`** | Native SQLite C-driver connector (`sqlite3_open_v2`) for zero-copy DataFrame ingestion via `DataFrame.fromSQL` & PostgreSQL driver. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdatabase/) |
-| **`SwiftAgent`** | Structured DSL command parser & RAG Context Summary Generator for local LLMs. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftagent/) |
+| Module                           | Description                                                                                                                                                                                                                                                                                                                                                          |                                    Docs                                    |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------: |
+| **`SwiftDataFrame`**     | Columnar data frame with Arrow zero-copy semantics, streaming CSV/JSON,`DataFrame.readURL` HTTP ingestion, hash joins, `pivot`/`melt`, `mapColumn`, `parallelGathered(at:)`.                                                                                                                                                                               |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/)   |
+| **`SwiftStats`**         | Vectorized descriptive statistics, SIMD vDSP sorting, Student-t/Chi-Square/F distributions, paired t-test, ANOVA powered by`Accelerate vDSP`.                                                                                                                                                                                                                      |     [📖](https://nodibell.github.io/SwiftSci/documentation/swiftstats/)     |
+| **`SwiftPreprocessing`** | Feature scaling, categorical encoding (`OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `FrequencyEncoder`), imputation (`Imputer`, `KNNImputer`), `Pipeline`, `ColumnTransformer`, `HardwareRouter`.                                                                                                                                           | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
+| **`SwiftML`**            | Linear/Logistic Regression (with LAPACK OLS`dgels_`), Decision Trees (pre-sorted feature splits), Random Forests, GBDTs, `OneVsRestClassifier`, `MLPClassifier`/`MLPRegressor` with Adam optimizer & BLAS `cblas_dgemm`.                                                                                                                                   |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftml/)      |
+| **`SwiftCluster`**       | Divide-and-conquer SVD PCA (`dgesdd_`), DBSCAN, `IsolationForest`, `LocalOutlierFactor`, `KMeans` with KMeans++ init.                                                                                                                                                                                                                                        |    [📖](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/)    |
+| **`SwiftOptimize`**      | `KFold`, `StratifiedKFold`, `TimeSeriesSplit` cross-validation, ROC-AUC, PR-AUC, MCC, `GridSearchCV`, `RandomizedSearchCV`, `AutoML` search engine.                                                                                                                                                                                                      |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftoptimize/)   |
+| **`SwiftForecast`**      | Exponential Smoothing, ARIMA, SARIMA, GARCH, Kalman filter,`ExpandingWindow`, additive/multiplicative decomposition.                                                                                                                                                                                                                                               |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/)   |
+| **`SwiftNLP`**           | NLTK-equivalent engine:`AppleWordTokenizer`, `SentenceTokenizer`, `RegexTokenizer`, `PorterStemmer`, `POSTagger`, `AppleLemmaTagger`, `AppleNamedEntityRecognizer`, `VADERSentimentAnalyzer`, `NLSentimentAnalyzer`, `AppleLanguageDetector`, `AppleNLEmbedding`, `MultinomialNaiveBayes`, `TextPipeline`, and `df.vectorizeTextColumn`. |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/)      |
+| **`SwiftExplain`**       | Black-box explainability via parallelized`KernelSHAP`, model-aware `TreeSHAP`, `PartialDependencePlot`, `PermutationImportance`, `TextExplainer`.                                                                                                                                                                                                          |    [📖](https://nodibell.github.io/SwiftSci/documentation/swiftexplain/)    |
+| **`SwiftLLM`**           | Local GPU text generation via causal transformer-decoder. SafeTensors & GGUF weight parsing, Top-K/Top-P sampling,`LLMContextWindow`.                                                                                                                                                                                                                              |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftllm/)      |
+| **`SwiftVisualization`** | Standalone interactive Plotly HTML chart exporters with dynamic ROC & trapezoidal AUC score:`plotCorrelationHeatmap`, `plotROCCurve`, `plotFeatureImportances`, `plotConfusionMatrix`.                                                                                                                                                                       | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvisualization/) |
+| **`SwiftVision`**        | Computer vision pipeline:`ImageDataset`, U-Net Segmentation, object detection wrappers, CNN feature extraction, `VisionError`.                                                                                                                                                                                                                                   |    [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvision/)    |
+| **`SwiftDatabase`**      | Native SQLite C-driver connector (`sqlite3_open_v2`) for zero-copy DataFrame ingestion via `DataFrame.fromSQL` & PostgreSQL driver.                                                                                                                                                                                                                              |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdatabase/)   |
+| **`SwiftAgent`**         | Structured DSL command parser & RAG Context Summary Generator for local LLMs.                                                                                                                                                                                                                                                                                        |     [📖](https://nodibell.github.io/SwiftSci/documentation/swiftagent/)     |
 
 ---
 
@@ -45,33 +45,37 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 The following table presents median execution times for benchmark scenarios on Apple Silicon (M-series / macOS 15 arm64), compared directly against popular Python counterparts (**Scikit-Learn, NumPy, Pandas, SHAP, Statsmodels, PyTorch**). See [PERFORMANCE.md](PERFORMANCE.md) for full benchmark methodology.
 
 ### 📈 1. Time Series Forecasting & Volatility
-| Benchmark Scenario | SwiftSci 2.4 (Swift) | Python Baseline | Swift Speedup | Winner |
-| :--- | :---: | :---: | :---: | :---: |
-| **ARIMA(1,1,1) Fit** (50k pts) | **2.27 ms** | 227.34 ms (*Statsmodels*) | ⚡ **100.1×** | 🟢 Swift |
-| **ARIMA(1,1,1) Forecast** (horizon=24) | **2.38 ms** | 224.57 ms (*Statsmodels*) | ⚡ **94.3×** | 🟢 Swift |
-| **Holt-Winters Fit** (50k pts, period=12) | **7.35 ms** | 144.90 ms (*Statsmodels*) | ⚡ **19.7×** | 🟢 Swift |
+
+| Benchmark Scenario                              | SwiftSci 2.4 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
+| **ARIMA(1,1,1) Fit** (50k pts)            |  **2.27 ms**  | 227.34 ms (*Statsmodels*) | ⚡**100.1×** | 🟢 Swift |
+| **ARIMA(1,1,1) Forecast** (horizon=24)    |  **2.38 ms**  | 224.57 ms (*Statsmodels*) | ⚡**94.3×** | 🟢 Swift |
+| **Holt-Winters Fit** (50k pts, period=12) |  **7.35 ms**  | 144.90 ms (*Statsmodels*) | ⚡**19.7×** | 🟢 Swift |
 
 ### 🤖 2. Machine Learning & Clustering
-| Benchmark Scenario | SwiftSci 2.4 (Swift) | Python Baseline | Swift Speedup | Winner |
-| :--- | :---: | :---: | :---: | :---: |
-| **RandomForest Fit** (1k×4, 50 trees) | **3.99 ms** | 27.10 ms (*Scikit-Learn*) | ⚡ **6.79×** | 🟢 Swift |
-| **GBDT Regressor Fit** (1k×4, 50 est) | **7.99 ms** | 34.80 ms (*Scikit-Learn*) | ⚡ **4.35×** | 🟢 Swift |
+
+| Benchmark Scenario                           | SwiftSci 2.4 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
+| :------------------------------------------- | :------------------: | :-------------------------: | :----------------: | :------: |
+| **RandomForest Fit** (1k×4, 50 trees) |  **3.99 ms**  | 27.10 ms (*Scikit-Learn*) | ⚡**6.79×** | 🟢 Swift |
+| **GBDT Regressor Fit** (1k×4, 50 est) |  **7.99 ms**  | 34.80 ms (*Scikit-Learn*) | ⚡**4.35×** | 🟢 Swift |
 
 ### 📝 3. Natural Language & Explainability
-| Benchmark Scenario | SwiftSci 2.4 (Swift) | Python Baseline | Swift Speedup | Winner |
-| :--- | :---: | :---: | :---: | :---: |
-| **KernelSHAP Explain** (100 coalitions) | **0.18 ms** | 0.46 ms (*SHAP*) | ⚡ **2.56×** | 🟢 Swift |
-| **LLM Forward Pass** (seqLen=64) | **0.45 ms** | 0.67 ms (*PyTorch*) | ⚡ **1.48×** | 🟢 Swift |
+
+| Benchmark Scenario                            | SwiftSci 2.4 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
+| **KernelSHAP Explain** (100 coalitions) |  **0.18 ms**  |  0.46 ms (*SHAP*)  | ⚡**2.56×** | 🟢 Swift |
+| **LLM Forward Pass** (seqLen=64)        |  **0.45 ms**  | 0.67 ms (*PyTorch*) | ⚡**1.48×** | 🟢 Swift |
 
 ### 📊 4. Core Data Engines & Vector Stats
-| Benchmark Scenario | SwiftSci 2.4 (Swift) | Python Baseline | Swift Speedup | Winner |
-| :--- | :---: | :---: | :---: | :---: |
-| **Mean Reduction** (vDSP 1M elements) | **0.098 ms** | 0.118 ms (*NumPy*) | ⚡ **1.20×** | 🟢 Swift |
-| **StdDev Reduction** (vDSP 1M elements) | **0.433 ms** | 0.516 ms (*NumPy*) | ⚡ **1.19×** | 🟢 Swift |
-| **Pearson Correlation** (500k pairs) | **1.032 ms** | 1.233 ms (*NumPy*) | ⚡ **1.19×** | 🟢 Swift |
-| **Kalman Filter 1D** (10k obs) | **60.44 ms** | 87.78 ms (*NumPy*) | ⚡ **1.45×** | 🟢 Swift |
-| **CSV Read** (100k rows) | **14.75 ms** | 20.11 ms (*Pandas*) | ⚡ **1.36×** | 🟢 Swift |
-| **CSV Stream + GroupBy** (100k rows) | **21.21 ms** | 30.05 ms (*Pandas*) | ⚡ **1.41×** | 🟢 Swift |
+
+| Benchmark Scenario                            | SwiftSci 2.4 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
+| **Mean Reduction** (vDSP 1M elements)   |  **0.098 ms**  | 0.118 ms (*NumPy*) | ⚡**1.20×** | 🟢 Swift |
+| **StdDev Reduction** (vDSP 1M elements) |  **0.433 ms**  | 0.516 ms (*NumPy*) | ⚡**1.19×** | 🟢 Swift |
+| **Pearson Correlation** (500k pairs)    |  **1.032 ms**  | 1.233 ms (*NumPy*) | ⚡**1.19×** | 🟢 Swift |
+| **Kalman Filter 1D** (10k obs)          |  **60.44 ms**  | 87.78 ms (*NumPy*) | ⚡**1.45×** | 🟢 Swift |
+| **CSV Read** (100k rows)                |  **14.75 ms**  | 20.11 ms (*Pandas*) | ⚡**1.36×** | 🟢 Swift |
+| **CSV Stream + GroupBy** (100k rows)    |  **21.21 ms**  | 30.05 ms (*Pandas*) | ⚡**1.41×** | 🟢 Swift |
 
 > ℹ️ **Transparent Reporting**: For the complete 25-benchmark matrix, see [PERFORMANCE.md](PERFORMANCE.md).
 
@@ -80,14 +84,18 @@ The following table presents median execution times for benchmark scenarios on A
 ## 🛠 Architectural Highlights & Optimizations
 
 ### 1. Data-Oriented Design (DOD) Tree Ensembles
+
 Traditional object-oriented trees suffer from ARC overhead and cache misses. `SwiftSci` stores trees as contiguous flat arrays of `FlatTreeNode` structures with pre-sorted feature matrix split indexes, eliminating pointer chasing and maximizing CPU L1/L2 cache hit rates.
 
 ### 2. Intelligent Hardware Routing
+
 We implement a flexible compute device routing policy (`requestedDevice` / `resolvedDevice`):
+
 * Branch-heavy algorithms (Decision Trees, Random Forests, spatial DBSCAN search) execute on CPU vector cores.
 * Tensor operations (Linear/Logistic Regression, Multi-Layer Perceptrons) leverage Apple Silicon GPU execution via `MLXArray` lazy evaluation and Accelerate `BLAS` (`cblas_dgemm`).
 
 ### 3. Native NaturalLanguage Integration & SwiftNLP
+
 `SwiftNLP` bridges NLTK-equivalent algorithms (`PorterStemmer`, `VADERSentimentAnalyzer`, `MultinomialNaiveBayes`) with native Apple OS frameworks (`NLTagger`, `NLLanguageRecognizer`, `NLEmbedding`), ensuring high accuracy and zero external binary dependencies.
 
 ---

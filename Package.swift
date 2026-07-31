@@ -397,6 +397,7 @@ let package = Package(
                 "SwiftVision",
                 "SwiftDatabase",
                 "SwiftAgent",
+                "SwiftVisualization",
             ],
             path: "Benchmarks/Swift",
             cSettings: globalCSettings,

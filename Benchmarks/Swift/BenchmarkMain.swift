@@ -17,6 +17,7 @@ struct BenchmarkArgs {
     var jsonOutputPath: String? = nil
     var filter: String? = nil      // optional: run only benchmarks whose name contains this string
     var suite: String? = nil       // optional: run only suites whose module contains this string
+    var isPresentation: Bool = false
 
     static func parse() -> BenchmarkArgs {
         var args = BenchmarkArgs()
@@ -30,6 +31,8 @@ struct BenchmarkArgs {
                 args.filter = iter.next()
             case "--suite":
                 args.suite = iter.next()
+            case "--presentation":
+                args.isPresentation = true
             default:
                 break
             }
@@ -44,6 +47,15 @@ struct BenchmarkArgs {
 struct BenchmarkEntryPoint {
     static func main() async {
         let args = BenchmarkArgs.parse()
+
+        if args.isPresentation {
+            do {
+                try await PresentationCodeRunner.runAll()
+            } catch {
+                print("Error running presentation code examples: \(error)")
+            }
+            return
+        }
 
         print("╔════════════════════════════════════════════════════╗")
         print("║        SwiftSci Benchmark Suite — v1.3             ║")

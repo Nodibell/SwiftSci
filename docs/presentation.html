@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 2.4.0 — Complete 52-Slide WWDC Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 2.4.0 — Complete 53-Slide WWDC Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -131,6 +131,55 @@
       text-align: center;
       line-height: 1.35;
       margin-bottom: 1rem;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.9rem;
+      width: 100%;
+      max-width: 1300px;
+      margin-top: 0.5rem;
+    }
+
+    .toc-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 0.8rem 1rem;
+      backdrop-filter: blur(24px);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .toc-item:hover {
+      border-color: var(--sf-blue);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 122, 255, 0.2);
+    }
+
+    .toc-module {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--sf-blue);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toc-slides {
+      font-size: 0.7rem;
+      color: var(--text-sub);
+      font-family: var(--font-mono);
+    }
+
+    .toc-desc {
+      font-size: 0.74rem;
+      color: #c7c7cc;
+      line-height: 1.25;
     }
 
     .code-grid {
@@ -313,11 +362,11 @@
     <!-- SLIDE 1: Title -->
     <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span>  WWDC 2026 KEYNOTE</div>
-      <h1 class="title-large">SwiftSci 2.4.0 Complete DocC Ecosystem</h1>
-      <p class="subtitle">52 dedicated slides covering 100% of all 14 native Swift 6 modules & Apple M4 Pro UMA acceleration.</p>
+      <h1 class="title-large">SwiftSci 2.4.0 Ecosystem</h1>
+      <p class="subtitle">53 dedicated slides covering 100% of all 14 native Swift 6 modules & Apple M4 Pro UMA acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
-          <div class="stat-val">52</div>
+          <div class="stat-val">53</div>
           <div class="stat-lbl">DocC Feature Slides</div>
         </div>
         <div class="stat-box">
@@ -331,9 +380,78 @@
       </div>
     </div>
 
-    <!-- SLIDE 2: SwiftDataFrame - TypedColumn -->
+    <!-- SLIDE 2: Interactive Table of Contents (Agenda / Зміст) -->
     <div class="slide" data-slide="2">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 02 OF 52</div>
+      <div class="badge"><span class="badge-dot"></span> AGENDA & TABLE OF CONTENTS / ЗМІСТ</div>
+      <h1 class="title-large">Ecosystem Architecture Overview</h1>
+      <p class="subtitle">Click any module to jump directly to its dedicated DocC feature slides.</p>
+      <div class="toc-grid">
+        <div class="toc-item" onclick="showSlide(3)">
+          <div class="toc-module"><span>01. SwiftDataFrame</span><span class="toc-slides">Slides 3–8</span></div>
+          <div class="toc-desc">TypedColumns, Expression Engine, GroupBy Aggregations, Joins & I/O.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(9)">
+          <div class="toc-module"><span>02. SwiftStats</span><span class="toc-slides">Slides 9–13</span></div>
+          <div class="toc-desc">SIMD Descriptive Stats, Distributions, Hypothesis Tests & Correlations.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(14)">
+          <div class="toc-module"><span>03. SwiftPreprocessing</span><span class="toc-slides">Slides 14–17</span></div>
+          <div class="toc-desc">StandardScaler, OneHotEncoder, Imputers & Polynomial Features.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(18)">
+          <div class="toc-module"><span>04. SwiftML</span><span class="toc-slides">Slides 18–22</span></div>
+          <div class="toc-desc">MLX Linear Models, Decision Trees, RandomForest, Gradient Boosting & SVM.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(23)">
+          <div class="toc-module"><span>05. SwiftCluster</span><span class="toc-slides">Slides 23–26</span></div>
+          <div class="toc-desc">PCA Variance Reduction, TruncatedSVD, t-SNE, K-Means & GMM.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(27)">
+          <div class="toc-module"><span>06. SwiftOptimize</span><span class="toc-slides">Slides 27–30</span></div>
+          <div class="toc-desc">Accuracy, F1, ROC-AUC, KFold, TimeSeriesSplit & GridSearchCV.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(31)">
+          <div class="toc-module"><span>07. SwiftForecast</span><span class="toc-slides">Slides 31–34</span></div>
+          <div class="toc-desc">ARIMA(p,d,q), Holt-Winters, STL Decomposition & Spectral FFT.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(35)">
+          <div class="toc-module"><span>08. SwiftNLP (v2.4)</span><span class="toc-slides">Slides 35–40</span></div>
+          <div class="toc-desc">Tokenizers, Stemmer, POS/NER Tagging, VADER Sentiment & NaiveBayes.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(41)">
+          <div class="toc-module"><span>09. SwiftExplain</span><span class="toc-slides">Slides 41–42</span></div>
+          <div class="toc-desc">KernelSHAP & TreeSHAP Attribution, Permutation Importance.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(43)">
+          <div class="toc-module"><span>10. SwiftLLM</span><span class="toc-slides">Slides 43–44</span></div>
+          <div class="toc-desc">LLM Context Window Token Budgeting, BPE & Prompt Templates.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(45)">
+          <div class="toc-module"><span>11. SwiftVisualization</span><span class="toc-slides">Slides 45–46</span></div>
+          <div class="toc-desc">Plotly Exporter for Heatmaps, Scatter, Line, Bar & ROC HTML charts.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(47)">
+          <div class="toc-module"><span>12. SwiftVision</span><span class="toc-slides">Slides 47–48</span></div>
+          <div class="toc-desc">Image Tensors, Normalization & CNN Global Average Pooling.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(49)">
+          <div class="toc-module"><span>13. SwiftDatabase</span><span class="toc-slides">Slides 49–50</span></div>
+          <div class="toc-desc">Embedded SQLite Engine & Bi-directional DataFrame Bridge.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(51)">
+          <div class="toc-module"><span>14. SwiftAgent</span><span class="toc-slides">Slides 51–52</span></div>
+          <div class="toc-desc">Autonomous AI Query Evaluator & RAG Context Summary Generator.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(53)" style="grid-column: span 2; border-color:var(--sf-green);">
+          <div class="toc-module"><span style="color:var(--sf-green);">⚡ Apple M4 Pro Benchmarks</span><span class="toc-slides" style="color:var(--sf-green);">Slide 53</span></div>
+          <div class="toc-desc">M4 Pro UMA Memory Bandwidth & Metal Acceleration Benchmarks.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: SwiftDataFrame - TypedColumn -->
+    <div class="slide" data-slide="3">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 03 OF 53</div>
       <h1 class="title-large">DataFrame & TypedColumn&lt;T&gt;</h1>
       <p class="subtitle">Strongly typed column vectors with zero-copy SIMD underlying storage buffers.</p>
       <div class="code-grid">
@@ -362,9 +480,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 3: SwiftDataFrame - Filter -->
-    <div class="slide" data-slide="3">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 03 OF 52</div>
+    <!-- SLIDE 4: SwiftDataFrame - Filter -->
+    <div class="slide" data-slide="4">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 04 OF 53</div>
       <h1 class="title-large">Expression Filtering (filter)</h1>
       <p class="subtitle">High-performance row evaluation closures with SIMD boolean masking.</p>
       <div class="code-grid">
@@ -387,9 +505,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 4: SwiftDataFrame - Column Transformations -->
-    <div class="slide" data-slide="4">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 04 OF 52</div>
+    <!-- SLIDE 5: SwiftDataFrame - Column Transformations -->
+    <div class="slide" data-slide="5">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 05 OF 53</div>
       <h1 class="title-large">Column Mutations (withColumn)</h1>
       <p class="subtitle">Dynamic column projections, renaming, and removal operations.</p>
       <div class="code-grid">
@@ -410,9 +528,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 5: SwiftDataFrame - GroupBy -->
-    <div class="slide" data-slide="5">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 05 OF 52</div>
+    <!-- SLIDE 6: SwiftDataFrame - GroupBy -->
+    <div class="slide" data-slide="6">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 06 OF 53</div>
       <h1 class="title-large">GroupBy Aggregations</h1>
       <p class="subtitle">Grouped aggregations calculating sum, mean, min, max, count & standard deviation.</p>
       <div class="code-grid">
@@ -431,9 +549,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 6: SwiftDataFrame - Relational Joins & I/O -->
-    <div class="slide" data-slide="6">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 06 OF 52</div>
+    <!-- SLIDE 7: SwiftDataFrame - Relational Joins & I/O -->
+    <div class="slide" data-slide="7">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 07 OF 53</div>
       <h1 class="title-large">Relational Joins & Multi-Format I/O</h1>
       <p class="subtitle">Inner, Left, Outer joins & CSV, JSON, Parquet file import/export engine.</p>
       <div class="code-grid">
@@ -453,9 +571,31 @@
       </div>
     </div>
 
-    <!-- SLIDE 7: SwiftStats - Descriptive Statistics -->
-    <div class="slide" data-slide="7">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 07 OF 52</div>
+    <!-- SLIDE 8: SwiftDataFrame - Pivot & Null Handling -->
+    <div class="slide" data-slide="8">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 08 OF 53</div>
+      <h1 class="title-large">Pivoting & Null Value Cleaning</h1>
+      <p class="subtitle">Reshaping data matrices via pivot and null cleaning with dropNulls / fillNulls.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Snippet</span></div>
+          <pre><span class="kw">let</span> cleanDF = <span class="kw">try</span> df.dropNulls(in: [<span class="str">"score"</span>])
+<span class="kw">let</span> filledDF = <span class="kw">try</span> df.fillNulls(value: <span class="num">0.0</span>)</pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Terminal Output & Null Summary</span></div>
+          <pre><span class="out-text">Null Rows Dropped & Filled Successfully</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Null Handling</span><span class="swiftui-pill" style="color:var(--sf-blue);">dropNulls</span></div>
+            <div style="font-family:monospace; color:#007aff;">NaN / nil Values Handled Cleanly</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: SwiftStats - Descriptive Statistics -->
+    <div class="slide" data-slide="9">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 09 OF 53</div>
       <h1 class="title-large">Descriptive Statistics</h1>
       <p class="subtitle">SIMD accelerated mean, median, variance, std, skewness, kurtosis & quartiles.</p>
       <div class="code-grid">
@@ -479,9 +619,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 8: SwiftStats - Continuous Distributions -->
-    <div class="slide" data-slide="8">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 08 OF 52</div>
+    <!-- SLIDE 10: SwiftStats - Continuous Distributions -->
+    <div class="slide" data-slide="10">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 10 OF 53</div>
       <h1 class="title-large">Continuous Probability Distributions</h1>
       <p class="subtitle">PDF, CDF, and quantile evaluations for Normal, StudentT, ChiSquare & Uniform.</p>
       <div class="code-grid">
@@ -501,9 +641,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 9: SwiftStats - Discrete Distributions -->
-    <div class="slide" data-slide="9">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 09 OF 52</div>
+    <!-- SLIDE 11: SwiftStats - Discrete Distributions -->
+    <div class="slide" data-slide="11">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 11 OF 53</div>
       <h1 class="title-large">Discrete Probability Distributions</h1>
       <p class="subtitle">PMF and Cumulative Distribution for Binomial & Poisson distributions.</p>
       <div class="code-grid">
@@ -523,9 +663,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 10: SwiftStats - Hypothesis Testing -->
-    <div class="slide" data-slide="10">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 10 OF 52</div>
+    <!-- SLIDE 12: SwiftStats - Hypothesis Testing -->
+    <div class="slide" data-slide="12">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 12 OF 53</div>
       <h1 class="title-large">Hypothesis Testing & ANOVA</h1>
       <p class="subtitle">Paired t-test, Two-sample t-test, ANOVA One-Way & Chi-Square tests.</p>
       <div class="code-grid">
@@ -545,9 +685,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 11: SwiftStats - Correlation Matrix -->
-    <div class="slide" data-slide="11">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 11 OF 52</div>
+    <!-- SLIDE 13: SwiftStats - Correlation Matrix -->
+    <div class="slide" data-slide="13">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 13 OF 53</div>
       <h1 class="title-large">Correlation Analysis</h1>
       <p class="subtitle">Pearson linear correlation, Spearman rank correlation & covariance matrix.</p>
       <div class="code-grid">
@@ -567,9 +707,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 12: SwiftPreprocessing - Feature Scalers -->
-    <div class="slide" data-slide="12">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 12 OF 52</div>
+    <!-- SLIDE 14: SwiftPreprocessing - Feature Scalers -->
+    <div class="slide" data-slide="14">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 14 OF 53</div>
       <h1 class="title-large">Feature Scalers (Standard & MinMax)</h1>
       <p class="subtitle">StandardScaler Z-score, MinMaxScaler, RobustScaler & MaxAbsScaler.</p>
       <div class="code-grid">
@@ -590,9 +730,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 13: SwiftPreprocessing - Categorical Encoders -->
-    <div class="slide" data-slide="13">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 13 OF 52</div>
+    <!-- SLIDE 15: SwiftPreprocessing - Categorical Encoders -->
+    <div class="slide" data-slide="15">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 15 OF 53</div>
       <h1 class="title-large">Categorical Encoders</h1>
       <p class="subtitle">LabelEncoder, OneHotEncoder & OrdinalEncoder for categorical strings.</p>
       <div class="code-grid">
@@ -612,9 +752,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 14: SwiftPreprocessing - Data Imputers -->
-    <div class="slide" data-slide="14">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 14 OF 52</div>
+    <!-- SLIDE 16: SwiftPreprocessing - Data Imputers -->
+    <div class="slide" data-slide="16">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 16 OF 53</div>
       <h1 class="title-large">Missing Data Imputation</h1>
       <p class="subtitle">SimpleImputer (mean, median, most_frequent) & KNNImputer for missing values.</p>
       <div class="code-grid">
@@ -634,9 +774,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 15: SwiftPreprocessing - Feature Generation -->
-    <div class="slide" data-slide="15">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 15 OF 52</div>
+    <!-- SLIDE 17: SwiftPreprocessing - Feature Generation -->
+    <div class="slide" data-slide="17">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 17 OF 53</div>
       <h1 class="title-large">Feature Generation & Binarizer</h1>
       <p class="subtitle">PolynomialFeatures degree interaction terms & Binarizer thresholding.</p>
       <div class="code-grid">
@@ -656,9 +796,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 16: SwiftML - Linear Models -->
-    <div class="slide" data-slide="16">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 16 OF 52</div>
+    <!-- SLIDE 18: SwiftML - Linear Models -->
+    <div class="slide" data-slide="18">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 18 OF 53</div>
       <h1 class="title-large">MLX Linear, Ridge & Lasso Regression</h1>
       <p class="subtitle">Apple MLX GPU accelerated Ordinary Least Squares, L1 Lasso, and L2 Ridge regression.</p>
       <div class="code-grid">
@@ -678,9 +818,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 17: SwiftML - Decision Trees -->
-    <div class="slide" data-slide="17">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 17 OF 52</div>
+    <!-- SLIDE 19: SwiftML - Decision Trees -->
+    <div class="slide" data-slide="19">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 19 OF 53</div>
       <h1 class="title-large">Decision Tree Regressor & Classifier</h1>
       <p class="subtitle">Binary tree recursive partitioning based on Gini impurity and MSE criteria.</p>
       <div class="code-grid">
@@ -700,9 +840,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 18: SwiftML - RandomForest -->
-    <div class="slide" data-slide="18">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 18 OF 52</div>
+    <!-- SLIDE 20: SwiftML - RandomForest -->
+    <div class="slide" data-slide="20">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 20 OF 53</div>
       <h1 class="title-large">RandomForest Ensembles</h1>
       <p class="subtitle">Parallel actor-based Random Forest regressor & classifier ensemble training.</p>
       <div class="code-grid">
@@ -723,9 +863,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 19: SwiftML - Gradient Boosting & SVM -->
-    <div class="slide" data-slide="19">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 19 OF 52</div>
+    <!-- SLIDE 21: SwiftML - Gradient Boosting & SVM -->
+    <div class="slide" data-slide="21">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 21 OF 53</div>
       <h1 class="title-large">Gradient Boosting & Support Vector Machines</h1>
       <p class="subtitle">Gradient boosting loss optimization, LinearSVC and SVR models.</p>
       <div class="code-grid">
@@ -745,9 +885,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 20: SwiftML - Model Serialization -->
-    <div class="slide" data-slide="20">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 20 OF 52</div>
+    <!-- SLIDE 22: SwiftML - Model Serialization -->
+    <div class="slide" data-slide="22">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 22 OF 53</div>
       <h1 class="title-large">Model Persistence (ModelSerializer)</h1>
       <p class="subtitle">JSON and binary serialization for saving and loading trained ML models.</p>
       <div class="code-grid">
@@ -767,9 +907,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 21: SwiftCluster - PCA -->
-    <div class="slide" data-slide="21">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 21 OF 52</div>
+    <!-- SLIDE 23: SwiftCluster - PCA -->
+    <div class="slide" data-slide="23">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 23 OF 53</div>
       <h1 class="title-large">Principal Component Analysis (PCA)</h1>
       <p class="subtitle">SVD-based orthogonal variance reduction for high-dimensional feature spaces.</p>
       <div class="code-grid">
@@ -789,9 +929,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 22: SwiftCluster - SVD & t-SNE -->
-    <div class="slide" data-slide="22">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 22 OF 52</div>
+    <!-- SLIDE 24: SwiftCluster - SVD & t-SNE -->
+    <div class="slide" data-slide="24">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 24 OF 53</div>
       <h1 class="title-large">TruncatedSVD & t-SNE Embeddings</h1>
       <p class="subtitle">Manifold learning and singular value decomposition for non-linear visualization.</p>
       <div class="code-grid">
@@ -811,9 +951,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 23: SwiftCluster - KMeans & DBSCAN -->
-    <div class="slide" data-slide="23">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 23 OF 52</div>
+    <!-- SLIDE 25: SwiftCluster - KMeans & DBSCAN -->
+    <div class="slide" data-slide="25">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 25 OF 53</div>
       <h1 class="title-large">K-Means & DBSCAN Clustering</h1>
       <p class="subtitle">Centroid-based K-Means++ and density-based noise filtering DBSCAN.</p>
       <div class="code-grid">
@@ -833,9 +973,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 24: SwiftCluster - Hierarchical & GMM -->
-    <div class="slide" data-slide="24">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 24 OF 52</div>
+    <!-- SLIDE 26: SwiftCluster - Hierarchical & GMM -->
+    <div class="slide" data-slide="26">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 26 OF 53</div>
       <h1 class="title-large">Hierarchical & Gaussian Mixture Models</h1>
       <p class="subtitle">Agglomerative dendrogram clustering and Expectation-Maximization GMMs.</p>
       <div class="code-grid">
@@ -855,9 +995,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 25: SwiftOptimize - Evaluation Metrics -->
-    <div class="slide" data-slide="25">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 25 OF 52</div>
+    <!-- SLIDE 27: SwiftOptimize - Evaluation Metrics -->
+    <div class="slide" data-slide="27">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 27 OF 53</div>
       <h1 class="title-large">Evaluation Metrics & ROC-AUC</h1>
       <p class="subtitle">Accuracy, Precision, Recall, F1 Score, MSE, RMSE, MAE, R2 & ROC-AUC.</p>
       <div class="code-grid">
@@ -877,9 +1017,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 26: SwiftOptimize - Cross-Validation -->
-    <div class="slide" data-slide="26">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 26 OF 52</div>
+    <!-- SLIDE 28: SwiftOptimize - Cross-Validation -->
+    <div class="slide" data-slide="28">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 28 OF 53</div>
       <h1 class="title-large">KFold & StratifiedKFold Validation</h1>
       <p class="subtitle">Balanced fold splitting ensuring class distributions across validation folds.</p>
       <div class="code-grid">
@@ -899,9 +1039,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 27: SwiftOptimize - TimeSeriesSplit -->
-    <div class="slide" data-slide="27">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 27 OF 52</div>
+    <!-- SLIDE 29: SwiftOptimize - TimeSeriesSplit -->
+    <div class="slide" data-slide="29">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 29 OF 53</div>
       <h1 class="title-large">Time Series Cross-Validation</h1>
       <p class="subtitle">Rolling window temporal split preserving strict chronological sequence.</p>
       <div class="code-grid">
@@ -921,9 +1061,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 28: SwiftOptimize - Hyperparameter Tuning -->
-    <div class="slide" data-slide="28">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 28 OF 52</div>
+    <!-- SLIDE 30: SwiftOptimize - Hyperparameter Tuning -->
+    <div class="slide" data-slide="30">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 30 OF 53</div>
       <h1 class="title-large">GridSearchCV & Hyperparameter Tuning</h1>
       <p class="subtitle">Exhaustive grid search and randomized parameter optimization.</p>
       <div class="code-grid">
@@ -943,9 +1083,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 29: SwiftForecast - ARIMA -->
-    <div class="slide" data-slide="29">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 29 OF 52</div>
+    <!-- SLIDE 31: SwiftForecast - ARIMA -->
+    <div class="slide" data-slide="31">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 31 OF 53</div>
       <h1 class="title-large">ARIMA(p,d,q) Time Series Model</h1>
       <p class="subtitle">Actor-based autoregressive integrated moving average forecasting model.</p>
       <div class="code-grid">
@@ -966,9 +1106,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 30: SwiftForecast - Exponential Smoothing -->
-    <div class="slide" data-slide="30">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 30 OF 52</div>
+    <!-- SLIDE 32: SwiftForecast - Exponential Smoothing -->
+    <div class="slide" data-slide="32">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 32 OF 53</div>
       <h1 class="title-large">Exponential Smoothing & Holt-Winters</h1>
       <p class="subtitle">Triple exponential smoothing capturing level, trend, and seasonal components.</p>
       <div class="code-grid">
@@ -988,9 +1128,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 31: SwiftForecast - TimeSeriesDecomposition -->
-    <div class="slide" data-slide="31">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 31 OF 52</div>
+    <!-- SLIDE 33: SwiftForecast - TimeSeriesDecomposition -->
+    <div class="slide" data-slide="33">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 33 OF 53</div>
       <h1 class="title-large">Classical Time Series Decomposition</h1>
       <p class="subtitle">Extracting Trend, Seasonal, and Residual Noise components from time series.</p>
       <div class="code-grid">
@@ -1009,9 +1149,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 32: SwiftForecast - FFT & Autocorrelation -->
-    <div class="slide" data-slide="32">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 32 OF 52</div>
+    <!-- SLIDE 34: SwiftForecast - FFT & Autocorrelation -->
+    <div class="slide" data-slide="34">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 34 OF 53</div>
       <h1 class="title-large">Spectral Analysis (FFT) & ACF / PACF</h1>
       <p class="subtitle">Accelerate vDSP Fast Fourier Transform spectral frequency analysis & autocorrelation.</p>
       <div class="code-grid">
@@ -1031,9 +1171,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 33: SwiftNLP - Tokenization -->
-    <div class="slide" data-slide="33">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 33 OF 52</div>
+    <!-- SLIDE 35: SwiftNLP - Tokenization -->
+    <div class="slide" data-slide="35">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 35 OF 53</div>
       <h1 class="title-large">Word & Sentence Tokenization</h1>
       <p class="subtitle">Apple Natural Language Tokenizer, Regex Tokenizer & Sentence Tokenizer.</p>
       <div class="code-grid">
@@ -1053,9 +1193,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 34: SwiftNLP - Stemming & Lemma -->
-    <div class="slide" data-slide="34">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 34 OF 52</div>
+    <!-- SLIDE 36: SwiftNLP - Stemming & Lemma -->
+    <div class="slide" data-slide="36">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 36 OF 53</div>
       <h1 class="title-large">Porter Stemmer & Lemma Tagger</h1>
       <p class="subtitle">Algorithmic suffix stripping via Porter Stemmer & Apple Lemma Tagger.</p>
       <div class="code-grid">
@@ -1075,9 +1215,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 35: SwiftNLP - POS & NER Tagging -->
-    <div class="slide" data-slide="35">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 35 OF 52</div>
+    <!-- SLIDE 37: SwiftNLP - POS & NER Tagging -->
+    <div class="slide" data-slide="37">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 37 OF 53</div>
       <h1 class="title-large">POS Tagging & Named Entity Recognition</h1>
       <p class="subtitle">Part-of-speech tagging and Apple Named Entity Recognizer for Person/Org/Loc.</p>
       <div class="code-grid">
@@ -1097,9 +1237,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 36: SwiftNLP - VADER Sentiment -->
-    <div class="slide" data-slide="36">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 36 OF 52</div>
+    <!-- SLIDE 38: SwiftNLP - VADER Sentiment -->
+    <div class="slide" data-slide="38">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 38 OF 53</div>
       <h1 class="title-large">VADER Sentiment Analysis Engine</h1>
       <p class="subtitle">Rule-based sentiment polarity scoring returning Positive, Negative, Neutral & Compound.</p>
       <div class="code-grid">
@@ -1118,9 +1258,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 37: SwiftNLP - Text Vectorization -->
-    <div class="slide" data-slide="37">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 37 OF 52</div>
+    <!-- SLIDE 39: SwiftNLP - Text Vectorization -->
+    <div class="slide" data-slide="39">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 39 OF 53</div>
       <h1 class="title-large">Text Vectorization (TF-IDF & Hashing)</h1>
       <p class="subtitle">CountVectorizer, TfidfVectorizer & HashingVectorizer sparse matrix generation.</p>
       <div class="code-grid">
@@ -1140,9 +1280,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 38: SwiftNLP - Naive Bayes -->
-    <div class="slide" data-slide="38">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 38 OF 52</div>
+    <!-- SLIDE 40: SwiftNLP - Naive Bayes -->
+    <div class="slide" data-slide="40">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 40 OF 53</div>
       <h1 class="title-large">Multinomial & Complement Naive Bayes</h1>
       <p class="subtitle">Probabilistic text classification for document topic modeling & spam filtering.</p>
       <div class="code-grid">
@@ -1162,9 +1302,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 39: SwiftExplain - KernelSHAP -->
-    <div class="slide" data-slide="39">
-      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 39 OF 52</div>
+    <!-- SLIDE 41: SwiftExplain - KernelSHAP -->
+    <div class="slide" data-slide="41">
+      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 41 OF 53</div>
       <h1 class="title-large">KernelSHAP & TreeSHAP Attribution</h1>
       <p class="subtitle">Shapley Additive exPlanations for model interpretability and feature attribution.</p>
       <div class="code-grid">
@@ -1183,9 +1323,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 40: SwiftExplain - Permutation Importance -->
-    <div class="slide" data-slide="40">
-      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 40 OF 52</div>
+    <!-- SLIDE 42: SwiftExplain - Permutation Importance -->
+    <div class="slide" data-slide="42">
+      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 42 OF 53</div>
       <h1 class="title-large">Permutation Importance & Partial Dependence</h1>
       <p class="subtitle">Feature shuffle score drop evaluation & partial dependence marginal effect plots.</p>
       <div class="code-grid">
@@ -1204,9 +1344,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 41: SwiftLLM - Context Window -->
-    <div class="slide" data-slide="41">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 41 OF 52</div>
+    <!-- SLIDE 43: SwiftLLM - Context Window -->
+    <div class="slide" data-slide="43">
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 43 OF 53</div>
       <h1 class="title-large">LLM Context Window Budgeting</h1>
       <p class="subtitle">Prompt token counting, sliding buffer & token truncation.</p>
       <div class="code-grid">
@@ -1226,9 +1366,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 42: SwiftLLM - BPE & Prompts -->
-    <div class="slide" data-slide="42">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 42 OF 52</div>
+    <!-- SLIDE 44: SwiftLLM - BPE & Prompts -->
+    <div class="slide" data-slide="44">
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 44 OF 53</div>
       <h1 class="title-large">BPE Tokenizer & Prompt Templates</h1>
       <p class="subtitle">Byte-Pair Encoding tokenizer & PromptTemplate variable substitution.</p>
       <div class="code-grid">
@@ -1248,9 +1388,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 43: SwiftVisualization - Heatmap -->
-    <div class="slide" data-slide="43">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 43 OF 52</div>
+    <!-- SLIDE 45: SwiftVisualization - Heatmap -->
+    <div class="slide" data-slide="45">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 45 OF 53</div>
       <h1 class="title-large">Plotly Correlation Heatmap Exporter</h1>
       <p class="subtitle">Export standalone HTML 2D correlation matrix heatmaps.</p>
       <div class="code-grid">
@@ -1269,9 +1409,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 44: SwiftVisualization - Interactive Charts -->
-    <div class="slide" data-slide="44">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 44 OF 52</div>
+    <!-- SLIDE 46: SwiftVisualization - Interactive Charts -->
+    <div class="slide" data-slide="46">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 46 OF 53</div>
       <h1 class="title-large">Plotly Interactive Chart Exporter</h1>
       <p class="subtitle">Scatter, Line, Bar, BoxPlot, Histogram & ROC Curve Plotly HTML rendering.</p>
       <div class="code-grid">
@@ -1290,9 +1430,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 45: SwiftVision - Image Datasets -->
-    <div class="slide" data-slide="45">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 45 OF 52</div>
+    <!-- SLIDE 47: SwiftVision - Image Datasets -->
+    <div class="slide" data-slide="47">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 47 OF 53</div>
       <h1 class="title-large">Tensor Image Datasets & Normalization</h1>
       <p class="subtitle">Multi-channel image tensor datasets, resizing & channel normalization.</p>
       <div class="code-grid">
@@ -1311,9 +1451,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 46: SwiftVision - CNN Feature Extractor -->
-    <div class="slide" data-slide="46">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 46 OF 52</div>
+    <!-- SLIDE 48: SwiftVision - CNN Feature Extractor -->
+    <div class="slide" data-slide="48">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 48 OF 53</div>
       <h1 class="title-large">CNN Global Average Pooling Layer</h1>
       <p class="subtitle">Global Average Pooling layer converting 3D feature maps to feature vectors.</p>
       <div class="code-grid">
@@ -1332,9 +1472,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 47: SwiftDatabase - SQLite Connection -->
-    <div class="slide" data-slide="47">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 47 OF 52</div>
+    <!-- SLIDE 49: SwiftDatabase - SQLite Connection -->
+    <div class="slide" data-slide="49">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 49 OF 53</div>
       <h1 class="title-large">Embedded SQLite Engine</h1>
       <p class="subtitle">In-memory SQLite execution returning type-safe SQLQueryResult.</p>
       <div class="code-grid">
@@ -1354,9 +1494,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 48: SwiftDatabase - DataFrame Bridge -->
-    <div class="slide" data-slide="48">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 48 OF 52</div>
+    <!-- SLIDE 50: SwiftDatabase - DataFrame Bridge -->
+    <div class="slide" data-slide="50">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 50 OF 53</div>
       <h1 class="title-large">DataFrame SQLite Bridge</h1>
       <p class="subtitle">Bi-directional export and import between DataFrames and SQLite relational tables.</p>
       <div class="code-grid">
@@ -1375,9 +1515,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 49: SwiftAgent - Evaluator -->
-    <div class="slide" data-slide="49">
-      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 49 OF 52</div>
+    <!-- SLIDE 51: SwiftAgent - Evaluator -->
+    <div class="slide" data-slide="51">
+      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 51 OF 53</div>
       <h1 class="title-large">Autonomous Query Evaluator Agent</h1>
       <p class="subtitle">Natural language query evaluation agent executing table transformations.</p>
       <div class="code-grid">
@@ -1397,9 +1537,9 @@
       </div>
     </div>
 
-    <!-- SLIDE 50: SwiftAgent - RAG Generator -->
-    <div class="slide" data-slide="50">
-      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 50 OF 52</div>
+    <!-- SLIDE 52: SwiftAgent - RAG Generator -->
+    <div class="slide" data-slide="52">
+      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 52 OF 53</div>
       <h1 class="title-large">RAG Context Summary Generator</h1>
       <p class="subtitle">Retrieval Augmented Generation context profile summary generator.</p>
       <div class="code-grid">
@@ -1418,43 +1558,8 @@
       </div>
     </div>
 
-    <!-- SLIDE 51: Ecosystem Master Matrix -->
-    <div class="slide" data-slide="51">
-      <div class="badge"><span class="badge-dot"></span> FULL ECOSYSTEM CAPABILITY MATRIX</div>
-      <h1 class="title-large">SwiftSci 2.4.0 Master Matrix</h1>
-      <p class="subtitle">Summary of all 14 modules, hardware acceleration targets, and zero-copy memory features.</p>
-      <div style="width: 100%; max-width: 1250px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 1.2rem; backdrop-filter: blur(24px);">
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.78rem; text-align: left;">
-          <thead>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.18); color: var(--sf-blue);">
-              <th style="padding: 5px;">Module</th>
-              <th style="padding: 5px;">Core Capabilities & APIs</th>
-              <th style="padding: 5px;">Hardware Acceleration</th>
-              <th style="padding: 5px;">Status</th>
-            </tr>
-          </thead>
-          <tbody style="color: #e3e3e8;">
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftDataFrame</td><td>DataFrame, TypedColumn, Filter, Select, GroupBy, Join, CSV/JSON/Parquet I/O</td><td>SIMD Column Buffer</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftStats</td><td>Descriptive Stats, Normal/Binomial/Poisson, Paired t-Test, ANOVA, Correlations</td><td>Accelerate vDSP</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftPreprocessing</td><td>StandardScaler, MinMaxScaler, RobustScaler, OneHotEncoder, Simple/KNN Imputers</td><td>Metal Vector Kernels</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftML</td><td>Linear/Ridge/Lasso Regression, Decision Trees, RandomForest, Gradient Boosting, SVM</td><td>Apple MLX Framework</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftCluster</td><td>PCA, TruncatedSVD, t-SNE, K-Means, DBSCAN, Hierarchical Clustering, GMM</td><td>Accelerate LAPACK/BLAS</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftOptimize</td><td>Accuracy, Precision, F1, ROC-AUC, KFold, TimeSeriesSplit, GridSearchCV</td><td>Strict Swift 6 Actors</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftForecast</td><td>ARIMA(p,d,q), Exponential Smoothing, Holt-Winters, TimeSeriesDecomposition, FFT</td><td>Accelerate vDSP FFT</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-purple); font-weight:bold;">SwiftNLP (v2.4)</td><td>Apple Tokenizer, Porter Stemmer, POS Tagger, VADER Sentiment, TF-IDF, NaiveBayes</td><td>NaturalLanguage Framework</td><td style="color:var(--sf-green);">New in 2.4 ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftExplain</td><td>KernelSHAP, TreeSHAP, Permutation Importance, Partial Dependence Plots</td><td>Parallel Async Tasks</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftLLM</td><td>LLMContextWindow, BPE Tokenizer, PromptTemplate, SlidingWindowBuffer</td><td>Zero-Copy Buffer</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftVisualization</td><td>ChartExporter Plotly Exporter (Scatter, Line, Bar, Heatmap, ROC, Confusion Matrix)</td><td>Plotly Engine</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftVision</td><td>ImageDataset Tensor, Normalization, Resizing, CNN Global Average Pooling</td><td>Metal Performance Shaders</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftDatabase</td><td>SQLiteConnection, SQLQueryResult, Schema Inspector, DataFrame Bridge</td><td>Embedded SQLite C-Lib</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-            <tr><td style="padding: 4px; color: var(--sf-blue); font-weight:bold;">SwiftAgent</td><td>SwiftAgentEvaluator, RAGContextGenerator, DataAnalysisAgent, ToolRegistry</td><td>Autonomous RAG Loop</td><td style="color:var(--sf-green);">Production ✓</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- SLIDE 52: Benchmark Summary -->
-    <div class="slide" data-slide="52">
+    <!-- SLIDE 53: Benchmark Summary -->
+    <div class="slide" data-slide="53">
       <div class="badge"><span class="badge-dot"></span> HARDWARE ACCELERATION</div>
       <h1 class="title-large">Apple M4 Pro Hardware Speedup</h1>
       <p class="subtitle">Local Apple M4 Pro benchmark comparison against Python NumPy/SciPy baseline.</p>
@@ -1483,13 +1588,14 @@
   <!-- Slide Navigation Controls -->
   <div class="nav-bar">
     <button class="btn" id="prevBtn">← Prev</button>
-    <span class="progress" id="slideNum">1 / 52</span>
+    <button class="btn" onclick="showSlide(2)" style="background:var(--sf-blue); color:#fff;">📑 Зміст / Agenda</button>
+    <span class="progress" id="slideNum">1 / 53</span>
     <button class="btn" id="nextBtn">Next →</button>
   </div>
 
   <script>
     let currentSlide = 1;
-    const totalSlides = 52;
+    const totalSlides = 53;
 
     function showSlide(index) {
       if (index < 1) index = 1;

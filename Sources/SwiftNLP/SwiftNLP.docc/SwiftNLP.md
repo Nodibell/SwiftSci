@@ -24,7 +24,7 @@ import SwiftDataFrame
 
 // Tokenization & Sentiment Analysis
 let tokenizer = AppleWordTokenizer()
-let tokens = tokenizer.tokenize(text: "SwiftSci 2.4.0 is fantastic!")
+let tokens = tokenizer.tokenize(text: "SwiftSci 2.5.0 is fantastic!")
 
 let vader = VADERSentimentAnalyzer()
 let sentiment = vader.polarityScores(text: "SwiftSci is an amazing library!")

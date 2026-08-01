@@ -1,1 +1,2572 @@
-{"variants":[{"traits":[{"interfaceLanguage":"swift"}],"paths":["\/documentation\/swiftnlp"]}],"hierarchy":{"paths":[[]]},"abstract":[{"text":"Natural Language Processing, Text Feature Extraction & Native Apple NaturalLanguage Integration.","type":"text"}],"sections":[],"kind":"symbol","identifier":{"interfaceLanguage":"swift","url":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP"},"topicSections":[{"anchor":"Guides--Tutorials","identifiers":["doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextNormalizationAndTokenization","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VectorizationAndEmbeddings"],"title":"Guides & Tutorials"},{"anchor":"Classes","identifiers":["doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CountVectorizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/HashingVectorizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SystemsCSVParser","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TFIDFVectorizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextPipeline"],"generated":true,"title":"Classes"},{"anchor":"Protocols","identifiers":["doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AnyColumn","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SupportedType","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Tokenizer"],"generated":true,"title":"Protocols"},{"anchor":"Structures","identifiers":["doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleLanguageDetector","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleLemmaTagger","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleNLEmbedding","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleNamedEntityRecognizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleWordTokenizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/BPETokenizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CSVFieldOffset","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CSVReadOptions","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ComplementNaiveBayes","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrame","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameDiff","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameRow","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameVersionSnapshot","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/GroupedDataFrame","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/LLMContextWindow","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/LazyDataFrame","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/MultinomialNaiveBayes","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NGramTokenizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NLSentimentAnalyzer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NamedEntity","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/POSTagger","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/PorterStemmer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/QueryPlan","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/RegexTokenizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Schema","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SentenceTokenizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SentimentScore","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextExplainer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextNormalizer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TypedColumn","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VADERSentimentAnalyzer","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/WordEmbeddings"],"generated":true,"title":"Structures"},{"anchor":"Type-Aliases","identifiers":["doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ClusterError","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameError","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ForecastError","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/MLError","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/PreprocessingError","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/StatsError"],"generated":true,"title":"Type Aliases"},{"anchor":"Enumerations","identifiers":["doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Aggregation","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ColumnDType","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FeatherReader","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FeatherWriter","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FilterCondition","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/JoinKind","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NLPError","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/QueryPlanNode","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/StopWords","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SwiftMLError","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VADERLexicon","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VectorizedByteParsers"],"generated":true,"title":"Enumerations"},{"anchor":"Extended-Modules","identifiers":["doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Foundation","doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Swift"],"generated":true,"title":"Extended Modules"}],"metadata":{"roleHeading":"Framework","modules":[{"name":"SwiftNLP"}],"externalID":"SwiftNLP","role":"collection","title":"SwiftNLP","symbolKind":"module"},"primaryContentSections":[{"content":[{"level":2,"anchor":"Overview","text":"Overview","type":"heading"},{"inlineContent":[{"type":"codeVoice","code":"SwiftNLP"},{"type":"text","text":" provides high-performance text normalization, tokenization, linguistic tagging, sentiment analysis, entity recognition, language detection, word embeddings, text classification, and seamless "},{"type":"codeVoice","code":"SwiftDataFrame"},{"type":"text","text":" extensions."}],"type":"paragraph"},{"level":3,"anchor":"Key-Capabilities","text":"Key Capabilities","type":"heading"},{"items":[{"content":[{"type":"paragraph","inlineContent":[{"inlineContent":[{"type":"text","text":"Tokenizers"}],"type":"strong"},{"text":": ","type":"text"},{"code":"AppleWordTokenizer","type":"codeVoice"},{"text":" (Apple OS multi-lingual boundary detection), ","type":"text"},{"code":"SentenceTokenizer","type":"codeVoice"},{"text":", ","type":"text"},{"code":"RegexTokenizer","type":"codeVoice"},{"text":", ","type":"text"},{"code":"BPETokenizer","type":"codeVoice"},{"text":", and ","type":"text"},{"code":"NGramTokenizer","type":"codeVoice"},{"text":".","type":"text"}]}]},{"content":[{"type":"paragraph","inlineContent":[{"inlineContent":[{"type":"text","text":"Linguistic Processing"}],"type":"strong"},{"text":": ","type":"text"},{"code":"PorterStemmer","type":"codeVoice"},{"text":" (morphological suffix stripping), ","type":"text"},{"code":"POSTagger","type":"codeVoice"},{"text":" (part-of-speech tagging), and ","type":"text"},{"code":"AppleLemmaTagger","type":"codeVoice"},{"text":" (canonical base form lemmatization).","type":"text"}]}]},{"content":[{"type":"paragraph","inlineContent":[{"inlineContent":[{"type":"text","text":"Named Entity Recognition"}],"type":"strong"},{"text":": ","type":"text"},{"code":"AppleNamedEntityRecognizer","type":"codeVoice"},{"text":" extracting Person, Place, and Organization entities.","type":"text"}]}]},{"content":[{"type":"paragraph","inlineContent":[{"inlineContent":[{"type":"text","text":"Sentiment Analysis"}],"type":"strong"},{"text":": ","type":"text"},{"code":"VADERSentimentAnalyzer","type":"codeVoice"},{"text":" (valence score calculation with static 200KB lexicon) and ","type":"text"},{"code":"NLSentimentAnalyzer","type":"codeVoice"},{"text":" (Apple OS ML sentiment scoring).","type":"text"}]}]},{"content":[{"type":"paragraph","inlineContent":[{"inlineContent":[{"type":"text","text":"Language Detection & Embeddings"}],"type":"strong"},{"text":": ","type":"text"},{"code":"AppleLanguageDetector","type":"codeVoice"},{"text":" (multi-lingual language recognition), ","type":"text"},{"code":"AppleNLEmbedding","type":"codeVoice"},{"text":", and ","type":"text"},{"code":"WordEmbeddings","type":"codeVoice"},{"text":" (SIMD Accelerate vector dot-product optimization).","type":"text"}]}]},{"content":[{"type":"paragraph","inlineContent":[{"inlineContent":[{"type":"text","text":"Text Classification"}],"type":"strong"},{"text":": ","type":"text"},{"code":"MultinomialNaiveBayes","type":"codeVoice"},{"text":" and ","type":"text"},{"code":"ComplementNaiveBayes","type":"codeVoice"},{"text":" classifiers for text classification tasks.","type":"text"}]}]},{"content":[{"type":"paragraph","inlineContent":[{"inlineContent":[{"type":"text","text":"Ecosystem Pipelines"}],"type":"strong"},{"text":": ","type":"text"},{"code":"TextPipeline","type":"codeVoice"},{"text":" and fluent ","type":"text"},{"code":"SwiftDataFrame","type":"codeVoice"},{"text":" text extensions (","type":"text"},{"code":"df.tokenizeColumn","type":"codeVoice"},{"text":", ","type":"text"},{"code":"df.stemColumn","type":"codeVoice"},{"text":", ","type":"text"},{"code":"df.analyzeSentiment","type":"codeVoice"},{"text":", ","type":"text"},{"code":"df.detectLanguage","type":"codeVoice"},{"text":", ","type":"text"},{"code":"df.extractEntities","type":"codeVoice"},{"text":").","type":"text"}]}]}],"type":"unorderedList"},{"level":3,"anchor":"Example-Usage","text":"Example Usage","type":"heading"},{"code":["import SwiftNLP","import SwiftDataFrame","","\/\/ Tokenization & Sentiment Analysis","let tokenizer = AppleWordTokenizer()","let tokens = tokenizer.tokenize(text: \"SwiftSci 2.4.0 is fantastic!\")","","let vader = VADERSentimentAnalyzer()","let sentiment = vader.polarityScores(text: \"SwiftSci is an amazing library!\")","print(sentiment.compound) \/\/ > 0.5","","\/\/ Fluent DataFrame Integration","var df = try DataFrame(columns: [","    TypedColumn<String>(name: \"text\", values: [\"I love SwiftSci!\", \"This error is terrible.\"])","])","let sentimentDF = try df.analyzeSentiment(column: \"text\")"],"syntax":"swift","type":"codeListing"}],"kind":"content"}],"schemaVersion":{"minor":3,"patch":0,"major":0},"references":{"doc://SwiftNLP/documentation/SwiftNLP/DataFrameError":{"role":"symbol","title":"DataFrameError","type":"topic","abstract":[],"url":"\/documentation\/swiftnlp\/dataframeerror","navigatorTitle":[{"text":"DataFrameError","kind":"identifier"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameError","fragments":[{"text":"typealias","kind":"keyword"},{"text":" ","kind":"text"},{"text":"DataFrameError","kind":"identifier"}]},"doc://SwiftNLP/documentation/SwiftNLP/AppleWordTokenizer":{"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"AppleWordTokenizer","kind":"identifier"}],"title":"AppleWordTokenizer","role":"symbol","url":"\/documentation\/swiftnlp\/applewordtokenizer","type":"topic","navigatorTitle":[{"text":"AppleWordTokenizer","kind":"identifier"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleWordTokenizer","abstract":[{"type":"text","text":"A word tokenizer wrapping Apple’s "},{"type":"codeVoice","code":"NaturalLanguage.NLTokenizer(unit: .word)"},{"type":"text","text":" with multi-lingual support."}]},"doc://SwiftNLP/documentation/SwiftNLP/PreprocessingError":{"fragments":[{"kind":"keyword","text":"typealias"},{"kind":"text","text":" "},{"kind":"identifier","text":"PreprocessingError"}],"title":"PreprocessingError","role":"symbol","url":"\/documentation\/swiftnlp\/preprocessingerror","type":"topic","navigatorTitle":[{"kind":"identifier","text":"PreprocessingError"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/PreprocessingError","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/VADERLexicon":{"kind":"symbol","url":"\/documentation\/swiftnlp\/vaderlexicon","navigatorTitle":[{"text":"VADERLexicon","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VADERLexicon","title":"VADERLexicon","role":"symbol","fragments":[{"text":"enum","kind":"keyword"},{"text":" ","kind":"text"},{"text":"VADERLexicon","kind":"identifier"}],"abstract":[{"type":"text","text":"Provides static pre-sorted lookup structures holding the complete official VADER sentiment lexicon (7,520 words)."}],"type":"topic"},"doc://SwiftNLP/documentation/SwiftNLP/StopWords":{"kind":"symbol","url":"\/documentation\/swiftnlp\/stopwords","navigatorTitle":[{"text":"StopWords","kind":"identifier"}],"title":"StopWords","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/StopWords","role":"symbol","fragments":[{"kind":"keyword","text":"enum"},{"kind":"text","text":" "},{"kind":"identifier","text":"StopWords"}],"type":"topic","abstract":[{"type":"text","text":"Provides static stop-words sets for text filtering."}]},"doc://SwiftNLP/documentation/SwiftNLP/WordEmbeddings":{"kind":"symbol","url":"\/documentation\/swiftnlp\/wordembeddings","navigatorTitle":[{"kind":"identifier","text":"WordEmbeddings"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/WordEmbeddings","title":"WordEmbeddings","role":"symbol","fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"WordEmbeddings"}],"type":"topic","abstract":[{"type":"text","text":"A representation of pre-trained word embeddings (e.g. Word2Vec\/GloVe)."}]},"doc://SwiftNLP/documentation/SwiftNLP/CSVFieldOffset":{"fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"CSVFieldOffset"}],"title":"CSVFieldOffset","role":"symbol","url":"\/documentation\/swiftnlp\/csvfieldoffset","type":"topic","navigatorTitle":[{"kind":"identifier","text":"CSVFieldOffset"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CSVFieldOffset","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/DataFrameVersionSnapshot":{"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameVersionSnapshot","title":"DataFrameVersionSnapshot","url":"\/documentation\/swiftnlp\/dataframeversionsnapshot","role":"symbol","type":"topic","kind":"symbol","navigatorTitle":[{"text":"DataFrameVersionSnapshot","kind":"identifier"}],"abstract":[],"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"DataFrameVersionSnapshot","kind":"identifier"}]},"doc://SwiftNLP/documentation/SwiftNLP/PorterStemmer":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/PorterStemmer","navigatorTitle":[{"kind":"identifier","text":"PorterStemmer"}],"fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"PorterStemmer"}],"url":"\/documentation\/swiftnlp\/porterstemmer","title":"PorterStemmer","abstract":[{"text":"Pure Swift implementation of the Porter Stemming Algorithm for suffix stripping.","type":"text"}]},"doc://SwiftNLP/documentation/SwiftNLP/DataFrameRow":{"kind":"symbol","url":"\/documentation\/swiftnlp\/dataframerow","navigatorTitle":[{"text":"DataFrameRow","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameRow","title":"DataFrameRow","role":"symbol","fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"DataFrameRow","kind":"identifier"}],"type":"topic","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/ClusterError":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ClusterError","navigatorTitle":[{"text":"ClusterError","kind":"identifier"}],"fragments":[{"text":"typealias","kind":"keyword"},{"text":" ","kind":"text"},{"text":"ClusterError","kind":"identifier"}],"url":"\/documentation\/swiftnlp\/clustererror","abstract":[],"title":"ClusterError"},"doc://SwiftNLP/documentation/SwiftNLP/SwiftMLError":{"role":"symbol","title":"SwiftMLError","type":"topic","abstract":[],"url":"\/documentation\/swiftnlp\/swiftmlerror","navigatorTitle":[{"kind":"identifier","text":"SwiftMLError"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SwiftMLError","fragments":[{"kind":"keyword","text":"enum"},{"kind":"text","text":" "},{"kind":"identifier","text":"SwiftMLError"}]},"doc://SwiftNLP/documentation/SwiftNLP/AppleNamedEntityRecognizer":{"kind":"symbol","url":"\/documentation\/swiftnlp\/applenamedentityrecognizer","navigatorTitle":[{"text":"AppleNamedEntityRecognizer","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleNamedEntityRecognizer","title":"AppleNamedEntityRecognizer","role":"symbol","fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"AppleNamedEntityRecognizer","kind":"identifier"}],"type":"topic","abstract":[{"type":"text","text":"Extracts Named Entities (Persons, Places, Organizations) from text using Apple’s "},{"type":"codeVoice","code":"NLTagger"},{"type":"text","text":"."}]},"doc://SwiftNLP/documentation/SwiftNLP/DataFrame":{"fragments":[{"text":"struct","kind":"keyword"},{"kind":"text","text":" "},{"text":"DataFrame","kind":"identifier"}],"title":"DataFrame","url":"\/documentation\/swiftnlp\/dataframe","navigatorTitle":[{"text":"DataFrame","kind":"identifier"}],"type":"topic","abstract":[],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrame","role":"symbol"},"doc://SwiftNLP/documentation/SwiftNLP/CountVectorizer":{"role":"symbol","title":"CountVectorizer","type":"topic","abstract":[{"type":"text","text":"CountVectorizer converts a collection of text documents to a matrix of token counts."}],"url":"\/documentation\/swiftnlp\/countvectorizer","navigatorTitle":[{"kind":"identifier","text":"CountVectorizer"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CountVectorizer","fragments":[{"text":"class","kind":"keyword"},{"text":" ","kind":"text"},{"text":"CountVectorizer","kind":"identifier"}]},"doc://SwiftNLP/documentation/SwiftNLP/QueryPlan":{"kind":"symbol","url":"\/documentation\/swiftnlp\/queryplan","navigatorTitle":[{"kind":"identifier","text":"QueryPlan"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/QueryPlan","title":"QueryPlan","role":"symbol","fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"QueryPlan"}],"type":"topic","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/FilterCondition":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FilterCondition","navigatorTitle":[{"kind":"identifier","text":"FilterCondition"}],"fragments":[{"kind":"keyword","text":"enum"},{"kind":"text","text":" "},{"kind":"identifier","text":"FilterCondition"}],"url":"\/documentation\/swiftnlp\/filtercondition","title":"FilterCondition","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/AnyColumn":{"fragments":[{"kind":"keyword","text":"protocol"},{"kind":"text","text":" "},{"kind":"identifier","text":"AnyColumn"}],"title":"AnyColumn","role":"symbol","url":"\/documentation\/swiftnlp\/anycolumn","type":"topic","navigatorTitle":[{"kind":"identifier","text":"AnyColumn"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AnyColumn","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/JoinKind":{"kind":"symbol","url":"\/documentation\/swiftnlp\/joinkind","navigatorTitle":[{"text":"JoinKind","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/JoinKind","title":"JoinKind","role":"symbol","fragments":[{"text":"enum","kind":"keyword"},{"text":" ","kind":"text"},{"text":"JoinKind","kind":"identifier"}],"type":"topic","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/TypedColumn":{"fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"TypedColumn"}],"title":"TypedColumn","role":"symbol","url":"\/documentation\/swiftnlp\/typedcolumn","type":"topic","navigatorTitle":[{"kind":"identifier","text":"TypedColumn"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TypedColumn","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/LLMContextWindow":{"kind":"symbol","url":"\/documentation\/swiftnlp\/llmcontextwindow","navigatorTitle":[{"kind":"identifier","text":"LLMContextWindow"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/LLMContextWindow","title":"LLMContextWindow","role":"symbol","fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"LLMContextWindow"}],"type":"topic","abstract":[{"text":"Utilities for LLM token context window management and prompt truncation.","type":"text"}]},"doc://SwiftNLP/documentation/SwiftNLP/ComplementNaiveBayes":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ComplementNaiveBayes","navigatorTitle":[{"text":"ComplementNaiveBayes","kind":"identifier"}],"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"ComplementNaiveBayes","kind":"identifier"}],"url":"\/documentation\/swiftnlp\/complementnaivebayes","abstract":[{"type":"text","text":"Pure Swift implementation of Complement Naive Bayes classifier optimized for imbalanced text corpora."}],"title":"ComplementNaiveBayes"},"doc://SwiftNLP/documentation/SwiftNLP/Aggregation":{"title":"Aggregation","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Aggregation","type":"topic","url":"\/documentation\/swiftnlp\/aggregation","kind":"symbol","abstract":[],"fragments":[{"kind":"keyword","text":"enum"},{"kind":"text","text":" "},{"kind":"identifier","text":"Aggregation"}],"navigatorTitle":[{"kind":"identifier","text":"Aggregation"}]},"doc://SwiftNLP/documentation/SwiftNLP/SystemsCSVParser":{"fragments":[{"kind":"keyword","text":"class"},{"kind":"text","text":" "},{"kind":"identifier","text":"SystemsCSVParser"}],"title":"SystemsCSVParser","role":"symbol","url":"\/documentation\/swiftnlp\/systemscsvparser","type":"topic","navigatorTitle":[{"kind":"identifier","text":"SystemsCSVParser"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SystemsCSVParser","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/Foundation":{"title":"Foundation","role":"collection","url":"\/documentation\/swiftnlp\/foundation","type":"topic","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Foundation","kind":"symbol","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/NGramTokenizer":{"fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"NGramTokenizer"}],"title":"NGramTokenizer","role":"symbol","url":"\/documentation\/swiftnlp\/ngramtokenizer","type":"topic","navigatorTitle":[{"kind":"identifier","text":"NGramTokenizer"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NGramTokenizer","abstract":[{"type":"text","text":"Generates n-gram token sequences from input string texts."}]},"doc://SwiftNLP/documentation/SwiftNLP/SentenceTokenizer":{"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SentenceTokenizer","type":"topic","kind":"symbol","fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"SentenceTokenizer"}],"navigatorTitle":[{"text":"SentenceTokenizer","kind":"identifier"}],"role":"symbol","url":"\/documentation\/swiftnlp\/sentencetokenizer","title":"SentenceTokenizer","abstract":[{"type":"text","text":"A sentence tokenizer splitting input text into individual sentences."}]},"doc://SwiftNLP/documentation/SwiftNLP":{"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP","title":"SwiftNLP","url":"\/documentation\/swiftnlp","role":"collection","kind":"symbol","type":"topic","abstract":[{"type":"text","text":"Natural Language Processing, Text Feature Extraction & Native Apple NaturalLanguage Integration."}]},"doc://SwiftNLP/documentation/SwiftNLP/DataFrameDiff":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameDiff","navigatorTitle":[{"kind":"identifier","text":"DataFrameDiff"}],"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"DataFrameDiff","kind":"identifier"}],"url":"\/documentation\/swiftnlp\/dataframediff","abstract":[],"title":"DataFrameDiff"},"doc://SwiftNLP/documentation/SwiftNLP/ColumnDType":{"fragments":[{"text":"enum","kind":"keyword"},{"text":" ","kind":"text"},{"text":"ColumnDType","kind":"identifier"}],"title":"ColumnDType","role":"symbol","url":"\/documentation\/swiftnlp\/columndtype","type":"topic","navigatorTitle":[{"text":"ColumnDType","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ColumnDType","kind":"symbol","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/FeatherWriter":{"fragments":[{"text":"enum","kind":"keyword"},{"text":" ","kind":"text"},{"text":"FeatherWriter","kind":"identifier"}],"title":"FeatherWriter","role":"symbol","url":"\/documentation\/swiftnlp\/featherwriter","type":"topic","navigatorTitle":[{"text":"FeatherWriter","kind":"identifier"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FeatherWriter","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/FeatherReader":{"kind":"symbol","url":"\/documentation\/swiftnlp\/featherreader","navigatorTitle":[{"text":"FeatherReader","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FeatherReader","title":"FeatherReader","role":"symbol","fragments":[{"kind":"keyword","text":"enum"},{"kind":"text","text":" "},{"kind":"identifier","text":"FeatherReader"}],"type":"topic","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/GroupedDataFrame":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/GroupedDataFrame","navigatorTitle":[{"kind":"identifier","text":"GroupedDataFrame"}],"fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"GroupedDataFrame"}],"url":"\/documentation\/swiftnlp\/groupeddataframe","abstract":[],"title":"GroupedDataFrame"},"doc://SwiftNLP/documentation/SwiftNLP/TextNormalizer":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextNormalizer","navigatorTitle":[{"text":"TextNormalizer","kind":"identifier"}],"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"TextNormalizer","kind":"identifier"}],"url":"\/documentation\/swiftnlp\/textnormalizer","abstract":[{"text":"Utilities for standard text normalization.","type":"text"}],"title":"TextNormalizer"},"doc://SwiftNLP/documentation/SwiftNLP/HashingVectorizer":{"kind":"symbol","url":"\/documentation\/swiftnlp\/hashingvectorizer","navigatorTitle":[{"kind":"identifier","text":"HashingVectorizer"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/HashingVectorizer","title":"HashingVectorizer","role":"symbol","fragments":[{"kind":"keyword","text":"class"},{"kind":"text","text":" "},{"kind":"identifier","text":"HashingVectorizer"}],"type":"topic","abstract":[{"type":"text","text":"HashingVectorizer converts text documents directly into fixed-size numeric feature vectors"},{"type":"text","text":" "},{"type":"text","text":"using the hashing trick (FNV-1a 64-bit hash modulo nFeatures)."}]},"doc://SwiftNLP/documentation/SwiftNLP/TextExplainer":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextExplainer","navigatorTitle":[{"text":"TextExplainer","kind":"identifier"}],"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"TextExplainer","kind":"identifier"}],"url":"\/documentation\/swiftnlp\/textexplainer","abstract":[{"text":"Provides token-level importance explanation for text predictions.","type":"text"}],"title":"TextExplainer"},"doc://SwiftNLP/documentation/SwiftNLP/TextPipeline":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextPipeline","navigatorTitle":[{"kind":"identifier","text":"TextPipeline"}],"fragments":[{"kind":"keyword","text":"actor"},{"text":" ","kind":"text"},{"kind":"identifier","text":"TextPipeline"}],"url":"\/documentation\/swiftnlp\/textpipeline","abstract":[{"type":"text","text":"A unified pipeline combining text tokenization, vectorization, and Naive Bayes text classification."}],"title":"TextPipeline"},"doc://SwiftNLP/documentation/SwiftNLP/VectorizationAndEmbeddings":{"role":"article","title":"Text Feature Vectorization, Embeddings & Naive Bayes Classification","type":"topic","abstract":[{"type":"text","text":"Convert text corpora into numerical feature matrices using "},{"code":"CountVectorizer","type":"codeVoice"},{"type":"text","text":", "},{"code":"HashingVectorizer","type":"codeVoice"},{"type":"text","text":", and "},{"code":"TFIDFVectorizer","type":"codeVoice"},{"type":"text","text":", query "},{"code":"WordEmbeddings","type":"codeVoice"},{"type":"text","text":" and "},{"code":"AppleNLEmbedding","type":"codeVoice"},{"type":"text","text":", and train Naive Bayes classifiers with "},{"code":"TextPipeline","type":"codeVoice"},{"type":"text","text":"."}],"url":"\/documentation\/swiftnlp\/vectorizationandembeddings","kind":"article","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VectorizationAndEmbeddings"},"doc://SwiftNLP/documentation/SwiftNLP/ForecastError":{"fragments":[{"kind":"keyword","text":"typealias"},{"kind":"text","text":" "},{"kind":"identifier","text":"ForecastError"}],"title":"ForecastError","role":"symbol","url":"\/documentation\/swiftnlp\/forecasterror","type":"topic","navigatorTitle":[{"kind":"identifier","text":"ForecastError"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ForecastError","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/MultinomialNaiveBayes":{"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"MultinomialNaiveBayes","kind":"identifier"}],"title":"MultinomialNaiveBayes","role":"symbol","url":"\/documentation\/swiftnlp\/multinomialnaivebayes","type":"topic","navigatorTitle":[{"text":"MultinomialNaiveBayes","kind":"identifier"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/MultinomialNaiveBayes","abstract":[{"type":"text","text":"Pure Swift implementation of Multinomial Naive Bayes text classifier with Laplace smoothing."}]},"doc://SwiftNLP/documentation/SwiftNLP/MLError":{"role":"symbol","title":"MLError","type":"topic","abstract":[],"url":"\/documentation\/swiftnlp\/mlerror","navigatorTitle":[{"text":"MLError","kind":"identifier"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/MLError","fragments":[{"text":"typealias","kind":"keyword"},{"text":" ","kind":"text"},{"text":"MLError","kind":"identifier"}]},"doc://SwiftNLP/documentation/SwiftNLP/TextNormalizationAndTokenization":{"type":"topic","kind":"article","role":"article","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextNormalizationAndTokenization","url":"\/documentation\/swiftnlp\/textnormalizationandtokenization","abstract":[{"text":"Clean text, strip punctuation, tokenize sentences\/words, tag parts of speech, extract entities, stem and lemmatize tokens, and score sentiment using NLTK-equivalent algorithms and Apple’s native ","type":"text"},{"type":"codeVoice","code":"NaturalLanguage"},{"text":" framework.","type":"text"}],"title":"Text Normalization, Tokenization & Linguistic Tagging"},"doc://SwiftNLP/documentation/SwiftNLP/RegexTokenizer":{"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"RegexTokenizer","kind":"identifier"}],"title":"RegexTokenizer","role":"symbol","url":"\/documentation\/swiftnlp\/regextokenizer","type":"topic","navigatorTitle":[{"text":"RegexTokenizer","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/RegexTokenizer","kind":"symbol","abstract":[{"type":"text","text":"A tokenizer that splits text based on a regular expression pattern."}]},"doc://SwiftNLP/documentation/SwiftNLP/NLPError":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NLPError","navigatorTitle":[{"kind":"identifier","text":"NLPError"}],"fragments":[{"kind":"keyword","text":"enum"},{"kind":"text","text":" "},{"kind":"identifier","text":"NLPError"}],"url":"\/documentation\/swiftnlp\/nlperror","abstract":[{"type":"text","text":"Errors that can occur during NLP processing."}],"title":"NLPError"},"doc://SwiftNLP/documentation/SwiftNLP/AppleLemmaTagger":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleLemmaTagger","navigatorTitle":[{"text":"AppleLemmaTagger","kind":"identifier"}],"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"AppleLemmaTagger","kind":"identifier"}],"url":"\/documentation\/swiftnlp\/applelemmatagger","abstract":[{"type":"text","text":"A lemmatizer using Apple’s "},{"code":"NLTagger(tagSchemes: [.lemma])","type":"codeVoice"},{"type":"text","text":" for dictionary canonical form extraction."}],"title":"AppleLemmaTagger"},"doc://SwiftNLP/documentation/SwiftNLP/StatsError":{"fragments":[{"text":"typealias","kind":"keyword"},{"text":" ","kind":"text"},{"text":"StatsError","kind":"identifier"}],"title":"StatsError","role":"symbol","url":"\/documentation\/swiftnlp\/statserror","type":"topic","navigatorTitle":[{"text":"StatsError","kind":"identifier"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/StatsError","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/AppleLanguageDetector":{"kind":"symbol","url":"\/documentation\/swiftnlp\/applelanguagedetector","navigatorTitle":[{"kind":"identifier","text":"AppleLanguageDetector"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleLanguageDetector","title":"AppleLanguageDetector","role":"symbol","fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"AppleLanguageDetector"}],"type":"topic","abstract":[{"text":"Detects the dominant language and language probabilities using Apple’s ","type":"text"},{"type":"codeVoice","code":"NLLanguageRecognizer"},{"text":".","type":"text"}]},"doc://SwiftNLP/documentation/SwiftNLP/SupportedType":{"fragments":[{"kind":"keyword","text":"protocol"},{"kind":"text","text":" "},{"kind":"identifier","text":"SupportedType"}],"title":"SupportedType","role":"symbol","url":"\/documentation\/swiftnlp\/supportedtype","type":"topic","navigatorTitle":[{"kind":"identifier","text":"SupportedType"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SupportedType","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/NamedEntity":{"fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"NamedEntity"}],"title":"NamedEntity","role":"symbol","url":"\/documentation\/swiftnlp\/namedentity","type":"topic","navigatorTitle":[{"kind":"identifier","text":"NamedEntity"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NamedEntity","abstract":[{"text":"Represents a extracted Named Entity from text.","type":"text"}]},"doc://SwiftNLP/documentation/SwiftNLP/POSTagger":{"kind":"symbol","url":"\/documentation\/swiftnlp\/postagger","navigatorTitle":[{"kind":"identifier","text":"POSTagger"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/POSTagger","title":"POSTagger","role":"symbol","fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"POSTagger"}],"type":"topic","abstract":[{"text":"A part-of-speech (POS) tagger.","type":"text"}]},"doc://SwiftNLP/documentation/SwiftNLP/Tokenizer":{"fragments":[{"text":"protocol","kind":"keyword"},{"text":" ","kind":"text"},{"text":"Tokenizer","kind":"identifier"}],"title":"Tokenizer","role":"symbol","url":"\/documentation\/swiftnlp\/tokenizer","type":"topic","navigatorTitle":[{"text":"Tokenizer","kind":"identifier"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Tokenizer","abstract":[{"type":"text","text":"A unified protocol for tokenizing and encoding text."}]},"doc://SwiftNLP/documentation/SwiftNLP/SentimentScore":{"fragments":[{"kind":"keyword","text":"struct"},{"kind":"text","text":" "},{"kind":"identifier","text":"SentimentScore"}],"title":"SentimentScore","role":"symbol","url":"\/documentation\/swiftnlp\/sentimentscore","type":"topic","navigatorTitle":[{"kind":"identifier","text":"SentimentScore"}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SentimentScore","abstract":[{"text":"Sentiment score breakdown containing positive, negative, neutral, and normalized compound metrics.","type":"text"}]},"doc://SwiftNLP/documentation/SwiftNLP/AppleNLEmbedding":{"url":"\/documentation\/swiftnlp\/applenlembedding","title":"AppleNLEmbedding","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleNLEmbedding","role":"symbol","type":"topic","kind":"symbol","navigatorTitle":[{"kind":"identifier","text":"AppleNLEmbedding"}],"abstract":[{"type":"text","text":"Provides access to Apple’s native pre-trained word and sentence embedding vector spaces ("},{"type":"codeVoice","code":"NLEmbedding"},{"type":"text","text":")."}],"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"kind":"identifier","text":"AppleNLEmbedding"}]},"doc://SwiftNLP/documentation/SwiftNLP/CSVReadOptions":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CSVReadOptions","navigatorTitle":[{"kind":"identifier","text":"CSVReadOptions"}],"fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"kind":"identifier","text":"CSVReadOptions"}],"url":"\/documentation\/swiftnlp\/csvreadoptions","abstract":[],"title":"CSVReadOptions"},"doc://SwiftNLP/documentation/SwiftNLP/LazyDataFrame":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/LazyDataFrame","navigatorTitle":[{"kind":"identifier","text":"LazyDataFrame"}],"fragments":[{"kind":"keyword","text":"struct"},{"text":" ","kind":"text"},{"kind":"identifier","text":"LazyDataFrame"}],"url":"\/documentation\/swiftnlp\/lazydataframe","title":"LazyDataFrame","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/VADERSentimentAnalyzer":{"kind":"symbol","url":"\/documentation\/swiftnlp\/vadersentimentanalyzer","navigatorTitle":[{"text":"VADERSentimentAnalyzer","kind":"identifier"}],"title":"VADERSentimentAnalyzer","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VADERSentimentAnalyzer","role":"symbol","fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"VADERSentimentAnalyzer","kind":"identifier"}],"abstract":[{"text":"Pure Swift VADER Sentiment Analyzer implementing valence score calculation with negation and intensity boosters.","type":"text"}],"type":"topic"},"doc://SwiftNLP/documentation/SwiftNLP/NLSentimentAnalyzer":{"kind":"symbol","url":"\/documentation\/swiftnlp\/nlsentimentanalyzer","navigatorTitle":[{"text":"NLSentimentAnalyzer","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NLSentimentAnalyzer","title":"NLSentimentAnalyzer","role":"symbol","fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"NLSentimentAnalyzer","kind":"identifier"}],"type":"topic","abstract":[{"type":"text","text":"A sentiment analyzer wrapping Apple’s machine learned OS model ("},{"type":"codeVoice","code":"NLTagger(tagSchemes: [.sentimentScore])"},{"type":"text","text":")."}]},"doc://SwiftNLP/documentation/SwiftNLP/Swift":{"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Swift","title":"Swift","url":"\/documentation\/swiftnlp\/swift","role":"collection","type":"topic","kind":"symbol","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/BPETokenizer":{"fragments":[{"kind":"keyword","text":"struct"},{"text":" ","kind":"text"},{"kind":"identifier","text":"BPETokenizer"}],"title":"BPETokenizer","url":"\/documentation\/swiftnlp\/bpetokenizer","navigatorTitle":[{"text":"BPETokenizer","kind":"identifier"}],"type":"topic","abstract":[{"type":"text","text":"A Byte Pair Encoding (BPE) subword tokenizer."}],"kind":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/BPETokenizer","role":"symbol"},"doc://SwiftNLP/documentation/SwiftNLP/Schema":{"kind":"symbol","url":"\/documentation\/swiftnlp\/schema","navigatorTitle":[{"text":"Schema","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Schema","title":"Schema","role":"symbol","fragments":[{"text":"struct","kind":"keyword"},{"text":" ","kind":"text"},{"text":"Schema","kind":"identifier"}],"type":"topic","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/VectorizedByteParsers":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VectorizedByteParsers","navigatorTitle":[{"kind":"identifier","text":"VectorizedByteParsers"}],"fragments":[{"kind":"keyword","text":"enum"},{"kind":"text","text":" "},{"kind":"identifier","text":"VectorizedByteParsers"}],"url":"\/documentation\/swiftnlp\/vectorizedbyteparsers","title":"VectorizedByteParsers","abstract":[]},"doc://SwiftNLP/documentation/SwiftNLP/QueryPlanNode":{"type":"topic","kind":"symbol","role":"symbol","identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/QueryPlanNode","navigatorTitle":[{"text":"QueryPlanNode","kind":"identifier"}],"fragments":[{"text":"enum","kind":"keyword"},{"text":" ","kind":"text"},{"text":"QueryPlanNode","kind":"identifier"}],"url":"\/documentation\/swiftnlp\/queryplannode","abstract":[],"title":"QueryPlanNode"},"doc://SwiftNLP/documentation/SwiftNLP/TFIDFVectorizer":{"kind":"symbol","url":"\/documentation\/swiftnlp\/tfidfvectorizer","navigatorTitle":[{"text":"TFIDFVectorizer","kind":"identifier"}],"identifier":"doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TFIDFVectorizer","title":"TFIDFVectorizer","role":"symbol","fragments":[{"text":"actor","kind":"keyword"},{"text":" ","kind":"text"},{"text":"TFIDFVectorizer","kind":"identifier"}],"type":"topic","abstract":[{"type":"text","text":"TF-IDF Vectorizer for text feature extraction."}]}}}
+{
+    "variants": [
+        {
+            "traits": [
+                {
+                    "interfaceLanguage": "swift"
+                }
+            ],
+            "paths": [
+                "\/documentation\/swiftnlp"
+            ]
+        }
+    ],
+    "hierarchy": {
+        "paths": [
+            []
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Natural Language Processing, Text Feature Extraction & Native Apple NaturalLanguage Integration.",
+            "type": "text"
+        }
+    ],
+    "sections": [],
+    "kind": "symbol",
+    "identifier": {
+        "interfaceLanguage": "swift",
+        "url": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP"
+    },
+    "topicSections": [
+        {
+            "anchor": "Guides--Tutorials",
+            "identifiers": [
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextNormalizationAndTokenization",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VectorizationAndEmbeddings"
+            ],
+            "title": "Guides & Tutorials"
+        },
+        {
+            "anchor": "Classes",
+            "identifiers": [
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CountVectorizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/HashingVectorizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SystemsCSVParser",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TFIDFVectorizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextPipeline"
+            ],
+            "generated": true,
+            "title": "Classes"
+        },
+        {
+            "anchor": "Protocols",
+            "identifiers": [
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AnyColumn",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SupportedType",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Tokenizer"
+            ],
+            "generated": true,
+            "title": "Protocols"
+        },
+        {
+            "anchor": "Structures",
+            "identifiers": [
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleLanguageDetector",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleLemmaTagger",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleNLEmbedding",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleNamedEntityRecognizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleWordTokenizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/BPETokenizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CSVFieldOffset",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CSVReadOptions",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ComplementNaiveBayes",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrame",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameDiff",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameRow",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameVersionSnapshot",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/GroupedDataFrame",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/LLMContextWindow",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/LazyDataFrame",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/MultinomialNaiveBayes",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NGramTokenizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NLSentimentAnalyzer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NamedEntity",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/POSTagger",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/PorterStemmer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/QueryPlan",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/RegexTokenizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Schema",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SentenceTokenizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SentimentScore",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextExplainer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextNormalizer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TypedColumn",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VADERSentimentAnalyzer",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/WordEmbeddings"
+            ],
+            "generated": true,
+            "title": "Structures"
+        },
+        {
+            "anchor": "Type-Aliases",
+            "identifiers": [
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ClusterError",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameError",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ForecastError",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/MLError",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/PreprocessingError",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/StatsError"
+            ],
+            "generated": true,
+            "title": "Type Aliases"
+        },
+        {
+            "anchor": "Enumerations",
+            "identifiers": [
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Aggregation",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ColumnDType",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FeatherReader",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FeatherWriter",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FilterCondition",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/JoinKind",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NLPError",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/QueryPlanNode",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/StopWords",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SwiftMLError",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VADERLexicon",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VectorizedByteParsers"
+            ],
+            "generated": true,
+            "title": "Enumerations"
+        },
+        {
+            "anchor": "Extended-Modules",
+            "identifiers": [
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Foundation",
+                "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Swift"
+            ],
+            "generated": true,
+            "title": "Extended Modules"
+        }
+    ],
+    "metadata": {
+        "roleHeading": "Framework",
+        "modules": [
+            {
+                "name": "SwiftNLP"
+            }
+        ],
+        "externalID": "SwiftNLP",
+        "role": "collection",
+        "title": "SwiftNLP",
+        "symbolKind": "module"
+    },
+    "primaryContentSections": [
+        {
+            "content": [
+                {
+                    "level": 2,
+                    "anchor": "Overview",
+                    "text": "Overview",
+                    "type": "heading"
+                },
+                {
+                    "inlineContent": [
+                        {
+                            "type": "codeVoice",
+                            "code": "SwiftNLP"
+                        },
+                        {
+                            "type": "text",
+                            "text": " provides high-performance text normalization, tokenization, linguistic tagging, sentiment analysis, entity recognition, language detection, word embeddings, text classification, and seamless "
+                        },
+                        {
+                            "type": "codeVoice",
+                            "code": "SwiftDataFrame"
+                        },
+                        {
+                            "type": "text",
+                            "text": " extensions."
+                        }
+                    ],
+                    "type": "paragraph"
+                },
+                {
+                    "level": 3,
+                    "anchor": "Key-Capabilities",
+                    "text": "Key Capabilities",
+                    "type": "heading"
+                },
+                {
+                    "items": [
+                        {
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "inlineContent": [
+                                        {
+                                            "inlineContent": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "Tokenizers"
+                                                }
+                                            ],
+                                            "type": "strong"
+                                        },
+                                        {
+                                            "text": ": ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "AppleWordTokenizer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " (Apple OS multi-lingual boundary detection), ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "SentenceTokenizer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ", ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "RegexTokenizer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ", ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "BPETokenizer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ", and ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "NGramTokenizer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ".",
+                                            "type": "text"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "inlineContent": [
+                                        {
+                                            "inlineContent": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "Linguistic Processing"
+                                                }
+                                            ],
+                                            "type": "strong"
+                                        },
+                                        {
+                                            "text": ": ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "PorterStemmer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " (morphological suffix stripping), ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "POSTagger",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " (part-of-speech tagging), and ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "AppleLemmaTagger",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " (canonical base form lemmatization).",
+                                            "type": "text"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "inlineContent": [
+                                        {
+                                            "inlineContent": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "Named Entity Recognition"
+                                                }
+                                            ],
+                                            "type": "strong"
+                                        },
+                                        {
+                                            "text": ": ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "AppleNamedEntityRecognizer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " extracting Person, Place, and Organization entities.",
+                                            "type": "text"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "inlineContent": [
+                                        {
+                                            "inlineContent": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "Sentiment Analysis"
+                                                }
+                                            ],
+                                            "type": "strong"
+                                        },
+                                        {
+                                            "text": ": ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "VADERSentimentAnalyzer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " (valence score calculation with static 200KB lexicon) and ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "NLSentimentAnalyzer",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " (Apple OS ML sentiment scoring).",
+                                            "type": "text"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "inlineContent": [
+                                        {
+                                            "inlineContent": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "Language Detection & Embeddings"
+                                                }
+                                            ],
+                                            "type": "strong"
+                                        },
+                                        {
+                                            "text": ": ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "AppleLanguageDetector",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " (multi-lingual language recognition), ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "AppleNLEmbedding",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ", and ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "WordEmbeddings",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " (SIMD Accelerate vector dot-product optimization).",
+                                            "type": "text"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "inlineContent": [
+                                        {
+                                            "inlineContent": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "Text Classification"
+                                                }
+                                            ],
+                                            "type": "strong"
+                                        },
+                                        {
+                                            "text": ": ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "MultinomialNaiveBayes",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " and ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "ComplementNaiveBayes",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " classifiers for text classification tasks.",
+                                            "type": "text"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "inlineContent": [
+                                        {
+                                            "inlineContent": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "Ecosystem Pipelines"
+                                                }
+                                            ],
+                                            "type": "strong"
+                                        },
+                                        {
+                                            "text": ": ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "TextPipeline",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " and fluent ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "SwiftDataFrame",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": " text extensions (",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "df.tokenizeColumn",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ", ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "df.stemColumn",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ", ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "df.analyzeSentiment",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ", ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "df.detectLanguage",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ", ",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "code": "df.extractEntities",
+                                            "type": "codeVoice"
+                                        },
+                                        {
+                                            "text": ").",
+                                            "type": "text"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "type": "unorderedList"
+                },
+                {
+                    "level": 3,
+                    "anchor": "Example-Usage",
+                    "text": "Example Usage",
+                    "type": "heading"
+                },
+                {
+                    "code": [
+                        "import SwiftNLP",
+                        "import SwiftDataFrame",
+                        "",
+                        "\/\/ Tokenization & Sentiment Analysis",
+                        "let tokenizer = AppleWordTokenizer()",
+                        "let tokens = tokenizer.tokenize(text: \"SwiftSci 2.5.0 is fantastic!\")",
+                        "",
+                        "let vader = VADERSentimentAnalyzer()",
+                        "let sentiment = vader.polarityScores(text: \"SwiftSci is an amazing library!\")",
+                        "print(sentiment.compound) \/\/ > 0.5",
+                        "",
+                        "\/\/ Fluent DataFrame Integration",
+                        "var df = try DataFrame(columns: [",
+                        "    TypedColumn<String>(name: \"text\", values: [\"I love SwiftSci!\", \"This error is terrible.\"])",
+                        "])",
+                        "let sentimentDF = try df.analyzeSentiment(column: \"text\")"
+                    ],
+                    "syntax": "swift",
+                    "type": "codeListing"
+                }
+            ],
+            "kind": "content"
+        }
+    ],
+    "schemaVersion": {
+        "minor": 3,
+        "patch": 0,
+        "major": 0
+    },
+    "references": {
+        "doc://SwiftNLP/documentation/SwiftNLP/DataFrameError": {
+            "role": "symbol",
+            "title": "DataFrameError",
+            "type": "topic",
+            "abstract": [],
+            "url": "\/documentation\/swiftnlp\/dataframeerror",
+            "navigatorTitle": [
+                {
+                    "text": "DataFrameError",
+                    "kind": "identifier"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameError",
+            "fragments": [
+                {
+                    "text": "typealias",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "DataFrameError",
+                    "kind": "identifier"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/AppleWordTokenizer": {
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "AppleWordTokenizer",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "AppleWordTokenizer",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/applewordtokenizer",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "text": "AppleWordTokenizer",
+                    "kind": "identifier"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleWordTokenizer",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A word tokenizer wrapping Apple’s "
+                },
+                {
+                    "type": "codeVoice",
+                    "code": "NaturalLanguage.NLTokenizer(unit: .word)"
+                },
+                {
+                    "type": "text",
+                    "text": " with multi-lingual support."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/PreprocessingError": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "typealias"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "PreprocessingError"
+                }
+            ],
+            "title": "PreprocessingError",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/preprocessingerror",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "PreprocessingError"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/PreprocessingError",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/VADERLexicon": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/vaderlexicon",
+            "navigatorTitle": [
+                {
+                    "text": "VADERLexicon",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VADERLexicon",
+            "title": "VADERLexicon",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "text": "enum",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "VADERLexicon",
+                    "kind": "identifier"
+                }
+            ],
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Provides static pre-sorted lookup structures holding the complete official VADER sentiment lexicon (7,520 words)."
+                }
+            ],
+            "type": "topic"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/StopWords": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/stopwords",
+            "navigatorTitle": [
+                {
+                    "text": "StopWords",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "StopWords",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/StopWords",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "enum"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "StopWords"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Provides static stop-words sets for text filtering."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/WordEmbeddings": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/wordembeddings",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "WordEmbeddings"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/WordEmbeddings",
+            "title": "WordEmbeddings",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "WordEmbeddings"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A representation of pre-trained word embeddings (e.g. Word2Vec\/GloVe)."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/CSVFieldOffset": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "CSVFieldOffset"
+                }
+            ],
+            "title": "CSVFieldOffset",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/csvfieldoffset",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "CSVFieldOffset"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CSVFieldOffset",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/DataFrameVersionSnapshot": {
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameVersionSnapshot",
+            "title": "DataFrameVersionSnapshot",
+            "url": "\/documentation\/swiftnlp\/dataframeversionsnapshot",
+            "role": "symbol",
+            "type": "topic",
+            "kind": "symbol",
+            "navigatorTitle": [
+                {
+                    "text": "DataFrameVersionSnapshot",
+                    "kind": "identifier"
+                }
+            ],
+            "abstract": [],
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "DataFrameVersionSnapshot",
+                    "kind": "identifier"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/PorterStemmer": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/PorterStemmer",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "PorterStemmer"
+                }
+            ],
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "PorterStemmer"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/porterstemmer",
+            "title": "PorterStemmer",
+            "abstract": [
+                {
+                    "text": "Pure Swift implementation of the Porter Stemming Algorithm for suffix stripping.",
+                    "type": "text"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/DataFrameRow": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/dataframerow",
+            "navigatorTitle": [
+                {
+                    "text": "DataFrameRow",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameRow",
+            "title": "DataFrameRow",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "DataFrameRow",
+                    "kind": "identifier"
+                }
+            ],
+            "type": "topic",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/ClusterError": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ClusterError",
+            "navigatorTitle": [
+                {
+                    "text": "ClusterError",
+                    "kind": "identifier"
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "typealias",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "ClusterError",
+                    "kind": "identifier"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/clustererror",
+            "abstract": [],
+            "title": "ClusterError"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/SwiftMLError": {
+            "role": "symbol",
+            "title": "SwiftMLError",
+            "type": "topic",
+            "abstract": [],
+            "url": "\/documentation\/swiftnlp\/swiftmlerror",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "SwiftMLError"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SwiftMLError",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "enum"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "SwiftMLError"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/AppleNamedEntityRecognizer": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/applenamedentityrecognizer",
+            "navigatorTitle": [
+                {
+                    "text": "AppleNamedEntityRecognizer",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleNamedEntityRecognizer",
+            "title": "AppleNamedEntityRecognizer",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "AppleNamedEntityRecognizer",
+                    "kind": "identifier"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Extracts Named Entities (Persons, Places, Organizations) from text using Apple’s "
+                },
+                {
+                    "type": "codeVoice",
+                    "code": "NLTagger"
+                },
+                {
+                    "type": "text",
+                    "text": "."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/DataFrame": {
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "text": "DataFrame",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "DataFrame",
+            "url": "\/documentation\/swiftnlp\/dataframe",
+            "navigatorTitle": [
+                {
+                    "text": "DataFrame",
+                    "kind": "identifier"
+                }
+            ],
+            "type": "topic",
+            "abstract": [],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrame",
+            "role": "symbol"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/CountVectorizer": {
+            "role": "symbol",
+            "title": "CountVectorizer",
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "CountVectorizer converts a collection of text documents to a matrix of token counts."
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/countvectorizer",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "CountVectorizer"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CountVectorizer",
+            "fragments": [
+                {
+                    "text": "class",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "CountVectorizer",
+                    "kind": "identifier"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/QueryPlan": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/queryplan",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "QueryPlan"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/QueryPlan",
+            "title": "QueryPlan",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "QueryPlan"
+                }
+            ],
+            "type": "topic",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/FilterCondition": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FilterCondition",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "FilterCondition"
+                }
+            ],
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "enum"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "FilterCondition"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/filtercondition",
+            "title": "FilterCondition",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/AnyColumn": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "protocol"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "AnyColumn"
+                }
+            ],
+            "title": "AnyColumn",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/anycolumn",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "AnyColumn"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AnyColumn",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/JoinKind": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/joinkind",
+            "navigatorTitle": [
+                {
+                    "text": "JoinKind",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/JoinKind",
+            "title": "JoinKind",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "text": "enum",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "JoinKind",
+                    "kind": "identifier"
+                }
+            ],
+            "type": "topic",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/TypedColumn": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "TypedColumn"
+                }
+            ],
+            "title": "TypedColumn",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/typedcolumn",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "TypedColumn"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TypedColumn",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/LLMContextWindow": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/llmcontextwindow",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "LLMContextWindow"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/LLMContextWindow",
+            "title": "LLMContextWindow",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "LLMContextWindow"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "text": "Utilities for LLM token context window management and prompt truncation.",
+                    "type": "text"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/ComplementNaiveBayes": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ComplementNaiveBayes",
+            "navigatorTitle": [
+                {
+                    "text": "ComplementNaiveBayes",
+                    "kind": "identifier"
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "ComplementNaiveBayes",
+                    "kind": "identifier"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/complementnaivebayes",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Pure Swift implementation of Complement Naive Bayes classifier optimized for imbalanced text corpora."
+                }
+            ],
+            "title": "ComplementNaiveBayes"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/Aggregation": {
+            "title": "Aggregation",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Aggregation",
+            "type": "topic",
+            "url": "\/documentation\/swiftnlp\/aggregation",
+            "kind": "symbol",
+            "abstract": [],
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "enum"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "Aggregation"
+                }
+            ],
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "Aggregation"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/SystemsCSVParser": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "class"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "SystemsCSVParser"
+                }
+            ],
+            "title": "SystemsCSVParser",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/systemscsvparser",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "SystemsCSVParser"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SystemsCSVParser",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/Foundation": {
+            "title": "Foundation",
+            "role": "collection",
+            "url": "\/documentation\/swiftnlp\/foundation",
+            "type": "topic",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Foundation",
+            "kind": "symbol",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/NGramTokenizer": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "NGramTokenizer"
+                }
+            ],
+            "title": "NGramTokenizer",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/ngramtokenizer",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "NGramTokenizer"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NGramTokenizer",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Generates n-gram token sequences from input string texts."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/SentenceTokenizer": {
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SentenceTokenizer",
+            "type": "topic",
+            "kind": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "SentenceTokenizer"
+                }
+            ],
+            "navigatorTitle": [
+                {
+                    "text": "SentenceTokenizer",
+                    "kind": "identifier"
+                }
+            ],
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/sentencetokenizer",
+            "title": "SentenceTokenizer",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A sentence tokenizer splitting input text into individual sentences."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP": {
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP",
+            "title": "SwiftNLP",
+            "url": "\/documentation\/swiftnlp",
+            "role": "collection",
+            "kind": "symbol",
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Natural Language Processing, Text Feature Extraction & Native Apple NaturalLanguage Integration."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/DataFrameDiff": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/DataFrameDiff",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "DataFrameDiff"
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "DataFrameDiff",
+                    "kind": "identifier"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/dataframediff",
+            "abstract": [],
+            "title": "DataFrameDiff"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/ColumnDType": {
+            "fragments": [
+                {
+                    "text": "enum",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "ColumnDType",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "ColumnDType",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/columndtype",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "text": "ColumnDType",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ColumnDType",
+            "kind": "symbol",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/FeatherWriter": {
+            "fragments": [
+                {
+                    "text": "enum",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "FeatherWriter",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "FeatherWriter",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/featherwriter",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "text": "FeatherWriter",
+                    "kind": "identifier"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FeatherWriter",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/FeatherReader": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/featherreader",
+            "navigatorTitle": [
+                {
+                    "text": "FeatherReader",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/FeatherReader",
+            "title": "FeatherReader",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "enum"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "FeatherReader"
+                }
+            ],
+            "type": "topic",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/GroupedDataFrame": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/GroupedDataFrame",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "GroupedDataFrame"
+                }
+            ],
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "GroupedDataFrame"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/groupeddataframe",
+            "abstract": [],
+            "title": "GroupedDataFrame"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/TextNormalizer": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextNormalizer",
+            "navigatorTitle": [
+                {
+                    "text": "TextNormalizer",
+                    "kind": "identifier"
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "TextNormalizer",
+                    "kind": "identifier"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/textnormalizer",
+            "abstract": [
+                {
+                    "text": "Utilities for standard text normalization.",
+                    "type": "text"
+                }
+            ],
+            "title": "TextNormalizer"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/HashingVectorizer": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/hashingvectorizer",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "HashingVectorizer"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/HashingVectorizer",
+            "title": "HashingVectorizer",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "class"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "HashingVectorizer"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "HashingVectorizer converts text documents directly into fixed-size numeric feature vectors"
+                },
+                {
+                    "type": "text",
+                    "text": " "
+                },
+                {
+                    "type": "text",
+                    "text": "using the hashing trick (FNV-1a 64-bit hash modulo nFeatures)."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/TextExplainer": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextExplainer",
+            "navigatorTitle": [
+                {
+                    "text": "TextExplainer",
+                    "kind": "identifier"
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "TextExplainer",
+                    "kind": "identifier"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/textexplainer",
+            "abstract": [
+                {
+                    "text": "Provides token-level importance explanation for text predictions.",
+                    "type": "text"
+                }
+            ],
+            "title": "TextExplainer"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/TextPipeline": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextPipeline",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "TextPipeline"
+                }
+            ],
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "actor"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "kind": "identifier",
+                    "text": "TextPipeline"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/textpipeline",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A unified pipeline combining text tokenization, vectorization, and Naive Bayes text classification."
+                }
+            ],
+            "title": "TextPipeline"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/VectorizationAndEmbeddings": {
+            "role": "article",
+            "title": "Text Feature Vectorization, Embeddings & Naive Bayes Classification",
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Convert text corpora into numerical feature matrices using "
+                },
+                {
+                    "code": "CountVectorizer",
+                    "type": "codeVoice"
+                },
+                {
+                    "type": "text",
+                    "text": ", "
+                },
+                {
+                    "code": "HashingVectorizer",
+                    "type": "codeVoice"
+                },
+                {
+                    "type": "text",
+                    "text": ", and "
+                },
+                {
+                    "code": "TFIDFVectorizer",
+                    "type": "codeVoice"
+                },
+                {
+                    "type": "text",
+                    "text": ", query "
+                },
+                {
+                    "code": "WordEmbeddings",
+                    "type": "codeVoice"
+                },
+                {
+                    "type": "text",
+                    "text": " and "
+                },
+                {
+                    "code": "AppleNLEmbedding",
+                    "type": "codeVoice"
+                },
+                {
+                    "type": "text",
+                    "text": ", and train Naive Bayes classifiers with "
+                },
+                {
+                    "code": "TextPipeline",
+                    "type": "codeVoice"
+                },
+                {
+                    "type": "text",
+                    "text": "."
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/vectorizationandembeddings",
+            "kind": "article",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VectorizationAndEmbeddings"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/ForecastError": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "typealias"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "ForecastError"
+                }
+            ],
+            "title": "ForecastError",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/forecasterror",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "ForecastError"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/ForecastError",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/MultinomialNaiveBayes": {
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "MultinomialNaiveBayes",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "MultinomialNaiveBayes",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/multinomialnaivebayes",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "text": "MultinomialNaiveBayes",
+                    "kind": "identifier"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/MultinomialNaiveBayes",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Pure Swift implementation of Multinomial Naive Bayes text classifier with Laplace smoothing."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/MLError": {
+            "role": "symbol",
+            "title": "MLError",
+            "type": "topic",
+            "abstract": [],
+            "url": "\/documentation\/swiftnlp\/mlerror",
+            "navigatorTitle": [
+                {
+                    "text": "MLError",
+                    "kind": "identifier"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/MLError",
+            "fragments": [
+                {
+                    "text": "typealias",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "MLError",
+                    "kind": "identifier"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/TextNormalizationAndTokenization": {
+            "type": "topic",
+            "kind": "article",
+            "role": "article",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TextNormalizationAndTokenization",
+            "url": "\/documentation\/swiftnlp\/textnormalizationandtokenization",
+            "abstract": [
+                {
+                    "text": "Clean text, strip punctuation, tokenize sentences\/words, tag parts of speech, extract entities, stem and lemmatize tokens, and score sentiment using NLTK-equivalent algorithms and Apple’s native ",
+                    "type": "text"
+                },
+                {
+                    "type": "codeVoice",
+                    "code": "NaturalLanguage"
+                },
+                {
+                    "text": " framework.",
+                    "type": "text"
+                }
+            ],
+            "title": "Text Normalization, Tokenization & Linguistic Tagging"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/RegexTokenizer": {
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "RegexTokenizer",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "RegexTokenizer",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/regextokenizer",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "text": "RegexTokenizer",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/RegexTokenizer",
+            "kind": "symbol",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A tokenizer that splits text based on a regular expression pattern."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/NLPError": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NLPError",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "NLPError"
+                }
+            ],
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "enum"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "NLPError"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/nlperror",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Errors that can occur during NLP processing."
+                }
+            ],
+            "title": "NLPError"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/AppleLemmaTagger": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleLemmaTagger",
+            "navigatorTitle": [
+                {
+                    "text": "AppleLemmaTagger",
+                    "kind": "identifier"
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "AppleLemmaTagger",
+                    "kind": "identifier"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/applelemmatagger",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A lemmatizer using Apple’s "
+                },
+                {
+                    "code": "NLTagger(tagSchemes: [.lemma])",
+                    "type": "codeVoice"
+                },
+                {
+                    "type": "text",
+                    "text": " for dictionary canonical form extraction."
+                }
+            ],
+            "title": "AppleLemmaTagger"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/StatsError": {
+            "fragments": [
+                {
+                    "text": "typealias",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "StatsError",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "StatsError",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/statserror",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "text": "StatsError",
+                    "kind": "identifier"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/StatsError",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/AppleLanguageDetector": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/applelanguagedetector",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "AppleLanguageDetector"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleLanguageDetector",
+            "title": "AppleLanguageDetector",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "AppleLanguageDetector"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "text": "Detects the dominant language and language probabilities using Apple’s ",
+                    "type": "text"
+                },
+                {
+                    "type": "codeVoice",
+                    "code": "NLLanguageRecognizer"
+                },
+                {
+                    "text": ".",
+                    "type": "text"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/SupportedType": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "protocol"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "SupportedType"
+                }
+            ],
+            "title": "SupportedType",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/supportedtype",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "SupportedType"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SupportedType",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/NamedEntity": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "NamedEntity"
+                }
+            ],
+            "title": "NamedEntity",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/namedentity",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "NamedEntity"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NamedEntity",
+            "abstract": [
+                {
+                    "text": "Represents a extracted Named Entity from text.",
+                    "type": "text"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/POSTagger": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/postagger",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "POSTagger"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/POSTagger",
+            "title": "POSTagger",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "POSTagger"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "text": "A part-of-speech (POS) tagger.",
+                    "type": "text"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/Tokenizer": {
+            "fragments": [
+                {
+                    "text": "protocol",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "Tokenizer",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "Tokenizer",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/tokenizer",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "text": "Tokenizer",
+                    "kind": "identifier"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Tokenizer",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A unified protocol for tokenizing and encoding text."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/SentimentScore": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "SentimentScore"
+                }
+            ],
+            "title": "SentimentScore",
+            "role": "symbol",
+            "url": "\/documentation\/swiftnlp\/sentimentscore",
+            "type": "topic",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "SentimentScore"
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/SentimentScore",
+            "abstract": [
+                {
+                    "text": "Sentiment score breakdown containing positive, negative, neutral, and normalized compound metrics.",
+                    "type": "text"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/AppleNLEmbedding": {
+            "url": "\/documentation\/swiftnlp\/applenlembedding",
+            "title": "AppleNLEmbedding",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/AppleNLEmbedding",
+            "role": "symbol",
+            "type": "topic",
+            "kind": "symbol",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "AppleNLEmbedding"
+                }
+            ],
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "Provides access to Apple’s native pre-trained word and sentence embedding vector spaces ("
+                },
+                {
+                    "type": "codeVoice",
+                    "code": "NLEmbedding"
+                },
+                {
+                    "type": "text",
+                    "text": ")."
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "kind": "identifier",
+                    "text": "AppleNLEmbedding"
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/CSVReadOptions": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/CSVReadOptions",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "CSVReadOptions"
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "kind": "identifier",
+                    "text": "CSVReadOptions"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/csvreadoptions",
+            "abstract": [],
+            "title": "CSVReadOptions"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/LazyDataFrame": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/LazyDataFrame",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "LazyDataFrame"
+                }
+            ],
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "kind": "identifier",
+                    "text": "LazyDataFrame"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/lazydataframe",
+            "title": "LazyDataFrame",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/VADERSentimentAnalyzer": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/vadersentimentanalyzer",
+            "navigatorTitle": [
+                {
+                    "text": "VADERSentimentAnalyzer",
+                    "kind": "identifier"
+                }
+            ],
+            "title": "VADERSentimentAnalyzer",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VADERSentimentAnalyzer",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "VADERSentimentAnalyzer",
+                    "kind": "identifier"
+                }
+            ],
+            "abstract": [
+                {
+                    "text": "Pure Swift VADER Sentiment Analyzer implementing valence score calculation with negation and intensity boosters.",
+                    "type": "text"
+                }
+            ],
+            "type": "topic"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/NLSentimentAnalyzer": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/nlsentimentanalyzer",
+            "navigatorTitle": [
+                {
+                    "text": "NLSentimentAnalyzer",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/NLSentimentAnalyzer",
+            "title": "NLSentimentAnalyzer",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "NLSentimentAnalyzer",
+                    "kind": "identifier"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A sentiment analyzer wrapping Apple’s machine learned OS model ("
+                },
+                {
+                    "type": "codeVoice",
+                    "code": "NLTagger(tagSchemes: [.sentimentScore])"
+                },
+                {
+                    "type": "text",
+                    "text": ")."
+                }
+            ]
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/Swift": {
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Swift",
+            "title": "Swift",
+            "url": "\/documentation\/swiftnlp\/swift",
+            "role": "collection",
+            "type": "topic",
+            "kind": "symbol",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/BPETokenizer": {
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "struct"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "kind": "identifier",
+                    "text": "BPETokenizer"
+                }
+            ],
+            "title": "BPETokenizer",
+            "url": "\/documentation\/swiftnlp\/bpetokenizer",
+            "navigatorTitle": [
+                {
+                    "text": "BPETokenizer",
+                    "kind": "identifier"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "A Byte Pair Encoding (BPE) subword tokenizer."
+                }
+            ],
+            "kind": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/BPETokenizer",
+            "role": "symbol"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/Schema": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/schema",
+            "navigatorTitle": [
+                {
+                    "text": "Schema",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/Schema",
+            "title": "Schema",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "text": "struct",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "Schema",
+                    "kind": "identifier"
+                }
+            ],
+            "type": "topic",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/VectorizedByteParsers": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/VectorizedByteParsers",
+            "navigatorTitle": [
+                {
+                    "kind": "identifier",
+                    "text": "VectorizedByteParsers"
+                }
+            ],
+            "fragments": [
+                {
+                    "kind": "keyword",
+                    "text": "enum"
+                },
+                {
+                    "kind": "text",
+                    "text": " "
+                },
+                {
+                    "kind": "identifier",
+                    "text": "VectorizedByteParsers"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/vectorizedbyteparsers",
+            "title": "VectorizedByteParsers",
+            "abstract": []
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/QueryPlanNode": {
+            "type": "topic",
+            "kind": "symbol",
+            "role": "symbol",
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/QueryPlanNode",
+            "navigatorTitle": [
+                {
+                    "text": "QueryPlanNode",
+                    "kind": "identifier"
+                }
+            ],
+            "fragments": [
+                {
+                    "text": "enum",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "QueryPlanNode",
+                    "kind": "identifier"
+                }
+            ],
+            "url": "\/documentation\/swiftnlp\/queryplannode",
+            "abstract": [],
+            "title": "QueryPlanNode"
+        },
+        "doc://SwiftNLP/documentation/SwiftNLP/TFIDFVectorizer": {
+            "kind": "symbol",
+            "url": "\/documentation\/swiftnlp\/tfidfvectorizer",
+            "navigatorTitle": [
+                {
+                    "text": "TFIDFVectorizer",
+                    "kind": "identifier"
+                }
+            ],
+            "identifier": "doc:\/\/SwiftNLP\/documentation\/SwiftNLP\/TFIDFVectorizer",
+            "title": "TFIDFVectorizer",
+            "role": "symbol",
+            "fragments": [
+                {
+                    "text": "actor",
+                    "kind": "keyword"
+                },
+                {
+                    "text": " ",
+                    "kind": "text"
+                },
+                {
+                    "text": "TFIDFVectorizer",
+                    "kind": "identifier"
+                }
+            ],
+            "type": "topic",
+            "abstract": [
+                {
+                    "type": "text",
+                    "text": "TF-IDF Vectorizer for text feature extraction."
+                }
+            ]
+        }
+    }
+}

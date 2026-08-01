@@ -171,14 +171,14 @@ public enum PresentationCodeRunner {
         // 8. SwiftNLP
         print("--- [MODULE 8: SwiftNLP] ---")
         let nlpCode = """
-        let text = "SwiftSci 2.4.0 is an extraordinarily powerful library!"
+        let text = "SwiftSci 2.5.0 is an extraordinarily powerful library!"
         let tokens = AppleWordTokenizer().tokenize(text: text)
         let stems = PorterStemmer().stem(tokens: tokens)
         let sentiment = VADERSentimentAnalyzer().polarityScores(text: text)
         let tags = POSTagger().tag(text: text)
         """
         print("INPUT CODE:\n\(nlpCode)\n")
-        let text = "SwiftSci 2.4.0 is an extraordinarily powerful library!"
+        let text = "SwiftSci 2.5.0 is an extraordinarily powerful library!"
         let tokens = AppleWordTokenizer().tokenize(text: text)
         let stems = PorterStemmer().stem(tokens: tokens)
         let sentiment = VADERSentimentAnalyzer().polarityScores(text: text)
@@ -208,12 +208,12 @@ public enum PresentationCodeRunner {
         let llmCode = """
         let contextWindow = LLMContextWindow(maxTokens: 512)
         let tokenCount = contextWindow.countTokens(in: "User: What is Apple Silicon UMA?\\nAssistant:")
-        let truncated = contextWindow.truncate(text: "SwiftSci 2.4.0 is an amazingly fast scientific framework.", maxTokens: 5)
+        let truncated = contextWindow.truncate(text: "SwiftSci 2.5.0 is an amazingly fast scientific framework.", maxTokens: 5)
         """
         print("INPUT CODE:\n\(llmCode)\n")
         let contextWindow = LLMContextWindow(maxTokens: 512)
         let tokenCount = contextWindow.countTokens(in: "User: What is Apple Silicon UMA?\nAssistant:")
-        let truncated = contextWindow.truncate(text: "SwiftSci 2.4.0 is an amazingly fast scientific framework.", maxTokens: 5)
+        let truncated = contextWindow.truncate(text: "SwiftSci 2.5.0 is an amazingly fast scientific framework.", maxTokens: 5)
         print("COMPILED STDOUT OUTPUT:")
         print("  Prompt Token Count: \(tokenCount)")
         print("  Truncated Text    : \"\(truncated)\"\n")

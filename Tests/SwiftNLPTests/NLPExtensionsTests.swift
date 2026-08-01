@@ -29,7 +29,7 @@ struct NLPExtensionsTests {
     @Test("LLM Context Window - Token Counting and Truncation")
     func testLLMContextWindow() {
         let contextWindow = LLMContextWindow(maxTokens: 5, tokenizer: AppleWordTokenizer())
-        let longText = "SwiftSci 2.4.0 is a highly performant framework for data science and machine learning."
+        let longText = "SwiftSci 2.5.0 is a highly performant framework for data science and machine learning."
         
         let tokenCount = contextWindow.countTokens(in: longText)
         #expect(tokenCount > 5)

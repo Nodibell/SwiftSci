@@ -159,8 +159,8 @@ let tags = POSTagger().tag(text: text)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Tokens       : ["SwiftSci", "2.4.0", "is", "an", "extraordinarily"]
-  Porter Stems : ["swiftsci", "2.4.0", "is", "an", "extraordinarili"]
+  Tokens       : ["SwiftSci", "2.5.0", "is", "an", "extraordinarily"]
+  Porter Stems : ["swiftsci", "2.5.0", "is", "an", "extraordinarili"]
 ```
 
 ---
@@ -194,7 +194,7 @@ let truncated = contextWindow.truncate(text: prompt, maxTokens: 5)
 **Empirical Console Output (`stdout`):**
 ```text
   Prompt Token Count: 7
-  Truncated Text    : "SwiftSci 2.4.0 is an amazingly"
+  Truncated Text    : "SwiftSci 2.5.0 is an amazingly"
 ```
 
 ---

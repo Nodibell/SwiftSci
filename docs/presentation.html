@@ -107,6 +107,116 @@
       box-shadow: 0 0 12px rgba(0, 122, 255, 0.5);
     }
 
+    /* Sub-module Intra-Slide Slider Bar */
+    .sub-slider-bar {
+      position: fixed;
+      top: 2.55rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.22rem 0.8rem;
+      background: rgba(18, 18, 22, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 89;
+      max-width: 94vw;
+      overflow-x: auto;
+      scrollbar-width: none;
+      transition: all 0.25s ease;
+    }
+
+    .sub-slider-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .sub-mod-label {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+    .sub-mod-name {
+      font-weight: 700;
+      color: var(--sf-blue);
+    }
+
+    .sub-mod-counter {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-sub);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.12rem 0.42rem;
+      border-radius: 99px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .mod-range-input {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      outline: none;
+      cursor: pointer;
+      width: min(200px, 22vw);
+      transition: all 0.2s ease;
+    }
+
+    .mod-range-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--sf-blue);
+      box-shadow: 0 0 8px rgba(0, 122, 255, 0.8);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .mod-range-input::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    .sub-mod-pills {
+      display: flex;
+      gap: 0.22rem;
+      align-items: center;
+    }
+
+    .sub-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-sub);
+      padding: 0.1rem 0.38rem;
+      border-radius: 99px;
+      font-size: 0.66rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .sub-pill:hover {
+      background: rgba(0, 122, 255, 0.2);
+      color: var(--sf-blue);
+      border-color: var(--sf-blue);
+    }
+
+    .sub-pill.active {
+      background: var(--sf-blue);
+      color: #ffffff;
+      border-color: var(--sf-blue);
+      box-shadow: 0 0 8px rgba(0, 122, 255, 0.6);
+    }
+
     .deck {
       position: relative;
       width: 100%;
@@ -488,6 +598,16 @@
     <div class="chip" onclick="showSlide(61)">Database (61-62)</div>
     <div class="chip" onclick="showSlide(63)">Agent (63-64)</div>
     <div class="chip" onclick="showSlide(65)" style="color:var(--sf-green);">⚡ M4 Pro (65)</div>
+  </div>
+
+  <!-- Sub-Module Intra-Slide Sub-Slider Bar -->
+  <div class="sub-slider-bar" id="subSliderBar">
+    <div class="sub-mod-label">
+      <span class="sub-mod-name" id="subModName">Title</span>
+      <span class="sub-mod-counter" id="subModCounter">Slide 1 of 1</span>
+    </div>
+    <input type="range" id="modRangeSlider" class="mod-range-input" min="1" max="1" value="1" oninput="showSlide(parseInt(this.value))">
+    <div class="sub-mod-pills" id="subModPills"></div>
   </div>
 
   <div class="deck">
@@ -2828,6 +2948,34 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
         }
       });
 
+      // Update Sub-Module Intra-Slide Sub-Slider Bar
+      const subName = document.getElementById('subModName');
+      const subCounter = document.getElementById('subModCounter');
+      const modSlider = document.getElementById('modRangeSlider');
+      const subPillsContainer = document.getElementById('subModPills');
+
+      const currentMod = moduleRanges.find(m => currentSlide >= m.start && currentSlide <= m.end);
+
+      if (currentMod) {
+        subName.textContent = currentMod.name;
+        const relativeIdx = currentSlide - currentMod.start + 1;
+        const totalInMod = currentMod.end - currentMod.start + 1;
+        subCounter.textContent = `Slide ${relativeIdx} of ${totalInMod}`;
+
+        modSlider.min = currentMod.start;
+        modSlider.max = currentMod.end;
+        modSlider.value = currentSlide;
+
+        // Render sub-pills
+        let pillsHTML = '';
+        for (let s = currentMod.start; s <= currentMod.end; s++) {
+          const isActive = s === currentSlide ? 'active' : '';
+          const relNum = s - currentMod.start + 1;
+          pillsHTML += `<div class="sub-pill ${isActive}" onclick="showSlide(${s})">#${relNum}</div>`;
+        }
+        subPillsContainer.innerHTML = pillsHTML;
+      }
+
       const glow = document.getElementById('glow');
       const posX = 15 + (currentSlide * 3) % 70;
       const posY = 10 + (currentSlide * 4) % 60;
@@ -2843,6 +2991,9 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       if (e.key === 'ArrowRight' || e.key === 'Space') showSlide(currentSlide + 1);
       if (e.key === 'ArrowLeft') showSlide(currentSlide - 1);
     });
+
+    // Initial call to populate UI controls
+    showSlide(1);
   </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 2.4.0 — Complete 65-Slide Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 2.5.0 — Complete Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -614,7 +614,7 @@
 
 <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 65</div>
-      <h1 class="title-large">SwiftSci 2.4.0 Ecosystem</h1>
+      <h1 class="title-large">SwiftSci 2.5.0 Ecosystem</h1>
       <p class="subtitle">65 dedicated slides covering 100% of all 14 native Swift 6 modules & Apple M4 Pro UMA acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
@@ -2760,7 +2760,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     </div>
 
 <div class="slide" data-slide="65">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 65 OF 65</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 65 OF 66</div>
       <h1 class="title-large">Apple M4 Pro Hardware Speedup</h1>
       <p class="subtitle">Local Apple M4 Pro benchmark comparison against Python NumPy/SciPy baseline.</p>
       <div class="grid-3" style="grid-template-columns: repeat(2, 1fr); max-width: 1000px;">
@@ -2783,21 +2783,54 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       </div>
     </div>
 
+<div class="slide" data-slide="66">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 2.5.0 — SLIDE 66 OF 66</div>
+      <h1 class="title-large">SwiftSci 2.5.0 Innovations</h1>
+      <p class="subtitle">Key features introduced in the 2.5.0 release line.</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Feather I/O & LazyDataFrame</span><span class="swiftui-pill" style="color:var(--sf-blue);">SwiftDataFrame</span></div>
+          <pre><code class="language-swift"><span class="kw">let</span> df = <span class="kw">try</span> <span class="kw">await</span> DataFrame(feather: url)
+<span class="kw">let</span> lazyResult = <span class="kw">try</span> <span class="kw">await</span> df.lazy()
+    .filter { row in (row.double("score") ?? 0) >= 80.0 }
+    .select(["id", "score"])
+    .collect()</code></pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">MultiOutput ML & ETS Models</span><span class="swiftui-pill" style="color:var(--sf-purple);">SwiftML / Forecast</span></div>
+          <pre><code class="language-swift"><span class="kw">let</span> multiReg = MultiOutputRegressor(estimatorFactory: { LinearRegression() })
+<span class="kw">try</span> <span class="kw">await</span> multiReg.fit(features: X, targets: Y)
+<span class="kw">let</span> ets = <span class="kw">try</span> <span class="kw">await</span> ETSModel.autoFit(series: y, period: 12)</code></pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">KVCache Streaming & SwiftUI Canvas</span><span class="swiftui-pill" style="color:var(--sf-green);">SwiftLLM / Viz</span></div>
+          <pre><code class="language-swift"><span class="kw">let</span> stream = decoder.generateStream(prompt: "AI", options: opts)
+<span class="kw">let</span> chart = SwiftSciChartView(title: "Sales", type: .line, series: [s1])</code></pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">swiftsci CLI Utility</span><span class="swiftui-pill" style="color:var(--sf-orange);">SwiftSciCLI</span></div>
+          <pre><code class="language-bash">$ swiftsci summary dataset.feather
+$ swiftsci convert input.csv output.feather
+$ swiftsci export-model model.json</code></pre>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- BOTTOM NAV BAR -->
   <div class="bottom-nav">
     <button class="nav-btn" id="prevBtn">← Prev</button>
     <div style="display:flex; align-items:center; gap:0.8rem; flex:1; justify-content:center;">
-      <span class="footer-pos" id="slideNum">1 / 65</span>
-      <input type="range" id="slideSlider" min="1" max="65" value="1" style="width: min(350px, 40vw);">
+      <span class="footer-pos" id="slideNum">1 / 66</span>
+      <input type="range" id="slideSlider" min="1" max="66" value="1" style="width: min(350px, 40vw);">
     </div>
     <button class="nav-btn" id="nextBtn">Next →</button>
   </div>
 
   <script>
     let currentSlide = 1;
-    const totalSlides = 65;
+    const totalSlides = 66;
 
     // Slide ranges for Top Module Chips
     const moduleRanges = [
@@ -2817,8 +2850,10 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       { name: "Vision",       start: 59, end: 60 },
       { name: "Database",     start: 61, end: 62 },
       { name: "Agent",        start: 63, end: 64 },
-      { name: "M4 Pro",       start: 65, end: 65 }
+      { name: "M4 Pro",       start: 65, end: 65 },
+      { name: "v2.5.0",       start: 66, end: 66 }
     ];
+
 
     function showSlide(index) {
       if (index < 1) index = 1;

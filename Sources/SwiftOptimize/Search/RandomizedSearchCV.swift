@@ -5,15 +5,47 @@ import SwiftML
 /// via K-Fold Cross-Validation.
 public struct RandomizedSearchCV: Sendable {
 
-    /// Represents result.
-    public struct Result: Sendable, Comparable {
+    /// Represents result for decision tree search.
+    public struct Result: Sendable, Comparable, Equatable {
         public let maxDepth: Int
         public let criterion: SplitCriterion
         public let meanScore: Double
         public let stdScore: Double
 
+        public init(maxDepth: Int, criterion: SplitCriterion, meanScore: Double, stdScore: Double) {
+            self.maxDepth = maxDepth
+            self.criterion = criterion
+            self.meanScore = meanScore
+            self.stdScore = stdScore
+        }
+
         public static func < (lhs: Result, rhs: Result) -> Bool {
             lhs.meanScore < rhs.meanScore
+        }
+        
+        public static func == (lhs: Result, rhs: Result) -> Bool {
+            lhs.maxDepth == rhs.maxDepth && lhs.criterion == rhs.criterion && lhs.meanScore == rhs.meanScore && lhs.stdScore == rhs.stdScore
+        }
+    }
+
+    /// Generic result holding arbitrary parameter combinations.
+    public struct GenericResult<Params: Sendable>: Sendable, Comparable, Equatable {
+        public let params: Params
+        public let meanScore: Double
+        public let stdScore: Double
+
+        public init(params: Params, meanScore: Double, stdScore: Double) {
+            self.params = params
+            self.meanScore = meanScore
+            self.stdScore = stdScore
+        }
+
+        public static func < (lhs: GenericResult<Params>, rhs: GenericResult<Params>) -> Bool {
+            lhs.meanScore < rhs.meanScore
+        }
+        
+        public static func == (lhs: GenericResult<Params>, rhs: GenericResult<Params>) -> Bool {
+            lhs.meanScore == rhs.meanScore && lhs.stdScore == rhs.stdScore
         }
     }
 
@@ -82,6 +114,41 @@ public struct RandomizedSearchCV: Sendable {
                 }
             }
             var allResults = [Result]()
+            for try await r in group { allResults.append(r) }
+            return allResults
+        }
+
+        return results.sorted().reversed()
+    }
+
+    /// Runs randomized search over generic parameter candidates and custom estimator factory.
+    public func searchGeneric<P: Sendable, E: ClassifierEstimator>(
+        candidates: [P],
+        features: [[Double]],
+        targets: [Double],
+        estimatorBuilder: @escaping @Sendable (P) -> E
+    ) async throws -> [GenericResult<P>] {
+        guard !candidates.isEmpty else { return [] }
+        let count = min(nIter, candidates.count)
+        let sampled = Array(candidates.prefix(count))
+        let nSplits = self.nSplits
+        let cvSeed = self.seed
+
+        let results: [GenericResult<P>] = try await withThrowingTaskGroup(of: GenericResult<P>.self) { group in
+            for p in sampled {
+                group.addTask {
+                    let factory: @Sendable () -> E = { estimatorBuilder(p) }
+                    let cvResult = try await CrossValidator.crossValidate(
+                        factory,
+                        features: features,
+                        targets: targets,
+                        nSplits: nSplits,
+                        seed: cvSeed
+                    )
+                    return GenericResult(params: p, meanScore: cvResult.mean, stdScore: cvResult.std)
+                }
+            }
+            var allResults = [GenericResult<P>]()
             for try await r in group { allResults.append(r) }
             return allResults
         }

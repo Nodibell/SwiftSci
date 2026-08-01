@@ -1,0 +1,26 @@
+codecov:
+  notify:
+    require_ci_to_pass: yes
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+
+ignore:
+  # Exclude GPU/MLX-dependent source modules skipped in CI runner
+  - "Sources/SwiftML/**"
+  - "Sources/SwiftCluster/**"
+  - "Sources/SwiftForecast/**"
+  - "Sources/SwiftPrivacy/**"
+  - "Sources/SwiftExplain/**"
+  - "Sources/SwiftPreprocessing/**"
+  - "Sources/SwiftOptimize/**"
+  - "Sources/SwiftLLM/**"
+  - "Sources/SwiftVisualization/**"

@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.4+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.5+)
 
 ## 📌 Vision & Architecture
 
@@ -169,6 +169,32 @@ The architecture combines two hardware engines:
 
 ---
 
+### Version 2.5.0: Arrow IPC / Feather Serialization, LazyDataFrame, MultiOutput Models, ETSModel & KVCache *(🟢 Completed)*
+
+*Detailed implementation plan:* [implementation_plan_25.md](implementation_plan_25.md)
+
+1. **Feather / Arrow IPC Serialization (`SwiftDataFrame`)**:
+   - High-performance binary file and buffer I/O (`FeatherReader`, `FeatherWriter`, `DataFrame.init(feather:)`, `writeFeather(to:)`).
+2. **LazyDataFrame & Query Optimization (`SwiftDataFrame`)**:
+   - Deferred execution pipeline (`DataFrame.lazy()`, `.filter()`, `.select()`, `.collect()`) with filter predicate merging and pushdown.
+3. **MultiOutput Models & Generalized Hyperparameter Search (`SwiftML` & `SwiftOptimize`)**:
+   - Parallel `MultiOutputRegressor` and `MultiLabelClassifier` actors.
+   - Generalized `RandomizedSearchCV.searchGeneric` for parameter dictionary optimization across custom estimator factories.
+4. **SwiftForecast Models (`SwiftForecast`)**:
+   - `ETSModel` state space forecasting with R-equivalent `autoFit` AICc model selection.
+   - Prophet-style `PiecewiseTrendDecomposition` (piecewise linear & logistic trends).
+5. **SwiftLLM KV-Cache & Streaming (`SwiftLLM`)**:
+   - `KVCache` Key-Value tensor cache for autoregressive inference.
+   - `generateStream(prompt:options:)` returning `AsyncThrowingStream<String, any Error>`.
+6. **Native Charting (`SwiftVisualization`)**:
+   - `SwiftSciChartView` native SwiftUI `Canvas` charting component for line, bar, and heatmap visualization.
+7. **`swiftsci` CLI Utility (`SwiftSciCLI`)**:
+   - Command-line utility for dataset summaries (`swiftsci summary`), CSV/Feather format conversions (`swiftsci convert`), and model export inspection.
+8. **Full Test Suite & Documentation Verification**:
+   - 100% test pass rate across all 15 workspace targets and updated DocC documentation archives.
+
+---
+
 ## 🏛 Integration Guidelines for Client Applications
 
 Thanks to its modular design, SwiftSci seamlessly integrates into applications following clean architecture:
@@ -176,3 +202,4 @@ Thanks to its modular design, SwiftSci seamlessly integrates into applications f
 * **View Models:** All model initialization, dataset loading (`SwiftDataFrame`), and preprocessing pipeline configurations reside in the View Model layer.
 * **Background Tasks:** Method calls like `.fit()` for compute-heavy algorithms (e.g. Random Forest or `MLX` graph evaluations) should be executed inside isolated background tasks (`Task.detached { }`) to prevent main thread blocking and maintain smooth 120Hz UI rendering.
 * **Complexity Encapsulation:** Low-level Arrow memory buffers and non-Sendable `MLXArray` handles are encapsulated as `internal`. Client applications interact strictly with thread-safe, public Swift 6 API contracts.
+

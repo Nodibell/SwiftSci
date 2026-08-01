@@ -51,10 +51,38 @@ public class TransformerDecoder: Module, @unchecked Sendable {
         super.init()
     }
     
+    // MARK: - Compiled Forward Pass Cache
+    //
+    // MLX `MLX.compile` traces and caches the Metal compute graph on the first call for a
+    // given input shape. Subsequent calls with the same shape hit the cache directly, amortising
+    // graph-build cost across all forward passes — analogous to PyTorch's `torch.compile`.
+    //
+    // We bucket sequence lengths (16, 32, 64, 128, 256) to bound the number of cached graphs.
+
+    private var compiledForwardCache: [Int: (MLXArray) -> MLXArray] = [:]
+
+    /// Returns the compiled forward function for the nearest power-of-two seqLen bucket.
+    private func compiledForward(seqLen: Int) -> (MLXArray) -> MLXArray {
+        let bucket = seqLenBucket(seqLen)
+        if let cached = compiledForwardCache[bucket] {
+            return cached
+        }
+        let compiled = MLX.compile(self.callAsFunction)
+        compiledForwardCache[bucket] = compiled
+        return compiled
+    }
+
+    /// Maps a sequence length to the nearest larger power-of-two bucket.
+    private func seqLenBucket(_ seqLen: Int) -> Int {
+        let buckets = [16, 32, 64, 128, 256]
+        return buckets.first(where: { $0 >= seqLen }) ?? seqLen
+    }
+
     /// Executes the forward pass of the model.
     /// - Parameter x: An MLXArray of token IDs, shape [seq_len] or [batch, seq_len].
     /// - Returns: Logits tensor, shape [batch, seq_len, vocab_size].
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
+
         var input = x
         if input.ndim == 1 {
             input = input.expandedDimensions(axis: 0) // shape [1, seq_len]
@@ -105,8 +133,9 @@ public class TransformerDecoder: Module, @unchecked Sendable {
                     let inputTokens = Array(tokens.suffix(maxSeqLen))
                     let arrayInput = MLXArray(inputTokens)
                     
-                    // Forward pass: logits shape [1, seq_len, vocab_size]
-                    let logits = self(arrayInput)
+                    // Compiled forward pass — MLX graph cached after first call.
+                    let forwardFn = compiledForward(seqLen: inputTokens.count)
+                    let logits = forwardFn(arrayInput)
                     
                     // Extracted logits for the last token in sequence: shape [vocab_size]
                     let lastLogits = logits[0, logits.shape[1] - 1]
@@ -153,7 +182,9 @@ public class TransformerDecoder: Module, @unchecked Sendable {
                     
                     let inputTokens = Array(tokens.suffix(maxSeqLen))
                     let arrayInput = MLXArray(inputTokens)
-                    let logits = self(arrayInput)
+                    // Compiled forward pass — MLX graph cached after first call.
+                    let forwardFn = compiledForward(seqLen: inputTokens.count)
+                    let logits = forwardFn(arrayInput)
                     let lastLogits = logits[0, logits.shape[1] - 1]
                     let nextToken = Sampler.sample(logits: lastLogits, options: options)
                     let decodedToken = tokenizer.decode(tokens: [nextToken])

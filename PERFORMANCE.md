@@ -1,9 +1,10 @@
-# SwiftSci 2.5.0 Complete Performance Benchmarks
+# SwiftSci 2.6.0 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 2.5.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 2.6.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
 
 > [!NOTE]
-> All benchmarks are executed under identical conditions: deterministic seeds (`seed=42`), single-node execution, and release optimizations (`swift run -c release`).
+> All 6 benchmarks previously marked as informational gaps (Filter rows, SortBy, PCA SVD, TS Decomposition, KMeans, LLM Forward Pass) have been accelerated in 2.6.0 and promoted to CI-gated regression checks.
+
 
 ---
 

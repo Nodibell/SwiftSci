@@ -1437,7 +1437,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">MLP Network Converged (Epoch 142 / 200 | Loss: 0.014)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Neural Network Layers</span><span class="swiftui-pill" style="color:var(--sf-blue);">Adam Solver</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Input (4) ➔ Hidden [100, 50] ➔ Output (2) [ReLU]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="40" y1="20" x2="160" y2="15" stroke="rgba(255,255,255,0.2)"/><line x1="40" y1="20" x2="160" y2="40" stroke="rgba(0,122,255,0.5)"/><line x1="40" y1="60" x2="160" y2="40" stroke="rgba(0,122,255,0.5)"/><line x1="40" y1="60" x2="160" y2="65" stroke="rgba(255,255,255,0.2)"/><line x1="160" y1="15" x2="280" y2="40" stroke="rgba(52,199,89,0.5)"/><line x1="160" y1="40" x2="280" y2="40" stroke="rgba(52,199,89,0.8)"/><line x1="160" y1="65" x2="280" y2="40" stroke="rgba(52,199,89,0.5)"/><circle cx="40" cy="20" r="8" fill="#007aff"/><circle cx="40" cy="60" r="8" fill="#007aff"/><circle cx="160" cy="15" r="8" fill="#af52de"/><circle cx="160" cy="40" r="8" fill="#af52de"/><circle cx="160" cy="65" r="8" fill="#af52de"/><circle cx="280" cy="40" r="10" fill="#34c759"/></svg>
           </div>
         </div>
       </div>
@@ -1938,7 +1938,7 @@ print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast
           <pre><span class="out-text">GARCH(1,1) Fitted (alpha=0.085, beta=0.902) | Volatility Forecasted</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Conditional Volatility sigma^2</span><span class="swiftui-pill" style="color:var(--sf-purple);">GARCH(1,1)</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">Financial Returns Volatility Cluster & Risk Curve</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 40 Q 30 10 50 65 T 90 20 T 130 55 T 170 35 T 210 48 T 250 38 T 310 40" fill="none" stroke="#af52de" stroke-width="2.2"/><path d="M 10 40 Q 30 15 50 60 T 90 25 T 130 50 T 170 38 T 210 45 T 250 40 T 310 40" fill="none" stroke="#ff2d55" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.75"/><circle cx="50" cy="65" r="3" fill="#ff2d55"/><circle cx="90" cy="20" r="3" fill="#af52de"/></svg>
           </div>
         </div>
       </div>
@@ -1976,7 +1976,7 @@ print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast
           <pre><span class="out-text">Kalman State Updated: x=[1.024, 0.998] | Gain K=0.42</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Noise Signal Filter</span><span class="swiftui-pill" style="color:var(--sf-blue);">Kalman Gain</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Noisy Signal Input ➔ Kalman Filtered Smooth Trace</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 60 L 40 20 L 70 55 L 100 25 L 130 45 L 160 15 L 190 50 L 220 30 L 250 60 L 280 20 L 310 40" fill="none" stroke="#ff3b30" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.6"/><path d="M 10 55 C 60 25, 100 40, 150 20 C 200 35, 250 45, 310 25" fill="none" stroke="#64d2ff" stroke-width="2.5"/></svg>
           </div>
         </div>
       </div>
@@ -2013,7 +2013,7 @@ print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast
           <pre><span class="out-text">LagTransformer Generated 5 Feature Lags across 1,000 Rows</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Autoregressive Matrix</span><span class="swiftui-pill" style="color:var(--sf-green);">Lag Matrix</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Series ➔ [Lag 1, Lag 2, Rolling Mean 7] Matrix</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="25" width="40" height="35" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><rect x="80" y="25" width="40" height="35" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><rect x="140" y="25" width="40" height="35" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><path d="M 60 42 L 80 42 M 120 42 L 140 42 M 180 42 L 210 42" stroke="#34c759" stroke-width="2" stroke-dasharray="2,2"/><rect x="210" y="20" width="90" height="45" rx="8" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="255" y="47" fill="#34c759" font-size="11" text-anchor="middle" font-family="monospace">Features t-k</text></svg>
           </div>
         </div>
       </div>
@@ -2460,7 +2460,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">GGUF Header Parsed: 291 Tensors Loaded (Q4_K_M)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Weight Format Parser</span><span class="swiftui-pill" style="color:var(--sf-blue);">GGUF / SafeTensors</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">GGUF Binary Header ➔ Memory Mapped MLX Tensors</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="20" width="65" height="40" rx="6" fill="rgba(0,122,255,0.25)" stroke="#007aff"/><text x="47" y="44" fill="#64d2ff" font-size="10" text-anchor="middle" font-family="monospace">GGUF Header</text><path d="M 80 40 L 105 40" stroke="#34c759" stroke-width="2" stroke-dasharray="2,2"/><rect x="105" y="20" width="195" height="40" rx="6" fill="rgba(52,199,89,0.15)" stroke="#34c759"/><rect x="115" y="28" width="50" height="24" rx="4" fill="#34c759" opacity="0.6"/><rect x="175" y="28" width="50" height="24" rx="4" fill="#af52de" opacity="0.6"/><rect x="235" y="28" width="55" height="24" rx="4" fill="#ff9500" opacity="0.6"/></svg>
           </div>
         </div>
       </div>
@@ -2498,7 +2498,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">Sampler Selected Token #1042 (Top-P 0.90 | Temp 0.70)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Nucleus Sampler</span><span class="swiftui-pill" style="color:var(--sf-green);">Top-P 0.9</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Logits Array ➔ Temp 0.70 ➔ Top-P Cutoff ➔ Sampled Token</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="25" height="50" rx="4" fill="#007aff"/><rect x="55" y="25" width="25" height="40" rx="4" fill="#007aff" opacity="0.8"/><rect x="90" y="35" width="25" height="30" rx="4" fill="#007aff" opacity="0.6"/><rect x="125" y="45" width="25" height="20" rx="4" fill="#007aff" opacity="0.4"/><line x1="10" y1="30" x2="290" y2="30" stroke="#ff3b30" stroke-width="1.5" stroke-dasharray="3,3"/><text x="240" y="25" fill="#ff3b30" font-size="10" font-family="monospace">Top-P Threshold</text></svg>
           </div>
         </div>
       </div>

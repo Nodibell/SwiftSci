@@ -1,4 +1,4 @@
-SwiftSci 2.4.0
+# SwiftSci 2.4.0
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 

@@ -13,7 +13,7 @@ import SwiftNLP
 
 // Apple OS multi-lingual word boundary detection
 let wordTokenizer = AppleWordTokenizer()
-let words = wordTokenizer.tokenize(text: "SwiftSci 2.4.0 is fantastic for NLP!")
+let words = wordTokenizer.tokenize(text: "SwiftSci 2.5.0 is fantastic for NLP!")
 
 // Sentence boundary tokenizer
 let sentenceTokenizer = SentenceTokenizer()

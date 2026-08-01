@@ -3,12 +3,12 @@ import Foundation
 @testable import SwiftNLP
 import SwiftDataFrame
 
-@Suite("SwiftNLP 2.4.0 Feature Suite")
+@Suite("SwiftNLP 2.5.0 Feature Suite")
 struct NLPv24Tests {
 
     @Test("Tokenizers - Word, Sentence, and Regex")
     func testTokenizers() {
-        let text = "Hello world! This is SwiftSci 2.4.0. Isn't it awesome?"
+        let text = "Hello world! This is SwiftSci 2.5.0. Isn't it awesome?"
         
         let wordTokenizer = AppleWordTokenizer()
         let words = wordTokenizer.tokenize(text: text)

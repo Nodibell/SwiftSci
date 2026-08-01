@@ -40,7 +40,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ---
 
-## 🔍 Detailed Analysis of Optimizations in v2.4.0
+## 🔍 Detailed Analysis of Optimizations in v2.5.0
 
 1. **SwiftNLP Accelerate & NLTK Equivalence**:
    - VADER Lexicon lookup uses zero-allocation binary search over pre-sorted static Key-Value arrays in `VADERLexicon.swift`.

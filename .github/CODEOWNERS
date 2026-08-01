@@ -2,8 +2,16 @@
 # Global default code owners
 * @Nodibell
 
-# Target-specific maintainer groups
+# Target-specific maintainer (all modules authored by @Nodibell)
+# Core / data / ML / LLM / forecasting / viz / db / agent / utils
 /Sources/SwiftDataFrame/ @Nodibell
 /Sources/SwiftML/ @Nodibell
 /Sources/SwiftLLM/ @Nodibell
 /Sources/SwiftForecast/ @Nodibell
+/Sources/SwiftExplain/ @Nodibell
+/Sources/SwiftVisualization/ @Nodibell
+/Sources/SwiftVision/ @Nodibell
+/Sources/SwiftDatabase/ @Nodibell
+/Sources/SwiftAgent/ @Nodibell
+/Sources/SwiftStats/ @Nodibell
+/Sources/SwiftPreprocessing/ @Nodibell

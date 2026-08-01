@@ -78,6 +78,18 @@ public struct DataFrame: Sendable {
         self = df
     }
 
+    /// Creates a DataFrame by reading a Feather / Arrow IPC binary file.
+    public init(feather url: URL) async throws {
+        let df = try await FeatherReader.read(url: url)
+        self = df
+    }
+
+    /// Reads a Feather / Arrow IPC binary file into a DataFrame.
+    public static func readFeather(from url: URL) async throws -> DataFrame {
+        try await FeatherReader.read(url: url)
+    }
+
+
     /// Downloads a dataset directly from an HTTP/HTTPS URL into a DataFrame.
     /// - Parameters:
     ///   - url: Remote URL pointing to a CSV or JSON dataset.
@@ -410,6 +422,17 @@ public struct DataFrame: Sendable {
     public func writeCSV(to url: URL) async throws {
         try await CSVWriter.write(self, to: url)
     }
+
+    /// Writes the DataFrame to a Feather / Arrow IPC binary file.
+    public func writeFeather(to url: URL) async throws {
+        try await FeatherWriter.write(self, to: url)
+    }
+
+    /// Serializes the DataFrame into Feather / Arrow IPC binary Data.
+    public func writeFeatherData() throws -> Data {
+        try FeatherWriter.write(self)
+    }
+
 
     /// Prints a formatted table to stdout.
     public func debugPrint(maxRows: Int = 20) {

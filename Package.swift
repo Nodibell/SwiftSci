@@ -32,8 +32,13 @@ let package = Package(
         .library(name: "SwiftVision",        targets: ["SwiftVision"]),
         .library(name: "SwiftDatabase",      targets: ["SwiftDatabase"]),
         .library(name: "SwiftAgent",         targets: ["SwiftAgent"]),
+        .executable(name: "swiftsci",        targets: ["SwiftSciCLI"]),
     ],
     dependencies: [
+        .package(
+            url: "https://github.com/apple/swift-argument-parser.git",
+            from: "1.3.0"
+        ),
         .package(
             url: "https://github.com/apache/arrow-swift.git",
             from: "21.0.0"
@@ -47,6 +52,7 @@ let package = Package(
             from: "1.3.0"
         ),
     ],
+
     targets: [
         // ── SwiftDataFrame ──────────────────────────────────────────────
         .target(
@@ -403,5 +409,19 @@ let package = Package(
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),
+
+        // ── SwiftSciCLI ──────────────────────────────────────────────
+        .executableTarget(
+            name: "SwiftSciCLI",
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                "SwiftDataFrame",
+                "SwiftML"
+            ],
+            path: "Sources/SwiftSciCLI",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
     ]
 )
+

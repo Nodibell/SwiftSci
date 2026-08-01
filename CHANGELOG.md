@@ -4,6 +4,20 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-08-01
+
+### Added
+- **`FeatherReader` & `FeatherWriter` (`SwiftDataFrame`)**: High-performance Feather / Arrow IPC File and Data buffer serialization (`init(feather:)`, `readFeather(from:)`, `writeFeather(to:)`).
+- **`LazyDataFrame` (`SwiftDataFrame`)**: Deferred execution pipeline with predicate pushdown and filter merging optimization (`DataFrame.lazy()`, `.filter()`, `.select()`, `.collect()`).
+- **`MultiOutputRegressor` & `MultiLabelClassifier` (`SwiftML`)**: Parallel multi-target regression and multi-label binary classification actors.
+- **Generalized `RandomizedSearchCV` (`SwiftOptimize`)**: Generalized hyperparameter search for generic estimator factories via `searchGeneric`.
+- **`ETSModel` & `PiecewiseTrendDecomposition` (`SwiftForecast`)**: Error-Trend-Seasonal state space model with `autoFit` AICc selection and Prophet-style piecewise linear/logistic trend decomposition.
+- **`KVCache` & `generateStream` (`SwiftLLM`)**: Key-Value tensor cache for autoregressive inference and `AsyncThrowingStream` streaming output.
+- **`SwiftSciChartView` (`SwiftVisualization`)**: Native SwiftUI `Canvas` charting component for line, bar, and heatmap visualization.
+- **`swiftsci` CLI (`SwiftSciCLI`)**: Command-line interface tool providing dataset summaries, CSV/Feather format conversions, and model export inspection.
+
+---
+
 ## [2.3.1] - 2026-07-30
 
 ### Fixed & Refactored

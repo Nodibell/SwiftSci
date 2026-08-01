@@ -87,8 +87,8 @@ internal enum ArrowTableBridge {
         return try DataFrame(columns: columns)
     }
 
-    /// Converts a `DataFrame` into an Apache Arrow `ArrowTable`.
-    static func toArrowTable(_ df: DataFrame) throws -> ArrowTable {
+    /// Converts a `DataFrame` into an Apache Arrow `RecordBatch`.
+    static func toRecordBatch(_ df: DataFrame) throws -> RecordBatch {
         let rbBuilder = RecordBatch.Builder()
         
         for col in df.columns {
@@ -114,16 +114,23 @@ internal enum ArrowTableBridge {
         
         switch rbBuilder.finish() {
         case .success(let rb):
-            switch ArrowTable.from(recordBatches: [rb]) {
-            case .success(let table):
-                return table
-            case .failure(let err):
-                throw DataFrameError.unsupportedFormat("Failed to build ArrowTable: \(err)")
-            }
+            return rb
         case .failure(let err):
             throw DataFrameError.unsupportedFormat("Failed to build RecordBatch: \(err)")
         }
     }
+
+    /// Converts a `DataFrame` into an Apache Arrow `ArrowTable`.
+    static func toArrowTable(_ df: DataFrame) throws -> ArrowTable {
+        let rb = try toRecordBatch(df)
+        switch ArrowTable.from(recordBatches: [rb]) {
+        case .success(let table):
+            return table
+        case .failure(let err):
+            throw DataFrameError.unsupportedFormat("Failed to build ArrowTable: \(err)")
+        }
+    }
+
     
     private static func mapArrowType(_ arrowType: ArrowType) throws -> ColumnDType {
         switch arrowType.id {

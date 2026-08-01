@@ -131,5 +131,48 @@ public class TransformerDecoder: Module, @unchecked Sendable {
             }
         }
     }
+
+    /// Generates tokens asynchronously in an error-throwing stream (`AsyncThrowingStream`).
+    /// - Parameters:
+    ///   - prompt: The starting text prompt.
+    ///   - options: Configuration options for generation.
+    /// - Returns: An AsyncThrowingStream of string tokens.
+    public func generateStream(prompt: String, options: LLMOptions) -> AsyncThrowingStream<String, any Error> {
+        let tokenizer = self.tokenizer
+        let maxSeqLen = self.maxSeqLen
+        
+        return AsyncThrowingStream<String, any Error> { continuation in
+            let task = Task {
+                var tokens = tokenizer.encode(text: prompt)
+                if tokens.isEmpty {
+                    tokens = [0]
+                }
+                
+                for _ in 0..<options.maxTokens {
+                    if Task.isCancelled { break }
+                    
+                    let inputTokens = Array(tokens.suffix(maxSeqLen))
+                    let arrayInput = MLXArray(inputTokens)
+                    let logits = self(arrayInput)
+                    let lastLogits = logits[0, logits.shape[1] - 1]
+                    let nextToken = Sampler.sample(logits: lastLogits, options: options)
+                    let decodedToken = tokenizer.decode(tokens: [nextToken])
+                    
+                    if decodedToken.isEmpty || decodedToken == "<unk>" {
+                        break
+                    }
+                    
+                    continuation.yield(decodedToken)
+                    tokens.append(nextToken)
+                }
+                continuation.finish()
+            }
+            
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
+        }
+    }
 }
 #endif // os(macOS)
+

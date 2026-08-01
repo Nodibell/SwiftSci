@@ -82,6 +82,30 @@ final class FastFilterTests: XCTestCase {
                        "filterFast must produce identical row count to closure filter on 100k rows")
     }
 
+    // MARK: - Sugar overload for all FilterOp cases
+
+    func testFilterFastSugarAllOps() throws {
+        let scores = TypedColumn<Double>(name: "score", values: [10.0, 20.0, 30.0, 40.0])
+        let df     = try DataFrame(columns: [scores])
+
+        XCTAssertEqual((try df.filterFast(column: "score", op: .greaterThan, threshold: 25.0)).shape.rows, 2)
+        XCTAssertEqual((try df.filterFast(column: "score", op: .greaterThanOrEqual, threshold: 30.0)).shape.rows, 2)
+        XCTAssertEqual((try df.filterFast(column: "score", op: .lessThan, threshold: 25.0)).shape.rows, 2)
+        XCTAssertEqual((try df.filterFast(column: "score", op: .lessThanOrEqual, threshold: 20.0)).shape.rows, 2)
+        XCTAssertEqual((try df.filterFast(column: "score", op: .equals, threshold: 20.0)).shape.rows, 1)
+        XCTAssertEqual((try df.filterFast(column: "score", op: .notEquals, threshold: 20.0)).shape.rows, 3)
+    }
+
+    // MARK: - Fallback scalar path (Bool column where filteredIndices returns nil)
+
+    func testFilterFastFallbackBoolColumn() throws {
+        let flags = TypedColumn<Bool>(name: "flag", values: [true, false, true, false])
+        let df    = try DataFrame(columns: [flags])
+
+        let res = try df.filterFast(column: "flag", where: .equals(true))
+        XCTAssertEqual(res.shape.rows, 2)
+    }
+
     // MARK: - Error: column not found
 
     func testFilterFastThrowsOnMissingColumn() throws {

@@ -106,6 +106,21 @@ final class FastFilterTests: XCTestCase {
         XCTAssertEqual(res.shape.rows, 2)
     }
 
+    // MARK: - Radix vDSP_vsortD Double sort coverage
+
+    func testSortByDoublevDSP() throws {
+        let col = TypedColumn<Double>(name: "v", values: [50.0, 10.0, 40.0, 20.0, 30.0])
+        let df  = try DataFrame(columns: [col])
+
+        let asc = try df.sortBy("v", ascending: true)
+        let ascVals = (0..<asc.shape.rows).compactMap { asc._columns["v"]?.value(at: $0) as? Double }
+        XCTAssertEqual(ascVals, [10.0, 20.0, 30.0, 40.0, 50.0])
+
+        let desc = try df.sortBy("v", ascending: false)
+        let descVals = (0..<desc.shape.rows).compactMap { desc._columns["v"]?.value(at: $0) as? Double }
+        XCTAssertEqual(descVals, [50.0, 40.0, 30.0, 20.0, 10.0])
+    }
+
     // MARK: - Error: column not found
 
     func testFilterFastThrowsOnMissingColumn() throws {

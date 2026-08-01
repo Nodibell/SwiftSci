@@ -390,12 +390,13 @@ def bench_advanced():
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="SwiftAnalytics Python Benchmark Suite")
+    parser = argparse.ArgumentParser(description="SwiftSci Python Benchmark Suite")
     parser.add_argument("--json", metavar="PATH", help="Export results to JSON file")
     args = parser.parse_args()
 
+
     print("╔══════════════════════════════════════════════════════════╗")
-    print("║      SwiftAnalytics Python Benchmark Suite — v1.0        ║")
+    print("║        SwiftSci Python Benchmark Suite — v2.5            ║")
     print("╚══════════════════════════════════════════════════════════╝")
     print(f"Platform : {platform.machine()} ({platform.system()})")
     print(f"Python   : {sys.version.split()[0]}")

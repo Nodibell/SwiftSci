@@ -31,8 +31,18 @@ public struct AppleWordTokenizer: Tokenizer, Sendable {
         #endif
     }
 
+    /// Deterministic 64-bit FNV-1a hashing for persistent token encoding across process restarts.
+    private func fnv1aHash(_ string: String) -> Int {
+        var hash: UInt64 = 0xcbf29ce484222325
+        for byte in string.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x100000001b3
+        }
+        return Int(truncatingIfNeeded: hash)
+    }
+
     public func encode(text: String) -> [Int] {
-        return tokenize(text: text).map { $0.hashValue }
+        return tokenize(text: text).map { fnv1aHash($0) }
     }
 
     public func decode(tokens: [Int]) -> String {

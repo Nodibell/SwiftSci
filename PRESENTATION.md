@@ -1,12 +1,14 @@
-#  SwiftSci 2.4.0 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 2.4.1 — Apple Keynote Ecosystem Presentation
 
-> **Built for Apple Silicon UMA (Unified Memory Architecture) & MLX Acceleration.**
-> Licensed under the MIT License.
+> **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
+> **Date**: August 2026
+> **Presenter**: Antigravity Pair-Programming Agent
 
 ---
 
-## 🌟 Executive Summary
-SwiftSci 2.4.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
+## Executive Summary
+
+SwiftSci 2.4.1 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
 
 ---
 

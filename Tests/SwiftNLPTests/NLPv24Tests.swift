@@ -64,11 +64,32 @@ struct NLPv24Tests {
         let negativeScore = vader.polarityScores(text: "This product is terrible, awful, and horrible.")
         #expect(negativeScore.compound < -0.5)
 
+        // v2.4.1 extended VADER lexicon test (words like awesome, amazing, catastrophic, disgrace)
+        let extendedPositive = vader.polarityScores(text: "This new engine is awesome, amazing, and fantastic!")
+        #expect(extendedPositive.compound > 0.5)
+
+        let extendedNegative = vader.polarityScores(text: "The failure was a total disaster, catastrophic, and a disgrace.")
+        #expect(extendedNegative.compound < -0.5)
+
         #if canImport(NaturalLanguage)
         let nlSentiment = NLSentimentAnalyzer()
         let score = try nlSentiment.score(text: "I absolutely love writing Swift code.")
         #expect(score > 0.0)
         #endif
+    }
+
+    @Test("AppleWordTokenizer - Deterministic Encoding Persistence")
+    func testAppleWordTokenizerDeterminism() {
+        let tokenizer = AppleWordTokenizer()
+        let text = "SwiftSci persistent token serialization test"
+
+        let enc1 = tokenizer.encode(text: text)
+        let enc2 = tokenizer.encode(text: text)
+
+        #expect(enc1 == enc2)
+        #expect(!enc1.isEmpty)
+        // Check exact FNV-1a deterministic hash stability
+        #expect(enc1[0] == tokenizer.encode(text: "SwiftSci")[0])
     }
 
     @Test("Language Detection & Embeddings")

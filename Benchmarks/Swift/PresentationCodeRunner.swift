@@ -21,8 +21,9 @@ public enum PresentationCodeRunner {
 
     public static func runAll() async throws {
         print("\n=======================================================")
-        print("🚀 SwiftSci 2.4.0 — Empirical Compiled Module Execution")
+        print("🚀 SwiftSci 2.5.0 — Empirical Compiled Module Execution")
         print("=======================================================\n")
+
 
         // 1. SwiftDataFrame
         print("--- [MODULE 1: SwiftDataFrame] ---")

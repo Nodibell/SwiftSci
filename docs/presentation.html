@@ -110,7 +110,7 @@
     /* Sub-module Intra-Slide Slider Bar */
     .sub-slider-bar {
       position: fixed;
-      top: 2.55rem;
+      top: 3.1rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -2937,6 +2937,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       });
 
       // Update Sub-Module Intra-Slide Sub-Slider Bar
+      const subBar = document.getElementById('subSliderBar');
       const subName = document.getElementById('subModName');
       const subCounter = document.getElementById('subModCounter');
       const modSlider = document.getElementById('modRangeSlider');
@@ -2944,7 +2945,8 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
 
       const currentMod = moduleRanges.find(m => currentSlide >= m.start && currentSlide <= m.end);
 
-      if (currentMod) {
+      if (currentMod && (currentMod.end > currentMod.start)) {
+        subBar.style.display = 'flex';
         subName.textContent = currentMod.name;
         const relativeIdx = currentSlide - currentMod.start + 1;
         const totalInMod = currentMod.end - currentMod.start + 1;
@@ -2962,6 +2964,8 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
           pillsHTML += `<div class="sub-pill ${isActive}" onclick="showSlide(${s})">#${relNum}</div>`;
         }
         subPillsContainer.innerHTML = pillsHTML;
+      } else {
+        subBar.style.display = 'none';
       }
 
       const glow = document.getElementById('glow');

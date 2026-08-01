@@ -4,6 +4,17 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-08-02
+
+### Added & Accelerated
+- **`DataFrame.filterFast` (`SwiftDataFrame`)**: SIMD vectorised single-column predicate evaluation operating directly on contiguous buffers via `SIMD4<Double>` / `SIMD4<Int64>` bitmasks (`vDSP_vcmprsD` / `vDSP_vthresDp`), eliminating per-row closure allocations.
+- **Radix Primitive Sort (`SwiftDataFrame`)**: Accelerate `vDSP_vsortD` fast path in `sortIndicesPrimitiveFast` for Double columns.
+- **Randomized SVD & Fast PCA (`SwiftCluster`)**: Halko et al. (2011) $O(MNk)$ `RandomizedSVD` implementation (`RandomizedSVD.compute`) and `SVDSolver` strategy enum (`.auto`, `.randomized`, `.full`) in `PCA`.
+- **MLX Compute Graph Compilation (`SwiftLLM`)**: Sequence-length bucketed (16, 32, 64, 128, 256) `MLX.compile` forward pass caching in `TransformerDecoder`, amortising Metal GPU graph compilation cost across autoregressive steps.
+- **CI Gate Promotion (`compare.py`)**: Promoted `filter rows`, `sortby double column`, `pca svd fit`, and `kmeans fit` from informational to CI-gated regression checks.
+
+---
+
 ## [2.5.0] - 2026-08-01
 
 ### Added

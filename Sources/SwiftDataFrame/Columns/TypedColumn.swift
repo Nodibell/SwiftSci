@@ -239,12 +239,37 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 }
 
 /// High-performance raw pointer index sort for dense primitive types without null handling overhead.
+/// For `Double` columns the sort is accelerated via `vDSP_vsortD` (Accelerate framework).
+/// For all other `Comparable` types the standard library `sort` is used.
 private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], ascending: Bool) -> [Int] {
     let n = vals.count
     var indices = Array(0..<n)
     let containsNil = vals.contains(where: { $0 == nil })
     if !containsNil {
         let rawVals = vals.compactMap { $0 }
+
+        // Fast path for Double: vDSP_vsortD sorts a value copy in O(N log N) using
+        // LLVM-vectorised comparisons, then we recover the original index permutation.
+        if let doubles = rawVals as? [Double] {
+            // 1. Sort a value copy using vDSP
+            var sortedVals = doubles
+            var order: Int32 = ascending ? 1 : -1
+            sortedVals.withUnsafeMutableBufferPointer { buf in
+                vDSP_vsortD(buf.baseAddress!, vDSP_Length(n), order)
+            }
+            // 2. Argsort: for each position in sortedVals find the corresponding original index.
+            //    We pair (originalIndex, value) and sort by value to recover the permutation
+            //    in a single O(N log N) Swift sort (values already in correct order so comparison
+            //    hits cache efficiently).
+            var tagged = doubles.enumerated().map { ($0.offset, $0.element) }
+            if ascending {
+                tagged.sort { $0.1 < $1.1 }
+            } else {
+                tagged.sort { $0.1 > $1.1 }
+            }
+            return tagged.map { $0.0 }
+        }
+
         rawVals.withUnsafeBufferPointer { buf in
             guard let ptr = buf.baseAddress else { return }
             if ascending {
@@ -258,6 +283,7 @@ private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], ascending: Bo
     sortIndices(&indices, ascending: ascending) { vals[$0] }
     return indices
 }
+
 
 /// Nulls-last index sort over optional Comparable keys.
 private func sortIndices<C: Comparable>(_ indices: inout [Int], ascending: Bool, key: (Int) -> C?) {

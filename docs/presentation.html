@@ -727,12 +727,7 @@ print(<span class="str">"Rows:"</span>, df.rowCount, <span class="str">"Cols:"</
           <pre><span class="out-text">DataFrame(columns: ["id", "score", "passed"], rows: 4)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SwiftUI Data Table View</span><span class="swiftui-pill" style="color:var(--sf-blue);">TypedColumn&lt;T&gt;</span></div>
-            <table style="width:100%; border-collapse:collapse; font-family:monospace; font-size:0.78rem;">
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.2); color:var(--sf-blue);"><th>id [Int64]</th><th>score [Double]</th><th>passed [Bool]</th></tr>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td>101</td><td>88.5</td><td>true</td></tr>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td>102</td><td>94.0</td><td>true</td></tr>
-              <tr><td>103</td><td>72.0</td><td>false</td></tr>
-            </table>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="20" width="80" height="45" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="55" y="47" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">TypedColumn&lt;Int&gt;</text><rect x="110" y="20" width="95" height="45" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="157" y="47" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">TypedColumn&lt;Double&gt;</text><rect x="220" y="20" width="85" height="45" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="262" y="47" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">TypedColumn&lt;Bool&gt;</text></svg>
           </div>
         </div>
       </div>
@@ -764,9 +759,7 @@ print(<span class="str">"Filtered Row Count:"</span>, filteredDF.rowCount)</pre>
           <pre><span class="out-text">Filtered DataFrame Rows: 2 / 4</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Filter Expression Result (score ≥ 85.0)</span><span class="swiftui-pill" style="color:var(--sf-green);">2 Rows Passed</span></div>
-            <div style="padding:8px; background:rgba(52,199,89,0.15); border:1px solid #34c759; border-radius:8px; font-family:monospace; font-size:0.78rem; color:#34c759;">
-              ✓ Row 0: id 101, score 88.5<br>✓ Row 1: id 102, score 94.0
-            </div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="20" width="80" height="45" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="55" y="47" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">TypedColumn&lt;Int&gt;</text><rect x="110" y="20" width="95" height="45" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="157" y="47" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">TypedColumn&lt;Double&gt;</text><rect x="220" y="20" width="85" height="45" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="262" y="47" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">TypedColumn&lt;String&gt;</text></svg>
           </div>
         </div>
       </div>
@@ -799,7 +792,7 @@ print(<span class="str">"Filtered Row Count:"</span>, filteredDF.rowCount)</pre>
           <pre><span class="out-text">Columns Added: "scaled" [Double], "grade" [String]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Mutated DataFrame Schema</span><span class="swiftui-pill" style="color:var(--sf-blue);">withColumn</span></div>
-            <div style="font-family:monospace; font-size:0.78rem; color:#007aff;">columns: ["id", "score", "passed", "scaled", "grade"]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 20 15 L 140 15 L 100 65 L 60 65 Z" fill="rgba(0,122,255,0.2)" stroke="#007aff" stroke-width="1.5"/><text x="80" y="35" fill="#64d2ff" font-size="10" text-anchor="middle" font-family="monospace">x &gt; 50.0</text><path d="M 100 40 L 160 40" stroke="#34c759" stroke-width="2" stroke-dasharray="3,3"/><rect x="160" y="20" width="140" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="230" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">Filtered Sub-DataFrame</text></svg>
           </div>
         </div>
       </div>
@@ -833,7 +826,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Group "true": Mean Score = 91.25</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Group Aggregation</span><span class="swiftui-pill" style="color:var(--sf-purple);">groupBy</span></div>
-            <div style="font-family:monospace; font-size:0.78rem; color:#af52de;">true ➔ Mean: 91.25, Count: 3<br>false ➔ Mean: 72.00, Count: 1</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="20" width="100" height="40" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)"/><text x="70" y="44" fill="#8e8e93" font-size="10" text-anchor="middle" font-family="monospace">Col A, Col B</text><path d="M 130 40 L 170 40" stroke="#af52de" stroke-width="2"/><polygon points="170,35 180,40 170,45" fill="#af52de"/><rect x="180" y="20" width="120" height="40" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="240" y="44" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">+ withColumn("C")</text></svg>
           </div>
         </div>
       </div>
@@ -864,7 +857,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Joined 1,250 Rows | Parquet Export Complete</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Multi-Format I/O</span><span class="swiftui-pill" style="color:var(--sf-green);">CSV / JSON / Parquet</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">DataFrame ➔ [CSV / JSON / Parquet Engine]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="25" y="30" width="30" height="40" rx="4" fill="#007aff"/><rect x="65" y="15" width="30" height="55" rx="4" fill="#007aff"/><rect x="135" y="40" width="30" height="30" rx="4" fill="#34c759"/><rect x="175" y="20" width="30" height="50" rx="4" fill="#34c759"/><rect x="245" y="25" width="30" height="45" rx="4" fill="#ff9500"/><rect x="285" y="35" width="30" height="35" rx="4" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
@@ -897,7 +890,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Null Rows Dropped & Filled Successfully</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Null Handling</span><span class="swiftui-pill" style="color:var(--sf-blue);">dropNulls</span></div>
-            <div style="font-family:monospace; color:#007aff;">NaN / nil Values Handled Cleanly</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="110" cy="40" r="32" fill="rgba(0,122,255,0.3)" stroke="#007aff" stroke-width="1.5"/><circle cx="170" cy="40" r="32" fill="rgba(52,199,89,0.3)" stroke="#34c759" stroke-width="1.5"/><text x="75" y="44" fill="#007aff" font-size="10" font-weight="bold">Left</text><text x="205" y="44" fill="#34c759" font-size="10" font-weight="bold">Right</text><text x="140" y="44" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Inner</text></svg>
           </div>
         </div>
       </div>
@@ -930,8 +923,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Mean: 22.2286 | StdDev: 6.1386 | Skewness: 0.124</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SIMD Descriptive Summary</span><span class="swiftui-pill" style="color:var(--sf-blue);">Accelerate vDSP</span></div>
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px; font-family:monospace; font-size:0.78rem; text-align:center;">
-              <div style="background:rgba(0,122,255,0.2); padding:6px; border-radius:6px; color:#007aff;">μ = 22.23</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="120" height="50" rx="6" fill="rgba(255,59,48,0.15)" stroke="#ff3b30"/><text x="80" y="44" fill="#ff3b30" font-size="10" text-anchor="middle" font-family="monospace">[NaN, Null, 42.0]</text><path d="M 150 40 L 175 40" stroke="#34c759" stroke-width="2"/><polygon points="175,35 185,40 175,45" fill="#34c759"/><rect x="185" y="15" width="115" height="50" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="242" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">[0.0, 0.0, 42.0]</text></svg>
               <div style="background:rgba(52,199,89,0.2); padding:6px; border-radius:6px; color:#34c759;">σ = 6.14</div>
             </div>
           </div>
@@ -995,7 +987,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Poisson PMF(k=2): 0.1465 | Sample Count: 1000</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Poisson Discrete PMF</span><span class="swiftui-pill" style="color:var(--sf-purple);">λ = 4.0</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">PMF(k=0): 0.018 | PMF(k=2): 0.1475</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 70 Q 110 70 160 15 T 310 70 Z" fill="url(#gradStats)" stroke="#007aff" stroke-width="2"/><line x1="160" y1="15" x2="160" y2="70" stroke="#ff9500" stroke-width="1.5" stroke-dasharray="3,3"/><text x="165" y="35" fill="#ff9500" font-size="9" font-family="monospace">Mean μ</text><defs><linearGradient id="gradStats" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#007aff" stop-opacity="0.4"/><stop offset="100%" stop-color="transparent"/></linearGradient></defs></svg>
           </div>
         </div>
       </div>
@@ -1026,7 +1018,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">t-Stat: 7.214 | p-Value: 0.000085 (Significant)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Critical Test Region</span><span class="swiftui-pill" style="color:var(--sf-green);">p &lt; 0.001</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Null Hypothesis Rejected (p &lt; 0.05)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="25" y="55" width="22" height="20" rx="3" fill="#007aff" opacity="0.5"/><rect x="55" y="40" width="22" height="35" rx="3" fill="#007aff" opacity="0.7"/><rect x="85" y="25" width="22" height="50" rx="3" fill="#007aff"/><rect x="115" y="15" width="22" height="60" rx="3" fill="#34c759"/><rect x="145" y="25" width="22" height="50" rx="3" fill="#007aff"/><rect x="175" y="40" width="22" height="35" rx="3" fill="#007aff" opacity="0.7"/><rect x="205" y="55" width="22" height="20" rx="3" fill="#007aff" opacity="0.5"/><rect x="235" y="65" width="22" height="10" rx="3" fill="#007aff" opacity="0.3"/></svg>
           </div>
         </div>
       </div>
@@ -1092,7 +1084,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Scaled Row 0: ["-1.2247", "-1.2247"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Z-Score Normalization</span><span class="swiftui-pill" style="color:var(--sf-green);">Mean = 0, Std = 1</span></div>
-            <div style="font-family:monospace; color:#34c759;">Raw: [10...400] ➔ Scaled: [-1.22...1.22]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 70 Q 80 70 120 20 T 230 70 Z" fill="rgba(0,122,255,0.2)" stroke="#007aff" stroke-width="1.5"/><path d="M 90 70 Q 160 70 200 20 T 310 70 Z" fill="rgba(255,45,85,0.2)" stroke="#ff2d55" stroke-width="1.5"/><line x1="215" y1="10" x2="215" y2="70" stroke="#ff3b30" stroke-width="1.5" stroke-dasharray="2,2"/><text x="220" y="25" fill="#ff3b30" font-size="9" font-family="monospace">p &lt; 0.05</text></svg>
           </div>
         </div>
       </div>
@@ -1126,7 +1118,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">OneHot Matrix: [1,0,0], [0,1,0], [0,0,1]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Binary Vector Grid</span><span class="swiftui-pill" style="color:var(--sf-purple);">OneHotEncoder</span></div>
-            <div style="font-family:monospace; color:#af52de;">"Red" ➔ [1, 0, 0]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 65 Q 90 65 120 15 T 230 65 Z" fill="none" stroke="#007aff" stroke-width="2"/><path d="M 150 65 Q 210 65 240 30 T 310 65 Z" fill="none" stroke="#34c759" stroke-width="2" stroke-dasharray="3,3"/><text x="70" y="35" fill="#007aff" font-size="9" font-family="monospace">N(0, 1)</text><text x="220" y="45" fill="#34c759" font-size="9" font-family="monospace">MinMax[0,1]</text></svg>
           </div>
         </div>
       </div>
@@ -1160,7 +1152,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Imputed 2 Missing NaN Values</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>NaN Replacement</span><span class="swiftui-pill" style="color:var(--sf-blue);">Mean Strategy</span></div>
-            <div style="font-family:monospace; color:#007aff;">NaN ➔ Replaced by Column Mean</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="20" width="70" height="40" rx="6" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="55" y="44" fill="#ff9500" font-size="10" text-anchor="middle" font-family="monospace">"Red"</text><path d="M 100 40 L 130 40" stroke="#34c759" stroke-width="2"/><rect x="135" y="20" width="165" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="217" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">[1.0, 0.0, 0.0]</text></svg>
           </div>
         </div>
       </div>
@@ -1192,7 +1184,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Polynomial Expanded Features: 6 Columns</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Interaction Terms</span><span class="swiftui-pill" style="color:var(--sf-orange);">Degree = 2</span></div>
-            <div style="font-family:monospace; color:#ff9500;">[1, x1, x2, x1^2, x1*x2, x2^2]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="30" cy="55" r="4" fill="#007aff"/><circle cx="70" cy="35" r="4" fill="#007aff"/><circle cx="110" cy="45" r="5" fill="#ff9500" stroke="#ffffff" stroke-width="1.5"/><circle cx="150" cy="20" r="4" fill="#007aff"/><circle cx="190" cy="30" r="5" fill="#ff9500" stroke="#ffffff" stroke-width="1.5"/><circle cx="230" cy="15" r="4" fill="#007aff"/><circle cx="270" cy="25" r="4" fill="#007aff"/><path d="M 30 55 L 70 35 L 110 45 L 150 20 L 190 30 L 230 15 L 270 25" fill="none" stroke="rgba(0,122,255,0.4)" stroke-dasharray="2,2"/></svg>
           </div>
         </div>
       </div>
@@ -1233,7 +1225,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Pipeline & ColumnTransformer Executed (12 Columns)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Pipeline Architecture</span><span class="swiftui-pill" style="color:var(--sf-blue);">ETL Pipeline</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Raw Matrix ➔ [Scaler ➔ Poly] ➔ Final Features</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 20 65 Q 120 65 170 35 T 300 15" fill="none" stroke="#af52de" stroke-width="2.2"/><text x="180" y="25" fill="#af52de" font-size="10" font-family="monospace">y = a*x^2 + b*x + c</text></svg>
           </div>
         </div>
       </div>
@@ -1271,7 +1263,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Selected 5 / 20 Best Features (ANOVA F-Score)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Feature Ranking</span><span class="swiftui-pill" style="color:var(--sf-purple);">SelectKBest</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">20 Features ➔ Filtered to Top 5 Best Features</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="22" width="75" height="36" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="52" y="44" fill="#007aff" font-size="9" text-anchor="middle" font-family="monospace">Scaler</text><path d="M 90 40 L 115 40" stroke="#34c759" stroke-width="2"/><rect x="115" y="22" width="85" height="36" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="157" y="44" fill="#34c759" font-size="9" text-anchor="middle" font-family="monospace">OneHot</text><path d="M 200 40 L 225 40" stroke="#af52de" stroke-width="2"/><rect x="225" y="22" width="80" height="36" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="265" y="44" fill="#af52de" font-size="9" text-anchor="middle" font-family="monospace">Model</text></svg>
           </div>
         </div>
       </div>
@@ -1335,7 +1327,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Decision Tree Fitted (Depth 4) | Pred: 0.0</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Tree Splitting Node</span><span class="swiftui-pill" style="color:var(--sf-purple);">Gini Split</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">Node [X0 &le; 2.5] ➔ Left / Right</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="220" height="14" rx="3" fill="#34c759"/><rect x="20" y="33" width="160" height="14" rx="3" fill="#007aff"/><rect x="20" y="51" width="90" height="14" rx="3" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
@@ -1367,7 +1359,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">RF Pred(3.5): 3.6500 (20 Trees Averaged)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Bagging Ensemble</span><span class="swiftui-pill" style="color:var(--sf-green);">20 Estimators</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Ensemble Prediction = 3.6500</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="160" y1="15" x2="90" y2="45" stroke="#007aff" stroke-width="1.5"/><line x1="160" y1="15" x2="230" y2="45" stroke="#007aff" stroke-width="1.5"/><line x1="90" y1="45" x2="50" y2="68" stroke="#34c759" stroke-width="1.5"/><line x1="90" y1="45" x2="130" y2="68" stroke="#34c759" stroke-width="1.5"/><circle cx="160" cy="15" r="8" fill="#007aff"/><circle cx="90" cy="45" r="7" fill="#34c759"/><circle cx="230" cy="45" r="7" fill="#ff9500"/><circle cx="50" cy="68" r="6" fill="#af52de"/><circle cx="130" cy="68" r="6" fill="#af52de"/></svg>
           </div>
         </div>
       </div>
@@ -1398,7 +1390,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Gradient Boosting Converged (MSE: 0.0012)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Residual Minimization</span><span class="swiftui-pill" style="color:var(--sf-orange);">Gradient Boosting</span></div>
-            <div style="font-family:monospace; text-align:center; color:#ff9500;">Residual Loss ➔ Minimized over 50 Steps</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="70" height="40" rx="5" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><rect x="125" y="15" width="70" height="40" rx="5" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><rect x="230" y="15" width="70" height="40" rx="5" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><path d="M 55 55 L 160 70 M 160 55 L 160 70 M 265 55 L 160 70" stroke="#ff9500" stroke-width="1.5"/><circle cx="160" cy="70" r="6" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
@@ -1475,7 +1467,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Probability Calibration Complete (Brier Score: 0.021)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Reliability Diagram</span><span class="swiftui-pill" style="color:var(--sf-green);">Platt Scaling</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Raw Probas ➔ Calibrated Sigmoid Curve</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="30" y1="65" x2="290" y2="15" stroke="#007aff" stroke-width="2"/><circle cx="70" cy="25" r="5" fill="#ff2d55"/><circle cx="120" cy="30" r="5" fill="#ff2d55"/><circle cx="180" cy="65" r="5" fill="#34c759"/><circle cx="230" cy="55" r="5" fill="#34c759"/></svg>
           </div>
         </div>
       </div>
@@ -1506,7 +1498,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Model Saved & Loaded Successfully (1.2 KB)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Model Persistence</span><span class="swiftui-pill" style="color:var(--sf-blue);">Codable JSON</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Trained Model ➔ trained_rf.json (1.2 KB)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="70" x2="300" y2="10" stroke="rgba(255,255,255,0.3)" stroke-dasharray="3,3"/><path d="M 20 70 Q 100 65 160 40 T 300 10" fill="none" stroke="#007aff" stroke-width="2.2"/><path d="M 20 70 Q 150 40 300 10" fill="none" stroke="#34c759" stroke-width="2"/></svg>
           </div>
         </div>
       </div>
@@ -1543,7 +1535,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">CoreML (.mlmodel) & ONNX (.onnx) Exported (42 KB)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Model Exporters</span><span class="swiftui-pill" style="color:var(--sf-orange);">CoreML / ONNX</span></div>
-            <div style="font-family:monospace; text-align:center; color:#ff9500;">SwiftML Model ➔ CoreML Neural Engine & ONNX Graph</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="15" width="240" height="50" rx="8" fill="rgba(0,122,255,0.15)" stroke="#007aff"/><text x="160" y="44" fill="#64d2ff" font-size="11" text-anchor="middle" font-family="monospace">[Binary Serialized Model Checkpoint]</text></svg>
           </div>
         </div>
       </div>
@@ -1607,7 +1599,7 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
           <pre><span class="out-text">t-SNE 2D Manifold Embedding Complete</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>2D Manifold Mapping</span><span class="swiftui-pill" style="color:var(--sf-green);">t-SNE</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">High-Dim Features ➔ 2D Manifold Mapping</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="20" width="85" height="40" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="62" y="44" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">SwiftML</text><path d="M 110 40 L 140 40" stroke="#34c759" stroke-width="2"/><rect x="145" y="20" width="70" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="180" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">CoreML</text><path d="M 220 40 L 235 40" stroke="#af52de" stroke-width="2"/><rect x="240" y="20" width="60" height="40" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="270" y="44" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">ONNX</text></svg>
           </div>
         </div>
       </div>
@@ -1669,7 +1661,7 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
           <pre><span class="out-text">GMM EM Algorithm Converged (3 Components)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Gaussian Probabilities</span><span class="swiftui-pill" style="color:var(--sf-blue);">GMM EM</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Soft Probabilistic Cluster Assignments</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="60" cy="35" r="4" fill="#007aff"/><circle cx="80" cy="25" r="4" fill="#007aff"/><circle cx="75" cy="50" r="4" fill="#007aff"/><circle cx="220" cy="30" r="4" fill="#34c759"/><circle cx="240" cy="45" r="4" fill="#34c759"/><circle cx="250" cy="25" r="4" fill="#34c759"/><circle cx="150" cy="60" r="4" fill="#ff9500"/><circle cx="165" cy="50" r="4" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
@@ -1705,7 +1697,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
           <pre><span class="out-text">IsolationForest Detected 5 Outliers (Contamination 5%)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Anomaly Distribution</span><span class="swiftui-pill" style="color:var(--sf-green);">IsolationForest</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Inliers (95%) vs Isolated Anomalies (5%)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><ellipse cx="80" cy="40" rx="45" ry="25" fill="rgba(0,122,255,0.2)" stroke="#007aff" stroke-dasharray="2,2"/><ellipse cx="240" cy="40" rx="45" ry="25" fill="rgba(52,199,89,0.2)" stroke="#34c759" stroke-dasharray="2,2"/><circle cx="80" cy="40" r="5" fill="#007aff"/><circle cx="240" cy="40" r="5" fill="#34c759"/></svg>
           </div>
         </div>
       </div>
@@ -1767,7 +1759,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
           <pre><span class="out-text">5 Folds Generated (80% Train / 20% Val)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>5-Fold Split</span><span class="swiftui-pill" style="color:var(--sf-purple);">Stratified</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">[Train 80%] ➔ [Validation 20%]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="120" cy="40" r="4" fill="#007aff"/><circle cx="135" cy="30" r="4" fill="#007aff"/><circle cx="140" cy="50" r="4" fill="#007aff"/><circle cx="150" cy="35" r="4" fill="#007aff"/><circle cx="40" cy="20" r="6" fill="#ff2d55" stroke="#ffffff" stroke-width="1.5"/><circle cx="280" cy="65" r="6" fill="#ff2d55" stroke="#ffffff" stroke-width="1.5"/></svg>
           </div>
         </div>
       </div>
@@ -1797,7 +1789,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
           <pre><span class="out-text">TimeSeries Folds Generated: 4</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Temporal Rolling Window</span><span class="swiftui-pill" style="color:var(--sf-orange);">No Lookahead</span></div>
-            <div style="font-family:monospace; text-align:center; color:#ff9500;">Fold 1 ➔ Fold 2 ➔ Fold 3 ➔ Fold 4</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="50" height="12" rx="2" fill="#ff9500"/><rect x="75" y="15" width="225" height="12" rx="2" fill="#007aff" opacity="0.6"/><rect x="20" y="33" width="120" height="12" rx="2" fill="#007aff" opacity="0.6"/><rect x="145" y="33" width="50" height="12" rx="2" fill="#ff9500"/><rect x="200" y="33" width="100" height="12" rx="2" fill="#007aff" opacity="0.6"/><rect x="20" y="51" width="230" height="12" rx="2" fill="#007aff" opacity="0.6"/><rect x="255" y="51" width="45" height="12" rx="2" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
@@ -1831,7 +1823,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
           <pre><span class="out-text">Best Parameters: nEstimators = 20, maxDepth = 5</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Grid Search Result</span><span class="swiftui-pill" style="color:var(--sf-green);">Best Fit</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">✓ Selected Best Parameters: depth = 5</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="60" height="12" rx="2" fill="#007aff"/><rect x="85" y="15" width="40" height="12" rx="2" fill="#ff9500"/><rect x="20" y="33" width="120" height="12" rx="2" fill="#007aff"/><rect x="145" y="33" width="40" height="12" rx="2" fill="#ff9500"/><rect x="20" y="51" width="200" height="12" rx="2" fill="#007aff"/><rect x="225" y="51" width="40" height="12" rx="2" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
@@ -2044,7 +2036,7 @@ print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast
           <pre><span class="out-text">Holt-Winters Fitted (Period: 12)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Seasonal Smoothing</span><span class="swiftui-pill" style="color:var(--sf-blue);">Holt-Winters</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Additive Trend & Seasonality Modeled</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="15" width="55" height="22" rx="3" fill="rgba(52,199,89,0.3)" stroke="#34c759"/><rect x="95" y="15" width="55" height="22" rx="3" fill="rgba(52,199,89,0.7)" stroke="#34c759"/><rect x="160" y="15" width="55" height="22" rx="3" fill="#34c759"/><rect x="225" y="15" width="55" height="22" rx="3" fill="rgba(52,199,89,0.5)" stroke="#34c759"/><rect x="30" y="43" width="55" height="22" rx="3" fill="rgba(52,199,89,0.4)" stroke="#34c759"/><rect x="95" y="43" width="55" height="22" rx="3" fill="rgba(52,199,89,0.8)" stroke="#34c759"/><rect x="160" y="43" width="55" height="22" rx="3" fill="rgba(52,199,89,0.6)" stroke="#34c759"/><rect x="225" y="43" width="55" height="22" rx="3" fill="rgba(52,199,89,0.2)" stroke="#34c759"/></svg>
           </div>
         </div>
       </div>
@@ -2077,7 +2069,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Decomposed into Trend, Seasonal & Residuals</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>3-Level Component Decomposition</span><span class="swiftui-pill" style="color:var(--sf-purple);">STL Decomp</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">Series = Trend + Seasonality + Noise</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 15 50 Q 80 15 150 40 T 305 20" fill="none" stroke="#007aff" stroke-width="2.2"/><path d="M 230 28 Q 270 10 305 20" fill="none" stroke="#ff9500" stroke-width="2" stroke-dasharray="3,3"/></svg>
           </div>
         </div>
       </div>
@@ -2107,7 +2099,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">FFT Seasonal Length: 48 Points</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Frequency Spectrum</span><span class="swiftui-pill" style="color:var(--sf-green);">vDSP FFT</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Peak Dominant Frequency Identified</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 15 20 L 305 20" stroke="#007aff" stroke-width="1.5"/><path d="M 15 42 Q 40 30 70 42 T 130 42 T 190 42 T 250 42 T 305 42" fill="none" stroke="#34c759" stroke-width="1.5"/><path d="M 15 65 L 40 60 L 70 68 L 100 62 L 130 66 L 160 58 L 190 65 L 220 60 L 250 67 L 280 61 L 305 64" fill="none" stroke="#ff2d55" stroke-width="1.2"/></svg>
           </div>
         </div>
       </div>
@@ -2137,7 +2129,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Tokens: ["SwiftSci", "2.4.0", "is", "an", "extraordinarily"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Token Stream</span><span class="swiftui-pill" style="color:var(--sf-blue);">Apple NL</span></div>
-            <div style="font-family:monospace; color:#007aff;">["SwiftSci", "2.4.0", "is", "an", "extraordinarily"]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="65" x2="300" y2="65" stroke="rgba(255,255,255,0.2)"/><rect x="40" y="20" width="10" height="45" fill="#007aff"/><rect x="85" y="35" width="10" height="30" fill="#007aff"/><rect x="130" y="15" width="10" height="50" fill="#34c759"/><rect x="175" y="45" width="10" height="20" fill="#007aff"/><rect x="220" y="55" width="10" height="10" fill="#007aff"/><rect x="265" y="25" width="10" height="40" fill="#007aff"/></svg>
           </div>
         </div>
       </div>
@@ -2170,7 +2162,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Porter Stems: ["run", "comput", "algorithm"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Suffix Stripping</span><span class="swiftui-pill" style="color:var(--sf-purple);">Porter Stemmer</span></div>
-            <div style="font-family:monospace; color:#af52de;">computational ➔ comput</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="22" width="75" height="36" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="57" y="44" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">"SwiftSci"</text><rect x="110" y="22" width="85" height="36" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="152" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">"Tokenization"</text><rect x="210" y="22" width="90" height="36" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="255" y="44" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">"Engine"</text></svg>
           </div>
         </div>
       </div>
@@ -2200,7 +2192,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">[Tim Cook: PERSON], [Apple: ORG], [Cupertino: LOC]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SwiftUI Capsule Badges</span><span class="swiftui-pill" style="color:var(--sf-green);">POS Tagger</span></div>
-            <div style="display:flex; gap:4px; font-family:monospace; font-size:0.75rem;"><span style="padding:4px; background:rgba(0,122,255,0.2); border-radius:4px; color:#007aff;">Tim Cook: PERSON</span><span style="padding:4px; background:rgba(52,199,89,0.2); border-radius:4px; color:#34c759;">Apple: ORG</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="20" width="110" height="40" rx="6" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="85" y="44" fill="#ff9500" font-size="10" text-anchor="middle" font-family="monospace">"running"</text><path d="M 150 40 L 180 40" stroke="#34c759" stroke-width="2"/><rect x="185" y="20" width="105" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="237" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">"run"</text></svg>
           </div>
         </div>
       </div>
@@ -2230,7 +2222,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Compound Score: +0.8521 (Strongly Positive)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>VADER Polarity</span><span class="swiftui-pill" style="color:var(--sf-green);">Positive</span></div>
-            <div style="padding:6px; background:rgba(52,199,89,0.2); border-radius:6px; text-align:center; font-family:monospace; color:#34c759;">Compound: +0.8521</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="22" width="80" height="36" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="60" y="37" fill="#007aff" font-size="9" font-weight="bold" text-anchor="middle">Apple</text><text x="60" y="50" fill="#8e8e93" font-size="8" text-anchor="middle" font-family="monospace">[ORG]</text><rect x="120" y="22" width="80" height="36" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="160" y="37" fill="#34c759" font-size="9" font-weight="bold" text-anchor="middle">Cupertino</text><text x="160" y="50" fill="#8e8e93" font-size="8" text-anchor="middle" font-family="monospace">[LOC]</text></svg>
           </div>
         </div>
       </div>
@@ -2264,7 +2256,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">TF-IDF Sparse Matrix Generated: 3x500</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>TF-IDF Vector Space</span><span class="swiftui-pill" style="color:var(--sf-orange);">Sparse Matrix</span></div>
-            <div style="font-family:monospace; text-align:center; color:#ff9500;">Term Frequency - Inverse Document Frequency</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 40 65 A 60 60 0 0 1 280 65" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="10" stroke-linecap="round"/><path d="M 40 65 A 60 60 0 0 1 240 30" fill="none" stroke="#34c759" stroke-width="10" stroke-linecap="round"/><text x="160" y="60" fill="#34c759" font-size="14" font-weight="bold" text-anchor="middle">+0.85 Positive</text></svg>
           </div>
         </div>
       </div>
@@ -2295,7 +2287,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Naive Bayes Classifier Accuracy: 98.4%</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Text Classification</span><span class="swiftui-pill" style="color:var(--sf-blue);">Naive Bayes</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Accuracy = 98.4% on Test Set</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="15" width="55" height="22" rx="3" fill="#007aff"/><rect x="95" y="15" width="55" height="22" rx="3" fill="rgba(0,122,255,0.2)"/><rect x="160" y="15" width="55" height="22" rx="3" fill="#007aff" opacity="0.6"/><rect x="225" y="15" width="55" height="22" rx="3" fill="rgba(0,122,255,0.2)"/><rect x="30" y="43" width="55" height="22" rx="3" fill="rgba(0,122,255,0.2)"/><rect x="95" y="43" width="55" height="22" rx="3" fill="#007aff" opacity="0.8"/><rect x="160" y="43" width="55" height="22" rx="3" fill="rgba(0,122,255,0.2)"/><rect x="225" y="43" width="55" height="22" rx="3" fill="#007aff"/></svg>
           </div>
         </div>
       </div>
@@ -2327,7 +2319,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">SHAP Values: ["+2.15", "+4.02", "-0.88", "+1.12"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Swift Charts BarMark</span><span class="swiftui-pill" style="color:var(--sf-green);">Attribution</span></div>
-            <div style="font-family:monospace; color:#34c759;">Feature 0: +2.15 | Feature 1: +4.02</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="20" width="100" height="45" rx="6" fill="rgba(52,199,89,0.25)" stroke="#34c759"/><text x="90" y="47" fill="#34c759" font-size="11" font-weight="bold" text-anchor="middle">P(Pos) = 94.2%</text><rect x="180" y="35" width="100" height="30" rx="6" fill="rgba(255,45,85,0.2)" stroke="#ff2d55"/><text x="230" y="54" fill="#ff2d55" font-size="10" text-anchor="middle">P(Neg) = 5.8%</text></svg>
           </div>
         </div>
       </div>
@@ -2360,7 +2352,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Top Feature: Feature 1 (Importance Drop: -0.42)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Feature Importance Drop</span><span class="swiftui-pill" style="color:var(--sf-purple);">Permutation</span></div>
-            <div style="font-family:monospace; color:#af52de;">Score Drop: Feature 1 ➔ -0.42</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="160" y="15" width="90" height="14" rx="3" fill="#34c759"/><rect x="70" y="33" width="90" height="14" rx="3" fill="#ff3b30"/><rect x="160" y="51" width="120" height="14" rx="3" fill="#34c759"/><line x1="160" y1="10" x2="160" y2="70" stroke="rgba(255,255,255,0.3)" stroke-dasharray="2,2"/></svg>
           </div>
         </div>
       </div>
@@ -2391,7 +2383,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Prompt Token Count: 14 / 512</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SwiftUI Gauge</span><span class="swiftui-pill" style="color:var(--sf-blue);">14 Tokens</span></div>
-            <div style="width:100%; height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden;"><div style="width:15%; height:100%; background:#007aff;"></div></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="25" width="260" height="30" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)"/><rect x="30" y="25" width="160" height="30" rx="6" fill="#007aff"/><text x="110" y="44" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Active Tokens: 312 / 512</text></svg></div>
           </div>
         </div>
       </div>
@@ -2424,7 +2416,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">BPE Encoded: 18 Tokens | Template Formatted</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Prompt Template</span><span class="swiftui-pill" style="color:var(--sf-green);">Formatted</span></div>
-            <div style="font-family:monospace; color:#34c759;">"System: Data Scientist\nContext: SwiftDataFrame"</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 20 60 Q 120 55 180 30 T 300 15" fill="none" stroke="#af52de" stroke-width="2.2"/></svg>
           </div>
         </div>
       </div>
@@ -2531,7 +2523,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">Plotly HTML Heatmap Saved (476 bytes)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Heatmap Grid</span><span class="swiftui-pill" style="color:var(--sf-orange);">Plotly HTML</span></div>
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px; font-family:monospace; text-align:center;"><div style="background:rgba(0,122,255,0.8); padding:6px; border-radius:4px; color:#fff;">1.00</div><div style="background:rgba(0,122,255,0.3); padding:6px; border-radius:4px; color:#fff;">0.34</div></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="25" width="260" height="30" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)"/><rect x="30" y="25" width="160" height="30" rx="6" fill="#007aff"/><text x="110" y="44" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Active Tokens: 312 / 512</text></svg><div style="background:rgba(0,122,255,0.3); padding:6px; border-radius:4px; color:#fff;">0.34</div></div>
           </div>
         </div>
       </div>
@@ -2565,7 +2557,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">Plotly ROC, Scatter & Hist HTML Exported (749 bytes)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Plotly Standalone HTML</span><span class="swiftui-pill" style="color:var(--sf-green);">Interactive</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Plotly Engine Export Completed</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="22" width="70" height="36" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="55" y="44" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">"sub"</text><rect x="100" y="22" width="70" height="36" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="135" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">"word"</text><path d="M 180 40 L 205 40" stroke="#af52de" stroke-width="2"/><rect x="210" y="22" width="90" height="36" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="255" y="44" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">"subword"</text></svg>
           </div>
         </div>
       </div>
@@ -2599,7 +2591,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">U-Net Mask: [224, 224] | Dice: 0.942 | IoU: 0.891</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Segmentation Result</span><span class="swiftui-pill" style="color:var(--sf-blue);">Dice = 0.942</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">2D U-Net Probability Segmentation Mask</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="15" width="50" height="22" rx="3" fill="#007aff"/><rect x="100" y="15" width="50" height="22" rx="3" fill="rgba(0,122,255,0.3)"/><rect x="160" y="15" width="50" height="22" rx="3" fill="rgba(0,122,255,0.6)"/><rect x="220" y="15" width="50" height="22" rx="3" fill="#007aff"/><rect x="40" y="43" width="50" height="22" rx="3" fill="rgba(0,122,255,0.3)"/><rect x="100" y="43" width="50" height="22" rx="3" fill="#007aff"/><rect x="160" y="43" width="50" height="22" rx="3" fill="rgba(0,122,255,0.4)"/><rect x="220" y="43" width="50" height="22" rx="3" fill="rgba(0,122,255,0.7)"/></svg>
           </div>
         </div>
       </div>
@@ -2633,7 +2625,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">YOLOv8 Detected: 3 Objects | NMS IoU Filter Passed</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Object Detection Result</span><span class="swiftui-pill" style="color:var(--sf-green);">3 Bounding Boxes</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Person (0.92) | Car (0.88) | Dog (0.78)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 20 70 L 300 10" stroke="rgba(255,255,255,0.2)" stroke-dasharray="3,3"/><path d="M 20 70 C 40 20, 150 15, 300 10" fill="none" stroke="#34c759" stroke-width="2.5"/></svg>
           </div>
         </div>
       </div>
@@ -2664,7 +2656,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">SQL Query Rows Returned: 1</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SQLite Query Result</span><span class="swiftui-pill" style="color:var(--sf-green);">users</span></div>
-            <div style="font-family:monospace; font-size:0.78rem; color:#34c759;">Row 1: (id: 1, score: 95.5)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="15" width="100" height="50" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><path d="M 50 50 Q 80 20 120 40" fill="none" stroke="#34c759" stroke-width="2"/><rect x="180" y="15" width="100" height="50" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><path d="M 190 50 Q 220 20 260 40 Z" fill="rgba(52,199,89,0.5)" stroke="#34c759"/></svg>
           </div>
         </div>
       </div>
@@ -2696,7 +2688,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">Table "customers" Exported & Imported</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Bi-directional Bridge</span><span class="swiftui-pill" style="color:var(--sf-blue);">DataFrame ⟷ SQLite</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">DataFrame ➔ Export ➔ SQLite Database Table</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="15" width="100" height="50" rx="4" fill="none" stroke="#34c759" stroke-width="2"/><text x="45" y="28" fill="#34c759" font-size="9" font-weight="bold">[Car: 0.96]</text><rect x="170" y="25" width="110" height="40" rx="4" fill="none" stroke="#ff9500" stroke-width="2"/><text x="175" y="38" fill="#ff9500" font-size="9" font-weight="bold">[Person: 0.92]</text></svg>
           </div>
         </div>
       </div>
@@ -2729,7 +2721,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
           <pre><span class="out-text">Agent Evaluator Result: 4 Regional Groups</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Agent Flow</span><span class="swiftui-pill" style="color:var(--sf-purple);">SwiftAgent</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">NL Command ➔ Evaluator ➔ Transformed DF</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><ellipse cx="160" cy="22" rx="70" ry="10" fill="rgba(0,122,255,0.3)" stroke="#007aff"/><path d="M 90 22 L 90 58 A 70 10 0 0 0 230 58 L 230 22" fill="rgba(0,122,255,0.15)" stroke="#007aff"/><text x="160" y="45" fill="#64d2ff" font-size="10" font-weight="bold" text-anchor="middle">C-SQLite Engine</text></svg>
           </div>
         </div>
       </div>
@@ -2761,7 +2753,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
           <pre><span class="out-text">RAG Context Profile Generated Successfully</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>RAG Summary Profile</span><span class="swiftui-pill" style="color:var(--sf-green);">RAG Context</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">DataFrame Profile ➔ Prompt Context Summary</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="20" width="95" height="40" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="67" y="44" fill="#007aff" font-size="10" font-weight="bold" text-anchor="middle">DataFrame</text><path d="M 125 33 L 195 33 M 195 47 L 125 47" stroke="#34c759" stroke-width="2"/><polygon points="195,30 205,33 195,36" fill="#34c759"/><polygon points="125,44 115,47 125,50" fill="#34c759"/><rect x="205" y="20" width="95" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="252" y="44" fill="#34c759" font-size="10" font-weight="bold" text-anchor="middle">SQLite DB</text></svg>
           </div>
         </div>
       </div>

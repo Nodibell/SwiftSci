@@ -93,14 +93,18 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
             var results = [Double](repeating: base, count: count)
             let localTrees = trees
             results.withUnsafeMutableBufferPointer { buf in
-                guard let ptr = buf.baseAddress else { return }
+                guard let basePtr = buf.baseAddress else { return }
+                struct UnsafeSendablePtr: @unchecked Sendable {
+                    let ptr: UnsafeMutablePointer<Double>
+                }
+                let sendablePtr = UnsafeSendablePtr(ptr: basePtr)
                 DispatchQueue.concurrentPerform(iterations: count) { i in
                     let sample = features[i]
                     var pred = base
                     for treeNodes in localTrees {
                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
                     }
-                    ptr[i] = pred
+                    sendablePtr.ptr[i] = pred
                 }
             }
             return results

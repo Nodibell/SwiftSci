@@ -253,7 +253,7 @@ private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], ascending: Bo
         if let doubles = rawVals as? [Double] {
             // 1. Sort a value copy using vDSP
             var sortedVals = doubles
-            var order: Int32 = ascending ? 1 : -1
+            let order: Int32 = ascending ? 1 : -1
             sortedVals.withUnsafeMutableBufferPointer { buf in
                 vDSP_vsortD(buf.baseAddress!, vDSP_Length(n), order)
             }
@@ -659,79 +659,79 @@ private func filterIndicesInt64SIMD(values: [Int64], condition: FilterCondition)
 }
 
 private func filterIndicesDouble(values: [Double?], condition: FilterCondition) -> [Int]? {
-    let containsNil = values.contains(where: { $0 == nil })
-    if !containsNil {
-        let nonNulls = values.compactMap { $0 }
-        return filterIndicesDoubleSIMD(values: nonNulls, condition: condition)
-    }
-
+    let count = values.count
     var res = [Int]()
-    res.reserveCapacity(values.count / 2)
-    switch condition {
-    case .isNull:
-        for (i, v) in values.enumerated() where v == nil { res.append(i) }
-    case .isNotNull:
-        for (i, v) in values.enumerated() where v != nil { res.append(i) }
-    case .greaterThan(let rhs):
-        guard let thr = toDouble(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x > thr { res.append(i) } }
-    case .lessThan(let rhs):
-        guard let thr = toDouble(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x < thr { res.append(i) } }
-    case .greaterThanOrEqual(let rhs):
-        guard let thr = toDouble(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x >= thr { res.append(i) } }
-    case .lessThanOrEqual(let rhs):
-        guard let thr = toDouble(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x <= thr { res.append(i) } }
-    case .equals(let rhs):
-        guard let thr = toDouble(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x == thr { res.append(i) } }
-    case .notEquals(let rhs):
-        guard let thr = toDouble(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x != thr { res.append(i) } }
-    case .contains:
-        return nil
+    res.reserveCapacity(count / 2)
+
+    return values.withUnsafeBufferPointer { buf -> [Int]? in
+        guard let ptr = buf.baseAddress else { return nil }
+
+        switch condition {
+        case .isNull:
+            for i in 0..<count { if ptr[i] == nil { res.append(i) } }
+        case .isNotNull:
+            for i in 0..<count { if ptr[i] != nil { res.append(i) } }
+        case .greaterThan(let rhs):
+            guard let thr = toDouble(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x > thr { res.append(i) } }
+        case .lessThan(let rhs):
+            guard let thr = toDouble(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x < thr { res.append(i) } }
+        case .greaterThanOrEqual(let rhs):
+            guard let thr = toDouble(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x >= thr { res.append(i) } }
+        case .lessThanOrEqual(let rhs):
+            guard let thr = toDouble(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x <= thr { res.append(i) } }
+        case .equals(let rhs):
+            guard let thr = toDouble(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x == thr { res.append(i) } }
+        case .notEquals(let rhs):
+            guard let thr = toDouble(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x != thr { res.append(i) } }
+        case .contains:
+            return nil
+        }
+        return res
     }
-    return res
 }
 
 private func filterIndicesInt64(values: [Int64?], condition: FilterCondition) -> [Int]? {
-    let containsNil = values.contains(where: { $0 == nil })
-    if !containsNil {
-        let nonNulls = values.compactMap { $0 }
-        return filterIndicesInt64SIMD(values: nonNulls, condition: condition)
-    }
-
+    let count = values.count
     var res = [Int]()
-    res.reserveCapacity(values.count / 2)
-    switch condition {
-    case .isNull:
-        for (i, v) in values.enumerated() where v == nil { res.append(i) }
-    case .isNotNull:
-        for (i, v) in values.enumerated() where v != nil { res.append(i) }
-    case .greaterThan(let rhs):
-        guard let thr = toInt64(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x > thr { res.append(i) } }
-    case .lessThan(let rhs):
-        guard let thr = toInt64(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x < thr { res.append(i) } }
-    case .greaterThanOrEqual(let rhs):
-        guard let thr = toInt64(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x >= thr { res.append(i) } }
-    case .lessThanOrEqual(let rhs):
-        guard let thr = toInt64(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x <= thr { res.append(i) } }
-    case .equals(let rhs):
-        guard let thr = toInt64(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x == thr { res.append(i) } }
-    case .notEquals(let rhs):
-        guard let thr = toInt64(rhs) else { return nil }
-        for (i, v) in values.enumerated() { if let x = v, x != thr { res.append(i) } }
-    case .contains:
-        return nil
+    res.reserveCapacity(count / 2)
+
+    return values.withUnsafeBufferPointer { buf -> [Int]? in
+        guard let ptr = buf.baseAddress else { return nil }
+
+        switch condition {
+        case .isNull:
+            for i in 0..<count { if ptr[i] == nil { res.append(i) } }
+        case .isNotNull:
+            for i in 0..<count { if ptr[i] != nil { res.append(i) } }
+        case .greaterThan(let rhs):
+            guard let thr = toInt64(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x > thr { res.append(i) } }
+        case .lessThan(let rhs):
+            guard let thr = toInt64(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x < thr { res.append(i) } }
+        case .greaterThanOrEqual(let rhs):
+            guard let thr = toInt64(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x >= thr { res.append(i) } }
+        case .lessThanOrEqual(let rhs):
+            guard let thr = toInt64(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x <= thr { res.append(i) } }
+        case .equals(let rhs):
+            guard let thr = toInt64(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x == thr { res.append(i) } }
+        case .notEquals(let rhs):
+            guard let thr = toInt64(rhs) else { return nil }
+            for i in 0..<count { if let x = ptr[i], x != thr { res.append(i) } }
+        case .contains:
+            return nil
+        }
+        return res
     }
-    return res
 }
 
 private func filterIndicesString(values: [String?], condition: FilterCondition) -> [Int]? {

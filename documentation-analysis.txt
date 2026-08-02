@@ -1,28 +1,35 @@
+warning: 'flatbuffers': /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/checkouts/flatbuffers/Package.swift:23:11: warning: 'v11' is deprecated: iOS 15.0 is the oldest supported version [#DeprecatedDeclaration]
+21 |   name: "FlatBuffers",
+22 |   platforms: [
+23 |     .iOS(.v11),
+   |           `- warning: 'v11' is deprecated: iOS 15.0 is the oldest supported version [#DeprecatedDeclaration]
+24 |     .macOS(.v10_14),
+25 |   ],
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
 Building for debugging...
 [Planning deferred tasks]
-Build complete! (0,38 sec)
+Build complete! (0,42 sec)
 Building for debugging...
 [Pre-planning 1 / 329]
 [Planning deferred tasks]
-[5 / 27] RealModule
-[21 / 42] RealModule
-[38 / 57] ComplexModule
-[51 / 71] ArgumentParser
-[54 / 71] ComplexModule
-[62 / 77] ArgumentParser
-[71 / 81] ArgumentParser
-[77 / 87] ArgumentParser
-[80 / 87] encuda-product
-[82 / 89] encuda-product
+[1 / 26]
+[16 / 39] RealModule
+[24 / 42] ArgumentParserToolInfo
+[39 / 66] ArgumentParser
+[50 / 66] ComplexModule
+[59 / 72] Numerics
+[64 / 73] encuda-product
+[70 / 77] encuda-product
 warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[73 / 76] MLX
 [86 / 89] MLX
-[99 / 102] MLX
-[102 / 104] MLX
-Build complete! (3,00 sec)
+[88 / 90] MLX
+Build complete! (2,60 sec)
 Extracting symbol information for 'MLX'...
-Extracting symbol information for 'Arrow'...
 Extracting symbol information for 'ArgumentParser'...
-Finished extracting symbol information for 'MLX'. (3.33s)
+Extracting symbol information for 'Arrow'...
+Finished extracting symbol information for 'MLX'. (2.93s)
 Building documentation for 'MLX'...
 warning: '(HasDType.Type,StreamOrDevice)' isn't a disambiguation for 'asType(_:stream:)' at '/MLX/MLXArray'
   --> ../DType.swift:25:35-25:66
@@ -476,21 +483,8 @@ warning: '(Double,Double,Int,StreamOrDevice)' isn't a disambiguation for 'linspa
 246 + - ``MLXArray/linspace(_:_:count:stream:)-(Double,Double,Int,StreamOrDevice)``
     |                                         ├─suggestion: Replace '(Double,Double,Int,StreamOrDevice)' with '92x6l' for 'static func linspace<T>(_ start: T, _ stop: T, count: Int = 50, stream: StreamOrDevice = .default) -> MLBuilding for debugging...
 [Planning deferred tasks]
-[1 / 16]
-[15 / 25] Atomics
-[22 / 38] FlatBuffers
-[26 / 38] FlatBuffers
-[29 / 38] FlatBuffers
-[32 / 40] Atomics
-[32 / 40] FlatBuffers
-[40 / 44] Arrow
-[54 / 58] Arrow
-[57 / 59] Arrow
-Build complete! (2,48 sec)
-Building for debugging...
-[Planning deferred tasks]
 [1 / 7]
-Build complete! (0,47 sec)
+Build complete! (0,49 sec)
 XArray where T : HasDType, T : BinaryFloatingPoint'
     |                                         ╰─suggestion: Replace '(Double,Double,Int,StreamOrDevice)' with '7m7eg' for 'static func linspace<T>(_ start: T, _ stop: T, count: Int = 50, stream: StreamOrDevice = .default) -> MLXArray where T : HasDType, T : BinaryInteger'
 247 | - ``MLXArray/repeated(_:count:axis:stream:)``
@@ -576,34 +570,39 @@ warning: '_updateInternal(_:)' doesn't exist at '/MLX/MLXArray'
 9  | /// implemention detail for MLX and should not be depended on by outside callers.
 10 | ///
 
-Finished building documentation for 'MLX' (0.48s)
+Finished building documentation for 'MLX' (0.47s)
 Extracting symbol information for 'MLXNN'...
-Finished extracting symbol information for 'Arrow'. (6.27s)
-Building documentation for 'Arrow'...
-
-
-Finished building documentation for 'Arrow' (0.38s)
-Extracting symbol information for 'SwiftDataFrame'...
-Finished extracting symbol information for 'ArgumentParser'. (7.15s)
+Finished extracting symbol information for 'ArgumentParser'. (3.83s)
 Building documentation for 'ArgumentParser'...
 note: This document does not have a summary.
-An abstract provides a short description of the document. Write a paragraph below the title of the document toBuilding for debugging...
-[Pre-planning 1 / 358]
-[Planning deferred tasks]
-[1 / 29]
-warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
-[3 / 7] MLXNN
-[16 / 20] MLXNN
-[19 / 21] MLXNN
-Build complete! (1,39 sec)
- use it as an abstract.
+An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
  --> Extensions/Argument.md:1:1-1:30
 1 + # ``ArgumentParser/Argument``
 2 |
 3 | ## Topics
 
 note: This document does not have a summary.
-An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
+An abstract provides a short description of theBuilding for debugging...
+[Planning deferred tasks]
+[1 / 17]
+[15 / 26] Atomics
+[23 / 39] FlatBuffers
+[26 / 39] FlatBuffers
+[31 / 40] Atomics
+[31 / 40] FlatBuffers
+[36 / 40] Arrow
+[50 / 54] Arrow
+[52 / 54] Arrow
+Build complete! (2,01 sec)
+Building for debugging...
+[Pre-planning 1 / 358]
+[Planning deferred tasks]
+[1 / 29]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[3 / 7] MLXNN
+[16 / 20] MLXNN
+Build complete! (1,19 sec)
+ document. Write a paragraph below the title of the document to use it as an abstract.
  --> Extensions/ArgumentArrayParsingStrategy.md:1:1-1:50
 1 + # ``ArgumentParser/ArgumentArrayParsingStrategy``
 2 |
@@ -644,8 +643,14 @@ An abstract provides a short description of the document. Write a paragraph belo
 2 |
 3 | ## Topics
 
-Finished building documentation for 'ArgumentParser' (0.15s)
-Finished extracting symbol information for 'MLXNN'. (5.09s)
+Finished building documentation for 'ArgumentParser' (0.17s)
+Finished extracting symbol information for 'Arrow'. (6.22s)
+Building documentation for 'Arrow'...
+
+
+Finished building documentation for 'Arrow' (0.43s)
+Extracting symbol information for 'SwiftDataFrame'...
+Finished extracting symbol information for 'MLXNN'. (4.47s)
 Building documentation for 'MLXNN'...
 note: The majority of content should be under level-3 headers under the "Overview" section
 MLXNN.md:5:1: Overview section starts here
@@ -708,304 +713,249 @@ note: The majority of content should be under level-3 headers under the "Overvie
 204 + ## CoBuilding for debugging...
 [Pre-planning 1 / 215]
 [Planning deferred tasks]
-[2 / 20]
+[2 / 21]
 [3 / 6] SwiftDataFrame
 [17 / 20] SwiftDataFrame
-[20 / 22] SwiftDataFrame
-Build complete! (1,51 sec)
+[19 / 21] SwiftDataFrame
+Build complete! (1,21 sec)
 Building for debugging...
 [Pre-planning 1 / 273]
 [Planning deferred tasks]
-[3 / 24]
+[3 / 25]
 [4 / 7] SwiftNLP
 [18 / 21] SwiftNLP
-[21 / 23] SwiftNLP
-Build complete! (1,12 sec)
+[20 / 22] SwiftNLP
+Build complete! (1,11 sec)
 Building for debugging...
 [Pre-planning 1 / 273]
 [Planning deferred tasks]
-[3 / 24]
 [4 / 8] SwiftDatabase
 [8 / 12] SwiftDatabase
-[11 / 13] SwiftDatabase
-Build complete! (0,94 sec)
+Build complete! (0,81 sec)
 Building for debugging...
 [Pre-planning 1 / 273]
 [Planning deferred tasks]
+[3 / 25]
 [4 / 8] SwiftStats
 [15 / 19] SwiftStats
-[18 / 20] SwiftStats
-Build complete! (0,87 sec)
+[17 / 19] SwiftStats
+Build complete! (0,93 sec)
 Building for debugging...
 [Computing dependencies]
 [Pre-planning 1 / 684]
 [Planning deferred tasks]
-[3 / 55]
 warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[6 / 16] mlx-swift_Cmlx
 [6 / 10] SwiftLLM
 [15 / 19] SwiftLLM
-[18 / 20] SwiftLLM
-Build complete! (1,22 sec)
-Building for debugging...
-[Pre-planning 1 / 331]
-[Planning deferred tasks]
-[3 / 27]
-[5 / 9] SwiftVisualization
-[10 / 14] SwiftVisualization
-Build complete! (1,12 sec)
+[17 / 19] SwiftLLM
+Build complete! (1,00 sec)
 Building for debugging...
 [Computing dependencies]
 [Pre-planning 1 / 654]
 [Planning deferred tasks]
-[3 / 52]
+[3 / 53]
 warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
 [6 / 9] SwiftPreprocessing
 [20 / 23] SwiftPreprocessing
-[23 / 25] SwiftPreprocessing
-Build complete! (1,41 sec)
+[22 / 24] SwiftPreprocessing
+Build complete! (1,28 sec)
 Building for debugging...
 [Pre-planning 1 / 331]
 [Planning deferred tasks]
-[3 / 27]
+[3 / 28]
 [5 / 8] SwiftForecast
 [19 / 22] SwiftForecast
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftForecast/Core/ETSModel.swift:122:13: [1;33mwarning: [1;39mvariable 'curL' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m120 |[0;0m 
-[0;36m121 |[0;0m         var result: [Double] = []
-[0;36m122 |[0;0m         var curL = lastLevel
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'curL' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m123 |[0;0m         var curB = lastTrend
-[0;36m124 |[0;0m 
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftForecast/Core/ETSModel.swift:123:13: [1;33mwarning: [1;39mvariable 'curB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m121 |[0;0m         var result: [Double] = []
-[0;36m122 |[0;0m         var curL = lastLevel
-[0;36m123 |[0;0m         var curB = lastTrend
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'curB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m124 |[0;0m 
-[0;36m125 |[0;0m         for h in 1...steps {
-[22 / 24] SwiftForecast
+[21 / 23] SwiftForecast
+Build complete! (1,05 sec)
+Building for debugging...
+[Pre-planning 1 / 331]
+[Planning deferred tasks]
+[3 / 28]
+[5 / 9] SwiftVisualization
+[10 / 14] SwiftVisualization
+Build complete! (1,03 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 742]
+[Planning deferred tasks]
+[3 / 59]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[7 / 11] SwiftAgent
+[11 / 15] SwiftAgent
 Build complete! (1,17 sec)
 Building for debugging...
 [Computing dependencies]
 [Pre-planning 1 / 742]
 [Planning deferred tasks]
-[3 / 58]
+[3 / 59]
 warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
-[7 / 11] SwiftAgent
-[11 / 15] SwiftAgent
-Build complete! (1,20 sec)
+[7 / 10] SwiftML
+[21 / 24] SwiftML
+[25 / 27] SwiftML
+Build complete! (1,44 sec)
 Building for debugging...
 [Computing dependencies]
 [Pre-planning 1 / 712]
 [Planning deferred tasks]
-[3 / 55]
+[3 / 56]
 warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
 [7 / 11] SwiftCluster
 [18 / 22] SwiftCluster
-[21 / 23] SwiftCluster
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:102:13: [1;33mwarning: [1;39mvariable 'omega' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m100 |[0;0m 
-[0;36m101 |[0;0m         // --- Step 1: Random Gaussian sketch Ω ∈ ℝ^{N×l} (column-major) ---
-[0;36m102 |[0;0m         var omega = randomGaussian(count: N * l, seed: seed)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'omega' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m103 |[0;0m 
-[0;36m104 |[0;0m         // --- Step 2: Y = A·Ω  →  shape [M×l] (column-major) ---
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:13: [1;33mwarning: [1;39mvariable 'mInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:30: [1;33mwarning: [1;39mvariable 'nInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-    [0;36m|[0;0m                              `- [1;33mwarning: [1;39mvariable 'nInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:47: [1;33mwarning: [1;39mvariable 'kInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39mvariable 'kInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:109:13: [1;33mwarning: [1;39mvariable 'alpha' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'alpha' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:109:26: [1;33mwarning: [1;39mvariable 'beta' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-    [0;36m|[0;0m                          `- [1;33mwarning: [1;39mvariable 'beta' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:13: [1;33mwarning: [1;39mvariable 'ldA' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldA' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:29: [1;33mwarning: [1;39mvariable 'ldOm' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'ldOm' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:46: [1;33mwarning: [1;39mvariable 'ldY' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-    [0;36m|[0;0m                                              `- [1;33mwarning: [1;39mvariable 'ldY' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:111:13: [1;33mwarning: [1;39mvariable 'trN' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'trN' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-[0;36m113 |[0;0m                     mInt, nInt, kInt,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:111:29: [1;33mwarning: [1;39mvariable 'trT' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'trT' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-[0;36m113 |[0;0m                     mInt, nInt, kInt,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:17: [1;33mwarning: [1;39mvariable 'mZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-    [0;36m|[0;0m                 `- [1;33mwarning: [1;39mvariable 'mZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:32: [1;33mwarning: [1;39mvariable 'nZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-    [0;36m|[0;0m                                `- [1;33mwarning: [1;39mvariable 'nZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:47: [1;33mwarning: [1;39mvariable 'kZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39mvariable 'kZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:123:17: [1;33mwarning: [1;39mvariable 'ldAT' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-    [0;36m|[0;0m                 `- [1;33mwarning: [1;39mvariable 'ldAT' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-[0;36m125 |[0;0m                         mZ, nZ, kZ,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:123:34: [1;33mwarning: [1;39mvariable 'ldZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-    [0;36m|[0;0m                                  `- [1;33mwarning: [1;39mvariable 'ldZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-[0;36m125 |[0;0m                         mZ, nZ, kZ,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:13: [1;33mwarning: [1;39mvariable 'mB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:28: [1;33mwarning: [1;39mvariable 'nB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-    [0;36m|[0;0m                            `- [1;33mwarning: [1;39mvariable 'nB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:43: [1;33mwarning: [1;39mvariable 'kB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-    [0;36m|[0;0m                                           `- [1;33mwarning: [1;39mvariable 'kB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:161:13: [1;33mwarning: [1;39mvariable 'ldQ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldQ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-[0;36m163 |[0;0m                     mB, nB, kB,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:161:29: [1;33mwarning: [1;39mvariable 'ldB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'ldB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-[0;36m163 |[0;0m                     mB, nB, kB,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:13: [1;33mwarning: [1;39mvariable 'mU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
-[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m192 |[0;0m         var ldU2 = Int32(M)
-[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:28: [1;33mwarning: [1;39mvariable 'nU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
-[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-    [0;36m|[0;0m                            `- [1;33mwarning: [1;39mvariable 'nU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m192 |[0;0m         var ldU2 = Int32(M)
-[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:48: [1;33mwarning: [1;39mvariable 'kU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
-[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-    [0;36m|[0;0m                                                `- [1;33mwarning: [1;39mvariable 'kU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m192 |[0;0m         var ldU2 = Int32(M)
-[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:192:13: [1;33mwarning: [1;39mvariable 'ldU2' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-[0;36m192 |[0;0m         var ldU2 = Int32(M)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldU2' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-[0;36m194 |[0;0m                     mU, nU, kU,
-
-[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
-Build complete! (1,35 sec)
+[20 / 22] SwiftCluster
+Build complete! (1,27 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 771]
+[Planning deferred tasks]
+[2 / 61]
+[17 / 71] Atomics
+[29 / 97] FlatBuffers
+[37 / 98] RealModule
+[46 / 101] FlatBuffers
+[54 / 113] ComplexModule
+[66 / 113] Atomics
+[75 / 114] Numerics
+[90 / 126] ArgumentParser
+[95 / 127] Arrow
+[104 / 141] Arrow
+[110 / 142] Arrow
+[113 / 143] Arrow
+[119 / 149] encuda-product
+[123 / 150] Arrow
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[126 / 150] SwiftDataFrame
+[138 / 163] SwiftDataFrame
+[140 / 176] SwiftDataFrame
+[143 / 176] MLX
+[147 / 176] MLX
+[152 / 177] SwiftDataFrame
+[154 / 179] MLX
+[162 / 188] SwiftStats
+[168 / 188] SwiftStats
+[175 / 192] SwiftStats
+[189 / 218] SwiftPreprocessing
+[195 / 218] SwiftPreprocessing
+[201 / 219] SwiftPreprocessing
+[209 / 219] SwiftPreprocessing
+[220 / 232] SwiftML
+[221 / 232] SwiftPreprocessing
+[225 / 231] SwiftML
+[228 / 233] SwiftML
+[230 / 234] SwiftML
+[233 / 235] swiftsci-product
+Build complete! (5,33 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 800]
+[Planning deferred tasks]
+[3 / 62]
+[19 / 84] Atomics
+[34 / 98] RealModule
+[44 / 113] ComplexModule
+[55 / 114] ComplexModule
+[68 / 116] Numerics
+[76 / 115] Atomics
+[90 / 127] ArgumentParser
+[92 / 127] ArgumentParser
+[96 / 128] ArgumentParser
+[105 / 142] Arrow
+[111 / 143] Arrow
+[114 / 144] Arrow
+[120 / 150] encuda-product
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[127 / 150] SwiftDataFrame
+[141 / 177] SwiftDataFrame
+[144 / 177] SwiftDataFrame
+[147 / 177] SwiftDataFrame
+[155 / 180] MLX
+[157 / 180] MLX
+[161 / 189] SwiftStats
+[166 / 189] SwiftStats
+[175 / 193] Arrow
+[176 / 193] SwiftStats
+[189 / 219] SwiftPreprocessing
+[193 / 219] SwiftPreprocessing
+[199 / 219] SwiftPreprocessing
+[207 / 220] SwiftSci_SwiftPreprocessing
+[210 / 220] SwiftPreprocessing
+[224 / 233] SwiftML
+[226 / 232] SwiftML
+[229 / 235] SwiftExplain
+[236 / 238] SwiftExplain
+Build complete! (5,17 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 800]
+[Planning deferred tasks]
+[3 / 62]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[8 / 12] SwiftOptimize
+[17 / 21] SwiftOptimize
+[19 / 21] SwiftOptimize
+Build complete! (1,31 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 800]
+[Planning deferred tasks]
+[3 / 62]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[8 / 11] SwiftVision
+[11 / 14] SwiftVision
+Build complete! (1,16 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 1351]
+[Planning deferred tasks]
+[16 / 99] RealModule
+[29 / 126] FlatBuffers
+[39 / 129] FlatBuffers
+[45 / 141] FlatBuffers
+[55 / 142] ComplexModule
+[67 / 144] Numerics
+[77 / 145] Atomics
+[91 / 157] ArgumentParser
+[95 / 171] Arrow
+[99 / 171] Arrow
+[106 / 171] ArgumentParser
+[111 / 173] Arrow
+[115 / 174] Atomics
+[116 / 174] Arrow
+[130 / 193] SwiftDataFrame
+[135 / 193] SwiftDataFrame
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[145 / 196] SwiftDataFrame
+[153 / 209] MLX
+[157 / 235] SwiftNLP
+[164 / 235] SwiftStats
+[168 / 237] SwiftVisualization
+[175 / 238] SwiftNLP
+[181 / 238] SwiftNLP
+[186 / 255] SwiftVisualization
+[196 / 256] SwiftForecast
+[202 / 256] SwiftForecast
+[207 / 256] SwiftDatabase
+[221 / 262]
+[227 / 272] MLXNN
+[233 / 287] SwiftSci_SwiftDatabase
+[240 / 286] SwiftPreprocessing
+[244 / 286] SwiftPreprocessing
+[252 / 289] SwiftCluster
+[259 / 290] SwiftLLM
+[265 / 299] SwiftCluster
+[267 / 299] SwiftCluster
+[276 / 307] SwiftLLM
+[281 / 320] SwiftML
+[289 / 320] SwiftML
+[293 / 320] SwiftLLM
+[305 / 325] MLXNN
+[313 / 330] SwiftOptimize
+[325 / 342] SwiftVision
+[343 / 353] SwiftExplain
+[348 / 351] SwiftSciBenchmarks-product
+[351 / 352] SwiftSciBenchmarks-product
+[352 / 352] SwiftSciBenchmarks-product
+Build complete! (6,99 sec)
 nverting From Python
     | ╰─suggestion: Change the title to "Overview"
 205 |
@@ -1020,573 +970,102 @@ note: The majority of content should be under level-3 headers under the "Overvie
 14 |
 15 | The `filterMap()` method has several options for controlling the traversal of
 
-Finished building documentation for 'MLXNN' (0.19s)
-Finished extracting symbol information for 'SwiftDataFrame'. (4.10s)
+Finished building documentation for 'MLXNN' (0.22s)
+Finished extracting symbol information for 'SwiftDataFrame'. (2.81s)
 Building documentation for 'SwiftDataFrame'...
 
 
-Finished building documentation for 'SwiftDataFrame' (0.12s)
+Finished building documentation for 'SwiftDataFrame' (0.14s)
 Extracting symbol information for 'SwiftNLP'...
 Extracting symbol information for 'SwiftDatabase'...
 Extracting symbol information for 'SwiftStats'...
-Finished extracting symbol information for 'SwiftNLP'. (1.45s)
+Finished extracting symbol information for 'SwiftNLP'. (1.44s)
 Building documentation for 'SwiftNLP'...
 
 
-Finished building documentation for 'SwiftNLP' (0.20s)
+Finished building documentation for 'SwiftNLP' (0.23s)
 Extracting symbol information for 'SwiftLLM'...
-Finished extracting symbol information for 'SwiftDatabase'. (2.76s)
+Finished extracting symbol information for 'SwiftDatabase'. (2.65s)
 Building documentation for 'SwiftDatabase'...
 
 
 Finished building documentation for 'SwiftDatabase' (0.04s)
-Finished extracting symbol information for 'SwiftStats'. (3.96s)
+Finished extracting symbol information for 'SwiftStats'. (3.89s)
 Building documentation for 'SwiftStats'...
 
 
 Finished building documentation for 'SwiftStats' (0.06s)
-Extracting symbol information for 'SwiftVisualization'...
 Extracting symbol information for 'SwiftPreprocessing'...
 Extracting symbol information for 'SwiftForecast'...
-Finished extracting symbol information for 'SwiftLLM'. (3.88s)
+Extracting symbol information for 'SwiftVisualization'...
+Finished extracting symbol information for 'SwiftLLM'. (3.55s)
 Building documentation for 'SwiftLLM'...
 
 
-Finished building documentation for 'SwiftLLM' (0.05s)
+Finished building documentation for 'SwiftLLM' (0.04s)
 Extracting symbol information for 'SwiftAgent'...
-Finished extracting symbol information for 'SwiftVisualization'. (2.96s)
-Building documentation for 'SwiftVisualization'...
-
-
-Finished building documentation for 'SwiftVisualization' (0.36s)
-Finished extracting symbol information for 'SwiftPreprocessing'. (4.77s)
+Finished extracting symbol information for 'SwiftPreprocessing'. (2.89s)
 Building documentation for 'SwiftPreprocessing'...
 
 
-Finished building documentation for 'SwiftPreprocessing' (0.25s)
-Extracting symbol information for 'SwiftCluster'...
+Finished building documentation for 'SwiftPreprocessing' (0.28s)
 Extracting symbol information for 'SwiftML'...
-Finished extracting symbol information for 'SwiftForecast'. (6.33s)
+Extracting symbol information for 'SwiftCluster'...
+Finished extracting symbol information for 'SwiftForecast'. (4.34s)
 Building documentation for 'SwiftForecast'...
 
 
-Finished building documentation for 'SwiftForecast' (0.21s)
-Finished extracting symbol information for 'SwiftAgent'. (6.38s)
+Finished building documentation for 'SwiftForecast' (0.26s)
+Finished extracting symbol information for 'SwiftVisualization'. (5.77s)
+Building documentation for 'SwiftVisualization'...
+
+
+Finished building documentation for 'SwiftVisualization' (0.47s)
+Finished extracting symbol information for 'SwiftAgent'. (6.08s)
 Building documentation for 'SwiftAgent'...
 
 
-Finished building documentation for 'SwiftAgent' (0.04s)
-Finished extracting symbol information for 'SwiftCluster'. (4.61s)
-Building documentation for 'SwiftCluster'...
-warning: External name 'nComponents' used to document parameter
-  --> ../Decomposition/RandomizedSVD.swift:73:13-73:24
-71 |     /// - Parameters:
-72 |     ///   - X:            Input matrix, shape [M, N], row-major.
-73 +     ///   - nComponents:  Number of singular values/vectors to compute (k).
-   |             ╰─suggestion: Replace 'nComponents' with 'k'
-74 |     ///   - nOversamples: Extra random columns for accuracy (default 10).
-75 |     ///   - nPowerIter:   Number of power iterations for improved accuracy on slow-decay spectra (default 2).
-
-warning: External name 'nOversamples' used to document parameter
-  --> ../Decomposition/RandomizedSVD.swift:74:13-74:25
-72 |     ///   - X:            Input matrix, shape [M, N], row-major.
-73 |     ///   - nComponents:  Number of singular values/vectors to compute (k).
-74 +     ///   - nOversamples: Extra random columns for accuracy (default 10).
-   |             ╰─suggestion: Replace 'nOversamples' with 'p'
-75 |     ///   - nPowerIter:   Number of power iterations for improved accuracy on slow-decay spectra (default 2).
-76 |     ///   - seed:         Seed for deterministic random sketch (default 42).
-
-warning: External name 'nPowerIter' used to document parameter
-  --> ../Decomposition/RandomizedSVD.swift:75:13-75:23
-73 |Building for debugging...
-[Computing dependencies]
-[Pre-planning 1 / 742]
-[Planning deferred tasks]
-[3 / 58]
-warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
-[7 / 10] SwiftML
-[21 / 24] SwiftML
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftML/Core/GradientBoosting.swift:103:21: [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
-[0;36m101 |[0;0m                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
-[0;36m102 |[0;0m                     }
-[0;36m103 |[0;0m                     ptr[i] = pred
-    [0;36m|[0;0m                     `- [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
-[0;36m104 |[0;0m                 }
-[0;36m105 |[0;0m             }
-
-Swift.UnsafeMutablePointer:1:23: [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
-[0;36m1 |[0;0m @frozen public struct UnsafeMutablePointer<Pointee> : Copyable where Pointee : ~Copyable {
-  [0;36m|[0;0m                       `- [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
-[0;36m2 |[0;0m     public let _rawValue: Builtin.RawPointer
-[0;36m3 |[0;0m     public init(_ _rawValue: Builtin.RawPointer)
-
-[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
-[24 / 26] SwiftML
-Build complete! (1,67 sec)
-Building for debugging...
-[Computing dependencies]
-[Pre-planning 1 / 800]
-[Planning deferred tasks]
-[3 / 61]
-warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
-[8 / 12] SwiftExplain
-[13 / 17] SwiftExplain
-[18 / 18] SwiftExplain
-Build complete! (1,25 sec)
-Building for debugging...
-[Computing dependencies]
-[Pre-planning 1 / 800]
-[Planning deferred tasks]
-[3 / 24] mlx-swift_Cmlx
-warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
-[8 / 12] SwiftOptimize
-[17 / 21] SwiftOptimize
-[20 / 22] SwiftOptimize
-Build complete! (1,24 sec)
-Building for debugging...
-[Computing dependencies]
-[Pre-planning 1 / 771]
-[Planning deferred tasks]
-[2 / 60]
-[18 / 82] Atomics
-[32 / 96] FlatBuffers
-[40 / 98] FlatBuffers
-[48 / 110] ComplexModule
-[58 / 111] ComplexModule
-[69 / 112] FlatBuffers
-[78 / 116] Atomics
-[94 / 128] Atomics
-[95 / 142]
-[101 / 141] Arrow
-[103 / 141] Arrow
-[107 / 141] Arrow
-[111 / 142] ArgumentParser
-[113 / 143] Arrow
-[122 / 150] Arrow
-warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
-[127 / 164] mlx-swift_Cmlx
-[137 / 163] SwiftDataFrame
-[143 / 175] MLX
-[149 / 175] MLX
-[150 / 175] SwiftDataFrame
-[156 / 178] MLX
-[159 / 178] MLX
-[166 / 188] SwiftStats
-[175 / 192] SwiftStats
-[175 / 192] MLXNN
-[187 / 218] SwiftPreprocessing
-[193 / 217] SwiftPreprocessing
-[197 / 217] SwiftPreprocessing
-[201 / 217] MLXNN
-[209 / 219] SwiftPreprocessing
-[209 / 220] SwiftML
-[222 / 232] SwiftPreprocessing
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftML/Core/GradientBoosting.swift:103:21: [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
-[0;36m101 |[0;0m                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
-[0;36m102 |[0;0m                     }
-[0;36m103 |[0;0m                     ptr[i] = pred
-    [0;36m|[0;0m                     `- [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
-[0;36m104 |[0;0m                 }
-[0;36m105 |[0;0m             }
-
-Swift.UnsafeMutablePointer:1:23: [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
-[0;36m1 |[0;0m @frozen public struct UnsafeMutablePointer<Pointee> : Copyable where Pointee : ~Copyable {
-  [0;36m|[0;0m                       `- [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
-[0;36m2 |[0;0m     public let _rawValue: Builtin.RawPointer
-[0;36m3 |[0;0m     public init(_ _rawValue: Builtin.RawPointer)
-
-[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
-[225 / 231] SwiftML
-[228 / 233] SwiftML
-[232 / 233] swiftsci-product
-[233 / 235] swiftsci-product
-Build complete! (5,53 sec)
-Building for debugging...
-[Computing dependencies]
-[Pre-planning 1 / 800]
-[Planning deferred tasks]
-[3 / 61]
-[19 / 83] Atomics
-[28 / 96] ArgumentParserToolInfo
-[41 / 98] RealModule
-[48 / 111] ComplexModule
-[56 / 112] ComplexModule
-[67 / 113] ComplexModule
-[76 / 114] Numerics
-[93 / 129] ArgumentParser
-[97 / 143] Arrow
-[100 / 143] Arrow
-[102 / 143] Arrow
-[108 / 144] Arrow
-[113 / 145] Arrow
-[116 / 145] encuda-product
-[119 / 160]
-[130 / 160] SwiftDataFrame
-[133 / 161] encuda-product
-[141 / 168] encuda-product
-[142 / 168] SwiftStats
-[153 / 178]
-warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
-[159 / 176] SwiftStats
-[171 / 189] MLX
-[172 / 189] SwiftStats
-[174 / 189] MLX
-[178 / 193] MLXNN
-[191 / 219] SwiftPreprocessing
-[192 / 219] SwiftPreprocessing
-[200 / 219] SwiftPreprocessing
-[209 / 220] SwiftML
-[210 / 220] SwiftPreprocessing
-[224 / 233] SwiftML
-[226 / 232] SwiftML
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftML/Core/GradientBoosting.swift:103:21: [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
-[0;36m101 |[0;0m                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
-[0;36m102 |[0;0m                     }
-[0;36m103 |[0;0m                     ptr[i] = pred
-    [0;36m|[0;0m                     `- [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
-[0;36m104 |[0;0m                 }
-[0;36m105 |[0;0m             }
-
-Swift.UnsafeMutablePointer:1:23: [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
-[0;36m1 |[0;0m @frozen public struct UnsafeMutablePointer<Pointee> : Copyable where Pointee : ~Copyable {
-  [0;36m|[0;0m                       `- [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
-[0;36m2 |[0;0m     public let _rawValue: Builtin.RawPointer
-[0;36m3 |[0;0m     public init(_ _rawValue: Builtin.RawPointer)
-
-[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
-[232 / 237] SwiftML
-[236 / 238] SwiftVision
-Build complete! (5,52 sec)
-Building for debugging...
-[Computing dependencies]
-[Pre-planning 1 / 1351]
-[Planning deferred tasks]
-[1 / 89]
-[17 / 111] Atomics
-[31 / 125] FlatBuffers
-[40 / 127] FlatBuffers
-[49 / 140] ComplexModule
-[60 / 143] Atomics
-[70 / 145] Numerics
-[77 / 141] ArgumentParser
-[90 / 154] Atomics
-[94 / 156] ArgumentParser
-[103 / 170] Arrow
-[109 / 171] ArgumentParser
-[112 / 172] encuda-product
-[118 / 178] encuda-product
-[124 / 180] MLX
-warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
-[127 / 191] MLX
-[140 / 204] SwiftDataFrame
-[142 / 204] SwiftDataFrame
-[147 / 204] SwiftDataFrame
-[150 / 204] SwiftDataFrame
-[156 / 209] SwiftStats
-[161 / 212] SwiftDataFrame
-[161 / 212] MLX
-[170 / 223] MLXNN
-[182 / 252] SwiftVisualization
-[187 / 255] SwiftNLP
-[192 / 255] SwiftDatabase
-[200 / 269] SwiftPreprocessing
-[205 / 286] SwiftForecast
-[214 / 286] SwiftPreprocessing
-[220 / 287] SwiftPreprocessing
-[230 / 288] SwiftForecast
-[235 / 290] SwiftSci_SwiftVisualization
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftForecast/Core/ETSModel.swift:122:13: [1;33mwarning: [1;39mvariable 'curL' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m120 |[0;0m 
-[0;36m121 |[0;0m         var result: [Double] = []
-[0;36m122 |[0;0m         var curL = lastLevel
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'curL' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m123 |[0;0m         var curB = lastTrend
-[0;36m124 |[0;0m 
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftForecast/Core/ETSModel.swift:123:13: [1;33mwarning: [1;39mvariable 'curB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m121 |[0;0m         var result: [Double] = []
-[0;36m122 |[0;0m         var curL = lastLevel
-[0;36m123 |[0;0m         var curB = lastTrend
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'curB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m124 |[0;0m 
-[0;36m125 |[0;0m         for h in 1...steps {
-[249 / 301] SwiftNLP
-[256 / 302] MLXNN
-[259 / 305] SwiftLLM
-[265 / 305] MLXNN
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:102:13: [1;33mwarning: [1;39mvariable 'omega' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m100 |[0;0m 
-[0;36m101 |[0;0m         // --- Step 1: Random Gaussian sketch Ω ∈ ℝ^{N×l} (column-major) ---
-[0;36m102 |[0;0m         var omega = randomGaussian(count: N * l, seed: seed)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'omega' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m103 |[0;0m 
-[0;36m104 |[0;0m         // --- Step 2: Y = A·Ω  →  shape [M×l] (column-major) ---
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:13: [1;33mwarning: [1;39mvariable 'mInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:30: [1;33mwarning: [1;39mvariable 'nInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-    [0;36m|[0;0m                              `- [1;33mwarning: [1;39mvariable 'nInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:47: [1;33mwarning: [1;39mvariable 'kInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39mvariable 'kInt' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:109:13: [1;33mwarning: [1;39mvariable 'alpha' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'alpha' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:109:26: [1;33mwarning: [1;39mvariable 'beta' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-    [0;36m|[0;0m                          `- [1;33mwarning: [1;39mvariable 'beta' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:13: [1;33mwarning: [1;39mvariable 'ldA' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldA' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:29: [1;33mwarning: [1;39mvariable 'ldOm' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'ldOm' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:46: [1;33mwarning: [1;39mvariable 'ldY' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-    [0;36m|[0;0m                                              `- [1;33mwarning: [1;39mvariable 'ldY' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:111:13: [1;33mwarning: [1;39mvariable 'trN' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'trN' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-[0;36m113 |[0;0m                     mInt, nInt, kInt,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:111:29: [1;33mwarning: [1;39mvariable 'trT' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
-[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
-[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
-    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'trT' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
-[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-[0;36m113 |[0;0m                     mInt, nInt, kInt,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:17: [1;33mwarning: [1;39mvariable 'mZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-    [0;36m|[0;0m                 `- [1;33mwarning: [1;39mvariable 'mZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:32: [1;33mwarning: [1;39mvariable 'nZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-    [0;36m|[0;0m                                `- [1;33mwarning: [1;39mvariable 'nZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:47: [1;33mwarning: [1;39mvariable 'kZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39mvariable 'kZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:123:17: [1;33mwarning: [1;39mvariable 'ldAT' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-    [0;36m|[0;0m                 `- [1;33mwarning: [1;39mvariable 'ldAT' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-[0;36m125 |[0;0m                         mZ, nZ, kZ,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:123:34: [1;33mwarning: [1;39mvariable 'ldZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
-[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
-    [0;36m|[0;0m                                  `- [1;33mwarning: [1;39mvariable 'ldZ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-[0;36m125 |[0;0m                         mZ, nZ, kZ,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:13: [1;33mwarning: [1;39mvariable 'mB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:28: [1;33mwarning: [1;39mvariable 'nB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-    [0;36m|[0;0m                            `- [1;33mwarning: [1;39mvariable 'nB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:43: [1;33mwarning: [1;39mvariable 'kB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-    [0;36m|[0;0m                                           `- [1;33mwarning: [1;39mvariable 'kB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:161:13: [1;33mwarning: [1;39mvariable 'ldQ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldQ' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-[0;36m163 |[0;0m                     mB, nB, kB,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:161:29: [1;33mwarning: [1;39mvariable 'ldB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
-[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
-    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'ldB' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-[0;36m163 |[0;0m                     mB, nB, kB,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:13: [1;33mwarning: [1;39mvariable 'mU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
-[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m192 |[0;0m         var ldU2 = Int32(M)
-[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:28: [1;33mwarning: [1;39mvariable 'nU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
-[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-    [0;36m|[0;0m                            `- [1;33mwarning: [1;39mvariable 'nU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m192 |[0;0m         var ldU2 = Int32(M)
-[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:48: [1;33mwarning: [1;39mvariable 'kU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
-[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-    [0;36m|[0;0m                                                `- [1;33mwarning: [1;39mvariable 'kU' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m192 |[0;0m         var ldU2 = Int32(M)
-[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:192:13: [1;33mwarning: [1;39mvariable 'ldU2' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-[0;36m192 |[0;0m         var ldU2 = Int32(M)
-    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldU2' was never mutated; consider changing to 'let' constant[0;0m
-[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-[0;36m194 |[0;0m                     mU, nU, kU,
-
-[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
-[271 / 306] SwiftML
-[278 / 326] SwiftML
-[283 / 326] SwiftML
-[290 / 326] SwiftLLM
-[295 / 327] SwiftAgent
-/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftML/Core/GradientBoosting.swift:103:21: [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
-[0;36m101 |[0;0m                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
-[0;36m102 |[0;0m                     }
-[0;36m103 |[0;0m                     ptr[i] = pred
-    [0;36m|[0;0m                     `- [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
-[0;36m104 |[0;0m                 }
-[0;36m105 |[0;0m             }
-
-Swift.UnsafeMutablePointer:1:23: [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
-[0;36m1 |[0;0m @frozen public struct UnsafeMutablePointer<Pointee> : Copyable where Pointee : ~Copyable {
-  [0;36m|[0;0m                       `- [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
-[0;36m2 |[0;0m     public let _rawValue: Builtin.RawPointer
-[0;36m3 |[0;0m     public init(_ _rawValue: Builtin.RawPointer)
-
-[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
-[305 / 333] SwiftSci_SwiftCluster
-[312 / 330] SwiftLLM
-[313 / 330] SwiftAgent
-[327 / 343] SwiftVision
-[335 / 344] SwiftOptimize
-[347 / 352] SwiftOptimize
-[351 / 352] SwiftSciBenchmarks-product
-[352 / 354] SwiftSciBenchmarks-product
-Build complete! (7,60 sec)
-     ///   - nComponents:  Number of singular values/vectors to compute (k).
-74 |     ///   - nOversamples: Extra random columns for accuracy (default 10).
-75 +     ///   - nPowerIter:   Number of power iterations for improved accuracy on slow-decay spectra (default 2).
-   |             ╰─suggestion: Replace 'nPowerIter' with 'q'
-76 |     ///   - seed:         Seed for deterministic random sketch (default 42).
-77 |     /// - Returns: `RandomizedSVD.Result` with U [M×k], S [k], Vt [k×N].
-
-Finished building documentation for 'SwiftCluster' (0.16s)
-Finished extracting symbol information for 'SwiftML'. (6.66s)
+Finished building documentation for 'SwiftAgent' (0.05s)
+Finished extracting symbol information for 'SwiftML'. (6.02s)
 Building documentation for 'SwiftML'...
 
 
-Finished building documentation for 'SwiftML' (0.39s)
+Finished building documentation for 'SwiftML' (0.35s)
+Extracting symbol information for 'SwiftSciCLI'...
 Extracting symbol information for 'SwiftExplain'...
 Extracting symbol information for 'SwiftOptimize'...
-Extracting symbol information for 'SwiftSciCLI'...
 Extracting symbol information for 'SwiftVision'...
-Finished extracting symbol information for 'SwiftExplain'. (1.58s)
-Building documentation for 'SwiftExplain'...
+Finished extracting symbol information for 'SwiftCluster'. (7.73s)
+Building documentation for 'SwiftCluster'...
 
 
-Finished building documentation for 'SwiftExplain' (0.05s)
-Finished extracting symbol information for 'SwiftOptimize'. (3.16s)
-Building documentation for 'SwiftOptimize'...
-
-
-Finished building documentation for 'SwiftOptimize' (0.07s)
-Finished extracting symbol information for 'SwiftSciCLI'. (9.02s)
+Finished building documentation for 'SwiftCluster' (0.16s)
+Finished extracting symbol information for 'SwiftSciCLI'. (7.07s)
 Building documentation for 'SwiftSciCLI'...
 
 
 Finished building documentation for 'SwiftSciCLI' (0.07s)
-Finished extracting symbol information for 'SwiftVision'. (14.90s)
+Finished extracting symbol information for 'SwiftExplain'. (12.58s)
+Building documentation for 'SwiftExplain'...
+
+
+Finished building documentation for 'SwiftExplain' (0.05s)
+Finished extracting symbol information for 'SwiftOptimize'. (14.24s)
+Building documentation for 'SwiftOptimize'...
+
+
+Finished building documentation for 'SwiftOptimize' (0.07s)
+Finished extracting symbol information for 'SwiftVision'. (15.75s)
 Building documentation for 'SwiftVision'...
 
 
 Finished building documentation for 'SwiftVision' (0.05s)
 Extracting symbol information for 'SwiftSciBenchmarks'...
-Finished extracting symbol information for 'SwiftSciBenchmarks'. (7.96s)
+Finished extracting symbol information for 'SwiftSciBenchmarks'. (7.34s)
 Building documentation for 'SwiftSciBenchmarks'...
 
 
-Finished building documentation for 'SwiftSciBenchmarks' (0.05s)
+Finished building documentation for 'SwiftSciBenchmarks' (0.04s)
 Generated 20 documentation archives:
   /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/ArgumentParser.doccarchive
   /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/Arrow.doccarchive

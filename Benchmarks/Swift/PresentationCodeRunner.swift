@@ -21,7 +21,7 @@ public enum PresentationCodeRunner {
 
     public static func runAll() async throws {
         print("\n=======================================================")
-        print("🚀 SwiftSci 2.5.0 — Empirical Compiled Module Execution")
+        print("🚀 SwiftSci 2.6.2 — Empirical Compiled Module Execution")
         print("=======================================================\n")
 
 

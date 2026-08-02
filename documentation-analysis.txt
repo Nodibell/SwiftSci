@@ -1,0 +1,1610 @@
+Building for debugging...
+[Planning deferred tasks]
+Build complete! (0,38 sec)
+Building for debugging...
+[Pre-planning 1 / 329]
+[Planning deferred tasks]
+[5 / 27] RealModule
+[21 / 42] RealModule
+[38 / 57] ComplexModule
+[51 / 71] ArgumentParser
+[54 / 71] ComplexModule
+[62 / 77] ArgumentParser
+[71 / 81] ArgumentParser
+[77 / 87] ArgumentParser
+[80 / 87] encuda-product
+[82 / 89] encuda-product
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[86 / 89] MLX
+[99 / 102] MLX
+[102 / 104] MLX
+Build complete! (3,00 sec)
+Extracting symbol information for 'MLX'...
+Extracting symbol information for 'Arrow'...
+Extracting symbol information for 'ArgumentParser'...
+Finished extracting symbol information for 'MLX'. (3.33s)
+Building documentation for 'MLX'...
+warning: '(HasDType.Type,StreamOrDevice)' isn't a disambiguation for 'asType(_:stream:)' at '/MLX/MLXArray'
+  --> ../DType.swift:25:35-25:66
+23 | /// - ``HasDType``
+24 | /// - ``MLXArray/asType(_:stream:)-(DType,StreamOrDevice)``
+25 + /// - ``MLXArray/asType(_:stream:)-(HasDType.Type,StreamOrDevice)``
+   |                                   ├─suggestion: Replace '(HasDType.Type,StreamOrDevice)' with '((HasDType).Type,_)' for 'func asType(_ type: (some HasDType).Type, stream: StreamOrDevice = .default) -> MLXArray'
+   |                                   ╰─suggestion: Replace '(HasDType.Type,StreamOrDevice)' with '(DType,_)' for 'func asType(_ type: DType, stream: StreamOrDevice = .default) -> MLXArray'
+26 | /// - ``MLXArray/init(_:dtype:)``
+27 | public enum DType: Hashable, Sendable, CaseIterable {
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/compilation.md:11:1-11:21
+9  | some edge cases that are good to be aware of for more complex graphs and advanced usage.
+10 |
+11 + ## Basics of Compile
+   | ╰─suggestion: Change the title to "Overview"
+12 |
+13 | Let's start with a simple example:
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/compilation.md:58:1-58:19
+56 | function inside a loop -- better to hoist it to outside the loop.
+57 |
+58 + ## Example Speedup
+   | ╰─suggestion: Change the title to "Overview"
+59 |
+60 | The function `gelu()` is a nonlinear activation function commonly used with
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+   --> Articles/compilation.md:115:1-115:13
+113 | speedup as compiling operations that run on the GPU.
+114 |
+115 + ## Debugging
+    | ╰─suggestion: Change the title to "Overview"
+116 |
+117 | When a compiled function is first called, it is traced with placeholder
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+   --> Articles/compilation.md:139:1-139:18
+137 | `MLX_DISABLE_COMPILE` environment variable.
+138 |
+139 + ## Pure Functions
+    | ╰─suggestion: Change the title to "Overview"
+140 |
+141 | Compiled functions are intended to be *pure*; that is they should not have side
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+   --> Articles/compilation.md:243:1-243:29
+241 | ```
+242 |
+243 + ## Compiling Training Graphs
+    | ╰─suggestion: Change the title to "Overview"
+244 |
+245 | This section will step through how to use ``compile(inputs:outputs:shapeless:_:)-([Updatable],[Updatable],Bool,([MLXArray])->[MLXArray])``
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> Articles/converting-python.md:5:1-5:12
+3 | Common patterns from python and mapping `mlx` function names.
+4 |
+5 + ## Indexing
+  | ╰─suggestion: Change the title to "Overview"
+6 |
+7 | ``MLXArray`` supports all the same indexing (see <doc:indexing>) as
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/converting-python.md:36:1-36:16
+34 | See <doc:indexing> for more information.
+35 |
+36 + ## Name Mapping
+   | ╰─suggestion: Change the title to "Overview"
+37 |
+38 | ### Swift Naming
+
+warning: '(HasDType.Type,StreamOrDevice)' isn't a disambiguation for 'asType(_:stream:)' at '/MLX/MLXArray'
+  --> Articles/converting-python.md:76:40-76:71
+74 | `item` | ``MLXArray/item(_:)``
+75 | `tolist` | ``MLXArray/asArray(_:)``
+76 + `astype` | ``MLXArray/asType(_:stream:)-(HasDType.Type,StreamOrDevice)`` or ``MLXArray/asType(_:stream:)-(DType,StreamOrDevice)``
+   |                                        ├─suggestion: Replace '(HasDType.Type,StreamOrDevice)' with '((HasDType).Type,_)' for 'func asType(_ type: (some HasDType).Type, stream: StreamOrDevice = .default) -> MLXArray'
+   |                                        ╰─suggestion: Replace '(HasDType.Type,StreamOrDevice)' with '(DType,_)' for 'func asType(_ type: DType, stream: StreamOrDevice = .default) -> MLXArray'
+77 | `__getitem__` | ``MLXArray/subscript(_:stream:)-(MLXArrayIndex,StreamOrDevice)``
+78 | `__len__` | ``MLXArray/count``
+
+warning: '(MLXArrayIndex,StreamOrDevice)' isn't a disambiguation for 'subscript(_:stream:)' at '/MLX/MLXArray'
+  --> Articles/converting-python.md:77:48-77:79
+75 | `tolist` | ``MLXArray/asArray(_:)``
+76 | `astype` | ``MLXArray/asType(_:stream:)-(HasDType.Type,StreamOrDevice)`` or ``MLXArray/asType(_:stream:)-(DType,StreamOrDevice)``
+77 + `__getitem__` | ``MLXArray/subscript(_:stream:)-(MLXArrayIndex,StreamOrDevice)``
+   |                                                ├─suggestion: Replace '(MLXArrayIndex,StreamOrDevice)' with '([MLXArrayIndex],_)' for 'subscript(indices: [any MLXArrayIndex], stream stream: StreamOrDevice = .default) -> MLXArray { get set }'
+   |                                                ╰─suggestion: Replace '(MLXArrayIndex,StreamOrDevice)' with '(MLXArrayIndex...,_)' for 'subscript(indices: any MLXArrayIndex..., stream stream: StreamOrDevice = .default) -> MLXArray { get set }'
+78 | `__len__` | ``MLXArray/count``
+79 | `__iter__` | implements `Sequence`
+
+warning: '(inout_MLXArray,MLXArray)' isn't a disambiguation for '+=(_:_:)' at '/MLX/MLXArray'
+  --> Articles/converting-python.md:81:24-81:50
+79 | `__iter__` | implements `Sequence`
+80 | `__add__` | ``MLXArray/+(_:_:)-(MLXArray,MLXArray)``
+81 + `__iadd__` | ``MLXArray/+=(_:_:)-(inout_MLXArray,MLXArray)``
+   |                        ├─suggestion: Replace '(inout_MLXArray,MLXArray)' with '(_,MLXArray)' for 'static func += (lhs: inout MLXArray, rhs: MLXArray)'
+   |                        ╰─suggestion: Replace '(inout_MLXArray,MLXArray)' with '(_,ScalarOrArray)' for 'static func += (lhs: inout MLXArray, rhs: some ScalarOrArray)'
+82 | `__sub__` | ``MLXArray/-(_:_:)-(MLXArray,MLXArray)``
+83 | `__isub__` | ``MLXArray/-=(_:_:)-(inout_MLXArray,MLXArray)``
+
+warning: '(inout_MLXArray,MLXArray)' isn't a disambiguation for '-=(_:_:)' at '/MLX/MLXArray'
+  --> Articles/converting-python.md:83:24-83:50
+81 | `__iadd__` | ``MLXArray/+=(_:_:)-(inout_MLXArray,MLXArray)``
+82 | `__sub__` | ``MLXArray/-(_:_:)-(MLXArray,MLXArray)``
+83 + `__isub__` | ``MLXArray/-=(_:_:)-(inout_MLXArray,MLXArray)``
+   |                        ├─suggestion: Replace '(inout_MLXArray,MLXArray)' with '(_,MLXArray)' for 'static func -= (lhs: inout MLXArray, rhs: MLXArray)'
+   |                        ╰─suggestion: Replace '(inout_MLXArray,MLXArray)' with '(_,ScalarOrArray)' for 'static func -= (lhs: inout MLXArray, rhs: some ScalarOrArray)'
+84 | `__mul__` | ``MLXArray/*(_:_:)-(MLXArray,MLXArray)``
+85 | `__imul__` | ``MLXArray/*=(_:_:)-(inout_MLXArray,MLXArray)``
+
+warning: '(inout_MLXArray,MLXArray)' isn't a disambiguation for '*=(_:_:)' at '/MLX/MLXArray'
+  --> Articles/converting-python.md:85:24-85:50
+83 | `__isub__` | ``MLXArray/-=(_:_:)-(inout_MLXArray,MLXArray)``
+84 | `__mul__` | ``MLXArray/*(_:_:)-(MLXArray,MLXArray)``
+85 + `__imul__` | ``MLXArray/*=(_:_:)-(inout_MLXArray,MLXArray)``
+   |                        ├─suggestion: Replace '(inout_MLXArray,MLXArray)' with '(_,MLXArray)' for 'static func *= (lhs: inout MLXArray, rhs: MLXArray)'
+   |                        ╰─suggestion: Replace '(inout_MLXArray,MLXArray)' with '(_,ScalarOrArray)' for 'static func *= (lhs: inout MLXArray, rhs: some ScalarOrArray)'
+86 | `__truediv__` | ``MLXArray//(_:_:)-(MLXArray,MLXArray)``
+87 | `__div__` | ``MLXArray//(_:_:)-(MLXArray,MLXArray)``
+
+warning: '(inout_MLXArray,MLXArray)' isn't a disambiguation for '/=(_:_:)' at '/MLX/MLXArray'
+  --> Articles/converting-python.md:88:24-88:50
+86 | `__truediv__` | ``MLXArray//(_:_:)-(MLXArray,MLXArray)``
+87 | `__div__` | ``MLXArray//(_:_:)-(MLXArray,MLXArray)``
+88 + `__idiv__` | ``MLXArray//=(_:_:)-(inout_MLXArray,MLXArray)``
+   |                        ├─suggestion: Replace '(inout_MLXArray,MLXArray)' with '(_,MLXArray)' for 'static func /= (lhs: inout MLXArray, rhs: MLXArray)'
+   |                        ╰─suggestion: Replace '(inout_MLXArray,MLXArray)' with '(_,ScalarOrArray)' for 'static func /= (lhs: inout MLXArray, rhs: some ScalarOrArray)'
+89 | `__floordiv__` | ``MLXArray/floorDivide(_:stream:)``
+90 | `__mod__` | ``MLXArray/%(_:_:)-(MLXArray,MLXArray)``
+
+warning: '(Int,Int,Int,StreamOrDevice)' isn't a disambiguation for 'linspace(_:_:count:stream:)' at '/MLX/MLXArray'
+   --> Articles/converting-python.md:193:52-193:81
+191 | `less` | ``MLX/less(_:_:stream:)``
+192 | `less_equal` | ``MLX/lessEqual(_:_:stream:)``
+193 + `linspace` | ``MLXArray/linspace(_:_:count:stream:)-(Int,Int,Int,StreamOrDevice)``
+    |                                                    ├─suggestion: Replace '(Int,Int,Int,StreamOrDevice)' with '92x6l' for 'static func linspace<T>(_ start: T, _ stop: T, count: Int = 50, stream: StreamOrDevice = .default) -> MLXArray where T : HasDType, T : BinaryFloatingPoint'
+    |                                                    ╰─suggestion: Replace '(Int,Int,Int,StreamOrDevice)' with '7m7eg' for 'static func linspace<T>(_ start: T, _ stop: T, count: Int = 50, stream: StreamOrDevice = .default) -> MLXArray where T : HasDType, T : BinaryInteger'
+194 | `load` | ``MLX/loadArray(url:stream:)`` and ``MLX/loadArrays(url:stream:)``
+195 | `log` | ``MLX/log(_:stream:)``
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> Articles/lazy-evaluation.md:5:1-5:3
+3 | Computation in `MLX` is lazy.  Understand when the graph is evaluated.
+4 |
+5 + ##
+  | ╰─suggestion: Change the title to "Overview"
+6 |
+7 | See also [mlx python docs](https://ml-explore.github.io/mlx/build/html/usage/lazy_evaluation.html).
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/lazy-evaluation.md:9:1-9:23
+7  | See also [mlx python docs](https://ml-explore.github.io/mlx/build/html/usage/lazy_evaluation.html).
+8  |
+9  + ## Why Lazy Evaluation
+   | ╰─suggestion: Change the title to "Overview"
+10 |
+11 | When you perform operations in MLX, no computation actually happens. Instead a
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/lazy-evaluation.md:67:1-67:20
+65 | ```
+66 |
+67 + ## When to Evaluate
+   | ╰─suggestion: Change the title to "Overview"
+68 |
+69 | A common question is when to use ``eval(_:)-(Collection<MLXArray>)``. The trade-off is between
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> Articles/running-on-ios.md:5:1-5:26
+3 | Considerations for running on iOS and general memory tuning.
+4 |
+5 + ## Controlling Memory Use
+  | ╰─suggestion: Change the title to "Overview"
+6 |
+7 | iOS devices have a feature called [jetsam](https://developer.apple.com/documentation/xcode/identifying-high-memory-use-with-jetsam-event-reports)
+
+warning: 'CacheLimit' doesn't exist at '/MLX/Memory'
+  --> Articles/running-on-ios.md:23:97-23:107
+21 | but you may wish to limit this further.
+22 |
+23 + For example, to evaluate an LLM you might allow up to 20 megabytes of buffer cache via ``Memory/CacheLimit``.
+   |                                                                                                 ╰─suggestion: Replace 'CacheLimit' with 'cacheLimit'
+24 |
+25 | ```swift
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/running-on-ios.md:74:1-74:22
+72 | normally allow, you can use the [Increased Memory Limit](https://developer.apple.com/documentation/bundleresources/entitlements/com_apple_developer_kernel_increased-memory-limit) entitlement.
+73 |
+74 + ## Developing for iOS
+   | ╰─suggestion: Change the title to "Overview"
+75 |
+76 | Typically developers use the
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> Articles/unified-memory.md:5:1-5:14
+3 | `MLX` takes advantage of the shared memory between the CPU and GPU.
+4 |
+5 + ## Discussion
+  | ╰─suggestion: Change the title to "Overview"
+6 |
+7 | See also [mlx python docs](https://ml-explore.github.io/mlx/build/html/usage/unified_memory.html).
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/unified-memory.md:50:1-50:20
+48 | available.
+49 |
+50 + ## A Simple Example
+   | ╰─suggestion: Change the title to "Overview"
+51 |
+52 | Here is a more interesting (albeit slightly contrived example) of how unified
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> Articles/using-streams.md:5:1-5:25
+3 | Controlling where your computations are evaluated.
+4 |
+5 + ## Specifying the Stream
+  | ╰─suggestion: Change the title to "Overview"
+6 |
+7 | All operations (including random number generation) take an optional
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/vmap.md:9:1-9:18
+7  | writing explicit loops.
+8  |
+9  + ## Basics of vmap
+   | ╰─suggestion: Change the title to "Overview"
+10 |
+11 | Let's start with a simple example:
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Articles/vmap.md:42:1-42:18
+40 | Here `x` is mapped over its first axis while `y` is used as a broadcast value.
+41 |
+42 + ## Nested Mapping
+   | ╰─suggestion: Change the title to "Overview"
+43 |
+44 | You can nest calls to `vmap` to map over multiple axes.
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+Articles/wired-memory.md:5:1: Overview section starts here
+  --> Articles/wired-memory.md:22:1-22:26
+20 | portable upper bound when designing custom policies.
+21 |
+22 + ## Tickets and Work Types
+   | ╰─suggestion: Change the heading to a level-3 heading
+23 |
+24 | Tickets represent memory demand. They come in two flavors:
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+Articles/wired-memory.md:5:1: Overview section starts here
+  --> Articles/wired-memory.md:35:1-35:25
+33 | no work is running.
+34 |
+35 + ## Policies and Grouping
+   | ╰─suggestion: Change the heading to a level-3 heading
+36 |
+37 | Policies are grouped by their `id`. The manager computes one limit per policy
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+Articles/wired-memory.md:5:1: Overview section starts here
+  --> Articles/wired-memory.md:44:1-44:14
+42 | as expected. Hashable value policies get an `id` automatically.
+43 |
+44 + ## Hysteresis
+   | ╰─suggestion: Change the heading to a level-3 heading
+45 |
+46 | The manager applies hysteresis to avoid rapid shrink oscillations while active
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+Articles/wired-memory.md:5:1: Overview section starts here
+  --> Articles/wired-memory.md:55:1-55:16
+53 | ``WiredMemoryManagerConfiguration``.
+54 |
+55 + ## Debug Events
+   | ╰─suggestion: Change the heading to a level-3 heading
+56 |
+57 | In DEBUG builds, `WiredMemoryManager.events()` emits a stream of
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+Articles/wired-memory.md:5:1: Overview section starts here
+  --> Articles/wired-memory.md:61:1-61:11
+59 | builds, the stream finishes immediately and produces no events.
+60 |
+61 + ## Example
+   | ╰─suggestion: Change the heading to a level-3 heading
+62 |
+63 | The following example uses a custom policy and demonstrates both reservation
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+Articles/wired-memory.md:5:1: Overview section starts here
+  --> Articles/wired-memory.md:86:1-86:21
+84 | ```
+85 |
+86 + ## Admission Control
+   | ╰─suggestion: Change the heading to a level-3 heading
+87 |
+88 | Policies can gate concurrency by implementing `canAdmit`. If admission fails,
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+Articles/wired-memory.md:5:1: Overview section starts here
+  --> Articles/wired-memory.md:92:1-92:18
+90 | preventing over-commit when many inferences launch simultaneously.
+91 |
+92 + ## Best Practices
+   | ╰─suggestion: Change the heading to a level-3 heading
+93 |
+94 | - Use the shared manager (`WiredMemoryManager.shared`) unless you have a
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+Articles/wired-memory.md:5:1: Overview section starts here
+   --> Articles/wired-memory.md:103:1-103:50
+101 |   baseline.
+102 |
+103 + ## Policy-only mode (CPU or unsupported backends)
+    | ╰─suggestion: Change the heading to a level-3 heading
+104 |
+105 | On systems where wired memory control is unavailable, you can still use the
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> MLX.md:36:1-36:16
+34 | are the CPU and GPU.
+35 |
+36 + ## Wired Memory
+   | ╰─suggestion: Change the title to "Overview"
+37 |
+38 | MLX includes a process-wide wired memory coordinator for GPU workloads. Use
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> MLX.md:67:1-67:22
+65 | See <doc:wired-memory> for configuration, best practices, and policy guidance.
+66 |
+67 + ## Other MLX Packages
+   | ╰─suggestion: Change the title to "Overview"
+68 |
+69 | - [MLXNN](mlxnn)
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> MLXArray.md:5:1-5:16
+3 | An N dimensional array.  The main type in `mlx`.
+4 |
+5 + ## Introduction
+  | ╰─suggestion: Change the title to "Overview"
+6 |
+7 | `MLXArray` is an N dimension array that can contain a variety of data types (``DType``).
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> MLXArray.md:26:1-26:17
+24 | ```
+25 |
+26 + ## Thread Safety
+   | ╰─suggestion: Change the title to "Overview"
+27 |
+28 | > `MLXArray` is not thread safe.
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> MLXArray.md:45:1-45:17
+43 | to create `c` in one thread and consume/evaluate it in another.
+44 |
+45 + ## Memory Safety
+   | ╰─suggestion: Change the title to "Overview"
+46 |
+47 | > `MLXArray` is not memory safe.
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Organization/arithmetic.md:29:1-29:16
+27 | use the methods on `MLXArray` or the free functions.
+28 |
+29 + ## Swift Naming
+   | ╰─suggestion: Change the title to "Overview"
+30 |
+31 | Note that the element-wise logical operations such as:
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Organization/arithmetic.md:39:1-39:27
+37 | operators produce a new ``MLXArray`` with `true`/`false` values for the elementwise comparison.
+38 |
+39 + ## Operations With Scalars
+   | ╰─suggestion: Change the title to "Overview"
+40 |
+41 | Many functions and operators that work on ``MLXArray`` take a ``ScalarOrArray`` argument or have
+
+warning: '(HasDType.Type,StreamOrDevice)' isn't a disambiguation for 'asType(_:stream:)' at '/MLX/MLXArray'
+  --> Organization/conversion.md:11:31-11:62
+9  | MLX has several functions to support converting between ``DType``:
+10 |
+11 + - ``MLXArray/asType(_:stream:)-(HasDType.Type,StreamOrDevice)``
+   |                               ├─suggestion: Replace '(HasDType.Type,StreamOrDevice)' with '((HasDType).Type,_)' for 'func asType(_ type: (some HasDType).Type, stream: StreamOrDevice = .default) -> MLXArray'
+   |                               ╰─suggestion: Replace '(HasDType.Type,StreamOrDevice)' with '(DType,_)' for 'func asType(_ type: DType, stream: StreamOrDevice = .default) -> MLXArray'
+12 | - ``MLXArray/asType(_:stream:)-(DType,StreamOrDevice)``
+13 | - ``MLXArray/asArray(_:)``
+
+warning: 'asData(noCopy:)' doesn't exist at '/MLX/MLXArray'
+  --> Organization/conversion.md:14:14-14:29
+12 | - ``MLXArray/asType(_:stream:)-(DType,StreamOrDevice)``
+13 | - ``MLXArray/asArray(_:)``
+14 + - ``MLXArray/asData(noCopy:)``
+   |              ╰─suggestion: Replace 'asData(noCopy:)' with 'asData(noCopy:disambiguate:)'
+15 | - ``MLXArray/asMTLBuffer(device:noCopy:)``
+16 | - ``MLXArray/asImaginary(stream:)``
+
+warning: '(MLXArrayIndex,StreamOrDevice)' isn't a disambiguation for 'subscript(_:stream:)' at '/MLX/MLXArray'
+  --> Organization/indexes.md:37:34-37:65
+35 | ### Index Consuming Functions
+36 |
+37 + - ``MLXArray/subscript(_:stream:)-(MLXArrayIndex,StreamOrDevice)``
+   |                                  ├─suggestion: Replace '(MLXArrayIndex,StreamOrDevice)' with '([MLXArrayIndex],_)' for 'subscript(indices: [any MLXArrayIndex], stream stream: StreamOrDevice = .default) -> MLXArray { get set }'
+   |                                  ╰─suggestion: Replace '(MLXArrayIndex,StreamOrDevice)' with '(MLXArrayIndex...,_)' for 'subscript(indices: any MLXArrayIndex..., stream stream: StreamOrDevice = .default) -> MLXArray { get set }'
+38 | - ``MLXArray/take(_:axis:stream:)``
+39 | - ``takeAlong(_:_:axis:stream:)``
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> Organization/indexing.md:89:1-89:37
+87 | More complex forms are also available if multiple arrays are passed.
+88 |
+89 + ## Idiomatic Expressions From Python
+   | ╰─suggestion: Change the title to "Overview"
+90 |
+91 | ### Negative Indexes
+
+warning: '(Sequence,_)' isn't a disambiguation for 'init(_:_:)' at '/MLX/MLXArray'
+   --> Organization/initialization.md:222:24-222:37
+220 |
+221 | - ``MLXArray/init(_:_:)-([T],_)``
+222 + - ``MLXArray/init(_:_:)-(Sequence,_)``
+    |                        ├─suggestion: Replace '(Sequence,_)' with '([Int],_)' for 'convenience init(_ value: [Int], _ shape: (some Collection<Int>)? = [Int]?.none)'
+    |                        ├─suggestion: Replace '(Sequence,_)' with '(S,_)' for 'convenience init<S>(_ sequence: S, _ shape: (some Collection<Int>)? = [Int]?.none) where S : Sequence, S.Element : HasDType'
+    |                        ├─suggestion: Replace '(Sequence,_)' with '(UnsafeBufferPointer<T>,_)' for 'convenience init<T>(_ ptr: UnsafeBufferPointer<T>, _ shape: (some Collection<Int>)? = [Int]?.none) where T : HasDType'
+    |                        ╰─suggestion: Replace '(Sequence,_)' with '([T],_)' for 'convenience init<T>(_ value: [T], _ shape: (some Collection<Int>)? = [Int]?.none) where T : HasDType'
+223 | - ``MLXArray/init(_:_:)-([Int],_)``
+224 | - ``MLXArray/init(converting:_:)``
+
+warning: '(Int,Int,Int,StreamOrDevice)' isn't a disambiguation for 'linspace(_:_:count:stream:)' at '/MLX/MLXArray'
+   --> Organization/initialization.md:245:41-245:70
+243 | - ``MLXArray/full(_:values:stream:)``
+244 | - ``MLXArray/identity(_:type:stream:)``
+245 + - ``MLXArray/linspace(_:_:count:stream:)-(Int,Int,Int,StreamOrDevice)``
+    |                                         ├─suggestion: Replace '(Int,Int,Int,StreamOrDevice)' with '92x6l' for 'static func linspace<T>(_ start: T, _ stop: T, count: Int = 50, stream: StreamOrDevice = .default) -> MLXArray where T : HasDType, T : BinaryFloatingPoint'
+    |                                         ╰─suggestion: Replace '(Int,Int,Int,StreamOrDevice)' with '7m7eg' for 'static func linspace<T>(_ start: T, _ stop: T, count: Int = 50, stream: StreamOrDevice = .default) -> MLXArray where T : HasDType, T : BinaryInteger'
+246 | - ``MLXArray/linspace(_:_:count:stream:)-(Double,Double,Int,StreamOrDevice)``
+247 | - ``MLXArray/repeated(_:count:axis:stream:)``
+
+warning: '(Double,Double,Int,StreamOrDevice)' isn't a disambiguation for 'linspace(_:_:count:stream:)' at '/MLX/MLXArray'
+   --> Organization/initialization.md:246:41-246:76
+244 | - ``MLXArray/identity(_:type:stream:)``
+245 | - ``MLXArray/linspace(_:_:count:stream:)-(Int,Int,Int,StreamOrDevice)``
+246 + - ``MLXArray/linspace(_:_:count:stream:)-(Double,Double,Int,StreamOrDevice)``
+    |                                         ├─suggestion: Replace '(Double,Double,Int,StreamOrDevice)' with '92x6l' for 'static func linspace<T>(_ start: T, _ stop: T, count: Int = 50, stream: StreamOrDevice = .default) -> MLBuilding for debugging...
+[Planning deferred tasks]
+[1 / 16]
+[15 / 25] Atomics
+[22 / 38] FlatBuffers
+[26 / 38] FlatBuffers
+[29 / 38] FlatBuffers
+[32 / 40] Atomics
+[32 / 40] FlatBuffers
+[40 / 44] Arrow
+[54 / 58] Arrow
+[57 / 59] Arrow
+Build complete! (2,48 sec)
+Building for debugging...
+[Planning deferred tasks]
+[1 / 7]
+Build complete! (0,47 sec)
+XArray where T : HasDType, T : BinaryFloatingPoint'
+    |                                         ╰─suggestion: Replace '(Double,Double,Int,StreamOrDevice)' with '7m7eg' for 'static func linspace<T>(_ start: T, _ stop: T, count: Int = 50, stream: StreamOrDevice = .default) -> MLXArray where T : HasDType, T : BinaryInteger'
+247 | - ``MLXArray/repeated(_:count:axis:stream:)``
+248 | - ``MLXArray/repeated(_:count:stream:)``
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> install.md:7:1-7:9
+5 | ``MLX`` is meant to be built and run from Xcode or SwiftPM.
+6 |
+7 + ## Xcode
+  | ╰─suggestion: Change the title to "Overview"
+8 |
+9 | In Xcode you can add `https://github.com/ml-explore/mlx-swift` as a package
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> install.md:12:1-12:11
+10 | dependency and link `MLX`, `MLXNN` and `MLXRandom` as needed.
+11 |
+12 + ## SwiftPM
+   | ╰─suggestion: Change the title to "Overview"
+13 |
+14 | To use ``MLX`` with SwiftPm you can add this to your `Package.swift`:
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> install.md:35:1-35:22
+33 | Xcode or `xcodebuild`.
+34 |
+35 + ## Command Line Tools
+   | ╰─suggestion: Change the title to "Overview"
+36 |
+37 | See <doc:troubleshooting> (Running From Command Line) for information about running command line tools from the shell.
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> troubleshooting.md:5:1-5:16
+3 | Help with problems you might run into.
+4 |
+5 + ## Installation
+  | ╰─suggestion: Change the title to "Overview"
+6 |
+7 | See <doc:install> for more information.  If you use Xcode or SwiftPM to reference
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> troubleshooting.md:25:1-25:29
+23 | ```
+24 |
+25 + ## Running From Command Line
+   | ╰─suggestion: Change the title to "Overview"
+26 |
+27 | > MLX requires metal shaders from the `Cmlx` framework -- these are not usable
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> troubleshooting.md:48:1-48:12
+46 | ```
+47 |
+48 + ## Building
+   | ╰─suggestion: Change the title to "Overview"
+49 |
+50 | Specific build issues you may encounter.
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> troubleshooting.md:73:1-73:23
+71 | - use Xcode 15.3 beta 2 or later
+72 |
+73 + ## Porting Python Code
+   | ╰─suggestion: Change the title to "Overview"
+74 |
+75 | See <doc:converting-python> for examples and information about
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> troubleshooting.md:79:1-79:28
+77 | contains information about porting models from MLX (Python) to Swift.
+78 |
+79 + ## Running on iOS Simulator
+   | ╰─suggestion: Change the title to "Overview"
+80 |
+81 | It isn't possible to use the iOS simulator for developing MLX applications, since MLX requires
+
+warning: '_updateInternal(_:)' doesn't exist at '/MLX/MLXArray'
+  --> ../Protocols.swift:8:23-8:42
+6  | ///
+7  | /// Note that the array itself is not a reference to the inner state, but the ``MLXArray`` instances
+8  + /// can be ``MLXArray/_updateInternal(_:)`` to mutate the inner state.  The exact working is an
+9  | /// implemention detail for MLX and should not be depended on by outside callers.
+10 | ///
+
+Finished building documentation for 'MLX' (0.48s)
+Extracting symbol information for 'MLXNN'...
+Finished extracting symbol information for 'Arrow'. (6.27s)
+Building documentation for 'Arrow'...
+
+
+Finished building documentation for 'Arrow' (0.38s)
+Extracting symbol information for 'SwiftDataFrame'...
+Finished extracting symbol information for 'ArgumentParser'. (7.15s)
+Building documentation for 'ArgumentParser'...
+note: This document does not have a summary.
+An abstract provides a short description of the document. Write a paragraph below the title of the document toBuilding for debugging...
+[Pre-planning 1 / 358]
+[Planning deferred tasks]
+[1 / 29]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[3 / 7] MLXNN
+[16 / 20] MLXNN
+[19 / 21] MLXNN
+Build complete! (1,39 sec)
+ use it as an abstract.
+ --> Extensions/Argument.md:1:1-1:30
+1 + # ``ArgumentParser/Argument``
+2 |
+3 | ## Topics
+
+note: This document does not have a summary.
+An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
+ --> Extensions/ArgumentArrayParsingStrategy.md:1:1-1:50
+1 + # ``ArgumentParser/ArgumentArrayParsingStrategy``
+2 |
+3 | ## Topics
+
+note: This document does not have a summary.
+An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
+ --> Extensions/CommandConfiguration.md:1:1-1:42
+1 + # ``ArgumentParser/CommandConfiguration``
+2 |
+3 | ## Topics
+
+note: This document does not have a summary.
+An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
+ --> Extensions/Flag.md:1:1-1:26
+1 + # ``ArgumentParser/Flag``
+2 |
+3 | ## Topics
+
+note: This document does not have a summary.
+An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
+ --> Extensions/Option.md:1:1-1:28
+1 + # ``ArgumentParser/Option``
+2 |
+3 | ## Topics
+
+note: This document does not have a summary.
+An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
+ --> Extensions/OptionGroup.md:1:1-1:33
+1 + # ``ArgumentParser/OptionGroup``
+2 |
+3 | ## Topics
+
+note: This document does not have a summary.
+An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
+ --> Extensions/ParsableArguments.md:1:1-1:39
+1 + # ``ArgumentParser/ParsableArguments``
+2 |
+3 | ## Topics
+
+Finished building documentation for 'ArgumentParser' (0.15s)
+Finished extracting symbol information for 'MLXNN'. (5.09s)
+Building documentation for 'MLXNN'...
+note: The majority of content should be under level-3 headers under the "Overview" section
+MLXNN.md:5:1: Overview section starts here
+  --> MLXNN.md:16:1-16:11
+14 | them for finetuning and more.
+15 |
+16 + ## Modules
+   | ╰─suggestion: Change the heading to a level-3 heading
+17 |
+18 | The workhorse of any neural network library is the ``Module`` class. In MLX
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+MLXNN.md:5:1: Overview section starts here
+  --> MLXNN.md:44:1-44:22
+42 | See <doc:training>
+43 |
+44 + ## Other MLX Packages
+   | ╰─suggestion: Change the heading to a level-3 heading
+45 |
+46 | - [MLX](mlx)
+
+note: This document does not have a summary.
+An abstract provides a short description of the document. Write a paragraph below the title of the document to use it as an abstract.
+ --> Module.md:1:1-1:13
+1 + # ``Module``
+2 |
+3 | ## Topics
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+ --> custom-layers.md:5:1-5:19
+3 | Creating custom modules using `MLXNN`.
+4 |
+5 + ## Neural Networks
+  | ╰─suggestion: Change the title to "Overview"
+6 |
+7 | Writing arbitrarily complex neural networks in MLX can be done using only
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> custom-layers.md:16:1-16:20
+14 | for finetuning and more.
+15 |
+16 + ## The Module Class
+   | ╰─suggestion: Change the title to "Overview"
+17 |
+18 | The workhorse of any neural network library is the ``Module`` class. In
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+   --> custom-layers.md:137:1-137:32
+135 |
+136 |
+137 + ## ModuleInfo and ParameterInfo
+    | ╰─suggestion: Change the title to "Overview"
+138 |
+139 | The ``ModuleInfo`` and ``ParameterInfo`` provide two important features for module
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+   --> custom-layers.md:204:1-204:26
+202 | Note that `MLXArray` is settable without any ``ParameterInfo`` -- it has an `update()` method.
+203 |
+204 + ## CoBuilding for debugging...
+[Pre-planning 1 / 215]
+[Planning deferred tasks]
+[2 / 20]
+[3 / 6] SwiftDataFrame
+[17 / 20] SwiftDataFrame
+[20 / 22] SwiftDataFrame
+Build complete! (1,51 sec)
+Building for debugging...
+[Pre-planning 1 / 273]
+[Planning deferred tasks]
+[3 / 24]
+[4 / 7] SwiftNLP
+[18 / 21] SwiftNLP
+[21 / 23] SwiftNLP
+Build complete! (1,12 sec)
+Building for debugging...
+[Pre-planning 1 / 273]
+[Planning deferred tasks]
+[3 / 24]
+[4 / 8] SwiftDatabase
+[8 / 12] SwiftDatabase
+[11 / 13] SwiftDatabase
+Build complete! (0,94 sec)
+Building for debugging...
+[Pre-planning 1 / 273]
+[Planning deferred tasks]
+[4 / 8] SwiftStats
+[15 / 19] SwiftStats
+[18 / 20] SwiftStats
+Build complete! (0,87 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 684]
+[Planning deferred tasks]
+[3 / 55]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[6 / 10] SwiftLLM
+[15 / 19] SwiftLLM
+[18 / 20] SwiftLLM
+Build complete! (1,22 sec)
+Building for debugging...
+[Pre-planning 1 / 331]
+[Planning deferred tasks]
+[3 / 27]
+[5 / 9] SwiftVisualization
+[10 / 14] SwiftVisualization
+Build complete! (1,12 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 654]
+[Planning deferred tasks]
+[3 / 52]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[6 / 9] SwiftPreprocessing
+[20 / 23] SwiftPreprocessing
+[23 / 25] SwiftPreprocessing
+Build complete! (1,41 sec)
+Building for debugging...
+[Pre-planning 1 / 331]
+[Planning deferred tasks]
+[3 / 27]
+[5 / 8] SwiftForecast
+[19 / 22] SwiftForecast
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftForecast/Core/ETSModel.swift:122:13: [1;33mwarning: [1;39mvariable 'curL' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m120 |[0;0m 
+[0;36m121 |[0;0m         var result: [Double] = []
+[0;36m122 |[0;0m         var curL = lastLevel
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'curL' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m123 |[0;0m         var curB = lastTrend
+[0;36m124 |[0;0m 
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftForecast/Core/ETSModel.swift:123:13: [1;33mwarning: [1;39mvariable 'curB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m121 |[0;0m         var result: [Double] = []
+[0;36m122 |[0;0m         var curL = lastLevel
+[0;36m123 |[0;0m         var curB = lastTrend
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'curB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m124 |[0;0m 
+[0;36m125 |[0;0m         for h in 1...steps {
+[22 / 24] SwiftForecast
+Build complete! (1,17 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 742]
+[Planning deferred tasks]
+[3 / 58]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[7 / 11] SwiftAgent
+[11 / 15] SwiftAgent
+Build complete! (1,20 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 712]
+[Planning deferred tasks]
+[3 / 55]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[7 / 11] SwiftCluster
+[18 / 22] SwiftCluster
+[21 / 23] SwiftCluster
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:102:13: [1;33mwarning: [1;39mvariable 'omega' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m100 |[0;0m 
+[0;36m101 |[0;0m         // --- Step 1: Random Gaussian sketch Ω ∈ ℝ^{N×l} (column-major) ---
+[0;36m102 |[0;0m         var omega = randomGaussian(count: N * l, seed: seed)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'omega' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m103 |[0;0m 
+[0;36m104 |[0;0m         // --- Step 2: Y = A·Ω  →  shape [M×l] (column-major) ---
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:13: [1;33mwarning: [1;39mvariable 'mInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:30: [1;33mwarning: [1;39mvariable 'nInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+    [0;36m|[0;0m                              `- [1;33mwarning: [1;39mvariable 'nInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:47: [1;33mwarning: [1;39mvariable 'kInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39mvariable 'kInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:109:13: [1;33mwarning: [1;39mvariable 'alpha' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'alpha' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:109:26: [1;33mwarning: [1;39mvariable 'beta' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+    [0;36m|[0;0m                          `- [1;33mwarning: [1;39mvariable 'beta' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:13: [1;33mwarning: [1;39mvariable 'ldA' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldA' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:29: [1;33mwarning: [1;39mvariable 'ldOm' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'ldOm' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:46: [1;33mwarning: [1;39mvariable 'ldY' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+    [0;36m|[0;0m                                              `- [1;33mwarning: [1;39mvariable 'ldY' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:111:13: [1;33mwarning: [1;39mvariable 'trN' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'trN' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+[0;36m113 |[0;0m                     mInt, nInt, kInt,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:111:29: [1;33mwarning: [1;39mvariable 'trT' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'trT' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+[0;36m113 |[0;0m                     mInt, nInt, kInt,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:17: [1;33mwarning: [1;39mvariable 'mZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+    [0;36m|[0;0m                 `- [1;33mwarning: [1;39mvariable 'mZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:32: [1;33mwarning: [1;39mvariable 'nZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+    [0;36m|[0;0m                                `- [1;33mwarning: [1;39mvariable 'nZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:47: [1;33mwarning: [1;39mvariable 'kZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39mvariable 'kZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:123:17: [1;33mwarning: [1;39mvariable 'ldAT' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+    [0;36m|[0;0m                 `- [1;33mwarning: [1;39mvariable 'ldAT' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+[0;36m125 |[0;0m                         mZ, nZ, kZ,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:123:34: [1;33mwarning: [1;39mvariable 'ldZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+    [0;36m|[0;0m                                  `- [1;33mwarning: [1;39mvariable 'ldZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+[0;36m125 |[0;0m                         mZ, nZ, kZ,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:13: [1;33mwarning: [1;39mvariable 'mB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:28: [1;33mwarning: [1;39mvariable 'nB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+    [0;36m|[0;0m                            `- [1;33mwarning: [1;39mvariable 'nB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:43: [1;33mwarning: [1;39mvariable 'kB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+    [0;36m|[0;0m                                           `- [1;33mwarning: [1;39mvariable 'kB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:161:13: [1;33mwarning: [1;39mvariable 'ldQ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldQ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+[0;36m163 |[0;0m                     mB, nB, kB,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:161:29: [1;33mwarning: [1;39mvariable 'ldB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'ldB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+[0;36m163 |[0;0m                     mB, nB, kB,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:13: [1;33mwarning: [1;39mvariable 'mU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
+[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
+[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m192 |[0;0m         var ldU2 = Int32(M)
+[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:28: [1;33mwarning: [1;39mvariable 'nU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
+[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
+[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+    [0;36m|[0;0m                            `- [1;33mwarning: [1;39mvariable 'nU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m192 |[0;0m         var ldU2 = Int32(M)
+[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:48: [1;33mwarning: [1;39mvariable 'kU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
+[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
+[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+    [0;36m|[0;0m                                                `- [1;33mwarning: [1;39mvariable 'kU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m192 |[0;0m         var ldU2 = Int32(M)
+[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:192:13: [1;33mwarning: [1;39mvariable 'ldU2' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
+[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+[0;36m192 |[0;0m         var ldU2 = Int32(M)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldU2' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+[0;36m194 |[0;0m                     mU, nU, kU,
+
+[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
+Build complete! (1,35 sec)
+nverting From Python
+    | ╰─suggestion: Change the title to "Overview"
+205 |
+206 | Consider [this example from a Llama model](https://github.com/ml-explore/mlx-examples/blob/main/llms/mlx_lm/models/llama.py):
+
+note: The majority of content should be under level-3 headers under the "Overview" section
+  --> module-filters.md:13:1-13:12
+11 | See those methods for more information.
+12 |
+13 + ## Examples
+   | ╰─suggestion: Change the title to "Overview"
+14 |
+15 | The `filterMap()` method has several options for controlling the traversal of
+
+Finished building documentation for 'MLXNN' (0.19s)
+Finished extracting symbol information for 'SwiftDataFrame'. (4.10s)
+Building documentation for 'SwiftDataFrame'...
+
+
+Finished building documentation for 'SwiftDataFrame' (0.12s)
+Extracting symbol information for 'SwiftNLP'...
+Extracting symbol information for 'SwiftDatabase'...
+Extracting symbol information for 'SwiftStats'...
+Finished extracting symbol information for 'SwiftNLP'. (1.45s)
+Building documentation for 'SwiftNLP'...
+
+
+Finished building documentation for 'SwiftNLP' (0.20s)
+Extracting symbol information for 'SwiftLLM'...
+Finished extracting symbol information for 'SwiftDatabase'. (2.76s)
+Building documentation for 'SwiftDatabase'...
+
+
+Finished building documentation for 'SwiftDatabase' (0.04s)
+Finished extracting symbol information for 'SwiftStats'. (3.96s)
+Building documentation for 'SwiftStats'...
+
+
+Finished building documentation for 'SwiftStats' (0.06s)
+Extracting symbol information for 'SwiftVisualization'...
+Extracting symbol information for 'SwiftPreprocessing'...
+Extracting symbol information for 'SwiftForecast'...
+Finished extracting symbol information for 'SwiftLLM'. (3.88s)
+Building documentation for 'SwiftLLM'...
+
+
+Finished building documentation for 'SwiftLLM' (0.05s)
+Extracting symbol information for 'SwiftAgent'...
+Finished extracting symbol information for 'SwiftVisualization'. (2.96s)
+Building documentation for 'SwiftVisualization'...
+
+
+Finished building documentation for 'SwiftVisualization' (0.36s)
+Finished extracting symbol information for 'SwiftPreprocessing'. (4.77s)
+Building documentation for 'SwiftPreprocessing'...
+
+
+Finished building documentation for 'SwiftPreprocessing' (0.25s)
+Extracting symbol information for 'SwiftCluster'...
+Extracting symbol information for 'SwiftML'...
+Finished extracting symbol information for 'SwiftForecast'. (6.33s)
+Building documentation for 'SwiftForecast'...
+
+
+Finished building documentation for 'SwiftForecast' (0.21s)
+Finished extracting symbol information for 'SwiftAgent'. (6.38s)
+Building documentation for 'SwiftAgent'...
+
+
+Finished building documentation for 'SwiftAgent' (0.04s)
+Finished extracting symbol information for 'SwiftCluster'. (4.61s)
+Building documentation for 'SwiftCluster'...
+warning: External name 'nComponents' used to document parameter
+  --> ../Decomposition/RandomizedSVD.swift:73:13-73:24
+71 |     /// - Parameters:
+72 |     ///   - X:            Input matrix, shape [M, N], row-major.
+73 +     ///   - nComponents:  Number of singular values/vectors to compute (k).
+   |             ╰─suggestion: Replace 'nComponents' with 'k'
+74 |     ///   - nOversamples: Extra random columns for accuracy (default 10).
+75 |     ///   - nPowerIter:   Number of power iterations for improved accuracy on slow-decay spectra (default 2).
+
+warning: External name 'nOversamples' used to document parameter
+  --> ../Decomposition/RandomizedSVD.swift:74:13-74:25
+72 |     ///   - X:            Input matrix, shape [M, N], row-major.
+73 |     ///   - nComponents:  Number of singular values/vectors to compute (k).
+74 +     ///   - nOversamples: Extra random columns for accuracy (default 10).
+   |             ╰─suggestion: Replace 'nOversamples' with 'p'
+75 |     ///   - nPowerIter:   Number of power iterations for improved accuracy on slow-decay spectra (default 2).
+76 |     ///   - seed:         Seed for deterministic random sketch (default 42).
+
+warning: External name 'nPowerIter' used to document parameter
+  --> ../Decomposition/RandomizedSVD.swift:75:13-75:23
+73 |Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 742]
+[Planning deferred tasks]
+[3 / 58]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[7 / 10] SwiftML
+[21 / 24] SwiftML
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftML/Core/GradientBoosting.swift:103:21: [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
+[0;36m101 |[0;0m                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
+[0;36m102 |[0;0m                     }
+[0;36m103 |[0;0m                     ptr[i] = pred
+    [0;36m|[0;0m                     `- [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
+[0;36m104 |[0;0m                 }
+[0;36m105 |[0;0m             }
+
+Swift.UnsafeMutablePointer:1:23: [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
+[0;36m1 |[0;0m @frozen public struct UnsafeMutablePointer<Pointee> : Copyable where Pointee : ~Copyable {
+  [0;36m|[0;0m                       `- [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
+[0;36m2 |[0;0m     public let _rawValue: Builtin.RawPointer
+[0;36m3 |[0;0m     public init(_ _rawValue: Builtin.RawPointer)
+
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+[24 / 26] SwiftML
+Build complete! (1,67 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 800]
+[Planning deferred tasks]
+[3 / 61]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[8 / 12] SwiftExplain
+[13 / 17] SwiftExplain
+[18 / 18] SwiftExplain
+Build complete! (1,25 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 800]
+[Planning deferred tasks]
+[3 / 24] mlx-swift_Cmlx
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[8 / 12] SwiftOptimize
+[17 / 21] SwiftOptimize
+[20 / 22] SwiftOptimize
+Build complete! (1,24 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 771]
+[Planning deferred tasks]
+[2 / 60]
+[18 / 82] Atomics
+[32 / 96] FlatBuffers
+[40 / 98] FlatBuffers
+[48 / 110] ComplexModule
+[58 / 111] ComplexModule
+[69 / 112] FlatBuffers
+[78 / 116] Atomics
+[94 / 128] Atomics
+[95 / 142]
+[101 / 141] Arrow
+[103 / 141] Arrow
+[107 / 141] Arrow
+[111 / 142] ArgumentParser
+[113 / 143] Arrow
+[122 / 150] Arrow
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[127 / 164] mlx-swift_Cmlx
+[137 / 163] SwiftDataFrame
+[143 / 175] MLX
+[149 / 175] MLX
+[150 / 175] SwiftDataFrame
+[156 / 178] MLX
+[159 / 178] MLX
+[166 / 188] SwiftStats
+[175 / 192] SwiftStats
+[175 / 192] MLXNN
+[187 / 218] SwiftPreprocessing
+[193 / 217] SwiftPreprocessing
+[197 / 217] SwiftPreprocessing
+[201 / 217] MLXNN
+[209 / 219] SwiftPreprocessing
+[209 / 220] SwiftML
+[222 / 232] SwiftPreprocessing
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftML/Core/GradientBoosting.swift:103:21: [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
+[0;36m101 |[0;0m                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
+[0;36m102 |[0;0m                     }
+[0;36m103 |[0;0m                     ptr[i] = pred
+    [0;36m|[0;0m                     `- [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
+[0;36m104 |[0;0m                 }
+[0;36m105 |[0;0m             }
+
+Swift.UnsafeMutablePointer:1:23: [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
+[0;36m1 |[0;0m @frozen public struct UnsafeMutablePointer<Pointee> : Copyable where Pointee : ~Copyable {
+  [0;36m|[0;0m                       `- [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
+[0;36m2 |[0;0m     public let _rawValue: Builtin.RawPointer
+[0;36m3 |[0;0m     public init(_ _rawValue: Builtin.RawPointer)
+
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+[225 / 231] SwiftML
+[228 / 233] SwiftML
+[232 / 233] swiftsci-product
+[233 / 235] swiftsci-product
+Build complete! (5,53 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 800]
+[Planning deferred tasks]
+[3 / 61]
+[19 / 83] Atomics
+[28 / 96] ArgumentParserToolInfo
+[41 / 98] RealModule
+[48 / 111] ComplexModule
+[56 / 112] ComplexModule
+[67 / 113] ComplexModule
+[76 / 114] Numerics
+[93 / 129] ArgumentParser
+[97 / 143] Arrow
+[100 / 143] Arrow
+[102 / 143] Arrow
+[108 / 144] Arrow
+[113 / 145] Arrow
+[116 / 145] encuda-product
+[119 / 160]
+[130 / 160] SwiftDataFrame
+[133 / 161] encuda-product
+[141 / 168] encuda-product
+[142 / 168] SwiftStats
+[153 / 178]
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[159 / 176] SwiftStats
+[171 / 189] MLX
+[172 / 189] SwiftStats
+[174 / 189] MLX
+[178 / 193] MLXNN
+[191 / 219] SwiftPreprocessing
+[192 / 219] SwiftPreprocessing
+[200 / 219] SwiftPreprocessing
+[209 / 220] SwiftML
+[210 / 220] SwiftPreprocessing
+[224 / 233] SwiftML
+[226 / 232] SwiftML
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftML/Core/GradientBoosting.swift:103:21: [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
+[0;36m101 |[0;0m                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
+[0;36m102 |[0;0m                     }
+[0;36m103 |[0;0m                     ptr[i] = pred
+    [0;36m|[0;0m                     `- [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
+[0;36m104 |[0;0m                 }
+[0;36m105 |[0;0m             }
+
+Swift.UnsafeMutablePointer:1:23: [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
+[0;36m1 |[0;0m @frozen public struct UnsafeMutablePointer<Pointee> : Copyable where Pointee : ~Copyable {
+  [0;36m|[0;0m                       `- [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
+[0;36m2 |[0;0m     public let _rawValue: Builtin.RawPointer
+[0;36m3 |[0;0m     public init(_ _rawValue: Builtin.RawPointer)
+
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+[232 / 237] SwiftML
+[236 / 238] SwiftVision
+Build complete! (5,52 sec)
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 1351]
+[Planning deferred tasks]
+[1 / 89]
+[17 / 111] Atomics
+[31 / 125] FlatBuffers
+[40 / 127] FlatBuffers
+[49 / 140] ComplexModule
+[60 / 143] Atomics
+[70 / 145] Numerics
+[77 / 141] ArgumentParser
+[90 / 154] Atomics
+[94 / 156] ArgumentParser
+[103 / 170] Arrow
+[109 / 171] ArgumentParser
+[112 / 172] encuda-product
+[118 / 178] encuda-product
+[124 / 180] MLX
+warning: missing creator for mutated node: ('/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+[127 / 191] MLX
+[140 / 204] SwiftDataFrame
+[142 / 204] SwiftDataFrame
+[147 / 204] SwiftDataFrame
+[150 / 204] SwiftDataFrame
+[156 / 209] SwiftStats
+[161 / 212] SwiftDataFrame
+[161 / 212] MLX
+[170 / 223] MLXNN
+[182 / 252] SwiftVisualization
+[187 / 255] SwiftNLP
+[192 / 255] SwiftDatabase
+[200 / 269] SwiftPreprocessing
+[205 / 286] SwiftForecast
+[214 / 286] SwiftPreprocessing
+[220 / 287] SwiftPreprocessing
+[230 / 288] SwiftForecast
+[235 / 290] SwiftSci_SwiftVisualization
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftForecast/Core/ETSModel.swift:122:13: [1;33mwarning: [1;39mvariable 'curL' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m120 |[0;0m 
+[0;36m121 |[0;0m         var result: [Double] = []
+[0;36m122 |[0;0m         var curL = lastLevel
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'curL' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m123 |[0;0m         var curB = lastTrend
+[0;36m124 |[0;0m 
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftForecast/Core/ETSModel.swift:123:13: [1;33mwarning: [1;39mvariable 'curB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m121 |[0;0m         var result: [Double] = []
+[0;36m122 |[0;0m         var curL = lastLevel
+[0;36m123 |[0;0m         var curB = lastTrend
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'curB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m124 |[0;0m 
+[0;36m125 |[0;0m         for h in 1...steps {
+[249 / 301] SwiftNLP
+[256 / 302] MLXNN
+[259 / 305] SwiftLLM
+[265 / 305] MLXNN
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:102:13: [1;33mwarning: [1;39mvariable 'omega' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m100 |[0;0m 
+[0;36m101 |[0;0m         // --- Step 1: Random Gaussian sketch Ω ∈ ℝ^{N×l} (column-major) ---
+[0;36m102 |[0;0m         var omega = randomGaussian(count: N * l, seed: seed)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'omega' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m103 |[0;0m 
+[0;36m104 |[0;0m         // --- Step 2: Y = A·Ω  →  shape [M×l] (column-major) ---
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:13: [1;33mwarning: [1;39mvariable 'mInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:30: [1;33mwarning: [1;39mvariable 'nInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+    [0;36m|[0;0m                              `- [1;33mwarning: [1;39mvariable 'nInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:108:47: [1;33mwarning: [1;39mvariable 'kInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m106 |[0;0m         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39mvariable 'kInt' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:109:13: [1;33mwarning: [1;39mvariable 'alpha' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'alpha' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:109:26: [1;33mwarning: [1;39mvariable 'beta' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m107 |[0;0m         var Y = [Double](repeating: 0.0, count: M * l)
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+    [0;36m|[0;0m                          `- [1;33mwarning: [1;39mvariable 'beta' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:13: [1;33mwarning: [1;39mvariable 'ldA' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldA' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:29: [1;33mwarning: [1;39mvariable 'ldOm' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'ldOm' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:110:46: [1;33mwarning: [1;39mvariable 'ldY' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m108 |[0;0m         var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+    [0;36m|[0;0m                                              `- [1;33mwarning: [1;39mvariable 'ldY' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:111:13: [1;33mwarning: [1;39mvariable 'trN' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'trN' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+[0;36m113 |[0;0m                     mInt, nInt, kInt,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:111:29: [1;33mwarning: [1;39mvariable 'trT' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m109 |[0;0m         var alpha = 1.0, beta = 0.0
+[0;36m110 |[0;0m         var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
+[0;36m111 |[0;0m         var trN = Int8(78), trT = Int8(84)
+    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'trT' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m112 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+[0;36m113 |[0;0m                     mInt, nInt, kInt,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:17: [1;33mwarning: [1;39mvariable 'mZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+    [0;36m|[0;0m                 `- [1;33mwarning: [1;39mvariable 'mZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:32: [1;33mwarning: [1;39mvariable 'nZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+    [0;36m|[0;0m                                `- [1;33mwarning: [1;39mvariable 'nZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:122:47: [1;33mwarning: [1;39mvariable 'kZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m120 |[0;0m             // Z = Aᵀ·Y  → shape [N×l]
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39mvariable 'kZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:123:17: [1;33mwarning: [1;39mvariable 'ldAT' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+    [0;36m|[0;0m                 `- [1;33mwarning: [1;39mvariable 'ldAT' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+[0;36m125 |[0;0m                         mZ, nZ, kZ,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:123:34: [1;33mwarning: [1;39mvariable 'ldZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m121 |[0;0m             var Z = [Double](repeating: 0.0, count: N * l)
+[0;36m122 |[0;0m             var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+[0;36m123 |[0;0m             var ldAT = Int32(M), ldZ = Int32(N)
+    [0;36m|[0;0m                                  `- [1;33mwarning: [1;39mvariable 'ldZ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m124 |[0;0m             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+[0;36m125 |[0;0m                         mZ, nZ, kZ,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:13: [1;33mwarning: [1;39mvariable 'mB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:28: [1;33mwarning: [1;39mvariable 'nB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+    [0;36m|[0;0m                            `- [1;33mwarning: [1;39mvariable 'nB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:160:43: [1;33mwarning: [1;39mvariable 'kB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m158 |[0;0m         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+    [0;36m|[0;0m                                           `- [1;33mwarning: [1;39mvariable 'kB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:161:13: [1;33mwarning: [1;39mvariable 'ldQ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldQ' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+[0;36m163 |[0;0m                     mB, nB, kB,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:161:29: [1;33mwarning: [1;39mvariable 'ldB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m159 |[0;0m         var B = [Double](repeating: 0.0, count: l * N)
+[0;36m160 |[0;0m         var mB = Int32(l), nB = Int32(N), kB = Int32(M)
+[0;36m161 |[0;0m         var ldQ = Int32(M), ldB = Int32(l)
+    [0;36m|[0;0m                             `- [1;33mwarning: [1;39mvariable 'ldB' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m162 |[0;0m         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
+[0;36m163 |[0;0m                     mB, nB, kB,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:13: [1;33mwarning: [1;39mvariable 'mU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
+[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
+[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'mU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m192 |[0;0m         var ldU2 = Int32(M)
+[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:28: [1;33mwarning: [1;39mvariable 'nU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
+[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
+[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+    [0;36m|[0;0m                            `- [1;33mwarning: [1;39mvariable 'nU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m192 |[0;0m         var ldU2 = Int32(M)
+[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:191:48: [1;33mwarning: [1;39mvariable 'kU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m189 |[0;0m         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
+[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
+[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+    [0;36m|[0;0m                                                `- [1;33mwarning: [1;39mvariable 'kU' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m192 |[0;0m         var ldU2 = Int32(M)
+[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftCluster/Decomposition/RandomizedSVD.swift:192:13: [1;33mwarning: [1;39mvariable 'ldU2' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m190 |[0;0m         var Ufull = [Double](repeating: 0.0, count: M * minDim)
+[0;36m191 |[0;0m         var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+[0;36m192 |[0;0m         var ldU2 = Int32(M)
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mvariable 'ldU2' was never mutated; consider changing to 'let' constant[0;0m
+[0;36m193 |[0;0m         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+[0;36m194 |[0;0m                     mU, nU, kU,
+
+[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
+[271 / 306] SwiftML
+[278 / 326] SwiftML
+[283 / 326] SwiftML
+[290 / 326] SwiftLLM
+[295 / 327] SwiftAgent
+/Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Sources/SwiftML/Core/GradientBoosting.swift:103:21: [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
+[0;36m101 |[0;0m                         pred += lr * GradientBoostedTreesRegressor.predictSample(sample, nodes: treeNodes)
+[0;36m102 |[0;0m                     }
+[0;36m103 |[0;0m                     ptr[i] = pred
+    [0;36m|[0;0m                     `- [1;33mwarning: [1;39mcapture of 'ptr' with non-Sendable type 'UnsafeMutablePointer<Double>' in a '@Sendable' closure[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures\SendableClosureCaptures]8;;\]
+[0;36m104 |[0;0m                 }
+[0;36m105 |[0;0m             }
+
+Swift.UnsafeMutablePointer:1:23: [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
+[0;36m1 |[0;0m @frozen public struct UnsafeMutablePointer<Pointee> : Copyable where Pointee : ~Copyable {
+  [0;36m|[0;0m                       `- [1;39mnote: [1;39mgeneric struct 'UnsafeMutablePointer' does not conform to the 'Sendable' protocol[0;0m
+[0;36m2 |[0;0m     public let _rawValue: Builtin.RawPointer
+[0;36m3 |[0;0m     public init(_ _rawValue: Builtin.RawPointer)
+
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+[305 / 333] SwiftSci_SwiftCluster
+[312 / 330] SwiftLLM
+[313 / 330] SwiftAgent
+[327 / 343] SwiftVision
+[335 / 344] SwiftOptimize
+[347 / 352] SwiftOptimize
+[351 / 352] SwiftSciBenchmarks-product
+[352 / 354] SwiftSciBenchmarks-product
+Build complete! (7,60 sec)
+     ///   - nComponents:  Number of singular values/vectors to compute (k).
+74 |     ///   - nOversamples: Extra random columns for accuracy (default 10).
+75 +     ///   - nPowerIter:   Number of power iterations for improved accuracy on slow-decay spectra (default 2).
+   |             ╰─suggestion: Replace 'nPowerIter' with 'q'
+76 |     ///   - seed:         Seed for deterministic random sketch (default 42).
+77 |     /// - Returns: `RandomizedSVD.Result` with U [M×k], S [k], Vt [k×N].
+
+Finished building documentation for 'SwiftCluster' (0.16s)
+Finished extracting symbol information for 'SwiftML'. (6.66s)
+Building documentation for 'SwiftML'...
+
+
+Finished building documentation for 'SwiftML' (0.39s)
+Extracting symbol information for 'SwiftExplain'...
+Extracting symbol information for 'SwiftOptimize'...
+Extracting symbol information for 'SwiftSciCLI'...
+Extracting symbol information for 'SwiftVision'...
+Finished extracting symbol information for 'SwiftExplain'. (1.58s)
+Building documentation for 'SwiftExplain'...
+
+
+Finished building documentation for 'SwiftExplain' (0.05s)
+Finished extracting symbol information for 'SwiftOptimize'. (3.16s)
+Building documentation for 'SwiftOptimize'...
+
+
+Finished building documentation for 'SwiftOptimize' (0.07s)
+Finished extracting symbol information for 'SwiftSciCLI'. (9.02s)
+Building documentation for 'SwiftSciCLI'...
+
+
+Finished building documentation for 'SwiftSciCLI' (0.07s)
+Finished extracting symbol information for 'SwiftVision'. (14.90s)
+Building documentation for 'SwiftVision'...
+
+
+Finished building documentation for 'SwiftVision' (0.05s)
+Extracting symbol information for 'SwiftSciBenchmarks'...
+Finished extracting symbol information for 'SwiftSciBenchmarks'. (7.96s)
+Building documentation for 'SwiftSciBenchmarks'...
+
+
+Finished building documentation for 'SwiftSciBenchmarks' (0.05s)
+Generated 20 documentation archives:
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/ArgumentParser.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/Arrow.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/MLX.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/MLXNN.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftAgent.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftCluster.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftDataFrame.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftDatabase.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftExplain.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftForecast.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftLLM.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftML.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftNLP.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftOptimize.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftPreprocessing.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftSciBenchmarks.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftSciCLI.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftStats.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftVision.doccarchive
+  /Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/.build/plugins/Swift-DocC/outputs/SwiftVisualization.doccarchive

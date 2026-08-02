@@ -119,8 +119,8 @@ public actor ETSModel {
         guard steps > 0 else { return [] }
 
         var result: [Double] = []
-        var curL = lastLevel
-        var curB = lastTrend
+        let curL = lastLevel
+        let curB = lastTrend
 
         for h in 1...steps {
             let sIdx = (fittedSeries.count + h - 1) % period

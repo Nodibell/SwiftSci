@@ -99,16 +99,15 @@ public enum RandomizedSVD {
         }
 
         // --- Step 1: Random Gaussian sketch Ω ∈ ℝ^{N×l} (column-major) ---
-        var omega = randomGaussian(count: N * l, seed: seed)
+        let omega = randomGaussian(count: N * l, seed: seed)
 
         // --- Step 2: Y = A·Ω  →  shape [M×l] (column-major) ---
         // dgemm: C = alpha*A*B + beta*C
         // A is M×N colmaj, Omega is N×l colmaj → Y is M×l colmaj
         var Y = [Double](repeating: 0.0, count: M * l)
-        var mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
-        var alpha = 1.0, beta = 0.0
-        var ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
-        var trN = Int8(78), trT = Int8(84)
+        let mInt = Int32(M), nInt = Int32(l), kInt = Int32(N)
+        let alpha = 1.0, beta = 0.0
+        let ldA = Int32(M), ldOm = Int32(N), ldY = Int32(M)
         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
                     mInt, nInt, kInt,
                     alpha, A, ldA,
@@ -119,8 +118,8 @@ public enum RandomizedSVD {
         for _ in 0..<q {
             // Z = Aᵀ·Y  → shape [N×l]
             var Z = [Double](repeating: 0.0, count: N * l)
-            var mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
-            var ldAT = Int32(M), ldZ = Int32(N)
+            let mZ = Int32(N), nZ = Int32(l), kZ = Int32(M)
+            let ldAT = Int32(M), ldZ = Int32(N)
             cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
                         mZ, nZ, kZ,
                         alpha, A, ldAT,
@@ -157,8 +156,8 @@ public enum RandomizedSVD {
 
         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
         var B = [Double](repeating: 0.0, count: l * N)
-        var mB = Int32(l), nB = Int32(N), kB = Int32(M)
-        var ldQ = Int32(M), ldB = Int32(l)
+        let mB = Int32(l), nB = Int32(N), kB = Int32(M)
+        let ldQ = Int32(M), ldB = Int32(l)
         cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
                     mB, nB, kB,
                     alpha, Q, ldQ,
@@ -188,8 +187,8 @@ public enum RandomizedSVD {
 
         // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
         var Ufull = [Double](repeating: 0.0, count: M * minDim)
-        var mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-        var ldU2 = Int32(M)
+        let mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
+        let ldU2 = Int32(M)
         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
                     mU, nU, kU,
                     alpha, Q, ldQ,

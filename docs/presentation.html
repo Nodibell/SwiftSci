@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 2.6.2 — Complete 53-Slide WWDC Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 2.6.2 — Complete Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -105,6 +105,116 @@
       color: #ffffff;
       border-color: var(--sf-blue);
       box-shadow: 0 0 12px rgba(0, 122, 255, 0.5);
+    }
+
+    /* Sub-module Intra-Slide Slider Bar */
+    .sub-slider-bar {
+      position: fixed;
+      top: 3.1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.22rem 0.8rem;
+      background: rgba(18, 18, 22, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 89;
+      max-width: 94vw;
+      overflow-x: auto;
+      scrollbar-width: none;
+      transition: all 0.25s ease;
+    }
+
+    .sub-slider-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .sub-mod-label {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+    .sub-mod-name {
+      font-weight: 700;
+      color: var(--sf-blue);
+    }
+
+    .sub-mod-counter {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-sub);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.12rem 0.42rem;
+      border-radius: 99px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .mod-range-input {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      outline: none;
+      cursor: pointer;
+      width: min(200px, 22vw);
+      transition: all 0.2s ease;
+    }
+
+    .mod-range-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--sf-blue);
+      box-shadow: 0 0 8px rgba(0, 122, 255, 0.8);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .mod-range-input::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    .sub-mod-pills {
+      display: flex;
+      gap: 0.22rem;
+      align-items: center;
+    }
+
+    .sub-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-sub);
+      padding: 0.1rem 0.38rem;
+      border-radius: 99px;
+      font-size: 0.66rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .sub-pill:hover {
+      background: rgba(0, 122, 255, 0.2);
+      color: var(--sf-blue);
+      border-color: var(--sf-blue);
+    }
+
+    .sub-pill.active {
+      background: var(--sf-blue);
+      color: #ffffff;
+      border-color: var(--sf-blue);
+      box-shadow: 0 0 8px rgba(0, 122, 255, 0.6);
     }
 
     .deck {
@@ -475,31 +585,40 @@
     <div class="chip" onclick="showSlide(2)">📑 Agenda</div>
     <div class="chip" onclick="showSlide(3)">DataFrame (3-8)</div>
     <div class="chip" onclick="showSlide(9)">Stats (9-13)</div>
-    <div class="chip" onclick="showSlide(14)">Preprocessing (14-17)</div>
-    <div class="chip" onclick="showSlide(18)">ML (18-22)</div>
-    <div class="chip" onclick="showSlide(23)">Cluster (23-26)</div>
-    <div class="chip" onclick="showSlide(27)">Optimize (27-30)</div>
-    <div class="chip" onclick="showSlide(31)">Forecast (31-34)</div>
-    <div class="chip" onclick="showSlide(35)">NLP (35-40)</div>
-    <div class="chip" onclick="showSlide(41)">Explain (41-42)</div>
-    <div class="chip" onclick="showSlide(43)">LLM (43-44)</div>
-    <div class="chip" onclick="showSlide(45)">Viz (45-46)</div>
-    <div class="chip" onclick="showSlide(47)">Vision (47-48)</div>
-    <div class="chip" onclick="showSlide(49)">Database (49-50)</div>
-    <div class="chip" onclick="showSlide(51)">Agent (51-52)</div>
-    <div class="chip" onclick="showSlide(53)" style="color:var(--sf-green);">⚡ M4 Pro (53)</div>
+    <div class="chip" onclick="showSlide(14)">Preprocessing (14-19)</div>
+    <div class="chip" onclick="showSlide(20)">ML (20-27)</div>
+    <div class="chip" onclick="showSlide(28)">Cluster (28-32)</div>
+    <div class="chip" onclick="showSlide(33)">Optimize (33-36)</div>
+    <div class="chip" onclick="showSlide(37)">Forecast (37-44)</div>
+    <div class="chip" onclick="showSlide(45)">NLP (45-50)</div>
+    <div class="chip" onclick="showSlide(51)">Explain (51-52)</div>
+    <div class="chip" onclick="showSlide(53)">LLM (53-56)</div>
+    <div class="chip" onclick="showSlide(57)">Viz (57-58)</div>
+    <div class="chip" onclick="showSlide(59)">Vision (59-60)</div>
+    <div class="chip" onclick="showSlide(61)">Database (61-62)</div>
+    <div class="chip" onclick="showSlide(63)">Agent (63-64)</div>
+    <div class="chip" onclick="showSlide(65)" style="color:var(--sf-green);">⚡ M4 Pro (65)</div>
+  </div>
+
+  <!-- Sub-Module Intra-Slide Sub-Slider Bar -->
+  <div class="sub-slider-bar" id="subSliderBar">
+    <div class="sub-mod-label">
+      <span class="sub-mod-name" id="subModName">Title</span>
+      <span class="sub-mod-counter" id="subModCounter">Slide 1 of 1</span>
+    </div>
+    <input type="range" id="modRangeSlider" class="mod-range-input" min="1" max="1" value="1" oninput="showSlide(parseInt(this.value))">
+    <div class="sub-mod-pills" id="subModPills"></div>
   </div>
 
   <div class="deck">
 
-    <!-- SLIDE 1: Title -->
-    <div class="slide active" data-slide="1">
-      <div class="badge"><span class="badge-dot"></span>  WWDC 2026 KEYNOTE</div>
+<div class="slide active" data-slide="1">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 65</div>
       <h1 class="title-large">SwiftSci 2.6.2 Ecosystem</h1>
-      <p class="subtitle">53 dedicated slides covering 100% of all 14 native Swift 6 modules & Apple M4 Pro UMA acceleration.</p>
+      <p class="subtitle">65 dedicated slides covering 100% of all 14 native Swift 6 modules & Apple M4 Pro UMA acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
-          <div class="stat-val">53</div>
+          <div class="stat-val">65</div>
           <div class="stat-lbl">DocC Feature Slides</div>
         </div>
         <div class="stat-box">
@@ -513,78 +632,77 @@
       </div>
     </div>
 
-    <!-- SLIDE 2: Interactive Table of Contents (Agenda) -->
-    <div class="slide" data-slide="2">
-      <div class="badge"><span class="badge-dot"></span> AGENDA & TABLE OF CONTENTS</div>
+<div class="slide" data-slide="2">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 2 OF 65</div>
       <h1 class="title-large">Ecosystem Architecture Overview</h1>
       <p class="subtitle">Click any module to jump directly to its dedicated DocC feature slides.</p>
       <div class="toc-grid">
         <div class="toc-item" onclick="showSlide(3)">
-          <div class="toc-module"><span>01. SwiftDataFrame</span><span class="toc-slides">Slides 3–8</span></div>
-          <div class="toc-desc">TypedColumns, Expression Engine, GroupBy Aggregations, Joins & I/O.</div>
+          <div class="toc-module"><span>DataFrame Engine</span><span class="toc-slides">Slides 3-8</span></div>
+          <div class="toc-desc">TypedColumn<T>, zero-copy SIMD vectors, filter, projections, joins, group aggregations, Parquet I/O.</div>
         </div>
         <div class="toc-item" onclick="showSlide(9)">
-          <div class="toc-module"><span>02. SwiftStats</span><span class="toc-slides">Slides 9–13</span></div>
-          <div class="toc-desc">SIMD Descriptive Stats, Distributions, Hypothesis Tests & Correlations.</div>
+          <div class="toc-module"><span>Statistics & Math</span><span class="toc-slides">Slides 9-13</span></div>
+          <div class="toc-desc">Descriptive moments, Gaussian / StudentT / Poisson / Binomial, t-tests, ANOVA, correlation.</div>
         </div>
         <div class="toc-item" onclick="showSlide(14)">
-          <div class="toc-module"><span>03. SwiftPreprocessing</span><span class="toc-slides">Slides 14–17</span></div>
-          <div class="toc-desc">StandardScaler, OneHotEncoder, Imputers & Polynomial Features.</div>
+          <div class="toc-module"><span>Data Preprocessing</span><span class="toc-slides">Slides 14-19</span></div>
+          <div class="toc-desc">Scalers, Encoders, Imputers, Polynomial, Pipeline & ColumnTransformer, Feature Selection.</div>
         </div>
-        <div class="toc-item" onclick="showSlide(18)">
-          <div class="toc-module"><span>04. SwiftML</span><span class="toc-slides">Slides 18–22</span></div>
-          <div class="toc-desc">MLX Linear Models, Decision Trees, RandomForest, Gradient Boosting & SVM.</div>
+        <div class="toc-item" onclick="showSlide(20)">
+          <div class="toc-module"><span>Machine Learning</span><span class="toc-slides">Slides 20-27</span></div>
+          <div class="toc-desc">Linear MLX, Trees, Random Forest, Gradient Boosting, SVM, MLP Neural Nets, Calibration, Exporters.</div>
         </div>
-        <div class="toc-item" onclick="showSlide(23)">
-          <div class="toc-module"><span>05. SwiftCluster</span><span class="toc-slides">Slides 23–26</span></div>
-          <div class="toc-desc">PCA Variance Reduction, TruncatedSVD, t-SNE, K-Means & GMM.</div>
+        <div class="toc-item" onclick="showSlide(28)">
+          <div class="toc-module"><span>Clustering & Manifold</span><span class="toc-slides">Slides 28-32</span></div>
+          <div class="toc-desc">PCA, t-SNE, TruncatedSVD, KMeans++, DBSCAN, GMM & IsolationForest / LOF Outliers.</div>
         </div>
-        <div class="toc-item" onclick="showSlide(27)">
-          <div class="toc-module"><span>06. SwiftOptimize</span><span class="toc-slides">Slides 27–30</span></div>
-          <div class="toc-desc">Accuracy, F1, ROC-AUC, KFold, TimeSeriesSplit & GridSearchCV.</div>
+        <div class="toc-item" onclick="showSlide(33)">
+          <div class="toc-module"><span>Model Optimization</span><span class="toc-slides">Slides 33-36</span></div>
+          <div class="toc-desc">Classification & Regression Metrics, Stratified K-Fold, TimeSeriesSplit & GridSearchCV.</div>
         </div>
-        <div class="toc-item" onclick="showSlide(31)">
-          <div class="toc-module"><span>07. SwiftForecast</span><span class="toc-slides">Slides 31–34</span></div>
-          <div class="toc-desc">ARIMA(p,d,q), Holt-Winters, STL Decomposition & Spectral FFT.</div>
-        </div>
-        <div class="toc-item" onclick="showSlide(35)">
-          <div class="toc-module"><span>08. SwiftNLP (v2.4)</span><span class="toc-slides">Slides 35–40</span></div>
-          <div class="toc-desc">Tokenizers, Stemmer, POS/NER Tagging, VADER Sentiment & NaiveBayes.</div>
-        </div>
-        <div class="toc-item" onclick="showSlide(41)">
-          <div class="toc-module"><span>09. SwiftExplain</span><span class="toc-slides">Slides 41–42</span></div>
-          <div class="toc-desc">KernelSHAP & TreeSHAP Attribution, Permutation Importance.</div>
-        </div>
-        <div class="toc-item" onclick="showSlide(43)">
-          <div class="toc-module"><span>10. SwiftLLM</span><span class="toc-slides">Slides 43–44</span></div>
-          <div class="toc-desc">LLM Context Window Token Budgeting, BPE & Prompt Templates.</div>
+        <div class="toc-item" onclick="showSlide(37)">
+          <div class="toc-module"><span>Time-Series Forecasting</span><span class="toc-slides">Slides 37-44</span></div>
+          <div class="toc-desc">ARIMA, SARIMA, GARCH Volatility, Kalman Filter, Lag Transformers, Holt-Winters, STL, FFT.</div>
         </div>
         <div class="toc-item" onclick="showSlide(45)">
-          <div class="toc-module"><span>11. SwiftVisualization</span><span class="toc-slides">Slides 45–46</span></div>
-          <div class="toc-desc">Plotly Exporter for Heatmaps, Scatter, Line, Bar & ROC HTML charts.</div>
-        </div>
-        <div class="toc-item" onclick="showSlide(47)">
-          <div class="toc-module"><span>12. SwiftVision</span><span class="toc-slides">Slides 47–48</span></div>
-          <div class="toc-desc">Image Tensors, U-Net Segmentation & YOLOv8 Object Detection.</div>
-        </div>
-        <div class="toc-item" onclick="showSlide(49)">
-          <div class="toc-module"><span>13. SwiftDatabase</span><span class="toc-slides">Slides 49–50</span></div>
-          <div class="toc-desc">Embedded SQLite Engine & Bi-directional DataFrame Bridge.</div>
+          <div class="toc-module"><span>Natural Language (NLP)</span><span class="toc-slides">Slides 45-50</span></div>
+          <div class="toc-desc">Apple NL Tokenizer, Porter Stemmer, POS & Apple NER, VADER Sentiment, TF-IDF & Naive Bayes.</div>
         </div>
         <div class="toc-item" onclick="showSlide(51)">
-          <div class="toc-module"><span>14. SwiftAgent</span><span class="toc-slides">Slides 51–52</span></div>
+          <div class="toc-module"><span>Model Explainability</span><span class="toc-slides">Slides 51-52</span></div>
+          <div class="toc-desc">Shapley Additive exPlanations (SHAP), Permutation Importance & Partial Dependence.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(53)">
+          <div class="toc-module"><span>Large Language Models</span><span class="toc-slides">Slides 53-56</span></div>
+          <div class="toc-desc">SlidingWindowBuffer, Token Counter, BPE Subword Tokenizer, GGUF/SafeTensors & Sampler.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(57)">
+          <div class="toc-module"><span>Scientific Visualization</span><span class="toc-slides">Slides 57-58</span></div>
+          <div class="toc-desc">Plotly HTML Correlation Heatmaps, Scatter, Line, Bar, BoxPlot, Histogram & ROC Curves.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(59)">
+          <div class="toc-module"><span>Computer Vision</span><span class="toc-slides">Slides 59-60</span></div>
+          <div class="toc-desc">ImageDataset Tensors, U-Net Segmentation, YOLOv8 Object Detection & CNN GAP.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(61)">
+          <div class="toc-module"><span>Embedded Database</span><span class="toc-slides">Slides 61-62</span></div>
+          <div class="toc-desc">Async C-SQLite Engine, SQLQueryResult Schema & DataFrameSQLiteBridge.</div>
+        </div>
+        <div class="toc-item" onclick="showSlide(63)">
+          <div class="toc-module"><span>Autonomous Agent</span><span class="toc-slides">Slides 63-64</span></div>
           <div class="toc-desc">Autonomous AI Query Evaluator & RAG Context Summary Generator.</div>
         </div>
-        <div class="toc-item" onclick="showSlide(53)" style="grid-column: span 2; border-color:var(--sf-green);">
-          <div class="toc-module"><span style="color:var(--sf-green);">⚡ Apple M4 Pro Benchmarks</span><span class="toc-slides" style="color:var(--sf-green);">Slide 53</span></div>
+        <div class="toc-item" onclick="showSlide(65)" style="grid-column: span 2; border-color:var(--sf-green);">
+          <div class="toc-module"><span style="color:var(--sf-green);">⚡ Apple M4 Pro Benchmarks</span><span class="toc-slides" style="color:var(--sf-green);">Slide 65</span></div>
           <div class="toc-desc">M4 Pro UMA Memory Bandwidth & Metal Acceleration Benchmarks.</div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 3: SwiftDataFrame - TypedColumn -->
-    <div class="slide" data-slide="3">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 03 OF 53</div>
+
+<div class="slide" data-slide="3">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 3 OF 65</div>
       <h1 class="title-large">DataFrame & TypedColumn&lt;T&gt;</h1>
       <p class="subtitle">Strongly typed column vectors with zero-copy SIMD underlying storage buffers.</p>
       <div class="code-grid">
@@ -609,20 +727,14 @@ print(<span class="str">"Rows:"</span>, df.rowCount, <span class="str">"Cols:"</
           <pre><span class="out-text">DataFrame(columns: ["id", "score", "passed"], rows: 4)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SwiftUI Data Table View</span><span class="swiftui-pill" style="color:var(--sf-blue);">TypedColumn&lt;T&gt;</span></div>
-            <table style="width:100%; border-collapse:collapse; font-family:monospace; font-size:0.78rem;">
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.2); color:var(--sf-blue);"><th>id [Int64]</th><th>score [Double]</th><th>passed [Bool]</th></tr>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td>101</td><td>88.5</td><td>true</td></tr>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td>102</td><td>94.0</td><td>true</td></tr>
-              <tr><td>103</td><td>72.0</td><td>false</td></tr>
-            </table>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="20" width="85" height="45" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="57" y="47" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">id: Int64</text><rect x="110" y="20" width="95" height="45" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="157" y="47" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">score: Double</text><rect x="215" y="20" width="90" height="45" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="260" y="47" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">pass: Bool</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 4: SwiftDataFrame - Filter -->
-    <div class="slide" data-slide="4">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 04 OF 53</div>
+<div class="slide" data-slide="4">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 4 OF 65</div>
       <h1 class="title-large">Expression Filtering (filter)</h1>
       <p class="subtitle">High-performance row evaluation closures with SIMD boolean masking.</p>
       <div class="code-grid">
@@ -647,17 +759,14 @@ print(<span class="str">"Filtered Row Count:"</span>, filteredDF.rowCount)</pre>
           <pre><span class="out-text">Filtered DataFrame Rows: 2 / 4</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Filter Expression Result (score ≥ 85.0)</span><span class="swiftui-pill" style="color:var(--sf-green);">2 Rows Passed</span></div>
-            <div style="padding:8px; background:rgba(52,199,89,0.15); border:1px solid #34c759; border-radius:8px; font-family:monospace; font-size:0.78rem; color:#34c759;">
-              ✓ Row 0: id 101, score 88.5<br>✓ Row 1: id 102, score 94.0
-            </div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="20" width="80" height="40" rx="6" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="55" y="44" fill="#ff9500" font-size="9" font-weight="bold" text-anchor="middle">4 Rows In</text><path d="M 105 40 L 135 40" stroke="#007aff" stroke-width="2"/><rect x="140" y="22" width="70" height="36" rx="6" fill="rgba(0,122,255,0.3)" stroke="#007aff"/><text x="175" y="43" fill="#64d2ff" font-size="9" font-weight="bold" text-anchor="middle">score ≥ 85</text><path d="M 220 40 L 245 40" stroke="#34c759" stroke-width="2"/><rect x="250" y="20" width="60" height="40" rx="6" fill="rgba(52,199,89,0.25)" stroke="#34c759"/><text x="280" y="44" fill="#34c759" font-size="9" font-weight="bold" text-anchor="middle">2 Passed</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 5: SwiftDataFrame - Column Transformations -->
-    <div class="slide" data-slide="5">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 05 OF 53</div>
+<div class="slide" data-slide="5">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 5 OF 65</div>
       <h1 class="title-large">Column Mutations (withColumn)</h1>
       <p class="subtitle">Dynamic column projections, renaming, and removal operations.</p>
       <div class="code-grid">
@@ -683,15 +792,14 @@ print(<span class="str">"Filtered Row Count:"</span>, filteredDF.rowCount)</pre>
           <pre><span class="out-text">Columns Added: "scaled" [Double], "grade" [String]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Mutated DataFrame Schema</span><span class="swiftui-pill" style="color:var(--sf-blue);">withColumn</span></div>
-            <div style="font-family:monospace; font-size:0.78rem; color:#007aff;">columns: ["id", "score", "passed", "scaled", "grade"]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="20" width="90" height="40" rx="6" fill="rgba(0,122,255,0.15)" stroke="#007aff"/><text x="60" y="44" fill="#007aff" font-size="9" text-anchor="middle" font-family="monospace">[id, score]</text><path d="M 115 40 L 145 40" stroke="#af52de" stroke-width="2"/><polygon points="145,35 155,40 145,45" fill="#af52de"/><rect x="155" y="20" width="150" height="40" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="230" y="44" fill="#af52de" font-size="9" font-weight="bold" text-anchor="middle">+ "scaled", + "grade"</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 6: SwiftDataFrame - GroupBy -->
-    <div class="slide" data-slide="6">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 06 OF 53</div>
+<div class="slide" data-slide="6">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 6 OF 65</div>
       <h1 class="title-large">GroupBy Aggregations</h1>
       <p class="subtitle">Grouped aggregations calculating sum, mean, min, max, count & standard deviation.</p>
       <div class="code-grid">
@@ -718,15 +826,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Group "true": Mean Score = 91.25</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Group Aggregation</span><span class="swiftui-pill" style="color:var(--sf-purple);">groupBy</span></div>
-            <div style="font-family:monospace; font-size:0.78rem; color:#af52de;">true ➔ Mean: 91.25, Count: 3<br>false ➔ Mean: 72.00, Count: 1</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="25" y="35" width="28" height="35" rx="4" fill="#007aff"/><rect x="60" y="20" width="28" height="50" rx="4" fill="#007aff"/><rect x="130" y="40" width="28" height="30" rx="4" fill="#34c759"/><rect x="165" y="25" width="28" height="45" rx="4" fill="#34c759"/><rect x="235" y="30" width="28" height="40" rx="4" fill="#ff9500"/><rect x="270" y="45" width="28" height="25" rx="4" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 7: SwiftDataFrame - Relational Joins & I/O -->
-    <div class="slide" data-slide="7">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 07 OF 53</div>
+<div class="slide" data-slide="7">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 7 OF 65</div>
       <h1 class="title-large">Relational Joins & Multi-Format I/O</h1>
       <p class="subtitle">Inner, Left, Outer joins & CSV, JSON, Parquet file import/export engine.</p>
       <div class="code-grid">
@@ -750,15 +857,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Joined 1,250 Rows | Parquet Export Complete</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Multi-Format I/O</span><span class="swiftui-pill" style="color:var(--sf-green);">CSV / JSON / Parquet</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">DataFrame ➔ [CSV / JSON / Parquet Engine]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="110" cy="40" r="32" fill="rgba(0,122,255,0.3)" stroke="#007aff" stroke-width="1.5"/><circle cx="170" cy="40" r="32" fill="rgba(52,199,89,0.3)" stroke="#34c759" stroke-width="1.5"/><text x="75" y="44" fill="#007aff" font-size="10" font-weight="bold">Left</text><text x="205" y="44" fill="#34c759" font-size="10" font-weight="bold">Right</text><text x="140" y="44" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Inner</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 8: SwiftDataFrame - Pivot & Null Handling -->
-    <div class="slide" data-slide="8">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 08 OF 53</div>
+<div class="slide" data-slide="8">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 8 OF 65</div>
       <h1 class="title-large">Pivoting & Null Value Cleaning</h1>
       <p class="subtitle">Reshaping data matrices via pivot and null cleaning with dropNulls / fillNulls.</p>
       <div class="code-grid">
@@ -784,15 +890,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Null Rows Dropped & Filled Successfully</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Null Handling</span><span class="swiftui-pill" style="color:var(--sf-blue);">dropNulls</span></div>
-            <div style="font-family:monospace; color:#007aff;">NaN / nil Values Handled Cleanly</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="120" height="50" rx="6" fill="rgba(255,59,48,0.15)" stroke="#ff3b30"/><text x="80" y="44" fill="#ff3b30" font-size="10" text-anchor="middle" font-family="monospace">[NaN, Null, 42.0]</text><path d="M 150 40 L 175 40" stroke="#34c759" stroke-width="2"/><polygon points="175,35 185,40 175,45" fill="#34c759"/><rect x="185" y="15" width="115" height="50" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="242" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">[0.0, 0.0, 42.0]</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 9: SwiftStats - Descriptive Statistics -->
-    <div class="slide" data-slide="9">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 09 OF 53</div>
+<div class="slide" data-slide="9">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 9 OF 65</div>
       <h1 class="title-large">Descriptive Statistics</h1>
       <p class="subtitle">SIMD accelerated mean, median, variance, std, skewness, kurtosis & quartiles.</p>
       <div class="code-grid">
@@ -818,8 +923,7 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Mean: 22.2286 | StdDev: 6.1386 | Skewness: 0.124</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SIMD Descriptive Summary</span><span class="swiftui-pill" style="color:var(--sf-blue);">Accelerate vDSP</span></div>
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px; font-family:monospace; font-size:0.78rem; text-align:center;">
-              <div style="background:rgba(0,122,255,0.2); padding:6px; border-radius:6px; color:#007aff;">μ = 22.23</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 70 Q 110 70 160 15 T 310 70 Z" fill="url(#gradStats2)" stroke="#007aff" stroke-width="2"/><line x1="160" y1="15" x2="160" y2="70" stroke="#ff9500" stroke-width="1.5" stroke-dasharray="3,3"/><text x="165" y="35" fill="#ff9500" font-size="9" font-family="monospace">Mean μ</text><defs><linearGradient id="gradStats2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#007aff" stop-opacity="0.4"/><stop offset="100%" stop-color="transparent"/></linearGradient></defs></svg>
               <div style="background:rgba(52,199,89,0.2); padding:6px; border-radius:6px; color:#34c759;">σ = 6.14</div>
             </div>
           </div>
@@ -827,9 +931,8 @@ print(groupedDF)</pre>
       </div>
     </div>
 
-    <!-- SLIDE 10: SwiftStats - Continuous Distributions -->
-    <div class="slide" data-slide="10">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 10 OF 53</div>
+<div class="slide" data-slide="10">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 10 OF 65</div>
       <h1 class="title-large">Continuous Probability Distributions</h1>
       <p class="subtitle">PDF, CDF, and quantile evaluations for Normal, StudentT, ChiSquare & Uniform.</p>
       <div class="code-grid">
@@ -859,9 +962,8 @@ print(groupedDF)</pre>
       </div>
     </div>
 
-    <!-- SLIDE 11: SwiftStats - Discrete Distributions -->
-    <div class="slide" data-slide="11">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 11 OF 53</div>
+<div class="slide" data-slide="11">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 11 OF 65</div>
       <h1 class="title-large">Discrete Probability Distributions</h1>
       <p class="subtitle">PMF and Cumulative Distribution for Binomial & Poisson distributions.</p>
       <div class="code-grid">
@@ -885,15 +987,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Poisson PMF(k=2): 0.1465 | Sample Count: 1000</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Poisson Discrete PMF</span><span class="swiftui-pill" style="color:var(--sf-purple);">λ = 4.0</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">PMF(k=0): 0.018 | PMF(k=2): 0.1475</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="25" y="60" width="22" height="15" rx="3" fill="#007aff" opacity="0.5"/><rect x="55" y="42" width="22" height="33" rx="3" fill="#007aff" opacity="0.75"/><rect x="85" y="22" width="22" height="53" rx="3" fill="#007aff"/><rect x="115" y="15" width="22" height="60" rx="3" fill="#34c759"/><rect x="145" y="25" width="22" height="50" rx="3" fill="#007aff"/><rect x="175" y="40" width="22" height="35" rx="3" fill="#007aff" opacity="0.75"/><rect x="205" y="55" width="22" height="20" rx="3" fill="#007aff" opacity="0.5"/><rect x="235" y="65" width="22" height="10" rx="3" fill="#007aff" opacity="0.3"/><text x="126" y="12" fill="#34c759" font-size="8" font-weight="bold" text-anchor="middle">k=3</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 12: SwiftStats - Hypothesis Testing -->
-    <div class="slide" data-slide="12">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 12 OF 53</div>
+<div class="slide" data-slide="12">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 12 OF 65</div>
       <h1 class="title-large">Hypothesis Testing & ANOVA</h1>
       <p class="subtitle">Paired t-test, Two-sample t-test, ANOVA One-Way & Chi-Square tests.</p>
       <div class="code-grid">
@@ -917,15 +1018,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">t-Stat: 7.214 | p-Value: 0.000085 (Significant)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Critical Test Region</span><span class="swiftui-pill" style="color:var(--sf-green);">p &lt; 0.001</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Null Hypothesis Rejected (p &lt; 0.05)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 70 Q 80 70 120 20 T 230 70 Z" fill="rgba(0,122,255,0.2)" stroke="#007aff" stroke-width="1.5"/><path d="M 90 70 Q 160 70 200 20 T 310 70 Z" fill="rgba(255,45,85,0.2)" stroke="#ff2d55" stroke-width="1.5"/><line x1="215" y1="10" x2="215" y2="70" stroke="#ff3b30" stroke-width="1.5" stroke-dasharray="2,2"/><text x="220" y="25" fill="#ff3b30" font-size="9" font-family="monospace">p &lt; 0.05</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 13: SwiftStats - Correlation Matrix -->
-    <div class="slide" data-slide="13">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 13 OF 53</div>
+<div class="slide" data-slide="13">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 13 OF 65</div>
       <h1 class="title-large">Correlation Analysis</h1>
       <p class="subtitle">Pearson linear correlation, Spearman rank correlation & covariance matrix.</p>
       <div class="code-grid">
@@ -956,9 +1056,8 @@ print(groupedDF)</pre>
       </div>
     </div>
 
-    <!-- SLIDE 14: SwiftPreprocessing - Feature Scalers -->
-    <div class="slide" data-slide="14">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 14 OF 53</div>
+<div class="slide" data-slide="14">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 14 OF 65</div>
       <h1 class="title-large">Feature Scalers (Standard & MinMax)</h1>
       <p class="subtitle">StandardScaler Z-score, MinMaxScaler, RobustScaler & MaxAbsScaler.</p>
       <div class="code-grid">
@@ -985,15 +1084,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Scaled Row 0: ["-1.2247", "-1.2247"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Z-Score Normalization</span><span class="swiftui-pill" style="color:var(--sf-green);">Mean = 0, Std = 1</span></div>
-            <div style="font-family:monospace; color:#34c759;">Raw: [10...400] ➔ Scaled: [-1.22...1.22]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 65 Q 90 65 120 15 T 230 65 Z" fill="none" stroke="#007aff" stroke-width="2"/><path d="M 150 65 Q 210 65 240 30 T 310 65 Z" fill="none" stroke="#34c759" stroke-width="2" stroke-dasharray="3,3"/><text x="70" y="35" fill="#007aff" font-size="9" font-family="monospace">N(0, 1)</text><text x="220" y="45" fill="#34c759" font-size="9" font-family="monospace">MinMax[0,1]</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 15: SwiftPreprocessing - Categorical Encoders -->
-    <div class="slide" data-slide="15">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 15 OF 53</div>
+<div class="slide" data-slide="15">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 15 OF 65</div>
       <h1 class="title-large">Categorical Encoders</h1>
       <p class="subtitle">LabelEncoder, OneHotEncoder & OrdinalEncoder for categorical strings.</p>
       <div class="code-grid">
@@ -1020,15 +1118,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">OneHot Matrix: [1,0,0], [0,1,0], [0,0,1]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Binary Vector Grid</span><span class="swiftui-pill" style="color:var(--sf-purple);">OneHotEncoder</span></div>
-            <div style="font-family:monospace; color:#af52de;">"Red" ➔ [1, 0, 0]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="20" width="65" height="40" rx="6" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="47" y="44" fill="#ff9500" font-size="10" text-anchor="middle" font-family="monospace">"Red"</text><path d="M 90 40 L 115 40" stroke="#34c759" stroke-width="2"/><rect x="120" y="15" width="55" height="50" rx="6" fill="rgba(52,199,89,0.25)" stroke="#34c759"/><text x="147" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">[1,0,0]</text><rect x="185" y="15" width="55" height="50" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="212" y="44" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">[0,1,0]</text><rect x="250" y="15" width="55" height="50" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="277" y="44" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">[0,0,1]</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 16: SwiftPreprocessing - Data Imputers -->
-    <div class="slide" data-slide="16">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 16 OF 53</div>
+<div class="slide" data-slide="16">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 16 OF 65</div>
       <h1 class="title-large">Missing Data Imputation</h1>
       <p class="subtitle">SimpleImputer (mean, median, most_frequent) & KNNImputer for missing values.</p>
       <div class="code-grid">
@@ -1055,15 +1152,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Imputed 2 Missing NaN Values</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>NaN Replacement</span><span class="swiftui-pill" style="color:var(--sf-blue);">Mean Strategy</span></div>
-            <div style="font-family:monospace; color:#007aff;">NaN ➔ Replaced by Column Mean</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="20" width="70" height="40" rx="6" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="55" y="44" fill="#ff9500" font-size="10" text-anchor="middle" font-family="monospace">"Red"</text><path d="M 100 40 L 130 40" stroke="#34c759" stroke-width="2"/><rect x="135" y="20" width="165" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="217" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">[1.0, 0.0, 0.0]</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 17: SwiftPreprocessing - Feature Generation -->
-    <div class="slide" data-slide="17">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 17 OF 53</div>
+<div class="slide" data-slide="17">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 17 OF 65</div>
       <h1 class="title-large">Feature Generation & Binarizer</h1>
       <p class="subtitle">PolynomialFeatures degree interaction terms & Binarizer thresholding.</p>
       <div class="code-grid">
@@ -1088,15 +1184,93 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Polynomial Expanded Features: 6 Columns</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Interaction Terms</span><span class="swiftui-pill" style="color:var(--sf-orange);">Degree = 2</span></div>
-            <div style="font-family:monospace; color:#ff9500;">[1, x1, x2, x1^2, x1*x2, x2^2]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="30" cy="55" r="4" fill="#007aff"/><circle cx="70" cy="35" r="4" fill="#007aff"/><circle cx="110" cy="45" r="5" fill="#ff9500" stroke="#ffffff" stroke-width="1.5"/><circle cx="150" cy="20" r="4" fill="#007aff"/><circle cx="190" cy="30" r="5" fill="#ff9500" stroke="#ffffff" stroke-width="1.5"/><circle cx="230" cy="15" r="4" fill="#007aff"/><circle cx="270" cy="25" r="4" fill="#007aff"/><path d="M 30 55 L 70 35 L 110 45 L 150 20 L 190 30 L 230 15 L 270 25" fill="none" stroke="rgba(0,122,255,0.4)" stroke-dasharray="2,2"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 18: SwiftML - Linear Models -->
+<!-- SLIDE: SwiftPreprocessing - Pipeline & ColumnTransformer Engine -->
     <div class="slide" data-slide="18">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 18 OF 53</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 18 OF 65</div>
+      <h1 class="title-large">Pipeline & ColumnTransformer Engine</h1>
+      <p class="subtitle">Scikit-Learn style composable ETL transformer pipelines and heterogenous column routing.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
+
+<span class="kw">let</span> pipeline = <span class="type">Pipeline</span>(steps: [
+    <span class="type">StandardScaler</span>(),
+    <span class="type">PolynomialFeatures</span>(degree: <span class="num">2</span>, includeBias: <span class="kw">false</span>)
+])
+<span class="kw">try</span> pipeline.fit(rawMatrix)
+<span class="kw">let</span> transformedMatrix = <span class="kw">try</span> pipeline.transform(rawMatrix)
+
+<span class="kw">let</span> colTransformer = <span class="type">ColumnTransformer</span>(routes: [
+    <span class="type">ColumnTransformer</span>.<span class="type">Route</span>(name: <span class="str">"num"</span>, transformer: <span class="type">StandardScaler</span>(), columns: [<span class="num">0</span>, <span class="num">1</span>]),
+    <span class="type">ColumnTransformer</span>.<span class="type">Route</span>(name: <span class="str">"cat"</span>, transformer: <span class="type">OneHotEncoder</span>(), columns: [<span class="num">2</span>])
+])
+<span class="kw">let</span> finalFeatures = <span class="kw">try</span> colTransformer.fitTransform(rawMatrix)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Composable PreprocessingTransformer pipeline execution chain</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>ColumnTransformer applies specific transformers to feature subsets</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Preserves zero-copy feature matrix layout across pipeline steps</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Pipeline Flow</span><span class="swiftui-pill" style="color:var(--sf-green);">0.34ms | M4 Pro</span></div>
+          <pre><span class="out-text">Pipeline & ColumnTransformer Executed (12 Columns)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Pipeline Architecture</span><span class="swiftui-pill" style="color:var(--sf-blue);">ETL Pipeline</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 20 65 Q 120 65 170 35 T 300 15" fill="none" stroke="#af52de" stroke-width="2.2"/><text x="180" y="25" fill="#af52de" font-size="10" font-family="monospace">y = a*x^2 + b*x + c</text></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- SLIDE: SwiftPreprocessing - Automated Feature Selection -->
+    <div class="slide" data-slide="19">
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 19 OF 65</div>
+      <h1 class="title-large">Automated Feature Selection</h1>
+      <p class="subtitle">SelectKBest, RecursiveFeatureElimination (RFE) & VarianceThreshold feature filtering.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
+
+<span class="kw">let</span> selector = <span class="type">SelectKBest</span>(scoreFunc: .fClassif, k: <span class="num">5</span>)
+<span class="kw">try</span> selector.fit(features: X, targets: y)
+<span class="kw">let</span> top5Features = <span class="kw">try</span> selector.transform(X)
+
+<span class="kw">let</span> varianceFilter = <span class="type">VarianceThreshold</span>(threshold: <span class="num">0.01</span>)
+<span class="kw">let</span> nonConstantFeatures = <span class="kw">try</span> varianceFilter.fitTransform(X)
+
+<span class="kw">let</span> rfe = <span class="type">RecursiveFeatureElimination</span>(nFeaturesToSelect: <span class="num">3</span>)
+<span class="kw">let</span> selectedIndices = <span class="kw">try</span> rfe.fitTransform(features: X, targets: y)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Statistical ANOVA F-score & Chi-Square feature ranking (SelectKBest)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>VarianceThreshold removes zero-variance and low-variance features</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>RecursiveFeatureElimination iteratively drops least important features</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Selection Summary</span><span class="swiftui-pill" style="color:var(--sf-green);">0.41ms | M4 Pro</span></div>
+          <pre><span class="out-text">Selected 5 / 20 Best Features (ANOVA F-Score)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Feature Ranking</span><span class="swiftui-pill" style="color:var(--sf-purple);">SelectKBest</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="220" height="10" rx="3" fill="#34c759"/><rect x="20" y="29" width="180" height="10" rx="3" fill="#34c759"/><rect x="20" y="43" width="140" height="10" rx="3" fill="#007aff"/><rect x="20" y="57" width="90" height="10" rx="3" fill="#007aff" opacity="0.6"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div class="slide" data-slide="20">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 20 OF 65</div>
       <h1 class="title-large">MLX Linear, Ridge & Lasso Regression</h1>
       <p class="subtitle">Apple MLX GPU accelerated Ordinary Least Squares, L1 Lasso, and L2 Ridge regression.</p>
       <div class="code-grid">
@@ -1127,9 +1301,8 @@ print(groupedDF)</pre>
       </div>
     </div>
 
-    <!-- SLIDE 19: SwiftML - Decision Trees -->
-    <div class="slide" data-slide="19">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 19 OF 53</div>
+<div class="slide" data-slide="21">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 21 OF 65</div>
       <h1 class="title-large">Decision Tree Regressor & Classifier</h1>
       <p class="subtitle">Binary tree recursive partitioning based on Gini impurity and MSE criteria.</p>
       <div class="code-grid">
@@ -1154,15 +1327,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Decision Tree Fitted (Depth 4) | Pred: 0.0</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Tree Splitting Node</span><span class="swiftui-pill" style="color:var(--sf-purple);">Gini Split</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">Node [X0 &le; 2.5] ➔ Left / Right</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="220" height="14" rx="3" fill="#34c759"/><rect x="20" y="33" width="160" height="14" rx="3" fill="#007aff"/><rect x="20" y="51" width="90" height="14" rx="3" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 20: SwiftML - RandomForest -->
-    <div class="slide" data-slide="20">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 20 OF 53</div>
+<div class="slide" data-slide="22">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 22 OF 65</div>
       <h1 class="title-large">RandomForest Ensembles</h1>
       <p class="subtitle">Parallel actor-based Random Forest regressor & classifier ensemble training.</p>
       <div class="code-grid">
@@ -1187,15 +1359,14 @@ print(groupedDF)</pre>
           <pre><span class="out-text">RF Pred(3.5): 3.6500 (20 Trees Averaged)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Bagging Ensemble</span><span class="swiftui-pill" style="color:var(--sf-green);">20 Estimators</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Ensemble Prediction = 3.6500</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="160" y1="15" x2="90" y2="45" stroke="#007aff" stroke-width="1.5"/><line x1="160" y1="15" x2="230" y2="45" stroke="#007aff" stroke-width="1.5"/><line x1="90" y1="45" x2="50" y2="68" stroke="#34c759" stroke-width="1.5"/><line x1="90" y1="45" x2="130" y2="68" stroke="#34c759" stroke-width="1.5"/><circle cx="160" cy="15" r="8" fill="#007aff"/><circle cx="90" cy="45" r="7" fill="#34c759"/><circle cx="230" cy="45" r="7" fill="#ff9500"/><circle cx="50" cy="68" r="6" fill="#af52de"/><circle cx="130" cy="68" r="6" fill="#af52de"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 21: SwiftML - Gradient Boosting & SVM -->
-    <div class="slide" data-slide="21">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 21 OF 53</div>
+<div class="slide" data-slide="23">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 23 OF 65</div>
       <h1 class="title-large">Gradient Boosting & Support Vector Machines</h1>
       <p class="subtitle">Gradient boosting loss optimization, LinearSVC and SVR models.</p>
       <div class="code-grid">
@@ -1219,15 +1390,91 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Gradient Boosting Converged (MSE: 0.0012)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Residual Minimization</span><span class="swiftui-pill" style="color:var(--sf-orange);">Gradient Boosting</span></div>
-            <div style="font-family:monospace; text-align:center; color:#ff9500;">Residual Loss ➔ Minimized over 50 Steps</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 15 15 Q 60 70 140 68 T 305 70" fill="none" stroke="#ff9500" stroke-width="2.5"/><path d="M 15 15 Q 60 70 140 68 T 305 70 L 305 75 L 15 75 Z" fill="url(#gradBoost)" opacity="0.2"/><defs><linearGradient id="gradBoost" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff9500"/><stop offset="100%" stop-color="transparent"/></linearGradient></defs></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 22: SwiftML - Model Serialization -->
-    <div class="slide" data-slide="22">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 22 OF 53</div>
+<!-- SLIDE: SwiftML - Multi-Layer Perceptron (MLP) Neural Networks -->
+    <div class="slide" data-slide="24">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 24 OF 65</div>
+      <h1 class="title-large">Multi-Layer Perceptron (MLP) Neural Networks</h1>
+      <p class="subtitle">Parallel actor-based MLP classifier and regressor with backpropagation & Adam optimizer.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftML</span>
+
+<span class="kw">let</span> mlp = <span class="kw">try</span> <span class="type">MLPClassifier</span>(
+    hiddenLayerSizes: [<span class="num">100</span>, <span class="num">50</span>],
+    activation: .relu,
+    solver: .adam,
+    maxIter: <span class="num">200</span>,
+    learningRate: <span class="num">0.001</span>
+)
+<span class="kw">try await</span> mlp.fit(features: XTrain, targets: yTrain)
+<span class="kw">let</span> predictions = <span class="kw">try await</span> mlp.predict(features: XTest)
+<span class="kw">let</span> probabilities = <span class="kw">try await</span> mlp.predictProba(features: XTest)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Deep feedforward architecture with customizable hidden layer topology</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>Activation functions: ReLU, GELU, Sigmoid, Tanh with Adam solver</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Actor-isolated forward pass and backpropagation gradient updates</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Neural Graph</span><span class="swiftui-pill" style="color:var(--sf-green);">3.80ms | M4 Pro</span></div>
+          <pre><span class="out-text">MLP Network Converged (Epoch 142 / 200 | Loss: 0.014)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Neural Network Layers</span><span class="swiftui-pill" style="color:var(--sf-blue);">Adam Solver</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="40" y1="20" x2="160" y2="15" stroke="rgba(255,255,255,0.2)"/><line x1="40" y1="20" x2="160" y2="40" stroke="rgba(0,122,255,0.5)"/><line x1="40" y1="60" x2="160" y2="40" stroke="rgba(0,122,255,0.5)"/><line x1="40" y1="60" x2="160" y2="65" stroke="rgba(255,255,255,0.2)"/><line x1="160" y1="15" x2="280" y2="40" stroke="rgba(52,199,89,0.5)"/><line x1="160" y1="40" x2="280" y2="40" stroke="rgba(52,199,89,0.8)"/><line x1="160" y1="65" x2="280" y2="40" stroke="rgba(52,199,89,0.5)"/><circle cx="40" cy="20" r="8" fill="#007aff"/><circle cx="40" cy="60" r="8" fill="#007aff"/><circle cx="160" cy="15" r="8" fill="#af52de"/><circle cx="160" cy="40" r="8" fill="#af52de"/><circle cx="160" cy="65" r="8" fill="#af52de"/><circle cx="280" cy="40" r="10" fill="#34c759"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- SLIDE: SwiftML - Probability Calibration -->
+    <div class="slide" data-slide="25">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 25 OF 65</div>
+      <h1 class="title-large">Probability Calibration</h1>
+      <p class="subtitle">PlattScaling, IsotonicRegression & CalibratedClassifier for calibrated confidence scores.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftML</span>
+
+<span class="kw">let</span> rawModel = <span class="kw">try</span> <span class="type">LogisticRegression</span>()
+<span class="kw">try await</span> rawModel.fit(features: XTrain, targets: yTrain)
+
+<span class="kw">var</span> platt = <span class="type">PlattScaling</span>()
+<span class="kw">try</span> platt.fit(uncalibratedScores: rawScores, targets: yVal)
+<span class="kw">let</span> calibratedProbas = platt.transform(rawScores)
+
+<span class="kw">let</span> calibratedModel = <span class="type">CalibratedClassifier</span>(baseEstimator: rawModel, method: .sigmoid)
+<span class="kw">try await</span> calibratedModel.fit(features: XTrain, targets: yTrain)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Platt Scaling (Sigmoid) & Isotonic non-parametric monotonicity curve</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>Converts uncalibrated margins into reliable posterior probabilities</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Improves Brier Score and reliability diagrams for safety-critical AI</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Calibration Curve</span><span class="swiftui-pill" style="color:var(--sf-green);">0.52ms | M4 Pro</span></div>
+          <pre><span class="out-text">Probability Calibration Complete (Brier Score: 0.021)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Reliability Diagram</span><span class="swiftui-pill" style="color:var(--sf-green);">Platt Scaling</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="30" y1="65" x2="290" y2="15" stroke="#007aff" stroke-width="2"/><circle cx="70" cy="25" r="5" fill="#ff2d55"/><circle cx="120" cy="30" r="5" fill="#ff2d55"/><circle cx="180" cy="65" r="5" fill="#34c759"/><circle cx="230" cy="55" r="5" fill="#34c759"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div class="slide" data-slide="26">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 26 OF 65</div>
       <h1 class="title-large">Model Persistence (ModelSerializer)</h1>
       <p class="subtitle">JSON and binary serialization for saving and loading trained ML models.</p>
       <div class="code-grid">
@@ -1251,15 +1498,51 @@ print(groupedDF)</pre>
           <pre><span class="out-text">Model Saved & Loaded Successfully (1.2 KB)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Model Persistence</span><span class="swiftui-pill" style="color:var(--sf-blue);">Codable JSON</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Trained Model ➔ trained_rf.json (1.2 KB)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="70" x2="300" y2="10" stroke="rgba(255,255,255,0.3)" stroke-dasharray="3,3"/><path d="M 20 70 Q 100 65 160 40 T 300 10" fill="none" stroke="#007aff" stroke-width="2.2"/><path d="M 20 70 Q 150 40 300 10" fill="none" stroke="#34c759" stroke-width="2"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 23: SwiftCluster - PCA -->
-    <div class="slide" data-slide="23">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 23 OF 53</div>
+<!-- SLIDE: SwiftML - CoreML & ONNX Model Exporters -->
+    <div class="slide" data-slide="27">
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 27 OF 65</div>
+      <h1 class="title-large">CoreML & ONNX Model Exporters</h1>
+      <p class="subtitle">Zero-dependency export of trained SwiftML models to Apple CoreML .mlmodel and ONNX formats.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftML</span>
+
+<span class="kw">let</span> rfModel = <span class="kw">try</span> <span class="type">RandomForestClassifier</span>(nEstimators: <span class="num">50</span>, maxDepth: <span class="num">6</span>)
+<span class="kw">try await</span> rfModel.fit(features: X, targets: y)
+
+<span class="kw">let</span> coreMLSpec = <span class="kw">try</span> <span class="type">CoreMLExporter</span>.export(model: rfModel, modelName: <span class="str">"Classifier.mlmodel"</span>)
+<span class="kw">try</span> coreMLSpec.save(to: <span class="type">URL</span>(fileURLWithPath: <span class="str">"Classifier.mlmodel"</span>))
+
+<span class="kw">let</span> onnxGraph = <span class="kw">try</span> <span class="type">ONNXExporter</span>.export(model: rfModel, graphName: <span class="str">"RandomForest"</span>)
+<span class="kw">try</span> onnxGraph.save(to: <span class="type">URL</span>(fileURLWithPath: <span class="str">"model.onnx"</span>))</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Exports decision trees, random forests, and linear models to CoreML</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>ONNX graph spec serialization for cross-platform model deployment</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Enables native iOS / macOS Neural Engine deployment with zero overhead</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Model Format</span><span class="swiftui-pill" style="color:var(--sf-green);">0.88ms | M4 Pro</span></div>
+          <pre><span class="out-text">CoreML (.mlmodel) & ONNX (.onnx) Exported (42 KB)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Model Exporters</span><span class="swiftui-pill" style="color:var(--sf-orange);">CoreML / ONNX</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="15" width="240" height="50" rx="8" fill="rgba(0,122,255,0.15)" stroke="#007aff"/><text x="160" y="44" fill="#64d2ff" font-size="11" text-anchor="middle" font-family="monospace">[Binary Serialized Model Checkpoint]</text></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div class="slide" data-slide="28">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 28 OF 65</div>
       <h1 class="title-large">Principal Component Analysis (PCA)</h1>
       <p class="subtitle">SVD-based orthogonal variance reduction for high-dimensional feature spaces.</p>
       <div class="code-grid">
@@ -1285,15 +1568,14 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
           <pre><span class="out-text">PCA Reduced Dimension: 2x2 | Variance: 98.4%</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Primary Component Line</span><span class="swiftui-pill" style="color:var(--sf-purple);">2D Vector</span></div>
-            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="40" x2="300" y2="40" stroke="#af52de" stroke-width="2" stroke-dasharray="4,4"/></svg>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="50" cy="65" r="4" fill="#007aff" opacity="0.8"/><circle cx="80" cy="55" r="4" fill="#007aff" opacity="0.8"/><circle cx="110" cy="45" r="5" fill="#34c759"/><circle cx="140" cy="38" r="4" fill="#007aff" opacity="0.8"/><circle cx="170" cy="30" r="5" fill="#34c759"/><circle cx="210" cy="22" r="4" fill="#007aff" opacity="0.8"/><circle cx="250" cy="15" r="4" fill="#007aff" opacity="0.8"/><line x1="30" y1="72" x2="280" y2="10" stroke="#af52de" stroke-width="2.5"/><polygon points="280,10 270,16 273,8" fill="#af52de"/><text x="285" y="16" fill="#af52de" font-size="9" font-weight="bold" font-family="monospace">PC1</text><line x1="140" y1="38" x2="160" y2="70" stroke="#ff9500" stroke-width="1.5" stroke-dasharray="3,3"/><text x="165" y="72" fill="#ff9500" font-size="9" font-family="monospace">PC2</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 24: SwiftCluster - SVD & t-SNE -->
-    <div class="slide" data-slide="24">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 24 OF 53</div>
+<div class="slide" data-slide="29">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 29 OF 65</div>
       <h1 class="title-large">TruncatedSVD & t-SNE Embeddings</h1>
       <p class="subtitle">Manifold learning and singular value decomposition for non-linear visualization.</p>
       <div class="code-grid">
@@ -1317,15 +1599,14 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
           <pre><span class="out-text">t-SNE 2D Manifold Embedding Complete</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>2D Manifold Mapping</span><span class="swiftui-pill" style="color:var(--sf-green);">t-SNE</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">High-Dim Features ➔ 2D Manifold Mapping</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="20" width="85" height="40" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="62" y="44" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">SwiftML</text><path d="M 110 40 L 140 40" stroke="#34c759" stroke-width="2"/><rect x="145" y="20" width="70" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="180" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">CoreML</text><path d="M 220 40 L 235 40" stroke="#af52de" stroke-width="2"/><rect x="240" y="20" width="60" height="40" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="270" y="44" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">ONNX</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 25: SwiftCluster - KMeans & DBSCAN -->
-    <div class="slide" data-slide="25">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 25 OF 53</div>
+<div class="slide" data-slide="30">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 30 OF 65</div>
       <h1 class="title-large">K-Means & DBSCAN Clustering</h1>
       <p class="subtitle">Centroid-based K-Means++ and density-based noise filtering DBSCAN.</p>
       <div class="code-grid">
@@ -1355,9 +1636,8 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
       </div>
     </div>
 
-    <!-- SLIDE 26: SwiftCluster - Hierarchical & GMM -->
-    <div class="slide" data-slide="26">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 26 OF 53</div>
+<div class="slide" data-slide="31">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 31 OF 65</div>
       <h1 class="title-large">Hierarchical & Gaussian Mixture Models</h1>
       <p class="subtitle">Agglomerative dendrogram clustering and Expectation-Maximization GMMs.</p>
       <div class="code-grid">
@@ -1381,15 +1661,50 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
           <pre><span class="out-text">GMM EM Algorithm Converged (3 Components)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Gaussian Probabilities</span><span class="swiftui-pill" style="color:var(--sf-blue);">GMM EM</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Soft Probabilistic Cluster Assignments</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="60" cy="35" r="4" fill="#007aff"/><circle cx="80" cy="25" r="4" fill="#007aff"/><circle cx="75" cy="50" r="4" fill="#007aff"/><circle cx="220" cy="30" r="4" fill="#34c759"/><circle cx="240" cy="45" r="4" fill="#34c759"/><circle cx="250" cy="25" r="4" fill="#34c759"/><circle cx="150" cy="60" r="4" fill="#ff9500"/><circle cx="165" cy="50" r="4" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 27: SwiftOptimize - Evaluation Metrics -->
-    <div class="slide" data-slide="27">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 27 OF 53</div>
+<!-- SLIDE: SwiftCluster - Anomaly & Outlier Detection -->
+    <div class="slide" data-slide="32">
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 32 OF 65</div>
+      <h1 class="title-large">Anomaly & Outlier Detection</h1>
+      <p class="subtitle">Unsupervised anomaly scoring via IsolationForest & LocalOutlierFactor (LOF).</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftCluster</span>
+
+<span class="kw">let</span> isoForest = <span class="type">IsolationForest</span>(nEstimators: <span class="num">100</span>, contamination: <span class="num">0.05</span>)
+<span class="kw">let</span> anomalyRes = <span class="kw">try</span> isoForest.fitPredict(sensorMatrix)
+print(<span class="str">"Outlier Labels:"</span>, anomalyRes.labels)
+
+<span class="kw">let</span> lof = <span class="type">LocalOutlierFactor</span>(nNeighbors: <span class="num">20</span>, contamination: <span class="num">0.05</span>)
+<span class="kw">let</span> lofScores = <span class="kw">try</span> lof.fitPredict(sensorMatrix)
+print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Isolation Forest partitions data trees to isolate rare anomalies</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>Local Outlier Factor calculates relative local density ratios</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Returns binary labels (+1 inlier, -1 outlier) and anomaly scores</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Outlier Plot</span><span class="swiftui-pill" style="color:var(--sf-green);">1.62ms | M4 Pro</span></div>
+          <pre><span class="out-text">IsolationForest Detected 5 Outliers (Contamination 5%)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Anomaly Distribution</span><span class="swiftui-pill" style="color:var(--sf-green);">IsolationForest</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><ellipse cx="80" cy="40" rx="45" ry="25" fill="rgba(0,122,255,0.2)" stroke="#007aff" stroke-dasharray="2,2"/><ellipse cx="240" cy="40" rx="45" ry="25" fill="rgba(52,199,89,0.2)" stroke="#34c759" stroke-dasharray="2,2"/><circle cx="80" cy="40" r="5" fill="#007aff"/><circle cx="240" cy="40" r="5" fill="#34c759"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div class="slide" data-slide="33">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 33 OF 65</div>
       <h1 class="title-large">Evaluation Metrics & ROC-AUC</h1>
       <p class="subtitle">Accuracy, Precision, Recall, F1 Score, MSE, RMSE, MAE, R2 & ROC-AUC.</p>
       <div class="code-grid">
@@ -1420,9 +1735,8 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
       </div>
     </div>
 
-    <!-- SLIDE 28: SwiftOptimize - Cross-Validation -->
-    <div class="slide" data-slide="28">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 28 OF 53</div>
+<div class="slide" data-slide="34">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 34 OF 65</div>
       <h1 class="title-large">KFold & StratifiedKFold Validation</h1>
       <p class="subtitle">Balanced fold splitting ensuring class distributions across validation folds.</p>
       <div class="code-grid">
@@ -1445,15 +1759,14 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
           <pre><span class="out-text">5 Folds Generated (80% Train / 20% Val)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>5-Fold Split</span><span class="swiftui-pill" style="color:var(--sf-purple);">Stratified</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">[Train 80%] ➔ [Validation 20%]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><circle cx="120" cy="40" r="4" fill="#007aff"/><circle cx="135" cy="30" r="4" fill="#007aff"/><circle cx="140" cy="50" r="4" fill="#007aff"/><circle cx="150" cy="35" r="4" fill="#007aff"/><circle cx="40" cy="20" r="6" fill="#ff2d55" stroke="#ffffff" stroke-width="1.5"/><circle cx="280" cy="65" r="6" fill="#ff2d55" stroke="#ffffff" stroke-width="1.5"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 29: SwiftOptimize - TimeSeriesSplit -->
-    <div class="slide" data-slide="29">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 29 OF 53</div>
+<div class="slide" data-slide="35">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 35 OF 65</div>
       <h1 class="title-large">Time Series Cross-Validation</h1>
       <p class="subtitle">Rolling window temporal split preserving strict chronological sequence.</p>
       <div class="code-grid">
@@ -1476,15 +1789,14 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
           <pre><span class="out-text">TimeSeries Folds Generated: 4</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Temporal Rolling Window</span><span class="swiftui-pill" style="color:var(--sf-orange);">No Lookahead</span></div>
-            <div style="font-family:monospace; text-align:center; color:#ff9500;">Fold 1 ➔ Fold 2 ➔ Fold 3 ➔ Fold 4</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="60" height="12" rx="2" fill="#007aff"/><rect x="85" y="15" width="40" height="12" rx="2" fill="#ff9500"/><text x="50" y="24" fill="#ffffff" font-size="7" text-anchor="middle">Train 1</text><text x="105" y="24" fill="#ffffff" font-size="7" text-anchor="middle">Test 1</text><rect x="20" y="33" width="120" height="12" rx="2" fill="#007aff"/><rect x="145" y="33" width="40" height="12" rx="2" fill="#ff9500"/><text x="80" y="42" fill="#ffffff" font-size="7" text-anchor="middle">Train 2</text><text x="165" y="42" fill="#ffffff" font-size="7" text-anchor="middle">Test 2</text><rect x="20" y="51" width="180" height="12" rx="2" fill="#007aff"/><rect x="205" y="51" width="40" height="12" rx="2" fill="#ff9500"/><text x="110" y="60" fill="#ffffff" font-size="7" text-anchor="middle">Train 3</text><text x="225" y="60" fill="#ffffff" font-size="7" text-anchor="middle">Test 3</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 30: SwiftOptimize - Hyperparameter Tuning -->
-    <div class="slide" data-slide="30">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 30 OF 53</div>
+<div class="slide" data-slide="36">
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 36 OF 65</div>
       <h1 class="title-large">GridSearchCV & Hyperparameter Tuning</h1>
       <p class="subtitle">Exhaustive grid search and randomized parameter optimization.</p>
       <div class="code-grid">
@@ -1511,15 +1823,14 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
           <pre><span class="out-text">Best Parameters: nEstimators = 20, maxDepth = 5</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Grid Search Result</span><span class="swiftui-pill" style="color:var(--sf-green);">Best Fit</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">✓ Selected Best Parameters: depth = 5</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="60" height="12" rx="2" fill="#007aff"/><rect x="85" y="15" width="40" height="12" rx="2" fill="#ff9500"/><rect x="20" y="33" width="120" height="12" rx="2" fill="#007aff"/><rect x="145" y="33" width="40" height="12" rx="2" fill="#ff9500"/><rect x="20" y="51" width="200" height="12" rx="2" fill="#007aff"/><rect x="225" y="51" width="40" height="12" rx="2" fill="#ff9500"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 31: SwiftForecast - ARIMA -->
-    <div class="slide" data-slide="31">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 31 OF 53</div>
+<div class="slide" data-slide="37">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 37 OF 65</div>
       <h1 class="title-large">ARIMA(p,d,q) Time Series Model</h1>
       <p class="subtitle">Actor-based autoregressive integrated moving average forecasting model.</p>
       <div class="code-grid">
@@ -1551,9 +1862,157 @@ print(<span class="str">"5-Step Forecast:"</span>, forecastResult.forecast)</pre
       </div>
     </div>
 
-    <!-- SLIDE 32: SwiftForecast - Exponential Smoothing -->
-    <div class="slide" data-slide="32">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 32 OF 53</div>
+<!-- SLIDE: SwiftForecast - Seasonal ARIMA (SARIMA) Model -->
+    <div class="slide" data-slide="38">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 38 OF 65</div>
+      <h1 class="title-large">Seasonal ARIMA (SARIMA) Model</h1>
+      <p class="subtitle">Multi-seasonal ARIMA (p,d,q)x(P,D,Q)_s with seasonal differencing & AR/MA estimation.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
+
+<span class="kw">let</span> sarima = <span class="kw">try</span> <span class="type">SARIMAModel</span>(
+    p: <span class="num">1</span>, d: <span class="num">1</span>, q: <span class="num">1</span>,
+    P: <span class="num">1</span>, D: <span class="num">1</span>, Q: <span class="num">1</span>, s: <span class="num">12</span>
+)
+<span class="kw">try await</span> sarima.fit(series: monthlySales)
+<span class="kw">let</span> forecastResult = <span class="kw">try await</span> sarima.forecast(horizon: <span class="num">24</span>)
+print(<span class="str">"2-Year Seasonal Forecast:"</span>, forecastResult.forecast)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Captures complex multi-seasonal periodic patterns (monthly s=12)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>Combined non-seasonal (p,d,q) and seasonal (P,D,Q)_s lag operators</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Produces multi-step forecasts with exact 95% confidence intervals</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Seasonal Forecast</span><span class="swiftui-pill" style="color:var(--sf-green);">2.15ms | M4 Pro</span></div>
+          <pre><span class="out-text">SARIMA(1,1,1)x(1,1,1)12 Fitted | 24-Month Forecast Ready</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>24-Month Forecast Curve</span><span class="swiftui-pill" style="color:var(--sf-orange);">Seasonal s=12</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;">
+              <path d="M 20 50 Q 80 10 140 50 T 260 50" fill="none" stroke="#007aff" stroke-width="2"/>
+              <path d="M 260 50 Q 290 20 310 50" fill="none" stroke="#ff9500" stroke-width="2" stroke-dasharray="3,3"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- SLIDE: SwiftForecast - GARCH Volatility Model -->
+    <div class="slide" data-slide="39">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 39 OF 65</div>
+      <h1 class="title-large">GARCH Volatility Model</h1>
+      <p class="subtitle">GARCH(1,1) conditional variance modeling for financial risk and market volatility forecasting.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
+
+<span class="kw">let</span> garch = <span class="kw">try</span> <span class="type">GARCHModel</span>(p: <span class="num">1</span>, q: <span class="num">1</span>)
+<span class="kw">try</span> garch.fit(series: stockReturns)
+
+print(<span class="str">"Omega:"</span>, garch.omega, <span class="str">"Alpha:"</span>, garch.alpha, <span class="str">"Beta:"</span>, garch.beta)
+<span class="kw">let</span> volatilityForecast = <span class="kw">try</span> garch.forecast(horizon: <span class="num">10</span>)
+print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast.forecast)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Models time-varying conditional variance sigma_t^2 = omega + alpha*e^2 + beta*sigma^2</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>Maximum Likelihood Estimation (MLE) of ARCH alpha and GARCH beta terms</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Crucial for financial risk analysis, Value at Risk (VaR), and options pricing</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Volatility Curve</span><span class="swiftui-pill" style="color:var(--sf-green);">1.72ms | M4 Pro</span></div>
+          <pre><span class="out-text">GARCH(1,1) Fitted (alpha=0.085, beta=0.902) | Volatility Forecasted</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Conditional Volatility sigma^2</span><span class="swiftui-pill" style="color:var(--sf-purple);">GARCH(1,1)</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 40 Q 30 10 50 65 T 90 20 T 130 55 T 170 35 T 210 48 T 250 38 T 310 40" fill="none" stroke="#af52de" stroke-width="2.2"/><path d="M 10 40 Q 30 15 50 60 T 90 25 T 130 50 T 170 38 T 210 45 T 250 40 T 310 40" fill="none" stroke="#ff2d55" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.75"/><circle cx="50" cy="65" r="3" fill="#ff2d55"/><circle cx="90" cy="20" r="3" fill="#af52de"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- SLIDE: SwiftForecast - Kalman Filter State-Space Engine -->
+    <div class="slide" data-slide="40">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 40 OF 65</div>
+      <h1 class="title-large">Kalman Filter State-Space Engine</h1>
+      <p class="subtitle">Dynamic state-space estimation, covariance update, and measurement noise filtering.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
+
+<span class="kw">let</span> kalman = <span class="kw">try</span> <span class="type">KalmanFilter</span>(stateSize: <span class="num">2</span>, observationSize: <span class="num">1</span>)
+<span class="kw">try</span> kalman.setTransitionMatrix([[<span class="num">1.0</span>, <span class="num">1.0</span>], [<span class="num">0.0</span>, <span class="num">1.0</span>]])
+<span class="kw">try</span> kalman.setObservationMatrix([[<span class="num">1.0</span>, <span class="num">0.0</span>]])
+<span class="kw">try</span> kalman.setProcessNoise([[<span class="num">0.01</span>, <span class="num">0.0</span>], [<span class="num">0.0</span>, <span class="num">0.01</span>]])
+<span class="kw">try</span> kalman.setMeasurementNoise([[<span class="num">0.1</span>]])
+<span class="kw">try</span> kalman.initialize(state: [<span class="num">0.0</span>, <span class="num">1.0</span>], covariance: [[<span class="num">1.0</span>, <span class="num">0.0</span>], [<span class="num">0.0</span>, <span class="num">1.0</span>]])
+
+<span class="kw">try</span> kalman.predict()
+<span class="kw">let</span> updatedState = <span class="kw">try</span> kalman.update(measurement: [<span class="num">1.05</span>])</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Optimal linear state estimation for noisy time-series signals</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>State transition matrix F, observation matrix H, noise matrices Q & R</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Real-time Kalman Gain K_k computation and error covariance P_k update</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Filter Output</span><span class="swiftui-pill" style="color:var(--sf-green);">0.48ms | M4 Pro</span></div>
+          <pre><span class="out-text">Kalman State Updated: x=[1.024, 0.998] | Gain K=0.42</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Noise Signal Filter</span><span class="swiftui-pill" style="color:var(--sf-blue);">Kalman Gain</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 10 60 L 40 20 L 70 55 L 100 25 L 130 45 L 160 15 L 190 50 L 220 30 L 250 60 L 280 20 L 310 40" fill="none" stroke="#ff3b30" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.6"/><path d="M 10 55 C 60 25, 100 40, 150 20 C 200 35, 250 45, 310 25" fill="none" stroke="#64d2ff" stroke-width="2.5"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- SLIDE: SwiftForecast - Time Series Transformers -->
+    <div class="slide" data-slide="41">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 41 OF 65</div>
+      <h1 class="title-large">Time Series Transformers</h1>
+      <p class="subtitle">LagTransformer, RollingWindow & ExpandingWindow feature engineering.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
+
+<span class="kw">let</span> lagTransformer = <span class="type">LagTransformer</span>(lags: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">7</span>, <span class="num">14</span>])
+<span class="kw">let</span> (lagFeatures, targets) = lagTransformer.transform(series: dailyDemand)
+
+<span class="kw">let</span> rolling = <span class="type">RollingWindow</span>(windowSize: <span class="num">7</span>)
+<span class="kw">let</span> rollingStats = rolling.transform(series: dailyDemand)
+
+<span class="kw">let</span> expanding = <span class="type">ExpandingWindow</span>(minSamples: <span class="num">5</span>)
+<span class="kw">let</span> cumulativeMean = expanding.transform(series: dailyDemand)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Converts raw univariate time series into supervised ML feature matrices</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>LagTransformer creates autoregressive feature columns y_{t-1}, y_{t-2}...</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>RollingWindow & ExpandingWindow compute sliding/cumulative mean & std</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Feature Matrix</span><span class="swiftui-pill" style="color:var(--sf-green);">0.36ms | M4 Pro</span></div>
+          <pre><span class="out-text">LagTransformer Generated 5 Feature Lags across 1,000 Rows</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Autoregressive Matrix</span><span class="swiftui-pill" style="color:var(--sf-green);">Lag Matrix</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="25" width="40" height="35" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><rect x="80" y="25" width="40" height="35" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><rect x="140" y="25" width="40" height="35" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><path d="M 60 42 L 80 42 M 120 42 L 140 42 M 180 42 L 210 42" stroke="#34c759" stroke-width="2" stroke-dasharray="2,2"/><rect x="210" y="20" width="90" height="45" rx="8" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="255" y="47" fill="#34c759" font-size="11" text-anchor="middle" font-family="monospace">Features t-k</text></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div class="slide" data-slide="42">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 42 OF 65</div>
       <h1 class="title-large">Exponential Smoothing & Holt-Winters</h1>
       <p class="subtitle">Triple exponential smoothing capturing level, trend, and seasonal components.</p>
       <div class="code-grid">
@@ -1577,15 +2036,14 @@ print(<span class="str">"5-Step Forecast:"</span>, forecastResult.forecast)</pre
           <pre><span class="out-text">Holt-Winters Fitted (Period: 12)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Seasonal Smoothing</span><span class="swiftui-pill" style="color:var(--sf-blue);">Holt-Winters</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Additive Trend & Seasonality Modeled</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="15" width="55" height="22" rx="3" fill="rgba(52,199,89,0.3)" stroke="#34c759"/><rect x="95" y="15" width="55" height="22" rx="3" fill="rgba(52,199,89,0.7)" stroke="#34c759"/><rect x="160" y="15" width="55" height="22" rx="3" fill="#34c759"/><rect x="225" y="15" width="55" height="22" rx="3" fill="rgba(52,199,89,0.5)" stroke="#34c759"/><rect x="30" y="43" width="55" height="22" rx="3" fill="rgba(52,199,89,0.4)" stroke="#34c759"/><rect x="95" y="43" width="55" height="22" rx="3" fill="rgba(52,199,89,0.8)" stroke="#34c759"/><rect x="160" y="43" width="55" height="22" rx="3" fill="rgba(52,199,89,0.6)" stroke="#34c759"/><rect x="225" y="43" width="55" height="22" rx="3" fill="rgba(52,199,89,0.2)" stroke="#34c759"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 33: SwiftForecast - TimeSeriesDecomposition -->
-    <div class="slide" data-slide="33">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 33 OF 53</div>
+<div class="slide" data-slide="43">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 43 OF 65</div>
       <h1 class="title-large">Classical Time Series Decomposition</h1>
       <p class="subtitle">Extracting Trend, Seasonal, and Residual Noise components from time series.</p>
       <div class="code-grid">
@@ -1611,15 +2069,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Decomposed into Trend, Seasonal & Residuals</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>3-Level Component Decomposition</span><span class="swiftui-pill" style="color:var(--sf-purple);">STL Decomp</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">Series = Trend + Seasonality + Noise</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 15 50 Q 80 15 150 40 T 305 20" fill="none" stroke="#007aff" stroke-width="2.2"/><path d="M 230 28 Q 270 10 305 20" fill="none" stroke="#ff9500" stroke-width="2" stroke-dasharray="3,3"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 34: SwiftForecast - FFT & Autocorrelation -->
-    <div class="slide" data-slide="34">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 34 OF 53</div>
+<div class="slide" data-slide="44">
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 44 OF 65</div>
       <h1 class="title-large">Spectral Analysis (FFT) & ACF / PACF</h1>
       <p class="subtitle">Accelerate vDSP Fast Fourier Transform spectral frequency analysis & autocorrelation.</p>
       <div class="code-grid">
@@ -1642,15 +2099,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">FFT Seasonal Length: 48 Points</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Frequency Spectrum</span><span class="swiftui-pill" style="color:var(--sf-green);">vDSP FFT</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Peak Dominant Frequency Identified</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 15 20 L 305 20" stroke="#007aff" stroke-width="1.5"/><path d="M 15 42 Q 40 30 70 42 T 130 42 T 190 42 T 250 42 T 305 42" fill="none" stroke="#34c759" stroke-width="1.5"/><path d="M 15 65 L 40 60 L 70 68 L 100 62 L 130 66 L 160 58 L 190 65 L 220 60 L 250 67 L 280 61 L 305 64" fill="none" stroke="#ff2d55" stroke-width="1.2"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 35: SwiftNLP - Tokenization -->
-    <div class="slide" data-slide="35">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 35 OF 53</div>
+<div class="slide" data-slide="45">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 45 OF 65</div>
       <h1 class="title-large">Word & Sentence Tokenization</h1>
       <p class="subtitle">Apple Natural Language Tokenizer, Regex Tokenizer & Sentence Tokenizer.</p>
       <div class="code-grid">
@@ -1673,15 +2129,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Tokens: ["SwiftSci", "2.6.2", "is", "an", "extraordinarily"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Token Stream</span><span class="swiftui-pill" style="color:var(--sf-blue);">Apple NL</span></div>
-            <div style="font-family:monospace; color:#007aff;">["SwiftSci", "2.6.2", "is", "an", "extraordinarily"]</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="65" x2="300" y2="65" stroke="rgba(255,255,255,0.2)"/><rect x="40" y="20" width="10" height="45" fill="#007aff"/><rect x="85" y="35" width="10" height="30" fill="#007aff"/><rect x="130" y="15" width="10" height="50" fill="#34c759"/><rect x="175" y="45" width="10" height="20" fill="#007aff"/><rect x="220" y="55" width="10" height="10" fill="#007aff"/><rect x="265" y="25" width="10" height="40" fill="#007aff"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 36: SwiftNLP - Stemming & Lemma -->
-    <div class="slide" data-slide="36">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 36 OF 53</div>
+<div class="slide" data-slide="46">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 46 OF 65</div>
       <h1 class="title-large">Porter Stemmer & Lemma Tagger</h1>
       <p class="subtitle">Algorithmic suffix stripping via Porter Stemmer & Apple Lemma Tagger.</p>
       <div class="code-grid">
@@ -1707,15 +2162,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Porter Stems: ["run", "comput", "algorithm"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Suffix Stripping</span><span class="swiftui-pill" style="color:var(--sf-purple);">Porter Stemmer</span></div>
-            <div style="font-family:monospace; color:#af52de;">computational ➔ comput</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="22" width="75" height="36" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="57" y="44" fill="#007aff" font-size="10" text-anchor="middle" font-family="monospace">"SwiftSci"</text><rect x="110" y="22" width="85" height="36" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="152" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">"Tokenization"</text><rect x="210" y="22" width="90" height="36" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="255" y="44" fill="#af52de" font-size="10" text-anchor="middle" font-family="monospace">"Engine"</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 37: SwiftNLP - POS & NER Tagging -->
-    <div class="slide" data-slide="37">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 37 OF 53</div>
+<div class="slide" data-slide="47">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 47 OF 65</div>
       <h1 class="title-large">POS Tagging & Named Entity Recognition</h1>
       <p class="subtitle">Part-of-speech tagging and Apple Named Entity Recognizer for Person/Org/Loc.</p>
       <div class="code-grid">
@@ -1738,15 +2192,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">[Tim Cook: PERSON], [Apple: ORG], [Cupertino: LOC]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SwiftUI Capsule Badges</span><span class="swiftui-pill" style="color:var(--sf-green);">POS Tagger</span></div>
-            <div style="display:flex; gap:4px; font-family:monospace; font-size:0.75rem;"><span style="padding:4px; background:rgba(0,122,255,0.2); border-radius:4px; color:#007aff;">Tim Cook: PERSON</span><span style="padding:4px; background:rgba(52,199,89,0.2); border-radius:4px; color:#34c759;">Apple: ORG</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="20" width="110" height="40" rx="6" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="85" y="44" fill="#ff9500" font-size="10" text-anchor="middle" font-family="monospace">"running"</text><path d="M 150 40 L 180 40" stroke="#34c759" stroke-width="2"/><rect x="185" y="20" width="105" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="237" y="44" fill="#34c759" font-size="10" text-anchor="middle" font-family="monospace">"run"</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 38: SwiftNLP - VADER Sentiment -->
-    <div class="slide" data-slide="38">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 38 OF 53</div>
+<div class="slide" data-slide="48">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 48 OF 65</div>
       <h1 class="title-large">VADER Sentiment Analysis Engine</h1>
       <p class="subtitle">Rule-based sentiment polarity scoring returning Positive, Negative, Neutral & Compound.</p>
       <div class="code-grid">
@@ -1769,15 +2222,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Compound Score: +0.8521 (Strongly Positive)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>VADER Polarity</span><span class="swiftui-pill" style="color:var(--sf-green);">Positive</span></div>
-            <div style="padding:6px; background:rgba(52,199,89,0.2); border-radius:6px; text-align:center; font-family:monospace; color:#34c759;">Compound: +0.8521</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="22" width="80" height="36" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="60" y="37" fill="#007aff" font-size="9" font-weight="bold" text-anchor="middle">Apple</text><text x="60" y="50" fill="#8e8e93" font-size="8" text-anchor="middle" font-family="monospace">[ORG]</text><rect x="120" y="22" width="80" height="36" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="160" y="37" fill="#34c759" font-size="9" font-weight="bold" text-anchor="middle">Cupertino</text><text x="160" y="50" fill="#8e8e93" font-size="8" text-anchor="middle" font-family="monospace">[LOC]</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 39: SwiftNLP - Text Vectorization -->
-    <div class="slide" data-slide="39">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 39 OF 53</div>
+<div class="slide" data-slide="49">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 49 OF 65</div>
       <h1 class="title-large">Text Vectorization (TF-IDF & Hashing)</h1>
       <p class="subtitle">CountVectorizer, TfidfVectorizer & HashingVectorizer sparse matrix generation.</p>
       <div class="code-grid">
@@ -1804,15 +2256,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">TF-IDF Sparse Matrix Generated: 3x500</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>TF-IDF Vector Space</span><span class="swiftui-pill" style="color:var(--sf-orange);">Sparse Matrix</span></div>
-            <div style="font-family:monospace; text-align:center; color:#ff9500;">Term Frequency - Inverse Document Frequency</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 40 65 A 60 60 0 0 1 280 65" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="10" stroke-linecap="round"/><path d="M 40 65 A 60 60 0 0 1 240 30" fill="none" stroke="#34c759" stroke-width="10" stroke-linecap="round"/><text x="160" y="60" fill="#34c759" font-size="14" font-weight="bold" text-anchor="middle">+0.85 Positive</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 40: SwiftNLP - Naive Bayes -->
-    <div class="slide" data-slide="40">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 40 OF 53</div>
+<div class="slide" data-slide="50">
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 50 OF 65</div>
       <h1 class="title-large">Multinomial & Complement Naive Bayes</h1>
       <p class="subtitle">Probabilistic text classification for document topic modeling & spam filtering.</p>
       <div class="code-grid">
@@ -1836,15 +2287,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Naive Bayes Classifier Accuracy: 98.4%</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Text Classification</span><span class="swiftui-pill" style="color:var(--sf-blue);">Naive Bayes</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">Accuracy = 98.4% on Test Set</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="15" width="55" height="22" rx="3" fill="#007aff"/><rect x="95" y="15" width="55" height="22" rx="3" fill="rgba(0,122,255,0.2)"/><rect x="160" y="15" width="55" height="22" rx="3" fill="#007aff" opacity="0.6"/><rect x="225" y="15" width="55" height="22" rx="3" fill="rgba(0,122,255,0.2)"/><rect x="30" y="43" width="55" height="22" rx="3" fill="rgba(0,122,255,0.2)"/><rect x="95" y="43" width="55" height="22" rx="3" fill="#007aff" opacity="0.8"/><rect x="160" y="43" width="55" height="22" rx="3" fill="rgba(0,122,255,0.2)"/><rect x="225" y="43" width="55" height="22" rx="3" fill="#007aff"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 41: SwiftExplain - KernelSHAP -->
-    <div class="slide" data-slide="41">
-      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 41 OF 53</div>
+<div class="slide" data-slide="51">
+      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 51 OF 65</div>
       <h1 class="title-large">KernelSHAP & TreeSHAP Attribution</h1>
       <p class="subtitle">Shapley Additive exPlanations for model interpretability and feature attribution.</p>
       <div class="code-grid">
@@ -1869,15 +2319,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">SHAP Values: ["+2.15", "+4.02", "-0.88", "+1.12"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Swift Charts BarMark</span><span class="swiftui-pill" style="color:var(--sf-green);">Attribution</span></div>
-            <div style="font-family:monospace; color:#34c759;">Feature 0: +2.15 | Feature 1: +4.02</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="20" width="100" height="45" rx="6" fill="rgba(52,199,89,0.25)" stroke="#34c759"/><text x="90" y="47" fill="#34c759" font-size="11" font-weight="bold" text-anchor="middle">P(Pos) = 94.2%</text><rect x="180" y="35" width="100" height="30" rx="6" fill="rgba(255,45,85,0.2)" stroke="#ff2d55"/><text x="230" y="54" fill="#ff2d55" font-size="10" text-anchor="middle">P(Neg) = 5.8%</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 42: SwiftExplain - Permutation Importance -->
-    <div class="slide" data-slide="42">
-      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 42 OF 53</div>
+<div class="slide" data-slide="52">
+      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 52 OF 65</div>
       <h1 class="title-large">Permutation Importance & Partial Dependence</h1>
       <p class="subtitle">Feature shuffle score drop evaluation & partial dependence marginal effect plots.</p>
       <div class="code-grid">
@@ -1903,15 +2352,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Top Feature: Feature 1 (Importance Drop: -0.42)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Feature Importance Drop</span><span class="swiftui-pill" style="color:var(--sf-purple);">Permutation</span></div>
-            <div style="font-family:monospace; color:#af52de;">Score Drop: Feature 1 ➔ -0.42</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="160" y="15" width="90" height="14" rx="3" fill="#34c759"/><rect x="70" y="33" width="90" height="14" rx="3" fill="#ff3b30"/><rect x="160" y="51" width="120" height="14" rx="3" fill="#34c759"/><line x1="160" y1="10" x2="160" y2="70" stroke="rgba(255,255,255,0.3)" stroke-dasharray="2,2"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 43: SwiftLLM - Context Window -->
-    <div class="slide" data-slide="43">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 43 OF 53</div>
+<div class="slide" data-slide="53">
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 53 OF 65</div>
       <h1 class="title-large">LLM Context Window Budgeting</h1>
       <p class="subtitle">Prompt token counting, sliding buffer & token truncation.</p>
       <div class="code-grid">
@@ -1935,15 +2383,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Prompt Token Count: 14 / 512</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SwiftUI Gauge</span><span class="swiftui-pill" style="color:var(--sf-blue);">14 Tokens</span></div>
-            <div style="width:100%; height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden;"><div style="width:15%; height:100%; background:#007aff;"></div></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="25" width="260" height="30" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)"/><rect x="30" y="25" width="160" height="30" rx="6" fill="#007aff"/><text x="110" y="44" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Active Tokens: 312 / 512</text></svg></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 44: SwiftLLM - BPE & Prompts -->
-    <div class="slide" data-slide="44">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 44 OF 53</div>
+<div class="slide" data-slide="54">
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 54 OF 65</div>
       <h1 class="title-large">BPE Tokenizer & Prompt Templates</h1>
       <p class="subtitle">Byte-Pair Encoding tokenizer & PromptTemplate variable substitution.</p>
       <div class="code-grid">
@@ -1969,15 +2416,88 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">BPE Encoded: 18 Tokens | Template Formatted</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Prompt Template</span><span class="swiftui-pill" style="color:var(--sf-green);">Formatted</span></div>
-            <div style="font-family:monospace; color:#34c759;">"System: Data Scientist\nContext: SwiftDataFrame"</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><path d="M 20 60 Q 120 55 180 30 T 300 15" fill="none" stroke="#af52de" stroke-width="2.2"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 45: SwiftVisualization - Heatmap -->
-    <div class="slide" data-slide="45">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 45 OF 53</div>
+<!-- SLIDE: SwiftLLM - GGUF & SafeTensors Model File Parsers -->
+    <div class="slide" data-slide="55">
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 55 OF 65</div>
+      <h1 class="title-large">GGUF & SafeTensors Model File Parsers</h1>
+      <p class="subtitle">Binary header parsing and memory-mapped tensor loading for quantized LLM weights.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftLLM</span>
+
+<span class="kw">let</span> ggufFile = <span class="type">URL</span>(fileURLWithPath: <span class="str">"llama-3-8b-instruct.Q4_K_M.gguf"</span>)
+<span class="kw">let</span> ggufMetaData = <span class="kw">try</span> <span class="type">GGUFParser</span>.parseHeader(url: ggufFile)
+print(<span class="str">"Architecture:"</span>, ggufMetaData[<span class="str">"general.architecture"</span>] ?? <span class="str">"llama"</span>)
+print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
+
+<span class="kw">let</span> safeTensors = <span class="kw">try</span> <span class="type">SafeTensorsParser</span>.loadTensors(path: <span class="str">"model.safetensors"</span>)
+<span class="kw">let</span> weightTensor = safeTensors[<span class="str">"model.embed_tokens.weight"</span>]</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Zero-copy binary parsing of GGUF (q4_0, q8_0, F16) & SafeTensors formats</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>Maps binary file offsets directly into Metal / Apple MLX memory buffers</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Extracts model metadata architecture, layer shapes, and quantization types</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Parser Metadata</span><span class="swiftui-pill" style="color:var(--sf-green);">0.95ms | M4 Pro</span></div>
+          <pre><span class="out-text">GGUF Header Parsed: 291 Tensors Loaded (Q4_K_M)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Weight Format Parser</span><span class="swiftui-pill" style="color:var(--sf-blue);">GGUF / SafeTensors</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="15" y="20" width="65" height="40" rx="6" fill="rgba(0,122,255,0.25)" stroke="#007aff"/><text x="47" y="44" fill="#64d2ff" font-size="10" text-anchor="middle" font-family="monospace">GGUF Header</text><path d="M 80 40 L 105 40" stroke="#34c759" stroke-width="2" stroke-dasharray="2,2"/><rect x="105" y="20" width="195" height="40" rx="6" fill="rgba(52,199,89,0.15)" stroke="#34c759"/><rect x="115" y="28" width="50" height="24" rx="4" fill="#34c759" opacity="0.6"/><rect x="175" y="28" width="50" height="24" rx="4" fill="#af52de" opacity="0.6"/><rect x="235" y="28" width="55" height="24" rx="4" fill="#ff9500" opacity="0.6"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- SLIDE: SwiftLLM - Sampler & Autoregressive Decoding -->
+    <div class="slide" data-slide="56">
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 56 OF 65</div>
+      <h1 class="title-large">Sampler & Autoregressive Decoding</h1>
+      <p class="subtitle">Temperature scaling, Top-K, Top-P Nucleus Sampling & Repetition Penalty generation.</p>
+      <div class="code-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+            <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          </div>
+          <pre><span class="kw">import</span> <span class="type">SwiftLLM</span>
+
+<span class="kw">let</span> sampler = <span class="type">Sampler</span>(
+    temperature: <span class="num">0.7</span>,
+    topK: <span class="num">40</span>,
+    topP: <span class="num">0.9</span>,
+    repetitionPenalty: <span class="num">1.1</span>
+)
+
+<span class="kw">let</span> logits: [<span class="type">Float</span>] = [<span class="num">0.1</span>, <span class="num">0.4</span>, <span class="num">2.8</span>, <span class="num">0.9</span>, <span class="num">0.2</span>]
+<span class="kw">let</span> selectedTokenId = sampler.sample(logits: logits, previousTokens: generatedTokens)</pre>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>High-performance logits sampling engine for LLM text generation</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>Top-K filtering and Top-P (Nucleus) cumulative probability truncation</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Temperature scaling and frequency/repetition penalty adjustments</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Execution Log & Sampler Output</span><span class="swiftui-pill" style="color:var(--sf-green);">0.12ms | M4 Pro</span></div>
+          <pre><span class="out-text">Sampler Selected Token #1042 (Top-P 0.90 | Temp 0.70)</span></pre>
+          <div class="swiftui-chart-box">
+            <div class="swiftui-header"><span>Nucleus Sampler</span><span class="swiftui-pill" style="color:var(--sf-green);">Top-P 0.9</span></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="15" width="25" height="50" rx="4" fill="#007aff"/><rect x="55" y="25" width="25" height="40" rx="4" fill="#007aff" opacity="0.8"/><rect x="90" y="35" width="25" height="30" rx="4" fill="#007aff" opacity="0.6"/><rect x="125" y="45" width="25" height="20" rx="4" fill="#007aff" opacity="0.4"/><line x1="10" y1="30" x2="290" y2="30" stroke="#ff3b30" stroke-width="1.5" stroke-dasharray="3,3"/><text x="240" y="25" fill="#ff3b30" font-size="10" font-family="monospace">Top-P Threshold</text></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div class="slide" data-slide="57">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 57 OF 65</div>
       <h1 class="title-large">Plotly Correlation Heatmap Exporter</h1>
       <p class="subtitle">Export standalone HTML 2D correlation matrix heatmaps.</p>
       <div class="code-grid">
@@ -2003,15 +2523,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Plotly HTML Heatmap Saved (476 bytes)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Heatmap Grid</span><span class="swiftui-pill" style="color:var(--sf-orange);">Plotly HTML</span></div>
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px; font-family:monospace; text-align:center;"><div style="background:rgba(0,122,255,0.8); padding:6px; border-radius:4px; color:#fff;">1.00</div><div style="background:rgba(0,122,255,0.3); padding:6px; border-radius:4px; color:#fff;">0.34</div></div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="25" width="260" height="30" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)"/><rect x="30" y="25" width="160" height="30" rx="6" fill="#007aff"/><text x="110" y="44" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Active Tokens: 312 / 512</text></svg><div style="background:rgba(0,122,255,0.3); padding:6px; border-radius:4px; color:#fff;">0.34</div></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 46: SwiftVisualization - Interactive Charts -->
-    <div class="slide" data-slide="46">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 46 OF 53</div>
+<div class="slide" data-slide="58">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 58 OF 65</div>
       <h1 class="title-large">Plotly Interactive Chart Exporter</h1>
       <p class="subtitle">Scatter, Line, Bar, BoxPlot, Histogram & ROC Curve Plotly HTML rendering.</p>
       <div class="code-grid">
@@ -2038,15 +2557,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Plotly ROC, Scatter & Hist HTML Exported (749 bytes)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Plotly Standalone HTML</span><span class="swiftui-pill" style="color:var(--sf-green);">Interactive</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Plotly Engine Export Completed</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><line x1="20" y1="70" x2="300" y2="10" stroke="rgba(255,255,255,0.2)" stroke-dasharray="3,3"/><path d="M 20 70 C 35 25, 120 15, 300 10" fill="none" stroke="#34c759" stroke-width="2.5"/><text x="210" y="45" fill="#34c759" font-size="10" font-weight="bold" font-family="monospace">AUC = 0.96</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 47: SwiftVision - Image Datasets & U-Net -->
-    <div class="slide" data-slide="47">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 47 OF 53</div>
+<div class="slide" data-slide="59">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 59 OF 65</div>
       <h1 class="title-large">Image Datasets & U-Net Spatial Segmentation</h1>
       <p class="subtitle">Multi-channel image tensor datasets, U-Net probability masks & VisionMetrics.</p>
       <div class="code-grid">
@@ -2073,15 +2591,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">U-Net Mask: [224, 224] | Dice: 0.942 | IoU: 0.891</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Segmentation Result</span><span class="swiftui-pill" style="color:var(--sf-blue);">Dice = 0.942</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">2D U-Net Probability Segmentation Mask</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="30" y="15" width="110" height="50" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="85" y="44" fill="#007aff" font-size="9" font-weight="bold" text-anchor="middle">Input [224,224]</text><path d="M 150 40 L 175 40" stroke="#34c759" stroke-width="2"/><rect x="180" y="15" width="110" height="50" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><path d="M 195 50 Q 230 20 275 42 Z" fill="rgba(52,199,89,0.6)" stroke="#34c759"/><text x="235" y="32" fill="#34c759" font-size="9" font-weight="bold" text-anchor="middle">U-Net Mask</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 48: SwiftVision - YOLOv8 & GAP -->
-    <div class="slide" data-slide="48">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 48 OF 53</div>
+<div class="slide" data-slide="60">
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 60 OF 65</div>
       <h1 class="title-large">YOLOv8 Object Detector & NMS Bounding Boxes</h1>
       <p class="subtitle">Multi-scale object detection, Non-Maximum Suppression (NMS) & CNN Global Average Pooling.</p>
       <div class="code-grid">
@@ -2108,15 +2625,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">YOLOv8 Detected: 3 Objects | NMS IoU Filter Passed</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Object Detection Result</span><span class="swiftui-pill" style="color:var(--sf-green);">3 Bounding Boxes</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">Person (0.92) | Car (0.88) | Dog (0.78)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="25" y="15" width="120" height="52" rx="4" fill="none" stroke="#34c759" stroke-width="2"/><rect x="25" y="15" width="65" height="15" fill="#34c759"/><text x="30" y="26" fill="#ffffff" font-size="9" font-weight="bold">Car: 0.96</text><rect x="170" y="22" width="120" height="45" rx="4" fill="none" stroke="#ff9500" stroke-width="2"/><rect x="170" y="22" width="80" height="15" fill="#ff9500"/><text x="175" y="33" fill="#ffffff" font-size="9" font-weight="bold">Person: 0.92</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 49: SwiftDatabase - SQLite Connection -->
-    <div class="slide" data-slide="49">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 49 OF 53</div>
+<div class="slide" data-slide="61">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 61 OF 65</div>
       <h1 class="title-large">Embedded SQLite Engine</h1>
       <p class="subtitle">In-memory SQLite execution returning type-safe SQLQueryResult.</p>
       <div class="code-grid">
@@ -2140,15 +2656,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">SQL Query Rows Returned: 1</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SQLite Query Result</span><span class="swiftui-pill" style="color:var(--sf-green);">users</span></div>
-            <div style="font-family:monospace; font-size:0.78rem; color:#34c759;">Row 1: (id: 1, score: 95.5)</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="15" width="100" height="50" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><path d="M 50 50 Q 80 20 120 40" fill="none" stroke="#34c759" stroke-width="2"/><rect x="180" y="15" width="100" height="50" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><path d="M 190 50 Q 220 20 260 40 Z" fill="rgba(52,199,89,0.5)" stroke="#34c759"/></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 50: SwiftDatabase - DataFrame Bridge -->
-    <div class="slide" data-slide="50">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 50 OF 53</div>
+<div class="slide" data-slide="62">
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 62 OF 65</div>
       <h1 class="title-large">DataFrame SQLite Bridge</h1>
       <p class="subtitle">Bi-directional export and import between DataFrames and SQLite relational tables.</p>
       <div class="code-grid">
@@ -2173,15 +2688,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Table "customers" Exported & Imported</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Bi-directional Bridge</span><span class="swiftui-pill" style="color:var(--sf-blue);">DataFrame ⟷ SQLite</span></div>
-            <div style="font-family:monospace; text-align:center; color:#007aff;">DataFrame ➔ Export ➔ SQLite Database Table</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="40" y="15" width="100" height="50" rx="4" fill="none" stroke="#34c759" stroke-width="2"/><text x="45" y="28" fill="#34c759" font-size="9" font-weight="bold">[Car: 0.96]</text><rect x="170" y="25" width="110" height="40" rx="4" fill="none" stroke="#ff9500" stroke-width="2"/><text x="175" y="38" fill="#ff9500" font-size="9" font-weight="bold">[Person: 0.92]</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 51: SwiftAgent - Evaluator -->
-    <div class="slide" data-slide="51">
-      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 51 OF 53</div>
+<div class="slide" data-slide="63">
+      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 63 OF 65</div>
       <h1 class="title-large">Autonomous Query Evaluator Agent</h1>
       <p class="subtitle">Natural language query evaluation agent executing table transformations.</p>
       <div class="code-grid">
@@ -2207,15 +2721,14 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           <pre><span class="out-text">Agent Evaluator Result: 4 Regional Groups</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Agent Flow</span><span class="swiftui-pill" style="color:var(--sf-purple);">SwiftAgent</span></div>
-            <div style="font-family:monospace; text-align:center; color:#af52de;">NL Command ➔ Evaluator ➔ Transformed DF</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><ellipse cx="160" cy="22" rx="70" ry="10" fill="rgba(0,122,255,0.3)" stroke="#007aff"/><path d="M 90 22 L 90 58 A 70 10 0 0 0 230 58 L 230 22" fill="rgba(0,122,255,0.15)" stroke="#007aff"/><text x="160" y="45" fill="#64d2ff" font-size="10" font-weight="bold" text-anchor="middle">C-SQLite Engine</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 52: SwiftAgent - RAG Generator -->
-    <div class="slide" data-slide="52">
-      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 52 OF 53</div>
+<div class="slide" data-slide="64">
+      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 64 OF 65</div>
       <h1 class="title-large">RAG Context Summary Generator</h1>
       <p class="subtitle">Retrieval Augmented Generation context profile summary generator.</p>
       <div class="code-grid">
@@ -2240,15 +2753,14 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
           <pre><span class="out-text">RAG Context Profile Generated Successfully</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>RAG Summary Profile</span><span class="swiftui-pill" style="color:var(--sf-green);">RAG Context</span></div>
-            <div style="font-family:monospace; text-align:center; color:#34c759;">DataFrame Profile ➔ Prompt Context Summary</div>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;"><rect x="20" y="20" width="95" height="40" rx="6" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="67" y="44" fill="#007aff" font-size="10" font-weight="bold" text-anchor="middle">DataFrame</text><path d="M 125 33 L 195 33 M 195 47 L 125 47" stroke="#34c759" stroke-width="2"/><polygon points="195,30 205,33 195,36" fill="#34c759"/><polygon points="125,44 115,47 125,50" fill="#34c759"/><rect x="205" y="20" width="95" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="252" y="44" fill="#34c759" font-size="10" font-weight="bold" text-anchor="middle">SQLite DB</text></svg>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 53: Benchmark Summary -->
-    <div class="slide" data-slide="53">
-      <div class="badge"><span class="badge-dot"></span> HARDWARE ACCELERATION</div>
+<div class="slide" data-slide="65">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 65 OF 66</div>
       <h1 class="title-large">Apple M4 Pro Hardware Speedup</h1>
       <p class="subtitle">Local Apple M4 Pro benchmark comparison against Python NumPy/SciPy baseline.</p>
       <div class="grid-3" style="grid-template-columns: repeat(2, 1fr); max-width: 1000px;">
@@ -2271,43 +2783,77 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       </div>
     </div>
 
+<div class="slide" data-slide="66">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 2.6.2 — SLIDE 66 OF 66</div>
+      <h1 class="title-large">SwiftSci 2.6.2 Innovations</h1>
+      <p class="subtitle">Key features introduced in the 2.6.2 release line.</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Feather I/O & LazyDataFrame</span><span class="swiftui-pill" style="color:var(--sf-blue);">SwiftDataFrame</span></div>
+          <pre><code class="language-swift"><span class="kw">let</span> df = <span class="kw">try</span> <span class="kw">await</span> DataFrame(feather: url)
+<span class="kw">let</span> lazyResult = <span class="kw">try</span> <span class="kw">await</span> df.lazy()
+    .filter { row in (row.double("score") ?? 0) >= 80.0 }
+    .select(["id", "score"])
+    .collect()</code></pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">MultiOutput ML & ETS Models</span><span class="swiftui-pill" style="color:var(--sf-purple);">SwiftML / Forecast</span></div>
+          <pre><code class="language-swift"><span class="kw">let</span> multiReg = MultiOutputRegressor(estimatorFactory: { LinearRegression() })
+<span class="kw">try</span> <span class="kw">await</span> multiReg.fit(features: X, targets: Y)
+<span class="kw">let</span> ets = <span class="kw">try</span> <span class="kw">await</span> ETSModel.autoFit(series: y, period: 12)</code></pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">KVCache Streaming & SwiftUI Canvas</span><span class="swiftui-pill" style="color:var(--sf-green);">SwiftLLM / Viz</span></div>
+          <pre><code class="language-swift"><span class="kw">let</span> stream = decoder.generateStream(prompt: "AI", options: opts)
+<span class="kw">let</span> chart = SwiftSciChartView(title: "Sales", type: .line, series: [s1])</code></pre>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">swiftsci CLI Utility</span><span class="swiftui-pill" style="color:var(--sf-orange);">SwiftSciCLI</span></div>
+          <pre><code class="language-bash">$ swiftsci summary dataset.feather
+$ swiftsci convert input.csv output.feather
+$ swiftsci export-model model.json</code></pre>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Bottom Navigation Bar with Interactive Slide Range Slider -->
-  <div class="nav-bar">
-    <button class="btn" id="prevBtn">← Prev</button>
-    <button class="btn" onclick="showSlide(2)" style="background:var(--sf-blue); color:#fff;">📑 Agenda</button>
-    <div class="slider-container">
-      <input type="range" class="slide-slider" id="slideSlider" min="1" max="53" value="1">
+  <!-- BOTTOM NAV BAR -->
+  <div class="bottom-nav">
+    <button class="nav-btn" id="prevBtn">← Prev</button>
+    <div style="display:flex; align-items:center; gap:0.8rem; flex:1; justify-content:center;">
+      <span class="footer-pos" id="slideNum">1 / 66</span>
+      <input type="range" id="slideSlider" min="1" max="66" value="1" style="width: min(350px, 40vw);">
     </div>
-    <span class="progress" id="slideNum">1 / 53</span>
-    <button class="btn" id="nextBtn">Next →</button>
+    <button class="nav-btn" id="nextBtn">Next →</button>
   </div>
 
   <script>
     let currentSlide = 1;
-    const totalSlides = 53;
+    const totalSlides = 66;
 
     // Slide ranges for Top Module Chips
     const moduleRanges = [
-      { name: "Title", start: 1, end: 1 },
-      { name: "Agenda", start: 2, end: 2 },
-      { name: "DataFrame", start: 3, end: 8 },
-      { name: "Stats", start: 9, end: 13 },
-      { name: "Preprocessing", start: 14, end: 17 },
-      { name: "ML", start: 18, end: 22 },
-      { name: "Cluster", start: 23, end: 26 },
-      { name: "Optimize", start: 27, end: 30 },
-      { name: "Forecast", start: 31, end: 34 },
-      { name: "NLP", start: 35, end: 40 },
-      { name: "Explain", start: 41, end: 42 },
-      { name: "LLM", start: 43, end: 44 },
-      { name: "Viz", start: 45, end: 46 },
-      { name: "Vision", start: 47, end: 48 },
-      { name: "Database", start: 49, end: 50 },
-      { name: "Agent", start: 51, end: 52 },
-      { name: "M4 Pro", start: 53, end: 53 }
+      { name: "Title",        start: 1,  end: 1  },
+      { name: "Agenda",       start: 2,  end: 2  },
+      { name: "DataFrame",    start: 3,  end: 8  },
+      { name: "Stats",        start: 9,  end: 13 },
+      { name: "Preprocessing",start: 14, end: 19 },
+      { name: "ML",           start: 20, end: 27 },
+      { name: "Cluster",      start: 28, end: 32 },
+      { name: "Optimize",     start: 33, end: 36 },
+      { name: "Forecast",     start: 37, end: 44 },
+      { name: "NLP",          start: 45, end: 50 },
+      { name: "Explain",      start: 51, end: 52 },
+      { name: "LLM",          start: 53, end: 56 },
+      { name: "Viz",          start: 57, end: 58 },
+      { name: "Vision",       start: 59, end: 60 },
+      { name: "Database",     start: 61, end: 62 },
+      { name: "Agent",        start: 63, end: 64 },
+      { name: "M4 Pro",       start: 65, end: 65 },
+      { name: "v2.6.2",       start: 66, end: 66 }
     ];
+
 
     function showSlide(index) {
       if (index < 1) index = 1;
@@ -2322,20 +2868,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       });
 
       document.getElementById('slideNum').textContent = `${currentSlide} / ${totalSlides}`;
-
-      // Module-specific slider display logic
-      const activeModule = moduleRanges.find(m => currentSlide >= m.start && currentSlide <= m.end);
-      const sliderContainer = document.querySelector('.slider-container');
-      const slideSlider = document.getElementById('slideSlider');
-
-      if (activeModule && (activeModule.end - activeModule.start) > 0) {
-        sliderContainer.style.display = 'flex';
-        slideSlider.min = activeModule.start;
-        slideSlider.max = activeModule.end;
-        slideSlider.value = currentSlide;
-      } else {
-        sliderContainer.style.display = 'none';
-      }
+      document.getElementById('slideSlider').value = currentSlide;
 
       // Update Top Module Chips active highlight
       document.querySelectorAll('.chip').forEach((chip, i) => {
@@ -2345,6 +2878,38 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
           chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
       });
+
+      // Update Sub-Module Intra-Slide Sub-Slider Bar
+      const subBar = document.getElementById('subSliderBar');
+      const subName = document.getElementById('subModName');
+      const subCounter = document.getElementById('subModCounter');
+      const modSlider = document.getElementById('modRangeSlider');
+      const subPillsContainer = document.getElementById('subModPills');
+
+      const currentMod = moduleRanges.find(m => currentSlide >= m.start && currentSlide <= m.end);
+
+      if (currentMod && (currentMod.end > currentMod.start)) {
+        subBar.style.display = 'flex';
+        subName.textContent = currentMod.name;
+        const relativeIdx = currentSlide - currentMod.start + 1;
+        const totalInMod = currentMod.end - currentMod.start + 1;
+        subCounter.textContent = `Slide ${relativeIdx} of ${totalInMod}`;
+
+        modSlider.min = currentMod.start;
+        modSlider.max = currentMod.end;
+        modSlider.value = currentSlide;
+
+        // Render sub-pills
+        let pillsHTML = '';
+        for (let s = currentMod.start; s <= currentMod.end; s++) {
+          const isActive = s === currentSlide ? 'active' : '';
+          const relNum = s - currentMod.start + 1;
+          pillsHTML += `<div class="sub-pill ${isActive}" onclick="showSlide(${s})">#${relNum}</div>`;
+        }
+        subPillsContainer.innerHTML = pillsHTML;
+      } else {
+        subBar.style.display = 'none';
+      }
 
       const glow = document.getElementById('glow');
       const posX = 15 + (currentSlide * 3) % 70;
@@ -2361,6 +2926,9 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       if (e.key === 'ArrowRight' || e.key === 'Space') showSlide(currentSlide + 1);
       if (e.key === 'ArrowLeft') showSlide(currentSlide - 1);
     });
+
+    // Initial call to populate UI controls
+    showSlide(1);
   </script>
 </body>
 </html>

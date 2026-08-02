@@ -2322,7 +2322,20 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       });
 
       document.getElementById('slideNum').textContent = `${currentSlide} / ${totalSlides}`;
-      document.getElementById('slideSlider').value = currentSlide;
+
+      // Module-specific slider display logic
+      const activeModule = moduleRanges.find(m => currentSlide >= m.start && currentSlide <= m.end);
+      const sliderContainer = document.querySelector('.slider-container');
+      const slideSlider = document.getElementById('slideSlider');
+
+      if (activeModule && (activeModule.end - activeModule.start) > 0) {
+        sliderContainer.style.display = 'flex';
+        slideSlider.min = activeModule.start;
+        slideSlider.max = activeModule.end;
+        slideSlider.value = currentSlide;
+      } else {
+        sliderContainer.style.display = 'none';
+      }
 
       // Update Top Module Chips active highlight
       document.querySelectorAll('.chip').forEach((chip, i) => {

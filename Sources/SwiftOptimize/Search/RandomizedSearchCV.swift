@@ -5,13 +5,23 @@ import SwiftML
 /// via K-Fold Cross-Validation.
 public struct RandomizedSearchCV: Sendable {
 
-    /// Represents result for decision tree search.
+    /// Evaluation result payload for decision tree parameter combinations.
     public struct Result: Sendable, Comparable, Equatable {
+        /// Evaluated maximum tree depth hyperparameter.
         public let maxDepth: Int
+        /// Evaluated node split criterion hyperparameter.
         public let criterion: SplitCriterion
+        /// Cross-validated mean evaluation metric score across all folds.
         public let meanScore: Double
+        /// Standard deviation of evaluation scores across folds.
         public let stdScore: Double
 
+        /// Initializes a decision tree search result.
+        /// - Parameters:
+        ///   - maxDepth: Evaluated maximum tree depth.
+        ///   - criterion: Evaluated node split criterion.
+        ///   - meanScore: Cross-validated mean evaluation metric score.
+        ///   - stdScore: Standard deviation of evaluation scores.
         public init(maxDepth: Int, criterion: SplitCriterion, meanScore: Double, stdScore: Double) {
             self.maxDepth = maxDepth
             self.criterion = criterion
@@ -28,12 +38,20 @@ public struct RandomizedSearchCV: Sendable {
         }
     }
 
-    /// Generic result holding arbitrary parameter combinations.
+    /// Generic result payload holding arbitrary parameter combinations.
     public struct GenericResult<Params: Sendable>: Sendable, Comparable, Equatable {
+        /// Sampled hyperparameter combination instance.
         public let params: Params
+        /// Cross-validated mean evaluation metric score across all folds.
         public let meanScore: Double
+        /// Standard deviation of evaluation scores across folds.
         public let stdScore: Double
 
+        /// Initializes a generic randomized search result payload.
+        /// - Parameters:
+        ///   - params: Sampled hyperparameter combination.
+        ///   - meanScore: Cross-validated mean metric score.
+        ///   - stdScore: Standard deviation of evaluation scores.
         public init(params: Params, meanScore: Double, stdScore: Double) {
             self.params = params
             self.meanScore = meanScore

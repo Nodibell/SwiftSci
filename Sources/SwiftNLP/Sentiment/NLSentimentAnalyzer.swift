@@ -5,6 +5,7 @@ import NaturalLanguage
 
 /// A sentiment analyzer wrapping Apple's machine learned OS model (`NLTagger(tagSchemes: [.sentimentScore])`).
 public struct NLSentimentAnalyzer: Sendable {
+    /// Creates a NaturalLanguage sentiment analyzer instance.
     public init() {}
 
     /// Evaluates text sentiment score (-1.0 to +1.0) using Apple's OS ML model.

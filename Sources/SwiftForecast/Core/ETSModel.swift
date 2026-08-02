@@ -2,13 +2,20 @@ import Foundation
 
 /// Error, Trend, and Seasonal (ETS) State Space forecasting model.
 public actor ETSModel {
+    /// Classification for the error component (Additive or Multiplicative).
     public enum ErrorType: String, Sendable { case additive = "A", multiplicative = "M" }
+    /// Classification for the trend component (None, Additive, or Damped).
     public enum TrendType: String, Sendable { case none = "N", additive = "A", damped = "Ad" }
+    /// Classification for the seasonal component (None, Additive, or Multiplicative).
     public enum SeasonalType: String, Sendable { case none = "N", additive = "A", multiplicative = "M" }
 
+    /// Configured error component specification.
     public let errorType: ErrorType
+    /// Configured trend component specification.
     public let trendType: TrendType
+    /// Configured seasonal component specification.
     public let seasonalType: SeasonalType
+    /// Seasonal period length (number of observations per full cycle).
     public let period: Int
 
     private var alpha: Double = 0.3
@@ -22,6 +29,12 @@ public actor ETSModel {
     private var seasonalComponents: [Double] = []
     private var isFitted: Bool = false
 
+    /// Initializes an Error, Trend, and Seasonal (ETS) forecasting model.
+    /// - Parameters:
+    ///   - error: Error model component (`.additive` or `.multiplicative`). Defaults to `.additive`.
+    ///   - trend: Trend component variant (`.none`, `.additive`, or `.damped`). Defaults to `.additive`.
+    ///   - seasonal: Seasonal cycle variant (`.none`, `.additive`, or `.multiplicative`). Defaults to `.none`.
+    ///   - period: Number of periods per seasonal cycle. Defaults to 1.
     public init(
         error: ErrorType = .additive,
         trend: TrendType = .additive,

@@ -3,12 +3,20 @@ import SwiftDataFrame
 
 /// Applies separate preprocessing transformers to specified subsets of columns.
 public final class ColumnTransformer: PreprocessingTransformer, @unchecked Sendable {
-    /// Represents route.
+    /// Transformation route mapping a specific transformer to target column indices.
     public struct Route {
+        /// Name identifier for this transformation route.
         public let name: String
+        /// Target preprocessor implementation.
         public let transformer: any PreprocessingTransformer
+        /// Array of targeted column indices.
         public let columnIndices: [Int]
 
+        /// Initializes a column transformer route mapping.
+        /// - Parameters:
+        ///   - name: Route identifier name.
+        ///   - transformer: Preprocessor implementation.
+        ///   - columnIndices: Column indices array.
         public init(name: String, transformer: any PreprocessingTransformer, columnIndices: [Int]) {
             self.name = name
             self.transformer = transformer

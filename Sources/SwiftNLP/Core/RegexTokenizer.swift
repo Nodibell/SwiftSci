@@ -7,11 +7,18 @@ public struct RegexTokenizer: Tokenizer, Sendable {
     /// Whether to match tokens directly (gaps = false) or split on gaps/separators (gaps = true).
     public let gaps: Bool
 
+    /// Initializes a regex-pattern tokenizer instance.
+    /// - Parameters:
+    ///   - pattern: Regular expression pattern string. Defaults to `\w+`.
+    ///   - gaps: If true, splits on matching gaps; if false, matches token substrings directly. Defaults to false.
     public init(pattern: String = #"\w+"#, gaps: Bool = false) {
         self.pattern = pattern
         self.gaps = gaps
     }
 
+    /// Tokenizes input string according to the configured regex pattern.
+    /// - Parameter text: Raw text string.
+    /// - Returns: Array of token strings.
     public func tokenize(text: String) -> [String] {
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return [text]
@@ -47,10 +54,16 @@ public struct RegexTokenizer: Tokenizer, Sendable {
         }
     }
 
+    /// Encodes input string into integer hashes.
+    /// - Parameter text: Raw text string.
+    /// - Returns: Array of integer token hashes.
     public func encode(text: String) -> [Int] {
         return tokenize(text: text).map { $0.hashValue }
     }
 
+    /// Decodes token integer IDs back to string.
+    /// - Parameter tokens: Array of integer token IDs.
+    /// - Returns: Empty string for non-vocabulary hash encoders.
     public func decode(tokens: [Int]) -> String {
         return ""
     }

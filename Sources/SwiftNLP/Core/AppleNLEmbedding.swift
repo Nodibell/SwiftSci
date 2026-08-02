@@ -5,6 +5,7 @@ import NaturalLanguage
 
 /// Provides access to Apple's native pre-trained word and sentence embedding vector spaces (`NLEmbedding`).
 public struct AppleNLEmbedding: Sendable {
+    /// Supported language code enum for pre-trained word vector spaces.
     public enum Language: String, Sendable {
         case english = "en"
         case spanish = "es"
@@ -14,8 +15,11 @@ public struct AppleNLEmbedding: Sendable {
         case portuguese = "pt"
     }
 
+    /// Configured language specification for embedding vectors.
     public let language: Language
 
+    /// Creates an Apple NLEmbedding vector space instance.
+    /// - Parameter language: Language vector space selection. Defaults to `.english`.
     public init(language: Language = .english) {
         self.language = language
     }

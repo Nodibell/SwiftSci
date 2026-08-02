@@ -3,9 +3,13 @@ import SwiftDataFrame
 
 /// A unified pipeline combining text tokenization, vectorization, and Naive Bayes text classification.
 public actor TextPipeline {
+    /// Internal TF-IDF document vectorizer instance.
     public let vectorizer: TFIDFVectorizer
+    /// Internal Multinomial Naive Bayes text classifier instance.
     public private(set) var classifier: MultinomialNaiveBayes
 
+    /// Initializes a text classification pipeline.
+    /// - Parameter alpha: Laplace smoothing parameter for Naive Bayes. Defaults to 1.0.
     public init(alpha: Double = 1.0) {
         self.vectorizer = TFIDFVectorizer()
         self.classifier = MultinomialNaiveBayes(alpha: alpha)

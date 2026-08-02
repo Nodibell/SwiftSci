@@ -2,6 +2,7 @@ import Foundation
 
 /// Pure Swift implementation of the Porter Stemming Algorithm for suffix stripping.
 public struct PorterStemmer: Sendable {
+    /// Creates a pure-Swift Porter Stemmer instance.
     public init() {}
 
     private static let vowels: Set<Character> = ["a", "e", "i", "o", "u"]

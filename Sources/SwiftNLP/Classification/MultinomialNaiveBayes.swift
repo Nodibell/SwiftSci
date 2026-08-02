@@ -12,6 +12,8 @@ public struct MultinomialNaiveBayes: Sendable {
     /// List of target class labels.
     public private(set) var classes: [String] = []
 
+    /// Creates a Multinomial Naive Bayes text classifier instance.
+    /// - Parameter alpha: Additive Laplace smoothing hyperparameter. Defaults to 1.0.
     public init(alpha: Double = 1.0) {
         self.alpha = max(0.0, alpha)
     }

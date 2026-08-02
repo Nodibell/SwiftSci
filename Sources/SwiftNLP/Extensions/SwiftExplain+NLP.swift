@@ -2,6 +2,7 @@ import Foundation
 
 /// Provides token-level importance explanation for text predictions.
 public struct TextExplainer: Sendable {
+    /// Creates a text token explainer instance.
     public init() {}
 
     /// Explains token importance by measuring sentiment score shift when each token is omitted.

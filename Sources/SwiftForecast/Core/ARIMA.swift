@@ -4,6 +4,7 @@ import SwiftStats
 
 
 
+/// AutoRegressive Integrated Moving Average (ARIMA) time-series forecasting model actor.
 public actor ARIMAModel {
     /// The order.
     public let order: (p: Int, d: Int, q: Int)

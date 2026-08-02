@@ -5,6 +5,7 @@ import NaturalLanguage
 
 /// Detects the dominant language and language probabilities using Apple's `NLLanguageRecognizer`.
 public struct AppleLanguageDetector: Sendable {
+    /// Creates a NaturalLanguage-backed language detector instance.
     public init() {}
 
     /// Detects dominant language code (e.g. "en", "uk", "fr") for the given text.

@@ -8,6 +8,7 @@ public enum SmoothingMethod: Sendable {
     case holtWinters(beta: Double, gamma: Double, period: Int, seasonal: DecompositionModel)
 }
 
+/// Exponential Smoothing time-series forecasting model actor.
 public actor ExponentialSmoothing {
     /// The method.
     public let method: SmoothingMethod

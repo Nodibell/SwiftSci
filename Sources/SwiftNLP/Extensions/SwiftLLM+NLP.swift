@@ -2,9 +2,15 @@ import Foundation
 
 /// Utilities for LLM token context window management and prompt truncation.
 public struct LLMContextWindow: Sendable {
+    /// Maximum context window token capacity limit.
     public let maxTokens: Int
+    /// Tokenizer instance for counting and truncating prompt tokens.
     public let tokenizer: any Tokenizer
 
+    /// Creates an LLM context window manager instance.
+    /// - Parameters:
+    ///   - maxTokens: Maximum token capacity. Defaults to 4096.
+    ///   - tokenizer: Tokenizer implementation. Defaults to `AppleWordTokenizer`.
     public init(maxTokens: Int = 4096, tokenizer: any Tokenizer = AppleWordTokenizer()) {
         self.maxTokens = maxTokens
         self.tokenizer = tokenizer

@@ -2,11 +2,14 @@ import Foundation
 
 /// Pure Swift implementation of Complement Naive Bayes classifier optimized for imbalanced text corpora.
 public struct ComplementNaiveBayes: Sendable {
+    /// Additive Laplace smoothing parameter (alpha >= 0).
     public let alpha: Double
 
     public private(set) var featureWeights: [String: [Double]] = [:]
     public private(set) var classes: [String] = []
 
+    /// Creates a Complement Naive Bayes classifier.
+    /// - Parameter alpha: Laplace smoothing hyperparameter. Defaults to 1.0.
     public init(alpha: Double = 1.0) {
         self.alpha = max(0.0, alpha)
     }
@@ -94,6 +97,9 @@ public struct ComplementNaiveBayes: Sendable {
         return bestClass
     }
 
+    /// Predicts target class label names for a batch of sample feature vectors.
+    /// - Parameter X: Matrix of sample feature vectors.
+    /// - Returns: Array of predicted class strings.
     public func predict(X: [[Double]]) -> [String] {
         return X.compactMap { predict(x: $0) }
     }

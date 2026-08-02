@@ -5,6 +5,7 @@ import NaturalLanguage
 
 /// A part-of-speech (POS) tagger.
 public struct POSTagger: Sendable {
+    /// Grammatical part-of-speech category tag.
     public enum POSTag: String, Sendable, Codable, Equatable {
         case noun
         case verb
@@ -21,16 +22,24 @@ public struct POSTagger: Sendable {
         case other
     }
 
+    /// A token paired with its predicted part-of-speech tag.
     public struct TaggedToken: Sendable, Equatable {
+        /// The raw token word substring.
         public let token: String
+        /// The assigned part-of-speech tag.
         public let tag: POSTag
 
+        /// Initializes a tagged token.
+        /// - Parameters:
+        ///   - token: Token word string.
+        ///   - tag: Assigned part-of-speech category.
         public init(token: String, tag: POSTag) {
             self.token = token
             self.tag = tag
         }
     }
 
+    /// Creates a part-of-speech tagger instance.
     public init() {}
 
     /// Tags part-of-speech for each word in the input text.

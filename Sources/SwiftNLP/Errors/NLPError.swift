@@ -9,6 +9,7 @@ public enum NLPError: Error, CustomStringConvertible, Sendable, Equatable {
     case invalidVocabulary
     case fittingRequired
 
+    /// Human-readable error description message string.
     public var description: String {
         switch self {
         case .unavailableOnPlatform(let feature):

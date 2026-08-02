@@ -10,11 +10,21 @@ public enum ChartType: Sendable {
 
 /// Data series for native SwiftUI rendering.
 public struct ChartSeries: Sendable, Identifiable {
+    /// Unique identifier for the data series.
     public let id: String
+    /// X-axis coordinate values.
     public let x: [Double]
+    /// Y-axis coordinate values.
     public let y: [Double]
+    /// Display color for the series.
     public let color: Color
 
+    /// Creates a new data series for SwiftUI chart rendering.
+    /// - Parameters:
+    ///   - id: Unique identifier for the series. Defaults to a random UUID.
+    ///   - x: Array of X-axis coordinates.
+    ///   - y: Array of Y-axis coordinates matching `x` length.
+    ///   - color: Rendering color for lines or bars. Defaults to blue.
     public init(id: String = UUID().uuidString, x: [Double], y: [Double], color: Color = .blue) {
         self.id = id
         self.x = x
@@ -24,18 +34,35 @@ public struct ChartSeries: Sendable, Identifiable {
 }
 
 /// A native SwiftUI `Canvas` chart component for SwiftSci datasets.
+///
+/// `SwiftSciChartView` provides lightweight, zero-dependency 2D chart rendering
+/// using SwiftUI `Canvas`, supporting line charts, bar charts, and heatmaps.
+///
+/// ```swift
+/// let series = ChartSeries(x: [1.0, 2.0, 3.0], y: [10.0, 25.0, 18.0], color: .green)
+/// let chartView = SwiftSciChartView(title: "Sales Growth", type: .line, series: [series])
+/// ```
 @MainActor
 public struct SwiftSciChartView: View {
+    /// Title header text displayed above the chart canvas.
     public let title: String
+    /// Rendering mode for the dataset (line, bar, or heatmap).
     public let type: ChartType
+    /// Collection of data series to plot on the canvas.
     public let series: [ChartSeries]
 
+    /// Initializes a native SwiftUI chart view.
+    /// - Parameters:
+    ///   - title: Header title displayed above the chart.
+    ///   - type: Rendering layout mode (`.line`, `.bar`, or `.heatmap`). Defaults to `.line`.
+    ///   - series: Array of data series to draw.
     public init(title: String, type: ChartType = .line, series: [ChartSeries]) {
         self.title = title
         self.type = type
         self.series = series
     }
 
+    /// The content and behavior of the SwiftUI view.
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)

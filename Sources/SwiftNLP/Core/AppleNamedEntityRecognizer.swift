@@ -5,6 +5,7 @@ import NaturalLanguage
 
 /// Extracts Named Entities (Persons, Places, Organizations) from text using Apple's `NLTagger`.
 public struct AppleNamedEntityRecognizer: Sendable {
+    /// Creates a NaturalLanguage-backed named entity recognizer instance.
     public init() {}
 
     /// Extracts named entities from input text.

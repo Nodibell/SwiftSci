@@ -2,6 +2,7 @@ import Foundation
 
 /// Pure Swift VADER Sentiment Analyzer implementing valence score calculation with negation and intensity boosters.
 public struct VADERSentimentAnalyzer: Sendable {
+    /// Creates a VADER rule-based lexicon sentiment analyzer instance.
     public init() {}
 
     /// Evaluates sentiment of the input text and returns a `SentimentScore`.

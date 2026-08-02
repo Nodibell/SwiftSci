@@ -2,6 +2,7 @@ import Foundation
 import Accelerate
 import SwiftStats
 
+/// Seasonal AutoRegressive Integrated Moving Average (SARIMA) time-series forecasting model actor.
 public actor SARIMAModel {
     /// The order.
     public let order: (p: Int, d: Int, q: Int)

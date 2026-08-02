@@ -2,16 +2,23 @@ import Foundation
 
 /// A lazy-evaluated representation of a `DataFrame` query pipeline.
 public struct LazyDataFrame: Sendable {
+    /// The underlying evaluation query plan node sequence.
     public let plan: QueryPlan
-    
+
+    /// Initializes a lazy DataFrame wrapper around a query plan.
+    /// - Parameter plan: The evaluation query plan.
     public init(plan: QueryPlan) {
         self.plan = plan
     }
-    
+
+    /// Initializes a lazy DataFrame from an abstract query source node.
+    /// - Parameter source: The source data provider node.
     public init(source: QueryPlanNode.Source) {
         self.plan = QueryPlan(nodes: [.source(source)])
     }
-    
+
+    /// Initializes a lazy DataFrame from an eager memory-resident DataFrame.
+    /// - Parameter dataFrame: The eager source DataFrame.
     public init(dataFrame: DataFrame) {
         self.init(source: .eager(dataFrame))
     }

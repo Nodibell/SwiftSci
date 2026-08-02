@@ -6,17 +6,24 @@ public enum QueryPlanNode: Sendable {
     case filter(predicate: @Sendable (DataFrameRow) -> Bool)
     case select(columns: [String])
     
+    /// Data source node variants for lazy evaluation pipelines.
     public enum Source: Sendable {
+        /// Memory-resident eager DataFrame source.
         case eager(DataFrame)
+        /// Disk-based CSV file streaming source.
         case csv(url: URL, options: CSVReadOptions)
+        /// Disk-based Apache Arrow Feather file source.
         case feather(url: URL)
     }
 }
 
 /// Represents an optimization and execution pipeline for `LazyDataFrame`.
 public struct QueryPlan: Sendable {
+    /// Sequence of transformation and source nodes composing the query plan.
     public var nodes: [QueryPlanNode]
-    
+
+    /// Initializes a query plan with a sequence of execution nodes.
+    /// - Parameter nodes: Array of `QueryPlanNode` execution steps.
     public init(nodes: [QueryPlanNode] = []) {
         self.nodes = nodes
     }

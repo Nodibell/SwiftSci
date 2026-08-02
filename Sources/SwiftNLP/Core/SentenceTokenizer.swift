@@ -5,6 +5,7 @@ import NaturalLanguage
 
 /// A sentence tokenizer splitting input text into individual sentences.
 public struct SentenceTokenizer: Tokenizer, Sendable {
+    /// Creates a sentence tokenizer instance.
     public init() {}
 
     /// Splits text into sentence strings.
@@ -53,14 +54,23 @@ public struct SentenceTokenizer: Tokenizer, Sendable {
         #endif
     }
 
+    /// Encodes input string into integer hashes.
+    /// - Parameter text: Raw text string.
+    /// - Returns: Array of integer sentence hashes.
     public func encode(text: String) -> [Int] {
         return tokenize(text: text).map { $0.hashValue }
     }
 
+    /// Decodes token integer IDs back to string.
+    /// - Parameter tokens: Array of integer token IDs.
+    /// - Returns: Empty string for non-vocabulary hash encoders.
     public func decode(tokens: [Int]) -> String {
         return ""
     }
 
+    /// Splits text into individual sentences.
+    /// - Parameter text: Input text document.
+    /// - Returns: Array of sentence strings.
     public func tokenizeSentences(text: String) -> [String] {
         return tokenize(text: text)
     }

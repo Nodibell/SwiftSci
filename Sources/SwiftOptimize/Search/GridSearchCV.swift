@@ -7,11 +7,15 @@ import SwiftML
 /// best hyperparameter combination via K-Fold Cross-Validation.
 public struct GridSearchCV: Sendable {
 
-    /// Represents result.
+    /// Single hyperparameter trial evaluation result payload from Grid Search.
     public struct Result: Sendable, Comparable {
+        /// Evaluated maximum tree depth hyperparameter value.
         public let maxDepth: Int
+        /// Evaluated node split criterion hyperparameter value.
         public let criterion: SplitCriterion
+        /// Cross-validated mean evaluation metric score across all folds.
         public let meanScore: Double
+        /// Standard deviation of evaluation scores across folds.
         public let stdScore: Double
 
         public static func < (lhs: Result, rhs: Result) -> Bool {

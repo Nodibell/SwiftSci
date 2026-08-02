@@ -9,11 +9,15 @@ import SwiftDataFrame
 /// Decodes the metadata headers and maps the binary tensor blocks directly into MLXArrays.
 public enum GGUFParser {
     
-    /// Represents tensor info.
+    /// Represents metadata for a GGUF quantized model tensor.
     public struct TensorInfo {
+        /// Identifier name of the tensor.
         public let name: String
+        /// Dimension shape vector.
         public let shape: [Int]
+        /// GGUF numeric quantization type code.
         public let type: UInt32
+        /// Byte offset within the GGUF binary payload.
         public let offset: UInt64
     }
     

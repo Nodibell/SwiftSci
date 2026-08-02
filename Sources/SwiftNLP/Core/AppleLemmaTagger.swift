@@ -5,6 +5,7 @@ import NaturalLanguage
 
 /// A lemmatizer using Apple's `NLTagger(tagSchemes: [.lemma])` for dictionary canonical form extraction.
 public struct AppleLemmaTagger: Sendable {
+    /// Creates a NaturalLanguage-backed lemmatizer instance.
     public init() {}
 
     /// Lemmatizes input text into canonical base word forms.

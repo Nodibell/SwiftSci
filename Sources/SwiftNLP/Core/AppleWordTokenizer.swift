@@ -5,6 +5,7 @@ import NaturalLanguage
 
 /// A word tokenizer wrapping Apple's `NaturalLanguage.NLTokenizer(unit: .word)` with multi-lingual support.
 public struct AppleWordTokenizer: Tokenizer, Sendable {
+    /// Creates an Apple NLTokenizer word tokenizer instance.
     public init() {}
 
     /// Tokenizes input text into word tokens using Apple's linguistic boundary detection.
@@ -41,10 +42,16 @@ public struct AppleWordTokenizer: Tokenizer, Sendable {
         return Int(truncatingIfNeeded: hash)
     }
 
+    /// Encodes input string into integer hashes.
+    /// - Parameter text: Raw text string.
+    /// - Returns: Array of integer token hashes.
     public func encode(text: String) -> [Int] {
         return tokenize(text: text).map { fnv1aHash($0) }
     }
 
+    /// Decodes token integer IDs back to string.
+    /// - Parameter tokens: Array of integer token IDs.
+    /// - Returns: Empty string for non-vocabulary hash encoders.
     public func decode(tokens: [Int]) -> String {
         return ""
     }

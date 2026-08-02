@@ -4,6 +4,15 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.2] - 2026-08-02
+
+### Added & Verified
+- **100% Authentic DocC Public API Documentation Coverage**: Completed rich Markdown DocC annotations (`///`) for all 1,176 public/open symbols across all 14 targets, including `SwiftVisualization`, `SwiftNLP`, `SwiftOptimize`, `SwiftForecast`, `SwiftLLM`, `SwiftDataFrame`, `SwiftML`, `SwiftStats`, etc.
+- **Automated CI DocC Coverage Enforcement**: Added `scripts/verify_doc_coverage.py` to parse public/open Swift declarations during CI runs and fail builds if documentation coverage drops below 100.00%.
+- **DocC Badge Updated**: Updated documentation badge in `README.md` and `docs/index.html` to **100% DocC Coverage**.
+
+---
+
 ## [2.6.1] - 2026-08-02
 
 ### Fixed & Accelerated

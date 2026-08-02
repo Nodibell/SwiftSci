@@ -4,11 +4,15 @@ import Foundation
 
 /// Kaplan-Meier non-parametric statistic used to estimate the survival function from life-tables or right-censored data.
 public struct KaplanMeier: Sendable {
-    /// Represents survival point.
+    /// Represents a point on the Kaplan-Meier survival probability curve.
     public struct SurvivalPoint: Sendable {
+        /// Time point of observation.
         public let time: Double
+        /// Number of subjects at risk prior to this time point.
         public let atRisk: Int
+        /// Number of observed events (e.g. deaths, failures) at this time point.
         public let events: Int
+        /// Cumulative estimated survival probability S(t) at this time point.
         public let survivalProbability: Double
     }
 

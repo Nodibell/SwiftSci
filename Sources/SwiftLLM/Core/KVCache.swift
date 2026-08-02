@@ -7,6 +7,7 @@ public final class KVCache: @unchecked Sendable {
     public private(set) var keys: MLXArray?
     public private(set) var values: MLXArray?
     
+    /// Creates an empty key-value attention cache instance for an autoregressive decoder layer.
     public init() {}
     
     /// Updates the cache with new Keys and Values for the current step.

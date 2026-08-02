@@ -8,8 +8,11 @@ public enum GrowthType: String, Sendable {
 
 /// Prophet-style Piecewise Linear & Logistic Trend Decomposition model.
 public actor PiecewiseTrendDecomposition {
+    /// Growth trend model variant (`.linear` or `.logistic`).
     public let growth: GrowthType
+    /// Maximum number of automatic trend changepoints.
     public let nChangepoints: Int
+    /// Carrying capacity upper bound for logistic growth.
     public let capacity: Double
 
     private var changepointIndices: [Int] = []
@@ -19,6 +22,11 @@ public actor PiecewiseTrendDecomposition {
     private var isFitted: Bool = false
     private var seriesLength: Int = 0
 
+    /// Initializes a Prophet-style piecewise trend decomposition model.
+    /// - Parameters:
+    ///   - growth: Growth curve specification (`.linear` or `.logistic`). Defaults to `.linear`.
+    ///   - nChangepoints: Target number of automatic trend break points. Defaults to 5.
+    ///   - capacity: Maximum ceiling capacity for logistic growth curves. Defaults to 1.0.
     public init(
         growth: GrowthType = .linear,
         nChangepoints: Int = 5,

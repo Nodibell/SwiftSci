@@ -25,6 +25,9 @@ public protocol Tokenizer: Sendable {
 }
 
 extension Tokenizer {
+    /// Default protocol extension implementation delegating to `SentenceTokenizer`.
+    /// - Parameter text: Input text document.
+    /// - Returns: Array of sentence strings.
     public func tokenizeSentences(text: String) -> [String] {
         return SentenceTokenizer().tokenize(text: text)
     }

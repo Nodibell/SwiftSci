@@ -1,12 +1,20 @@
 /// Describes the structure of a DataFrame: column names and their types.
 public struct Schema: Sendable, CustomStringConvertible {
 
-    /// Represents field.
+    /// Field definition specifying column name, data type, and nullability.
     public struct Field: Sendable {
+        /// Name identifier for the column field.
         public let name: String
+        /// Data type classification for column elements.
         public let dtype: ColumnDType
+        /// Whether the column permits nil values.
         public let nullable: Bool
 
+        /// Initializes a schema field description.
+        /// - Parameters:
+        ///   - name: Column name string.
+        ///   - dtype: Data type classification.
+        ///   - nullable: Nullability flag. Defaults to true.
         public init(name: String, dtype: ColumnDType, nullable: Bool = true) {
             self.name     = name
             self.dtype    = dtype

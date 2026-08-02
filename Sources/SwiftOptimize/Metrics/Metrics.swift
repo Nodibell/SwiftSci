@@ -4,12 +4,17 @@ import Foundation
 
 /// Summary of per-class Precision, Recall, and F1 for a classifier.
 public struct ClassificationReport: Sendable {
-    /// Represents class metrics.
+    /// Per-class evaluation performance metrics struct.
     public struct ClassMetrics: Sendable {
+        /// Target class label identifier.
         public let label: Int
+        /// Class precision ratio (TP / (TP + FP)).
         public let precision: Double
+        /// Class recall ratio (TP / (TP + FN)).
         public let recall: Double
+        /// Harmonic mean F1 score (2 * P * R / (P + R)).
         public let f1: Double
+        /// Total number of true sample instances for this class.
         public let support: Int
     }
 

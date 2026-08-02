@@ -2,6 +2,7 @@ import Foundation
 import Accelerate
 import SwiftStats
 
+/// Generalized AutoRegressive Conditional Heteroskedasticity (GARCH) volatility forecasting model actor.
 public actor GARCHModel {
     /// The order.
     public let order: (p: Int, q: Int) // p = GARCH order (lagged variance), q = ARCH order (lagged residuals squared)

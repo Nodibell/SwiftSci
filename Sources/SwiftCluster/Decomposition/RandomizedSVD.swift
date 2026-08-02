@@ -246,7 +246,9 @@ public enum RandomizedSVD {
 
 // MARK: - Error
 
+/// Errors that can occur during Randomized SVD computation.
 public enum RandomizedSVDError: Error {
+    /// Raised when target rank k exceeds matrix bounds.
     case invalidComponents(k: Int, minDim: Int)
 }
 

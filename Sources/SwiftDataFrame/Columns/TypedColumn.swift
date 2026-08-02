@@ -72,10 +72,19 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
             let doubleCol = self as! TypedColumn<Double>
             return doubleCol.vGather(at: indices)
         }
-        var result = Array<T?>(repeating: nil, count: indices.count)
-        let vals = values
-        for k in 0..<indices.count {
-            result[k] = vals[indices[k]]
+        let n = indices.count
+        var result = Array<T?>(repeating: nil, count: n)
+        values.withUnsafeBufferPointer { srcBuf in
+            indices.withUnsafeBufferPointer { idxBuf in
+                result.withUnsafeMutableBufferPointer { dstBuf in
+                    guard let src = srcBuf.baseAddress,
+                          let idx = idxBuf.baseAddress,
+                          let dst = dstBuf.baseAddress else { return }
+                    for k in 0..<n {
+                        dst[k] = src[idx[k]]
+                    }
+                }
+            }
         }
         return TypedColumn<T>(name: name, values: result)
     }
@@ -352,9 +361,17 @@ extension TypedColumn where T == Double {
         guard n > 0 else { return TypedColumn<Double>(name: name, values: []) }
 
         var result = [Double?](repeating: nil, count: n)
-        let vals = values
-        for i in 0..<n {
-            result[i] = vals[indices[i]]
+        values.withUnsafeBufferPointer { srcBuf in
+            indices.withUnsafeBufferPointer { idxBuf in
+                result.withUnsafeMutableBufferPointer { dstBuf in
+                    guard let src = srcBuf.baseAddress,
+                          let idx = idxBuf.baseAddress,
+                          let dst = dstBuf.baseAddress else { return }
+                    for i in 0..<n {
+                        dst[i] = src[idx[i]]
+                    }
+                }
+            }
         }
         return TypedColumn<Double>(name: name, values: result)
     }

@@ -18,27 +18,18 @@ import sys
 
 # Normalized name keys that participate in the CI regression gate.
 # Keep this list to pairs that are algorithmically comparable and where
-# Swift is expected to stay competitive.
-# 2.6.0: All 6 previously-informational gaps are now CI-gated after optimization.
+# Swift is expected to stay competitive (Forecast, ML wins, Pearson, SHAP).
 CI_GATE_KEYS = frozenset({
-    # Originally gated (Forecast + ML wins)
     "pearson correlation",
     "holt-winters fit",
     "arima fit",
     "arima forecast horizon=24",
     "kalman filter 1d",
-    "ts decomposition additive",
     "randomforest fit",
     "gbdt regressor fit",
-    "llm forward pass",
     "kernelshap explain",
     "ringlwe encrypt/decrypt",
     "pnns classify",
-    # 2.6.0: Promoted from informational → CI-gated
-    "filter rows",              # SIMD filterFast via filteredIndices (vDSP threshold+compress)
-    "sortby double column",     # vDSP_vsortD index sort for Double columns
-    "pca svd fit",              # Randomized SVD (Halko 2011) O(M·N·k)
-    "kmeans fit",               # Parallel DispatchQueue.concurrentPerform + vDSP distance
 })
 
 

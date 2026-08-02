@@ -69,11 +69,11 @@ public enum RandomizedSVD {
     /// Computes an approximate rank-k SVD of matrix X (row-major, M rows × N cols).
     ///
     /// - Parameters:
-    ///   - X:            Input matrix, shape [M, N], row-major.
-    ///   - nComponents:  Number of singular values/vectors to compute (k).
-    ///   - nOversamples: Extra random columns for accuracy (default 10).
-    ///   - nPowerIter:   Number of power iterations for improved accuracy on slow-decay spectra (default 2).
-    ///   - seed:         Seed for deterministic random sketch (default 42).
+    ///   - X: Input matrix, shape [M, N], row-major.
+    ///   - k: Number of singular values/vectors to compute (k).
+    ///   - p: Extra random columns for accuracy (default 10).
+    ///   - q: Number of power iterations for improved accuracy on slow-decay spectra (default 2).
+    ///   - seed: Seed for deterministic random sketch (default 42).
     /// - Returns: `RandomizedSVD.Result` with U [M×k], S [k], Vt [k×N].
     public static func compute(
         X: [[Double]],

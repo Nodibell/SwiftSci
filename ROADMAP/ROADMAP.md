@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.5+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.6+)
 
 ## 📌 Vision & Architecture
 
@@ -192,6 +192,28 @@ The architecture combines two hardware engines:
    - Command-line utility for dataset summaries (`swiftsci summary`), CSV/Feather format conversions (`swiftsci convert`), and model export inspection.
 8. **Full Test Suite & Documentation Verification**:
    - 100% test pass rate across all 15 workspace targets and updated DocC documentation archives.
+
+---
+
+### Version 2.6.0 & 2.6.1: Swift 6 Strict Concurrency, Memory Safety & Benchmark Rigor *(🟢 Completed)*
+
+1. **Swift 6 Concurrency & Sendability**:
+   - Full concurrency audit across all 14 targets. Eliminated data races and unsafe pointer captures in `GradientBoosting`.
+2. **Honest Benchmark Governance**:
+   - Refactored benchmark suite preventing silent swallowing of benchmark failures or assertions.
+
+---
+
+### Version 2.6.2: Authentic 100.00% Public DocC API Coverage & Automated CI Enforcement *(🟢 Completed)*
+
+*Detailed implementation plan:* [implementation_plan.md](implementation_plan.md)
+
+1. **Authentic 100.00% DocC API Coverage**:
+   - Added rich Markdown `///` docstrings with parameters, return types, exceptions, and runnable usage examples for all 1,176 public/open symbols across all 14 targets (`SwiftDataFrame`, `SwiftStats`, `SwiftPreprocessing`, `SwiftML`, `SwiftCluster`, `SwiftOptimize`, `SwiftForecast`, `SwiftNLP`, `SwiftExplain`, `SwiftLLM`, `SwiftVisualization`, `SwiftVision`, `SwiftDatabase`, `SwiftAgent`).
+2. **Automated CI Coverage Verification**:
+   - Created `scripts/verify_doc_coverage.py` parsing public/open Swift declarations and failing CI if coverage drops below 100.00%.
+3. **Zero Compiler Documentation Warnings**:
+   - Verified via `swift package generate-documentation --analyze`, producing 0 compiler documentation warnings across all targets.
 
 ---
 

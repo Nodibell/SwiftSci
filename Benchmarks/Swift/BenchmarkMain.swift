@@ -58,7 +58,7 @@ struct BenchmarkEntryPoint {
         }
 
         print("╔════════════════════════════════════════════════════╗")
-        print("║        SwiftSci Benchmark Suite — v1.3             ║")
+        print("║        SwiftSci Benchmark Suite — v2.6.1           ║")
         print("╚════════════════════════════════════════════════════╝")
         print("Platform : \(platformString())")
         print("Swift    : \(swiftVersion())")

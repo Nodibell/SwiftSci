@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.6+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.7+)
 
 ## 📌 Vision & Architecture
 
@@ -214,6 +214,28 @@ The architecture combines two hardware engines:
    - Created `scripts/verify_doc_coverage.py` parsing public/open Swift declarations and failing CI if coverage drops below 100.00%.
 3. **Zero Compiler Documentation Warnings**:
    - Verified via `swift package generate-documentation --analyze`, producing 0 compiler documentation warnings across all targets.
+
+---
+
+### Version 2.7.0: Consolidation, Value Semantics & Feature Maturity *(🟢 Completed)*
+
+*Detailed implementation plan:* [implementation_plan_27.md](implementation_plan_27.md)
+
+1. **`SwiftPreprocessing` Value Semantics & Container Composition Fix**:
+   - Refactored `MinMaxScaler`, `StandardScaler`, and `RobustScaler` from `final class: @unchecked Sendable` to **`struct: Sendable`**.
+   - Updated `PreprocessingTransformer` protocol with `mutating func fit(_ data:) throws`, achieving strict Tier B value-semantics data-race freedom without `@unchecked Sendable`.
+   - Fixed container mutation in `Pipeline`, `ColumnTransformer`, `ClassificationPipeline`, and `RegressionPipeline` to mutate elements directly by array index in `fit()`, ensuring fitted state persists in `steps` and `routes` for subsequent `transform()` / `predict()` calls on new data.
+2. **`SwiftNLP` WordNet Synset & Semantic Similarity Engine**:
+   - Added native WordNet synset lookup (`synsets(for:)`), hypernym/hyponym tree traversal (`hypernyms(of:)`, `hyponyms(of:)`), and shortest path / Wu-Palmer concept similarity metrics (`pathSimilarity`, `wupSimilarity`).
+3. **`SwiftML` Binary ONNX Protobuf Exporter**:
+   - Added `ONNXExporter.exportBinaryONNX` constructing binary ONNX `ModelProto` wire format bytes for cross-platform model deployment.
+4. **`SwiftForecast` Error Handling & `SwiftDataFrame` Type Safety**:
+   - Eliminated silent `catch { continue }` in `ExponentialSmoothing.swift` parameter optimization; throws `ForecastError.trainingFailed` on grid search failure.
+   - Replaced all 11 instances of forced dynamic downcasting (`as!`) in `TypedColumn.swift` with safe `as?` conditional unwrapping.
+5. **Concurrency Decision Matrix & CI Enforcement**:
+   - Formalized Concurrency Tiers (A: `actor`, B: `struct`, C: `final class @unchecked Sendable`) and `Estimator` vs `PreprocessingTransformer` design guidelines in `CONTRIBUTING.md`.
+   - Added `docc-check` gate (`swift package generate-documentation --warnings-as-errors`) to `.github/workflows/ci.yml`.
+   - Configured `.spi.yml` for macOS-only builds.
 
 ---
 

@@ -102,7 +102,22 @@ jobs:
           key: ${{ runner.os }}-swiftsci-spm-v3-${{ hashFiles('**/Package.resolved') }}
       - name: Build DocC documentation and verify symbol coverage
         run: |
-          swift package generate-documentation --warnings-as-errors
+          swift package generate-documentation \
+            --target SwiftDataFrame \
+            --target SwiftStats \
+            --target SwiftPreprocessing \
+            --target SwiftML \
+            --target SwiftCluster \
+            --target SwiftNLP \
+            --target SwiftOptimize \
+            --target SwiftForecast \
+            --target SwiftLLM \
+            --target SwiftExplain \
+            --target SwiftVisualization \
+            --target SwiftVision \
+            --target SwiftDatabase \
+            --target SwiftAgent \
+            --warnings-as-errors
 
   # 5. Benchmark
   performance-check:

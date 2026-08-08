@@ -10,14 +10,37 @@ public enum POS: String, Sendable, Codable {
 
 /// Represents a WordNet Synset (Syntactic/Semantic Set of Synonym Concepts).
 public struct Synset: Sendable, Hashable, Identifiable {
+    /// The unique identifier of the synset (e.g., "dog.n.01").
     public let id: String
+    
+    /// The canonical label or short concept name of the synset.
     public let name: String
+    
+    /// The syntactic Part of Speech classification of the synset.
     public let pos: POS
+    
+    /// The natural language gloss definition explaining the semantic concept.
     public let definition: String
+    
+    /// List of synonym word forms (lemmas) belonging to this synset concept.
     public let lemmas: [String]
+    
+    /// List of parent synset identifiers in the hypernym taxonomy graph.
     public let hypernymIDs: [String]
+    
+    /// List of child synset identifiers in the hyponym taxonomy graph.
     public let hyponymIDs: [String]
     
+    /// Creates a new WordNet `Synset` concept instance.
+    ///
+    /// - Parameters:
+    ///   - id: Unique synset identifier.
+    ///   - name: Canonical concept name.
+    ///   - pos: Part of speech category.
+    ///   - definition: Gloss text definition.
+    ///   - lemmas: Array of synonym words.
+    ///   - hypernymIDs: Array of parent synset IDs.
+    ///   - hyponymIDs: Array of child synset IDs.
     public init(
         id: String,
         name: String,

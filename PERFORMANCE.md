@@ -1,6 +1,6 @@
-# SwiftSci 2.6.2 Complete Performance Benchmarks
+# SwiftSci 2.7.0 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 2.6.2** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 2.7.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
 
 > [!NOTE]
 > All benchmarks are executed under identical conditions: deterministic seeds (`seed=42`), single-node execution, and release optimizations (`swift run -c release`).
@@ -9,7 +9,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ## 📊 Complete Benchmark Matrix
 
-| Benchmark Scenario | SwiftSci 2.6.1 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
+| Benchmark Scenario | SwiftSci 2.7.0 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **ARIMA(1,1,1) Fit** (50k pts) | **2.38 ms** | 210.94 ms (*Statsmodels*) | ⚡ **88.3×** | 🟢 **Swift** | Swift 6 native state-space solver |
 | **ARIMA(1,1,1) Forecast** (horizon=24) | **2.42 ms** | 210.75 ms (*Statsmodels*) | ⚡ **86.8×** | 🟢 **Swift** | Zero-allocation forecast loop |
@@ -31,16 +31,20 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ---
 
-## 🔍 Detailed Analysis of Optimizations in v2.5.0
+## 🔍 Detailed Analysis of Optimizations in v2.7.0
 
-1. **SwiftNLP Accelerate & NLTK Equivalence**:
+1. **`SwiftPreprocessing` Zero-Allocation Value Semantics**:
+   - `MinMaxScaler`, `StandardScaler`, and `RobustScaler` operate as thread-safe `struct` value types.
+   - `Pipeline` and `ColumnTransformer` mutate array elements directly by index in-place.
+2. **SwiftNLP WordNet Engine & Accelerate Optimization**:
+   - WordNet synset lookup and similarity metrics (`pathSimilarity`, `wupSimilarity`) leverage fast in-memory trie structures.
    - VADER Lexicon lookup uses zero-allocation binary search over pre-sorted static Key-Value arrays in `VADERLexicon.swift`.
    - Cosine similarity in `WordEmbeddings` is accelerated via `vDSP_dotprD` and `vDSP_svesqD`.
-2. **SIMD Bitmask Filtering (`SwiftDataFrame`)**:
+3. **SIMD Bitmask Filtering (`SwiftDataFrame`)**:
    - `filterIndicesDoubleSIMD` and `filterIndicesInt64SIMD` use `SIMD4` vector registers for fast row mask evaluation.
-3. **Primitive Pointer Radix Sorting (`SwiftDataFrame`)**:
+4. **Primitive Pointer Radix Sorting (`SwiftDataFrame`)**:
    - `sortIndicesPrimitiveFast` for zero-copy array sorting over `UnsafeBufferPointer<Double>`.
-4. **vDSP FIR & Spectral Decomposition (`SwiftForecast`)**:
+5. **vDSP FIR & Spectral Decomposition (`SwiftForecast`)**:
    - 1D moving average convolution via `vDSP_convD` and real FFT decomposition via `vDSP_fft_zipD`.
 
 ---

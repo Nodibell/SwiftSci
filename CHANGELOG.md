@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactored & Consolidated (Architecture & Concurrency)
 - **`SwiftPreprocessing` Value Semantics**: Refactored `MinMaxScaler`, `StandardScaler`, and `RobustScaler` from `final class: @unchecked Sendable` to `struct: Sendable`. Updated `PreprocessingTransformer` protocol with `mutating func fit(_ data:)`, achieving strict Tier B value-semantics data-race freedom.
+- **Container Pipeline Element Mutation (`SwiftPreprocessing` & `SwiftML`)**: Fixed `Pipeline`, `ColumnTransformer`, `ClassificationPipeline`, and `RegressionPipeline` to mutate transformers directly by array index during `fit()`, ensuring fitted state persists in `steps` and `routes` for subsequent `transform()` / `predict()` calls on new data.
 - **`ExponentialSmoothing` Grid-Search Error Propagation (`SwiftForecast`)**: Eliminated silent `catch { continue }` swallowing in parameter optimization across all 3 method branches (`.simple`, `.double`, `.holtWinters`). Now tracks candidate errors and throws `ForecastError.trainingFailed` if all grid search candidates fail.
 - **`TypedColumn` Type-Safe Downcasting (`SwiftDataFrame`)**: Replaced all 11 instances of forced dynamic downcasting (`as!`) with safe conditional unwrapping (`as?`) and generic fallback loops (0 `as!` in file).
 - **Concurrency Decision Matrix (`CONTRIBUTING.md`)**: Formalized Concurrency Tiers (A: `actor`, B: `struct`, C: `final class @unchecked Sendable`) and `Estimator` vs `PreprocessingTransformer` design guidelines.

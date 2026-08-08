@@ -7,7 +7,7 @@ struct MissingValueIndicatorTests {
     
     @Test("MissingValueIndicator missingOnly mode")
     func testMissingOnly() throws {
-        let indicator = MissingValueIndicator(features: .missingOnly)
+        var indicator = MissingValueIndicator(features: .missingOnly)
         let data = [
             [1.0, Double.nan],
             [2.0, 3.0]
@@ -23,7 +23,7 @@ struct MissingValueIndicatorTests {
     
     @Test("MissingValueIndicator all mode")
     func testAllFeatures() throws {
-        let indicator = MissingValueIndicator(features: .all)
+        var indicator = MissingValueIndicator(features: .all)
         let data = [
             [1.0, Double.nan]
         ]

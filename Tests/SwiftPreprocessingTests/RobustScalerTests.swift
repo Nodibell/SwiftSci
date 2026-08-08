@@ -7,7 +7,7 @@ struct RobustScalerTests {
     
     @Test("RobustScaler basic centering and scaling")
     func testRobustScalerBasic() throws {
-        let scaler = RobustScaler()
+        var scaler = RobustScaler()
         let data = [
             [1.0],
             [2.0],

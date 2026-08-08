@@ -5,7 +5,7 @@ import Foundation
 /// with a final classification estimator.
 public final class ClassificationPipeline: ClassifierEstimator, @unchecked Sendable {
     /// The transformers.
-    public let transformers: [any PreprocessingTransformer]
+    public var transformers: [any PreprocessingTransformer]
     /// The estimator.
     public let estimator: any ClassifierEstimator
 
@@ -25,9 +25,9 @@ public final class ClassificationPipeline: ClassifierEstimator, @unchecked Senda
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         var current = features
-        for transformer in transformers {
-            try transformer.fit(current)
-            current = try transformer.transform(current)
+        for i in 0..<transformers.count {
+            try transformers[i].fit(current)
+            current = try transformers[i].transform(current)
         }
         try await estimator.fit(features: current, targets: targets)
     }
@@ -63,7 +63,7 @@ public final class ClassificationPipeline: ClassifierEstimator, @unchecked Senda
 /// with a final regression estimator.
 public final class RegressionPipeline: RegressorEstimator, @unchecked Sendable {
     /// The transformers.
-    public let transformers: [any PreprocessingTransformer]
+    public var transformers: [any PreprocessingTransformer]
     /// The estimator.
     public let estimator: any RegressorEstimator
 
@@ -83,9 +83,9 @@ public final class RegressionPipeline: RegressorEstimator, @unchecked Sendable {
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         var current = features
-        for transformer in transformers {
-            try transformer.fit(current)
-            current = try transformer.transform(current)
+        for i in 0..<transformers.count {
+            try transformers[i].fit(current)
+            current = try transformers[i].transform(current)
         }
         try await estimator.fit(features: current, targets: targets)
     }

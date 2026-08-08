@@ -7,7 +7,7 @@ struct MinMaxScalerTests {
     
     @Test("MinMaxScaler basic scaling [0, 1]")
     func testMinMaxScalerBasic() throws {
-        let scaler = MinMaxScaler()
+        var scaler = MinMaxScaler()
         let data: [[Double]] = [
             [1.0, 10.0],
             [2.0, 20.0],
@@ -26,7 +26,7 @@ struct MinMaxScalerTests {
     
     @Test("MinMaxScaler custom range [-1, 1]")
     func testMinMaxScalerCustomRange() throws {
-        let scaler = MinMaxScaler(range: (-1.0, 1.0))
+        var scaler = MinMaxScaler(range: (-1.0, 1.0))
         let data: [[Double]] = [
             [1.0],
             [2.0],
@@ -42,7 +42,7 @@ struct MinMaxScalerTests {
     
     @Test("MinMaxScaler constant column handling")
     func testMinMaxScalerConstant() throws {
-        let scaler = MinMaxScaler()
+        var scaler = MinMaxScaler()
         let data: [[Double]] = [
             [5.0, 2.0],
             [5.0, 4.0]
@@ -56,7 +56,7 @@ struct MinMaxScalerTests {
     
     @Test("MinMaxScaler errors")
     func testErrors() throws {
-        let scaler = MinMaxScaler()
+        var scaler = MinMaxScaler()
         
         #expect(throws: PreprocessingError.self) {
             try scaler.transform([[1.0]])

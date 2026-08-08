@@ -3,7 +3,7 @@ import Foundation
 /// Pipeline chains multiple PreprocessingTransformers sequentially.
 public final class Pipeline: PreprocessingTransformer, @unchecked Sendable {
     /// The steps.
-    public let steps: [any PreprocessingTransformer]
+    public var steps: [any PreprocessingTransformer]
     
     /// Creates a new instance.
     /// - Parameters:
@@ -15,9 +15,9 @@ public final class Pipeline: PreprocessingTransformer, @unchecked Sendable {
     /// Fits all the steps in the pipeline sequentially.
     public func fit(_ data: [[Double]]) throws {
         var current = data
-        for step in steps {
-            try step.fit(current)
-            current = try step.transform(current)
+        for i in 0..<steps.count {
+            try steps[i].fit(current)
+            current = try steps[i].transform(current)
         }
     }
     

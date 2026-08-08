@@ -8,8 +8,8 @@ struct PipelineTests {
     @Test("Pipeline chains Imputer and StandardScaler")
     func testPipelineChaining() throws {
         let imputer = Imputer(strategy: .mean)
-        let scaler = StandardScaler()
-        let pipeline = Pipeline(steps: [imputer, scaler])
+        var scaler = StandardScaler()
+        var pipeline = Pipeline(steps: [imputer, scaler])
         
         let trainData = [
             [2.0],
@@ -26,5 +26,20 @@ struct PipelineTests {
         #expect(abs(transformed[0][0] - (-1.224744871391589)) < 1e-6)
         #expect(abs(transformed[1][0] - 0.0) < 1e-6)
         #expect(abs(transformed[2][0] - 1.224744871391589) < 1e-6)
+    }
+
+    @Test("Pipeline fit followed by separate transform on new data")
+    func testPipelineFitThenSeparateTransform() throws {
+        let scaler = MinMaxScaler()
+        let pipeline = Pipeline(steps: [scaler])
+        
+        let trainData = [[10.0], [20.0]]
+        let testData = [[15.0]]
+        
+        try pipeline.fit(trainData)
+        let transformedTest = try pipeline.transform(testData)
+        
+        // Min = 10, Max = 20 -> (15 - 10)/(20 - 10) = 0.5
+        #expect(abs(transformedTest[0][0] - 0.5) < 1e-6)
     }
 }

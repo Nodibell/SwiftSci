@@ -1,7 +1,7 @@
 import Foundation
 
 /// RobustScaler scales features using statistics that are robust to outliers.
-public final class RobustScaler: PreprocessingTransformer, @unchecked Sendable {
+public struct RobustScaler: PreprocessingTransformer, Sendable {
     /// The with centering.
     public let withCentering: Bool
     /// The with scaling.
@@ -26,7 +26,7 @@ public final class RobustScaler: PreprocessingTransformer, @unchecked Sendable {
     }
     
     /// Fits the scaler by calculating the median and Interquartile Range (IQR) for each column.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }

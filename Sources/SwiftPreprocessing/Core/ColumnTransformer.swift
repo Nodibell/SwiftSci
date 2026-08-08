@@ -8,7 +8,7 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
         /// Name identifier for this transformation route.
         public let name: String
         /// Target preprocessor implementation.
-        public let transformer: any PreprocessingTransformer
+        public var transformer: any PreprocessingTransformer
         /// Array of targeted column indices.
         public let columnIndices: [Int]
 
@@ -25,7 +25,7 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
     }
 
     /// The routes.
-    public let routes: [Route]
+    public var routes: [Route]
     private var isFitted: Bool = false
 
     /// Creates a new instance.
@@ -41,14 +41,14 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
         guard !data.isEmpty else { throw PreprocessingError.invalidInput("Data cannot be empty") }
         let numCols = data[0].count
 
-        for route in routes {
-            for colIdx in route.columnIndices {
+        for i in 0..<routes.count {
+            for colIdx in routes[i].columnIndices {
                 guard colIdx >= 0 && colIdx < numCols else {
                     throw PreprocessingError.invalidInput("Column index \(colIdx) out of bounds (0..<\(numCols))")
                 }
             }
-            let slicedData = sliceColumns(data, indices: route.columnIndices)
-            try route.transformer.fit(slicedData)
+            let slicedData = sliceColumns(data, indices: routes[i].columnIndices)
+            try routes[i].transformer.fit(slicedData)
         }
         isFitted = true
     }

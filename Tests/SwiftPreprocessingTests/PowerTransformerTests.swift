@@ -7,7 +7,7 @@ struct PowerTransformerTests {
     
     @Test("PowerTransformer Yeo-Johnson transform")
     func testYeoJohnson() throws {
-        let pt = PowerTransformer(method: .yeoJohnson, standardize: false)
+        var pt = PowerTransformer(method: .yeoJohnson, standardize: false)
         let data = [
             [1.0],
             [2.0],
@@ -22,7 +22,7 @@ struct PowerTransformerTests {
     
     @Test("PowerTransformer Box-Cox positive requirement")
     func testBoxCoxValidation() throws {
-        let pt = PowerTransformer(method: .boxCox)
+        var pt = PowerTransformer(method: .boxCox)
         let data = [
             [0.0],
             [-1.0]

@@ -32,4 +32,19 @@ final class ExporterTests: XCTestCase {
         XCTAssertTrue(jsonStr.contains("TestONNXModel"))
         XCTAssertTrue(jsonStr.contains("LinearRegressor"))
     }
+
+    func testONNXExporterBinary() throws {
+        let binaryData = ONNXExporter.exportBinaryONNX(
+            name: "TestONNXBinaryModel",
+            inputs: ["x1", "x2"],
+            output: "y",
+            weights: [0.8, 0.2],
+            bias: 0.1
+        )
+
+        XCTAssertFalse(binaryData.isEmpty)
+        // Verify IR version tag 0x08 0x08
+        XCTAssertEqual(binaryData[0], 0x08)
+        XCTAssertEqual(binaryData[1], 0x08)
+    }
 }

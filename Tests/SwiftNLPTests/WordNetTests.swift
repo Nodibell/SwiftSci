@@ -49,4 +49,16 @@ struct WordNetTests {
         let wupSim = wn.wupSimilarity(dog, cat)
         #expect(wupSim > 0.5)
     }
+
+    @Test("WordNet wupSimilarity for unrelated synsets")
+    func testWupSimilarityUnrelated() throws {
+        let wn = WordNet()
+        guard let dog = wn.synsets(for: "dog").first,
+              let computer = wn.synsets(for: "computer").first else {
+            Issue.record("synsets not found")
+            return
+        }
+        let wupSim = wn.wupSimilarity(dog, computer)
+        #expect(wupSim > 0.0)
+    }
 }

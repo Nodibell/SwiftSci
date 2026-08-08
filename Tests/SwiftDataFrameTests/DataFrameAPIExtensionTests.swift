@@ -60,4 +60,19 @@ struct DataFrameAPIExtensionTests {
         #expect(meanCol[2] == 100.0)
         #expect(meanCol[3] == 100.0)
     }
+
+    @Test("TypedColumn sortedIndices for Float, Int32, and Date types")
+    func testTypedColumnSortedIndicesSpecializedTypes() throws {
+        let floatCol = TypedColumn<Float>(name: "float", values: [3.0, 1.0, 2.0])
+        #expect(floatCol.sortedIndices(ascending: true) == [1, 2, 0])
+
+        let int32Col = TypedColumn<Int32>(name: "int32", values: [30, 10, 20])
+        #expect(int32Col.sortedIndices(ascending: true) == [1, 2, 0])
+
+        let now = Date()
+        let date1 = now.addingTimeInterval(10)
+        let date2 = now.addingTimeInterval(20)
+        let dateCol = TypedColumn<Date>(name: "date", values: [date2, now, date1])
+        #expect(dateCol.sortedIndices(ascending: true) == [1, 2, 0])
+    }
 }

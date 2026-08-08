@@ -153,8 +153,9 @@ public actor ExponentialSmoothing {
             }
             
             // Search alpha over grid [0.1, 0.2, ..., 0.9]
-            var bestAlpha = 0.5
+            var bestAlpha: Double? = nil
             var minMse = Double.greatestFiniteMagnitude
+            var lastError: Error? = nil
             
             for a in stride(from: 0.1, through: 0.9, by: 0.1) {
                 do {
@@ -165,10 +166,13 @@ public actor ExponentialSmoothing {
                         bestAlpha = a
                     }
                 } catch {
-                    continue
+                    lastError = error
                 }
             }
-            self.alpha = bestAlpha
+            guard let resolvedAlpha = bestAlpha else {
+                throw ForecastError.trainingFailed("Simple exponential smoothing parameter optimization failed for all alpha candidates. Last error: \(lastError?.localizedDescription ?? "unknown")")
+            }
+            self.alpha = resolvedAlpha
         }
         
         // Double ES optimization
@@ -187,8 +191,9 @@ public actor ExponentialSmoothing {
             }
             
             // Search alpha
-            var bestAlpha = 0.5
+            var bestAlpha: Double? = nil
             var minMse = Double.greatestFiniteMagnitude
+            var lastError: Error? = nil
             for a in stride(from: 0.1, through: 0.9, by: 0.1) {
                 do {
                     try runSmoothing(alpha: a, beta: fixedBeta, gamma: 0.0)
@@ -198,10 +203,13 @@ public actor ExponentialSmoothing {
                         bestAlpha = a
                     }
                 } catch {
-                    continue
+                    lastError = error
                 }
             }
-            self.alpha = bestAlpha
+            guard let resolvedAlpha = bestAlpha else {
+                throw ForecastError.trainingFailed("Double exponential smoothing parameter optimization failed for all alpha candidates. Last error: \(lastError?.localizedDescription ?? "unknown")")
+            }
+            self.alpha = resolvedAlpha
         }
         
         // Holt-Winters optimization
@@ -224,8 +232,9 @@ public actor ExponentialSmoothing {
             }
             
             // Grid search alpha
-            var bestAlpha = 0.5
+            var bestAlpha: Double? = nil
             var minMse = Double.greatestFiniteMagnitude
+            var lastError: Error? = nil
             for a in stride(from: 0.1, through: 0.9, by: 0.2) {
                 do {
                     try runSmoothing(alpha: a, beta: fixedBeta, gamma: fixedGamma)
@@ -235,10 +244,13 @@ public actor ExponentialSmoothing {
                         bestAlpha = a
                     }
                 } catch {
-                    continue
+                    lastError = error
                 }
             }
-            self.alpha = bestAlpha
+            guard let resolvedAlpha = bestAlpha else {
+                throw ForecastError.trainingFailed("Holt-Winters exponential smoothing parameter optimization failed for all alpha candidates. Last error: \(lastError?.localizedDescription ?? "unknown")")
+            }
+            self.alpha = resolvedAlpha
         }
     }
     

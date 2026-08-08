@@ -7,7 +7,7 @@ struct NormalizerTests {
     
     @Test("Normalizer L2 norm")
     func testL2Normalization() throws {
-        let normalizer = Normalizer(norm: .l2)
+        var normalizer = Normalizer(norm: .l2)
         let data = [
             [3.0, 4.0],
             [0.0, 0.0]
@@ -21,7 +21,7 @@ struct NormalizerTests {
     
     @Test("Normalizer L1 norm")
     func testL1Normalization() throws {
-        let normalizer = Normalizer(norm: .l1)
+        var normalizer = Normalizer(norm: .l1)
         let data = [
             [1.0, -3.0]
         ]
@@ -32,7 +32,7 @@ struct NormalizerTests {
     
     @Test("Normalizer Max norm")
     func testMaxNormalization() throws {
-        let normalizer = Normalizer(norm: .max)
+        var normalizer = Normalizer(norm: .max)
         let data = [
             [5.0, -10.0]
         ]

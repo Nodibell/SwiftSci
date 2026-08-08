@@ -30,6 +30,27 @@ Please review and adhere to our [Code of Conduct](CODE_OF_CONDUCT.md) in all com
 - **Documentation:** Every public API method, struct, enum, and class must be documented using Swift DocC comments (`///`).
 - **Tests:** Add unit tests under `Tests/<Target>Tests` for every new algorithm or feature.
 
+## Architectural & Concurrency Design Criteria
+
+To maintain consistency before freezing the SwiftSci 3.0 API, all new types must adhere to these architectural criteria:
+
+### 1. Concurrency Tier Decision Matrix
+
+| Tier | Type Construct | Criteria & Use Cases | Examples |
+|---|---|---|---|
+| **Tier A** | `actor` | Stateful ML & Forecast models maintaining internal mutable arrays or multi-pass optimization state across concurrent tasks. | `KMeans`, `DBSCAN`, `ExponentialSmoothing`, `ARIMA` |
+| **Tier B** | `struct` (`Sendable`) | Pure value-semantics preprocessing transformers, data containers, value-typed columns, and configuration objects. Value semantics guarantee data-race freedom. | `TypedColumn`, `DataFrame`, `MinMaxScaler`, `StandardScaler`, `RobustScaler`, `Normalizer` |
+| **Tier C** | `final class` (`@unchecked Sendable`) | Reference-type container pipelines (`Pipeline`, `ColumnTransformer`) or wrappers for C-pointers/system APIs. Requires internal lock/synchronization or explicit design rationale. | `Pipeline`, `ColumnTransformer`, memory buffer wrappers |
+
+### 2. Model Hierarchy Guidelines: `Estimator` vs `PreprocessingTransformer`
+
+- **`Estimator` Protocol**: Used for predictive machine learning & time-series models (`SwiftML`, `SwiftCluster`, `SwiftForecast`).
+  - Core contract: `fit(data:)`, `predict(data:)`.
+  - Typical construct: `actor` (stateful fitting).
+- **`PreprocessingTransformer` Protocol**: Used for feature transformation and data pipeline operations (`SwiftPreprocessing`, `SwiftDataFrame`).
+  - Core contract: `fit(data:)`, `transform(data:)`, `fitTransform(data:)`.
+  - Typical construct: `struct` (immutable value-type transformations producing new `DataFrame` instances).
+
 ## Submitting Pull Requests
 
 1. Create a feature branch (`git checkout -b feature/my-new-algorithm`).

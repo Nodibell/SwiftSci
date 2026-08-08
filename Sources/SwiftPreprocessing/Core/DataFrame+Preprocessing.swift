@@ -7,7 +7,7 @@ extension PreprocessingTransformer {
     ///   - df: Target input `DataFrame`.
     ///   - columns: Array of column names to compute parameters from.
     /// - Throws: `PreprocessingError` if feature extraction or fitting fails.
-    public func fit(_ df: DataFrame, columns: [String]) throws {
+    public mutating func fit(_ df: DataFrame, columns: [String]) throws {
         try fit(df.toFeatureMatrix(columns))
     }
 
@@ -34,7 +34,7 @@ extension PreprocessingTransformer {
     ///   - columns: Array of column names to fit and transform.
     /// - Throws: `PreprocessingError` if fitting or transformation fails.
     /// - Returns: A new `DataFrame` with transformed numeric column values.
-    public func fitTransform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
+    public mutating func fitTransform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
         try fit(df, columns: columns)
         return try transform(df, columns: columns)
     }
@@ -48,7 +48,7 @@ extension DataFrame {
     /// Fits a StandardScaler on the specified columns.
     public func fitStandardScaler(columns names: [String]) throws -> StandardScaler {
         let features = try extractFeatures(columns: names)
-        let scaler = StandardScaler()
+        var scaler = StandardScaler()
         try scaler.fit(features)
         return scaler
     }
@@ -77,7 +77,7 @@ extension DataFrame {
     /// Fits a MinMaxScaler on the specified columns.
     public func fitMinMaxScaler(columns names: [String]) throws -> MinMaxScaler {
         let features = try extractFeatures(columns: names)
-        let scaler = MinMaxScaler()
+        var scaler = MinMaxScaler()
         try scaler.fit(features)
         return scaler
     }
@@ -185,7 +185,7 @@ extension DataFrame {
     /// Fits a RobustScaler on the specified columns.
     public func fitRobustScaler(columns names: [String], withCentering: Bool = true, withScaling: Bool = true, quantileRange: (Double, Double) = (25.0, 75.0)) throws -> RobustScaler {
         let features = try extractFeatures(columns: names)
-        let scaler = RobustScaler(withCentering: withCentering, withScaling: withScaling, quantileRange: quantileRange)
+        var scaler = RobustScaler(withCentering: withCentering, withScaling: withScaling, quantileRange: quantileRange)
         try scaler.fit(features)
         return scaler
     }

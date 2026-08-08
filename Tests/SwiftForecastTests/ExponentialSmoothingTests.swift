@@ -106,4 +106,13 @@ struct ExponentialSmoothingTests {
             try await unfittedModel.forecast(horizon: 2)
         }
     }
+    
+    @Test("Holt-Winters invalid beta parameter throws error")
+    func testHWInvalidBeta() async throws {
+        let model = ExponentialSmoothing(method: .holtWinters(beta: -0.5, gamma: 0.1, period: 4, seasonal: .additive))
+        let series = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        await #expect(throws: ForecastError.self) {
+            try await model.fit(series: series)
+        }
+    }
 }

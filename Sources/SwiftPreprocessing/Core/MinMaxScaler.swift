@@ -1,7 +1,7 @@
 import Foundation
 
 /// MinMaxScaler scales features to a specified range (default [0, 1]).
-public final class MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
+public struct MinMaxScaler: PreprocessingTransformer, Sendable {
     /// The data min.
     public private(set) var dataMin: [Double]?
     /// The data max.
@@ -17,7 +17,7 @@ public final class MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
     }
     
     /// Fits the scaler to the 2D input dataset.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }
@@ -72,7 +72,7 @@ public final class MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
     }
     
     /// Fits to data, then transforms it.
-    public func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
+    public mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
         try fit(data)
         return try transform(data)
     }

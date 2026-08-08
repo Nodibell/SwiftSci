@@ -7,7 +7,7 @@ struct PolynomialFeaturesTests {
     
     @Test("PolynomialFeatures degree 2 basic")
     func testPolynomialFeaturesBasic() throws {
-        let poly = PolynomialFeatures(degree: 2, interactionOnly: false, includeBias: true)
+        var poly = PolynomialFeatures(degree: 2, interactionOnly: false, includeBias: true)
         let data = [
             [2.0, 3.0]
         ]
@@ -22,7 +22,7 @@ struct PolynomialFeaturesTests {
     
     @Test("PolynomialFeatures degree 2 interaction only without bias")
     func testPolynomialFeaturesInteractionOnlyNoBias() throws {
-        let poly = PolynomialFeatures(degree: 2, interactionOnly: true, includeBias: false)
+        var poly = PolynomialFeatures(degree: 2, interactionOnly: true, includeBias: false)
         let data = [
             [2.0, 3.0]
         ]

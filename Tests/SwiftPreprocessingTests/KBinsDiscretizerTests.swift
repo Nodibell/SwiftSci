@@ -7,7 +7,7 @@ struct KBinsDiscretizerTests {
     
     @Test("KBinsDiscretizer uniform strategy ordinal encode")
     func testUniformOrdinal() throws {
-        let kb = KBinsDiscretizer(nBins: 3, strategy: .uniform, encode: .ordinal)
+        var kb = KBinsDiscretizer(nBins: 3, strategy: .uniform, encode: .ordinal)
         let data = [
             [0.0],
             [1.5],
@@ -28,7 +28,7 @@ struct KBinsDiscretizerTests {
     
     @Test("KBinsDiscretizer quantile strategy oneHot encode")
     func testQuantileOneHot() throws {
-        let kb = KBinsDiscretizer(nBins: 2, strategy: .quantile, encode: .oneHot)
+        var kb = KBinsDiscretizer(nBins: 2, strategy: .quantile, encode: .oneHot)
         let data = [
             [1.0],
             [2.0],

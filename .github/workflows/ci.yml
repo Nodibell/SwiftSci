@@ -87,7 +87,39 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
-  # 4. Benchmark
+  # 4. DocC Documentation Coverage Check
+  docc-check:
+    name: DocC Documentation Coverage Check
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with: { xcode-version: 'latest' }
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-swiftsci-spm-v3-${{ hashFiles('**/Package.resolved') }}
+      - name: Build DocC documentation and verify symbol coverage
+        run: |
+          swift package generate-documentation \
+            --target SwiftDataFrame \
+            --target SwiftStats \
+            --target SwiftPreprocessing \
+            --target SwiftML \
+            --target SwiftCluster \
+            --target SwiftNLP \
+            --target SwiftOptimize \
+            --target SwiftForecast \
+            --target SwiftLLM \
+            --target SwiftExplain \
+            --target SwiftVisualization \
+            --target SwiftVision \
+            --target SwiftDatabase \
+            --target SwiftAgent \
+            --warnings-as-errors
+
+  # 5. Benchmark
   performance-check:
     name: Performance Regression Check (Disabled in CI)
     runs-on: macos-latest

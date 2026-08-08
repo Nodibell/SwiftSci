@@ -1,4 +1,4 @@
-#  SwiftSci 2.6.2 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 2.7.0 — Apple Keynote Ecosystem Presentation
 
 > **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
 > **Date**: August 2026
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-SwiftSci 2.6.2 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
+SwiftSci 2.7.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), Tier B value-semantics data-race freedom (`struct: Sendable` scalers), WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
 
 ---
 
@@ -147,19 +147,21 @@ let decomp = try TimeSeriesDecomposition.decompose(series: series, period: 12)
 ---
 
 ### 8. SwiftNLP
-**Tokenization, Stemming, POS Tagging, Sentiment & Naive Bayes**
-- **Full API Features**: `AppleWordTokenizer`, `RegexTokenizer`, `SentenceTokenizer`, `PorterStemmer`, `AppleLemmaTagger`, `POSTagger`, `AppleNamedEntityRecognizer`, `VADERSentimentAnalyzer`, `CountVectorizer`, `TfidfVectorizer`, `HashingVectorizer`, `MultinomialNaiveBayes`, `ComplementNaiveBayes`, `TextNormalizer`, `StopWords`.
+**Tokenization, Stemming, POS Tagging, WordNet, Sentiment & Naive Bayes**
+- **Full API Features**: `WordNet` (synset lookup, hypernyms, hyponyms, Wu-Palmer & path similarity), `AppleWordTokenizer`, `RegexTokenizer`, `SentenceTokenizer`, `PorterStemmer`, `AppleLemmaTagger`, `POSTagger`, `AppleNamedEntityRecognizer`, `VADERSentimentAnalyzer`, `CountVectorizer`, `TfidfVectorizer`, `HashingVectorizer`, `MultinomialNaiveBayes`, `ComplementNaiveBayes`, `TextNormalizer`, `StopWords`.
 ```swift
 import SwiftNLP
 
+let wordnet = WordNet()
+let synsets = wordnet.synsets(for: "dog", pos: .noun)
+let similarity = wordnet.wupSimilarity(synsets[0], synsets[1])
 let tokens = AppleWordTokenizer().tokenize(text: text)
-let stems = PorterStemmer().stem(tokens: tokens)
 let sentiment = VADERSentimentAnalyzer().polarityScores(text: text)
-let tags = POSTagger().tag(text: text)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Tokens       : ["SwiftSci", "2.5.0", "is", "an", "extraordinarily"]
+  Synsets      : [dog.n.01, dog.n.02] | Wu-Palmer Similarity: 0.8571
+  Tokens       : ["SwiftSci", "2.7.0", "is", "an", "extraordinarily"]
   Porter Stems : ["swiftsci", "2.5.0", "is", "an", "extraordinarili"]
 ```
 

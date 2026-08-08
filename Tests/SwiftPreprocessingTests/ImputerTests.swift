@@ -7,7 +7,7 @@ struct ImputerTests {
     
     @Test("Imputer mean strategy")
     func testMeanImputation() throws {
-        let imputer = Imputer(strategy: .mean)
+        var imputer = Imputer(strategy: .mean)
         let data = [
             [1.0, 2.0],
             [Double.nan, 4.0],
@@ -24,7 +24,7 @@ struct ImputerTests {
     
     @Test("Imputer median strategy")
     func testMedianImputation() throws {
-        let imputer = Imputer(strategy: .median)
+        var imputer = Imputer(strategy: .median)
         let data = [
             [1.0],
             [10.0],
@@ -39,7 +39,7 @@ struct ImputerTests {
     
     @Test("Imputer mostFrequent strategy")
     func testMostFrequentImputation() throws {
-        let imputer = Imputer(strategy: .mostFrequent)
+        var imputer = Imputer(strategy: .mostFrequent)
         let data = [
             [5.0],
             [3.0],
@@ -56,7 +56,7 @@ struct ImputerTests {
     
     @Test("Imputer constant strategy")
     func testConstantImputation() throws {
-        let imputer = Imputer(strategy: .constant(-999.0))
+        var imputer = Imputer(strategy: .constant(-999.0))
         let data = [
             [1.0, Double.nan],
             [Double.nan, 2.0]

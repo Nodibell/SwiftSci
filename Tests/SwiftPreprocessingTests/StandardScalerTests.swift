@@ -8,7 +8,7 @@ struct StandardScalerTests {
     
     @Test("StandardScaler basic transformation")
     func testStandardScalerBasic() throws {
-        let scaler = StandardScaler()
+        var scaler = StandardScaler()
         let data: [[Double]] = [
             [1.0, 2.0],
             [3.0, 4.0],
@@ -36,7 +36,7 @@ struct StandardScalerTests {
     
     @Test("StandardScaler constant column handling")
     func testConstantColumn() throws {
-        let scaler = StandardScaler()
+        var scaler = StandardScaler()
         let data: [[Double]] = [
             [5.0, 2.0],
             [5.0, 4.0],
@@ -58,7 +58,7 @@ struct StandardScalerTests {
     
     @Test("StandardScaler error handling")
     func testErrors() throws {
-        let scaler = StandardScaler()
+        var scaler = StandardScaler()
         
         // Transform before fit throws
         #expect(throws: PreprocessingError.self) {

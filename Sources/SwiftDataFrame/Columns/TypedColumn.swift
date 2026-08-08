@@ -68,8 +68,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter indices: Array of row indices to gather.
     /// - Returns: A new `AnyColumn` containing elements at the requested indices.
     public func gathered(at indices: [Int]) -> any AnyColumn {
-        if T.self == Double.self {
-            let doubleCol = self as! TypedColumn<Double>
+        if let doubleCol = self as? TypedColumn<Double> {
             return doubleCol.vGather(at: indices)
         }
         let n = indices.count
@@ -93,16 +92,13 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter condition: Filter condition comparison operator and threshold.
     /// - Returns: Array of row indices matching the condition, or `nil` if unsupported.
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? {
-        if T.self == Double.self {
-            let doubles = values as! [Double?]
+        if let doubles = values as? [Double?] {
             return filterIndicesDouble(values: doubles, condition: condition)
         }
-        if T.self == Int64.self {
-            let ints = values as! [Int64?]
+        if let ints = values as? [Int64?] {
             return filterIndicesInt64(values: ints, condition: condition)
         }
-        if T.self == String.self {
-            let strings = values as! [String?]
+        if let strings = values as? [String?] {
             return filterIndicesString(values: strings, condition: condition)
         }
         return nil
@@ -148,34 +144,27 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
         // Specialize common Comparable element types without constraining SupportedType
         // (Bool is Hashable but not Comparable).
-        if T.self == Double.self {
-            let doubles = vals as! [Double?]
+        if let doubles = vals as? [Double?] {
             return sortIndicesPrimitiveFast(doubles, ascending: ascending)
         }
-        if T.self == Float.self {
-            let floats = vals as! [Float?]
+        if let floats = vals as? [Float?] {
             return sortIndicesPrimitiveFast(floats, ascending: ascending)
         }
-        if T.self == Int64.self {
-            let ints = vals as! [Int64?]
+        if let ints = vals as? [Int64?] {
             return sortIndicesPrimitiveFast(ints, ascending: ascending)
         }
-        if T.self == Int32.self {
-            let ints = vals as! [Int32?]
+        if let ints = vals as? [Int32?] {
             return sortIndicesPrimitiveFast(ints, ascending: ascending)
         }
-        if T.self == String.self {
-            let strings = vals as! [String?]
+        if let strings = vals as? [String?] {
             sortIndices(&indices, ascending: ascending) { strings[$0] }
             return indices
         }
-        if T.self == Date.self {
-            let dates = vals as! [Date?]
+        if let dates = vals as? [Date?] {
             sortIndices(&indices, ascending: ascending) { dates[$0] }
             return indices
         }
-        if T.self == Bool.self {
-            let bools = vals as! [Bool?]
+        if let bools = vals as? [Bool?] {
             sortIndices(&indices, ascending: ascending) { i -> Int? in
                 bools[i].map { $0 ? 1 : 0 }
             }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Standardize features by removing the mean and scaling to unit variance.
-public final class StandardScaler: PreprocessingTransformer, @unchecked Sendable {
+public struct StandardScaler: PreprocessingTransformer, Sendable {
     /// The mean.
     public private(set) var mean: [Double]?
     /// The std.
@@ -12,7 +12,7 @@ public final class StandardScaler: PreprocessingTransformer, @unchecked Sendable
     
     /// Fits the scaler to the 2D input dataset.
     /// - Parameter data: A 2D array of features of shape [rows, cols].
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }
@@ -80,7 +80,7 @@ public final class StandardScaler: PreprocessingTransformer, @unchecked Sendable
     }
     
     /// Fits to data, then transforms it.
-    public func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
+    public mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
         try fit(data)
         return try transform(data)
     }

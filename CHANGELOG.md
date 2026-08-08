@@ -4,6 +4,22 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-08-07
+
+### Refactored & Consolidated (Architecture & Concurrency)
+- **`SwiftPreprocessing` Value Semantics**: Refactored `MinMaxScaler`, `StandardScaler`, and `RobustScaler` from `final class: @unchecked Sendable` to `struct: Sendable`. Updated `PreprocessingTransformer` protocol with `mutating func fit(_ data:)`, achieving strict Tier B value-semantics data-race freedom.
+- **Container Pipeline Element Mutation (`SwiftPreprocessing` & `SwiftML`)**: Fixed `Pipeline`, `ColumnTransformer`, `ClassificationPipeline`, and `RegressionPipeline` to mutate transformers directly by array index during `fit()`, ensuring fitted state persists in `steps` and `routes` for subsequent `transform()` / `predict()` calls on new data.
+- **`ExponentialSmoothing` Grid-Search Error Propagation (`SwiftForecast`)**: Eliminated silent `catch { continue }` swallowing in parameter optimization across all 3 method branches (`.simple`, `.double`, `.holtWinters`). Now tracks candidate errors and throws `ForecastError.trainingFailed` if all grid search candidates fail.
+- **`TypedColumn` Type-Safe Downcasting (`SwiftDataFrame`)**: Replaced all 11 instances of forced dynamic downcasting (`as!`) with safe conditional unwrapping (`as?`) and generic fallback loops (0 `as!` in file).
+- **Concurrency Decision Matrix (`CONTRIBUTING.md`)**: Formalized Concurrency Tiers (A: `actor`, B: `struct`, C: `final class @unchecked Sendable`) and `Estimator` vs `PreprocessingTransformer` design guidelines.
+- **DocC CI Gate (`.github/workflows/ci.yml`)**: Integrated `docc-check` step (`swift package generate-documentation --warnings-as-errors`) in GitHub Actions CI.
+
+### Added
+- **`WordNet` Semantic Engine (`SwiftNLP`)**: Added native WordNet synset lookup (`synsets(for:)`), hypernym/hyponym tree traversal (`hypernyms(of:)`, `hyponyms(of:)`), and shortest path / Wu-Palmer concept similarity metrics (`pathSimilarity`, `wupSimilarity`).
+- **Binary ONNX Protobuf Exporter (`SwiftML`)**: Added `ONNXExporter.exportBinaryONNX` constructing binary ONNX `ModelProto` wire format bytes for `.onnx` model deployment.
+
+---
+
 ## [2.6.2] - 2026-08-02
 
 ### Added & Verified

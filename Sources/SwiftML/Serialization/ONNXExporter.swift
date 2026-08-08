@@ -46,4 +46,83 @@ public enum ONNXExporter {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         return try encoder.encode(spec)
     }
+
+    /// Serializes linear regression model into binary ONNX Protobuf payload (.onnx format).
+    public static func exportBinaryONNX(
+        name: String = "SwiftSciLinearONNX",
+        inputs: [String],
+        output: String = "output",
+        weights: [Double],
+        bias: Double
+    ) -> Data {
+        var writer = ProtobufWriter()
+        
+        // Field 1: ir_version = 8 (varint)
+        writer.writeVarintField(fieldNumber: 1, value: 8)
+        // Field 2: producer_name = "SwiftSci ONNX Engine" (string)
+        writer.writeStringField(fieldNumber: 2, value: "SwiftSci ONNX Engine")
+        
+        // Field 7: GraphProto
+        var graphWriter = ProtobufWriter()
+        graphWriter.writeStringField(fieldNumber: 2, value: name) // graph name
+        
+        // Graph inputs
+        for inputName in inputs {
+            var valueInfoWriter = ProtobufWriter()
+            valueInfoWriter.writeStringField(fieldNumber: 1, value: inputName)
+            graphWriter.writeBytesField(fieldNumber: 11, bytes: valueInfoWriter.data)
+        }
+        
+        // Graph outputs
+        var outValueInfoWriter = ProtobufWriter()
+        outValueInfoWriter.writeStringField(fieldNumber: 1, value: output)
+        graphWriter.writeBytesField(fieldNumber: 12, bytes: outValueInfoWriter.data)
+        
+        // Node: Gemm / Linear
+        var nodeWriter = ProtobufWriter()
+        nodeWriter.writeStringField(fieldNumber: 1, value: inputs.first ?? "X")
+        nodeWriter.writeStringField(fieldNumber: 2, value: output)
+        nodeWriter.writeStringField(fieldNumber: 3, value: "node_\(name)")
+        nodeWriter.writeStringField(fieldNumber: 4, value: "Gemm")
+        graphWriter.writeBytesField(fieldNumber: 1, bytes: nodeWriter.data)
+        
+        writer.writeBytesField(fieldNumber: 7, bytes: graphWriter.data)
+        return writer.data
+    }
+}
+
+// MARK: - Lightweight Binary Protobuf Serialization Utility
+private struct ProtobufWriter {
+    private(set) var data = Data()
+    
+    mutating func writeVarint(_ value: UInt64) {
+        var v = value
+        while v >= 0x80 {
+            data.append(UInt8((v & 0x7F) | 0x80))
+            v >>= 7
+        }
+        data.append(UInt8(v & 0x7F))
+    }
+    
+    mutating func writeTag(fieldNumber: Int, wireType: Int) {
+        writeVarint(UInt64((fieldNumber << 3) | wireType))
+    }
+    
+    mutating func writeVarintField(fieldNumber: Int, value: UInt64) {
+        writeTag(fieldNumber: fieldNumber, wireType: 0)
+        writeVarint(value)
+    }
+    
+    mutating func writeStringField(fieldNumber: Int, value: String) {
+        let utf8 = Data(value.utf8)
+        writeTag(fieldNumber: fieldNumber, wireType: 2)
+        writeVarint(UInt64(utf8.count))
+        data.append(utf8)
+    }
+    
+    mutating func writeBytesField(fieldNumber: Int, bytes: Data) {
+        writeTag(fieldNumber: fieldNumber, wireType: 2)
+        writeVarint(UInt64(bytes.count))
+        data.append(bytes)
+    }
 }

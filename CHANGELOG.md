@@ -4,6 +4,20 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-08-09
+
+### Added
+- **`LinearSVC` & `LinearSVCOneVsRest` (`SwiftML`)**: L2-regularized Hinge-loss Support Vector Classifier with dual CPU and Apple Silicon Metal GPU backends via `mlx-swift`. `LinearSVCOneVsRest` wraps binary `LinearSVC` into a parallel One-Vs-Rest multi-class strategy.
+- **`DataFrame.unique` / `AnyColumn.unique` / `TypedColumn.unique` (`SwiftDataFrame`)**: Deduplication API preserving first-occurrence row order across all column types.
+- **Binary ONNX `TensorProto` Initializers (`SwiftML`)**: `ONNXExporter.exportBinaryONNX` now embeds `TensorProto` weight and bias initializers, producing standard binary `.onnx` files compatible with `onnxruntime`.
+
+### Fixed
+- **`RandomizedSearchCV` Seeded Sampling (`SwiftOptimize`)**: Replaced non-deterministic `Array.randomElement()` with `SeededRandom`-based sampling in `searchGeneric`, ensuring reproducible hyperparameter search results.
+- **`LogisticRegression` CPU–GPU Sync (`SwiftML`)**: Eliminated redundant CPU↔GPU synchronization barriers during training forward/backward passes, reducing per-epoch overhead.
+- **`SurvivalAnalysisTests` Timeline Points (`SwiftStats`)**: Fixed incorrect expected timeline point count in `KaplanMeier` test assertions.
+
+---
+
 ## [2.7.0] - 2026-08-07
 
 ### Refactored & Consolidated (Architecture & Concurrency)

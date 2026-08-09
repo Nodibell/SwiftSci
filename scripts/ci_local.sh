@@ -10,6 +10,7 @@ echo "📦 2. Building SwiftSci (Release mode)..."
 swift build -c release
 
 echo "🧪 3. Running ALL Unit Tests (including MLX GPU & Metal accelerated suites)..."
+cp .build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib . 2>/dev/null || true
 swift test --enable-code-coverage
 
 echo "📚 4. Checking DocC Documentation Warnings..."

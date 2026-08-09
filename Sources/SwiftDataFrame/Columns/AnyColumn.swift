@@ -32,6 +32,9 @@ public protocol AnyColumn: Sendable {
     /// Returns indices sorted by value (nulls last).
     func sortedIndices(ascending: Bool) -> [Int]
 
+    /// Returns a new column containing only unique elements (preserving order of first appearance).
+    var unique: any AnyColumn { get }
+
     /// Returns a new column shifted by `by` rows, filled with nulls at the edges.
     func lagged(by offset: Int) -> any AnyColumn
 

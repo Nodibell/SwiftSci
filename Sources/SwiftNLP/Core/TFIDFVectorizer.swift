@@ -15,6 +15,12 @@ public actor TFIDFVectorizer {
         "who", "whom", "this", "that", "these", "those", "am", "as"
     ]
     
+    /// Optional maximum number of vocabulary features to retain (ordered by document frequency).
+    public let maxFeatures: Int?
+    
+    /// Minimum document frequency required for a term to be included in vocabulary.
+    public let minDF: Int
+
     /// Map of word to vocabulary index.
     public private(set) var vocabulary: [String: Int] = [:]
     
@@ -22,25 +28,21 @@ public actor TFIDFVectorizer {
     public private(set) var idfs: [Double] = []
     
     /// Initializes a new TFIDFVectorizer.
-    public init() {}
+    /// - Parameters:
+    ///   - maxFeatures: Optional maximum number of features to retain by term frequency.
+    ///   - minDF: Minimum document frequency threshold. Defaults to 1.
+    public init(maxFeatures: Int? = nil, minDF: Int = 1) {
+        self.maxFeatures = maxFeatures.map { max(1, $0) }
+        self.minDF = max(1, minDF)
+    }
     
-    /// Tokenizes and cleans a document string.
+    /// Tokenizes a preprocessed document string into tokens.
     /// - Parameter doc: Input string document.
     /// - Returns: A list of clean tokens.
     private func tokenize(_ doc: String) -> [String] {
-        let cleaned = doc.lowercased().map { char -> String in
-            if char.isLetter || char.isNumber || char.isWhitespace {
-                return String(char)
-            } else {
-                return " "
-            }
-        }.joined()
-        
-        let tokens = cleaned.components(separatedBy: .whitespacesAndNewlines)
+        return doc.lowercased().components(separatedBy: .whitespacesAndNewlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            
-        return tokens.filter { !Self.stopWords.contains($0) }
+            .filter { !$0.isEmpty && !Self.stopWords.contains($0) }
     }
     
     /// Fits the vectorizer on a corpus of documents, building the vocabulary and computing IDFs.
@@ -50,25 +52,41 @@ public actor TFIDFVectorizer {
             throw NLPError.emptyInput
         }
         
-        // 1. Tokenize all documents and build vocabulary
-        var allTokens = Set<String>()
+        // 1. Tokenize all documents and build document frequencies
         var docTokenSets = [Set<String>]()
+        var dfMap = [String: Int]()
         
         for doc in documents {
             let tokens = tokenize(doc)
             let tokenSet = Set(tokens)
             docTokenSets.append(tokenSet)
-            for tok in tokens {
-                allTokens.insert(tok)
+            for tok in tokenSet {
+                dfMap[tok, default: 0] += 1
             }
         }
         
-        guard !allTokens.isEmpty else {
+        // Filter terms by minDF
+        var validTerms = dfMap.filter { $0.value >= minDF }.keys.map { String($0) }
+        
+        guard !validTerms.isEmpty else {
             throw NLPError.invalidVocabulary
         }
         
-        // Sort vocabulary for deterministic indexing
-        let sortedVocab = allTokens.sorted()
+        // If maxFeatures is specified, select top maxFeatures by document frequency
+        if let maxF = maxFeatures, validTerms.count > maxF {
+            validTerms.sort { t1, t2 in
+                let df1 = dfMap[t1] ?? 0
+                let df2 = dfMap[t2] ?? 0
+                if df1 != df2 {
+                    return df1 > df2
+                }
+                return t1 < t2
+            }
+            validTerms = Array(validTerms.prefix(maxF))
+        }
+        
+        // Sort selected vocabulary alphabetically for deterministic indexing
+        let sortedVocab = validTerms.sorted()
         var vocabMap = [String: Int]()
         for (idx, word) in sortedVocab.enumerated() {
             vocabMap[word] = idx
@@ -79,7 +97,7 @@ public actor TFIDFVectorizer {
         var idfValues = [Double](repeating: 0.0, count: sortedVocab.count)
         
         for (idx, word) in sortedVocab.enumerated() {
-            let df = Double(docTokenSets.filter { $0.contains(word) }.count)
+            let df = Double(dfMap[word] ?? 0)
             idfValues[idx] = log((1.0 + n) / (1.0 + df)) + 1.0
         }
         

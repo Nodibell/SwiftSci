@@ -80,11 +80,31 @@ public enum ONNXExporter {
         
         // Node: Gemm / Linear
         var nodeWriter = ProtobufWriter()
+        let weightName = "\(name)_weight"
+        let biasName = "\(name)_bias"
         nodeWriter.writeStringField(fieldNumber: 1, value: inputs.first ?? "X")
+        nodeWriter.writeStringField(fieldNumber: 1, value: weightName)
+        nodeWriter.writeStringField(fieldNumber: 1, value: biasName)
         nodeWriter.writeStringField(fieldNumber: 2, value: output)
         nodeWriter.writeStringField(fieldNumber: 3, value: "node_\(name)")
         nodeWriter.writeStringField(fieldNumber: 4, value: "Gemm")
         graphWriter.writeBytesField(fieldNumber: 1, bytes: nodeWriter.data)
+        
+        // Initializer 1: Weights TensorProto
+        var weightInitWriter = ProtobufWriter()
+        weightInitWriter.writeStringField(fieldNumber: 1, value: weightName)
+        weightInitWriter.writeVarintField(fieldNumber: 2, value: 11) // DOUBLE = 11
+        for w in weights {
+            weightInitWriter.writeDoubleField(fieldNumber: 7, value: w)
+        }
+        graphWriter.writeBytesField(fieldNumber: 5, bytes: weightInitWriter.data)
+        
+        // Initializer 2: Bias TensorProto
+        var biasInitWriter = ProtobufWriter()
+        biasInitWriter.writeStringField(fieldNumber: 1, value: biasName)
+        biasInitWriter.writeVarintField(fieldNumber: 2, value: 11) // DOUBLE = 11
+        biasInitWriter.writeDoubleField(fieldNumber: 7, value: bias)
+        graphWriter.writeBytesField(fieldNumber: 5, bytes: biasInitWriter.data)
         
         writer.writeBytesField(fieldNumber: 7, bytes: graphWriter.data)
         return writer.data
@@ -111,6 +131,12 @@ private struct ProtobufWriter {
     mutating func writeVarintField(fieldNumber: Int, value: UInt64) {
         writeTag(fieldNumber: fieldNumber, wireType: 0)
         writeVarint(value)
+    }
+    
+    mutating func writeDoubleField(fieldNumber: Int, value: Double) {
+        writeTag(fieldNumber: fieldNumber, wireType: 1)
+        var bitPattern = value.bitPattern
+        withUnsafeBytes(of: &bitPattern) { data.append(contentsOf: $0) }
     }
     
     mutating func writeStringField(fieldNumber: Int, value: String) {

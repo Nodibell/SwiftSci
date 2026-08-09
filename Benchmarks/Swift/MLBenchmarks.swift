@@ -117,6 +117,19 @@ struct MLBenchmarks: BenchmarkSuite {
         }
         results.append(isoResult)
 
+        // ── 7. LinearSVC (SwiftML, Metal GPU) ────────────────────────────
+        let (svcX, svcY) = MLBenchmarks.makeClassification(rows: 1_000, cols: 4)
+        let svcResult = await BenchmarkRunner.run(
+            name: "LinearSVC fit (1k×4, 100 epochs, Metal GPU)",
+            module: module,
+            warmup: 1,
+            iterations: 5
+        ) {
+            let svc = LinearSVC(C: 1.0, device: .auto)
+            try await svc.fit(features: svcX, targets: svcY, learningRate: 0.01, epochs: 100)
+        }
+        results.append(svcResult)
+
         return results
     }
 }

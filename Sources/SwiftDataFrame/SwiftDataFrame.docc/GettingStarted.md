@@ -41,3 +41,15 @@ summary.debugPrint()
 
 let joined = try df1.join(df2, on: "id", how: .inner)
 ```
+
+### 4. Deduplication
+
+`DataFrame.unique` removes duplicate rows while preserving first-occurrence order:
+
+```swift
+// Remove duplicate rows across all columns
+let deduplicated = df.unique
+
+// Deduplicate a single column's values
+let uniqueCategories = df["category"].unique
+```

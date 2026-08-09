@@ -80,6 +80,10 @@ struct DataFrameAPIExtensionTests {
         #expect(dfUnique.shape.rows == 4) // (A,1), (B,2), (B,3), (C,1)
         #expect(dfUnique[column: "cat", as: String.self]?.values == ["A", "B", "B", "C"])
         #expect(dfUnique[column: "val", as: Int64.self]?.values == [1, 2, 3, 1])
+
+        // Edge case: empty DataFrame.unique returns itself (guard branch)
+        let empty = try DataFrame(columns: [TypedColumn<String>(name: "x", values: [])])
+        #expect(empty.unique.shape.rows == 0)
     }
 
     @Test("TypedColumn sortedIndices for Float, Int32, and Date types")

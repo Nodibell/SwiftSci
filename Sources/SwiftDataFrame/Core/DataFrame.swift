@@ -264,6 +264,33 @@ public struct DataFrame: Sendable {
         return gathered(at: selected)
     }
 
+    /// Returns a new `DataFrame` containing only unique rows (deduplicated), preserving order of first appearance.
+    public var unique: DataFrame {
+        guard shape.rows > 0 else { return self }
+        
+        var seenRows = Set<String>()
+        var keepIndices: [Int] = []
+        keepIndices.reserveCapacity(shape.rows)
+        
+        for i in 0..<shape.rows {
+            var rowRepresentation = ""
+            for colName in _columnOrder {
+                if let col = _columns[colName] {
+                    if let val = col.value(at: i) {
+                        rowRepresentation.append("\(val)|")
+                    } else {
+                        rowRepresentation.append("nil|")
+                    }
+                }
+            }
+            if seenRows.insert(rowRepresentation).inserted {
+                keepIndices.append(i)
+            }
+        }
+        
+        return gathered(at: keepIndices)
+    }
+
     // MARK: – Filtering
 
     /// Filters rows using a predicate closure over raw row index (zero allocation).

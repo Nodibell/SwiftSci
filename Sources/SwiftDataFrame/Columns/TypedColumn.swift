@@ -64,6 +64,33 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return TypedColumn<T>(name: name, values: result)
     }
 
+    /// Returns a new column containing only unique elements (preserving order of first appearance).
+    public var unique: any AnyColumn {
+        return typedUnique
+    }
+
+    /// Strongly-typed property returning `TypedColumn<T>` containing only unique elements (preserving order of first appearance).
+    public var typedUnique: TypedColumn<T> {
+        var seen: Set<T> = []
+        var seenNull = false
+        var uniqueValues: [T?] = []
+        uniqueValues.reserveCapacity(values.count)
+        
+        for val in values {
+            if let v = val {
+                if seen.insert(v).inserted {
+                    uniqueValues.append(v)
+                }
+            } else {
+                if !seenNull {
+                    seenNull = true
+                    uniqueValues.append(nil)
+                }
+            }
+        }
+        return TypedColumn<T>(name: name, values: uniqueValues)
+    }
+
     /// Gathers elements at the specified row indices (uses SIMD/vDSP vectorization for `Double` columns).
     /// - Parameter indices: Array of row indices to gather.
     /// - Returns: A new `AnyColumn` containing elements at the requested indices.

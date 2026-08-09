@@ -179,15 +179,14 @@ public actor LogisticRegression: ClassifierEstimator {
             let (_, grads) = gradFn([w, b])
             w = w - lr * grads[0]
             b = b - lr * grads[1]
-            
-            eval(w, b)
-            
-            let wArray = w.asArray(Float.self)
-            let bArray = b.asArray(Float.self)
-            if wArray.contains(where: { $0.isNaN || $0.isInfinite }) ||
-               bArray.contains(where: { $0.isNaN || $0.isInfinite }) {
-                throw MLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
-            }
+        }
+        
+        eval(w, b)
+        let wArray = w.asArray(Float.self)
+        let bArray = b.asArray(Float.self)
+        if wArray.contains(where: { $0.isNaN || $0.isInfinite }) ||
+           bArray.contains(where: { $0.isNaN || $0.isInfinite }) {
+            throw MLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
         }
         
         self.weights = w

@@ -61,7 +61,7 @@ struct TFIDFTests {
         }
     }
 
-    @Test("TFIDF fitting on DataFrame")
+    @Test("TF-IDF fitting on DataFrame")
     func testNLPGlue() async throws {
         let text = TypedColumn<String>(name: "text", values: [
             "The quick brown fox",
@@ -73,5 +73,56 @@ struct TFIDFTests {
         let tfidf = try await df.fitTFIDF(column: "text")
         let vocab = await tfidf.vocabulary
         #expect(vocab.count == 7)
+    }
+
+    @Test("TF-IDF maxFeatures limits vocabulary size")
+    func testMaxFeatures() async throws {
+        // 4 unique terms across docs, maxFeatures=2 keeps top 2 by doc frequency
+        let corpus = [
+            "cat dog bird",
+            "cat dog fish",
+            "cat lion"
+        ]
+        let vectorizer = TFIDFVectorizer(maxFeatures: 2)
+        try await vectorizer.fit(corpus)
+        let vocab = await vectorizer.vocabulary
+        // "cat" appears in 3 docs, "dog" in 2 → top 2
+        #expect(vocab.count == 2)
+        #expect(vocab["cat"] != nil)
+        #expect(vocab["dog"] != nil)
+    }
+
+    @Test("TF-IDF minDF filters rare terms")
+    func testMinDF() async throws {
+        // "rare" appears in only 1 doc; minDF=2 should exclude it
+        let corpus = [
+            "cat dog rare",
+            "cat dog",
+            "cat dog"
+        ]
+        let vectorizer = TFIDFVectorizer(minDF: 2)
+        try await vectorizer.fit(corpus)
+        let vocab = await vectorizer.vocabulary
+        #expect(vocab["rare"] == nil)
+        #expect(vocab["cat"] != nil)
+        #expect(vocab["dog"] != nil)
+    }
+
+    @Test("TF-IDF fitTransform labeled overload produces same result as fit+transform")
+    func testFitTransformLabeledOverload() async throws {
+        let corpus = ["hello world", "world swift"]
+        let v1 = TFIDFVectorizer()
+        let matrix1 = try await v1.fitTransform(documents: corpus)
+
+        let v2 = TFIDFVectorizer()
+        try await v2.fit(documents: corpus)
+        let matrix2 = try await v2.transform(documents: corpus)
+
+        #expect(matrix1.count == matrix2.count)
+        for (row1, row2) in zip(matrix1, matrix2) {
+            for (v1, v2) in zip(row1, row2) {
+                #expect(abs(v1 - v2) < 1e-9)
+            }
+        }
     }
 }

@@ -11,6 +11,7 @@ High-Performance Columnar Data Tables built on Apache Arrow.
 - **Apache Arrow Integration**: Zero-copy memory sharing and Arrow IPC buffer conversions.
 - **Relational Operations**: Fast hash-joins (`inner`, `left`, `right`, `outer`), grouping, and aggregations.
 - **Reshaping & Filtering**: Pivot, melt, index-based row gathering, and vDSP mask filtering.
+- **Deduplication**: `DataFrame.unique`, `AnyColumn.unique`, and `TypedColumn.unique` with first-occurrence order preservation.
 - **Streaming I/O**: Direct HTTP/HTTPS dataset streaming via `DataFrame.readURL` and zero-allocation CSV parsing.
 
 ### Example Usage

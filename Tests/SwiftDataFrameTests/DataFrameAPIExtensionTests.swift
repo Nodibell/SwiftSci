@@ -61,6 +61,31 @@ struct DataFrameAPIExtensionTests {
         #expect(meanCol[3] == 100.0)
     }
 
+    @Test("TypedColumn.unique and DataFrame.unique return deduplicated elements and rows")
+    func testUniqueProperty() throws {
+        // 1. Column unique
+        let col = TypedColumn<String>(name: "category", values: ["спорт", "новини", "спорт", "політика", "новини", nil, nil])
+        let colUnique = col.typedUnique
+        #expect(colUnique.values == ["спорт", "новини", "політика", nil])
+        
+        let anyColUnique = col.unique
+        #expect(anyColUnique.count == 4)
+
+        // 2. DataFrame unique
+        let c1 = TypedColumn<String>(name: "cat", values: ["A", "B", "A", "B", "C"])
+        let c2 = TypedColumn<Int64>(name: "val", values: [1, 2, 1, 3, 1])
+        let df = try DataFrame(columns: [c1, c2])
+        
+        let dfUnique = df.unique
+        #expect(dfUnique.shape.rows == 4) // (A,1), (B,2), (B,3), (C,1)
+        #expect(dfUnique[column: "cat", as: String.self]?.values == ["A", "B", "B", "C"])
+        #expect(dfUnique[column: "val", as: Int64.self]?.values == [1, 2, 3, 1])
+
+        // Edge case: empty DataFrame.unique returns itself (guard branch)
+        let empty = try DataFrame(columns: [TypedColumn<String>(name: "x", values: [])])
+        #expect(empty.unique.shape.rows == 0)
+    }
+
     @Test("TypedColumn sortedIndices for Float, Int32, and Date types")
     func testTypedColumnSortedIndicesSpecializedTypes() throws {
         let floatCol = TypedColumn<Float>(name: "float", values: [3.0, 1.0, 2.0])

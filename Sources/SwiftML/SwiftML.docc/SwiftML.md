@@ -8,10 +8,12 @@ Supervised Machine Learning Estimators & Neural Networks.
 
 ### Key Capabilities
 
-- **Linear Models**: `LinearRegression` (exact LAPACK OLS solution) and `LogisticRegression`.
+- **Linear Models**: `LinearRegression` (exact LAPACK OLS solution) and `LogisticRegression` with Metal GPU acceleration.
+- **Support Vector Machines**: `LinearSVC` (L2-regularized Hinge loss SVM) with dual CPU and Apple Silicon Metal GPU backends via MLX.
+- **Multi-Class Support**: `OneVsRestClassifier` and `LinearSVCOneVsRest` multi-class reduction wrappers.
 - **Tree Ensembles**: Pre-sorted `DecisionTreeClassifier`, `RandomForestClassifier`, and `GradientBoostedTreesRegressor`.
-- **Multi-Class Support**: `OneVsRestClassifier` multi-class reduction solver.
 - **Deep Learning**: `MLPClassifier` and `MLPRegressor` with BLAS `cblas_dgemm` matrix multiplication and Adam optimizer.
+- **Model Export**: `ONNXExporter` producing standard binary `.onnx` files with `TensorProto` weight initializers compatible with `onnxruntime`.
 
 ### Example Usage
 

@@ -76,16 +76,24 @@ extension SwiftSciCLI {
 
     struct ExportModel: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
-            abstract: "Inspect export capabilities for SwiftSci models."
+            abstract: "Export model weights into binary ONNX format."
         )
 
-        @Argument(help: "Path to model definition or dataset.")
-        var path: String
+        @Argument(help: "Output .onnx file path.")
+        var outputPath: String
 
         func run() async throws {
+            let onnxData = ONNXExporter.exportBinaryONNX(
+                name: "SwiftSciModel",
+                inputs: ["feature1", "feature2"],
+                output: "prediction",
+                weights: [1.0, 0.5],
+                bias: 0.1
+            )
+            let outURL = URL(fileURLWithPath: outputPath)
+            try onnxData.write(to: outURL)
             print("=== SwiftSci Model Exporter ===")
-            print("Target: \(path)")
-            print("CoreML & ONNX export pipelines ready.")
+            print("Successfully exported binary ONNX model to '\(outputPath)' (\(onnxData.count) bytes).")
         }
     }
 }

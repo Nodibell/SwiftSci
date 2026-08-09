@@ -146,9 +146,14 @@ public struct RandomizedSearchCV: Sendable {
         targets: [Double],
         estimatorBuilder: @escaping @Sendable (P) -> E
     ) async throws -> [GenericResult<P>] {
-        guard !candidates.isEmpty else { return [] }
+        var rng = SeededRandom(seed: seed)
+        var sampled = [P]()
         let count = min(nIter, candidates.count)
-        let sampled = Array(candidates.prefix(count))
+        var available = candidates
+        for _ in 0..<count {
+            let idx = rng.nextInt(upperBound: available.count)
+            sampled.append(available.remove(at: idx))
+        }
         let nSplits = self.nSplits
         let cvSeed = self.seed
 

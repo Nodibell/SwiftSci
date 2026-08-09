@@ -18,7 +18,25 @@ let predictions = try await rf.predict(features: X_test)
 let probabilities = try await rf.predictProbability(features: X_test)
 ```
 
-### 2. Multi-Layer Perceptron (MLP)
+### 2. LinearSVC / Support Vector Classifier
+
+`LinearSVC` uses L2-regularized Hinge loss with automatic Apple Silicon Metal GPU acceleration:
+
+```swift
+import SwiftML
+
+// Binary SVC
+let svc = LinearSVC(C: 1.0, device: .auto)
+try await svc.fit(features: X_train, targets: y_train)
+let predictions = try await svc.predict(features: X_test)
+
+// Multi-class (One-Vs-Rest)
+let ovrSVC = LinearSVCOneVsRest(numClasses: 5)
+try await ovrSVC.fit(features: X_train, targets: y_train)
+let multiPredictions = try await ovrSVC.predict(features: X_test)
+```
+
+### 3. Multi-Layer Perceptron (MLP)
 
 ```swift
 let mlp = MLPClassifier(hiddenLayerSizes: [64, 32], activation: .relu, maxEpochs: 200)

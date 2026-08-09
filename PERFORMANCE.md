@@ -14,6 +14,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 | **ARIMA(1,1,1) Fit** (50k pts) | **2.38 ms** | 210.94 ms (*Statsmodels*) | ⚡ **88.3×** | 🟢 **Swift** | Swift 6 native state-space solver |
 | **ARIMA(1,1,1) Forecast** (horizon=24) | **2.42 ms** | 210.75 ms (*Statsmodels*) | ⚡ **86.8×** | 🟢 **Swift** | Zero-allocation forecast loop |
 | **Holt-Winters Fit** (50k pts, period=12) | **6.83 ms** | 142.87 ms (*Statsmodels*) | ⚡ **20.9×** | 🟢 **Swift** | Vectorized level/trend updates |
+| **LinearSVC Fit** (1k×4, Metal GPU) | **0.48 ms** | 3.85 ms (*Scikit-Learn*) | ⚡ **8.02×** | 🟢 **Swift** | MLX Metal GPU Hinge loss solver |
 | **RandomForest Fit** (1k×4, 50 trees) | **8.32 ms** | 26.23 ms (*Scikit-Learn*) | ⚡ **3.15×** | 🟢 **Swift** | Pre-sorted DOD trees & SIMD MSE split |
 | **GBDT Regressor Fit** (1k×4, 50 est) | **12.14 ms** | 33.15 ms (*Scikit-Learn*) | ⚡ **2.73×** | 🟢 **Swift** | Parallel tree gradient boosting |
 | **KernelSHAP Explain** (100 coalitions) | **0.19 ms** | 0.47 ms (*SHAP*) | ⚡ **2.43×** | 🟢 **Swift** | Swift `TaskGroup` parallel coalitions |

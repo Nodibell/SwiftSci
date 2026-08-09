@@ -41,13 +41,13 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## 📊 Complete Performance Comparison (SwiftSci 2.4 vs Python)
+## 📊 Complete Performance Comparison (SwiftSci 2.8.0 vs Python)
 
 The following table presents median execution times for benchmark scenarios on Apple Silicon (M-series / macOS 15 arm64), compared directly against popular Python counterparts (**Scikit-Learn, NumPy, Pandas, SHAP, Statsmodels, PyTorch**). See [PERFORMANCE.md](PERFORMANCE.md) for full benchmark methodology.
 
 ### 📈 1. Time Series Forecasting & Volatility
 
-| Benchmark Scenario                              | SwiftSci 2.4 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 2.8.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **ARIMA(1,1,1) Fit** (50k pts)            |  **2.27 ms**  | 227.34 ms (*Statsmodels*) | ⚡**100.1×** | 🟢 Swift |
 | **ARIMA(1,1,1) Forecast** (horizon=24)    |  **2.38 ms**  | 224.57 ms (*Statsmodels*) | ⚡**94.3×** | 🟢 Swift |
@@ -55,21 +55,22 @@ The following table presents median execution times for benchmark scenarios on A
 
 ### 🤖 2. Machine Learning & Clustering
 
-| Benchmark Scenario                           | SwiftSci 2.4 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
-| :------------------------------------------- | :------------------: | :-------------------------: | :----------------: | :------: |
+| Benchmark Scenario                           | SwiftSci 2.8.0 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
+| :------------------------------------------- | :--------------------: | :-------------------------: | :---------------: | :------: |
+| **LinearSVC Fit** (1k×4, Metal GPU)  |  **0.48 ms**  | 3.85 ms (*Scikit-Learn*)  | ⚡**8.02×** | 🟢 Swift |
 | **RandomForest Fit** (1k×4, 50 trees) |  **3.99 ms**  | 27.10 ms (*Scikit-Learn*) | ⚡**6.79×** | 🟢 Swift |
 | **GBDT Regressor Fit** (1k×4, 50 est) |  **7.99 ms**  | 34.80 ms (*Scikit-Learn*) | ⚡**4.35×** | 🟢 Swift |
 
 ### 📝 3. Natural Language & Explainability
 
-| Benchmark Scenario                            | SwiftSci 2.4 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                            | SwiftSci 2.8.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
 | **KernelSHAP Explain** (100 coalitions) |  **0.18 ms**  |  0.46 ms (*SHAP*)  | ⚡**2.56×** | 🟢 Swift |
 | **LLM Forward Pass** (seqLen=64)        |  **0.45 ms**  | 0.67 ms (*PyTorch*) | ⚡**1.48×** | 🟢 Swift |
 
 ### 📊 4. Core Data Engines & Vector Stats
 
-| Benchmark Scenario                            | SwiftSci 2.4 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                            | SwiftSci 2.8.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
 | **Mean Reduction** (vDSP 1M elements)   |  **0.098 ms**  | 0.118 ms (*NumPy*) | ⚡**1.20×** | 🟢 Swift |
 | **StdDev Reduction** (vDSP 1M elements) |  **0.433 ms**  | 0.516 ms (*NumPy*) | ⚡**1.19×** | 🟢 Swift |

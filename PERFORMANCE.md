@@ -1,6 +1,6 @@
-# SwiftSci 2.8.0 Complete Performance Benchmarks
+# SwiftSci 2.8.1 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 2.8.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 2.8.1** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
 
 > [!NOTE]
 > All benchmarks are executed under identical conditions: deterministic seeds (`seed=42`), single-node execution, and release optimizations (`swift run -c release`).
@@ -9,23 +9,25 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ## 📊 Complete Benchmark Matrix
 
-| Benchmark Scenario | SwiftSci 2.8.0 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
+| Benchmark Scenario | SwiftSci 2.8.1 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
 | :--- | :---: | :---: | :---: | :---: | :--- |
+| **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) | **0.49 ms** | 1.85 ms (*OpenCV/Torch*) | ⚡ **3.78×** | 🟢 **Swift** | >2,000 FPS letterbox preprocessor |
+| **UNetSegmentation Predict** (128×128 image) | **0.11 ms** | 0.42 ms (*PyTorch*) | ⚡ **3.82×** | 🟢 **Swift** | U-Net GPU segmentation forward pass |
+| **YOLOv8Detector Detect** (640×640 real GPU) | **16.61 ms** | 28.50 ms (*PyTorch*) | ⚡ **1.72×** | 🟢 **Swift** | Real YOLOv8n GPU forward pass (~60 FPS) |
 | **ARIMA(1,1,1) Fit** (50k pts) | **2.38 ms** | 210.94 ms (*Statsmodels*) | ⚡ **88.3×** | 🟢 **Swift** | Swift 6 native state-space solver |
 | **ARIMA(1,1,1) Forecast** (horizon=24) | **2.42 ms** | 210.75 ms (*Statsmodels*) | ⚡ **86.8×** | 🟢 **Swift** | Zero-allocation forecast loop |
 | **Holt-Winters Fit** (50k pts, period=12) | **6.83 ms** | 142.87 ms (*Statsmodels*) | ⚡ **20.9×** | 🟢 **Swift** | Vectorized level/trend updates |
 | **LinearSVC Fit** (1k×4, Metal GPU) | **0.48 ms** | 3.85 ms (*Scikit-Learn*) | ⚡ **8.02×** | 🟢 **Swift** | MLX Metal GPU Hinge loss solver |
-| **RandomForest Fit** (1k×4, 50 trees) | **8.32 ms** | 26.23 ms (*Scikit-Learn*) | ⚡ **3.15×** | 🟢 **Swift** | Pre-sorted DOD trees & SIMD MSE split |
-| **GBDT Regressor Fit** (1k×4, 50 est) | **12.14 ms** | 33.15 ms (*Scikit-Learn*) | ⚡ **2.73×** | 🟢 **Swift** | Parallel tree gradient boosting |
-| **KernelSHAP Explain** (100 coalitions) | **0.19 ms** | 0.47 ms (*SHAP*) | ⚡ **2.43×** | 🟢 **Swift** | Swift `TaskGroup` parallel coalitions |
-| **Kalman Filter 1D** (10k obs) | **60.53 ms** | 83.78 ms (*NumPy*) | ⚡ **1.38×** | 🟢 **Swift** | Accelerate matrix updates |
-| **CSV Stream + GroupBy** (100k rows) | **21.94 ms** | 28.34 ms (*Pandas*) | ⚡ **1.29×** | 🟢 **Swift** | Memory-mapped streaming reader |
+| **RandomForest Fit** (1k×4, 50 trees) | **5.43 ms** | 26.23 ms (*Scikit-Learn*) | ⚡ **4.83×** | 🟢 **Swift** | Pre-sorted DOD trees & SIMD MSE split |
+| **GBDT Regressor Fit** (1k×4, 50 est) | **8.55 ms** | 33.15 ms (*Scikit-Learn*) | ⚡ **3.87×** | 🟢 **Swift** | Parallel tree gradient boosting |
+| **KernelSHAP Explain** (100 coalitions) | **0.17 ms** | 0.47 ms (*SHAP*) | ⚡ **2.76×** | 🟢 **Swift** | Swift `TaskGroup` parallel coalitions |
+| **Kalman Filter 1D** (10k obs) | **67.11 ms** | 83.78 ms (*NumPy*) | ⚡ **1.25×** | 🟢 **Swift** | Accelerate matrix updates |
+| **CSV Stream + GroupBy** (100k rows) | **23.53 ms** | 28.34 ms (*Pandas*) | ⚡ **1.20×** | 🟢 **Swift** | Memory-mapped streaming reader |
 | **LLM Forward Pass** (seqLen=64) | **0.43 ms** | 0.53 ms (*PyTorch*) | ⚡ **1.22×** | 🟢 **Swift** | MLX Metal GPU execution & compile cache |
-| **CSV Read** (100k rows) | **15.75 ms** | 18.99 ms (*Pandas*) | ⚡ **1.21×** | 🟢 **Swift** | Memory-mapped zero-copy parser |
-| **Pearson Correlation** (500k pairs) | **1.16 ms** | 1.24 ms (*NumPy*) | ⚡ **1.07×** | 🟢 **Swift** | Vectorized dot product |
-| **CSV Stream Read** (chunk=10k) | **22.34 ms** | 22.46 ms (*Pandas*) | ⚡ **1.01×** | 🟢 **Swift** | Chunked stream parser |
-| **PCA SVD Fit** (1k×100 → 10 comps) | **0.94 ms** | 0.75 ms (*Scikit-Learn*) | 0.80× | 🔴 **Python** | Halko $O(MNk)$ `RandomizedSVD` |
-| **KMeans Fit** (10k×4, 3 clusters) | **23.05 ms** | 11.45 ms (*Scikit-Learn*) | 0.50× | 🔴 **Python** | OpenMP parallel centroids in C |
+| **CSV Read** (100k rows) | **17.29 ms** | 18.99 ms (*Pandas*) | ⚡ **1.10×** | 🟢 **Swift** | Memory-mapped zero-copy parser |
+| **Pearson Correlation** (500k pairs) | **1.40 ms** | 1.24 ms (*NumPy*) | 0.88× | 🔴 **Python** | Vectorized dot product |
+| **PCA SVD Fit** (1k×100 → 10 comps) | **0.98 ms** | 0.75 ms (*Scikit-Learn*) | 0.76× | 🔴 **Python** | Halko $O(MNk)$ `RandomizedSVD` |
+| **KMeans Fit** (10k×4, 3 clusters) | **23.13 ms** | 11.45 ms (*Scikit-Learn*) | 0.50× | 🔴 **Python** | OpenMP parallel centroids in C |
 | **LLM Token Generate** (10 tokens) | **7.16 ms** | 3.88 ms (*PyTorch*) | 0.54× | 🔴 **Python** | Includes streaming UI & tokenizer |
 
 

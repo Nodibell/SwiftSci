@@ -100,7 +100,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         numClasses = Int(targets.max() ?? 0) + 1
         numFeatures = features[0].count
         let maxDepth = self.maxDepth
-        let maxFeatures = self.maxFeatures
+        let maxFeatures = self.maxFeatures ?? max(1, Int(sqrt(Double(numFeatures))))
         let minSamplesSplit = self.minSamplesSplit
         let criterion = self.criterion
 
@@ -306,7 +306,7 @@ public actor RandomForestRegressor: RegressorEstimator {
 
         numFeatures = features[0].count
         let maxDepth = self.maxDepth
-        let maxFeatures = self.maxFeatures
+        let maxFeatures = self.maxFeatures ?? max(1, Int(sqrt(Double(numFeatures))))
         let minSamplesSplit = self.minSamplesSplit
 
         let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in

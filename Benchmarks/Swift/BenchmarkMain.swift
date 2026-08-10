@@ -78,6 +78,7 @@ struct BenchmarkEntryPoint {
             MLBenchmarks(),
             ForecastBenchmarks(),
             LLMBenchmarks(),
+            VisionBenchmarks(),
             ExplainBenchmarks(),
             ExtensionBenchmarks(),
         ]

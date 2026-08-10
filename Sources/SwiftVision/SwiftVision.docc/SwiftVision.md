@@ -1,26 +1,38 @@
 # ``SwiftVision``
 
-Computer Vision Pipelines & Image Datasets.
+Computer Vision Neural Inference, Object Detection & Image Datasets.
 
 ## Overview
 
-`SwiftVision` provides image dataset loading, augmentation pipelines, and U-Net segmentation neural architectures.
+`SwiftVision` provides GPU-accelerated computer vision neural architectures, real-time YOLOv8 object detection inference, native ONNX weight parsing, U-Net semantic segmentation, and dataset preprocessing pipelines.
 
 ### Key Capabilities
 
-- **Image Dataset Loader**: `ImageDataset` directory scanner with target resizing and batching.
-- **Segmentation Models**: `UNet` neural network architecture for semantic segmentation.
-- **Evaluation Metrics**: `DiceScore` and `IoU` (Intersection over Union) segmentation metrics.
+- **Real YOLOv8 Object Detection**: Full GPU-accelerated forward pass (`YOLOv8Detector`) featuring CSPDarknet backbone, PANet feature pyramid, decoupled DFL detection head, and non-maximum suppression (NMS).
+- **ONNX Weight Parsing**: `ONNXWeightReader` native binary Protobuf wire-format parser extracting model weights directly into `[String: MLXArray]` instances.
+- **Letterbox Preprocessor**: `YOLOPreprocessor` aspect-ratio preserving resizer with `(114, 114, 114)` gray padding and normalization.
+- **Segmentation Models**: `UNetSegmentationModel` neural architecture for semantic image segmentation.
+- **Image Dataset Loader**: `ImageDataset` directory scanner with configurable resizing and batching.
+- **Evaluation Metrics**: `UNetMetrics` with `diceScore` and `iouScore` (Intersection over Union).
 
 ### Example Usage
 
 ```swift
 import SwiftVision
 
-let dataset = try ImageDataset(directoryURL: imageDir, targetSize: (224, 224))
+// 1. Initialize YOLOv8 object detector
+let detector = YOLOv8Detector(version: .nano)
+
+// 2. Run real GPU-accelerated object detection
+let detections = try await detector.detect(
+    imagePath: "image.jpg",
+    confidenceThreshold: 0.25,
+    iouThreshold: 0.45
+)
 ```
 
 ## Topics
 
 ### Guides & Tutorials
+- <doc:YOLOv8ObjectDetection>
 - <doc:ImageDatasetsAndSegmentation>

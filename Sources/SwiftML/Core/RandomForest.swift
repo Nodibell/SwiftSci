@@ -4,14 +4,15 @@ import SwiftPreprocessing
 // MARK: - Bootstrap Helper
 
 // internal: not part of the public API; used by both Classifier and Regressor
-func bootstrapSample(features: [[Double]], targets: [Double], seed: Int) -> ([[Double]], [Double]) {
+func bootstrapSample(features: [[Double]], targets: [Double], seed: Int, maxSamples: Int? = nil) -> ([[Double]], [Double]) {
     let n = features.count
+    let sampleSize = min(n, maxSamples ?? n)
     var rng = SeededRandom(seed: seed)
     var sampledFeatures = [[Double]]()
     var sampledTargets = [Double]()
-    sampledFeatures.reserveCapacity(n)
-    sampledTargets.reserveCapacity(n)
-    for _ in 0..<n {
+    sampledFeatures.reserveCapacity(sampleSize)
+    sampledTargets.reserveCapacity(sampleSize)
+    for _ in 0..<sampleSize {
         let i = rng.nextInt(upperBound: n)
         sampledFeatures.append(features[i])
         sampledTargets.append(targets[i])
@@ -30,6 +31,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
     public let maxDepth: Int
     /// The max features.
     public let maxFeatures: Int?
+    /// The max samples per tree.
+    public let maxSamples: Int?
     /// The min samples split.
     public let minSamplesSplit: Int
     /// The criterion.
@@ -68,6 +71,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
     ///   - nEstimators: The n estimators.
     ///   - maxDepth: The max depth.
     ///   - maxFeatures: The max features.
+    ///   - maxSamples: Optional maximum number of bootstrap samples per tree (prevents OOM on large datasets).
     ///   - minSamplesSplit: The min samples split.
     ///   - criterion: The criterion.
     /// - Throws: An error if the operation fails.
@@ -75,6 +79,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         nEstimators: Int = 100,
         maxDepth: Int = 10,
         maxFeatures: Int? = nil,
+        maxSamples: Int? = nil,
         minSamplesSplit: Int = 2,
         criterion: SplitCriterion = .gini
     ) throws {
@@ -82,6 +87,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         self.nEstimators = nEstimators
         self.maxDepth = maxDepth
         self.maxFeatures = maxFeatures
+        self.maxSamples = maxSamples
         self.minSamplesSplit = minSamplesSplit
         self.criterion = criterion
     }
@@ -101,13 +107,14 @@ public actor RandomForestClassifier: ClassifierEstimator {
         numFeatures = features[0].count
         let maxDepth = self.maxDepth
         let maxFeatures = self.maxFeatures ?? max(1, Int(sqrt(Double(numFeatures))))
+        let maxSamples = self.maxSamples ?? (features.count > 10_000 ? 10_000 : features.count)
         let minSamplesSplit = self.minSamplesSplit
         let criterion = self.criterion
 
         let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in
             for i in 0..<nEstimators {
                 group.addTask {
-                    let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i)
+                    let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i, maxSamples: maxSamples)
                     let presorted = createPresortedIndices(X: bX)
                     var nodes = [FlatTreeNode]()
                     _ = RandomForestClassifier.buildTreeSync(
@@ -124,6 +131,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
                     return nodes
                 }
             }
+
             var result = [[FlatTreeNode]]()
             for try await treeNodes in group {
                 result.append(treeNodes)
@@ -244,6 +252,8 @@ public actor RandomForestRegressor: RegressorEstimator {
     public let maxDepth: Int
     /// The max features.
     public let maxFeatures: Int?
+    /// The max samples per tree.
+    public let maxSamples: Int?
     /// The min samples split.
     public let minSamplesSplit: Int
 
@@ -278,18 +288,21 @@ public actor RandomForestRegressor: RegressorEstimator {
     ///   - nEstimators: The n estimators.
     ///   - maxDepth: The max depth.
     ///   - maxFeatures: The max features.
+    ///   - maxSamples: Optional maximum number of bootstrap samples per tree.
     ///   - minSamplesSplit: The min samples split.
     /// - Throws: An error if the operation fails.
     public init(
         nEstimators: Int = 100,
         maxDepth: Int = 10,
         maxFeatures: Int? = nil,
+        maxSamples: Int? = nil,
         minSamplesSplit: Int = 2
     ) throws {
         guard nEstimators > 0 else { throw MLError.invalidParameter("nEstimators must be > 0") }
         self.nEstimators = nEstimators
         self.maxDepth = maxDepth
         self.maxFeatures = maxFeatures
+        self.maxSamples = maxSamples
         self.minSamplesSplit = minSamplesSplit
     }
 
@@ -307,12 +320,13 @@ public actor RandomForestRegressor: RegressorEstimator {
         numFeatures = features[0].count
         let maxDepth = self.maxDepth
         let maxFeatures = self.maxFeatures ?? max(1, Int(sqrt(Double(numFeatures))))
+        let maxSamples = self.maxSamples ?? (features.count > 10_000 ? 10_000 : features.count)
         let minSamplesSplit = self.minSamplesSplit
 
         let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in
             for i in 0..<nEstimators {
                 group.addTask {
-                    let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i)
+                    let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i, maxSamples: maxSamples)
                     let presorted = createPresortedIndices(X: bX)
                     var nodes = [FlatTreeNode]()
                     _ = RandomForestRegressor.buildTreeSync(

@@ -155,7 +155,7 @@ public actor ExponentialSmoothing {
             // Search alpha over grid [0.1, 0.2, ..., 0.9]
             var bestAlpha: Double? = nil
             var minMse = Double.greatestFiniteMagnitude
-            var lastError: Error? = nil
+            var lastError: (any Error)? = nil
             
             for a in stride(from: 0.1, through: 0.9, by: 0.1) {
                 do {
@@ -193,7 +193,7 @@ public actor ExponentialSmoothing {
             // Search alpha
             var bestAlpha: Double? = nil
             var minMse = Double.greatestFiniteMagnitude
-            var lastError: Error? = nil
+            var lastError: (any Error)? = nil
             for a in stride(from: 0.1, through: 0.9, by: 0.1) {
                 do {
                     try runSmoothing(alpha: a, beta: fixedBeta, gamma: 0.0)
@@ -234,7 +234,7 @@ public actor ExponentialSmoothing {
             // Grid search alpha
             var bestAlpha: Double? = nil
             var minMse = Double.greatestFiniteMagnitude
-            var lastError: Error? = nil
+            var lastError: (any Error)? = nil
             for a in stride(from: 0.1, through: 0.9, by: 0.2) {
                 do {
                     try runSmoothing(alpha: a, beta: fixedBeta, gamma: fixedGamma)

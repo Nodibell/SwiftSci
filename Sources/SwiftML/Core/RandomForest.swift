@@ -306,12 +306,22 @@ public actor RandomForestRegressor: RegressorEstimator {
         self.minSamplesSplit = minSamplesSplit
     }
 
-    /// Fit.
+    /// Fits the regressor model.
+    public func fit(features: [[Double]], targets: [Double]) async throws {
+        try await fit(features: features, targets: targets, onProgress: nil)
+    }
+
+    /// Fit with progress callback.
     /// - Parameters:
     ///   - features: The features.
     ///   - targets: The targets.
+    ///   - onProgress: Optional progress callback reporting (completed, total).
     /// - Throws: An error if the operation fails.
-    public func fit(features: [[Double]], targets: [Double]) async throws {
+    public func fit(
+        features: [[Double]],
+        targets: [Double],
+        onProgress: (@Sendable (Int, Int) -> Void)?
+    ) async throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
             throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
@@ -322,6 +332,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         let maxFeatures = self.maxFeatures ?? max(1, Int(sqrt(Double(numFeatures))))
         let maxSamples = self.maxSamples ?? (features.count > 10_000 ? 10_000 : features.count)
         let minSamplesSplit = self.minSamplesSplit
+        let nEstimators = self.nEstimators
 
         let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in
             for i in 0..<nEstimators {
@@ -343,8 +354,12 @@ public actor RandomForestRegressor: RegressorEstimator {
                 }
             }
             var result = [[FlatTreeNode]]()
+            result.reserveCapacity(nEstimators)
+            var doneCount = 0
             for try await treeNodes in group {
                 result.append(treeNodes)
+                doneCount += 1
+                onProgress?(doneCount, nEstimators)
             }
             return result
         }

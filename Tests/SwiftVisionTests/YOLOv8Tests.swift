@@ -2,10 +2,19 @@ import Testing
 import Foundation
 import MLX
 import MLXNN
+import SwiftML
 @testable import SwiftVision
 
 @Suite("YOLOv8 Real Inference Tests")
 struct YOLOv8Tests {
+    @Test("ONNXWeightReader parses binary ONNX weight initializers")
+    func testONNXWeightReader() throws {
+        let binaryONNX = ONNXExporter.exportBinaryONNX(name: "yolo_test", inputs: ["X"], output: "Y", weights: [0.5, 0.7], bias: 0.1)
+        let loader = YOLOWeightLoader.loadFromONNX(data: binaryONNX)
+        let weight = loader.get("yolo_test_weight")
+
+        #expect(weight != nil)
+    }
     @Test("YOLOBackbone outputs expected multi-scale P3, P4, P5 shapes")
     func testYOLOBackbone() throws {
         let backbone = YOLOBackbone()

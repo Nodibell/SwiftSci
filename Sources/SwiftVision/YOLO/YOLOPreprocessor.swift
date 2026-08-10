@@ -5,10 +5,18 @@ import MLX
 /// Preserves aspect ratio, resizes to target 640x640 resolution, pads with gray `(114, 114, 114)` pixels,
 /// and normalizes to `[0, 1]` tensor shape `[1, 640, 640, 3]`.
 public struct YOLOPreprocessor {
+    /// Target image tensor width in pixels (default 640).
     public let targetWidth: Int
+    /// Target image tensor height in pixels (default 640).
     public let targetHeight: Int
+    /// Normalized padding background color value (default 114/255).
     public let paddingColor: Double
 
+    /// Creates a YOLOPreprocessor.
+    /// - Parameters:
+    ///   - targetWidth: Target width (default 640).
+    ///   - targetHeight: Target height (default 640).
+    ///   - paddingColor: Normalized gray padding background value (default 114/255).
     public init(targetWidth: Int = 640, targetHeight: Int = 640, paddingColor: Double = 114.0 / 255.0) {
         self.targetWidth = targetWidth
         self.targetHeight = targetHeight

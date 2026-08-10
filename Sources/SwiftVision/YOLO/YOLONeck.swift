@@ -11,6 +11,11 @@ public struct YOLONeckOutput {
     /// P5 neck output (stride 32, 20x20x256).
     public let headP5: MLXArray
 
+    /// Creates a YOLONeckOutput container.
+    /// - Parameters:
+    ///   - headP3: P3 neck feature map tensor.
+    ///   - headP4: P4 neck feature map tensor.
+    ///   - headP5: P5 neck feature map tensor.
     public init(headP3: MLXArray, headP4: MLXArray, headP5: MLXArray) {
         self.headP3 = headP3
         self.headP4 = headP4
@@ -28,6 +33,7 @@ public class YOLONeck: Module {
     @ModuleInfo public var conv_p5: ConvBlock  // 128 -> 128, s=2
     @ModuleInfo public var c2f_n5: C2fBlock   // 384 -> 256, n=1
 
+    /// Initializes a new YOLONeck feature pyramid module.
     public override init() {
         self.upsample = Upsample(scaleFactor: 2.0, mode: .nearest)
         self.c2f_p4 = C2fBlock(cIn: 384, cOut: 128, n: 1, shortcut: false)
@@ -39,6 +45,9 @@ public class YOLONeck: Module {
         super.init()
     }
 
+    /// Evaluates forward pass over PANet feature pyramid.
+    /// - Parameter backboneOut: Multi-scale feature map output from CSPDarknet backbone.
+    /// - Returns: `YOLONeckOutput` containing fused head feature maps (P3, P4, P5).
     public func callAsFunction(_ backboneOut: YOLOBackboneOutput) -> YOLONeckOutput {
         let p3 = backboneOut.p3  // [B, 80, 80, 64]
         let p4 = backboneOut.p4  // [B, 40, 40, 128]

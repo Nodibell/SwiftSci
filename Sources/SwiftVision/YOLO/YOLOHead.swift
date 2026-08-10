@@ -9,6 +9,10 @@ public struct YOLOHeadOutput {
     /// Class probabilities [Batch, 8400, numClasses].
     public let scores: MLXArray
 
+    /// Creates a YOLOHeadOutput container.
+    /// - Parameters:
+    ///   - boxes: Decoded bounding box tensor [Batch, 8400, 4].
+    ///   - scores: Classification probabilities tensor [Batch, 8400, numClasses].
     public init(boxes: MLXArray, scores: MLXArray) {
         self.boxes = boxes
         self.scores = scores
@@ -17,7 +21,9 @@ public struct YOLOHeadOutput {
 
 /// Decoupled Anchor-free Detection Head with Distribution Focal Loss (DFL) decoding for YOLOv8n.
 public class YOLOHead: Module {
+    /// Number of object classification categories (defaults to 80 for COCO).
     public let numClasses: Int
+    /// Distribution Focal Loss maximum regression bin count (default 16).
     public let regMax: Int
     
     // Scale 0 (P3, stride 8, cIn=64)
@@ -44,9 +50,13 @@ public class YOLOHead: Module {
     @ModuleInfo public var cv3_2_1: ConvBlock
     @ModuleInfo public var cv3_2_2: Conv2d
 
-    // Pre-computed DFL projection array [16] = [0, 1, 2, ..., 15]
+    /// Pre-computed DFL projection array [16] = [0, 1, 2, ..., 15]
     public let dflProj: MLXArray
 
+    /// Initializes a decoupled detection head.
+    /// - Parameters:
+    ///   - numClasses: Target category count (default 80).
+    ///   - regMax: Regression bin count (default 16).
     public init(numClasses: Int = 80, regMax: Int = 16) {
         self.numClasses = numClasses
         self.regMax = regMax
@@ -83,6 +93,9 @@ public class YOLOHead: Module {
         super.init()
     }
 
+    /// Evaluates decoupled classification and DFL bounding box regression over all 8,400 anchor cells.
+    /// - Parameter neckOut: Feature pyramid output maps from YOLONeck.
+    /// - Returns: `YOLOHeadOutput` containing decoded bounding boxes and class scores.
     public func callAsFunction(_ neckOut: YOLONeckOutput) -> YOLOHeadOutput {
         let inputs = [neckOut.headP3, neckOut.headP4, neckOut.headP5]
         let strides: [Float] = [8.0, 16.0, 32.0]

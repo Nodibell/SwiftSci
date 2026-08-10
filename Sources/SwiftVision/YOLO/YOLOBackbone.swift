@@ -7,6 +7,14 @@ public class ConvBlock: Module, UnaryLayer {
     @ModuleInfo public var conv: Conv2d
     @ModuleInfo public var bn: BatchNorm
 
+    /// Creates a Convolutional block.
+    /// - Parameters:
+    ///   - cIn: Input channel dimension count.
+    ///   - cOut: Output channel dimension count.
+    ///   - k: Kernel spatial dimension size (default `1`).
+    ///   - s: Convolution stride rate (default `1`).
+    ///   - p: Explicit spatial padding width.
+    ///   - g: Convolution group count (default `1`).
     public init(cIn: Int, cOut: Int, k: Int = 1, s: Int = 1, p: Int? = nil, g: Int = 1) {
         let pad = p ?? (k / 2)
         self.conv = Conv2d(inputChannels: cIn, outputChannels: cOut, kernelSize: IntOrPair(k), stride: IntOrPair(s), padding: IntOrPair(pad), groups: g, bias: false)
@@ -14,6 +22,9 @@ public class ConvBlock: Module, UnaryLayer {
         super.init()
     }
 
+    /// Evaluates forward pass of Conv2d -> BatchNorm -> SiLU activation.
+    /// - Parameter x: Input feature tensor.
+    /// - Returns: Processed output feature map array.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
         return silu(bn(conv(x)))
     }
@@ -23,8 +34,16 @@ public class ConvBlock: Module, UnaryLayer {
 public class BottleneckBlock: Module, UnaryLayer {
     @ModuleInfo public var cv1: ConvBlock
     @ModuleInfo public var cv2: ConvBlock
+    /// Flag indicating whether residual identity shortcut is enabled.
     public let shortcut: Bool
 
+    /// Creates a Bottleneck block.
+    /// - Parameters:
+    ///   - cIn: Input channel dimension count.
+    ///   - cOut: Output channel dimension count.
+    ///   - shortcut: Enable identity addition shortcut (default `true`).
+    ///   - g: Group count for convolution.
+    ///   - e: Expansion factor for inner hidden channel depth.
     public init(cIn: Int, cOut: Int, shortcut: Bool = true, g: Int = 1, e: Float = 0.5) {
         let cHidden = Int(Float(cOut) * e)
         self.cv1 = ConvBlock(cIn: cIn, cOut: cHidden, k: 3, s: 1)
@@ -33,6 +52,9 @@ public class BottleneckBlock: Module, UnaryLayer {
         super.init()
     }
 
+    /// Evaluates forward pass through dual 3x3 convolutions with optional identity shortcut addition.
+    /// - Parameter x: Input feature tensor.
+    /// - Returns: Processed bottleneck output tensor.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
         let y = cv2(cv1(x))
         return shortcut ? (x + y) : y
@@ -44,9 +66,19 @@ public class C2fBlock: Module, UnaryLayer {
     @ModuleInfo public var cv1: ConvBlock
     @ModuleInfo public var cv2: ConvBlock
     @ModuleInfo var bottleneckList: [BottleneckBlock]
+    /// Output channel count for C2f block.
     public let cOut: Int
+    /// Hidden inner channel dimension count.
     public let cHidden: Int
 
+    /// Creates a C2f block.
+    /// - Parameters:
+    ///   - cIn: Input channel count.
+    ///   - cOut: Output channel count.
+    ///   - n: Number of sequential bottleneck blocks.
+    ///   - shortcut: Enable identity shortcut in sub-bottlenecks.
+    ///   - g: Group count.
+    ///   - e: Expansion ratio.
     public init(cIn: Int, cOut: Int, n: Int = 1, shortcut: Bool = true, g: Int = 1, e: Float = 0.5) {
         self.cOut = cOut
         self.cHidden = Int(Float(cOut) * e)
@@ -61,6 +93,9 @@ public class C2fBlock: Module, UnaryLayer {
         super.init()
     }
 
+    /// Evaluates forward pass over split channels, sequential bottlenecks, and final channel fusion.
+    /// - Parameter x: Input feature map tensor.
+    /// - Returns: Processed C2f output tensor.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
         let x12 = cv1(x)
         let parts = split(x12, parts: 2, axis: 3)
@@ -80,6 +115,11 @@ public class SPPFBlock: Module, UnaryLayer {
     @ModuleInfo public var cv2: ConvBlock
     @ModuleInfo public var m: MaxPool2d
 
+    /// Creates an SPPF block.
+    /// - Parameters:
+    ///   - cIn: Input channel count.
+    ///   - cOut: Output channel count.
+    ///   - k: Max pooling kernel size.
     public init(cIn: Int, cOut: Int, k: Int = 5) {
         let cHidden = cIn / 2
         self.cv1 = ConvBlock(cIn: cIn, cOut: cHidden, k: 1, s: 1)
@@ -95,6 +135,9 @@ public class SPPFBlock: Module, UnaryLayer {
         return m(paddedX)
     }
 
+    /// Evaluates forward pass through sequential 5x5 max pooling pyramids and channel fusion.
+    /// - Parameter x: Input feature map.
+    /// - Returns: SPPF output tensor.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
         let x1 = cv1(x)
         let y1 = pool(x1)
@@ -113,6 +156,11 @@ public struct YOLOBackboneOutput {
     /// P5 feature map (stride 32, 20x20x256 for 640x640 input).
     public let p5: MLXArray
 
+    /// Creates a YOLOBackboneOutput structure.
+    /// - Parameters:
+    ///   - p3: P3 feature map tensor.
+    ///   - p4: P4 feature map tensor.
+    ///   - p5: P5 feature map tensor.
     public init(p3: MLXArray, p4: MLXArray, p5: MLXArray) {
         self.p3 = p3
         self.p4 = p4
@@ -133,6 +181,7 @@ public class YOLOBackbone: Module {
     @ModuleInfo public var b8: C2fBlock   // 256 -> 256, n=1
     @ModuleInfo public var b9: SPPFBlock  // 256 -> 256, k=5
 
+    /// Initializes a new CSPDarknet YOLOBackbone instance.
     public override init() {
         self.b0 = ConvBlock(cIn: 3, cOut: 16, k: 3, s: 2)
         self.b1 = ConvBlock(cIn: 16, cOut: 32, k: 3, s: 2)
@@ -147,6 +196,9 @@ public class YOLOBackbone: Module {
         super.init()
     }
 
+    /// Evaluates forward pass over CSPDarknet backbone generating multi-scale feature maps P3, P4, P5.
+    /// - Parameter x: Preprocessed image tensor [Batch, 640, 640, 3].
+    /// - Returns: `YOLOBackboneOutput` containing multi-scale P3, P4, P5 arrays.
     public func callAsFunction(_ x: MLXArray) -> YOLOBackboneOutput {
         let x0 = b0(x)
         let x1 = b1(x0)

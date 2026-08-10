@@ -96,6 +96,7 @@ public struct MultinomialNaiveBayes: Sendable {
 
     /// Batch predicts class labels for a feature matrix.
     public func predict(X: [[Double]]) -> [String] {
-        return X.compactMap { predict(x: $0) }
+        let fallback = classes.first ?? ""
+        return X.map { predict(x: $0) ?? fallback }
     }
 }

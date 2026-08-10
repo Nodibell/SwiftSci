@@ -92,12 +92,22 @@ public actor RandomForestClassifier: ClassifierEstimator {
         self.criterion = criterion
     }
 
+    /// Fit classifier without progress callback.
+    public func fit(features: [[Double]], targets: [Double]) async throws {
+        try await fit(features: features, targets: targets, onProgress: nil)
+    }
+
     /// Fit.
     /// - Parameters:
     ///   - features: The features.
     ///   - targets: The targets.
+    ///   - onProgress: Optional progress callback reporting (completedTrees, totalTrees).
     /// - Throws: An error if the operation fails.
-    public func fit(features: [[Double]], targets: [Double]) async throws {
+    public func fit(
+        features: [[Double]],
+        targets: [Double],
+        onProgress: (@Sendable (Int, Int) -> Void)?
+    ) async throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
             throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
@@ -110,6 +120,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         let maxSamples = self.maxSamples ?? (features.count > 10_000 ? 10_000 : features.count)
         let minSamplesSplit = self.minSamplesSplit
         let criterion = self.criterion
+        let nEstimators = self.nEstimators
 
         let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in
             for i in 0..<nEstimators {
@@ -133,8 +144,12 @@ public actor RandomForestClassifier: ClassifierEstimator {
             }
 
             var result = [[FlatTreeNode]]()
+            result.reserveCapacity(nEstimators)
+            var doneCount = 0
             for try await treeNodes in group {
                 result.append(treeNodes)
+                doneCount += 1
+                onProgress?(doneCount, nEstimators)
             }
             return result
         }
@@ -231,7 +246,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
         var curr = 0
         while !nodes[curr].isLeaf {
             let node = nodes[curr]
-            if x[node.featureIndex] <= node.threshold {
+            let val = (node.featureIndex >= 0 && node.featureIndex < x.count) ? x[node.featureIndex] : 0.0
+            if val <= node.threshold {
                 curr = node.leftChild
             } else {
                 curr = node.rightChild
@@ -431,7 +447,8 @@ public actor RandomForestRegressor: RegressorEstimator {
 
         while !nodes[curr].isLeaf {
             let node = nodes[curr]
-            if x[node.featureIndex] <= node.threshold {
+            let val = (node.featureIndex >= 0 && node.featureIndex < x.count) ? x[node.featureIndex] : 0.0
+            if val <= node.threshold {
                 curr = node.leftChild
             } else {
                 curr = node.rightChild

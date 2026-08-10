@@ -4,6 +4,19 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.1] - 2026-08-10
+
+### Added
+- **Real YOLOv8 Object Detection Inference (`SwiftVision`)**: Implemented `YOLOBackbone` (CSPDarknet with `ConvBlock`, `BottleneckBlock`, `C2fBlock`, `SPPFBlock`), `YOLONeck` (PANet feature pyramid), `YOLOHead` (anchor-free decoupled classification and Distribution Focal Loss / DFL regression branches over 8,400 cells), and `YOLOPreprocessor` (640x640 letterbox).
+- **ONNX Binary Protobuf Weight Reader (`SwiftVision` & `SwiftML`)**: `ONNXWeightReader` parses `.onnx` binary initializers directly into `[String: MLXArray]`, mapped via `YOLOWeightLoader`.
+- **`RandomForest` Progress Callbacks (`SwiftML`)**: Added `onProgress: (@Sendable (Int, Int) -> Void)?` support to `RandomForestClassifier.fit()` and `RandomForestRegressor.fit()`.
+- **`VisionBenchmarks` (`SwiftSciBenchmarks`)**: Added real GPU YOLOv8 and UNet inference speed benchmarks.
+
+### Fixed
+- **`MultinomialNaiveBayes` Prediction Protection (`SwiftNLP`)**: Added fallback handling preventing empty predictions on single-sample inputs.
+
+---
+
 ## [2.8.0] - 2026-08-09
 
 ### Added

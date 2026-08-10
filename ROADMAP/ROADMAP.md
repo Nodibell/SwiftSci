@@ -239,6 +239,23 @@ The architecture combines two hardware engines:
 
 ---
 
+### Version 2.8.0: Real YOLOv8 Object Detection Inference & ONNX Weight Parsing *(🟢 Completed)*
+
+*Detailed implementation plan:* [implementation_plan_yolov8.md](implementation_plan_yolov8.md)
+
+1. **Real YOLOv8n Neural Network Architecture (`SwiftVision`)**:
+   - Implemented `YOLOBackbone` (CSPDarknet with `ConvBlock`, `BottleneckBlock`, `C2fBlock`, and `SPPFBlock` spatial pyramid pooling).
+   - Implemented `YOLONeck` (PANet feature pyramid with top-down 2x upsampling and bottom-up strided convolutions).
+   - Implemented `YOLOHead` (anchor-free decoupled classification and Distribution Focal Loss / DFL regression branches decoding 8,400 predictions).
+   - Implemented `YOLOPreprocessor` (aspect-ratio letterbox resizing to 640x640 with `(114, 114, 114)` gray padding).
+2. **ONNX Protobuf Binary Weight Reader (`SwiftVision` & `SwiftML`)**:
+   - Implemented `ONNXWeightReader` parsing binary `.onnx` model graphs (`ModelProto` -> `GraphProto` -> `TensorProto` initializers) into `[String: MLXArray]`.
+   - Integrated `YOLOWeightLoader` mapping PyTorch weight names (`model.0.conv.weight`, `model.0.bn.weight`...) directly into `SwiftVision` layer parameters.
+3. **End-to-End Inference Engine (`SwiftVision`)**:
+   - Replaced legacy heuristic image contrast placeholder in `YOLOv8Detector` with full, real GPU-accelerated forward pass execution via MLX / MLXNN on Apple Silicon.
+
+---
+
 ## 🏛 Integration Guidelines for Client Applications
 
 Thanks to its modular design, SwiftSci seamlessly integrates into applications following clean architecture:

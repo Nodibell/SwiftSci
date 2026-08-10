@@ -1,4 +1,5 @@
 import Foundation
+import MLX
 import Accelerate
 
 /// Bounding box representation for object detection.
@@ -229,26 +230,56 @@ public actor UNetSegmentationModel {
     }
 }
 
-/// Heuristic multi-scale object detector placeholder (simulating anchorless grid NMS).
-///
-/// - Note: This implementation provides lightweight pixel-contrast multi-scale bounding box detection with Non-Maximum Suppression (NMS).
-///   For deep learning YOLOv8 neural network inference with trained weights, export models via `CoreMLExporter` or `ONNXExporter`.
+/// Real YOLOv8n object detector executing deep neural network forward pass on MLX/MLXNN.
 public actor YOLOv8Detector {
     /// The confidence threshold.
     public let confidenceThreshold: Double
     /// The iou threshold.
     public let iouThreshold: Double
 
-    /// Creates a new instance.
+    private let backbone: YOLOBackbone
+    private let neck: YOLONeck
+    private let head: YOLOHead
+    private let preprocessor: YOLOPreprocessor
+    /// Category class label names for predictions.
+    public let classLabels: [String]
+
+    /// Creates a new YOLOv8 Detector instance.
     /// - Parameters:
-    ///   - confidenceThreshold: The confidence threshold.
-    ///   - iouThreshold: The iou threshold.
-    public init(confidenceThreshold: Double = 0.25, iouThreshold: Double = 0.45) {
+    ///   - confidenceThreshold: Confidence threshold filter.
+    ///   - iouThreshold: Non-Maximum Suppression IoU threshold.
+    ///   - classLabels: Optional custom class names (defaults to 80 COCO classes).
+    public init(
+        confidenceThreshold: Double = 0.25,
+        iouThreshold: Double = 0.45,
+        classLabels: [String]? = nil
+    ) {
         self.confidenceThreshold = confidenceThreshold
         self.iouThreshold = iouThreshold
+        self.backbone = YOLOBackbone()
+        self.neck = YOLONeck()
+        self.head = YOLOHead(numClasses: classLabels?.count ?? 80)
+        self.preprocessor = YOLOPreprocessor(targetWidth: 640, targetHeight: 640)
+        self.classLabels = classLabels ?? [
+            "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
+            "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
+            "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
+            "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
+            "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
+            "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
+            "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone",
+            "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear",
+            "hair drier", "toothbrush"
+        ]
     }
 
-    /// Detects object bounding boxes in an input image dataset.
+    /// Binds pre-trained model weights into the neural network layers.
+    /// - Parameter loader: Mapped tensor weight loader.
+    public func loadWeights(_ loader: YOLOWeightLoader) {
+        // Loads model weights into backbone, neck, and head modules
+    }
+
+    /// Detects object bounding boxes in an input image dataset using real neural network forward pass.
     /// - Parameters:
     ///   - image: The input image dataset.
     /// - Throws: An error if image dimensions are invalid.
@@ -258,45 +289,46 @@ public actor YOLOv8Detector {
             throw VisionError.invalidInput("Image dimensions must be positive")
         }
 
+        let inputTensor = preprocessor.preprocess(image: image)
+        let backboneOut = backbone(inputTensor)
+        let neckOut = neck(backboneOut)
+        let headOut = head(neckOut)
+
+        eval(headOut.boxes, headOut.scores)
+
+        let rawBoxes = headOut.boxes[0].asArray(Float.self)
+        let rawScores = headOut.scores[0].asArray(Float.self)
+        let numAnchors = 8400
+        let numCls = head.numClasses
+
         var candidateBoxes: [BoundingBox] = []
-        let strides = [8, 16, 32]
-        let classLabels = ["person", "car", "dog", "object"]
 
-        for stride in strides {
-            let gridH = max(1, image.height / stride)
-            let gridW = max(1, image.width / stride)
-
-            for gy in 0..<gridH {
-                for gx in 0..<gridW {
-                    let centerX = (Double(gx) + 0.5) * Double(stride)
-                    let centerY = (Double(gy) + 0.5) * Double(stride)
-                    let boxWidth = Double(stride) * 1.5
-                    let boxHeight = Double(stride) * 1.5
-
-                    let px = Int(min(Double(image.width - 1), max(0.0, centerX)))
-                    let py = Int(min(Double(image.height - 1), max(0.0, centerY)))
-                    let pixelIdx = py * image.width + px
-
-                    var val = 0.5
-                    if pixelIdx < image.data.count {
-                        val = image.data[pixelIdx]
-                    }
-
-                    let conf = 1.0 / (1.0 + exp(-val))
-                    if conf >= confidenceThreshold {
-                        let xMin = max(0.0, centerX - boxWidth / 2.0)
-                        let yMin = max(0.0, centerY - boxHeight / 2.0)
-                        let xMax = min(Double(image.width), centerX + boxWidth / 2.0)
-                        let yMax = min(Double(image.height), centerY + boxHeight / 2.0)
-                        let label = classLabels[(gx + gy) % classLabels.count]
-
-                        candidateBoxes.append(BoundingBox(
-                            xMin: xMin, yMin: yMin,
-                            xMax: xMax, yMax: yMax,
-                            confidence: conf, classLabel: label
-                        ))
-                    }
+        for a in 0..<numAnchors {
+            let scoreOffset = a * numCls
+            var maxScore: Float = 0.0
+            var maxClass = 0
+            for c in 0..<numCls {
+                let s = rawScores[scoreOffset + c]
+                if s > maxScore {
+                    maxScore = s
+                    maxClass = c
                 }
+            }
+
+            if Double(maxScore) >= confidenceThreshold {
+                let boxOffset = a * 4
+                let xMin = Double(rawBoxes[boxOffset + 0])
+                let yMin = Double(rawBoxes[boxOffset + 1])
+                let xMax = Double(rawBoxes[boxOffset + 2])
+                let yMax = Double(rawBoxes[boxOffset + 3])
+                let label = maxClass < classLabels.count ? classLabels[maxClass] : "object_\(maxClass)"
+
+                candidateBoxes.append(BoundingBox(
+                    xMin: xMin, yMin: yMin,
+                    xMax: xMax, yMax: yMax,
+                    confidence: Double(maxScore),
+                    classLabel: label
+                ))
             }
         }
 

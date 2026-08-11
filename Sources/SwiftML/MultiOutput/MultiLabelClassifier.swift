@@ -17,19 +17,19 @@ public actor MultiLabelClassifier {
     ///   - targets: Multi-label binary matrix `[N x K]` containing 0s and 1s.
     public func fit(features: [[Double]], targets: [[Int]]) async throws {
         guard !features.isEmpty, !targets.isEmpty, features.count == targets.count else {
-            throw SwiftSciError.dataError("Features and multi-labels count mismatch or empty.")
+            throw SwiftMLError.invalidInput("Features and multi-labels count mismatch or empty.")
         }
         
         let numLabels = targets[0].count
         guard numLabels > 0 else {
-            throw SwiftSciError.dataError("Label vector length must be greater than 0.")
+            throw SwiftMLError.invalidInput("Label vector length must be greater than 0.")
         }
         
         // Extract column-wise labels converted to Double for fit
         var columnLabels = [[Double]](repeating: [], count: numLabels)
         for targetRow in targets {
             guard targetRow.count == numLabels else {
-                throw SwiftSciError.dataError("Dimension mismatch: expected \(numLabels) label columns, got \(targetRow.count)")
+                throw SwiftMLError.dimensionMismatch(expected: numLabels, got: targetRow.count)
             }
             for k in 0..<numLabels {
                 columnLabels[k].append(Double(targetRow[k]))
@@ -61,7 +61,7 @@ public actor MultiLabelClassifier {
     /// - Returns: Predicted binary label matrix `[N x K]`.
     public func predict(features: [[Double]]) async throws -> [[Int]] {
         guard !estimators.isEmpty else {
-            throw SwiftSciError.predictionError("Model not fitted.")
+            throw SwiftMLError.modelNotFitted
         }
         
         let numLabels = estimators.count

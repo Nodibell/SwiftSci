@@ -28,7 +28,8 @@ public actor AutoML {
     /// Fits model candidates and returns the best model evaluation report.
     public func fit(features: [[Double]], targets: [Double]) async throws -> EvaluationReport {
         guard !features.isEmpty, features.count == targets.count else {
-            throw SwiftSciError.trainingError("Features and targets count mismatch in AutoML")
+            throw SwiftMLError.trainingFailed("Features and targets count mismatch in AutoML")
+
         }
 
         var metrics: [String: Double] = [:]

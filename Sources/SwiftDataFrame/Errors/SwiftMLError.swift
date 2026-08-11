@@ -188,9 +188,13 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
 
 // MARK: - Compatibility Typealiases
 /// Represents data frame error.
+@available(*, deprecated, renamed: "SwiftMLError", message: "Use SwiftMLError directly; DataFrameError will be removed in v4.0.")
 public typealias DataFrameError = SwiftMLError
+
 /// Represents m l error.
+@available(*, deprecated, renamed: "SwiftMLError", message: "Use SwiftMLError directly; MLError will be removed in v4.0.")
 public typealias MLError = SwiftMLError
+
 /// Represents preprocessing error.
 public typealias PreprocessingError = SwiftMLError
 /// Represents forecast error.
@@ -199,4 +203,5 @@ public typealias ForecastError = SwiftMLError
 public typealias StatsError = SwiftMLError
 /// Represents cluster error.
 public typealias ClusterError = SwiftMLError
+
 

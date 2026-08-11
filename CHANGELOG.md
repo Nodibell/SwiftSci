@@ -4,7 +4,15 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.2] - 2026-08-11
+
+### Added
+- **`KoopmanOperator` (`SwiftForecast`)**: Infinite-dimensional linear operator forecasting for nonlinear dynamical systems via Extended Dynamic Mode Decomposition (EDMD). Supports `ObservableDictionary` (Polynomial, Radial Basis Functions / RBF, Fourier trigonometric, identity, and combined dictionaries), Hankel time-delay embedding, multi-step state trajectory prediction, and spectral stability analysis via LAPACK `dgeev` eigenvalues decomposition.
+
+---
+
 ## [2.8.1] - 2026-08-10
+
 
 ### Added
 - **Real YOLOv8 Object Detection Inference (`SwiftVision`)**: Implemented `YOLOBackbone` (CSPDarknet with `ConvBlock`, `BottleneckBlock`, `C2fBlock`, `SPPFBlock`), `YOLONeck` (PANet feature pyramid), `YOLOHead` (anchor-free decoupled classification and Distribution Focal Loss / DFL regression branches over 8,400 cells), and `YOLOPreprocessor` (640x640 letterbox).

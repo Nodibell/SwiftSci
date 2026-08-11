@@ -1,4 +1,5 @@
-# SwiftSci 2.8.1
+# SwiftSci 2.8.2
+
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -20,7 +21,7 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## 🚀 Core Modules & What's New in 2.8.1
+## 🚀 Core Modules & What's New in 2.8.2
 
 | Module                           | Description                                                                                                                                                                                                                                                                                                                                                          |                                    Docs                                    |
 | :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------: |

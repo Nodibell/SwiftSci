@@ -135,13 +135,9 @@ public actor LogisticRegression: ClassifierEstimator {
     }
     
     private func stableSigmoid(_ z: Double) -> Double {
-        if z >= 0.0 {
-            return 1.0 / (1.0 + exp(-z))
-        } else {
-            let zExp = exp(z)
-            return zExp / (1.0 + zExp)
-        }
+        sigmoid(z)
     }
+
     
     // MARK: - GPU Backend (MLX)
     

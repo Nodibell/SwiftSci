@@ -1,6 +1,8 @@
 import Foundation
 import MLX
 import Accelerate
+import SwiftML
+
 
 /// Bounding box representation for object detection.
 public struct BoundingBox: Sendable, Codable, Equatable {
@@ -222,8 +224,9 @@ public actor UNetSegmentationModel {
             for c in 0..<w {
                 let p = r * w + c
                 let normVal = (brightness[p] - meanVal) / max(1e-6, stdVal)
-                let score = 1.0 / (1.0 + exp(-normVal))
+                let score = sigmoid(normVal)
                 mask[r][c] = score
+
             }
         }
         return mask

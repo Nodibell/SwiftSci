@@ -59,7 +59,8 @@ public actor OneVsRestClassifier: Sendable {
         }
         
         return classProbs.map { row in
-            row.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
+            row.argmax()
         }
+
     }
 }

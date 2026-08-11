@@ -227,9 +227,10 @@ public actor LinearSVC: ClassifierEstimator {
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         let scores = try decisionFunction(features: features)
         return scores.map { score in
-            let prob1 = 1.0 / (1.0 + exp(-score))
+            let prob1 = sigmoid(score)
             return [1.0 - prob1, prob1]
         }
+
     }
 }
 #endif

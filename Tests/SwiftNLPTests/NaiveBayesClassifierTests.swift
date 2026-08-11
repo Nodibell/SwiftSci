@@ -58,4 +58,55 @@ struct NaiveBayesClassifierTests {
         #expect(preds[0] == 0)
         #expect(preds[1] == 1)
     }
+
+    @Test("NaiveBayesClassifier handles error edge cases and unfitted predictions")
+    func testNaiveBayesClassifierEdgeCases() async throws {
+        let classifier = NaiveBayesClassifier(alpha: -1.0)
+        #expect(await classifier.alpha == 0.0)
+
+        await #expect(throws: SwiftMLError.self) {
+            try await classifier.predict(features: [[1.0, 2.0]])
+        }
+
+        await #expect(throws: SwiftMLError.self) {
+            try await classifier.fit(features: [], targets: [])
+        }
+
+        await #expect(throws: SwiftMLError.self) {
+            try await classifier.fit(features: [[1.0, 2.0]], targets: [0.0, 1.0])
+        }
+
+        try await classifier.fit(features: [[1.0, 2.0]], targets: [0.0])
+        let emptyPreds = try await classifier.predictProbability(features: [])
+        #expect(emptyPreds.isEmpty)
+
+        let mismatchProbs = try await classifier.predictProbability(features: [[1.0]])
+        #expect(mismatchProbs.count == 1)
+    }
+
+    @Test("ComplementNaiveBayesClassifier handles error edge cases and unfitted predictions")
+    func testComplementNaiveBayesClassifierEdgeCases() async throws {
+        let classifier = ComplementNaiveBayesClassifier(alpha: -1.0)
+        #expect(await classifier.alpha == 0.0)
+
+        await #expect(throws: SwiftMLError.self) {
+            try await classifier.predict(features: [[1.0, 2.0]])
+        }
+
+        await #expect(throws: SwiftMLError.self) {
+            try await classifier.fit(features: [], targets: [])
+        }
+
+        await #expect(throws: SwiftMLError.self) {
+            try await classifier.fit(features: [[1.0, 2.0]], targets: [0.0, 1.0])
+        }
+
+        try await classifier.fit(features: [[1.0, 2.0]], targets: [0.0])
+        let emptyPreds = try await classifier.predictProbability(features: [])
+        #expect(emptyPreds.isEmpty)
+
+        let mismatchProbs = try await classifier.predictProbability(features: [[1.0]])
+        #expect(mismatchProbs.count == 1)
+    }
 }
+

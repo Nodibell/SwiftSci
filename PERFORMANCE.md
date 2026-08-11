@@ -10,27 +10,47 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ## 📊 Complete Benchmark Matrix
 
-| Benchmark Scenario | SwiftSci 3.0.0 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
+The values below are median times from the latest release benchmark run. Speedups are computed as `Python / Swift`; values above `1×` favor Swift. `n/a` means that the Python suite did not include an equivalent benchmark.
 
+| Benchmark Scenario | SwiftSci 3.0.0 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) | **0.49 ms** | 1.85 ms (*OpenCV/Torch*) | ⚡ **3.78×** | 🟢 **Swift** | >2,000 FPS letterbox preprocessor |
-| **UNetSegmentation Predict** (128×128 image) | **0.11 ms** | 0.42 ms (*PyTorch*) | ⚡ **3.82×** | 🟢 **Swift** | U-Net GPU segmentation forward pass |
-| **YOLOv8Detector Detect** (640×640 real GPU) | **16.61 ms** | 28.50 ms (*PyTorch*) | ⚡ **1.72×** | 🟢 **Swift** | Real YOLOv8n GPU forward pass (~60 FPS) |
-| **ARIMA(1,1,1) Fit** (50k pts) | **2.38 ms** | 210.94 ms (*Statsmodels*) | ⚡ **88.3×** | 🟢 **Swift** | Swift 6 native state-space solver |
-| **ARIMA(1,1,1) Forecast** (horizon=24) | **2.42 ms** | 210.75 ms (*Statsmodels*) | ⚡ **86.8×** | 🟢 **Swift** | Zero-allocation forecast loop |
-| **Holt-Winters Fit** (50k pts, period=12) | **6.83 ms** | 142.87 ms (*Statsmodels*) | ⚡ **20.9×** | 🟢 **Swift** | Vectorized level/trend updates |
-| **LinearSVC Fit** (1k×4, Metal GPU) | **0.48 ms** | 3.85 ms (*Scikit-Learn*) | ⚡ **8.02×** | 🟢 **Swift** | MLX Metal GPU Hinge loss solver |
-| **RandomForest Fit** (1k×4, 50 trees) | **5.43 ms** | 26.23 ms (*Scikit-Learn*) | ⚡ **4.83×** | 🟢 **Swift** | Pre-sorted DOD trees & SIMD MSE split |
-| **GBDT Regressor Fit** (1k×4, 50 est) | **8.55 ms** | 33.15 ms (*Scikit-Learn*) | ⚡ **3.87×** | 🟢 **Swift** | Parallel tree gradient boosting |
-| **KernelSHAP Explain** (100 coalitions) | **0.17 ms** | 0.47 ms (*SHAP*) | ⚡ **2.76×** | 🟢 **Swift** | Swift `TaskGroup` parallel coalitions |
-| **Kalman Filter 1D** (10k obs) | **67.11 ms** | 83.78 ms (*NumPy*) | ⚡ **1.25×** | 🟢 **Swift** | Accelerate matrix updates |
-| **CSV Stream + GroupBy** (100k rows) | **23.53 ms** | 28.34 ms (*Pandas*) | ⚡ **1.20×** | 🟢 **Swift** | Memory-mapped streaming reader |
-| **LLM Forward Pass** (seqLen=64) | **0.43 ms** | 0.53 ms (*PyTorch*) | ⚡ **1.22×** | 🟢 **Swift** | MLX Metal GPU execution & compile cache |
-| **CSV Read** (100k rows) | **17.29 ms** | 18.99 ms (*Pandas*) | ⚡ **1.10×** | 🟢 **Swift** | Memory-mapped zero-copy parser |
-| **Pearson Correlation** (500k pairs) | **1.40 ms** | 1.24 ms (*NumPy*) | 0.88× | 🔴 **Python** | Vectorized dot product |
-| **PCA SVD Fit** (1k×100 → 10 comps) | **0.98 ms** | 0.75 ms (*Scikit-Learn*) | 0.76× | 🔴 **Python** | Halko $O(MNk)$ `RandomizedSVD` |
-| **KMeans Fit** (10k×4, 3 clusters) | **23.13 ms** | 11.45 ms (*Scikit-Learn*) | 0.50× | 🔴 **Python** | OpenMP parallel centroids in C |
-| **LLM Token Generate** (10 tokens) | **7.16 ms** | 3.88 ms (*PyTorch*) | 0.54× | 🔴 **Python** | Includes streaming UI & tokenizer |
+| Mean (1M elements) | **0.082 ms** | 0.121 ms (*NumPy*) | ⚡ **1.48×** | 🟢 **Swift** | vDSP reduction |
+| StdDev (1M elements) | **0.275 ms** | 0.533 ms (*NumPy*) | ⚡ **1.94×** | 🟢 **Swift** | vDSP reduction |
+| Variance (1M elements) | **0.282 ms** | 0.517 ms (*NumPy*) | ⚡ **1.84×** | 🟢 **Swift** | vDSP reduction |
+| Pearson Correlation (500k pairs) | **0.812 ms** | 1.193 ms (*NumPy*) | ⚡ **1.47×** | 🟢 **Swift** | CI-gated |
+| CSV Read (100k rows) | **15.465 ms** | 19.413 ms (*Pandas*) | ⚡ **1.26×** | 🟢 **Swift** | Memory-mapped parser |
+| CSV Stream Read (chunk=10k) | **21.715 ms** | 21.921 ms (*Pandas*) | ⚡ **1.01×** | 🟢 **Swift** | Near parity |
+| CSV Stream + Filter | **29.069 ms** | 24.233 ms (*Pandas*) | 0.83× | 🔴 **Python** | Informational gap |
+| CSV Stream + GroupBy | **22.830 ms** | 27.603 ms (*Pandas*) | ⚡ **1.21×** | 🟢 **Swift** | Streaming group-by |
+| Filter rows (100k) | **32.378 ms** | 0.581 ms (*Pandas*) | 0.02× | 🔴 **Python** | Informational gap |
+| GroupBy + Aggregation | **2.411 ms** | n/a | n/a | — | Swift-only benchmark |
+| SortBy double column | **68.424 ms** | 7.210 ms (*Pandas*) | 0.11× | 🔴 **Python** | Informational gap |
+| LinearRegression fit (10k×10, 100 epochs) | **26.063 ms** | 24.921 ms (*Scikit-Learn*) | 0.96× | 🔴 **Python** | Near parity; informational |
+| RandomForest fit (1k×4, 50 trees) | **3.838 ms** | 25.300 ms (*Scikit-Learn*) | ⚡ **6.59×** | 🟢 **Swift** | CI-gated |
+| GBDT Regressor fit (1k×4, 50 estimators) | **8.397 ms** | 32.366 ms (*Scikit-Learn*) | ⚡ **3.85×** | 🟢 **Swift** | CI-gated |
+| KMeans fit (10k×4, 3 clusters) | **20.062 ms** | 11.993 ms (*Scikit-Learn*) | 0.60× | 🔴 **Python** | Informational gap |
+| PCA SVD fit (1k×100 → 10 comps) | **1.014 ms** | 0.732 ms (*Scikit-Learn*) | 0.72× | 🔴 **Python** | Informational gap |
+| IsolationForest fit (1k×10, 100 trees) | **14.794 ms** | n/a | n/a | — | Swift-only benchmark |
+| LinearSVC fit (1k×4, 100 epochs, Metal GPU) | **0.463 ms** | n/a | n/a | — | Swift MLX Metal benchmark |
+| Holt-Winters fit (50k pts, period=12) | **6.451 ms** | 144.752 ms (*Statsmodels*) | ⚡ **22.44×** | 🟢 **Swift** | CI-gated |
+| ARIMA(1,1,1) fit (50k pts) | **2.463 ms** | 212.621 ms (*Statsmodels*) | ⚡ **86.34×** | 🟢 **Swift** | CI-gated |
+| ARIMA(1,1,1) forecast (horizon=24) | **2.566 ms** | 213.709 ms (*Statsmodels*) | ⚡ **83.27×** | 🟢 **Swift** | CI-gated |
+| Kalman Filter 1D (10k observations) | **57.970 ms** | 85.788 ms (*NumPy*) | ⚡ **1.48×** | 🟢 **Swift** | CI-gated |
+| TS Decomposition additive (1k pts) | **0.255 ms** | 0.100 ms (*Statsmodels*) | 0.39× | 🔴 **Python** | CI-gated, still below 2× threshold |
+| LLM Forward Pass (seqLen=64) | **0.437 ms** | 0.531 ms (*PyTorch*) | ⚡ **1.21×** | 🟢 **Swift** | MLX Metal execution |
+| LLM Generate (10 tokens) | **4.936 ms** | 3.609 ms (*PyTorch*) | 0.73× | 🔴 **Python** | Informational gap |
+| YOLOv8Detector detect (640×640 real GPU) | **12.317 ms** | n/a | n/a | — | SwiftVision GPU benchmark |
+| YOLOPreprocessor letterbox (1920×1080 → 640×640) | **0.414 ms** | n/a | n/a | — | SwiftVision preprocessing |
+| UNetSegmentationModel predict (128×128 image) | **0.107 ms** | n/a | n/a | — | SwiftVision GPU benchmark |
+| KernelSHAP Explain (5 features, 100 coalitions) | **0.168 ms** | 0.413 ms (*SHAP*) | ⚡ **2.45×** | 🟢 **Swift** | CI-gated |
+| CNN Feature Extraction & Vision Metrics | **0.004 ms** | n/a | n/a | — | SwiftSci Extensions benchmark |
+| SQLite Direct DataFrame Ingestion | **0.776 ms** | n/a | n/a | — | SwiftSci Extensions benchmark |
+| RAG Context Summary Generation | **0.000 ms** | n/a | n/a | — | SwiftSci Extensions benchmark |
+| TreeSHAP Explanation (100 samples) | **0.310 ms** | n/a | n/a | — | SwiftSci Extensions benchmark |
+| OneVsRestClassifier (5 classes, 100 samples) | **3.566 ms** | n/a | n/a | — | SwiftSci Extensions benchmark |
+| TF-IDF Vectorizer (50 documents) | **0.590 ms** | n/a | n/a | — | SwiftSci Extensions benchmark |
+
+**Comparison summary:** 15 matched benchmarks favor Swift; 8 favor Python. The CI comparison passed with no gated regressions.
 
 
 

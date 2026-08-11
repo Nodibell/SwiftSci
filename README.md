@@ -46,48 +46,55 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 Official comparative benchmark suite results comparing **SwiftSci** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
 
+Values are median times from the latest benchmark run. `n/a` means that the Python suite did not include an equivalent benchmark.
 
 ### 👁️ 1. Computer Vision & Neural Inference
 
 | Benchmark Scenario                              | SwiftSci 3.0.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
-| **YOLOv8Detector Detect** (640×640, GPU)  |  **16.61 ms** (~60 FPS) | 28.50 ms (*PyTorch*) | ⚡**1.72×** | 🟢 Swift |
-| **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) |  **0.49 ms** (>2k FPS) | 1.85 ms (*OpenCV/Torch*) | ⚡**3.78×** | 🟢 Swift |
-| **UNetSegmentation Predict** (128×128 image) |  **0.11 ms**  | 0.42 ms (*PyTorch*) | ⚡**3.82×** | 🟢 Swift |
+| **YOLOv8Detector Detect** (640×640, real GPU) | **12.317 ms** (~81 FPS) | n/a | n/a | — |
+| **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) | **0.414 ms** | n/a | n/a | — |
+| **UNetSegmentation Predict** (128×128 image) | **0.107 ms** | n/a | n/a | — |
+
+### 📈 2. Forecasting
 
 | Benchmark Scenario                              | SwiftSci 3.0.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
-| **ARIMA(1,1,1) Fit** (50k pts)            |  **2.27 ms**  | 227.34 ms (*Statsmodels*) | ⚡**100.1×** | 🟢 Swift |
-| **ARIMA(1,1,1) Forecast** (horizon=24)    |  **2.38 ms**  | 224.57 ms (*Statsmodels*) | ⚡**94.3×** | 🟢 Swift |
-| **Holt-Winters Fit** (50k pts, period=12) |  **7.35 ms**  | 144.90 ms (*Statsmodels*) | ⚡**19.7×** | 🟢 Swift |
+| **ARIMA(1,1,1) Fit** (50k pts) | **2.463 ms** | 212.621 ms (*Statsmodels*) | ⚡**86.34×** | 🟢 Swift |
+| **ARIMA(1,1,1) Forecast** (horizon=24) | **2.566 ms** | 213.709 ms (*Statsmodels*) | ⚡**83.27×** | 🟢 Swift |
+| **Holt-Winters Fit** (50k pts, period=12) | **6.451 ms** | 144.752 ms (*Statsmodels*) | ⚡**22.44×** | 🟢 Swift |
 
-### 🤖 2. Machine Learning & Clustering
+### 🤖 3. Machine Learning & Clustering
 
 | Benchmark Scenario                           | SwiftSci 3.0.0 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
 | :------------------------------------------- | :--------------------: | :-------------------------: | :---------------: | :------: |
-| **LinearSVC Fit** (1k×4, Metal GPU)  |  **0.48 ms**  | 3.85 ms (*Scikit-Learn*)  | ⚡**8.02×** | 🟢 Swift |
-| **RandomForest Fit** (1k×4, 50 trees) |  **3.99 ms**  | 27.10 ms (*Scikit-Learn*) | ⚡**6.79×** | 🟢 Swift |
-| **GBDT Regressor Fit** (1k×4, 50 est) |  **7.99 ms**  | 34.80 ms (*Scikit-Learn*) | ⚡**4.35×** | 🟢 Swift |
+| **LinearSVC Fit** (1k×4, Metal GPU) | **0.463 ms** | n/a | n/a | — |
+| **RandomForest Fit** (1k×4, 50 trees) | **3.838 ms** | 25.300 ms (*Scikit-Learn*) | ⚡**6.59×** | 🟢 Swift |
+| **GBDT Regressor Fit** (1k×4, 50 estimators) | **8.397 ms** | 32.366 ms (*Scikit-Learn*) | ⚡**3.85×** | 🟢 Swift |
+| **KMeans Fit** (10k×4, 3 clusters) | **20.062 ms** | 11.993 ms (*Scikit-Learn*) | 0.60× | 🔴 Python |
+| **PCA SVD Fit** (1k×100 → 10 comps) | **1.014 ms** | 0.732 ms (*Scikit-Learn*) | 0.72× | 🔴 Python |
 
-### 📝 3. Natural Language & Explainability
-
-| Benchmark Scenario                            | SwiftSci 3.0.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
-| :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
-| **KernelSHAP Explain** (100 coalitions) |  **0.18 ms**  |  0.46 ms (*SHAP*)  | ⚡**2.56×** | 🟢 Swift |
-| **LLM Forward Pass** (seqLen=64)        |  **0.45 ms**  | 0.67 ms (*PyTorch*) | ⚡**1.48×** | 🟢 Swift |
-
-### 📊 4. Core Data Engines & Vector Stats
+### 📝 4. Natural Language & Explainability
 
 | Benchmark Scenario                            | SwiftSci 3.0.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
-| **Mean Reduction** (vDSP 1M elements)   |  **0.098 ms**  | 0.118 ms (*NumPy*) | ⚡**1.20×** | 🟢 Swift |
-| **StdDev Reduction** (vDSP 1M elements) |  **0.433 ms**  | 0.516 ms (*NumPy*) | ⚡**1.19×** | 🟢 Swift |
-| **Pearson Correlation** (500k pairs)    |  **1.032 ms**  | 1.233 ms (*NumPy*) | ⚡**1.19×** | 🟢 Swift |
-| **Kalman Filter 1D** (10k obs)          |  **60.44 ms**  | 87.78 ms (*NumPy*) | ⚡**1.45×** | 🟢 Swift |
-| **CSV Read** (100k rows)                |  **14.75 ms**  | 20.11 ms (*Pandas*) | ⚡**1.36×** | 🟢 Swift |
-| **CSV Stream + GroupBy** (100k rows)    |  **21.21 ms**  | 30.05 ms (*Pandas*) | ⚡**1.41×** | 🟢 Swift |
+| **KernelSHAP Explain** (5 features, 100 coalitions) | **0.168 ms** | 0.413 ms (*SHAP*) | ⚡**2.45×** | 🟢 Swift |
+| **LLM Forward Pass** (seqLen=64) | **0.437 ms** | 0.531 ms (*PyTorch*) | ⚡**1.21×** | 🟢 Swift |
+| **LLM Generate** (10 tokens) | **4.936 ms** | 3.609 ms (*PyTorch*) | 0.73× | 🔴 Python |
 
-> ℹ️ **Transparent Reporting**: For the complete 25-benchmark matrix, see [PERFORMANCE.md](PERFORMANCE.md).
+### 📊 5. Core Data Engines & Vector Stats
+
+| Benchmark Scenario                            | SwiftSci 3.0.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
+| **Mean Reduction** (vDSP 1M elements) | **0.082 ms** | 0.121 ms (*NumPy*) | ⚡**1.48×** | 🟢 Swift |
+| **StdDev Reduction** (vDSP 1M elements) | **0.275 ms** | 0.533 ms (*NumPy*) | ⚡**1.94×** | 🟢 Swift |
+| **Variance Reduction** (vDSP 1M elements) | **0.282 ms** | 0.517 ms (*NumPy*) | ⚡**1.84×** | 🟢 Swift |
+| **Pearson Correlation** (500k pairs) | **0.812 ms** | 1.193 ms (*NumPy*) | ⚡**1.47×** | 🟢 Swift |
+| **Kalman Filter 1D** (10k observations) | **57.970 ms** | 85.788 ms (*NumPy*) | ⚡**1.48×** | 🟢 Swift |
+| **CSV Read** (100k rows) | **15.465 ms** | 19.413 ms (*Pandas*) | ⚡**1.26×** | 🟢 Swift |
+| **CSV Stream + GroupBy** (100k rows) | **22.830 ms** | 27.603 ms (*Pandas*) | ⚡**1.21×** | 🟢 Swift |
+
+> ℹ️ **Transparent Reporting**: For the complete 36-benchmark matrix, see [PERFORMANCE.md](PERFORMANCE.md).
 
 ---
 
@@ -134,4 +141,3 @@ let vader = VADERSentimentAnalyzer()
 let score = vader.polarityScores(text: "SwiftSci 3.0.0 is super fast!")
 print("Sentiment compound score:", score.compound)
 ```
-

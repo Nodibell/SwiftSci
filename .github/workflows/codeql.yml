@@ -17,6 +17,10 @@ jobs:
       actions: read
       contents: read
 
+    env:
+      CODEQL_DISABLE_IMPROVED_INCREMENTAL_ANALYSIS: "true"
+
+
     strategy:
       fail-fast: false
       matrix:

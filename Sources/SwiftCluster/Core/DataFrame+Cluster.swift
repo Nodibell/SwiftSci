@@ -9,7 +9,7 @@ extension DataFrame {
         var features = [[Double]](repeating: [Double](repeating: 0.0, count: names.count), count: nRows)
         for (colIdx, colName) in names.enumerated() {
             guard let col = self[column: colName, as: Double.self] else {
-                throw DataFrameError.columnNotFound(colName)
+                throw SwiftMLError.columnNotFound(colName)
             }
             for rowIdx in 0..<nRows {
                 features[rowIdx][colIdx] = col[rowIdx] ?? 0.0

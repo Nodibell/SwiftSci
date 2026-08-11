@@ -20,13 +20,13 @@ internal enum CSVWriter {
 
         let content = lines.joined(separator: "\n")
         guard let data = content.data(using: .utf8) else {
-            throw DataFrameError.writeError("Failed to encode CSV as UTF-8.")
+            throw SwiftMLError.writeError("Failed to encode CSV as UTF-8.")
         }
 
         do {
             try data.write(to: url, options: .atomic)
         } catch {
-            throw DataFrameError.writeError(error.localizedDescription)
+            throw SwiftMLError.writeError(error.localizedDescription)
         }
     }
 

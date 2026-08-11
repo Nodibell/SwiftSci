@@ -6,10 +6,10 @@ public extension DataFrame {
     /// Descriptive statistics for a named numeric column.
     func stats(for column: String) throws -> DescriptiveStats {
         guard let col = self[column: column] else {
-            throw DataFrameError.columnNotFound(column)
+            throw SwiftMLError.columnNotFound(column)
         }
         guard col.dtype.isNumeric, let doubles = col.toDoubles() else {
-            throw DataFrameError.typeMismatch(
+            throw SwiftMLError.typeMismatch(
                 column: column, expected: "numeric", got: col.dtype.description
             )
         }
@@ -44,13 +44,13 @@ public extension DataFrame {
     func correlationMatrix() throws -> DataFrame {
         let numericCols = columns.filter { $0.dtype.isNumeric }
         guard numericCols.count >= 2 else {
-            throw DataFrameError.emptyDataFrame(operation: "correlationMatrix")
+            throw SwiftMLError.emptyDataFrame(operation: "correlationMatrix")
         }
 
         let names   = numericCols.map(\.name)
         let vectors = try numericCols.map { col -> [Double] in
             guard let d = col.toDoubles() else {
-                throw DataFrameError.typeMismatch(
+                throw SwiftMLError.typeMismatch(
                     column: col.name, expected: "numeric", got: col.dtype.description
                 )
             }

@@ -56,7 +56,7 @@ public actor LinearRegression: RegressorEstimator {
         epochs: Int = 1000
     ) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
-            throw MLError.emptyInput
+            throw SwiftMLError.emptyInput
         }
         
         let numSamples = features.count
@@ -100,7 +100,7 @@ public actor LinearRegression: RegressorEstimator {
         let rows = numSamples
 
         guard rows >= cols else {
-            throw MLError.trainingFailed("OLS requires numSamples >= numFeatures + 1.")
+            throw SwiftMLError.trainingFailed("OLS requires numSamples >= numFeatures + 1.")
         }
 
         var trans = Int8(78) // 'N'
@@ -130,7 +130,7 @@ public actor LinearRegression: RegressorEstimator {
         dgels_(&trans, &r, &c, &nrhs, &AColMajor, &lda, &bVec, &ldb, &workQuery, &lwork, &info)
 
         guard info == 0 else {
-            throw MLError.trainingFailed("LAPACK dgels_ workspace query failed.")
+            throw SwiftMLError.trainingFailed("LAPACK dgels_ workspace query failed.")
         }
 
         lwork = Int32(workQuery[0])
@@ -138,14 +138,14 @@ public actor LinearRegression: RegressorEstimator {
         dgels_(&trans, &r, &c, &nrhs, &AColMajor, &lda, &bVec, &ldb, &work, &lwork, &info)
 
         guard info == 0 else {
-            throw MLError.trainingFailed("LAPACK dgels_ solve failed with info = \(info)")
+            throw SwiftMLError.trainingFailed("LAPACK dgels_ solve failed with info = \(info)")
         }
 
         let w = Array(bVec[0..<numFeatures])
         let b = bVec[numFeatures]
 
         if b.isNaN || b.isInfinite || w.contains(where: { $0.isNaN || $0.isInfinite }) {
-            throw MLError.trainingFailed("OLS solution contains NaN or Infinity.")
+            throw SwiftMLError.trainingFailed("OLS solution contains NaN or Infinity.")
         }
 
         self.cpuWeights = w
@@ -193,7 +193,7 @@ public actor LinearRegression: RegressorEstimator {
             
             // Check for NaN or Inf to early terminate
             if gradB.isNaN || gradB.isInfinite || gradW.contains(where: { $0.isNaN || $0.isInfinite }) {
-                throw MLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
+                throw SwiftMLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
             }
             
             // Weights updates
@@ -254,7 +254,7 @@ public actor LinearRegression: RegressorEstimator {
             let bArray = b.asArray(Float.self)
             if wArray.contains(where: { $0.isNaN || $0.isInfinite }) ||
                bArray.contains(where: { $0.isNaN || $0.isInfinite }) {
-                throw MLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
+                throw SwiftMLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
             }
         }
         
@@ -295,18 +295,18 @@ public actor LinearRegression: RegressorEstimator {
     /// Predicts targets for the given feature matrix X (MLX interface).
     public func predict(X: MLXArray) throws -> MLXArray {
         guard let weights = self.weights, let bias = self.bias else {
-            throw MLError.modelNotFitted
+            throw SwiftMLError.modelNotFitted
         }
-        guard X.size > 0 else { throw MLError.emptyInput }
+        guard X.size > 0 else { throw SwiftMLError.emptyInput }
         
         let shape = X.shape
         guard shape.count == 2 else {
-            throw MLError.dimensionMismatch(expected: 2, got: shape.count)
+            throw SwiftMLError.dimensionMismatch(expected: 2, got: shape.count)
         }
         
         let numFeatures = weights.shape[0]
         guard shape[1] == numFeatures else {
-            throw MLError.dimensionMismatch(expected: numFeatures, got: shape[1])
+            throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: shape[1])
         }
         
         return matmul(X, weights) + bias

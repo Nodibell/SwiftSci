@@ -31,8 +31,8 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         maxDepth: Int = 3,
         minSamplesSplit: Int = 2
     ) throws {
-        guard nEstimators > 0 else { throw MLError.invalidParameter("nEstimators must be > 0") }
-        guard learningRate > 0 else { throw MLError.invalidParameter("learningRate must be > 0") }
+        guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
+        guard learningRate > 0 else { throw SwiftMLError.invalidParameter("learningRate must be > 0") }
         self.nEstimators = nEstimators
         self.learningRate = learningRate
         self.maxDepth = maxDepth
@@ -41,9 +41,9 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     
     /// Fits the GBDT model on the provided features and targets.
     public func fit(features: [[Double]], targets: [Double]) async throws {
-        guard !features.isEmpty else { throw MLError.emptyInput }
+        guard !features.isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
-            throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
+            throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
         
         let n = features.count
@@ -83,7 +83,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     
     /// Returns predictions for the given feature matrix.
     public func predict(features: [[Double]]) async throws -> [Double] {
-        guard !trees.isEmpty else { throw MLError.notFitted }
+        guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         
         let lr = learningRate
         let base = initialPrediction

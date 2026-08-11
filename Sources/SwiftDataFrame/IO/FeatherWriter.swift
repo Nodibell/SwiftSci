@@ -17,7 +17,7 @@ public enum FeatherWriter {
         case .success:
             return
         case .failure(let err):
-            throw DataFrameError.unsupportedFormat("Failed to write Feather file to \(url.path): \(err)")
+            throw SwiftMLError.unsupportedFormat("Failed to write Feather file to \(url.path): \(err)")
         }
     }
 
@@ -33,7 +33,7 @@ public enum FeatherWriter {
         case .success(let data):
             return data
         case .failure(let err):
-            throw DataFrameError.unsupportedFormat("Failed to write Feather data: \(err)")
+            throw SwiftMLError.unsupportedFormat("Failed to write Feather data: \(err)")
         }
     }
 

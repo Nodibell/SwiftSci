@@ -27,10 +27,10 @@ extension DataFrame {
         how: JoinKind = .inner
     ) throws -> DataFrame {
         guard let leftKeyCol = self[column: key] else {
-            throw DataFrameError.columnNotFound(key)
+            throw SwiftMLError.columnNotFound(key)
         }
         guard let rightKeyCol = other[column: key] else {
-            throw DataFrameError.columnNotFound(key)
+            throw SwiftMLError.columnNotFound(key)
         }
 
         let leftCount = shape.rows

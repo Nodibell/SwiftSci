@@ -20,10 +20,10 @@ public enum FeatherReader {
             case .success(let table):
                 return try ArrowTableBridge.toDataFrame(table)
             case .failure(let err):
-                throw DataFrameError.unsupportedFormat("Failed to load ArrowTable from Feather batches: \(err)")
+                throw SwiftMLError.unsupportedFormat("Failed to load ArrowTable from Feather batches: \(err)")
             }
         case .failure(let err):
-            throw DataFrameError.unsupportedFormat("Failed to read Feather file at \(url.path): \(err)")
+            throw SwiftMLError.unsupportedFormat("Failed to read Feather file at \(url.path): \(err)")
         }
     }
 
@@ -43,10 +43,10 @@ public enum FeatherReader {
             case .success(let table):
                 return try ArrowTableBridge.toDataFrame(table)
             case .failure(let err):
-                throw DataFrameError.unsupportedFormat("Failed to load ArrowTable from Feather batches: \(err)")
+                throw SwiftMLError.unsupportedFormat("Failed to load ArrowTable from Feather batches: \(err)")
             }
         case .failure(let err):
-            throw DataFrameError.unsupportedFormat("Failed to read Feather data: \(err)")
+            throw SwiftMLError.unsupportedFormat("Failed to read Feather data: \(err)")
         }
     }
 }

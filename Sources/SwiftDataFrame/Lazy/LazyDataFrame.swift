@@ -64,12 +64,12 @@ public struct LazyDataFrame: Sendable {
                 }
             case .filter(let predicate):
                 guard let df = currentDF else {
-                    throw DataFrameError.unsupportedOperation("Cannot apply filter on an uninitialized source")
+                    throw SwiftMLError.unsupportedOperation("Cannot apply filter on an uninitialized source")
                 }
                 currentDF = df.filter(predicate)
             case .select(let cols):
                 guard let df = currentDF else {
-                    throw DataFrameError.unsupportedOperation("Cannot apply select on an uninitialized source")
+                    throw SwiftMLError.unsupportedOperation("Cannot apply select on an uninitialized source")
                 }
                 currentDF = try df.select(cols)
             }

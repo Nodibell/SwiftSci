@@ -56,15 +56,15 @@ public actor LinearSVC: ClassifierEstimator {
         epochs: Int = 800
     ) async throws {
         guard !features.isEmpty else {
-            throw MLError.emptyInput
+            throw SwiftMLError.emptyInput
         }
         guard features.count == targets.count else {
-            throw MLError.invalidInput("Features count (\(features.count)) != targets count (\(targets.count))")
+            throw SwiftMLError.invalidInput("Features count (\(features.count)) != targets count (\(targets.count))")
         }
         
         let numFeatures = features[0].count
         guard numFeatures > 0 else {
-            throw MLError.invalidInput("Feature dimension must be > 0")
+            throw SwiftMLError.invalidInput("Feature dimension must be > 0")
         }
         
         let router = HardwareRouter.shared
@@ -130,7 +130,7 @@ public actor LinearSVC: ClassifierEstimator {
         
         if wArray.contains(where: { $0.isNaN || $0.isInfinite }) ||
            bArray.contains(where: { $0.isNaN || $0.isInfinite }) {
-            throw MLError.trainingFailed("Gradient descent diverged in LinearSVC. Try a lower learning rate.")
+            throw SwiftMLError.trainingFailed("Gradient descent diverged in LinearSVC. Try a lower learning rate.")
         }
         
         self.weights = w

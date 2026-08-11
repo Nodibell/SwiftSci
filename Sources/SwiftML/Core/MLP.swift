@@ -132,7 +132,7 @@ public actor MLPClassifier: ClassifierEstimator {
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
-            throw MLError.emptyInput
+            throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
         let numFeatures = features[0].count
@@ -302,7 +302,7 @@ public actor MLPClassifier: ClassifierEstimator {
     /// - Returns: A `[[Double]]` result.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard let layers = layers, let classes = classes else {
-            throw MLError.modelNotFitted
+            throw SwiftMLError.modelNotFitted
         }
         guard !features.isEmpty else { return [] }
 
@@ -421,7 +421,7 @@ public actor MLPRegressor: RegressorEstimator {
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
-            throw MLError.emptyInput
+            throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
         let numFeatures = features[0].count
@@ -555,7 +555,7 @@ public actor MLPRegressor: RegressorEstimator {
     /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard let layers = layers else {
-            throw MLError.modelNotFitted
+            throw SwiftMLError.modelNotFitted
         }
         guard !features.isEmpty else { return [] }
 

@@ -83,7 +83,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         minSamplesSplit: Int = 2,
         criterion: SplitCriterion = .gini
     ) throws {
-        guard nEstimators > 0 else { throw MLError.invalidParameter("nEstimators must be > 0") }
+        guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
         self.nEstimators = nEstimators
         self.maxDepth = maxDepth
         self.maxFeatures = maxFeatures
@@ -108,9 +108,9 @@ public actor RandomForestClassifier: ClassifierEstimator {
         targets: [Double],
         onProgress: (@Sendable (Int, Int) -> Void)?
     ) async throws {
-        guard !features.isEmpty else { throw MLError.emptyInput }
+        guard !features.isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
-            throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
+            throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
 
         numClasses = Int(targets.max() ?? 0) + 1
@@ -163,7 +163,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) async throws -> [Int] {
-        guard !trees.isEmpty else { throw MLError.notFitted }
+        guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         return features.map { sample in
             var votes = [Int: Int]()
             for treeNodes in trees {
@@ -180,7 +180,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[[Double]]` result.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
-        guard !trees.isEmpty else { throw MLError.notFitted }
+        guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         return features.map { sample in
             var votes = [Double](repeating: 0, count: numClasses)
             for treeNodes in trees {
@@ -314,7 +314,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         maxSamples: Int? = nil,
         minSamplesSplit: Int = 2
     ) throws {
-        guard nEstimators > 0 else { throw MLError.invalidParameter("nEstimators must be > 0") }
+        guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
         self.nEstimators = nEstimators
         self.maxDepth = maxDepth
         self.maxFeatures = maxFeatures
@@ -338,9 +338,9 @@ public actor RandomForestRegressor: RegressorEstimator {
         targets: [Double],
         onProgress: (@Sendable (Int, Int) -> Void)?
     ) async throws {
-        guard !features.isEmpty else { throw MLError.emptyInput }
+        guard !features.isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
-            throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
+            throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
 
         numFeatures = features[0].count
@@ -389,7 +389,7 @@ public actor RandomForestRegressor: RegressorEstimator {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) async throws -> [Double] {
-        guard !trees.isEmpty else { throw MLError.notFitted }
+        guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         return features.map { sample in
             let preds = trees.map { RandomForestRegressor.predictSample(sample, nodes: $0) }
             return preds.mean()

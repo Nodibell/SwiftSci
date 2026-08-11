@@ -155,10 +155,11 @@ public class YOLOHead: Module {
             let cx = MLXArray(gridX).reshaped(1, h * w, 1)
             let cy = MLXArray(gridY).reshaped(1, h * w, 1)
 
-            let distL = distances[0, axis: 2].reshaped(batchSize, h * w, 1) * stride
-            let distT = distances[1, axis: 2].reshaped(batchSize, h * w, 1) * stride
-            let distR = distances[2, axis: 2].reshaped(batchSize, h * w, 1) * stride
-            let distB = distances[3, axis: 2].reshaped(batchSize, h * w, 1) * stride
+            let distL = distances[.ellipsis, 0].reshaped(batchSize, h * w, 1) * stride
+            let distT = distances[.ellipsis, 1].reshaped(batchSize, h * w, 1) * stride
+            let distR = distances[.ellipsis, 2].reshaped(batchSize, h * w, 1) * stride
+            let distB = distances[.ellipsis, 3].reshaped(batchSize, h * w, 1) * stride
+
 
             let xMin = cx - distL
             let yMin = cy - distT

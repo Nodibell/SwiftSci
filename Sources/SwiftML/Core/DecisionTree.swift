@@ -320,9 +320,9 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     ///   - targets: The targets.
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
-        guard !features.isEmpty else { throw MLError.emptyInput }
+        guard !features.isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
-            throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
+            throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
         numFeatures = features[0].count
         nodes = []
@@ -336,7 +336,7 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) async throws -> [Int] {
-        guard !nodes.isEmpty else { throw MLError.notFitted }
+        guard !nodes.isEmpty else { throw SwiftMLError.notFitted }
         return features.map { predictSample($0, nodes: nodes) }
     }
 
@@ -346,7 +346,7 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[[Double]]` result.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
-        guard !nodes.isEmpty else { throw MLError.notFitted }
+        guard !nodes.isEmpty else { throw SwiftMLError.notFitted }
         let maxLabel = nodes.map { Int($0.value) }.max() ?? 0
         let numClasses = maxLabel + 1
         return features.map { sample in
@@ -451,9 +451,9 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     ///   - targets: The targets.
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
-        guard !features.isEmpty else { throw MLError.emptyInput }
+        guard !features.isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
-            throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
+            throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
         
         numFeatures = features[0].count
@@ -468,7 +468,7 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) async throws -> [Double] {
-        guard !nodes.isEmpty else { throw MLError.notFitted }
+        guard !nodes.isEmpty else { throw SwiftMLError.notFitted }
         return features.map { predictSample($0, nodes: nodes) }
     }
 

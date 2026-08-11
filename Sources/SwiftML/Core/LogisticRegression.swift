@@ -55,7 +55,7 @@ public actor LogisticRegression: ClassifierEstimator {
         epochs: Int = 1000
     ) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
-            throw MLError.emptyInput
+            throw SwiftMLError.emptyInput
         }
         
         let numSamples = features.count
@@ -118,7 +118,7 @@ public actor LogisticRegression: ClassifierEstimator {
             }
             
             if gradB.isNaN || gradB.isInfinite || gradW.contains(where: { $0.isNaN || $0.isInfinite }) {
-                throw MLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
+                throw SwiftMLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
             }
             
             for j in 0..<numFeatures {
@@ -182,7 +182,7 @@ public actor LogisticRegression: ClassifierEstimator {
         let bArray = b.asArray(Float.self)
         if wArray.contains(where: { $0.isNaN || $0.isInfinite }) ||
            bArray.contains(where: { $0.isNaN || $0.isInfinite }) {
-            throw MLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
+            throw SwiftMLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
         }
         
         self.weights = w
@@ -227,18 +227,18 @@ public actor LogisticRegression: ClassifierEstimator {
     /// Predicts target probabilities of class 1 for the given features X.
     public func predictProbability(X: MLXArray) throws -> MLXArray {
         guard let weights = self.weights, let bias = self.bias else {
-            throw MLError.modelNotFitted
+            throw SwiftMLError.modelNotFitted
         }
-        guard X.size > 0 else { throw MLError.emptyInput }
+        guard X.size > 0 else { throw SwiftMLError.emptyInput }
         
         let shape = X.shape
         guard shape.count == 2 else {
-            throw MLError.dimensionMismatch(expected: 2, got: shape.count)
+            throw SwiftMLError.dimensionMismatch(expected: 2, got: shape.count)
         }
         
         let numFeatures = weights.shape[0]
         guard shape[1] == numFeatures else {
-            throw MLError.dimensionMismatch(expected: numFeatures, got: shape[1])
+            throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: shape[1])
         }
         
         let logits = matmul(X, weights) + bias

@@ -59,7 +59,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Returns: A new `AnyColumn` filtered by the mask.
     public func filtered(by mask: [Bool]) throws -> any AnyColumn {
         guard mask.count == count else {
-            throw DataFrameError.columnLengthMismatch(
+            throw SwiftMLError.columnLengthMismatch(
                 expected: count, got: mask.count, column: name
             )
         }

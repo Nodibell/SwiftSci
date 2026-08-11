@@ -115,9 +115,9 @@ extension DataFrame {
             rawValues = col.values.map { $0.map { String($0) } ?? "" }
         } else {
             if self[column: name] == nil {
-                throw DataFrameError.columnNotFound(name)
+                throw SwiftMLError.columnNotFound(name)
             } else {
-                throw DataFrameError.castFailed(column: name, targetType: "String | Int64 | Double")
+                throw SwiftMLError.castFailed(column: name, targetType: "String | Int64 | Double")
             }
         }
 
@@ -295,7 +295,7 @@ extension DataFrame {
     /// Adds a rolling mean column for the specified numeric column.
     public func withRollingMean(column name: String, window: Int) throws -> DataFrame {
         guard let col = self[column: name, as: Double.self] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
         let values = col.values
         let n = values.count
@@ -315,7 +315,7 @@ extension DataFrame {
     /// Adds a rolling standard deviation column for the specified numeric column.
     public func withRollingStd(column name: String, window: Int) throws -> DataFrame {
         guard let col = self[column: name, as: Double.self] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
         let values = col.values
         let n = values.count
@@ -341,10 +341,10 @@ extension DataFrame {
     /// Adds an Exponentially Weighted Moving Average (EWMA) column for the specified numeric column.
     public func withEWMA(column name: String, alpha: Double) throws -> DataFrame {
         guard alpha > 0 && alpha <= 1.0 else {
-            throw DataFrameError.invalidParameter("alpha must be in (0, 1], got \(alpha)")
+            throw SwiftMLError.invalidParameter("alpha must be in (0, 1], got \(alpha)")
         }
         guard let col = self[column: name, as: Double.self] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
         let values = col.values
         let n = values.count

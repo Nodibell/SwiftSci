@@ -39,6 +39,9 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+        env:
+          CODEQL_DISABLE_IMPROVED_INCREMENTAL_ANALYSIS: true
+
 
       - name: Build Swift Package
         if: matrix.language == 'swift'

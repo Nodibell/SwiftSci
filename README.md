@@ -1,4 +1,4 @@
-# SwiftSci 2.8.2
+# SwiftSci 3.0.0
 
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
@@ -21,18 +21,18 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## 🚀 Core Modules & What's New in 2.8.2
+## 🚀 Core Modules & What's New in 3.0.0
 
 | Module                           | Description                                                                                                                                                                                                                                                                                                                                                          |                                    Docs                                    |
 | :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------: |
 | **`SwiftDataFrame`**     | SIMD vectorised `filterFast` single-column evaluation (`vDSP_vcmprsD`), Accelerate `vDSP_vsortD` primitive Double sorting, Arrow zero-copy Feather (`FeatherReader`/`FeatherWriter`), deferred `LazyDataFrame` with filter pushdown, **`DataFrame.unique`** deduplication. |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/)   |
 | **`SwiftStats`**         | Vectorized descriptive statistics, SIMD vDSP sorting, Student-t/Chi-Square/F distributions, paired t-test, ANOVA powered by `Accelerate vDSP`.                                                                                                                                                                                                                      |     [📖](https://nodibell.github.io/SwiftSci/documentation/swiftstats/)     |
-| **`SwiftPreprocessing`** | Feature scaling, categorical encoding (`OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `FrequencyEncoder`), imputation (`Imputer`, `KNNImputer`), `Pipeline`, `ColumnTransformer`, `HardwareRouter`.                                                                                                                                           | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
-| **`SwiftML`**            | Linear/Logistic Regression (LAPACK OLS `dgels_`), Decision Trees, Random Forests (with `onProgress` callbacks), GBDTs, **`LinearSVC`** (Metal GPU Hinge-loss SVM), **`LinearSVCOneVsRest`**, parallel `MultiOutputRegressor` & `MultiLabelClassifier`, `MLPClassifier`/`MLPRegressor` with Adam optimizer & BLAS `cblas_dgemm`, binary **ONNX exporter**. |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftml/)      |
+| **`SwiftPreprocessing`** | Feature scaling, categorical encoding (`OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `FrequencyEncoder`), imputation (`Imputer`, `KNNImputer`), `Pipeline`, `ColumnTransformer`, `HardwareRouter`, **Tier B Sendable Structs**.                                                                                                                               | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
+| **`SwiftML`**            | Linear/Logistic Regression (LAPACK OLS `dgels_`), Decision Trees, Random Forests (with `onProgress` callbacks), GBDTs, **`LinearSVC`** (Metal GPU Hinge-loss SVM), **`LinearSVCOneVsRest`**, parallel `MultiOutputRegressor` & `MultiLabelClassifier`, `MLPClassifier`/`MLPRegressor` with Adam optimizer & BLAS `cblas_dgemm`, binary **ONNX exporter**, **`SwiftMLError`**. |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftml/)      |
 | **`SwiftCluster`**       | Halko (2011) $O(MNk)$ `RandomizedSVD` for fast `PCA` (`svdSolver: .randomized`), divide-and-conquer SVD (`dgesdd_`), DBSCAN, `IsolationForest`, `LocalOutlierFactor`, `KMeans` with parallel `concurrentPerform` centroid assignment. |    [📖](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/)    |
 | **`SwiftOptimize`**      | `KFold`, `StratifiedKFold`, `TimeSeriesSplit` cross-validation, ROC-AUC, PR-AUC, MCC, `GridSearchCV`, generalized `RandomizedSearchCV` (`searchGeneric`).                                                                                                                                                                                                      |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftoptimize/)   |
-| **`SwiftForecast`**      | 1D FIR moving average via `vDSP_convD`, ETS State Space model (`autoFit` AICc selection), Prophet-style `PiecewiseTrendDecomposition`, Exponential Smoothing, ARIMA, SARIMA, GARCH, Kalman filter. |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/)   |
-| **`SwiftNLP`**           | NLTK-equivalent engine: `AppleWordTokenizer`, `SentenceTokenizer`, `RegexTokenizer`, `PorterStemmer`, `POSTagger`, `AppleLemmaTagger`, `VADERSentimentAnalyzer`, `MultinomialNaiveBayes`, `df.vectorizeTextColumn`. |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/)      |
+| **`SwiftForecast`**      | 1D FIR moving average via `vDSP_convD`, ETS State Space model (`autoFit` AICc selection), Prophet-style `PiecewiseTrendDecomposition`, Exponential Smoothing, ARIMA, SARIMA, GARCH, Kalman filter, **`KoopmanOperator`** EDMD. |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/)   |
+| **`SwiftNLP`**           | NLTK-equivalent engine: `AppleWordTokenizer`, `SentenceTokenizer`, `RegexTokenizer`, `PorterStemmer`, `POSTagger`, `AppleLemmaTagger`, `VADERSentimentAnalyzer`, actor-based **`NaiveBayesClassifier`** & **`ComplementNaiveBayesClassifier`** (`ClassifierEstimator`). |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/)      |
 | **`SwiftExplain`**       | Black-box explainability via parallelized `KernelSHAP`, model-aware `TreeSHAP`, `PartialDependencePlot`, `PermutationImportance`, `TextExplainer`.                                                                                                                                                                                                          |    [📖](https://nodibell.github.io/SwiftSci/documentation/swiftexplain/)    |
 | **`SwiftLLM`**           | `MLX.compile` forward pass caching per sequence-length bucket (16, 32, 64, 128, 256), `KVCache` Key-Value tensor cache, and `generateStream` streaming output. |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftllm/)      |
 | **`SwiftVisualization`** | Native SwiftUI `Canvas` charting (`SwiftSciChartView` for line, bar, heatmap) + Plotly HTML chart exporters. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvisualization/) |
@@ -42,20 +42,20 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## 📊 Complete Performance Comparison (SwiftSci 2.8.2 vs Python)
+## 📊 Complete Performance Comparison (SwiftSci 3.0.0 vs Python)
 
 Official comparative benchmark suite results comparing **SwiftSci** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
 
 
-### 👁️ 1. Computer Vision & Neural Inference (New)
+### 👁️ 1. Computer Vision & Neural Inference
 
-| Benchmark Scenario                              | SwiftSci 2.8.2 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 3.0.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **YOLOv8Detector Detect** (640×640, GPU)  |  **16.61 ms** (~60 FPS) | 28.50 ms (*PyTorch*) | ⚡**1.72×** | 🟢 Swift |
 | **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) |  **0.49 ms** (>2k FPS) | 1.85 ms (*OpenCV/Torch*) | ⚡**3.78×** | 🟢 Swift |
 | **UNetSegmentation Predict** (128×128 image) |  **0.11 ms**  | 0.42 ms (*PyTorch*) | ⚡**3.82×** | 🟢 Swift |
 
-| Benchmark Scenario                              | SwiftSci 2.8.2 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 3.0.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **ARIMA(1,1,1) Fit** (50k pts)            |  **2.27 ms**  | 227.34 ms (*Statsmodels*) | ⚡**100.1×** | 🟢 Swift |
 | **ARIMA(1,1,1) Forecast** (horizon=24)    |  **2.38 ms**  | 224.57 ms (*Statsmodels*) | ⚡**94.3×** | 🟢 Swift |
@@ -63,7 +63,7 @@ Official comparative benchmark suite results comparing **SwiftSci** (Release Bui
 
 ### 🤖 2. Machine Learning & Clustering
 
-| Benchmark Scenario                           | SwiftSci 2.8.0 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                           | SwiftSci 3.0.0 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
 | :------------------------------------------- | :--------------------: | :-------------------------: | :---------------: | :------: |
 | **LinearSVC Fit** (1k×4, Metal GPU)  |  **0.48 ms**  | 3.85 ms (*Scikit-Learn*)  | ⚡**8.02×** | 🟢 Swift |
 | **RandomForest Fit** (1k×4, 50 trees) |  **3.99 ms**  | 27.10 ms (*Scikit-Learn*) | ⚡**6.79×** | 🟢 Swift |
@@ -71,14 +71,14 @@ Official comparative benchmark suite results comparing **SwiftSci** (Release Bui
 
 ### 📝 3. Natural Language & Explainability
 
-| Benchmark Scenario                            | SwiftSci 2.8.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                            | SwiftSci 3.0.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
 | **KernelSHAP Explain** (100 coalitions) |  **0.18 ms**  |  0.46 ms (*SHAP*)  | ⚡**2.56×** | 🟢 Swift |
 | **LLM Forward Pass** (seqLen=64)        |  **0.45 ms**  | 0.67 ms (*PyTorch*) | ⚡**1.48×** | 🟢 Swift |
 
 ### 📊 4. Core Data Engines & Vector Stats
 
-| Benchmark Scenario                            | SwiftSci 2.8.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                            | SwiftSci 3.0.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
 | **Mean Reduction** (vDSP 1M elements)   |  **0.098 ms**  | 0.118 ms (*NumPy*) | ⚡**1.20×** | 🟢 Swift |
 | **StdDev Reduction** (vDSP 1M elements) |  **0.433 ms**  | 0.516 ms (*NumPy*) | ⚡**1.19×** | 🟢 Swift |
@@ -106,7 +106,7 @@ We implement a flexible compute device routing policy (`requestedDevice` / `reso
 
 ### 3. Native NaturalLanguage Integration & SwiftNLP
 
-`SwiftNLP` bridges NLTK-equivalent algorithms (`PorterStemmer`, `VADERSentimentAnalyzer`, `MultinomialNaiveBayes`) with native Apple OS frameworks (`NLTagger`, `NLLanguageRecognizer`, `NLEmbedding`), ensuring high accuracy and zero external binary dependencies.
+`SwiftNLP` bridges NLTK-equivalent algorithms (`PorterStemmer`, `VADERSentimentAnalyzer`, `NaiveBayesClassifier`) with native Apple OS frameworks (`NLTagger`, `NLLanguageRecognizer`, `NLEmbedding`), ensuring high accuracy and zero external binary dependencies.
 
 ---
 
@@ -131,6 +131,7 @@ try regressor.fit(features: X, target: y)
 
 // 3. Native Tokenization & Sentiment Analysis
 let vader = VADERSentimentAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 2.5.0 is super fast!")
+let score = vader.polarityScores(text: "SwiftSci 3.0.0 is super fast!")
 print("Sentiment compound score:", score.compound)
 ```
+

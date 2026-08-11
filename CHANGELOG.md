@@ -4,6 +4,25 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-08-11
+
+### Added
+- **Actor-based Naive Bayes Classifiers (`SwiftNLP`)**: Added `NaiveBayesClassifier` and `ComplementNaiveBayesClassifier` actors conforming to `ClassifierEstimator`, bringing `SwiftNLP` classifiers under the unified `SwiftML` estimator protocol hierarchy.
+- **Shared Numeric Primitives (`SwiftML`)**: Added `sigmoid(_:)` with numerical overflow clamping protection and `Array.argmax()` in `Sources/SwiftML/Core/Numerics.swift`.
+
+### Changed / Refactored
+- **Error Type Consolidation (`SwiftMLError`)**: Consolidated `MLError`, `DataFrameError`, and `SwiftSciError` into `SwiftMLError`. Deprecated legacy aliases with `@available(*, deprecated, renamed: "SwiftMLError")`.
+- **Tier B Concurrency Governance (`SwiftPreprocessing`)**: Migrated all 12 preprocessing transformers (`VarianceThreshold`, `SelectKBest`, `RecursiveFeatureElimination`, `FrequencyEncoder`, `Imputer`, `KBinsDiscretizer`, `KNNImputer`, `MissingValueIndicator`, `Normalizer`, `PolynomialFeatures`, `PowerTransformer`, `TargetEncoder`) to `public struct ...: PreprocessingTransformer, Sendable`.
+- **`DecisionTree` Protocol Signature Consistency (`SwiftML`)**: Added explicit `async` to `DecisionTreeClassifier` and `DecisionTreeRegressor` fit/predict signatures.
+- **Scoped `predictProbability1D` (`SwiftML`)**: Scoped internal method to `binaryPositiveClassProbability`.
+- **`SwiftForecast` Refactoring**: Replaced manual reduction loops with `Stats.mean`.
+
+### Deprecated
+- Struct originals `MultinomialNaiveBayes` and `ComplementNaiveBayes` in `SwiftNLP` in favor of actor-based `NaiveBayesClassifier` and `ComplementNaiveBayesClassifier`.
+- `MLError` and `DataFrameError` typealiases in favor of `SwiftMLError`.
+
+---
+
 ## [2.8.2] - 2026-08-11
 
 ### Added

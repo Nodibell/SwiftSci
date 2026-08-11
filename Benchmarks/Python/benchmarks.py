@@ -396,7 +396,7 @@ def main():
 
 
     print("╔══════════════════════════════════════════════════════════╗")
-    print("║        SwiftSci Python Benchmark Suite — v2.8.2          ║")
+    print("║        SwiftSci Python Benchmark Suite — v3.0.0          ║")
 
     print("╚══════════════════════════════════════════════════════════╝")
     print(f"Platform : {platform.machine()} ({platform.system()})")

@@ -83,9 +83,10 @@ jobs:
           xcrun llvm-cov export -format="lcov" -instr-profile="$PROFDATA" $TEST_BINS > coverage.lcov || true
       - uses: codecov/codecov-action@v7
         with:
-          file: coverage.lcov
+          files: coverage.lcov
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
 
   # 4. DocC Documentation Coverage Check
   docc-check:

@@ -49,7 +49,8 @@ public final class RollingWindow: Sendable {
     }
     
     /// Computes rolling mean and rolling standard deviation series.
-    public func transform(series: [Double]) -> (rollingMean: [Double], rollingStd: [Double]) {
+    public func transform(series: [Double]) throws -> (rollingMean: [Double], rollingStd: [Double]) {
+
         guard series.count >= windowSize else {
             return (rollingMean: series, rollingStd: [Double](repeating: 0.0, count: series.count))
         }
@@ -61,8 +62,11 @@ public final class RollingWindow: Sendable {
             let start = max(0, i - windowSize + 1)
             let window = Array(series[start...i])
             let count = Double(window.count)
-            let mean = window.reduce(0.0, +) / count
+            let mean = try Stats.mean(window)
             means[i] = mean
+
+
+
             
             if count > 1 {
                 let variance = window.reduce(0.0) { $0 + ($1 - mean) * ($1 - mean) } / (count - 1.0)

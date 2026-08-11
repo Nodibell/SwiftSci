@@ -1,4 +1,6 @@
 import Foundation
+import SwiftStats
+
 
 /// Growth trend type for Prophet-style decomposition.
 public enum GrowthType: String, Sendable {
@@ -54,7 +56,8 @@ public actor PiecewiseTrendDecomposition {
         // Initial linear fit for baseline slope and intercept in index units
         let tValues = (0..<n).map { Double($0) }
         let meanT = Double(n - 1) / 2.0
-        let meanY = series.reduce(0.0, +) / Double(n)
+        let meanY = try Stats.mean(series)
+
 
         var num = 0.0
         var den = 0.0

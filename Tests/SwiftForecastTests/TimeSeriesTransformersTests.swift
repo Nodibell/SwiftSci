@@ -17,10 +17,11 @@ struct TimeSeriesTransformersTests {
     }
     
     @Test("RollingWindow calculates sliding mean and std")
-    func testRollingWindow() {
+    func testRollingWindow() throws {
         let series = [1.0, 2.0, 3.0, 4.0, 5.0]
         let window = RollingWindow(windowSize: 3)
-        let res = window.transform(series: series)
+        let res = try window.transform(series: series)
+
         
         #expect(res.rollingMean.count == 5)
         #expect(abs(res.rollingMean[2] - 2.0) < 1e-5) // mean of [1, 2, 3] is 2

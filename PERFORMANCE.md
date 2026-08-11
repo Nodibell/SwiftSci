@@ -10,7 +10,8 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ## 📊 Complete Benchmark Matrix
 
-| Benchmark Scenario | SwiftSci 2.8.1 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
+| Benchmark Scenario | SwiftSci 2.8.2 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
+
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) | **0.49 ms** | 1.85 ms (*OpenCV/Torch*) | ⚡ **3.78×** | 🟢 **Swift** | >2,000 FPS letterbox preprocessor |
 | **UNetSegmentation Predict** (128×128 image) | **0.11 ms** | 0.42 ms (*PyTorch*) | ⚡ **3.82×** | 🟢 **Swift** | U-Net GPU segmentation forward pass |

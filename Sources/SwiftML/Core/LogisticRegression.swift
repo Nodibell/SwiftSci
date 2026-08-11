@@ -192,8 +192,8 @@ public actor LogisticRegression: ClassifierEstimator {
         self.cpuBias = Double(b.item(Float.self))
     }
     
-    /// Predicts target probabilities of class 1 for the given features matrix (Sendable interface).
-    public func predictProbability1D(features: [[Double]]) throws -> [Double] {
+    /// Predicts target probabilities of class 1 for the given features matrix.
+    func binaryPositiveClassProbability(features: [[Double]]) throws -> [Double] {
         guard !features.isEmpty else {
             return []
         }
@@ -220,7 +220,7 @@ public actor LogisticRegression: ClassifierEstimator {
 
     /// Predicts class probabilities [[prob_class_0, prob_class_1]] for the given features matrix (ClassifierEstimator protocol).
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
-        let p1 = try predictProbability1D(features: features)
+        let p1 = try binaryPositiveClassProbability(features: features)
         return p1.map { [1.0 - $0, $0] }
     }
     
@@ -256,7 +256,7 @@ public actor LogisticRegression: ClassifierEstimator {
             return []
         }
         
-        let probs = try predictProbability1D(features: features)
+        let probs = try binaryPositiveClassProbability(features: features)
         return probs.map { $0 > Double(threshold) ? 1 : 0 }
     }
     

@@ -2,17 +2,7 @@ import Foundation
 import SwiftPreprocessing
 import SwiftStats
 
-private struct SeededRandom {
-    private var state: UInt64
-    init(seed: Int) {
-        self.state = UInt64(bitPattern: Int64(seed &+ 1))
-    }
-    mutating func nextInt(upperBound: Int) -> Int {
-        guard upperBound > 0 else { return 0 }
-        state = state &* 6364136223846793005 &+ 1442695040888963407
-        return Int(state >> 33) % upperBound
-    }
-}
+
 
 /// Anomaly score and binary classification output for outlier detection models.
 public struct AnomalyPrediction: Sendable {

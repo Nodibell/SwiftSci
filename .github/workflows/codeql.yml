@@ -2,7 +2,7 @@ name: "CodeQL Security Analysis"
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "develop", "feature/**" ]
   pull_request:
     branches: [ "main", "develop" ]
   schedule:
@@ -20,7 +20,6 @@ jobs:
     env:
       CODEQL_DISABLE_IMPROVED_INCREMENTAL_ANALYSIS: "true"
 
-
     strategy:
       fail-fast: false
       matrix:
@@ -34,22 +33,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-        env:
-          CODEQL_DISABLE_IMPROVED_INCREMENTAL_ANALYSIS: true
-
 
       - name: Build Swift Package
         if: matrix.language == 'swift'
         run: swift build
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
-
+        uses: github/codeql-action/analyze@v4

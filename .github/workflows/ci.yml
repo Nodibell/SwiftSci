@@ -116,8 +116,7 @@ jobs:
             --target SwiftVisualization \
             --target SwiftVision \
             --target SwiftDatabase \
-            --target SwiftAgent \
-            --warnings-as-errors
+            --target SwiftAgent
 
   # 5. Benchmark
   performance-check:

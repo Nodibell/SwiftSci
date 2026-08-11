@@ -100,7 +100,7 @@ jobs:
         with:
           path: .build
           key: ${{ runner.os }}-swiftsci-spm-v3-${{ hashFiles('**/Package.resolved') }}
-      - name: Build DocC documentation and verify symbol coverage
+      - name: Build DocC documentation
         run: |
           swift package generate-documentation \
             --target SwiftDataFrame \
@@ -117,6 +117,13 @@ jobs:
             --target SwiftVision \
             --target SwiftDatabase \
             --target SwiftAgent
+      - name: Verify documentation was generated without errors
+        run: |
+          if [ ! -d "docs/data" ] && [ ! -d "docs/documentation" ]; then
+            echo "Documentation generation failed - no docs directory created"
+            exit 1
+          fi
+          echo "✓ Documentation generated successfully"
 
   # 5. Benchmark
   performance-check:

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Normalizer scales individual samples (rows) to have unit norm.
-public final class Normalizer: PreprocessingTransformer, @unchecked Sendable {
+public struct Normalizer: PreprocessingTransformer, Sendable {
     /// Represents norm type.
     public enum NormType: Sendable {
         case l1
@@ -20,7 +20,8 @@ public final class Normalizer: PreprocessingTransformer, @unchecked Sendable {
     }
     
     /// Normalizer is stateless, so fit is a no-op that just checks input validity.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
+
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Target encoder for categorical features using Empirical Bayes smoothing.
-public final class TargetEncoder: PreprocessingTransformer, @unchecked Sendable {
+public struct TargetEncoder: PreprocessingTransformer, Sendable {
     /// The smoothing.
     public let smoothing: Double
     
@@ -17,7 +17,7 @@ public final class TargetEncoder: PreprocessingTransformer, @unchecked Sendable 
     }
     
     /// Fits the TargetEncoder on categorical series and target values.
-    public func fit(categories: [String], target: [Double]) throws {
+    public mutating func fit(categories: [String], target: [Double]) throws {
         guard !categories.isEmpty else { throw PreprocessingError.emptyInput }
         guard categories.count == target.count else {
             throw PreprocessingError.dimensionMismatch(expected: categories.count, got: target.count)
@@ -46,11 +46,12 @@ public final class TargetEncoder: PreprocessingTransformer, @unchecked Sendable 
     }
     
     /// Fits on 2D string matrix (first column used) and 1D target (PreprocessingTransformer protocol).
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
         let categories = data.map { String($0.first ?? 0.0) }
         let defaultTarget = data.map { $0.last ?? 0.0 }
         try fit(categories: categories, target: defaultTarget)
     }
+
     
     /// Transforms categorical string array into target-encoded numerical array.
     public func transform(categories: [String]) throws -> [Double] {
@@ -66,8 +67,9 @@ public final class TargetEncoder: PreprocessingTransformer, @unchecked Sendable 
     }
     
     /// Fits and transforms categorical string array in one step.
-    public func fitTransform(categories: [String], target: [Double]) throws -> [Double] {
+    public mutating func fitTransform(categories: [String], target: [Double]) throws -> [Double] {
         try fit(categories: categories, target: target)
         return try transform(categories: categories)
     }
+
 }

@@ -13,8 +13,9 @@ struct KNNImputerTests {
             [10.0, 20.0]
         ]
         
-        let imputer = KNNImputer(nNeighbors: 2)
+        var imputer = KNNImputer(nNeighbors: 2)
         try imputer.fit(trainData)
+
         
         let testData: [[Double]] = [
             [1.5, Double.nan]

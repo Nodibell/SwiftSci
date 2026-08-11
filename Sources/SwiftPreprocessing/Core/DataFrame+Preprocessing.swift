@@ -136,7 +136,7 @@ extension DataFrame {
     /// Fits an Imputer on the specified columns.
     public func fitImputer(columns names: [String], strategy: Imputer.Strategy = .mean) throws -> Imputer {
         let features = try extractFeatures(columns: names, allowNaN: true)
-        let imputer = Imputer(strategy: strategy)
+        var imputer = Imputer(strategy: strategy)
         try imputer.fit(features)
         return imputer
     }
@@ -167,7 +167,7 @@ extension DataFrame {
     /// Normalizes the specified columns, returning the normalized DataFrame and normalizer.
     public func normalize(columns names: [String], norm: Normalizer.NormType = .l2) throws -> (normalized: DataFrame, normalizer: Normalizer) {
         let features = try extractFeatures(columns: names)
-        let normalizer = Normalizer(norm: norm)
+        var normalizer = Normalizer(norm: norm)
         try normalizer.fit(features)
         let normalized = try normalizer.transform(features)
         
@@ -216,7 +216,7 @@ extension DataFrame {
     /// Fits a PowerTransformer on the specified columns.
     public func fitPowerTransformer(columns names: [String], method: PowerTransformer.Method = .yeoJohnson, standardize: Bool = true) throws -> PowerTransformer {
         let features = try extractFeatures(columns: names)
-        let transformer = PowerTransformer(method: method, standardize: standardize)
+        var transformer = PowerTransformer(method: method, standardize: standardize)
         try transformer.fit(features)
         return transformer
     }
@@ -247,7 +247,7 @@ extension DataFrame {
     /// Fits a KBinsDiscretizer on the specified columns.
     public func fitKBinsDiscretizer(columns names: [String], nBins: Int = 5, strategy: KBinsDiscretizer.Strategy = .uniform, encode: KBinsDiscretizer.Encode = .ordinal) throws -> KBinsDiscretizer {
         let features = try extractFeatures(columns: names)
-        let discretizer = KBinsDiscretizer(nBins: nBins, strategy: strategy, encode: encode)
+        var discretizer = KBinsDiscretizer(nBins: nBins, strategy: strategy, encode: encode)
         try discretizer.fit(features)
         return discretizer
     }

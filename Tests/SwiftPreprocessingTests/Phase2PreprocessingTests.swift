@@ -34,8 +34,9 @@ struct Phase2PreprocessingTests {
     func testVarianceThreshold() throws {
         // Feature 0 has zero variance (constant 5.0), Feature 1 varies
         let data: [[Double]] = [[5.0, 1.0], [5.0, 2.0], [5.0, 3.0], [5.0, 4.0]]
-        let selector = VarianceThreshold(threshold: 0.0)
+        var selector = VarianceThreshold(threshold: 0.0)
         try selector.fit(data)
+
         let transformed = try selector.transform(data)
         
         #expect(transformed[0].count == 1)

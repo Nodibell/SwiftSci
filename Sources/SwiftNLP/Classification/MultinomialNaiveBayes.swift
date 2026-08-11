@@ -1,7 +1,9 @@
 import Foundation
 
 /// Pure Swift implementation of Multinomial Naive Bayes text classifier with Laplace smoothing.
+@available(*, deprecated, renamed: "NaiveBayesClassifier", message: "Use actor NaiveBayesClassifier conforming to ClassifierEstimator instead.")
 public struct MultinomialNaiveBayes: Sendable {
+
     /// Additive Laplace smoothing parameter (alpha >= 0).
     public let alpha: Double
 

@@ -184,7 +184,9 @@ let package = Package(
             name: "SwiftNLP",
             dependencies: [
                 "SwiftDataFrame",
+                "SwiftML",
             ],
+
             path: "Sources/SwiftNLP",
             resources: [
                 .process("SwiftNLP.docc")

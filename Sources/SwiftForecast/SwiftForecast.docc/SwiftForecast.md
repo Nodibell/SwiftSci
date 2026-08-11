@@ -11,6 +11,7 @@ Time Series & Volatility Forecasting Models.
 - **Statistical Models**: `ARIMA(p, d, q)` and Seasonal `SARIMA` for trend and seasonality forecasting.
 - **Exponential Smoothing**: Holt-Winters single, double, and triple exponential smoothing.
 - **Volatility Modeling**: `GARCHModel` for financial volatility forecasting.
+- **Nonlinear & Dynamic Systems**: `KoopmanOperator` for Extended Dynamic Mode Decomposition (EDMD) and spectral analysis.
 - **Decomposition & Filtering**: Additive/multiplicative `TimeSeriesDecomposition` and 1D `KalmanFilter`.
 
 ### Example Usage
@@ -28,3 +29,5 @@ let forecast = try arima.predict(steps: 6)
 ### Guides & Tutorials
 - <doc:ArimaAndSarima>
 - <doc:SmoothingAndDecomposition>
+- <doc:KoopmanOperator>
+

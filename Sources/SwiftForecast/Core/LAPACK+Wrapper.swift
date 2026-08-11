@@ -124,3 +124,24 @@ func dpotri_wrapper(
 ) {
     dpotri_(uplo, &n, a, &lda, &info)
 }
+
+@inline(__always)
+func dgeev_wrapper(
+    _ jobvl: UnsafeMutablePointer<Int8>,
+    _ jobvr: UnsafeMutablePointer<Int8>,
+    _ n: inout LAPACKInteger,
+    _ a: UnsafeMutablePointer<Double>,
+    _ lda: inout LAPACKInteger,
+    _ wr: UnsafeMutablePointer<Double>,
+    _ wi: UnsafeMutablePointer<Double>,
+    _ vl: UnsafeMutablePointer<Double>,
+    _ ldvl: inout LAPACKInteger,
+    _ vr: UnsafeMutablePointer<Double>,
+    _ ldvr: inout LAPACKInteger,
+    _ work: UnsafeMutablePointer<Double>,
+    _ lwork: inout LAPACKInteger,
+    _ info: inout LAPACKInteger
+) {
+    dgeev_(jobvl, jobvr, &n, a, &lda, wr, wi, vl, &ldvl, vr, &ldvr, work, &lwork, &info)
+}
+

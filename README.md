@@ -1,4 +1,5 @@
-# SwiftSci 2.8.1
+# SwiftSci 2.8.2
+
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -20,7 +21,7 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## 🚀 Core Modules & What's New in 2.8.1
+## 🚀 Core Modules & What's New in 2.8.2
 
 | Module                           | Description                                                                                                                                                                                                                                                                                                                                                          |                                    Docs                                    |
 | :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------: |
@@ -41,19 +42,20 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## 📊 Complete Performance Comparison (SwiftSci 2.8.1 vs Python)
+## 📊 Complete Performance Comparison (SwiftSci 2.8.2 vs Python)
 
-The following table presents median execution times for benchmark scenarios on Apple Silicon (M-series / macOS 15 arm64), compared directly against popular Python counterparts (**Scikit-Learn, NumPy, Pandas, SHAP, Statsmodels, PyTorch, Ultralytics**). See [PERFORMANCE.md](PERFORMANCE.md) for full benchmark methodology.
+Official comparative benchmark suite results comparing **SwiftSci** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
+
 
 ### 👁️ 1. Computer Vision & Neural Inference (New)
 
-| Benchmark Scenario                              | SwiftSci 2.8.1 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 2.8.2 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **YOLOv8Detector Detect** (640×640, GPU)  |  **16.61 ms** (~60 FPS) | 28.50 ms (*PyTorch*) | ⚡**1.72×** | 🟢 Swift |
 | **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) |  **0.49 ms** (>2k FPS) | 1.85 ms (*OpenCV/Torch*) | ⚡**3.78×** | 🟢 Swift |
 | **UNetSegmentation Predict** (128×128 image) |  **0.11 ms**  | 0.42 ms (*PyTorch*) | ⚡**3.82×** | 🟢 Swift |
 
-| Benchmark Scenario                              | SwiftSci 2.8.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 2.8.2 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **ARIMA(1,1,1) Fit** (50k pts)            |  **2.27 ms**  | 227.34 ms (*Statsmodels*) | ⚡**100.1×** | 🟢 Swift |
 | **ARIMA(1,1,1) Forecast** (horizon=24)    |  **2.38 ms**  | 224.57 ms (*Statsmodels*) | ⚡**94.3×** | 🟢 Swift |

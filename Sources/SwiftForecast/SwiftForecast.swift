@@ -6,3 +6,6 @@
 public typealias ARIMA = ARIMAModel
 /// Represents g a r c h.
 public typealias GARCH = GARCHModel
+/// Represents Koopman Operator.
+public typealias Koopman = KoopmanOperator
+

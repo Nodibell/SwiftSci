@@ -119,6 +119,20 @@ jobs:
             --target SwiftAgent \
             --warnings-as-errors
 
+      - name: Verify Public API Documentation Coverage (100%)
+        run: python3 scripts/verify_doc_coverage.py
+
+      - name: Verify Published Documentation Freshness (docs/ staleness check)
+        run: |
+          ./scripts/build_unified_docs.sh
+          if [ -n "$(git status --porcelain docs/)" ]; then
+            echo "❌ Error: The published documentation in docs/ is stale relative to public API changes."
+            echo "Please run ./scripts/build_unified_docs.sh locally and commit the updated docs/ directory."
+            git status --porcelain docs/
+            exit 1
+          fi
+
+
   # 5. Benchmark
   performance-check:
     name: Performance Regression Check (Disabled in CI)

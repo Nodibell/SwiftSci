@@ -30,12 +30,14 @@ let vader = VADERSentimentAnalyzer()
 let sentiment = vader.polarityScores(text: "SwiftSci is an amazing library!")
 print(sentiment.compound) // > 0.5
 
-// Fluent DataFrame Integration
+// Fluent DataFrame Integration (supports both array literals and pre-typed [String] variables)
+let articles: [String] = ["I love SwiftSci!", "This error is terrible."]
 var df = try DataFrame(columns: [
-    TypedColumn<String>(name: "text", values: ["I love SwiftSci!", "This error is terrible."])
+    TypedColumn<String>(name: "text", values: articles)
 ])
 let sentimentDF = try df.analyzeSentiment(column: "text")
 ```
+
 
 ## Topics
 

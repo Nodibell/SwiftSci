@@ -6,12 +6,13 @@ on:
   pull_request:
     branches: [ "main", "develop" ]
   schedule:
-    - cron: '0 6 * * 1' # Runs every Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
 
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: macos-latest
+
     permissions:
       security-events: write
       actions: read
@@ -23,8 +24,6 @@ jobs:
         include:
           - language: swift
             build-mode: manual
-          - language: python
-            build-mode: none
 
     steps:
       - name: Checkout repository

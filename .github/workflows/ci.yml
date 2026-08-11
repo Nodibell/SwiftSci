@@ -81,7 +81,7 @@ jobs:
           PROFDATA=".build/debug/codecov/default.profdata"
           TEST_BINS=$(find "$BUILD_DIR" -name "*.xctest" -type d | while read d; do echo "$d/Contents/MacOS/$(basename "${d%.xctest}")"; done | tr '\n' ' ')
           xcrun llvm-cov export -format="lcov" -instr-profile="$PROFDATA" $TEST_BINS > coverage.lcov || true
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           file: coverage.lcov
           token: ${{ secrets.CODECOV_TOKEN }}

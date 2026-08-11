@@ -7,7 +7,7 @@ public enum KNNWeightStrategy: Sendable {
 }
 
 /// k-Nearest Neighbors missing value imputer for numerical feature matrices.
-public final class KNNImputer: PreprocessingTransformer, @unchecked Sendable {
+public struct KNNImputer: PreprocessingTransformer, Sendable {
     /// The n neighbors.
     public let nNeighbors: Int
     /// The weights.
@@ -26,7 +26,8 @@ public final class KNNImputer: PreprocessingTransformer, @unchecked Sendable {
     }
     
     /// Fits KNNImputer with feature matrix (PreprocessingTransformer protocol).
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
+
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }

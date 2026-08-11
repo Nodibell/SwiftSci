@@ -2,6 +2,7 @@ import Foundation
 import SwiftDataFrame
 
 /// A unified pipeline combining text tokenization, vectorization, and Naive Bayes text classification.
+@available(*, deprecated, message: "TextPipeline uses deprecated MultinomialNaiveBayes. Use NaiveBayesClassifier directly instead.")
 public actor TextPipeline {
     /// Internal TF-IDF document vectorizer instance.
     public let vectorizer: TFIDFVectorizer
@@ -35,3 +36,5 @@ public actor TextPipeline {
         return classifier.predict(X: X)
     }
 }
+
+

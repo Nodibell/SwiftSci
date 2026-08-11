@@ -1,7 +1,7 @@
 import Foundation
 
 /// KBinsDiscretizer bins continuous data into intervals.
-public final class KBinsDiscretizer: PreprocessingTransformer, @unchecked Sendable {
+public struct KBinsDiscretizer: PreprocessingTransformer, Sendable {
     /// Represents strategy.
     public enum Strategy: String, Sendable, Codable {
         case uniform
@@ -36,7 +36,8 @@ public final class KBinsDiscretizer: PreprocessingTransformer, @unchecked Sendab
     }
     
     /// Fits the discretizer by calculating the bin edges for each column.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
+
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }

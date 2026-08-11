@@ -35,7 +35,7 @@ public extension DataFrame {
     /// - Throws: `DataFrameError.columnNotFound` when the column does not exist.
     func filterFast(column name: String, where condition: FilterCondition) throws -> DataFrame {
         guard let col = _columns[name] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
 
         // Fast path: SIMD vectorised index filter (Double / Int64 / String).

@@ -24,16 +24,25 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     // MARK: – Init
 
-    /// Creates a new instance.
+    /// Creates a new instance with optional values.
     /// - Parameters:
     ///   - name: The name.
-    ///   - values: The values.
+    ///   - values: The values (optional elements).
     public init(name: String, values: [T?]) {
         self.name       = name
         self.dtype      = T.columnDType
         self.values     = values
         self._nullCount = values.reduce(0) { $0 + ($1 == nil ? 1 : 0) }
     }
+
+    /// Creates a new instance with non-optional values.
+    /// - Parameters:
+    ///   - name: The name.
+    ///   - values: The values (non-optional elements).
+    public init(name: String, values: [T]) {
+        self.init(name: name, values: values.map { $0 as T? })
+    }
+
 
     // MARK: – Subscript
 
@@ -50,7 +59,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Returns: A new `AnyColumn` filtered by the mask.
     public func filtered(by mask: [Bool]) throws -> any AnyColumn {
         guard mask.count == count else {
-            throw DataFrameError.columnLengthMismatch(
+            throw SwiftMLError.columnLengthMismatch(
                 expected: count, got: mask.count, column: name
             )
         }

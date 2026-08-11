@@ -6,7 +6,7 @@ extension DataFrame {
     public func toFeatureMatrix(_ columns: [String]) throws -> [[Double]] {
         for colName in columns {
             if !columnNames.contains(colName) {
-                throw DataFrameError.columnNotFound(colName)
+                throw SwiftMLError.columnNotFound(colName)
             }
         }
 
@@ -31,7 +31,7 @@ extension DataFrame {
                     }
                 }
             } else {
-                throw DataFrameError.castFailed(column: name, targetType: "Double")
+                throw SwiftMLError.castFailed(column: name, targetType: "Double")
             }
         }
         return matrix

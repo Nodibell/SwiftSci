@@ -1,7 +1,7 @@
 import Foundation
 
 /// PolynomialFeatures generates polynomial and interaction features.
-public final class PolynomialFeatures: PreprocessingTransformer, @unchecked Sendable {
+public struct PolynomialFeatures: PreprocessingTransformer, Sendable {
     /// The degree.
     public let degree: Int
     /// The interaction only.
@@ -26,7 +26,8 @@ public final class PolynomialFeatures: PreprocessingTransformer, @unchecked Send
     }
     
     /// Fits the transformer to identify the number of input features and pre-calculate combinations.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
+
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }

@@ -26,7 +26,7 @@ internal enum CSVReader {
 
     static func read(url: URL, options: CSVReadOptions) async throws -> DataFrame {
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw DataFrameError.fileNotFound(url)
+            throw SwiftMLError.fileNotFound(url)
         }
 
         let mappedData = try Data(contentsOf: url, options: .alwaysMapped)
@@ -131,7 +131,7 @@ internal enum CSVReader {
         }
 
         guard !headers.isEmpty else {
-            throw DataFrameError.parseError(line: 1, description: "Empty header row.")
+            throw SwiftMLError.parseError(line: 1, description: "Empty header row.")
         }
 
         // ── Limit rows ───────────────────────────────────────────────────
@@ -152,7 +152,7 @@ internal enum CSVReader {
             let lineNumber = dataStartLine + lineOffset + 1
 
             guard row.count == colCount else {
-                throw DataFrameError.parseError(
+                throw SwiftMLError.parseError(
                     line: lineNumber,
                     description: "Expected \(colCount) columns, found \(row.count)."
                 )
@@ -474,7 +474,7 @@ internal enum CSVReader {
             let task = Task {
                 do {
                     guard FileManager.default.fileExists(atPath: url.path) else {
-                        throw DataFrameError.fileNotFound(url)
+                        throw SwiftMLError.fileNotFound(url)
                     }
 
                     let mappedData = try Data(contentsOf: url, options: .alwaysMapped)

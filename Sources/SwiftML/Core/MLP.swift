@@ -132,7 +132,7 @@ public actor MLPClassifier: ClassifierEstimator {
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
-            throw MLError.emptyInput
+            throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
         let numFeatures = features[0].count
@@ -191,7 +191,7 @@ public actor MLPClassifier: ClassifierEstimator {
 
                     if isLast {
                         if numClasses == 2 {
-                            out[0] = 1.0 / (1.0 + exp(-out[0]))
+                            out[0] = sigmoid(out[0])
                         }
                     } else {
                         for j in 0..<layers[l].outDim {
@@ -289,7 +289,7 @@ public actor MLPClassifier: ClassifierEstimator {
             return probs.map { $0[1] >= 0.5 ? Int(classes.last ?? 1.0) : Int(classes.first ?? 0.0) }
         } else {
             return probs.map { p in
-                let maxIdx = p.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
+                let maxIdx = p.argmax()
                 return Int(classes[maxIdx])
             }
         }
@@ -302,7 +302,7 @@ public actor MLPClassifier: ClassifierEstimator {
     /// - Returns: A `[[Double]]` result.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard let layers = layers, let classes = classes else {
-            throw MLError.modelNotFitted
+            throw SwiftMLError.modelNotFitted
         }
         guard !features.isEmpty else { return [] }
 
@@ -332,7 +332,7 @@ public actor MLPClassifier: ClassifierEstimator {
             }
 
             if classes.count <= 2 {
-                let p1 = 1.0 / (1.0 + exp(-curr[0]))
+                let p1 = sigmoid(curr[0])
                 results.append([1.0 - p1, p1])
             } else {
                 let maxLogit = curr.max() ?? 0.0
@@ -421,7 +421,7 @@ public actor MLPRegressor: RegressorEstimator {
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
-            throw MLError.emptyInput
+            throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
         let numFeatures = features[0].count
@@ -555,7 +555,7 @@ public actor MLPRegressor: RegressorEstimator {
     /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard let layers = layers else {
-            throw MLError.modelNotFitted
+            throw SwiftMLError.modelNotFitted
         }
         guard !features.isEmpty else { return [] }
 
@@ -593,7 +593,7 @@ public actor MLPRegressor: RegressorEstimator {
 private func applyActivation(_ x: Double, activation: ActivationFunction) -> Double {
     switch activation {
     case .relu: return max(0.0, x)
-    case .sigmoid: return 1.0 / (1.0 + exp(-x))
+    case .sigmoid: return sigmoid(x)
     case .tanh: return tanh(x)
     }
 }
@@ -602,7 +602,7 @@ private func applyActivationDeriv(_ x: Double, activation: ActivationFunction) -
     switch activation {
     case .relu: return x > 0 ? 1.0 : 0.0
     case .sigmoid:
-        let s = 1.0 / (1.0 + exp(-x))
+        let s = sigmoid(x)
         return s * (1.0 - s)
     case .tanh:
         let t = tanh(x)

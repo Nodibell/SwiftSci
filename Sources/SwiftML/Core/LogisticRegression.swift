@@ -55,7 +55,7 @@ public actor LogisticRegression: ClassifierEstimator {
         epochs: Int = 1000
     ) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
-            throw MLError.emptyInput
+            throw SwiftMLError.emptyInput
         }
         
         let numSamples = features.count
@@ -118,7 +118,7 @@ public actor LogisticRegression: ClassifierEstimator {
             }
             
             if gradB.isNaN || gradB.isInfinite || gradW.contains(where: { $0.isNaN || $0.isInfinite }) {
-                throw MLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
+                throw SwiftMLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
             }
             
             for j in 0..<numFeatures {
@@ -135,13 +135,9 @@ public actor LogisticRegression: ClassifierEstimator {
     }
     
     private func stableSigmoid(_ z: Double) -> Double {
-        if z >= 0.0 {
-            return 1.0 / (1.0 + exp(-z))
-        } else {
-            let zExp = exp(z)
-            return zExp / (1.0 + zExp)
-        }
+        sigmoid(z)
     }
+
     
     // MARK: - GPU Backend (MLX)
     
@@ -186,7 +182,7 @@ public actor LogisticRegression: ClassifierEstimator {
         let bArray = b.asArray(Float.self)
         if wArray.contains(where: { $0.isNaN || $0.isInfinite }) ||
            bArray.contains(where: { $0.isNaN || $0.isInfinite }) {
-            throw MLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
+            throw SwiftMLError.trainingFailed("Gradient descent diverged: weights or bias contains NaN or Infinity. Try a lower learning rate.")
         }
         
         self.weights = w
@@ -196,8 +192,8 @@ public actor LogisticRegression: ClassifierEstimator {
         self.cpuBias = Double(b.item(Float.self))
     }
     
-    /// Predicts target probabilities of class 1 for the given features matrix (Sendable interface).
-    public func predictProbability1D(features: [[Double]]) throws -> [Double] {
+    /// Predicts target probabilities of class 1 for the given features matrix.
+    func binaryPositiveClassProbability(features: [[Double]]) throws -> [Double] {
         guard !features.isEmpty else {
             return []
         }
@@ -224,25 +220,25 @@ public actor LogisticRegression: ClassifierEstimator {
 
     /// Predicts class probabilities [[prob_class_0, prob_class_1]] for the given features matrix (ClassifierEstimator protocol).
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
-        let p1 = try predictProbability1D(features: features)
+        let p1 = try binaryPositiveClassProbability(features: features)
         return p1.map { [1.0 - $0, $0] }
     }
     
     /// Predicts target probabilities of class 1 for the given features X.
     public func predictProbability(X: MLXArray) throws -> MLXArray {
         guard let weights = self.weights, let bias = self.bias else {
-            throw MLError.modelNotFitted
+            throw SwiftMLError.modelNotFitted
         }
-        guard X.size > 0 else { throw MLError.emptyInput }
+        guard X.size > 0 else { throw SwiftMLError.emptyInput }
         
         let shape = X.shape
         guard shape.count == 2 else {
-            throw MLError.dimensionMismatch(expected: 2, got: shape.count)
+            throw SwiftMLError.dimensionMismatch(expected: 2, got: shape.count)
         }
         
         let numFeatures = weights.shape[0]
         guard shape[1] == numFeatures else {
-            throw MLError.dimensionMismatch(expected: numFeatures, got: shape[1])
+            throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: shape[1])
         }
         
         let logits = matmul(X, weights) + bias
@@ -260,7 +256,7 @@ public actor LogisticRegression: ClassifierEstimator {
             return []
         }
         
-        let probs = try predictProbability1D(features: features)
+        let probs = try binaryPositiveClassProbability(features: features)
         return probs.map { $0 > Double(threshold) ? 1 : 0 }
     }
     

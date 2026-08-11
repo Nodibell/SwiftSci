@@ -6,13 +6,13 @@ internal enum JSONReader {
 
     static func read(url: URL) async throws -> DataFrame {
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw DataFrameError.fileNotFound(url)
+            throw SwiftMLError.fileNotFound(url)
         }
 
         let data = try Data(contentsOf: url)
 
         guard let jsonArray = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
-            throw DataFrameError.parseError(line: 0,
+            throw SwiftMLError.parseError(line: 0,
                 description: "JSON file must contain an array of objects at the top level.")
         }
 

@@ -40,7 +40,7 @@ public actor CalibratedClassifier: ClassifierEstimator {
             var gradB = 0.0
             for i in 0..<numSamples {
                 let z = paramA * p1[i] + paramB
-                let calP = 1.0 / (1.0 + exp(-max(-50.0, min(50.0, z))))
+                let calP = sigmoid(z)
                 let diff = calP - targets[i]
                 gradA += diff * p1[i]
                 gradB += diff
@@ -73,7 +73,7 @@ public actor CalibratedClassifier: ClassifierEstimator {
         return rawProbs.map { row in
             let rawP1 = row.count > 1 ? row[1] : row[0]
             let z = a * rawP1 + b
-            let calP1 = 1.0 / (1.0 + exp(-max(-50.0, min(50.0, z))))
+            let calP1 = sigmoid(z)
             return [1.0 - calP1, calP1]
         }
     }

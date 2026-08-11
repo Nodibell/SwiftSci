@@ -256,6 +256,32 @@ The architecture combines two hardware engines:
 
 ---
 
+### Version 3.0.0: API Contract Freeze: Error Unification, Duplication Removal & Concurrency Governance Completion *(🟢 Completed)*
+
+*Detailed implementation plan:* [implementation_plan_30.md](implementation_plan_30.md)
+
+1. **Error Type Consolidation**:
+   - Consolidated `MLError`, `DataFrameError`, and `SwiftSciError` into `SwiftMLError`.
+   - Deprecated `MLError` and `DataFrameError` typealiases with `@available(*, deprecated, renamed: "SwiftMLError")`.
+   - Eliminated `SwiftSciError` across multi-output regressors, multi-label classifiers, estimator protocols, and AutoML.
+2. **Shared Numeric Primitives (`Numerics.swift`)**:
+   - Extracted clamped `sigmoid(_:)` with numerical overflow protection `min(50.0, max(-50.0, x))` and `Array.argmax()` extension into `Sources/SwiftML/Core/Numerics.swift`.
+   - Replaced raw `exp` sigmoid & copy-pasted `argmax` one-liners across `LogisticRegression`, `LinearSVC`, `MLP`, `ImageDataset`, `CalibratedClassifier`, `OneVsRestClassifier`, and `LinearSVCOneVsRest`.
+3. **Duplication Removal**:
+   - Removed duplicate private `SeededRandom` from `OutlierDetection.swift` in favor of public `SwiftPreprocessing.SeededRandom`.
+4. **Tier B Concurrency Migration (`SwiftPreprocessing`)**:
+   - Migrated 12 `final class @unchecked Sendable` transformers (`VarianceThreshold`, `SelectKBest`, `RecursiveFeatureElimination`, `FrequencyEncoder`, `Imputer`, `KBinsDiscretizer`, `KNNImputer`, `MissingValueIndicator`, `Normalizer`, `PolynomialFeatures`, `PowerTransformer`, `TargetEncoder`) to `public struct ...: PreprocessingTransformer, Sendable`.
+5. **`SwiftNLP` Classifier Protocol Governance**:
+   - Introduced actor-based `NaiveBayesClassifier` and `ComplementNaiveBayesClassifier` conforming to `ClassifierEstimator` in `SwiftNLP`.
+   - Deprecated struct originals `MultinomialNaiveBayes` and `ComplementNaiveBayes`.
+6. **API Signature Cleanups & Protocol Conformance**:
+   - Renamed and scoped `predictProbability1D` to internal `binaryPositiveClassProbability` in `LogisticRegression.swift`.
+   - Added explicit `async` keyword to `DecisionTree` `fit`/`predict`/`predictProbability` signatures in `DecisionTreeClassifier` and `DecisionTreeRegressor`.
+   - Closed `SystemsCSVParser` test gaps for escaped quotes and non-newline-terminated final lines.
+   - Replaced manual mean reductions in `SwiftForecast` with `try Stats.mean(...)`.
+
+---
+
 ## 🏛 Integration Guidelines for Client Applications
 
 Thanks to its modular design, SwiftSci seamlessly integrates into applications following clean architecture:
@@ -263,4 +289,5 @@ Thanks to its modular design, SwiftSci seamlessly integrates into applications f
 * **View Models:** All model initialization, dataset loading (`SwiftDataFrame`), and preprocessing pipeline configurations reside in the View Model layer.
 * **Background Tasks:** Method calls like `.fit()` for compute-heavy algorithms (e.g. Random Forest or `MLX` graph evaluations) should be executed inside isolated background tasks (`Task.detached { }`) to prevent main thread blocking and maintain smooth 120Hz UI rendering.
 * **Complexity Encapsulation:** Low-level Arrow memory buffers and non-Sendable `MLXArray` handles are encapsulated as `internal`. Client applications interact strictly with thread-safe, public Swift 6 API contracts.
+
 

@@ -116,7 +116,7 @@ internal enum ArrowTableBridge {
         case .success(let rb):
             return rb
         case .failure(let err):
-            throw DataFrameError.unsupportedFormat("Failed to build RecordBatch: \(err)")
+            throw SwiftMLError.unsupportedFormat("Failed to build RecordBatch: \(err)")
         }
     }
 
@@ -127,7 +127,7 @@ internal enum ArrowTableBridge {
         case .success(let table):
             return table
         case .failure(let err):
-            throw DataFrameError.unsupportedFormat("Failed to build ArrowTable: \(err)")
+            throw SwiftMLError.unsupportedFormat("Failed to build ArrowTable: \(err)")
         }
     }
 
@@ -142,7 +142,7 @@ internal enum ArrowTableBridge {
         case .string:  return .utf8
         case .date32:  return .date32
         default:
-            throw DataFrameError.unsupportedFormat("Unsupported Arrow type ID: \(arrowType.id)")
+            throw SwiftMLError.unsupportedFormat("Unsupported Arrow type ID: \(arrowType.id)")
         }
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Frequency encoder for categorical features using normalized frequency ratios.
-public final class FrequencyEncoder: PreprocessingTransformer, @unchecked Sendable {
+public struct FrequencyEncoder: PreprocessingTransformer, Sendable {
     private var frequencies: [String: Double] = [:]
     private var isFitted: Bool = false
     
@@ -9,7 +9,7 @@ public final class FrequencyEncoder: PreprocessingTransformer, @unchecked Sendab
     public init() {}
     
     /// Fits FrequencyEncoder on categorical string values.
-    public func fit(categories: [String]) throws {
+    public mutating func fit(categories: [String]) throws {
         guard !categories.isEmpty else { throw PreprocessingError.emptyInput }
         let total = Double(categories.count)
         
@@ -29,10 +29,11 @@ public final class FrequencyEncoder: PreprocessingTransformer, @unchecked Sendab
     
     /// Fit.
     /// - Throws: An error if the operation fails.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
         let categories = data.map { String($0.first ?? 0.0) }
         try fit(categories: categories)
     }
+
     
     /// Transforms categories into normalized frequency values.
     public func transform(categories: [String]) throws -> [Double] {
@@ -54,8 +55,9 @@ public final class FrequencyEncoder: PreprocessingTransformer, @unchecked Sendab
     ///   - categories: The categories.
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[Double]` result.
-    public func fitTransform(categories: [String]) throws -> [Double] {
+    public mutating func fitTransform(categories: [String]) throws -> [Double] {
         try fit(categories: categories)
         return try transform(categories: categories)
     }
+
 }

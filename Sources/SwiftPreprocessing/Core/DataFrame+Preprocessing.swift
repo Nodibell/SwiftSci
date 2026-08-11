@@ -115,9 +115,9 @@ extension DataFrame {
             rawValues = col.values.map { $0.map { String($0) } ?? "" }
         } else {
             if self[column: name] == nil {
-                throw DataFrameError.columnNotFound(name)
+                throw SwiftMLError.columnNotFound(name)
             } else {
-                throw DataFrameError.castFailed(column: name, targetType: "String | Int64 | Double")
+                throw SwiftMLError.castFailed(column: name, targetType: "String | Int64 | Double")
             }
         }
 
@@ -136,7 +136,7 @@ extension DataFrame {
     /// Fits an Imputer on the specified columns.
     public func fitImputer(columns names: [String], strategy: Imputer.Strategy = .mean) throws -> Imputer {
         let features = try extractFeatures(columns: names, allowNaN: true)
-        let imputer = Imputer(strategy: strategy)
+        var imputer = Imputer(strategy: strategy)
         try imputer.fit(features)
         return imputer
     }
@@ -167,7 +167,7 @@ extension DataFrame {
     /// Normalizes the specified columns, returning the normalized DataFrame and normalizer.
     public func normalize(columns names: [String], norm: Normalizer.NormType = .l2) throws -> (normalized: DataFrame, normalizer: Normalizer) {
         let features = try extractFeatures(columns: names)
-        let normalizer = Normalizer(norm: norm)
+        var normalizer = Normalizer(norm: norm)
         try normalizer.fit(features)
         let normalized = try normalizer.transform(features)
         
@@ -216,7 +216,7 @@ extension DataFrame {
     /// Fits a PowerTransformer on the specified columns.
     public func fitPowerTransformer(columns names: [String], method: PowerTransformer.Method = .yeoJohnson, standardize: Bool = true) throws -> PowerTransformer {
         let features = try extractFeatures(columns: names)
-        let transformer = PowerTransformer(method: method, standardize: standardize)
+        var transformer = PowerTransformer(method: method, standardize: standardize)
         try transformer.fit(features)
         return transformer
     }
@@ -247,7 +247,7 @@ extension DataFrame {
     /// Fits a KBinsDiscretizer on the specified columns.
     public func fitKBinsDiscretizer(columns names: [String], nBins: Int = 5, strategy: KBinsDiscretizer.Strategy = .uniform, encode: KBinsDiscretizer.Encode = .ordinal) throws -> KBinsDiscretizer {
         let features = try extractFeatures(columns: names)
-        let discretizer = KBinsDiscretizer(nBins: nBins, strategy: strategy, encode: encode)
+        var discretizer = KBinsDiscretizer(nBins: nBins, strategy: strategy, encode: encode)
         try discretizer.fit(features)
         return discretizer
     }
@@ -295,7 +295,7 @@ extension DataFrame {
     /// Adds a rolling mean column for the specified numeric column.
     public func withRollingMean(column name: String, window: Int) throws -> DataFrame {
         guard let col = self[column: name, as: Double.self] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
         let values = col.values
         let n = values.count
@@ -315,7 +315,7 @@ extension DataFrame {
     /// Adds a rolling standard deviation column for the specified numeric column.
     public func withRollingStd(column name: String, window: Int) throws -> DataFrame {
         guard let col = self[column: name, as: Double.self] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
         let values = col.values
         let n = values.count
@@ -341,10 +341,10 @@ extension DataFrame {
     /// Adds an Exponentially Weighted Moving Average (EWMA) column for the specified numeric column.
     public func withEWMA(column name: String, alpha: Double) throws -> DataFrame {
         guard alpha > 0 && alpha <= 1.0 else {
-            throw DataFrameError.invalidParameter("alpha must be in (0, 1], got \(alpha)")
+            throw SwiftMLError.invalidParameter("alpha must be in (0, 1], got \(alpha)")
         }
         guard let col = self[column: name, as: Double.self] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
         let values = col.values
         let n = values.count

@@ -17,19 +17,19 @@ public actor MultiOutputRegressor {
     ///   - targets: Multi-target matrix `[N x K]`.
     public func fit(features: [[Double]], targets: [[Double]]) async throws {
         guard !features.isEmpty, !targets.isEmpty, features.count == targets.count else {
-            throw SwiftSciError.dataError("Features and multi-targets count mismatch or empty.")
+            throw SwiftMLError.invalidInput("Features and multi-targets count mismatch or empty.")
         }
         
         let numTargets = targets[0].count
         guard numTargets > 0 else {
-            throw SwiftSciError.dataError("Target vector length must be greater than 0.")
+            throw SwiftMLError.invalidInput("Target vector length must be greater than 0.")
         }
         
         // Extract column-wise targets
         var columnTargets = [[Double]](repeating: [], count: numTargets)
         for targetRow in targets {
             guard targetRow.count == numTargets else {
-                throw SwiftSciError.dataError("Dimension mismatch: expected \(numTargets) target columns, got \(targetRow.count)")
+                throw SwiftMLError.dimensionMismatch(expected: numTargets, got: targetRow.count)
             }
             for k in 0..<numTargets {
                 columnTargets[k].append(targetRow[k])
@@ -63,7 +63,7 @@ public actor MultiOutputRegressor {
     /// - Returns: Predicted target matrix `[N x K]`.
     public func predict(features: [[Double]]) async throws -> [[Double]] {
         guard !estimators.isEmpty else {
-            throw SwiftSciError.predictionError("Model not fitted.")
+            throw SwiftMLError.modelNotFitted
         }
         
         let numTargets = estimators.count

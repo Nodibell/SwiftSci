@@ -4,7 +4,7 @@ import SwiftDataFrame
 extension DataFrame {
     private func extractDocuments(column name: String) throws -> [String] {
         guard let col = self[column: name, as: String.self] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
         return col.values.map { $0 ?? "" }
     }

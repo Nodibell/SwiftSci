@@ -54,7 +54,7 @@ extension LinearRegression {
     public func save(to url: URL) async throws {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else {
-            throw MLError.notFitted
+            throw SwiftMLError.notFitted
         }
         let state = LinearRegressionModelState(weights: weights, bias: bias)
         let data = try JSONEncoder().encode(state)
@@ -81,7 +81,7 @@ extension LogisticRegression {
     public func save(to url: URL) async throws {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else {
-            throw MLError.notFitted
+            throw SwiftMLError.notFitted
         }
         let state = LogisticRegressionModelState(weights: weights, bias: bias)
         let data = try JSONEncoder().encode(state)

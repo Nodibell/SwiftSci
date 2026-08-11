@@ -1,4 +1,6 @@
 import Foundation
+import SwiftStats
+
 
 /// Error, Trend, and Seasonal (ETS) State Space forecasting model.
 public actor ETSModel {
@@ -69,9 +71,10 @@ public actor ETSModel {
         if seasonalType == .additive {
             s = [Double](repeating: 0.0, count: period)
         } else if seasonalType == .multiplicative {
-            let meanVal = series.reduce(0.0, +) / Double(n)
+            let meanVal = try Stats.mean(series)
             s = (0..<period).map { i in meanVal == 0 ? 1.0 : series[i] / meanVal }
         }
+
 
         // Forward state update filtering
         for t in 0..<n {

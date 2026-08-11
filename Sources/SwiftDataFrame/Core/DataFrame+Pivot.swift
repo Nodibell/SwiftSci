@@ -18,7 +18,7 @@ extension DataFrame {
         guard let idxCol = self[column: indexCol],
               let pCol = self[column: pivotCol],
               let vCol = self[column: valueCol] else {
-            throw DataFrameError.columnNotFound("\(indexCol), \(pivotCol), or \(valueCol)")
+            throw SwiftMLError.columnNotFound("\(indexCol), \(pivotCol), or \(valueCol)")
         }
 
         let numRows = shape.rows
@@ -98,7 +98,7 @@ extension DataFrame {
         valueName: String = "value"
     ) throws -> DataFrame {
         for id in idVars {
-            if _columns[id] == nil { throw DataFrameError.columnNotFound(id) }
+            if _columns[id] == nil { throw SwiftMLError.columnNotFound(id) }
         }
 
         let targetValueVars: [String]
@@ -107,7 +107,7 @@ extension DataFrame {
         } else {
             targetValueVars = valueVars
             for v in targetValueVars {
-                if _columns[v] == nil { throw DataFrameError.columnNotFound(v) }
+                if _columns[v] == nil { throw SwiftMLError.columnNotFound(v) }
             }
         }
 

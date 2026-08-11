@@ -7,7 +7,7 @@ struct OrdinalEncoderTests {
     
     @Test("OrdinalEncoder basic encoding")
     func testOrdinalEncoderBasic() throws {
-        let encoder = OrdinalEncoder()
+        var encoder = OrdinalEncoder()
         let data = [
             ["low", "apple"],
             ["high", "banana"],
@@ -30,7 +30,8 @@ struct OrdinalEncoderTests {
     
     @Test("OrdinalEncoder unknown category fallback")
     func testOrdinalEncoderUnknownFallback() throws {
-        let encoder = OrdinalEncoder(unknownValue: -1.0)
+        var encoder = OrdinalEncoder(unknownValue: -1.0)
+
         let data = [
             ["apple"],
             ["banana"]

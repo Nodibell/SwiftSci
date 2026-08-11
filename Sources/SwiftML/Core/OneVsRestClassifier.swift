@@ -52,14 +52,17 @@ public actor OneVsRestClassifier: Sendable {
         var classProbs = [[Double]](repeating: [Double](repeating: 0.0, count: numClasses), count: features.count)
         
         for (c, est) in estimators.enumerated() {
-            let probs = try await est.predictProbability1D(features: features)
+            let probs = try await est.predictProbability(features: features)
             for i in 0..<features.count {
-                classProbs[i][c] = probs[i]
+                let p1 = probs[i].count > 1 ? probs[i][1] : probs[i][0]
+                classProbs[i][c] = p1
             }
         }
+
         
         return classProbs.map { row in
-            row.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
+            row.argmax()
         }
+
     }
 }

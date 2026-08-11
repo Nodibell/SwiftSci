@@ -39,7 +39,8 @@ To maintain consistency before freezing the SwiftSci 3.0 API, all new types must
 | Tier | Type Construct | Criteria & Use Cases | Examples |
 |---|---|---|---|
 | **Tier A** | `actor` | Stateful ML & Forecast models maintaining internal mutable arrays or multi-pass optimization state across concurrent tasks. | `KMeans`, `DBSCAN`, `ExponentialSmoothing`, `ARIMA` |
-| **Tier B** | `struct` (`Sendable`) | Pure value-semantics preprocessing transformers, data containers, value-typed columns, and configuration objects. Value semantics guarantee data-race freedom. | `TypedColumn`, `DataFrame`, `MinMaxScaler`, `StandardScaler`, `RobustScaler`, `Normalizer` |
+| **Tier B** | `struct` (`Sendable`) | Pure value-semantics preprocessing transformers, data containers, value-typed columns, and configuration objects. Value semantics guarantee data-race freedom. | `TypedColumn`, `DataFrame`, `MinMaxScaler`, `StandardScaler`, `RobustScaler`, `Normalizer`, `VarianceThreshold`, `SelectKBest`, `Imputer`, `KBinsDiscretizer`, `KNNImputer`, `PowerTransformer`, `TargetEncoder` |
+
 | **Tier C** | `final class` (`@unchecked Sendable`) | Reference-type container pipelines (`Pipeline`, `ColumnTransformer`) or wrappers for C-pointers/system APIs. Requires internal lock/synchronization or explicit design rationale. | `Pipeline`, `ColumnTransformer`, memory buffer wrappers |
 
 ### 2. Model Hierarchy Guidelines: `Estimator` vs `PreprocessingTransformer`

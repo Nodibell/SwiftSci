@@ -73,4 +73,27 @@ struct SystemsCSVParserTests {
         let vals: TypedColumn<Double>? = filtered[column: "val", as: Double.self]
         #expect(vals?.nonNullValues == [1.0, 3.0, 5.0])
     }
+
+    @Test("SystemsCSVParser handles escaped quotes and missing trailing newline")
+    func testEscapedQuotesAndMissingTrailingNewline() {
+        let csv = "id,message,value\n1,\"Hello \"\"World\"\"\",100\n2,\"No newline at end\",200"
+        let data = csv.data(using: .utf8)!
+        data.withUnsafeBytes { rawBuffer in
+            let basePtr = rawBuffer.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let buffer = UnsafeBufferPointer(start: basePtr, count: data.count)
+            let parser = SystemsCSVParser()
+            let records = parser.parse(buffer: buffer)
+
+            #expect(records.count == 3) // Header + 2 data rows
+            #expect(records[1].count == 3)
+            #expect(records[2].count == 3)
+
+            let msg1 = VectorizedByteParsers.parseString(buffer: buffer, offset: records[1][1])
+            #expect(msg1 == "Hello \"World\"")
+
+            let val2 = VectorizedByteParsers.parseInt(buffer: buffer, offset: records[2][2])
+            #expect(val2 == 200)
+        }
+    }
 }
+

@@ -64,4 +64,18 @@ struct DataFrameInitTests {
         let col = TypedColumn<Int64>(name: "n", values: [1, nil, 3, nil])
         #expect(col.nullCount == 2)
     }
+
+    @Test("TypedColumn initialises from non-optional array variables")
+    func nonOptionalArrayVariableInit() throws {
+        let stringVar: [String] = ["apple", "banana", "cherry"]
+        let doubleVar: [Double] = [1.1, 2.2, 3.3]
+        let colString = TypedColumn<String>(name: "text", values: stringVar)
+        let colDouble = TypedColumn<Double>(name: "score", values: doubleVar)
+
+        #expect(colString.count == 3)
+        #expect(colString.nullCount == 0)
+        #expect(colDouble.count == 3)
+        #expect(colDouble.nullCount == 0)
+    }
 }
+

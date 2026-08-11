@@ -1,7 +1,7 @@
 import Foundation
 
 /// MissingValueIndicator generates a binary mask indicating the presence of missing values (NaNs).
-public final class MissingValueIndicator: PreprocessingTransformer, @unchecked Sendable {
+public struct MissingValueIndicator: PreprocessingTransformer, Sendable {
     /// Represents features option.
     public enum FeaturesOption: String, Sendable, Codable {
         case all
@@ -23,7 +23,8 @@ public final class MissingValueIndicator: PreprocessingTransformer, @unchecked S
     }
     
     /// Fits the indicator by identifying which columns contain missing values (if features is .missingOnly).
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
+
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }

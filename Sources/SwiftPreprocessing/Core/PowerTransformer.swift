@@ -1,7 +1,7 @@
 import Foundation
 
 /// PowerTransformer applies a power transform feature-wise to stabilize variance and make data more Gaussian-like.
-public final class PowerTransformer: PreprocessingTransformer, @unchecked Sendable {
+public struct PowerTransformer: PreprocessingTransformer, Sendable {
     /// Represents method.
     public enum Method: String, Sendable, Codable {
         case boxCox = "box-cox"
@@ -30,7 +30,8 @@ public final class PowerTransformer: PreprocessingTransformer, @unchecked Sendab
     }
     
     /// Fits the PowerTransformer by finding the optimal lambda parameter for each column.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
+
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }

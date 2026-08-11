@@ -1,7 +1,7 @@
 import Foundation
 
 /// Imputer fills missing values (represented by `Double.nan`) using a specified strategy.
-public final class Imputer: PreprocessingTransformer, @unchecked Sendable {
+public struct Imputer: PreprocessingTransformer, Sendable {
     /// Represents strategy.
     public enum Strategy: Sendable, Equatable {
         case mean
@@ -23,7 +23,8 @@ public final class Imputer: PreprocessingTransformer, @unchecked Sendable {
     }
     
     /// Fits the imputer by calculating the chosen statistic for each column.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
+
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }

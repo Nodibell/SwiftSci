@@ -40,8 +40,9 @@ public enum PresentationCodeRunner {
         let scoreCol = TypedColumn<Double>(name: "score", values: [88.5, 94.0, 72.0, 96.5, 81.0])
         let passCol = TypedColumn<Bool>(name: "passed", values: [true, true, false, true, true])
         let df = try DataFrame(columns: [idCol, scoreCol, passCol])
-        let filtered = try df.filter { row in (row.double("score") ?? 0) >= 85.0 }
+        let filtered = df.filter { row in (row.double("score") ?? 0) >= 85.0 }
         print("COMPILED STDOUT OUTPUT:\n\(filtered.head(3))\n")
+
 
         // 2. SwiftStats
         print("--- [MODULE 2: SwiftStats] ---")
@@ -99,7 +100,7 @@ public enum PresentationCodeRunner {
         let y: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
         let regressor = LinearRegression()
         try await regressor.fit(features: X, targets: y)
-        var rf = try RandomForestRegressor(nEstimators: 10, maxDepth: 4)
+        let rf = try RandomForestRegressor(nEstimators: 10, maxDepth: 4)
         try await rf.fit(features: X, targets: y)
         let rfPred = try await rf.predict(features: [[6.0]])
         print("COMPILED STDOUT OUTPUT:")
@@ -113,9 +114,9 @@ public enum PresentationCodeRunner {
             [1.0, 2.0], [1.2, 1.8], [0.8, 2.2],
             [10.0, 12.0], [10.2, 11.8], [9.8, 12.2]
         ]
-        var pca = try PCA(nComponents: 1)
+        let pca = try PCA(nComponents: 1)
         let reduced = try await pca.fitTransform(points)
-        var kmeans = try KMeans(nClusters: 2, maxIterations: 50)
+        let kmeans = try KMeans(nClusters: 2, maxIterations: 50)
         try await kmeans.fit(features: points)
         """
         print("INPUT CODE:\n\(clusterCode)\n")
@@ -123,10 +124,11 @@ public enum PresentationCodeRunner {
             [1.0, 2.0], [1.2, 1.8], [0.8, 2.2],
             [10.0, 12.0], [10.2, 11.8], [9.8, 12.2]
         ]
-        var pca = try PCA(nComponents: 1)
+        let pca = try PCA(nComponents: 1)
         let reduced = try await pca.fitTransform(points)
-        var kmeans = try KMeans(nClusters: 2, maxIterations: 50)
+        let kmeans = try KMeans(nClusters: 2, maxIterations: 50)
         try await kmeans.fit(features: points)
+
         print("COMPILED STDOUT OUTPUT:")
         print("  PCA Reduced Dimension: \(reduced.count)x\(reduced[0].count)")
         print("  KMeans 2 Clusters Fit Completed Successfully\n")
@@ -200,7 +202,8 @@ public enum PresentationCodeRunner {
         print("INPUT CODE:\n\(expCode)\n")
         let kernelSHAP = KernelSHAP()
         let predictClosure: @Sendable ([Double]) async -> Double = { sample in sample.reduce(0.0, +) }
-        let shap = try await kernelSHAP.explain(model: predictClosure, instance: [2.0, 4.0], background: [[0.0, 0.0]])
+        let shap = await kernelSHAP.explain(model: predictClosure, instance: [2.0, 4.0], background: [[0.0, 0.0]])
+
         print("COMPILED STDOUT OUTPUT:")
         print("  KernelSHAP Values : \(shap.map { String(format: "%.4f", $0) })\n")
 

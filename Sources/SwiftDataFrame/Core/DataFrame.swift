@@ -34,7 +34,7 @@ public struct DataFrame: Sendable {
     ///           `DataFrameError.columnLengthMismatch` if columns differ in length.
     ///           `DataFrameError.duplicateColumnName` if two columns share a name.
     public init(columns: [any AnyColumn]) throws {
-        guard !columns.isEmpty else { throw DataFrameError.emptySchema }
+        guard !columns.isEmpty else { throw SwiftMLError.emptySchema }
 
         let expectedCount = columns[0].count
         var colMap: [String: any AnyColumn] = [:]
@@ -42,12 +42,12 @@ public struct DataFrame: Sendable {
 
         for col in columns {
             guard col.count == expectedCount else {
-                throw DataFrameError.columnLengthMismatch(
+                throw SwiftMLError.columnLengthMismatch(
                     expected: expectedCount, got: col.count, column: col.name
                 )
             }
             guard colMap[col.name] == nil else {
-                throw DataFrameError.duplicateColumnName(col.name)
+                throw SwiftMLError.duplicateColumnName(col.name)
             }
             colMap[col.name] = col
             colOrder.append(col.name)
@@ -104,7 +104,7 @@ public struct DataFrame: Sendable {
         }
         let (data, response) = try await URLSession.shared.data(from: url)
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            throw DataFrameError.parseError(line: 0, description: "Failed to download dataset from URL: \(url.absoluteString)")
+            throw SwiftMLError.parseError(line: 0, description: "Failed to download dataset from URL: \(url.absoluteString)")
         }
         
         let isJSON = url.pathExtension.lowercased() == "json" || (httpResponse.mimeType?.contains("json") ?? false)
@@ -199,7 +199,7 @@ public struct DataFrame: Sendable {
         var cols: [any AnyColumn] = []
         for name in names {
             guard let col = _columns[name] else {
-                throw DataFrameError.columnNotFound(name)
+                throw SwiftMLError.columnNotFound(name)
             }
             cols.append(col)
         }
@@ -222,7 +222,7 @@ public struct DataFrame: Sendable {
     private func dropArray(_ names: [String]) throws -> DataFrame {
         let nameSet = Set(names)
         for n in names {
-            guard _columns[n] != nil else { throw DataFrameError.columnNotFound(n) }
+            guard _columns[n] != nil else { throw SwiftMLError.columnNotFound(n) }
         }
         let remaining = _columnOrder.filter { !nameSet.contains($0) }
         let cols = remaining.compactMap { _columns[$0] }
@@ -327,7 +327,7 @@ public struct DataFrame: Sendable {
     /// Filters rows by a condition on a single column.
     public func filter(column name: String, where condition: FilterCondition) throws -> DataFrame {
         guard let col = _columns[name] else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
 
         // Bitmap-free fast path for direct index filtering
@@ -349,7 +349,7 @@ public struct DataFrame: Sendable {
     public func withColumn(_ name: String, column: any AnyColumn) throws -> DataFrame {
         let expectedRows = _columnOrder.isEmpty ? column.count : shape.rows
         guard column.count == expectedRows else {
-            throw DataFrameError.columnLengthMismatch(
+            throw SwiftMLError.columnLengthMismatch(
                 expected: expectedRows, got: column.count, column: name
             )
         }
@@ -365,14 +365,14 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame with a lagged column added.
     public func withLaggedColumn(column name: String, by offset: Int, newName: String) throws -> DataFrame {
-        guard let col = _columns[name] else { throw DataFrameError.columnNotFound(name) }
+        guard let col = _columns[name] else { throw SwiftMLError.columnNotFound(name) }
         let laggedCol = col.lagged(by: offset).renamed(to: newName)
         return try withColumn(newName, column: laggedCol)
     }
 
     /// Returns a new DataFrame with a column renamed.
     public func renameColumn(_ old: String, to new: String) throws -> DataFrame {
-        guard let col = _columns[old] else { throw DataFrameError.columnNotFound(old) }
+        guard let col = _columns[old] else { throw SwiftMLError.columnNotFound(old) }
         var newMap   = _columns
         var newOrder = _columnOrder
 
@@ -402,7 +402,7 @@ public struct DataFrame: Sendable {
 
     /// Casts a column to a new type.
     public func castColumn<T: SupportedType>(_ name: String, to type: T.Type = T.self) throws -> DataFrame {
-        guard let col = _columns[name] else { throw DataFrameError.columnNotFound(name) }
+        guard let col = _columns[name] else { throw SwiftMLError.columnNotFound(name) }
 
         var failedCount = 0
         var sourceNonNull = 0
@@ -421,10 +421,10 @@ public struct DataFrame: Sendable {
         }
 
         if sourceNonNull > 0 && failedCount == sourceNonNull {
-            throw DataFrameError.castFailed(column: name, targetType: "\(T.self)")
+            throw SwiftMLError.castFailed(column: name, targetType: "\(T.self)")
         }
         if failedCount > 0 {
-            throw DataFrameError.partialCastFailure(column: name, targetType: "\(T.self)", failed: failedCount, total: sourceNonNull)
+            throw SwiftMLError.partialCastFailure(column: name, targetType: "\(T.self)", failed: failedCount, total: sourceNonNull)
         }
 
         let newCol = TypedColumn<T>(name: name, values: newValues)
@@ -433,7 +433,7 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame sorted by the given column.
     public func sortBy(_ column: String, ascending: Bool = true) throws -> DataFrame {
-        guard let col = _columns[column] else { throw DataFrameError.columnNotFound(column) }
+        guard let col = _columns[column] else { throw SwiftMLError.columnNotFound(column) }
         let indices = col.sortedIndices(ascending: ascending)
         return gathered(at: indices)
     }
@@ -552,7 +552,7 @@ public struct DataFrame: Sendable {
         transform: (T?) -> T?
     ) throws -> DataFrame {
         guard let col = _columns[name] as? TypedColumn<T> else {
-            throw DataFrameError.columnNotFound(name)
+            throw SwiftMLError.columnNotFound(name)
         }
         let newValues = col.values.map { transform($0) }
         return try withColumn(name, column: TypedColumn<T>(name: name, values: newValues))

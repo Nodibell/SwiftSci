@@ -56,4 +56,25 @@ struct SwiftDatabaseTests {
             _ = try await conn.executeQuery("")
         }
     }
+
+    @Test("Test MySQL query throws notImplemented error")
+    func testMySQLQueryThrowsNotImplemented() async {
+        let conn = MySQLConnection(connectionURL: "mysql://user:pass@localhost:3306/testdb")
+        await #expect(throws: DatabaseError.self) {
+            _ = try await conn.executeQuery("SELECT 1;")
+        }
+    }
+
+    @Test("Test MySQL query error handling")
+    func testMySQLErrorHandling() async {
+        let connEmptyURL = MySQLConnection(connectionURL: "")
+        await #expect(throws: DatabaseError.self) {
+            _ = try await connEmptyURL.executeQuery("SELECT 1;")
+        }
+
+        let conn = MySQLConnection(connectionURL: "mysql://user:pass@localhost:3306/testdb")
+        await #expect(throws: DatabaseError.self) {
+            _ = try await conn.executeQuery("")
+        }
+    }
 }

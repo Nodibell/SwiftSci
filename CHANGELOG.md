@@ -4,6 +4,21 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-08-12
+
+### Added
+- **`MySQLConnection` stub (`SwiftDatabase`)**: Typed MySQL connection class that throws `DatabaseError.notImplemented` until a native driver is integrated (G-003).
+- **SwiftAgent cleaning commands (`SwiftAgent`)**: Added `rename`, `dropnulls`, `fillnulls`, and `groupby` DSL commands mapped to existing `SwiftDataFrame` APIs (G-002).
+
+### Changed
+- **Driver documentation honesty (`SwiftDatabase`)**: Updated `.docc` guides to distinguish implemented SQLite from PostgreSQL/MySQL stubs (G-003).
+- **`CoreMLExporter` documentation (`SwiftML`)**: Module doc now reflects JSON-only linear export scope; tree, forest, logistic, and binary `.mlmodel` export remain unimplemented (G-001).
+
+### Fixed
+- **FlatBuffers resolution pin (`SwiftDataFrame` dependency graph)**: Pinned `FlatBuffers` to `exact: "25.2.10"` so downstream consumers resolve a build-safe version with `arrow-swift` (G-004).
+
+---
+
 ## [3.0.0] - 2026-08-11
 
 ### Added

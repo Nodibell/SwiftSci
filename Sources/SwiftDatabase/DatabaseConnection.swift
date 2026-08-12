@@ -190,6 +190,32 @@ public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable
     }
 }
 
+/// MySQL database connection driver.
+public final class MySQLConnection: DatabaseConnection, @unchecked Sendable {
+    /// The connection URL.
+    public let connectionURL: String
+
+    /// Creates a new instance.
+    /// - Parameter connectionURL: The connection URL (e.g. `mysql://user:pass@host:3306/db`).
+    public init(connectionURL: String) {
+        self.connectionURL = connectionURL
+    }
+
+    /// Executes a SQL query against a MySQL database connection.
+    /// - Throws: `DatabaseError.notImplemented` — native MySQL driver not yet integrated.
+    public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
+        guard !connectionURL.isEmpty else {
+            throw DatabaseError.connectionFailed("Empty MySQL connection URL")
+        }
+        guard !sql.isEmpty else {
+            throw DatabaseError.queryFailed("SQL query cannot be empty")
+        }
+        throw DatabaseError.notImplemented(
+            "MySQL native driver integration not yet implemented. Use SQLiteConnection for local embedded SQL databases."
+        )
+    }
+}
+
 extension DataFrame {
     /// Ingests data from a SQL database connection directly into a DataFrame.
     public static func fromSQL(_ query: String, connection: any DatabaseConnection) async throws -> DataFrame {

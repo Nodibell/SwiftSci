@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v2.7+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.0+)
 
 ## 📌 Vision & Architecture
 
@@ -57,7 +57,7 @@ The architecture combines two hardware engines:
    - `HistGradientBoosting` (256-bin binned splitting), `Kaplan-Meier Estimator`, `Cox Proportional Hazards Model`, `Probability Calibration` (Isotonic/Platt).
 6. **MLOps & Model Export (`SwiftML`, `SwiftONNX`)**
    - `CoreMLExporter` (.mlmodel package), `ONNXExporter`, `TaskGroup` acceleration.
-7. **Saura UI Integration**
+7. **Client UI Integration**
    - Dynamic metric column selection in `ModelLeaderboardView.swift`.
 8. **DataFrame Engine**
    - Automatic header deduplication in CSV reading (`CSVReader.deduplicateHeaders`).
@@ -279,6 +279,27 @@ The architecture combines two hardware engines:
    - Added explicit `async` keyword to `DecisionTree` `fit`/`predict`/`predictProbability` signatures in `DecisionTreeClassifier` and `DecisionTreeRegressor`.
    - Closed `SystemsCSVParser` test gaps for escaped quotes and non-newline-terminated final lines.
    - Replaced manual mean reductions in `SwiftForecast` with `try Stats.mean(...)`.
+
+---
+
+### Version 3.0.1: Compatibility Patch — Dependency Pin, Driver Honesty & Agent DSL *(🟢 Completed)*
+
+*Detailed implementation plan:* [implementation_plan_30_1.md](implementation_plan_30_1.md)
+
+1. **FlatBuffers Resolution Pin (`SwiftDataFrame` dependency graph)**:
+   - Pinned `FlatBuffers` to `exact: "25.2.10"` in `Package.swift` so downstream consumers resolve a build-safe graph with `arrow-swift` without a local override (G-004).
+2. **`MySQLConnection` Stub & Driver Documentation Honesty (`SwiftDatabase`)**:
+   - Added `MySQLConnection` symmetric to `PostgreSQLConnection`, throwing `DatabaseError.notImplemented` until native driver integration.
+   - Updated `.docc` guides to distinguish implemented SQLite from PostgreSQL/MySQL stubs (G-003).
+3. **SwiftAgent Cleaning Command Expansion (`SwiftAgent`)**:
+   - Extended `AgentCommand` and `parseCommand` with `rename`, `dropnulls`, `fillnulls`, and `groupby` mapped to existing `SwiftDataFrame` APIs (`renameColumn`, row-null filtering via `gathered(at:)`, `TypedColumn.fillNull`, `GroupedDataFrame` aggregations) (G-002 partial).
+4. **CoreMLExporter Documentation Alignment (`SwiftML`)**:
+   - Corrected module doc to reflect JSON-only linear export; tree, forest, logistic, and binary `.mlmodel`/`.mlpackage` export remain deferred (G-001 partial).
+
+**Deferred to future releases:**
+- Binary Core ML artifact export (`Model.proto` protobuf writer — separate `implementation_plan_coreml_binary.md`).
+- Native PostgreSQL (`libpq`) and MySQL wire-protocol drivers.
+- Full SwiftAgent DSL (imputation, encoding, outlier treatment, joins, calculated columns).
 
 ---
 

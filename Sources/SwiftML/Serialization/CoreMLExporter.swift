@@ -1,7 +1,8 @@
 import Foundation
 
-/// Exporter for serializing SwiftML linear, tree, and ensemble models into CoreML JSON graph specifications.
-/// Note: Produces a JSON representation of the model specification, not a binary .mlmodel or .mlpackage bundle.
+/// Exporter for serializing SwiftML linear regression weights into a CoreML JSON specification payload.
+/// Note: Produces a JSON representation of model metadata and coefficients, not a binary .mlmodel or
+/// .mlpackage bundle. Tree, forest, logistic, and binary Core ML artifact export are not yet implemented.
 public enum CoreMLExporter {
     
     /// Represents a CoreML model specification metadata and parameter payload.

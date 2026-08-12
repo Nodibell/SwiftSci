@@ -1,10 +1,14 @@
 # Relational Database Connectors
 
-Query relational databases (SQLite, PostgreSQL, MySQL) directly into zero-copy SwiftDataFrames.
+Query relational databases directly into zero-copy SwiftDataFrames.
 
 ## Overview
 
 Execute SQL queries over native database connections without intermediate string parsing overhead.
+
+**Driver status:** SQLite is fully implemented via `SQLiteConnection`. `PostgreSQLConnection` and
+`MySQLConnection` are present as typed connection stubs and throw `DatabaseError.notImplemented` until
+native wire-protocol drivers are integrated.
 
 ### 1. SQLite Database Querying
 

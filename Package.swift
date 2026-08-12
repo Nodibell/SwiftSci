@@ -14,8 +14,6 @@ let package = Package(
     name: "SwiftSci",
     platforms: [
         .macOS(.v14),
-        .iOS(.v18),
-        .visionOS(.v2),
     ],
     products: [
         .library(name: "SwiftDataFrame",     targets: ["SwiftDataFrame"]),
@@ -42,6 +40,10 @@ let package = Package(
         .package(
             url: "https://github.com/apache/arrow-swift.git",
             from: "21.0.0"
+        ),
+        .package(
+            url: "https://github.com/google/flatbuffers.git",
+            exact: "25.2.10"
         ),
         .package(
             url: "https://github.com/ml-explore/mlx-swift.git",

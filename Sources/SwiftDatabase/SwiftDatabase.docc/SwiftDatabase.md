@@ -8,7 +8,7 @@ Relational Database Connectors to DataFrames.
 
 ### Key Capabilities
 
-- **Supported Drivers**: SQLite, PostgreSQL, and MySQL database engines.
+- **Supported Drivers**: SQLite (implemented), PostgreSQL and MySQL (connection types present; native drivers not yet implemented).
 - **Direct Querying**: `DatabaseConnection.query(...)` loading results into typed `DataFrame` instances.
 - **Memory Efficiency**: Low-allocation columnar byte parsing from database cursor streams.
 

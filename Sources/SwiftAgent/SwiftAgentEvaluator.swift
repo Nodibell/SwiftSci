@@ -24,6 +24,10 @@ public enum AgentCommand: Sendable {
     case select(columns: [String])
     case head(n: Int)
     case tail(n: Int)
+    case rename(from: String, to: String)
+    case dropNulls(columns: [String]?)
+    case fillNulls(column: String, value: Double)
+    case groupBy(column: String, aggregation: Aggregation, targetColumn: String?)
 }
 
 /// RAG Context summary generator for dataframes.
@@ -60,7 +64,33 @@ public actor SwiftAgentEvaluator {
                 return df.head(n)
             case .tail(let n):
                 return df.tail(n)
+            case .rename(let from, let to):
+                return try df.renameColumn(from, to: to)
+            case .dropNulls(let columns):
+                return try dropNullRows(in: df, columns: columns)
+            case .fillNulls(let column, let value):
+                guard let col = df[column: column, as: Double.self] else {
+                    throw AgentError.executionFailed("Column '\(column)' not found or not a Double column")
+                }
+                let filled = col.fillNull(with: value)
+                return try df.withColumn(column, column: filled)
+            case .groupBy(let column, let aggregation, let targetColumn):
+                let grouped = df.groupBy(column)
+                if let targetColumn {
+                    return grouped.agg([targetColumn: aggregation])
+                }
+                switch aggregation {
+                case .sum: return grouped.sum()
+                case .mean: return grouped.mean()
+                case .min: return grouped.min()
+                case .max: return grouped.max()
+                case .count: return grouped.count()
+                case .first, .last:
+                    throw AgentError.executionFailed("Aggregation '\(aggregation)' requires an explicit target column")
+                }
             }
+        } catch let error as AgentError {
+            throw error
         } catch {
             throw AgentError.executionFailed(error.localizedDescription)
         }
@@ -155,6 +185,80 @@ public actor SwiftAgentEvaluator {
             return .tail(n: n)
         }
 
+        // 6. rename command
+        if lower.hasPrefix("rename") {
+            let body = trimmed.dropFirst("rename".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let toRange = body.range(of: " to ", options: .caseInsensitive) else {
+                throw AgentError.unparseable(command)
+            }
+            let from = String(body[..<toRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            let to = String(body[toRange.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !from.isEmpty, !to.isEmpty else { throw AgentError.unparseable(command) }
+            return .rename(from: from, to: to)
+        }
+
+        // 7. dropnulls command
+        if lower.hasPrefix("dropnulls") {
+            let body = trimmed.dropFirst("dropnulls".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            if body.isEmpty {
+                return .dropNulls(columns: nil)
+            }
+            let cols = body.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            guard !cols.isEmpty else { throw AgentError.unparseable(command) }
+            return .dropNulls(columns: cols)
+        }
+
+        // 8. fillnulls command
+        if lower.hasPrefix("fillnulls") {
+            let body = trimmed.dropFirst("fillnulls".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let parts = body.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+            guard parts.count == 2, let value = Double(parts[1]) else {
+                throw AgentError.unparseable(command)
+            }
+            return .fillNulls(column: parts[0], value: value)
+        }
+
+        // 9. groupby command
+        if lower.hasPrefix("groupby") {
+            let body = trimmed.dropFirst("groupby".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let parts = body.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+            guard parts.count == 2 || parts.count == 3 else {
+                throw AgentError.unparseable(command)
+            }
+            guard let aggregation = parseAggregation(parts[1]) else {
+                throw AgentError.unparseable(command)
+            }
+            let targetColumn = parts.count == 3 ? parts[2] : nil
+            return .groupBy(column: parts[0], aggregation: aggregation, targetColumn: targetColumn)
+        }
+
         throw AgentError.unparseable(command)
+    }
+
+    private func dropNullRows(in df: DataFrame, columns: [String]?) throws -> DataFrame {
+        let cols = columns ?? df.columnNames
+        guard !cols.isEmpty else { return df }
+        for col in cols {
+            guard df[column: col] != nil else {
+                throw AgentError.executionFailed("Column '\(col)' not found")
+            }
+        }
+        let indices = (0..<df.rowCount).filter { i in
+            !cols.contains { col in df[column: col]?.value(at: i) == nil }
+        }
+        return df.gathered(at: indices)
+    }
+
+    private func parseAggregation(_ token: String) -> Aggregation? {
+        switch token.lowercased() {
+        case "sum": return .sum
+        case "mean": return .mean
+        case "min": return .min
+        case "max": return .max
+        case "count": return .count
+        case "first": return .first
+        case "last": return .last
+        default: return nil
+        }
     }
 }

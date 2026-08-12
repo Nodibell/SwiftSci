@@ -40,6 +40,52 @@ struct SwiftAgentTests {
         #expect(sampled.rowCount == 2)
     }
 
+    @Test("Test Agent Evaluator rename command")
+    func testAgentEvaluatorRename() async throws {
+        let ageCol = TypedColumn(name: "age", values: [20.0, 35.0])
+        let df = try DataFrame(columns: [ageCol])
+        let eval = SwiftAgentEvaluator()
+
+        let renamed = try await eval.evaluate(command: "rename age to years", on: df)
+        #expect(renamed.columnNames == ["years"])
+    }
+
+    @Test("Test Agent Evaluator dropnulls command")
+    func testAgentEvaluatorDropNulls() async throws {
+        let ageCol = TypedColumn(name: "age", values: [20.0, nil, 50.0])
+        let scoreCol = TypedColumn(name: "score", values: [80.0, 90.0, 95.0])
+        let df = try DataFrame(columns: [ageCol, scoreCol])
+        let eval = SwiftAgentEvaluator()
+
+        let cleaned = try await eval.evaluate(command: "dropnulls", on: df)
+        #expect(cleaned.rowCount == 2)
+    }
+
+    @Test("Test Agent Evaluator fillnulls command")
+    func testAgentEvaluatorFillNulls() async throws {
+        let scoreCol = TypedColumn(name: "score", values: [80.0, nil, 95.0])
+        let df = try DataFrame(columns: [scoreCol])
+        let eval = SwiftAgentEvaluator()
+
+        let filled = try await eval.evaluate(command: "fillnulls score 0.0", on: df)
+        guard let col = filled[column: "score", as: Double.self] else {
+            Issue.record("Missing score column")
+            return
+        }
+        #expect(col[1] == 0.0)
+    }
+
+    @Test("Test Agent Evaluator groupby command")
+    func testAgentEvaluatorGroupBy() async throws {
+        let categoryCol = TypedColumn(name: "category", values: ["A", "A", "B"])
+        let valueCol = TypedColumn(name: "value", values: [10.0, 20.0, 30.0])
+        let df = try DataFrame(columns: [categoryCol, valueCol])
+        let eval = SwiftAgentEvaluator()
+
+        let grouped = try await eval.evaluate(command: "groupby category mean", on: df)
+        #expect(grouped.rowCount == 2)
+    }
+
     @Test("Test Agent Evaluator unparseable command throws error")
     func testUnparseableCommandThrows() async {
         let col = TypedColumn(name: "A", values: [1.0, 2.0, 3.0])
@@ -48,6 +94,10 @@ struct SwiftAgentTests {
 
         await #expect(throws: AgentError.self) {
             _ = try await eval.evaluate(command: "invalid_gibberish_command", on: df)
+        }
+
+        await #expect(throws: AgentError.self) {
+            _ = try await eval.evaluate(command: "groupby x bogus y", on: df)
         }
     }
 }

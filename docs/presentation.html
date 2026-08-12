@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 3.0.0 — Complete Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 3.0.1 — Complete Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -643,8 +643,8 @@
 
     <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.0.0 Ecosystem</h1>
-      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.0.0 release changes & Apple Silicon acceleration.</p>
+      <h1 class="title-large">SwiftSci 3.0.1 Ecosystem</h1>
+      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.0.1 release changes & Apple Silicon acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
           <div class="stat-val">66</div>
@@ -2761,7 +2761,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
-<span class="kw">let</span> text = <span class="str">"SwiftSci 3.0.0 is an extraordinarily fast scientific ecosystem."</span>
+<span class="kw">let</span> text = <span class="str">"SwiftSci 3.0.1 is an extraordinarily fast scientific ecosystem."</span>
 
 <span class="kw">let</span> wordTokens = <span class="type">AppleWordTokenizer</span>().tokenize(text: text)
 <span class="kw">let</span> sentenceTokens = <span class="type">SentenceTokenizer</span>().tokenize(text: text)</pre>
@@ -2777,7 +2777,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
         <div class="card">
           <div class="card-header"><span class="card-title">Execution Log & Token Badges</span><span
               class="swiftui-pill" style="color:var(--sf-green);">0.45ms | M4 Pro</span></div>
-          <pre><span class="out-text">Tokens: ["SwiftSci", "3.0.0", "is", "an", "extraordinarily"]</span></pre>
+          <pre><span class="out-text">Tokens: ["SwiftSci", "3.0.1", "is", "an", "extraordinarily"]</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Token Stream</span><span class="swiftui-pill"
                 style="color:var(--sf-blue);">Apple NL</span></div>
@@ -2903,7 +2903,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
-<span class="kw">let</span> reviewText = <span class="str">"SwiftSci 3.0.0 is absolutely incredible, super fast and easy to use!"</span>
+<span class="kw">let</span> reviewText = <span class="str">"SwiftSci 3.0.1 is absolutely incredible, super fast and easy to use!"</span>
 
 <span class="kw">let</span> analyzer = <span class="type">VADERSentimentAnalyzer</span>()
 <span class="kw">let</span> scores = analyzer.polarityScores(text: reviewText)</pre>
@@ -3695,7 +3695,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     <div class="slide" data-slide="65">
       <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 65 OF 66</div>
       <h1 class="title-large">Apple Silicon Release Benchmarks</h1>
-      <p class="subtitle">SwiftSci 3.0.0 release-build medians compared with established Python data-science baselines on Apple Silicon.</p>
+      <p class="subtitle">SwiftSci 3.0.1 release-build medians compared with established Python data-science baselines on Apple Silicon.</p>
       <div class="grid-3" style="grid-template-columns: repeat(2, 1fr); max-width: 1000px;">
         <div class="stat-box"><div class="stat-val">100.1×</div><div class="stat-lbl">ARIMA Fit · 2.27 ms vs 227.34 ms</div></div>
         <div class="stat-box"><div class="stat-val">8.02×</div><div class="stat-lbl">LinearSVC GPU · 0.48 ms vs 3.85 ms</div></div>
@@ -3705,9 +3705,9 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     </div>
 
     <div class="slide" data-slide="66">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.0.0 — SLIDE 66 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.0.0 — Release Evolution</h1>
-      <p class="subtitle">3.0.0 consolidates the 2.8.x feature line into a stricter, safer Swift 6 architecture.</p>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.0.1 — SLIDE 66 OF 66</div>
+      <h1 class="title-large">SwiftSci 3.0.1 — Release Evolution</h1>
+      <p class="subtitle">3.0.1 extends the 3.0.0 contract freeze with dependency-graph safety, database honesty, and Agent DSL expansion.</p>
       <div class="grid-2">
         <div class="card">
           <div class="card-header"><span class="card-title">Concurrency & Estimator Architecture</span><span class="swiftui-pill" style="color:var(--sf-blue);">Swift 6</span></div>
@@ -3715,6 +3715,14 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
             <div class="highlight-item"><span class="highlight-icon">🧵</span><span>Actor-based <b>NaiveBayesClassifier</b> and <b>ComplementNaiveBayesClassifier</b> conforming to <b>ClassifierEstimator</b></span></div>
             <div class="highlight-item"><span class="highlight-icon">🛡️</span><span>12 preprocessing transformers migrated to value-semantic <b>Sendable</b> structs</span></div>
             <div class="highlight-item"><span class="highlight-icon">⚙️</span><span>Explicit async DecisionTree fit/predict signatures for protocol consistency</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">3.0.1 Compatibility Patch</span><span class="swiftui-pill" style="color:var(--sf-orange);">3.0.1</span></div>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">📌</span><span><b>FlatBuffers</b> pinned to 25.2.10 for reproducible <b>arrow-swift</b> builds</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🗄️</span><span><b>MySQLConnection</b> stub + honest PostgreSQL/MySQL driver documentation</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🤖</span><span><b>SwiftAgent</b> adds <b>rename</b>, <b>dropnulls</b>, <b>fillnulls</b>, <b>groupby</b> commands</span></div>
           </div>
         </div>
         <div class="card">
@@ -3726,12 +3734,13 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
           </div>
         </div>
         <div class="card" style="grid-column: span 2;">
-          <div class="card-header"><span class="card-title">2.8.x → 3.0.0 Feature Line</span><span class="swiftui-pill" style="color:var(--sf-green);">Production Release</span></div>
-          <div class="feature-highlights" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="card-header"><span class="card-title">2.8.x → 3.0.x Feature Line</span><span class="swiftui-pill" style="color:var(--sf-green);">Production Release</span></div>
+          <div class="feature-highlights" style="grid-template-columns: repeat(5, 1fr);">
             <div class="highlight-item"><span class="highlight-icon">⚡</span><span><b>2.8.0</b><br>LinearSVC, binary ONNX, unique(), deterministic RandomizedSearch</span></div>
             <div class="highlight-item"><span class="highlight-icon">👁️</span><span><b>2.8.1</b><br>Real YOLOv8 inference, ONNX weight reader & vision benchmarks</span></div>
             <div class="highlight-item"><span class="highlight-icon">🌊</span><span><b>2.8.2</b><br>Koopman Operator / EDMD forecasting & spectral stability analysis</span></div>
             <div class="highlight-item"><span class="highlight-icon">🚀</span><span><b>3.0.0</b><br>Concurrency governance, unified errors & estimator consistency</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🔧</span><span><b>3.0.1</b><br>FlatBuffers pin, MySQL stub, Agent cleaning DSL & doc honesty</span></div>
           </div>
         </div>
       </div>
@@ -3772,7 +3781,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       { name: "Database", start: 61, end: 62 },
       { name: "Agent", start: 63, end: 64 },
       { name: "M4 Pro", start: 65, end: 65 },
-      { name: "v3.0.0", start: 66, end: 66 }
+      { name: "v3.0.1", start: 66, end: 66 }
     ];
 
 

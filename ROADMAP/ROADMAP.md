@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.0+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.1+)
 
 ## 📌 Vision & Architecture
 
@@ -297,9 +297,25 @@ The architecture combines two hardware engines:
    - Corrected module doc to reflect JSON-only linear export; tree, forest, logistic, and binary `.mlmodel`/`.mlpackage` export remain deferred (G-001 partial).
 
 **Deferred to future releases:**
-- Binary Core ML artifact export (`Model.proto` protobuf writer — separate `implementation_plan_coreml_binary.md`).
 - Native PostgreSQL (`libpq`) and MySQL wire-protocol drivers.
 - Full SwiftAgent DSL (imputation, encoding, outlier treatment, joins, calculated columns).
+
+---
+
+### Version 3.1.0: Binary Core ML Export (G-001) *(🔵 Planned)*
+
+*Detailed implementation plan:* [implementation_plan_coreml_binary.md](implementation_plan_coreml_binary.md)
+
+1. **Shared `ProtobufWriter` (`SwiftML`)**:
+   - Extract from `ONNXExporter.swift` for reuse across ONNX and Core ML wire-format encoders.
+2. **Binary `.mlmodel` Export (`SwiftML`)**:
+   - `GLMRegressor` / `GLMClassifier` for linear and logistic regression.
+   - `TreeEnsembleClassifier` / `TreeEnsembleRegressor` for decision tree and random forest.
+   - Validated via `MLModel(contentsOf:)` load and numerical parity with SwiftSci `predict`.
+3. **Unified Export API (`SwiftML`)**:
+   - `CoreMLExportable` conformance on fitted model types; deprecate JSON-only `exportLinearModel`.
+4. **Gap closure**:
+   - G-001 resolved for supported families; MLP/`NeuralNetwork` and `.mlpackage` deferred beyond 3.1.0.
 
 ---
 

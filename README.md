@@ -1,4 +1,4 @@
-# SwiftSci 3.0.0
+# SwiftSci 3.0.1
 
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
@@ -21,7 +21,19 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## 🚀 Core Modules & What's New in 3.0.0
+## What's New in 3.0.1
+
+Patch release after the 3.0.0 API contract freeze — no breaking API changes.
+
+- **Fixed:** `FlatBuffers` pinned to `exact: "25.2.10"` for reproducible `arrow-swift` resolution (downstream packages can drop local overrides).
+- **Added:** `MySQLConnection` stub (`SwiftDatabase`) and four `SwiftAgent` cleaning commands (`rename`, `dropnulls`, `fillnulls`, `groupby`).
+- **Changed:** Honest PostgreSQL/MySQL driver documentation; `CoreMLExporter` docs aligned with JSON-only linear export (binary `.mlmodel` planned for 3.1.0).
+
+See [RELEASE_NOTES_3.0.1.md](RELEASE_NOTES_3.0.1.md) and [CHANGELOG.md](CHANGELOG.md#301---2026-08-12).
+
+---
+
+## Core Modules
 
 | Module                           | Description                                                                                                                                                                                                                                                                                                                                                          |                                    Docs                                    |
 | :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------: |
@@ -37,20 +49,20 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 | **`SwiftLLM`**           | `MLX.compile` forward pass caching per sequence-length bucket (16, 32, 64, 128, 256), `KVCache` Key-Value tensor cache, and `generateStream` streaming output. |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftllm/)      |
 | **`SwiftVisualization`** | Native SwiftUI `Canvas` charting (`SwiftSciChartView` for line, bar, heatmap) + Plotly HTML chart exporters. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvisualization/) |
 | **`SwiftVision`**        | Computer vision & neural inference: **Real YOLOv8n Object Detection** (`CSPDarknet` + `PANet` + Decoupled Head + DFL), **`ONNXWeightReader`** Protobuf binary weight parser, `YOLOPreprocessor` (640x640 letterbox), U-Net Segmentation, CNN feature extraction. |    [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvision/)    |
-| **`SwiftDatabase`**      | Native SQLite C-driver connector (`sqlite3_open_v2`) for zero-copy DataFrame ingestion via `DataFrame.fromSQL`. |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdatabase/)   |
-| **`SwiftAgent`**         | Structured DSL command parser & RAG Context Summary Generator for local LLMs.                                                                                                                                                                                                                                                                                        |     [📖](https://nodibell.github.io/SwiftSci/documentation/swiftagent/)     |
+| **`SwiftDatabase`**      | Native SQLite C-driver connector (`sqlite3_open_v2`) for zero-copy DataFrame ingestion via `DataFrame.fromSQL`. `PostgreSQLConnection` and `MySQLConnection` stubs throw `DatabaseError.notImplemented` until native drivers land. |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdatabase/)   |
+| **`SwiftAgent`**         | Structured DSL command parser (`filter`, `sample`, `select`, `head`, `tail`, `rename`, `dropnulls`, `fillnulls`, `groupby`) & RAG Context Summary Generator for local LLMs.                                                                                                                                                                                                                                                                                        |     [📖](https://nodibell.github.io/SwiftSci/documentation/swiftagent/)     |
 
 ---
 
-## 📊 Complete Performance Comparison (SwiftSci 3.0.0 vs Python)
+## 📊 Complete Performance Comparison (SwiftSci 3.0.1 vs Python)
 
-Official comparative benchmark suite results comparing **SwiftSci** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comparative benchmark suite results comparing **SwiftSci 3.0.1** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64). Performance numbers are unchanged from the 3.0.0 release benchmark run (compatibility patch only).
 
 Values are median times from the latest benchmark run. `n/a` means that the Python suite did not include an equivalent benchmark.
 
 ### 👁️ 1. Computer Vision & Neural Inference
 
-| Benchmark Scenario                              | SwiftSci 3.0.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 3.0.1 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **YOLOv8Detector Detect** (640×640, real GPU) | **12.317 ms** (~81 FPS) | n/a | n/a | — |
 | **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) | **0.414 ms** | n/a | n/a | — |
@@ -58,7 +70,7 @@ Values are median times from the latest benchmark run. `n/a` means that the Pyth
 
 ### 📈 2. Forecasting
 
-| Benchmark Scenario                              | SwiftSci 3.0.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 3.0.1 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **ARIMA(1,1,1) Fit** (50k pts) | **2.463 ms** | 212.621 ms (*Statsmodels*) | ⚡**86.34×** | 🟢 Swift |
 | **ARIMA(1,1,1) Forecast** (horizon=24) | **2.566 ms** | 213.709 ms (*Statsmodels*) | ⚡**83.27×** | 🟢 Swift |
@@ -66,7 +78,7 @@ Values are median times from the latest benchmark run. `n/a` means that the Pyth
 
 ### 🤖 3. Machine Learning & Clustering
 
-| Benchmark Scenario                           | SwiftSci 3.0.0 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                           | SwiftSci 3.0.1 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
 | :------------------------------------------- | :--------------------: | :-------------------------: | :---------------: | :------: |
 | **LinearSVC Fit** (1k×4, Metal GPU) | **0.463 ms** | n/a | n/a | — |
 | **RandomForest Fit** (1k×4, 50 trees) | **3.838 ms** | 25.300 ms (*Scikit-Learn*) | ⚡**6.59×** | 🟢 Swift |
@@ -76,7 +88,7 @@ Values are median times from the latest benchmark run. `n/a` means that the Pyth
 
 ### 📝 4. Natural Language & Explainability
 
-| Benchmark Scenario                            | SwiftSci 3.0.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                            | SwiftSci 3.0.1 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
 | **KernelSHAP Explain** (5 features, 100 coalitions) | **0.168 ms** | 0.413 ms (*SHAP*) | ⚡**2.45×** | 🟢 Swift |
 | **LLM Forward Pass** (seqLen=64) | **0.437 ms** | 0.531 ms (*PyTorch*) | ⚡**1.21×** | 🟢 Swift |
@@ -84,7 +96,7 @@ Values are median times from the latest benchmark run. `n/a` means that the Pyth
 
 ### 📊 5. Core Data Engines & Vector Stats
 
-| Benchmark Scenario                            | SwiftSci 3.0.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                            | SwiftSci 3.0.1 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
 | **Mean Reduction** (vDSP 1M elements) | **0.082 ms** | 0.121 ms (*NumPy*) | ⚡**1.48×** | 🟢 Swift |
 | **StdDev Reduction** (vDSP 1M elements) | **0.275 ms** | 0.533 ms (*NumPy*) | ⚡**1.94×** | 🟢 Swift |
@@ -138,6 +150,6 @@ try regressor.fit(features: X, target: y)
 
 // 3. Native Tokenization & Sentiment Analysis
 let vader = VADERSentimentAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 3.0.0 is super fast!")
+let score = vader.polarityScores(text: "SwiftSci 3.0.1 is super fast!")
 print("Sentiment compound score:", score.compound)
 ```

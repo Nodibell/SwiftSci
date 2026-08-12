@@ -1,4 +1,4 @@
-#  SwiftSci 2.7.0 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 3.0.1 — Apple Keynote Ecosystem Presentation
 
 > **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
 > **Date**: August 2026
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-SwiftSci 2.7.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), Tier B value-semantics data-race freedom (`struct: Sendable` scalers), WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
+SwiftSci 3.0.1 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), Tier B value-semantics data-race freedom (`struct: Sendable` scalers), WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
 
 ---
 
@@ -161,7 +161,7 @@ let sentiment = VADERSentimentAnalyzer().polarityScores(text: text)
 **Empirical Console Output (`stdout`):**
 ```text
   Synsets      : [dog.n.01, dog.n.02] | Wu-Palmer Similarity: 0.8571
-  Tokens       : ["SwiftSci", "2.7.0", "is", "an", "extraordinarily"]
+  Tokens       : ["SwiftSci", "3.0.1", "is", "an", "extraordinarily"]
   Porter Stems : ["swiftsci", "2.5.0", "is", "an", "extraordinarili"]
 ```
 

@@ -1,6 +1,9 @@
-# SwiftSci 3.0.0 Complete Performance Benchmarks
+# SwiftSci 3.0.1 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.0.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.0.1** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
+
+> [!NOTE]
+> 3.0.1 is a compatibility patch; benchmark medians are unchanged from the 3.0.0 release run.
 
 
 > [!NOTE]
@@ -12,7 +15,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 The values below are median times from the latest release benchmark run. Speedups are computed as `Python / Swift`; values above `1×` favor Swift. `n/a` means that the Python suite did not include an equivalent benchmark.
 
-| Benchmark Scenario | SwiftSci 3.0.0 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
+| Benchmark Scenario | SwiftSci 3.0.1 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | Mean (1M elements) | **0.082 ms** | 0.121 ms (*NumPy*) | ⚡ **1.48×** | 🟢 **Swift** | vDSP reduction |
 | StdDev (1M elements) | **0.275 ms** | 0.533 ms (*NumPy*) | ⚡ **1.94×** | 🟢 **Swift** | vDSP reduction |
@@ -56,7 +59,7 @@ The values below are median times from the latest release benchmark run. Speedup
 
 ---
 
-## 🔍 Detailed Analysis of Optimizations in v3.0.0
+## 🔍 Detailed Analysis of Optimizations in v3.0.0–v3.0.1
 
 1. **`SwiftPreprocessing` Zero-Allocation Value Semantics**:
    - `MinMaxScaler`, `StandardScaler`, and `RobustScaler` operate as thread-safe `struct` value types.

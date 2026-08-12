@@ -284,8 +284,6 @@ The architecture combines two hardware engines:
 
 ### Version 3.0.1: Compatibility Patch — Dependency Pin, Driver Honesty & Agent DSL *(🟢 Completed)*
 
-*Detailed implementation plan:* [implementation_plan_30_1.md](implementation_plan_30_1.md)
-
 1. **FlatBuffers Resolution Pin (`SwiftDataFrame` dependency graph)**:
    - Pinned `FlatBuffers` to `exact: "25.2.10"` in `Package.swift` so downstream consumers resolve a build-safe graph with `arrow-swift` without a local override (G-004).
 2. **`MySQLConnection` Stub & Driver Documentation Honesty (`SwiftDatabase`)**:
@@ -303,8 +301,6 @@ The architecture combines two hardware engines:
 ---
 
 ### Version 3.1.0: Binary Core ML Export (G-001) *(🔵 Planned)*
-
-*Detailed implementation plan:* [implementation_plan_coreml_binary.md](implementation_plan_coreml_binary.md)
 
 1. **Shared `ProtobufWriter` (`SwiftML`)**:
    - Extract from `ONNXExporter.swift` for reuse across ONNX and Core ML wire-format encoders.

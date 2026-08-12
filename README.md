@@ -29,7 +29,7 @@ Patch release after the 3.0.0 API contract freeze — no breaking API changes.
 - **Added:** `MySQLConnection` stub (`SwiftDatabase`) and four `SwiftAgent` cleaning commands (`rename`, `dropnulls`, `fillnulls`, `groupby`).
 - **Changed:** Honest PostgreSQL/MySQL driver documentation; `CoreMLExporter` docs aligned with JSON-only linear export (binary `.mlmodel` planned for 3.1.0).
 
-See [RELEASE_NOTES_3.0.1.md](RELEASE_NOTES_3.0.1.md) and [CHANGELOG.md](CHANGELOG.md#301---2026-08-12).
+See [CHANGELOG.md](CHANGELOG.md#301---2026-08-12).
 
 ---
 

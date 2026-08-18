@@ -1,4 +1,4 @@
-# SwiftSci 3.0.1
+# SwiftSci 3.1.0
 
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
@@ -21,15 +21,13 @@ SwiftSci is engineered for multi-platform deployment across Apple Silicon ecosys
 
 ---
 
-## What's New in 3.0.1
+## What's New in 3.1.0
 
-Patch release after the 3.0.0 API contract freeze — no breaking API changes.
+- **Binary Core ML Export (G-001 resolved):** Native Apple `Model.proto` v4 wire-format serializer (`CoreMLExporter`) emitting loadable binary `.mlmodel` artifacts directly to disk.
+- **`CoreMLExportable` Protocol:** Universal asynchronous protocol conforming `LinearRegression`, `LogisticRegression`, `DecisionTreeClassifier`, `DecisionTreeRegressor`, `RandomForestClassifier`, and `RandomForestRegressor`.
+- **Shared `ProtobufWriter`:** Zero-dependency, lightweight Protocol Buffer wire encoder reused across Core ML and ONNX serialization backends.
 
-- **Fixed:** `FlatBuffers` pinned to `exact: "25.2.10"` for reproducible `arrow-swift` resolution (downstream packages can drop local overrides).
-- **Added:** `MySQLConnection` stub (`SwiftDatabase`) and four `SwiftAgent` cleaning commands (`rename`, `dropnulls`, `fillnulls`, `groupby`).
-- **Changed:** Honest PostgreSQL/MySQL driver documentation; `CoreMLExporter` docs aligned with JSON-only linear export (binary `.mlmodel` planned for 3.1.0).
-
-See [CHANGELOG.md](CHANGELOG.md#301---2026-08-12).
+See [CHANGELOG.md](CHANGELOG.md#310---2026-08-19).
 
 ---
 
@@ -40,7 +38,7 @@ See [CHANGELOG.md](CHANGELOG.md#301---2026-08-12).
 | **`SwiftDataFrame`**     | SIMD vectorised `filterFast` single-column evaluation (`vDSP_vcmprsD`), Accelerate `vDSP_vsortD` primitive Double sorting, Arrow zero-copy Feather (`FeatherReader`/`FeatherWriter`), deferred `LazyDataFrame` with filter pushdown, **`DataFrame.unique`** deduplication. |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/)   |
 | **`SwiftStats`**         | Vectorized descriptive statistics, SIMD vDSP sorting, Student-t/Chi-Square/F distributions, paired t-test, ANOVA powered by `Accelerate vDSP`.                                                                                                                                                                                                                      |     [📖](https://nodibell.github.io/SwiftSci/documentation/swiftstats/)     |
 | **`SwiftPreprocessing`** | Feature scaling, categorical encoding (`OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `FrequencyEncoder`), imputation (`Imputer`, `KNNImputer`), `Pipeline`, `ColumnTransformer`, `HardwareRouter`, **Tier B Sendable Structs**.                                                                                                                               | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
-| **`SwiftML`**            | Linear/Logistic Regression (LAPACK OLS `dgels_`), Decision Trees, Random Forests (with `onProgress` callbacks), GBDTs, **`LinearSVC`** (Metal GPU Hinge-loss SVM), **`LinearSVCOneVsRest`**, parallel `MultiOutputRegressor` & `MultiLabelClassifier`, `MLPClassifier`/`MLPRegressor` with Adam optimizer & BLAS `cblas_dgemm`, binary **ONNX exporter**, **`SwiftMLError`**. |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftml/)      |
+| **`SwiftML`**            | Linear/Logistic Regression (LAPACK OLS `dgels_`), Decision Trees, Random Forests (with `onProgress` callbacks), GBDTs, **`LinearSVC`** (Metal GPU Hinge-loss SVM), **`LinearSVCOneVsRest`**, parallel `MultiOutputRegressor` & `MultiLabelClassifier`, `MLPClassifier`/`MLPRegressor`, **Binary Core ML Exporter (`.mlmodel`)**, binary **ONNX exporter**, **`SwiftMLError`**. |      [📖](https://nodibell.github.io/SwiftSci/documentation/swiftml/)      |
 | **`SwiftCluster`**       | Halko (2011) $O(MNk)$ `RandomizedSVD` for fast `PCA` (`svdSolver: .randomized`), divide-and-conquer SVD (`dgesdd_`), DBSCAN, `IsolationForest`, `LocalOutlierFactor`, `KMeans` with parallel `concurrentPerform` centroid assignment. |    [📖](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/)    |
 | **`SwiftOptimize`**      | `KFold`, `StratifiedKFold`, `TimeSeriesSplit` cross-validation, ROC-AUC, PR-AUC, MCC, `GridSearchCV`, generalized `RandomizedSearchCV` (`searchGeneric`).                                                                                                                                                                                                      |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftoptimize/)   |
 | **`SwiftForecast`**      | 1D FIR moving average via `vDSP_convD`, ETS State Space model (`autoFit` AICc selection), Prophet-style `PiecewiseTrendDecomposition`, Exponential Smoothing, ARIMA, SARIMA, GARCH, Kalman filter, **`KoopmanOperator`** EDMD. |   [📖](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/)   |
@@ -54,9 +52,9 @@ See [CHANGELOG.md](CHANGELOG.md#301---2026-08-12).
 
 ---
 
-## 📊 Complete Performance Comparison (SwiftSci 3.0.1 vs Python)
+## 📊 Complete Performance Comparison (SwiftSci 3.1.0 vs Python)
 
-Official comparative benchmark suite results comparing **SwiftSci 3.0.1** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64). Performance numbers are unchanged from the 3.0.0 release benchmark run (compatibility patch only).
+Official comparative benchmark suite results comparing **SwiftSci 3.1.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64). Performance numbers are unchanged from the 3.0.0 release benchmark run (compatibility patch only).
 
 Values are median times from the latest benchmark run. `n/a` means that the Python suite did not include an equivalent benchmark.
 

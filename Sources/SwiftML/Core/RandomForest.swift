@@ -194,6 +194,16 @@ public actor RandomForestClassifier: ClassifierEstimator {
         }
     }
 
+    /// Returns the fitted forest as an array of per-tree `FlatTreeNode` arrays.
+    ///
+    /// Used by ``CoreMLExportable`` conformance to build binary `.mlmodel` artifacts.
+    /// - Returns: All tree node arrays, or an empty array if the model is not fitted.
+    public func getForestTrees() -> [[FlatTreeNode]] { trees }
+
+    /// Returns the number of input features seen during training.
+    /// - Returns: Feature count, or `0` if the model is not fitted.
+    public func getNumFeatures() -> Int { numFeatures }
+
     // MARK: Static helpers (no actor isolation needed)
 
     private static func buildTreeSync(
@@ -395,6 +405,16 @@ public actor RandomForestRegressor: RegressorEstimator {
             return preds.mean()
         }
     }
+
+    /// Returns the fitted forest as an array of per-tree `FlatTreeNode` arrays.
+    ///
+    /// Used by ``CoreMLExportable`` conformance to build binary `.mlmodel` artifacts.
+    /// - Returns: All tree node arrays, or an empty array if the model is not fitted.
+    public func getForestTrees() -> [[FlatTreeNode]] { trees }
+
+    /// Returns the number of input features seen during training.
+    /// - Returns: Feature count, or `0` if the model is not fitted.
+    public func getNumFeatures() -> Int { numFeatures }
 
     private static func buildTreeSync(
         X: [[Double]],

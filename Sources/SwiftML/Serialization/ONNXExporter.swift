@@ -111,44 +111,5 @@ public enum ONNXExporter {
     }
 }
 
-// MARK: - Lightweight Binary Protobuf Serialization Utility
-private struct ProtobufWriter {
-    private(set) var data = Data()
-    
-    mutating func writeVarint(_ value: UInt64) {
-        var v = value
-        while v >= 0x80 {
-            data.append(UInt8((v & 0x7F) | 0x80))
-            v >>= 7
-        }
-        data.append(UInt8(v & 0x7F))
-    }
-    
-    mutating func writeTag(fieldNumber: Int, wireType: Int) {
-        writeVarint(UInt64((fieldNumber << 3) | wireType))
-    }
-    
-    mutating func writeVarintField(fieldNumber: Int, value: UInt64) {
-        writeTag(fieldNumber: fieldNumber, wireType: 0)
-        writeVarint(value)
-    }
-    
-    mutating func writeDoubleField(fieldNumber: Int, value: Double) {
-        writeTag(fieldNumber: fieldNumber, wireType: 1)
-        var bitPattern = value.bitPattern
-        withUnsafeBytes(of: &bitPattern) { data.append(contentsOf: $0) }
-    }
-    
-    mutating func writeStringField(fieldNumber: Int, value: String) {
-        let utf8 = Data(value.utf8)
-        writeTag(fieldNumber: fieldNumber, wireType: 2)
-        writeVarint(UInt64(utf8.count))
-        data.append(utf8)
-    }
-    
-    mutating func writeBytesField(fieldNumber: Int, bytes: Data) {
-        writeTag(fieldNumber: fieldNumber, wireType: 2)
-        writeVarint(UInt64(bytes.count))
-        data.append(bytes)
-    }
-}
+// MARK: - ProtobufWriter
+// Shared implementation lives in Sources/SwiftML/Serialization/ProtobufWriter.swift

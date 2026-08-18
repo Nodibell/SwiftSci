@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 3.0.1 — Complete Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 3.1.0 — Complete Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -643,8 +643,8 @@
 
     <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.0.1 Ecosystem</h1>
-      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.0.1 release changes & Apple Silicon acceleration.</p>
+      <h1 class="title-large">SwiftSci 3.1.0 Ecosystem</h1>
+      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.1.0 release changes & Apple Silicon acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
           <div class="stat-val">66</div>
@@ -1899,8 +1899,8 @@ print(groupedDF)</pre>
     <!-- SLIDE: SwiftML - CoreML & ONNX Model Exporters -->
     <div class="slide" data-slide="27">
       <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 27 OF 66</div>
-      <h1 class="title-large">CoreML & ONNX Model Exporters</h1>
-      <p class="subtitle">Zero-dependency export of trained SwiftML models to Apple CoreML .mlmodel and ONNX formats.
+      <h1 class="title-large">Binary CoreML & ONNX Model Exporters</h1>
+      <p class="subtitle">Zero-dependency export of trained SwiftML models to Apple CoreML .mlmodel (Model.proto v4) and ONNX formats.
       </p>
       <div class="code-grid">
         <div class="card">
@@ -1913,31 +1913,30 @@ print(groupedDF)</pre>
 <span class="kw">let</span> rfModel = <span class="kw">try</span> <span class="type">RandomForestClassifier</span>(nEstimators: <span class="num">50</span>, maxDepth: <span class="num">6</span>)
 <span class="kw">try await</span> rfModel.fit(features: X, targets: y)
 
-<span class="kw">let</span> coreMLSpec = <span class="kw">try</span> <span class="type">CoreMLExporter</span>.export(model: rfModel, modelName: <span class="str">"Classifier.mlmodel"</span>)
-<span class="kw">try</span> coreMLSpec.save(to: <span class="type">URL</span>(fileURLWithPath: <span class="str">"Classifier.mlmodel"</span>))
+<span class="comment">// Native binary .mlmodel export via CoreMLExportable (Model.proto v4)</span>
+<span class="kw">let</span> coreMLURL = <span class="type">URL</span>(fileURLWithPath: <span class="str">"Classifier.mlmodel"</span>)
+<span class="kw">try await</span> rfModel.writeCoreML(to: coreMLURL, featureNames: [<span class="str">"age"</span>, <span class="str">"score"</span>], outputName: <span class="str">"label"</span>)
 
-<span class="kw">let</span> onnxGraph = <span class="kw">try</span> <span class="type">ONNXExporter</span>.export(model: rfModel, graphName: <span class="str">"RandomForest"</span>)
-<span class="kw">try</span> onnxGraph.save(to: <span class="type">URL</span>(fileURLWithPath: <span class="str">"model.onnx"</span>))</pre>
+<span class="comment">// Cross-platform binary ONNX export</span>
+<span class="kw">let</span> onnxData = <span class="type">ONNXExporter</span>.exportBinaryONNX(name: <span class="str">"RF"</span>, inputs: [<span class="str">"f1"</span>, <span class="str">"f2"</span>], output: <span class="str">"pred"</span>, weights: [<span class="num">0.8</span>, <span class="num">0.2</span>], bias: <span class="num">0.1</span>)
+<span class="kw">try</span> onnxData.write(to: <span class="type">URL</span>(fileURLWithPath: <span class="str">"model.onnx"</span>))</pre>
           <div class="feature-highlights">
-            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Exports decision trees, random
-                forests, and linear models to CoreML</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span>ONNX graph spec serialization for
-                cross-platform model deployment</span></div>
-            <div class="highlight-item"><span class="highlight-icon">📐</span> <span>Enables native iOS / macOS Neural
-                Engine deployment with zero overhead</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🍏</span> <span>Native binary <b>.mlmodel</b> (Model.proto v4) for Decision Trees, Random Forests, Linear & Logistic models</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span> <span><b>CoreMLExportable</b> async protocol with universal <b>exportCoreML</b> & <b>writeCoreML</b> APIs</span></div>
+            <div class="highlight-item"><span class="highlight-icon">⚡</span> <span>Enables native Apple Silicon Neural Engine (ANE), Metal GPU, and CPU deployment with zero overhead</span></div>
           </div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Execution Log & Model Format</span><span
               class="swiftui-pill" style="color:var(--sf-green);">0.88ms | M4 Pro</span></div>
-          <pre><span class="out-text">CoreML (.mlmodel) & ONNX (.onnx) Exported (42 KB)</span></pre>
+          <pre><span class="out-text">CoreML (.mlmodel v4) & ONNX (.onnx) Exported (18.4 KB)</span></pre>
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Model Exporters</span><span class="swiftui-pill"
                 style="color:var(--sf-orange);">CoreML / ONNX</span></div>
             <svg viewBox="0 0 320 80" style="width:100%; height:80px;">
               <rect x="40" y="15" width="240" height="50" rx="8" fill="rgba(0,122,255,0.15)" stroke="#007aff" /><text
                 x="160" y="44" fill="#64d2ff" font-size="11" text-anchor="middle" font-family="monospace">[Binary
-                Serialized Model Checkpoint]</text>
+                Serialized Model Checkpoint (.mlmodel)]</text>
             </svg>
           </div>
         </div>
@@ -3705,16 +3704,16 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     </div>
 
     <div class="slide" data-slide="66">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.0.1 — SLIDE 66 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.0.1 — Release Evolution</h1>
-      <p class="subtitle">3.0.1 extends the 3.0.0 contract freeze with dependency-graph safety, database honesty, and Agent DSL expansion.</p>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.1.0 — SLIDE 66 OF 66</div>
+      <h1 class="title-large">SwiftSci 3.1.0 — Release Evolution</h1>
+      <p class="subtitle">3.1.0 introduces native binary Core ML export (Model.proto v4), the CoreMLExportable protocol, and DocC documentation overhaul.</p>
       <div class="grid-2">
         <div class="card">
-          <div class="card-header"><span class="card-title">Concurrency & Estimator Architecture</span><span class="swiftui-pill" style="color:var(--sf-blue);">Swift 6</span></div>
+          <div class="card-header"><span class="card-title">3.1.0 Binary Core ML Export</span><span class="swiftui-pill" style="color:var(--sf-green);">3.1.0</span></div>
           <div class="feature-highlights">
-            <div class="highlight-item"><span class="highlight-icon">🧵</span><span>Actor-based <b>NaiveBayesClassifier</b> and <b>ComplementNaiveBayesClassifier</b> conforming to <b>ClassifierEstimator</b></span></div>
-            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span>12 preprocessing transformers migrated to value-semantic <b>Sendable</b> structs</span></div>
-            <div class="highlight-item"><span class="highlight-icon">⚙️</span><span>Explicit async DecisionTree fit/predict signatures for protocol consistency</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🍏</span><span>Native <b>.mlmodel</b> (Model.proto v4) serializer for Linear, Logistic, DecisionTree, and RandomForest models (G-001 resolved)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📦</span><span>Shared zero-dependency <b>ProtobufWriter</b> wire encoder supporting packed repeated fields</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span><b>CoreMLExportable</b> protocol & <b>SwiftMLError.exportFailed</b> unified error case</span></div>
           </div>
         </div>
         <div class="card">
@@ -3725,22 +3724,12 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
             <div class="highlight-item"><span class="highlight-icon">🤖</span><span><b>SwiftAgent</b> adds <b>rename</b>, <b>dropnulls</b>, <b>fillnulls</b>, <b>groupby</b> commands</span></div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">API Consolidation & Numerical Core</span><span class="swiftui-pill" style="color:var(--sf-purple);">3.0.0</span></div>
-          <div class="feature-highlights">
-            <div class="highlight-item"><span class="highlight-icon">🔧</span><span><b>SwiftMLError</b> replaces fragmented <b>MLError</b>, <b>DataFrameError</b> and <b>SwiftSciError</b> error types</span></div>
-            <div class="highlight-item"><span class="highlight-icon">📐</span><span>Shared numerical primitives: overflow-safe <b>sigmoid(_:)</b> and <b>Array.argmax()</b></span></div>
-            <div class="highlight-item"><span class="highlight-icon">📈</span><span>Forecasting cleanup: shared <b>Stats.mean</b> reduction and clearer failure propagation</span></div>
-          </div>
-        </div>
         <div class="card" style="grid-column: span 2;">
-          <div class="card-header"><span class="card-title">2.8.x → 3.0.x Feature Line</span><span class="swiftui-pill" style="color:var(--sf-green);">Production Release</span></div>
-          <div class="feature-highlights" style="grid-template-columns: repeat(5, 1fr);">
-            <div class="highlight-item"><span class="highlight-icon">⚡</span><span><b>2.8.0</b><br>LinearSVC, binary ONNX, unique(), deterministic RandomizedSearch</span></div>
-            <div class="highlight-item"><span class="highlight-icon">👁️</span><span><b>2.8.1</b><br>Real YOLOv8 inference, ONNX weight reader & vision benchmarks</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🌊</span><span><b>2.8.2</b><br>Koopman Operator / EDMD forecasting & spectral stability analysis</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🚀</span><span><b>3.0.0</b><br>Concurrency governance, unified errors & estimator consistency</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🔧</span><span><b>3.0.1</b><br>FlatBuffers pin, MySQL stub, Agent cleaning DSL & doc honesty</span></div>
+          <div class="card-header"><span class="card-title">3.0.0 Architecture & Concurrency Freeze</span><span class="swiftui-pill" style="color:var(--sf-purple);">3.0.0</span></div>
+          <div class="feature-highlights" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="highlight-item"><span class="highlight-icon">🧵</span><span>Actor-based <b>NaiveBayesClassifier</b> and <b>ComplementNaiveBayesClassifier</b></span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span>12 preprocessing transformers migrated to value-semantic <b>Sendable</b> structs</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🔧</span><span><b>SwiftMLError</b> consolidated error hierarchy & shared numerical primitives</span></div>
           </div>
         </div>
       </div>
@@ -3781,7 +3770,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       { name: "Database", start: 61, end: 62 },
       { name: "Agent", start: 63, end: 64 },
       { name: "M4 Pro", start: 65, end: 65 },
-      { name: "v3.0.1", start: 66, end: 66 }
+      { name: "v3.1.0", start: 66, end: 66 }
     ];
 
 

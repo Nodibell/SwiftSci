@@ -25,3 +25,18 @@ let gbdt = GradientBoostedTreesRegressor(nEstimators: 50, learningRate: 0.1, max
 try await gbdt.fit(features: X_train, targets: y_train)
 let preds = try await gbdt.predict(features: X_test)
 ```
+
+### 3. Binary Core ML Export
+
+Fitted regression models conforming to ``CoreMLExportable`` can be exported directly to `.mlmodel`:
+
+```swift
+let exportURL = URL(fileURLWithPath: "Regressor.mlmodel")
+try await reg.writeCoreML(
+    to: exportURL,
+    featureNames: ["sqft", "bedrooms"],
+    outputName: "price"
+)
+```
+
+For full details, see <doc:MLOpsExport>.

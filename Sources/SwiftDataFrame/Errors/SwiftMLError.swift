@@ -14,6 +14,9 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
     case modelNotFitted
     case trainingFailed(String)
     case convergenceFailed(iterations: Int)
+    /// Model export to binary format (`.mlmodel`, `.onnx`) failed.
+    case exportFailed(String)
+
     
     // MARK: - Parameter Errors
     case invalidParameter(String)
@@ -98,6 +101,8 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
             return "Model must be fitted before calling predict or transform."
         case .trainingFailed(let reason):
             return "Model training failed: \(reason)"
+        case .exportFailed(let reason):
+            return "Model export failed: \(reason)"
         case .convergenceFailed(let iter):
             return "Numerical solver failed to converge after \(iter) iterations."
         case .invalidParameter(let msg):

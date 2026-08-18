@@ -6,7 +6,7 @@ Convert text corpora into numerical feature matrices using `CountVectorizer`, `H
 
 Extract term frequency and inverse document frequency matrices for downstream classification and clustering.
 
-### 1. TF-IDF Vectorizer & TextPipeline
+### 1. TF-IDF Vectorizer & Naive Bayes Classification
 
 ```swift
 import SwiftNLP
@@ -18,13 +18,19 @@ let corpus = [
     "trading stocks profit dividend inflation interest"
 ]
 
-// End-to-End Text Pipeline (TF-IDF + Multinomial Naive Bayes)
-let pipeline = TextPipeline(alpha: 1.0)
-let labels = ["sports", "sports", "finance", "finance"]
-try await pipeline.fit(documents: corpus, labels: labels)
+// Extract TF-IDF features
+let vectorizer = TFIDFVectorizer()
+try await vectorizer.fit(corpus)
+let X = try await vectorizer.transform(corpus)
 
-let category = try await pipeline.predict(document: "goal score match")
-print("Category: \(category)") // "sports"
+// Train actor-based NaiveBayesClassifier
+let labels: [Double] = [0.0, 0.0, 1.0, 1.0] // 0: sports, 1: finance
+let nb = NaiveBayesClassifier(alpha: 1.0)
+try await nb.fit(features: X, targets: labels)
+
+let testDoc = try await vectorizer.transform(["goal score match"])
+let prediction = try await nb.predict(features: testDoc)
+print("Prediction: \(prediction.first ?? 0)") // 0
 ```
 
 ### 2. Word Embeddings (Accelerated vDSP Cosine Similarity)

@@ -13,8 +13,8 @@ Natural Language Processing, Text Feature Extraction & Native Apple NaturalLangu
 - **Named Entity Recognition**: `AppleNamedEntityRecognizer` extracting Person, Place, and Organization entities.
 - **Sentiment Analysis**: `VADERSentimentAnalyzer` (valence score calculation with static 200KB lexicon) and `NLSentimentAnalyzer` (Apple OS ML sentiment scoring).
 - **Language Detection & Embeddings**: `AppleLanguageDetector` (multi-lingual language recognition), `AppleNLEmbedding`, and `WordEmbeddings` (SIMD Accelerate vector dot-product optimization).
-- **Text Classification**: `MultinomialNaiveBayes` and `ComplementNaiveBayes` classifiers for text classification tasks.
-- **Ecosystem Pipelines**: `TextPipeline` and fluent `SwiftDataFrame` text extensions (`df.tokenizeColumn`, `df.stemColumn`, `df.analyzeSentiment`, `df.detectLanguage`, `df.extractEntities`).
+- **Text Classification**: `NaiveBayesClassifier` and `ComplementNaiveBayesClassifier` actors conforming to `ClassifierEstimator`.
+- **Ecosystem Pipelines**: Fluent `SwiftDataFrame` text extensions (`df.tokenizeColumn`, `df.stemColumn`, `df.analyzeSentiment`, `df.detectLanguage`, `df.extractEntities`).
 
 ### Example Usage
 

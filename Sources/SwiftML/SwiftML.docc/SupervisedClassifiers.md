@@ -42,3 +42,18 @@ let multiPredictions = try await ovrSVC.predict(features: X_test)
 let mlp = MLPClassifier(hiddenLayerSizes: [64, 32], activation: .relu, maxEpochs: 200)
 try await mlp.fit(features: X_train, targets: y_train)
 ```
+
+### 4. Binary Core ML Export
+
+Fitted classifiers conforming to ``CoreMLExportable`` can be exported directly to `.mlmodel`:
+
+```swift
+let exportURL = URL(fileURLWithPath: "Classifier.mlmodel")
+try await rf.writeCoreML(
+    to: exportURL,
+    featureNames: ["feature_1", "feature_2"],
+    outputName: "label"
+)
+```
+
+For full details, see <doc:MLOpsExport>.

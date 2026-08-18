@@ -4,6 +4,26 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-08-19
+
+### Added
+- **Binary Core ML Exporter (`CoreMLExporter`, `SwiftML`)**: Implemented native Protocol Buffer wire-format serializers conforming to Apple's `Model.proto` specification (v4), outputting loadable binary `.mlmodel` files directly (G-001 full resolution):
+  - `exportBinaryLinearModel` / `writeLinearModel` for `LinearRegression` (`GLMRegressor`).
+  - `exportBinaryLogisticModel` / `writeLogisticModel` for `LogisticRegression` (`GLMClassifier` with logit transform).
+  - `exportBinaryDecisionTreeClassifier` / `writeDecisionTreeClassifier` for `DecisionTreeClassifier` (`TreeEnsembleClassifier`).
+  - `exportBinaryDecisionTreeRegressor` / `writeDecisionTreeRegressor` for `DecisionTreeRegressor` (`TreeEnsembleRegressor`).
+  - `exportBinaryRandomForestClassifier` / `writeRandomForestClassifier` for `RandomForestClassifier` (`TreeEnsembleClassifier`, multi-tree).
+  - `exportBinaryRandomForestRegressor` / `writeRandomForestRegressor` for `RandomForestRegressor` (`TreeEnsembleRegressor`, multi-tree).
+- **`CoreMLExportable` Protocol (`SwiftML`)**: Universal asynchronous protocol for fitted estimators providing `exportCoreML(featureNames:outputName:)` and `writeCoreML(to:featureNames:outputName:)`.
+- **Shared `ProtobufWriter` (`SwiftML`)**: Reusable zero-dependency protobuf binary wire-format encoder supporting packed repeated fields.
+- **`SwiftMLError.exportFailed` (`SwiftDataFrame`)**: Unified error case for Core ML / ONNX serialization and I/O write failures.
+- **MLOps DocC Guide (`SwiftML`)**: Comprehensive guide on exporting models to Core ML and ONNX (`MLOpsExport.md`).
+
+### Deprecated
+- `CoreMLExporter.exportLinearModel(...)` JSON specification method in favor of `exportBinaryLinearModel` / `CoreMLExportable.exportCoreML()`.
+
+---
+
 ## [3.0.1] - 2026-08-12
 
 ### Added

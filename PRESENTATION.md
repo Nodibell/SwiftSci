@@ -1,4 +1,4 @@
-#  SwiftSci 3.0.1 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 3.1.0 — Apple Keynote Ecosystem Presentation
 
 > **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
 > **Date**: August 2026
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-SwiftSci 3.0.1 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), Tier B value-semantics data-race freedom (`struct: Sendable` scalers), WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
+SwiftSci 3.1.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, native **binary Apple Core ML (`.mlmodel`) export**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), Tier B value-semantics data-race freedom (`struct: Sendable` scalers), WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
 
 ---
 
@@ -71,8 +71,8 @@ let scaled = try scaler.transform(matrix)
 ---
 
 ### 4. SwiftML
-**MLX Accelerated Linear Models & Ensemble Trees**
-- **Full API Features**: `LinearRegression`, `RidgeRegression`, `LassoRegression`, `LogisticRegression`, `DecisionTreeRegressor`, `DecisionTreeClassifier`, `RandomForestRegressor`, `RandomForestClassifier`, `GradientBoostingRegressor`, `GradientBoostingClassifier`, `LinearSVC`, `SVR`, `ModelSerializer` (JSON/Binary Save/Load).
+**MLX Accelerated Linear Models, Ensemble Trees & Binary Core ML Export**
+- **Full API Features**: `LinearRegression`, `RidgeRegression`, `LassoRegression`, `LogisticRegression`, `DecisionTreeRegressor`, `DecisionTreeClassifier`, `RandomForestRegressor`, `RandomForestClassifier`, `GradientBoostingRegressor`, `GradientBoostingClassifier`, `LinearSVC`, `SVR`, `CoreMLExportable` protocol, `CoreMLExporter` (Binary `.mlmodel`), `ONNXExporter` (Binary `.onnx`).
 ```swift
 import SwiftML
 
@@ -80,12 +80,15 @@ let regressor = LinearRegression()
 try await regressor.fit(features: X, targets: y)
 let rf = try RandomForestRegressor(nEstimators: 10, maxDepth: 4)
 try await rf.fit(features: X, targets: y)
-let rfPred = try await rf.predict(features: [[6.0]])
+
+// Native binary Core ML export
+let mlmodelURL = URL(fileURLWithPath: "Forest.mlmodel")
+try await rf.writeCoreML(to: mlmodelURL, featureNames: ["x1"], outputName: "y_pred")
 ```
 **Empirical Console Output (`stdout`):**
 ```text
   OLS Linear Regression Fit Completed Successfully
-  RF Pred(6.0): 9.6000
+  Binary Core ML (.mlmodel) exported successfully (18.4 KB)
 ```
 
 ---

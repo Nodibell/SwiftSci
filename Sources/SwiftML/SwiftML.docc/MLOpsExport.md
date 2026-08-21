@@ -58,9 +58,31 @@ let modelData = CoreMLExporter.exportBinaryLinearModel(
 try modelData.write(to: URL(fileURLWithPath: "HousePricePredictor.mlmodel"))
 ```
 
+### Exporting Composite Pipelines & Modern .mlpackage
+
+SwiftSci v3.3.0 supports exporting multi-stage composite pipelines and modern `.mlpackage` directory bundles:
+
+```swift
+// Export composite pipeline chaining preprocessing + classifier
+let pipelineData = CoreMLExporter.exportBinaryPipelineClassifier(
+    models: [scalerData, rfData],
+    names: ["Scaler", "RandomForestClassifier"],
+    inputNames: ["age", "income"],
+    outputName: "approved"
+)
+
+// Export directly into modern .mlpackage bundle format
+try CoreMLExporter.writeMLPackage(
+    modelData: pipelineData,
+    to: URL(fileURLWithPath: "/path/to/MyPipeline.mlpackage"),
+    author: "SwiftSci Developer",
+    description: "End-to-end data science inference pipeline"
+)
+```
+
 ### Loading in Client Applications
 
-Exported `.mlmodel` files can be compiled and loaded dynamically using Apple's `CoreML` framework:
+Exported `.mlmodel` and `.mlpackage` files can be compiled and loaded dynamically using Apple's `CoreML` framework:
 
 ```swift
 import CoreML

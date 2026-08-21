@@ -57,3 +57,13 @@ let processedDF = try df
     .stemColumn(column: "tokens", targetColumn: "stemmed")
     .analyzeSentiment(column: "text", targetColumn: "sentiment")
 ```
+
+### 4. Dense On-Device Text Embeddings (`LocalEmbeddingEngine`)
+
+```swift
+let engine = LocalEmbeddingEngine(dimension: 128)
+
+// Generate 100% offline, unit-normalized dense embeddings for local RAG
+let docVector = engine.embed("Apple Silicon M3 Max neural network computation")
+let batchVectors = engine.embedBatch(["Machine Learning", "Data Engineering"])
+```

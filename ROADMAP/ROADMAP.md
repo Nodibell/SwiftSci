@@ -340,8 +340,6 @@ The architecture combines two hardware engines:
 
 ### Version 3.3.0: Core ML Pipelines, Database TLS & VectorStore Foundation *(🟢 Completed)*
 
-*Detailed implementation plan:* [ROADMAP_v3.3.md](ROADMAP_v3.3.md) / [implementation_plan_33.md](implementation_plan_33.md)
-
 1. **End-to-End Core ML `Pipeline` Export (`SwiftML`, `SwiftPreprocessing`)**:
    - Chaining preprocessors (`StandardScaler`, `OneHotEncoder`) with estimators (`RandomForestClassifier`, `MLPClassifier`) into composite `PipelineClassifier` / `PipelineRegressor` Core ML messages.
    - Modern `.mlpackage` directory bundle serializer format.
@@ -356,8 +354,6 @@ The architecture combines two hardware engines:
 ---
 
 ### Version 3.4.0: Out-of-Core Data, Parquet Engine & Multimodal Perception *(📋 Planned)*
-
-*Detailed architecture document:* [ROADMAP_v3.4.md](ROADMAP_v3.4.md) / [implementation_plan_34.md](implementation_plan_34.md)
 
 1. **Out-of-Core & Large-Scale Data Processing (`SwiftDataFrame`)**:
    - `ChunkedDataFrame` and `LazyMemoryMappedCSVReader` for processing 100M+ row datasets exceeding RAM.

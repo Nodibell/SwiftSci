@@ -4,6 +4,23 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-08-21
+
+### Added
+- **Native PostgreSQL & MySQL Wire Protocol Drivers (`SwiftDatabase`)**: Implemented pure-Swift network wire-protocol drivers (`PostgresWireClient` v3.0 protocol and `MySQLWireClient` Client/Server protocol) with zero third-party C dependencies, completely eliminating `DatabaseError.notImplemented`.
+- **Deep Convolutional U-Net Architecture (`SwiftVision`)**: Implemented a real deep U-Net semantic segmentation network on Apple Silicon MLX (`UNetArchitecture`, `UNetDoubleConv`, `UNetDown`, `UNetUp`, `UNetOutConv`) replacing spatial heuristics with deep neural forward passes.
+- **Binary Core ML NeuralNetwork Export (`CoreMLExporter`, `SwiftML`)**: Implemented native Core ML `NeuralNetwork` (field 500) Protobuf export with `InnerProduct` and activation layers (`ReLU`, `Sigmoid`, `Tanh`, `Linear`), adding `exportBinaryMLPClassifier` and `exportBinaryMLPRegressor` along with `CoreMLExportable` conformance for `MLPClassifier` and `MLPRegressor`.
+- **Binary Standard Scaler Export (`CoreMLExporter`, `SwiftML`)**: Added `exportBinaryStandardScaler` and `writeStandardScaler` generating valid `Scaler` message protobuf binary `.mlmodel` artifacts (v4 specification).
+- **Codable Naive Bayes (`SwiftNLP`)**: Added `Codable` conformance to `MultinomialNaiveBayes` and `ComplementNaiveBayes` for JSON/binary persistence in downstream pipelines.
+
+### Fixed
+- **LAPACK Dimension Bounding (`RandomizedSVD`, `SwiftCluster`)**: Bounded sketch size $l = \min(k + p, \min(M, N))$, eliminating illegal parameter errors in LAPACK `dorgqr_` Householder reflector extraction on small or rectangular matrices.
+- **Ecosystem Build Synchronization (`UkrainianNewsClassification`)**: Fixed model pipeline serialization compilation error by ensuring model structures conform to `Codable`.
+- **Dependency Graph Cleanup (`Package.swift`)**: Removed unused top-level `flatbuffers` dependency declaration, resolving SPM compiler warnings.
+- **Hardware Router (`SwiftPreprocessing`)**: Finalized hardware routing documentation and removed placeholder markers for Apple Neural Engine execution.
+
+---
+
 ## [3.1.0] - 2026-08-19
 
 ### Added

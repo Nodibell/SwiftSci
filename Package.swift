@@ -42,10 +42,6 @@ let package = Package(
             from: "21.0.0"
         ),
         .package(
-            url: "https://github.com/google/flatbuffers.git",
-            exact: "25.2.10"
-        ),
-        .package(
             url: "https://github.com/ml-explore/mlx-swift.git",
             exact: "0.31.6"
         ),

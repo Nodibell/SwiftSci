@@ -36,43 +36,43 @@ struct SwiftDatabaseTests {
         }
     }
 
-    @Test("Test PostgreSQL query throws notImplemented error")
+    @Test("Test PostgreSQL wire connection error handling on unreachable host")
     func testPostgreSQLIngestion() async throws {
-        let conn = PostgreSQLConnection(connectionURL: "postgres://user:pass@localhost:5432/testdb")
+        let conn = PostgreSQLConnection(connectionURL: "postgres://user:pass@127.0.0.1:5432/testdb")
         await #expect(throws: DatabaseError.self) {
             _ = try await conn.executeQuery("CREATE TABLE users (id INTEGER PRIMARY KEY, score REAL);")
         }
     }
 
-    @Test("Test PostgreSQL query error handling")
+    @Test("Test PostgreSQL query validation error handling")
     func testPostgreSQLErrorHandling() async {
         let connEmptyURL = PostgreSQLConnection(connectionURL: "")
         await #expect(throws: DatabaseError.self) {
             _ = try await connEmptyURL.executeQuery("SELECT 1;")
         }
 
-        let conn = PostgreSQLConnection(connectionURL: "postgres://user:pass@localhost:5432/testdb")
+        let conn = PostgreSQLConnection(connectionURL: "postgres://user:pass@127.0.0.1:5432/testdb")
         await #expect(throws: DatabaseError.self) {
             _ = try await conn.executeQuery("")
         }
     }
 
-    @Test("Test MySQL query throws notImplemented error")
-    func testMySQLQueryThrowsNotImplemented() async {
-        let conn = MySQLConnection(connectionURL: "mysql://user:pass@localhost:3306/testdb")
+    @Test("Test MySQL wire connection error handling on unreachable host")
+    func testMySQLQueryThrowsConnectionError() async {
+        let conn = MySQLConnection(connectionURL: "mysql://user:pass@127.0.0.1:3306/testdb")
         await #expect(throws: DatabaseError.self) {
             _ = try await conn.executeQuery("SELECT 1;")
         }
     }
 
-    @Test("Test MySQL query error handling")
+    @Test("Test MySQL query validation error handling")
     func testMySQLErrorHandling() async {
         let connEmptyURL = MySQLConnection(connectionURL: "")
         await #expect(throws: DatabaseError.self) {
             _ = try await connEmptyURL.executeQuery("SELECT 1;")
         }
 
-        let conn = MySQLConnection(connectionURL: "mysql://user:pass@localhost:3306/testdb")
+        let conn = MySQLConnection(connectionURL: "mysql://user:pass@127.0.0.1:3306/testdb")
         await #expect(throws: DatabaseError.self) {
             _ = try await conn.executeQuery("")
         }

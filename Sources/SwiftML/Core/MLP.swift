@@ -86,6 +86,11 @@ public actor MLPClassifier: ClassifierEstimator {
     private var layers: [LayerWeights]?
     private var classes: [Double]?
 
+    /// The trained layer weights and biases (nil if not fitted).
+    public var trainedLayers: [LayerWeights]? { layers }
+    /// The trained class labels (nil if not fitted).
+    public var trainedClasses: [Double]? { classes }
+
     /// Creates a new instance.
     /// - Parameters:
     ///   - hiddenLayerSizes: The hidden layer sizes.
@@ -374,6 +379,9 @@ public actor MLPRegressor: RegressorEstimator {
     public private(set) var resolvedDevice: ExecutionDevice = .cpu
 
     private var layers: [LayerWeights]?
+
+    /// The trained layer weights and biases (nil if not fitted).
+    public var trainedLayers: [LayerWeights]? { layers }
 
     /// Creates a new instance.
     /// - Parameters:

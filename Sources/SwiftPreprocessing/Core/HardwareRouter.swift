@@ -17,7 +17,7 @@ public actor HardwareRouter {
         requestedDevice: ExecutionDevice
     ) -> ExecutionDevice {
         guard requestedDevice == .auto else {
-            // ANE is a placeholder until CoreML export exists.
+            // Direct MLX training uses GPU; deployed ANE execution is handled via CoreMLExporter.
             if requestedDevice == .ane { return .gpu }
             return requestedDevice
         }

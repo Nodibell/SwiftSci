@@ -313,5 +313,121 @@ final class CoreMLExporterBinaryTests: XCTestCase {
         try await clf.writeCoreML(to: tempURL, featureNames: ["x1", "x2"], outputName: "is_positive")
         XCTAssertTrue(FileManager.default.fileExists(atPath: tempURL.path))
     }
+    func testExportBinaryStandardScaler() throws {
+        let data = CoreMLExporter.exportBinaryStandardScaler(
+            name: "MyScaler",
+            inputNames: ["feature"],
+            outputNames: ["scaled_feature"],
+            shiftValues: [-10.0],
+            scaleValues: [0.5]
+        )
+        XCTAssertFalse(data.isEmpty)
+        XCTAssertEqual(data[0], 0x08)
+        XCTAssertEqual(data[1], 0x04)
+
+        #if canImport(CoreML) && os(macOS)
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("Scaler_\(UUID().uuidString).mlmodel")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+        try data.write(to: tempURL)
+
+        if #available(macOS 14.0, *) {
+            let compiledURL = try MLModel.compileModel(at: tempURL)
+            defer { try? FileManager.default.removeItem(at: compiledURL) }
+            let model = try MLModel(contentsOf: compiledURL)
+            XCTAssertNotNil(model.modelDescription.inputDescriptionsByName["feature"])
+            XCTAssertNotNil(model.modelDescription.outputDescriptionsByName["scaled_feature"])
+
+            // Numerical prediction test
+            let inputProvider = try MLDictionaryFeatureProvider(dictionary: ["feature": 20.0])
+            let prediction = try model.prediction(from: inputProvider)
+            let scaledVal = prediction.featureValue(for: "scaled_feature")?.doubleValue ?? 0.0
+            // (20.0 - 10.0) * 0.5 = 5.0
+            XCTAssertEqual(scaledVal, 5.0, accuracy: 1e-3)
+        }
+        #endif
+    }
+
+    // MARK: - Binary MLP NeuralNetwork Tests
+
+    func testExportBinaryMLPClassifier() throws {
+        let layer1 = LayerWeights(W: [1.0, 0.5, -0.5, 1.0], b: [0.1, -0.1], inDim: 2, outDim: 2)
+        let layer2 = LayerWeights(W: [0.8, -0.8], b: [0.0], inDim: 2, outDim: 1)
+
+        let data = CoreMLExporter.exportBinaryMLPClassifier(
+            name: "MLPBinaryClassifier",
+            inputNames: ["features"],
+            outputName: "prob",
+            layers: [layer1, layer2],
+            activation: "relu"
+        )
+        XCTAssertFalse(data.isEmpty)
+        XCTAssertEqual(data[0], 0x08)
+        XCTAssertEqual(data[1], 0x04)
+
+        #if canImport(CoreML) && os(macOS)
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("MLPClassifier_\(UUID().uuidString).mlmodel")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+        try data.write(to: tempURL)
+
+        if #available(macOS 14.0, *) {
+            let compiledURL = try MLModel.compileModel(at: tempURL)
+            defer { try? FileManager.default.removeItem(at: compiledURL) }
+            let model = try MLModel(contentsOf: compiledURL)
+            XCTAssertNotNil(model.modelDescription.inputDescriptionsByName["features"])
+            XCTAssertNotNil(model.modelDescription.outputDescriptionsByName["prob"])
+
+            let arr = try MLMultiArray(shape: [2], dataType: .double)
+            arr[0] = 1.0
+            arr[1] = 2.0
+            let inputProvider = try MLDictionaryFeatureProvider(dictionary: ["features": arr])
+            let prediction = try model.prediction(from: inputProvider)
+            let probArray = prediction.featureValue(for: "prob")?.multiArrayValue
+            XCTAssertNotNil(probArray)
+            let prob = probArray?[0].doubleValue
+            XCTAssertNotNil(prob)
+        }
+        #endif
+    }
+
+    func testExportBinaryMLPRegressor() throws {
+        let layer1 = LayerWeights(W: [2.0, 3.0], b: [1.0], inDim: 2, outDim: 1)
+
+        let data = CoreMLExporter.exportBinaryMLPRegressor(
+            name: "MLPLinearRegressor",
+            inputNames: ["features"],
+            outputName: "y",
+            layers: [layer1],
+            activation: "linear"
+        )
+        XCTAssertFalse(data.isEmpty)
+        XCTAssertEqual(data[0], 0x08)
+        XCTAssertEqual(data[1], 0x04)
+
+        #if canImport(CoreML) && os(macOS)
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("MLPRegressor_\(UUID().uuidString).mlmodel")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+        try data.write(to: tempURL)
+
+        if #available(macOS 14.0, *) {
+            let compiledURL = try MLModel.compileModel(at: tempURL)
+            defer { try? FileManager.default.removeItem(at: compiledURL) }
+            let model = try MLModel(contentsOf: compiledURL)
+            XCTAssertNotNil(model.modelDescription.inputDescriptionsByName["features"])
+            XCTAssertNotNil(model.modelDescription.outputDescriptionsByName["y"])
+
+            let arr = try MLMultiArray(shape: [2], dataType: .double)
+            arr[0] = 2.0
+            arr[1] = 3.0
+            let inputProvider = try MLDictionaryFeatureProvider(dictionary: ["features": arr])
+            let prediction = try model.prediction(from: inputProvider)
+            let yArray = prediction.featureValue(for: "y")?.multiArrayValue
+            XCTAssertNotNil(yArray)
+            let yVal = yArray?[0].doubleValue ?? 0.0
+            // 2.0 * 2.0 + 3.0 * 3.0 + 1.0 = 4 + 9 + 1 = 14.0
+            XCTAssertEqual(yVal, 14.0, accuracy: 1e-2)
+        }
+        #endif
+    }
     #endif
 }
+

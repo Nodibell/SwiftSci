@@ -383,6 +383,177 @@ public enum CoreMLExporter {
             throw SwiftMLError.exportFailed("Failed to write random forest regressor .mlmodel to \(url.path): \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Binary Scaler (StandardScaler)
+
+    /// Encodes a feature standard scaler as a binary Apple Core ML `.mlmodel` artifact.
+    ///
+    /// The output uses the `Scaler` Core ML message with `specificationVersion = 4`.
+    ///
+    /// - Parameters:
+    ///   - name: Model display name.
+    ///   - inputNames: Input feature identifiers.
+    ///   - outputName: Output scaled feature identifier.
+    ///   - shiftValues: Shift offsets (typically `-mean`).
+    ///   - scaleValues: Scale multipliers (typically `1 / std`).
+    /// - Returns: Binary `.mlmodel` `Data`.
+    public static func exportBinaryStandardScaler(
+        name: String = "SwiftSciStandardScaler",
+        inputNames: [String],
+        outputNames: [String]? = nil,
+        shiftValues: [Double],
+        scaleValues: [Double]
+    ) -> Data {
+        buildScalerModel(
+            name: name,
+            inputNames: inputNames,
+            outputNames: outputNames,
+            shiftValues: shiftValues,
+            scaleValues: scaleValues
+        )
+    }
+
+    /// Writes a standard scaler as a binary `.mlmodel` file to disk.
+    ///
+    /// - Parameters:
+    ///   - url: Destination file URL.
+    ///   - inputNames: Input feature identifiers.
+    ///   - outputNames: Output scaled feature identifiers.
+    ///   - shiftValues: Shift offsets.
+    ///   - scaleValues: Scale multipliers.
+    /// - Throws: `SwiftMLError.exportFailed` on I/O failure.
+    public static func writeStandardScaler(
+        to url: URL,
+        name: String = "SwiftSciStandardScaler",
+        inputNames: [String],
+        outputNames: [String]? = nil,
+        shiftValues: [Double],
+        scaleValues: [Double]
+    ) throws {
+        let data = exportBinaryStandardScaler(
+            name: name,
+            inputNames: inputNames,
+            outputNames: outputNames,
+            shiftValues: shiftValues,
+            scaleValues: scaleValues
+        )
+        do { try data.write(to: url) } catch {
+            throw SwiftMLError.exportFailed("Failed to write standard scaler .mlmodel to \(url.path): \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Binary Multi-Layer Perceptron (NeuralNetwork)
+
+    /// Encodes a fitted Multi-Layer Perceptron classifier as a binary Apple Core ML `.mlmodel` artifact.
+    public static func exportBinaryMLPClassifier(
+        name: String = "SwiftSciMLPClassifier",
+        inputNames: [String],
+        outputName: String = "target",
+        layers: [LayerWeights],
+        activation: String = "relu",
+        classLabels: [String]? = nil
+    ) -> Data {
+        let weights = layers.map { layer -> [[Double]] in
+            var w2D = [[Double]](repeating: [Double](repeating: 0.0, count: layer.inDim), count: layer.outDim)
+            for i in 0..<layer.inDim {
+                for j in 0..<layer.outDim {
+                    let flatIdx = i * layer.outDim + j
+                    if flatIdx < layer.W.count {
+                        w2D[j][i] = layer.W[flatIdx]
+                    }
+                }
+            }
+            return w2D
+        }
+        let biases = layers.map { $0.b }
+
+        return buildNeuralNetworkModel(
+            name: name,
+            inputNames: inputNames,
+            outputName: outputName,
+            layerWeights: weights,
+            layerBiases: biases,
+            hiddenActivation: activation,
+            outputActivation: layers.last?.outDim == 1 ? "sigmoid" : "softmax"
+        )
+    }
+
+    /// Encodes a fitted Multi-Layer Perceptron regressor as a binary Apple Core ML `.mlmodel` artifact.
+    public static func exportBinaryMLPRegressor(
+        name: String = "SwiftSciMLPRegressor",
+        inputNames: [String],
+        outputName: String = "target",
+        layers: [LayerWeights],
+        activation: String = "relu"
+    ) -> Data {
+        let weights = layers.map { layer -> [[Double]] in
+            var w2D = [[Double]](repeating: [Double](repeating: 0.0, count: layer.inDim), count: layer.outDim)
+            for i in 0..<layer.inDim {
+                for j in 0..<layer.outDim {
+                    let flatIdx = i * layer.outDim + j
+                    if flatIdx < layer.W.count {
+                        w2D[j][i] = layer.W[flatIdx]
+                    }
+                }
+            }
+            return w2D
+        }
+        let biases = layers.map { $0.b }
+
+        return buildNeuralNetworkModel(
+            name: name,
+            inputNames: inputNames,
+            outputName: outputName,
+            layerWeights: weights,
+            layerBiases: biases,
+            hiddenActivation: activation,
+            outputActivation: "linear"
+        )
+    }
+
+    /// Writes a binary `.mlmodel` file for a fitted MLP classifier.
+    public static func writeMLPClassifier(
+        to url: URL,
+        name: String = "SwiftSciMLPClassifier",
+        inputNames: [String],
+        outputName: String = "target",
+        layers: [LayerWeights],
+        activation: String = "relu",
+        classLabels: [String]? = nil
+    ) throws {
+        let data = exportBinaryMLPClassifier(
+            name: name,
+            inputNames: inputNames,
+            outputName: outputName,
+            layers: layers,
+            activation: activation,
+            classLabels: classLabels
+        )
+        do { try data.write(to: url) } catch {
+            throw SwiftMLError.exportFailed("Failed to write MLP classifier .mlmodel to \(url.path): \(error.localizedDescription)")
+        }
+    }
+
+    /// Writes a binary `.mlmodel` file for a fitted MLP regressor.
+    public static func writeMLPRegressor(
+        to url: URL,
+        name: String = "SwiftSciMLPRegressor",
+        inputNames: [String],
+        outputName: String = "target",
+        layers: [LayerWeights],
+        activation: String = "relu"
+    ) throws {
+        let data = exportBinaryMLPRegressor(
+            name: name,
+            inputNames: inputNames,
+            outputName: outputName,
+            layers: layers,
+            activation: activation
+        )
+        do { try data.write(to: url) } catch {
+            throw SwiftMLError.exportFailed("Failed to write MLP regressor .mlmodel to \(url.path): \(error.localizedDescription)")
+        }
+    }
 }
 
 // MARK: - Legacy JSON Spec (kept for backward compatibility)

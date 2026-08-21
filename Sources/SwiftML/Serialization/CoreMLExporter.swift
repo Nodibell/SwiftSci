@@ -555,6 +555,169 @@ public enum CoreMLExporter {
             throw SwiftMLError.exportFailed("Failed to write MLP regressor .mlmodel to \(url.path): \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Binary Pipeline Exporter (PipelineClassifier / PipelineRegressor)
+
+    /// Encodes a composite sequence of submodels into a single binary Apple Core ML `PipelineClassifier` `.mlmodel`.
+    ///
+    /// - Parameters:
+    ///   - name: Composite pipeline model display name.
+    ///   - inputNames: Input feature identifiers for the initial pipeline stage.
+    ///   - outputName: Final classification label output name.
+    ///   - submodelsData: Ordered array of serialized submodel `.mlmodel` binary Data (e.g. `[scalerData, modelData]`).
+    ///   - submodelNames: Optional display names for each submodel stage.
+    ///   - classLabels: Class label values (default `[0, 1]`).
+    /// - Returns: Binary `.mlmodel` `Data`.
+    public static func exportBinaryPipelineClassifier(
+        name: String = "SwiftSciPipelineClassifier",
+        inputNames: [String],
+        outputName: String = "label",
+        submodelsData: [Data],
+        submodelNames: [String]? = nil,
+        classLabels: [Int64] = [0, 1]
+    ) -> Data {
+        buildPipelineClassifierModel(
+            name: name,
+            inputNames: inputNames,
+            outputName: outputName,
+            submodelsData: submodelsData,
+            submodelNames: submodelNames,
+            classLabels: classLabels
+        )
+    }
+
+    /// Writes a composite `PipelineClassifier` as a binary `.mlmodel` file to disk.
+    ///
+    /// - Parameters:
+    ///   - url: Destination `.mlmodel` file URL.
+    ///   - name: Composite pipeline model display name.
+    ///   - inputNames: Input feature identifiers.
+    ///   - outputName: Final classification label output name.
+    ///   - submodelsData: Ordered array of serialized submodel `.mlmodel` binaries.
+    ///   - submodelNames: Optional display names for each stage.
+    ///   - classLabels: Class label values.
+    /// - Throws: `SwiftMLError.exportFailed` on I/O write failure.
+    public static func writePipelineClassifier(
+        to url: URL,
+        name: String = "SwiftSciPipelineClassifier",
+        inputNames: [String],
+        outputName: String = "label",
+        submodelsData: [Data],
+        submodelNames: [String]? = nil,
+        classLabels: [Int64] = [0, 1]
+    ) throws {
+        let data = exportBinaryPipelineClassifier(
+            name: name,
+            inputNames: inputNames,
+            outputName: outputName,
+            submodelsData: submodelsData,
+            submodelNames: submodelNames,
+            classLabels: classLabels
+        )
+        do { try data.write(to: url) } catch {
+            throw SwiftMLError.exportFailed("Failed to write pipeline classifier .mlmodel to \(url.path): \(error.localizedDescription)")
+        }
+    }
+
+    /// Encodes a composite sequence of submodels into a single binary Apple Core ML `PipelineRegressor` `.mlmodel`.
+    ///
+    /// - Parameters:
+    ///   - name: Composite pipeline model display name.
+    ///   - inputNames: Input feature identifiers for the initial pipeline stage.
+    ///   - outputName: Final continuous prediction output name.
+    ///   - submodelsData: Ordered array of serialized submodel `.mlmodel` binary Data.
+    ///   - submodelNames: Optional display names for each submodel stage.
+    /// - Returns: Binary `.mlmodel` `Data`.
+    public static func exportBinaryPipelineRegressor(
+        name: String = "SwiftSciPipelineRegressor",
+        inputNames: [String],
+        outputName: String = "target",
+        submodelsData: [Data],
+        submodelNames: [String]? = nil
+    ) -> Data {
+        buildPipelineRegressorModel(
+            name: name,
+            inputNames: inputNames,
+            outputName: outputName,
+            submodelsData: submodelsData,
+            submodelNames: submodelNames
+        )
+    }
+
+    /// Writes a composite `PipelineRegressor` as a binary `.mlmodel` file to disk.
+    ///
+    /// - Parameters:
+    ///   - url: Destination `.mlmodel` file URL.
+    ///   - name: Composite pipeline model display name.
+    ///   - inputNames: Input feature identifiers.
+    ///   - outputName: Final continuous prediction output name.
+    ///   - submodelsData: Ordered array of serialized submodel `.mlmodel` binaries.
+    ///   - submodelNames: Optional display names for each stage.
+    /// - Throws: `SwiftMLError.exportFailed` on I/O write failure.
+    public static func writePipelineRegressor(
+        to url: URL,
+        name: String = "SwiftSciPipelineRegressor",
+        inputNames: [String],
+        outputName: String = "target",
+        submodelsData: [Data],
+        submodelNames: [String]? = nil
+    ) throws {
+        let data = exportBinaryPipelineRegressor(
+            name: name,
+            inputNames: inputNames,
+            outputName: outputName,
+            submodelsData: submodelsData,
+            submodelNames: submodelNames
+        )
+        do { try data.write(to: url) } catch {
+            throw SwiftMLError.exportFailed("Failed to write pipeline regressor .mlmodel to \(url.path): \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Modern .mlpackage Directory Bundle Exporter
+
+    /// Writes a Core ML model payload into a modern `.mlpackage` directory bundle format.
+    ///
+    /// - Parameters:
+    ///   - modelData: Serialized `.mlmodel` binary payload data.
+    ///   - packageURL: Destination `.mlpackage` bundle directory URL.
+    ///   - author: Model author metadata string.
+    ///   - description: Model summary description string.
+    /// - Throws: `SwiftMLError.exportFailed` if directory creation or file writing fails.
+    public static func writeMLPackage(
+        modelData: Data,
+        to packageURL: URL,
+        author: String = "SwiftSci",
+        description: String = "CoreML Model exported by SwiftSci"
+    ) throws {
+        let fm = FileManager.default
+        let dataDir = packageURL.appendingPathComponent("Data/com.apple.CoreML", isDirectory: true)
+
+        do {
+            try fm.createDirectory(at: dataDir, withIntermediateDirectories: true)
+            let modelURL = dataDir.appendingPathComponent("model.mlmodel")
+            try modelData.write(to: modelURL)
+
+            let manifestJSON = """
+            {
+                "fileFormatVersion": "1.0.0",
+                "itemInfoEntries": {
+                    "com.apple.CoreML/model.mlmodel": {
+                        "author": "\(author)",
+                        "description": "\(description)",
+                        "name": "model.mlmodel",
+                        "path": "com.apple.CoreML/model.mlmodel"
+                    }
+                },
+                "rootModelIdentifier": "com.apple.CoreML/model.mlmodel"
+            }
+            """
+            let manifestURL = packageURL.appendingPathComponent("Manifest.json")
+            try manifestJSON.write(to: manifestURL, atomically: true, encoding: .utf8)
+        } catch {
+            throw SwiftMLError.exportFailed("Failed to generate .mlpackage at \(packageURL.path): \(error.localizedDescription)")
+        }
+    }
 }
 
 // MARK: - Legacy JSON Spec (kept for backward compatibility)

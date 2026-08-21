@@ -55,9 +55,21 @@ public protocol CoreMLExportable {
     /// - Throws: ``SwiftMLError/modelNotFitted`` if not fitted,
     ///   or ``SwiftMLError/exportFailed(_:)`` on I/O failure.
     func writeCoreML(to url: URL, featureNames: [String], outputName: String) async throws
+
+    /// Writes the fitted model into a modern Apple Core ML `.mlpackage` directory bundle.
+    ///
+    /// - Parameters:
+    ///   - url: Destination directory URL (`.mlpackage` extension recommended).
+    ///   - featureNames: Ordered list of input feature column names.
+    ///   - outputName: Name of the predicted output feature.
+    ///   - author: Model author metadata string.
+    ///   - description: Model summary description string.
+    /// - Throws: ``SwiftMLError/modelNotFitted`` if not fitted,
+    ///   or ``SwiftMLError/exportFailed(_:)`` on I/O failure.
+    func writeMLPackage(to url: URL, featureNames: [String], outputName: String, author: String, description: String) async throws
 }
 
-// MARK: - Default writeCoreML implementation
+// MARK: - Default writeCoreML & writeMLPackage implementations
 
 extension CoreMLExportable {
     /// Default implementation: encodes via ``exportCoreML(featureNames:outputName:)`` and writes to disk.
@@ -68,6 +80,18 @@ extension CoreMLExportable {
         } catch {
             throw SwiftMLError.exportFailed("Failed to write .mlmodel to \(url.path): \(error.localizedDescription)")
         }
+    }
+
+    /// Default implementation: encodes via ``exportCoreML(featureNames:outputName:)`` and packages into `.mlpackage`.
+    public func writeMLPackage(
+        to url: URL,
+        featureNames: [String],
+        outputName: String,
+        author: String = "SwiftSci",
+        description: String = "CoreML Model Package"
+    ) async throws {
+        let data = try await exportCoreML(featureNames: featureNames, outputName: outputName)
+        try CoreMLExporter.writeMLPackage(modelData: data, to: url, author: author, description: description)
     }
 }
 

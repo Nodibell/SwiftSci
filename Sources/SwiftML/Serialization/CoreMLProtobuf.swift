@@ -19,12 +19,28 @@ import Foundation
 private enum ModelField {
     static let specificationVersion: Int   = 1   // int32
     static let description: Int            = 2   // ModelDescription
+    static let pipelineClassifier: Int     = 200 // PipelineClassifier
+    static let pipelineRegressor: Int      = 201 // PipelineRegressor
+    static let pipeline: Int               = 202 // Pipeline
     static let glmRegressor: Int           = 300 // GLMRegressor
     static let treeEnsembleRegressor: Int  = 302 // TreeEnsembleRegressor
     static let glmClassifier: Int          = 400 // GLMClassifier
     static let treeEnsembleClassifier: Int = 402 // TreeEnsembleClassifier
     static let neuralNetwork: Int          = 500 // NeuralNetwork
     static let scaler: Int                 = 604 // Scaler
+}
+
+private enum PipelineField {
+    static let models: Int = 1 // repeated Model
+    static let names: Int  = 2 // repeated string
+}
+
+private enum PipelineClassifierField {
+    static let pipeline: Int = 1 // Pipeline
+}
+
+private enum PipelineRegressorField {
+    static let pipeline: Int = 1 // Pipeline
 }
 
 private enum ScalerField {
@@ -580,6 +596,69 @@ internal func buildNeuralNetworkModel(
 
     nnMsg.writeVarintField(fieldNumber: NeuralNetworkField.arrayInputShapeMapping, value: 1)
     model.writeBytesField(fieldNumber: ModelField.neuralNetwork, bytes: nnMsg.data)
+    return model.data
+}
+
+// MARK: - Pipeline Builders
+
+internal func buildPipelineClassifierModel(
+    name: String,
+    inputNames: [String],
+    outputName: String,
+    submodelsData: [Data],
+    submodelNames: [String]? = nil,
+    classLabels: [Int64] = [0, 1]
+) -> Data {
+    var model = ProtobufWriter()
+    model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
+
+    let desc = buildModelDescription(inputNames: inputNames, outputName: outputName, outputIsInt64: true)
+    model.writeBytesField(fieldNumber: ModelField.description, bytes: desc)
+
+    var pipelineMsg = ProtobufWriter()
+    for submodel in submodelsData {
+        pipelineMsg.writeBytesField(fieldNumber: PipelineField.models, bytes: submodel)
+    }
+    if let names = submodelNames {
+        for n in names {
+            pipelineMsg.writeStringField(fieldNumber: PipelineField.names, value: n)
+        }
+    }
+
+    var pipelineClassifierMsg = ProtobufWriter()
+    pipelineClassifierMsg.writeBytesField(fieldNumber: PipelineClassifierField.pipeline, bytes: pipelineMsg.data)
+
+    model.writeBytesField(fieldNumber: ModelField.pipelineClassifier, bytes: pipelineClassifierMsg.data)
+    return model.data
+}
+
+internal func buildPipelineRegressorModel(
+    name: String,
+    inputNames: [String],
+    outputName: String,
+    submodelsData: [Data],
+    submodelNames: [String]? = nil
+) -> Data {
+    var model = ProtobufWriter()
+    model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
+
+    let desc = buildModelDescription(inputNames: inputNames, outputName: outputName, outputIsInt64: false)
+    model.writeBytesField(fieldNumber: ModelField.description, bytes: desc)
+
+    var pipelineMsg = ProtobufWriter()
+    for submodel in submodelsData {
+        pipelineMsg.writeBytesField(fieldNumber: PipelineField.models, bytes: submodel)
+    }
+    if let names = submodelNames {
+        for n in names {
+            pipelineMsg.writeStringField(fieldNumber: PipelineField.names, value: n)
+        }
+    }
+
+    var pipelineRegressorMsg = ProtobufWriter()
+    pipelineRegressorMsg.writeBytesField(fieldNumber: PipelineRegressorField.pipeline, bytes: pipelineMsg.data)
+
+    model.writeBytesField(fieldNumber: ModelField.pipelineRegressor, bytes: pipelineRegressorMsg.data)
     return model.data
 }
 

@@ -221,4 +221,42 @@ extension LogisticRegression: CoreMLExportable {
     }
 }
 
+// MARK: - MLPClassifier Conformance
+
+extension MLPClassifier: CoreMLExportable {
+    /// Exports the fitted Multi-Layer Perceptron classifier as a binary `.mlmodel` (`NeuralNetwork`).
+    public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
+        guard let layers = trainedLayers, !layers.isEmpty else {
+            throw SwiftMLError.modelNotFitted
+        }
+        let labels = trainedClasses?.map { String(Int($0)) }
+        return CoreMLExporter.exportBinaryMLPClassifier(
+            name: "SwiftSciMLPClassifier",
+            inputNames: featureNames,
+            outputName: outputName,
+            layers: layers,
+            activation: activation.rawValue,
+            classLabels: labels
+        )
+    }
+}
+
+// MARK: - MLPRegressor Conformance
+
+extension MLPRegressor: CoreMLExportable {
+    /// Exports the fitted Multi-Layer Perceptron regressor as a binary `.mlmodel` (`NeuralNetwork`).
+    public func exportCoreML(featureNames: [String], outputName: String = "target") async throws -> Data {
+        guard let layers = trainedLayers, !layers.isEmpty else {
+            throw SwiftMLError.modelNotFitted
+        }
+        return CoreMLExporter.exportBinaryMLPRegressor(
+            name: "SwiftSciMLPRegressor",
+            inputNames: featureNames,
+            outputName: outputName,
+            layers: layers,
+            activation: activation.rawValue
+        )
+    }
+}
+
 #endif // os(macOS)

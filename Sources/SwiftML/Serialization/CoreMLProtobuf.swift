@@ -23,6 +23,47 @@ private enum ModelField {
     static let treeEnsembleRegressor: Int  = 302 // TreeEnsembleRegressor
     static let glmClassifier: Int          = 400 // GLMClassifier
     static let treeEnsembleClassifier: Int = 402 // TreeEnsembleClassifier
+    static let neuralNetwork: Int          = 500 // NeuralNetwork
+    static let scaler: Int                 = 604 // Scaler
+}
+
+private enum ScalerField {
+    static let shiftValue: Int = 1 // repeated double (packed)
+    static let scaleValue: Int = 2 // repeated double (packed)
+}
+
+private enum NeuralNetworkField {
+    static let layers: Int = 1                // repeated NeuralNetworkLayer
+    static let arrayInputShapeMapping: Int = 5 // enum: 0 = RANK5_ARRAY_MAPPING, 1 = EXACT_ARRAY_MAPPING
+}
+
+private enum NeuralNetworkLayerField {
+    static let name: Int = 1           // string
+    static let input: Int = 2          // repeated string
+    static let output: Int = 3         // repeated string
+    static let activation: Int = 130   // ActivationParams
+    static let innerProduct: Int = 140 // InnerProductLayerParams
+    static let softmax: Int = 175      // SoftmaxLayerParams
+    static let concat: Int = 320       // ConcatLayerParams
+}
+
+private enum InnerProductLayerParamsField {
+    static let inputChannels: Int = 1  // uint64
+    static let outputChannels: Int = 2 // uint64
+    static let hasBias: Int = 10       // bool
+    static let weights: Int = 20       // WeightParams
+    static let bias: Int = 21          // WeightParams
+}
+
+private enum WeightParamsField {
+    static let floatValue: Int = 1 // repeated float (packed)
+}
+
+private enum ActivationParamsField {
+    static let linear: Int = 5
+    static let reLU: Int = 10
+    static let tanh: Int = 30
+    static let sigmoid: Int = 40
 }
 
 private enum ModelDescriptionField {
@@ -37,9 +78,16 @@ private enum FeatureDescriptionField {
 }
 
 private enum FeatureTypeField {
-    static let int64Type: Int  = 1  // Int64FeatureType
-    static let doubleType: Int = 2  // DoubleFeatureType
-    static let stringType: Int = 3  // StringFeatureType
+    static let int64Type: Int      = 1 // Int64FeatureType
+    static let doubleType: Int     = 2 // DoubleFeatureType
+    static let stringType: Int     = 3 // StringFeatureType
+    static let imageType: Int      = 4 // ImageFeatureType
+    static let multiArrayType: Int = 5 // ArrayFeatureType
+}
+
+private enum ArrayFeatureTypeField {
+    static let shape: Int    = 1 // repeated int64
+    static let dataType: Int = 2 // ArrayDataType enum (DOUBLE = 65600, FLOAT32 = 65568)
 }
 
 // MARK: - GLMRegressor field numbers (GLMRegressor.proto)
@@ -118,6 +166,20 @@ private func encodeDoubleFeature(name: String) -> Data {
     // DoubleFeatureType (field 2 in FeatureType) is an empty message — presence signals Double
     var tw = ProtobufWriter()
     tw.writeBytesField(fieldNumber: FeatureTypeField.doubleType, bytes: Data())
+    fw.writeBytesField(fieldNumber: FeatureDescriptionField.type, bytes: tw.data)
+    return fw.data
+}
+
+private func encodeMultiArrayFeature(name: String, shape: [Int] = [1], isDouble: Bool = true) -> Data {
+    var fw = ProtobufWriter()
+    fw.writeStringField(fieldNumber: FeatureDescriptionField.name, value: name)
+    var arrayType = ProtobufWriter()
+    for s in shape {
+        arrayType.writeVarintField(fieldNumber: ArrayFeatureTypeField.shape, value: UInt64(s))
+    }
+    arrayType.writeVarintField(fieldNumber: ArrayFeatureTypeField.dataType, value: isDouble ? 65600 : 65568)
+    var tw = ProtobufWriter()
+    tw.writeBytesField(fieldNumber: FeatureTypeField.multiArrayType, bytes: arrayType.data)
     fw.writeBytesField(fieldNumber: FeatureDescriptionField.type, bytes: tw.data)
     return fw.data
 }
@@ -359,3 +421,165 @@ internal func buildTreeEnsembleRegressorModel(
     model.writeBytesField(fieldNumber: ModelField.treeEnsembleRegressor, bytes: reg.data)
     return model.data
 }
+
+// MARK: - Scaler builder
+
+/// Builds a binary `.mlmodel` payload encoding a feature standard scaler as a `Scaler`.
+///
+/// - Parameters:
+///   - name: Model display name.
+///   - inputNames: Names of the input double features.
+///   - outputName: Name of the output feature.
+///   - shiftValues: Offset shifts for each feature (typically -mean).
+///   - scaleValues: Scaling factors for each feature (typically 1 / std).
+/// - Returns: Binary `Data` representing a loadable Apple Core ML `.mlmodel` file.
+internal func buildScalerModel(
+    name: String,
+    inputNames: [String],
+    outputNames: [String]? = nil,
+    shiftValues: [Double],
+    scaleValues: [Double]
+) -> Data {
+    var model = ProtobufWriter()
+    model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
+
+    var desc = ProtobufWriter()
+    for name in inputNames {
+        desc.writeBytesField(fieldNumber: ModelDescriptionField.input, bytes: encodeDoubleFeature(name: name))
+    }
+    let outs = outputNames ?? inputNames.map { "scaled_\($0)" }
+    for name in outs {
+        desc.writeBytesField(fieldNumber: ModelDescriptionField.output, bytes: encodeDoubleFeature(name: name))
+    }
+    model.writeBytesField(fieldNumber: ModelField.description, bytes: desc.data)
+
+    var scalerMsg = ProtobufWriter()
+    if !shiftValues.isEmpty {
+        scalerMsg.writePackedDoublesField(fieldNumber: ScalerField.shiftValue, values: shiftValues)
+    }
+    if !scaleValues.isEmpty {
+        scalerMsg.writePackedDoublesField(fieldNumber: ScalerField.scaleValue, values: scaleValues)
+    }
+
+    model.writeBytesField(fieldNumber: ModelField.scaler, bytes: scalerMsg.data)
+    return model.data
+}
+
+// MARK: - NeuralNetwork builder
+
+/// Builds a binary `.mlmodel` payload encoding a Multi-Layer Perceptron (MLP) as a Core ML `NeuralNetwork`.
+///
+/// - Parameters:
+///   - name: Model display name.
+///   - inputNames: Names of the input double features.
+///   - outputName: Name of the output feature.
+///   - layerWeights: Array of 2D weight matrices for each layer.
+///   - layerBiases: Array of 1D bias vectors for each layer.
+///   - hiddenActivation: Activation function for hidden layers ("relu", "sigmoid", "tanh", "linear").
+///   - outputActivation: Activation function for the output layer (or nil for linear).
+/// - Returns: Binary `Data` representing a loadable Apple Core ML `.mlmodel` file.
+internal func buildNeuralNetworkModel(
+    name: String,
+    inputNames: [String],
+    outputName: String,
+    layerWeights: [[[Double]]],
+    layerBiases: [[Double]],
+    hiddenActivation: String = "relu",
+    outputActivation: String? = nil
+) -> Data {
+    var model = ProtobufWriter()
+    model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
+
+    let inDim = layerWeights.first?.first?.count ?? inputNames.count
+    let inFeatureName = inputNames.count == 1 ? inputNames[0] : (inputNames.first ?? "features")
+
+    var desc = ProtobufWriter()
+    desc.writeBytesField(fieldNumber: ModelDescriptionField.input, bytes: encodeMultiArrayFeature(name: inFeatureName, shape: [inDim], isDouble: true))
+    let lastOutDim = layerBiases.last?.count ?? 1
+    desc.writeBytesField(fieldNumber: ModelDescriptionField.output, bytes: encodeMultiArrayFeature(name: outputName, shape: [lastOutDim], isDouble: true))
+    model.writeBytesField(fieldNumber: ModelField.description, bytes: desc.data)
+
+    var nnMsg = ProtobufWriter()
+    var currentInputs = [inFeatureName]
+
+    for layerIdx in 0..<layerWeights.count {
+        let weights2D = layerWeights[layerIdx]
+        let biases = layerBiases[layerIdx]
+        let outDim = biases.count
+        let inDim = weights2D.count > 0 ? weights2D[0].count : currentInputs.count
+
+        // Flatten weights to [outDim * inDim] in row-major order
+        var flatWeights: [Float] = []
+        flatWeights.reserveCapacity(outDim * inDim)
+        for r in 0..<outDim {
+            for c in 0..<inDim {
+                if r < weights2D.count && c < weights2D[r].count {
+                    flatWeights.append(Float(weights2D[r][c]))
+                } else if c < weights2D.count && r < weights2D[c].count {
+                    flatWeights.append(Float(weights2D[c][r]))
+                } else {
+                    flatWeights.append(0.0)
+                }
+            }
+        }
+
+        let isLastLayer = (layerIdx == layerWeights.count - 1)
+        let actType = isLastLayer ? (outputActivation ?? "linear") : hiddenActivation
+        let hasActivation = actType.lowercased() != "linear"
+        let ipOutName = (!hasActivation && isLastLayer) ? outputName : "dense_out_\(layerIdx)"
+
+        var ipLayer = ProtobufWriter()
+        ipLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.name, value: "dense_\(layerIdx)")
+        for inp in currentInputs {
+            ipLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.input, value: inp)
+        }
+        ipLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.output, value: ipOutName)
+
+        var ipParams = ProtobufWriter()
+        ipParams.writeVarintField(fieldNumber: InnerProductLayerParamsField.inputChannels, value: UInt64(inDim))
+        ipParams.writeVarintField(fieldNumber: InnerProductLayerParamsField.outputChannels, value: UInt64(outDim))
+        ipParams.writeVarintField(fieldNumber: InnerProductLayerParamsField.hasBias, value: 1)
+
+        var wParams = ProtobufWriter()
+        wParams.writePackedFloatsField(fieldNumber: WeightParamsField.floatValue, values: flatWeights)
+        ipParams.writeBytesField(fieldNumber: InnerProductLayerParamsField.weights, bytes: wParams.data)
+
+        var bParams = ProtobufWriter()
+        bParams.writePackedFloatsField(fieldNumber: WeightParamsField.floatValue, values: biases.map { Float($0) })
+        ipParams.writeBytesField(fieldNumber: InnerProductLayerParamsField.bias, bytes: bParams.data)
+
+        ipLayer.writeBytesField(fieldNumber: NeuralNetworkLayerField.innerProduct, bytes: ipParams.data)
+        nnMsg.writeBytesField(fieldNumber: NeuralNetworkField.layers, bytes: ipLayer.data)
+
+        // Activation
+        if hasActivation {
+            let finalLayerOut = isLastLayer ? outputName : "act_out_\(layerIdx)"
+            var actLayer = ProtobufWriter()
+            actLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.name, value: "act_\(layerIdx)")
+            actLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.input, value: ipOutName)
+            actLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.output, value: finalLayerOut)
+
+            var actParams = ProtobufWriter()
+            switch actType.lowercased() {
+            case "relu":
+                actParams.writeBytesField(fieldNumber: ActivationParamsField.reLU, bytes: Data())
+            case "sigmoid":
+                actParams.writeBytesField(fieldNumber: ActivationParamsField.sigmoid, bytes: Data())
+            case "tanh":
+                actParams.writeBytesField(fieldNumber: ActivationParamsField.tanh, bytes: Data())
+            default:
+                break
+            }
+            actLayer.writeBytesField(fieldNumber: NeuralNetworkLayerField.activation, bytes: actParams.data)
+            nnMsg.writeBytesField(fieldNumber: NeuralNetworkField.layers, bytes: actLayer.data)
+            currentInputs = [finalLayerOut]
+        } else {
+            currentInputs = [ipOutName]
+        }
+    }
+
+    nnMsg.writeVarintField(fieldNumber: NeuralNetworkField.arrayInputShapeMapping, value: 1)
+    model.writeBytesField(fieldNumber: ModelField.neuralNetwork, bytes: nnMsg.data)
+    return model.data
+}
+

@@ -170,65 +170,68 @@ public enum VisionError: Error, LocalizedError, Equatable {
     }
 }
 
-/// Heuristic adaptive spatial segmentation model placeholder.
-///
-/// - Note: This implementation provides lightweight pixel-brightness spatial segmentation simulating U-Net output masks.
-///   For deep learning U-Net inference with trained weights, export models via `CoreMLExporter` or `ONNXExporter`.
+/// Deep Convolutional U-Net semantic segmentation model executing real neural network forward passes.
 public actor UNetSegmentationModel {
     /// The input channels.
     public let inputChannels: Int
-    /// The num classes.
+    /// The number of output segmentation classes.
     public let numClasses: Int
+    /// The deep U-Net convolutional neural network.
+    private let unet: UNetArchitecture
 
-    /// Creates a new instance.
+    /// Creates a new UNetSegmentationModel instance.
     /// - Parameters:
-    ///   - inputChannels: The input channels.
-    ///   - numClasses: The num classes.
-    public init(inputChannels: Int = 3, numClasses: Int = 2) {
+    ///   - inputChannels: Number of image channels (default 3).
+    ///   - numClasses: Number of output segmentation classes (default 2).
+    ///   - baseChannels: Number of base convolutional filter channels (default 16).
+    public init(inputChannels: Int = 3, numClasses: Int = 2, baseChannels: Int = 16) {
         self.inputChannels = inputChannels
         self.numClasses = numClasses
+        self.unet = UNetArchitecture(inChannels: inputChannels, numClasses: numClasses, baseChannels: baseChannels)
     }
 
-    /// Predicts 2D segmentation mask from image dataset.
-    /// - Parameters:
-    ///   - image: The input image dataset.
-    /// - Throws: An error if image dimensions are invalid.
-    /// - Returns: A 2D array of class segmentation probability masks.
+    /// Predicts 2D class segmentation probability mask from image dataset using U-Net neural network forward pass.
+    /// - Parameter image: The input image dataset.
+    /// - Throws: `VisionError.invalidInput` if image dimensions are non-positive.
+    /// - Returns: A 2D array of class segmentation probability masks [Height, Width].
     public func predict(image: ImageDataset) async throws -> [[Double]] {
         guard image.width > 0, image.height > 0 else {
             throw VisionError.invalidInput("Image dimensions must be positive")
         }
         let h = image.height
         let w = image.width
-        var mask = [[Double]](repeating: [Double](repeating: 0.0, count: w), count: h)
+        let c = min(image.channels, inputChannels)
 
+        // Convert [H * W * C] flat image data into NHWC MLXArray
+        var floatData = [Float](repeating: 0.0, count: h * w * inputChannels)
         let pixelCount = h * w
-        var brightness = [Double](repeating: 0.0, count: pixelCount)
-
         for p in 0..<pixelCount {
-            var sum = 0.0
-            for c in 0..<image.channels {
-                let idx = c * pixelCount + p
-                if idx < image.data.count {
-                    sum += image.data[idx]
+            for ch in 0..<c {
+                let srcIdx = ch * pixelCount + p
+                let dstIdx = p * inputChannels + ch
+                if srcIdx < image.data.count {
+                    floatData[dstIdx] = Float(image.data[srcIdx])
                 }
             }
-            brightness[p] = sum / Double(max(1, image.channels))
         }
 
-        let meanVal = vDSP.mean(brightness)
-        let sqMean = vDSP.meanSquare(brightness)
-        let stdVal = sqMean > (meanVal * meanVal) ? sqrt(sqMean - meanVal * meanVal) : 1.0
+        let inputTensor = MLXArray(floatData).reshaped([1, h, w, inputChannels])
+        let logits = unet(inputTensor)
+        eval(logits)
+
+        // Extract class 1 (foreground) or binary sigmoid probabilities
+        let flatLogits = logits[0].asArray(Float.self)
+        var mask = [[Double]](repeating: [Double](repeating: 0.0, count: w), count: h)
 
         for r in 0..<h {
-            for c in 0..<w {
-                let p = r * w + c
-                let normVal = (brightness[p] - meanVal) / max(1e-6, stdVal)
-                let score = sigmoid(normVal)
-                mask[r][c] = score
-
+            for col in 0..<w {
+                let pixelIdx = (r * w + col) * numClasses
+                let logitVal = numClasses > 1 ? flatLogits[pixelIdx + 1] : flatLogits[pixelIdx]
+                let prob = Double(1.0 / (1.0 + exp(-logitVal)))
+                mask[r][col] = prob
             }
         }
+
         return mask
     }
 }

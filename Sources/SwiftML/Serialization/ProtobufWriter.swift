@@ -90,6 +90,24 @@ internal struct ProtobufWriter {
         }
     }
 
+    /// Encodes a 32-bit fixed-width `Float` field (wire type 5).
+    mutating func writeFloatField(fieldNumber: Int, value: Float) {
+        writeTag(fieldNumber: fieldNumber, wireType: 5)
+        var bitPattern = value.bitPattern
+        withUnsafeBytes(of: &bitPattern) { data.append(contentsOf: $0) }
+    }
+
+    /// Encodes a packed repeated `Float` field (wire type 2).
+    mutating func writePackedFloatsField(fieldNumber: Int, values: [Float]) {
+        let byteCount = values.count * 4
+        writeTag(fieldNumber: fieldNumber, wireType: 2)
+        writeVarint(UInt64(byteCount))
+        for v in values {
+            var bitPattern = v.bitPattern
+            withUnsafeBytes(of: &bitPattern) { data.append(contentsOf: $0) }
+        }
+    }
+
     /// Encodes a packed repeated `UInt64` (varint) field (wire type 2).
     ///
     /// - Parameters:

@@ -82,13 +82,17 @@ public enum RandomizedSVD {
         nPowerIter q: Int = 2,
         seed: UInt64 = 42
     ) throws -> Result {
+        guard !X.isEmpty, !X[0].isEmpty else {
+            throw RandomizedSVDError.invalidDimensions(rows: X.count, cols: X.first?.count ?? 0)
+        }
         let M = X.count
         let N = X[0].count
-        let l = k + p // sketch size
 
         guard k > 0, k <= min(M, N) else {
             throw RandomizedSVDError.invalidComponents(k: k, minDim: min(M, N))
         }
+
+        let l = min(k + p, min(M, N)) // sketch size, bounded by matrix dimensions
 
         // --- Flatten X to column-major [M×N] ---
         var A = [Double](repeating: 0.0, count: M * N)
@@ -249,6 +253,8 @@ public enum RandomizedSVD {
 public enum RandomizedSVDError: Error {
     /// Raised when target rank k exceeds matrix bounds.
     case invalidComponents(k: Int, minDim: Int)
+    /// Raised when matrix has zero rows or zero columns.
+    case invalidDimensions(rows: Int, cols: Int)
 }
 
 #endif // os(macOS)

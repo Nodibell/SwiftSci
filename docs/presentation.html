@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 3.1.0 — Complete Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 3.2.0 — Complete Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -643,8 +643,8 @@
 
     <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.1.0 Ecosystem</h1>
-      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.1.0 release changes & Apple Silicon acceleration.</p>
+      <h1 class="title-large">SwiftSci 3.2.0 Ecosystem</h1>
+      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.2.0 release changes & Apple Silicon acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
           <div class="stat-val">66</div>
@@ -3704,30 +3704,31 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     </div>
 
     <div class="slide" data-slide="66">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.1.0 — SLIDE 66 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.1.0 — Release Evolution</h1>
-      <p class="subtitle">3.1.0 introduces native binary Core ML export (Model.proto v4), the CoreMLExportable protocol, and DocC documentation overhaul.</p>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.2.0 — SLIDE 66 OF 66</div>
+      <h1 class="title-large">SwiftSci 3.2.0 — Release Evolution</h1>
+      <p class="subtitle">3.2.0 delivers pure-Swift network wire protocols, deep U-Net vision, binary MLP Core ML export, and 100% DocC coverage.</p>
       <div class="grid-2">
         <div class="card">
-          <div class="card-header"><span class="card-title">3.1.0 Binary Core ML Export</span><span class="swiftui-pill" style="color:var(--sf-green);">3.1.0</span></div>
+          <div class="card-header"><span class="card-title">3.2.0 Pure-Swift Protocols & Deep UNet</span><span class="swiftui-pill" style="color:var(--sf-green);">3.2.0</span></div>
           <div class="feature-highlights">
-            <div class="highlight-item"><span class="highlight-icon">🍏</span><span>Native <b>.mlmodel</b> (Model.proto v4) serializer for Linear, Logistic, DecisionTree, and RandomForest models (G-001 resolved)</span></div>
-            <div class="highlight-item"><span class="highlight-icon">📦</span><span>Shared zero-dependency <b>ProtobufWriter</b> wire encoder supporting packed repeated fields</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span><b>CoreMLExportable</b> protocol & <b>SwiftMLError.exportFailed</b> unified error case</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🗄️</span><span>Native <b>PostgreSQL v3.0</b> & <b>MySQL Client/Server</b> wire drivers (zero C dependencies, zero stubs)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">👁️</span><span>Deep Convolutional <b>U-Net</b> segmentation network on Apple Silicon MLX GPU</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🧠</span><span><b>MLP NeuralNetwork</b> & <b>Scaler</b> binary Core ML (.mlmodel v4) export</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🌟</span><span><b>4 Showcase Repos</b>: EnergyGrid, CreditRisk, DataAnalyst-Agent, SingleCell</span></div>
           </div>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">3.0.1 Compatibility Patch</span><span class="swiftui-pill" style="color:var(--sf-orange);">3.0.1</span></div>
+          <div class="card-header"><span class="card-title">3.1.0 Binary Core ML Exporter</span><span class="swiftui-pill" style="color:var(--sf-blue);">3.1.0</span></div>
           <div class="feature-highlights">
-            <div class="highlight-item"><span class="highlight-icon">📌</span><span><b>FlatBuffers</b> pinned to 25.2.10 for reproducible <b>arrow-swift</b> builds</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🗄️</span><span><b>MySQLConnection</b> stub + honest PostgreSQL/MySQL driver documentation</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🤖</span><span><b>SwiftAgent</b> adds <b>rename</b>, <b>dropnulls</b>, <b>fillnulls</b>, <b>groupby</b> commands</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🍏</span><span>Native <b>.mlmodel</b> (Model.proto v4) serializer for Linear, Logistic, DecisionTree, and RandomForest</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📦</span><span>Shared zero-dependency <b>ProtobufWriter</b> wire encoder</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span><b>CoreMLExportable</b> protocol & <b>SwiftMLError.exportFailed</b> unified error case</span></div>
           </div>
         </div>
         <div class="card" style="grid-column: span 2;">
           <div class="card-header"><span class="card-title">3.0.0 Architecture & Concurrency Freeze</span><span class="swiftui-pill" style="color:var(--sf-purple);">3.0.0</span></div>
           <div class="feature-highlights" style="grid-template-columns: repeat(3, 1fr);">
-            <div class="highlight-item"><span class="highlight-icon">🧵</span><span>Actor-based <b>NaiveBayesClassifier</b> and <b>ComplementNaiveBayesClassifier</b></span></div>
+            <div class="highlight-item"><span class="highlight-icon">🧵</span><span>Actor-based <b>NaiveBayesClassifier</b> & <b>ComplementNaiveBayesClassifier</b></span></div>
             <div class="highlight-item"><span class="highlight-icon">🛡️</span><span>12 preprocessing transformers migrated to value-semantic <b>Sendable</b> structs</span></div>
             <div class="highlight-item"><span class="highlight-icon">🔧</span><span><b>SwiftMLError</b> consolidated error hierarchy & shared numerical primitives</span></div>
           </div>
@@ -3770,7 +3771,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       { name: "Database", start: 61, end: 62 },
       { name: "Agent", start: 63, end: 64 },
       { name: "M4 Pro", start: 65, end: 65 },
-      { name: "v3.1.0", start: 66, end: 66 }
+      { name: "v3.2.0", start: 66, end: 66 }
     ];
 
 

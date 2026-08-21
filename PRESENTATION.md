@@ -1,4 +1,4 @@
-#  SwiftSci 3.1.0 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 3.2.0 — Apple Keynote Ecosystem Presentation
 
 > **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
 > **Date**: August 2026
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-SwiftSci 3.1.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, native **binary Apple Core ML (`.mlmodel`) export**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), Tier B value-semantics data-race freedom (`struct: Sendable` scalers), WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
+SwiftSci 3.2.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, native **binary Apple Core ML (`.mlmodel`) export** (including Neural Networks and Scalers), zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), pure-Swift network wire-protocol database drivers, deep U-Net & YOLOv8 neural vision models, WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
 
 ---
 
@@ -58,21 +58,20 @@ let tTest = try Stats.pairedTTest(before: data, after: data2)
 import SwiftPreprocessing
 
 let matrix: [[Double]] = [[10.0, 100.0], [20.0, 200.0], [30.0, 300.0], [40.0, 400.0]]
-var scaler = StandardScaler()
-try scaler.fit(matrix)
-let scaled = try scaler.transform(matrix)
+let scaler = StandardScaler()
+let scaled = try scaler.fitTransform(matrix)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Scaled Row 0: ["-1.3416", "-1.3416"]
-  Scaled Row 3: ["1.3416", "1.3416"]
+  Transformed Row 0: [-1.3416, -1.3416]
+  Mean Vector      : [25.0, 250.0]
 ```
 
 ---
 
 ### 4. SwiftML
-**MLX Accelerated Linear Models, Ensemble Trees & Binary Core ML Export**
-- **Full API Features**: `LinearRegression`, `RidgeRegression`, `LassoRegression`, `LogisticRegression`, `DecisionTreeRegressor`, `DecisionTreeClassifier`, `RandomForestRegressor`, `RandomForestClassifier`, `GradientBoostingRegressor`, `GradientBoostingClassifier`, `LinearSVC`, `SVR`, `CoreMLExportable` protocol, `CoreMLExporter` (Binary `.mlmodel`), `ONNXExporter` (Binary `.onnx`).
+**Machine Learning Estimators, GPU Classifiers & Core ML / ONNX Exporters**
+- **Full API Features**: `LinearRegression`, `LogisticRegression`, `DecisionTreeClassifier`, `DecisionTreeRegressor`, `RandomForestClassifier`, `RandomForestRegressor`, `GradientBoostingRegressor`, `LinearSVC`, `LinearSVCOneVsRest`, `MLPClassifier`, `MLPRegressor`, `CoreMLExportable`, `CoreMLExporter`, `ONNXExporter`.
 ```swift
 import SwiftML
 
@@ -164,8 +163,8 @@ let sentiment = VADERSentimentAnalyzer().polarityScores(text: text)
 **Empirical Console Output (`stdout`):**
 ```text
   Synsets      : [dog.n.01, dog.n.02] | Wu-Palmer Similarity: 0.8571
-  Tokens       : ["SwiftSci", "3.0.1", "is", "an", "extraordinarily"]
-  Porter Stems : ["swiftsci", "2.5.0", "is", "an", "extraordinarili"]
+  Tokens       : ["SwiftSci", "3.2.0", "is", "an", "extraordinarily"]
+  Porter Stems : ["swiftsci", "3.2.0", "is", "an", "extraordinarili"]
 ```
 
 ---
@@ -199,7 +198,7 @@ let truncated = contextWindow.truncate(text: prompt, maxTokens: 5)
 **Empirical Console Output (`stdout`):**
 ```text
   Prompt Token Count: 7
-  Truncated Text    : "SwiftSci 2.6.2 is an amazingly"
+  Truncated Text    : "SwiftSci 3.2.0 is an amazingly"
 ```
 
 ---
@@ -222,30 +221,31 @@ let rocHTML = ChartExporter.plotROCCurve(yTrue: [1, 0], yScores: [0.9, 0.1])
 ---
 
 ### 12. SwiftVision
-**Computer Vision Tensor Dataset & Feature Extraction**
-- **Full API Features**: `ImageDataset`, `TensorTransform`, `ImageResizer`, `ImageNormalizer`, `CNNFeatureExtractor` (Global Average Pooling).
+**Computer Vision Tensor Dataset, Deep U-Net & YOLOv8 Inference**
+- **Full API Features**: `ImageDataset`, `UNetArchitecture`, `UNetSegmentationModel`, `YOLOv8Detector`, `YOLOPreprocessor`, `ONNXWeightReader`, `CNNFeatureExtractor`.
 ```swift
 import SwiftVision
 
-let imgDataset = ImageDataset(width: 224, height: 224, channels: 3, data: array)
-let features = CNNFeatureExtractor().extractFeatures(image: imgDataset)
+let unet = UNetSegmentationModel(inputChannels: 3, numClasses: 2)
+let mask = try await unet.predict(image: imgDataset)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  CNN Feature Extractor Means: ["0.5000", "0.5000", "0.5000"]
+  Deep U-Net Forward Pass : 128x128 mask evaluated on MLX GPU
+  CNN Feature Extractor   : ["0.5000", "0.5000", "0.5000"]
 ```
 
 ---
 
 ### 13. SwiftDatabase
-**Embedded SQLite Engine & DataFrame Bridge**
-- **Full API Features**: `SQLiteConnection`, `SQLQueryResult`, `TableSchema`, `DataFrameSQLiteBridge` (Export/Import).
+**Native SQLite, PostgreSQL & MySQL Wire Protocol Drivers**
+- **Full API Features**: `SQLiteConnection`, `PostgreSQLConnection` (v3.0 wire protocol), `MySQLConnection` (Client/Server protocol), `SQLQueryResult`, `DataFrame.fromSQL`.
 ```swift
 import SwiftDatabase
 
 let conn = SQLiteConnection(databasePath: ":memory:")
 _ = try await conn.executeQuery("CREATE TABLE users (id INTEGER, score REAL);")
-let dbResult = try await conn.executeQuery("SELECT * FROM users;")
+let df = try await DataFrame.fromSQL("SELECT * FROM users;", connection: conn)
 ```
 **Empirical Console Output (`stdout`):**
 ```text

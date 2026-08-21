@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Binary Core ML NeuralNetwork Export (`CoreMLExporter`, `SwiftML`)**: Implemented native Core ML `NeuralNetwork` (field 500) Protobuf export with `InnerProduct` and activation layers (`ReLU`, `Sigmoid`, `Tanh`, `Linear`), adding `exportBinaryMLPClassifier` and `exportBinaryMLPRegressor` along with `CoreMLExportable` conformance for `MLPClassifier` and `MLPRegressor`.
 - **Binary Standard Scaler Export (`CoreMLExporter`, `SwiftML`)**: Added `exportBinaryStandardScaler` and `writeStandardScaler` generating valid `Scaler` message protobuf binary `.mlmodel` artifacts (v4 specification).
 - **Codable Naive Bayes (`SwiftNLP`)**: Added `Codable` conformance to `MultinomialNaiveBayes` and `ComplementNaiveBayes` for JSON/binary persistence in downstream pipelines.
+- **100% DocC Public API Coverage**: Reached 100.00% verified DocC documentation coverage across all 14 modules (1,320 symbols) enforced via automated CI pipeline.
+- **Expanded Test Suite (380+ Unit Tests)**: Added comprehensive test suites across `SwiftVision` (`YOLOComponentTests`, `ONNXWeightReaderTests`, `UNetArchitectureTests`), `SwiftNLP` (`NGramHashingTests`, `DataFrameNLPExtensionTests`), `SwiftStats` (`StatResultsTests`), `SwiftDatabase` (`SwiftDatabaseTests`), and `SwiftDataFrame` (`TypedColumnCoverageTests`).
+- **4 Ecosystem Showcase Repositories Published**: Published dedicated standalone showcase projects solving real-world applications on GitHub:
+  - [`EnergyGridForecaster`](https://github.com/Nodibell/EnergyGridForecaster): Smart grid load forecasting (Holt-Winters) + anomaly detection (Isolation Forest).
+  - [`CreditRiskScoring-MLOps`](https://github.com/Nodibell/CreditRiskScoring-MLOps): Borrower risk assessment + binary Core ML ANE export.
+  - [`SwiftDataAnalyst-Agent`](https://github.com/Nodibell/SwiftDataAnalyst-Agent): Autonomous data analytics AI agent with sandboxed DSL execution.
+  - [`SingleCellClustering`](https://github.com/Nodibell/SingleCellClustering): Transcriptomic scRNA-seq PCA dimensionality reduction and KMeans/DBSCAN clustering.
 
 ### Fixed
 - **LAPACK Dimension Bounding (`RandomizedSVD`, `SwiftCluster`)**: Bounded sketch size $l = \min(k + p, \min(M, N))$, eliminating illegal parameter errors in LAPACK `dorgqr_` Householder reflector extraction on small or rectangular matrices.

@@ -169,10 +169,15 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
 public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable {
     /// The connection URL.
     public let connectionURL: String
+    /// The database host.
     public let host: String
+    /// The database port.
     public let port: Int
+    /// The database user.
     public let user: String
+    /// The database password.
     public let password: String
+    /// The database name.
     public let database: String
 
     /// Creates a new PostgreSQL connection instance.
@@ -358,10 +363,15 @@ public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable
 public final class MySQLConnection: DatabaseConnection, @unchecked Sendable {
     /// The connection URL.
     public let connectionURL: String
+    /// The database host.
     public let host: String
+    /// The database port.
     public let port: Int
+    /// The database user.
     public let user: String
+    /// The database password.
     public let password: String
+    /// The database name.
     public let database: String
 
     /// Creates a new MySQL connection instance.

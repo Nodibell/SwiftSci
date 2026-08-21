@@ -115,12 +115,16 @@ public class SPPFBlock: Module, UnaryLayer {
     @ModuleInfo public var cv2: ConvBlock
     @ModuleInfo public var m: MaxPool2d
 
+    /// Kernel size for SPPF max pooling.
+    public let k: Int
+
     /// Creates an SPPF block.
     /// - Parameters:
     ///   - cIn: Input channel count.
     ///   - cOut: Output channel count.
     ///   - k: Max pooling kernel size.
     public init(cIn: Int, cOut: Int, k: Int = 5) {
+        self.k = k
         let cHidden = cIn / 2
         self.cv1 = ConvBlock(cIn: cIn, cOut: cHidden, k: 1, s: 1)
         self.cv2 = ConvBlock(cIn: cHidden * 4, cOut: cOut, k: 1, s: 1)
@@ -130,7 +134,8 @@ public class SPPFBlock: Module, UnaryLayer {
 
     private func pool(_ x: MLXArray) -> MLXArray {
         let padVal = (-Float.infinity).asMLXArray(dtype: x.dtype)
-        let widths: [IntOrPair] = [IntOrPair(0), IntOrPair(2), IntOrPair(2), IntOrPair(0)]
+        let padSize = k / 2
+        let widths: [IntOrPair] = [IntOrPair(0), IntOrPair(padSize), IntOrPair(padSize), IntOrPair(0)]
         let paddedX = padded(x, widths: widths, mode: .constant, value: padVal)
         return m(paddedX)
     }

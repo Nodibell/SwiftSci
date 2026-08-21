@@ -134,22 +134,30 @@ public struct ONNXWeightReader {
     }
 
     private static func readBytes(data: Data, index: inout Int) -> Data {
-        let length = Int(readVarint(data: data, index: &index))
-        let end = min(data.count, index + length)
-        let sub = data.subdata(in: index..<end)
+        guard index < data.count else { return Data() }
+        let length = max(0, Int(readVarint(data: data, index: &index)))
+        let start = min(data.count, index)
+        let end = min(data.count, start + length)
+        let sub = data.subdata(in: start..<end)
         index = end
         return sub
     }
 
     private static func readFloat32(data: Data, index: inout Int) -> Float {
-        guard index + 4 <= data.count else { return 0.0 }
+        guard index + 4 <= data.count else {
+            index = data.count
+            return 0.0
+        }
         let sub = data.subdata(in: index..<index + 4)
         index += 4
         return sub.withUnsafeBytes { $0.load(as: Float.self) }
     }
 
     private static func readFloat64(data: Data, index: inout Int) -> Double {
-        guard index + 8 <= data.count else { return 0.0 }
+        guard index + 8 <= data.count else {
+            index = data.count
+            return 0.0
+        }
         let sub = data.subdata(in: index..<index + 8)
         index += 8
         return sub.withUnsafeBytes { $0.load(as: Double.self) }
@@ -160,14 +168,14 @@ public struct ONNXWeightReader {
         case 0:
             _ = readVarint(data: data, index: &index)
         case 1:
-            index += 8
+            index = min(data.count, index + 8)
         case 2:
-            let len = Int(readVarint(data: data, index: &index))
-            index += len
+            let len = max(0, Int(readVarint(data: data, index: &index)))
+            index = min(data.count, index + len)
         case 5:
-            index += 4
+            index = min(data.count, index + 4)
         default:
-            break
+            index = data.count
         }
     }
 }

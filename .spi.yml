@@ -1,8 +1,7 @@
 version: 1
 builder:
   configs:
-    - platform_compatibility:
-        - macos
+    - platform: macos
       documentation_targets:
         - SwiftDataFrame
         - SwiftStats

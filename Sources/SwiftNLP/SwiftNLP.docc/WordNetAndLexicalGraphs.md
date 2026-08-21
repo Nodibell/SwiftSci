@@ -47,4 +47,4 @@ print("Path Similarity: \(pathSim), Wu-Palmer: \(wupSim)")
 ### WordNet Types
 - ``WordNet``
 - ``Synset``
-- ``PartOfSpeech``
+- ``POS``

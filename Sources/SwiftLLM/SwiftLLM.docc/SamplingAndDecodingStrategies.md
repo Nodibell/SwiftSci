@@ -38,4 +38,5 @@ let outputText = try await model.generate(prompt: "Explain neural attention:", p
 ## Topics
 
 ### Sampling Types
-- ``GenerationParameters``
+- ``Sampler``
+- ``LLMOptions``

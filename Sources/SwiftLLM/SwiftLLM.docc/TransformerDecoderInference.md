@@ -39,4 +39,4 @@ for try await token in model.generateStream(prompt: "The future of scientific co
 
 ### LLM Components
 - ``TransformerDecoder``
-- ``LLMConfiguration``
+- ``KVCache``

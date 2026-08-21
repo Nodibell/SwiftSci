@@ -44,4 +44,3 @@ print("Feature Attributions: \(explanation.values)")
 
 ### SHAP Explainer APIs
 - ``KernelSHAP``
-- ``Explanation``

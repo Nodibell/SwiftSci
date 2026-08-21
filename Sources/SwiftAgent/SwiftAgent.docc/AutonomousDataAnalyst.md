@@ -34,5 +34,6 @@ resultDF.debugPrint()
 
 ## Topics
 
-### Agent Types
-- ``AgentEvaluator``
+### Agent Components
+- ``SwiftAgentEvaluator``
+- ``AgentCommand``

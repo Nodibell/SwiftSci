@@ -59,6 +59,5 @@ Answer:
 
 ## Topics
 
-### RAG Components
-- ``LocalEmbeddingEngine``
-- ``VectorStore``
+### Agent Components
+- ``SwiftAgentEvaluator``

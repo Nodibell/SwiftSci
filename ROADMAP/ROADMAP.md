@@ -338,6 +338,32 @@ The architecture combines two hardware engines:
 
 ---
 
+### Version 3.3.0 – 3.4.0: MLOps Pipelines, Large-Scale Data & On-Device GenAI *(📋 Planned)*
+
+*Detailed architecture document:* [ROADMAP_v3.4.md](ROADMAP_v3.4.md)
+
+1. **End-to-End Core ML `Pipeline` Export (`SwiftML`, `SwiftPreprocessing`)**:
+   - Chaining preprocessors (`StandardScaler`, `OneHotEncoder`) with estimators (`RandomForestClassifier`, `MLPClassifier`) into composite `PipelineClassifier` / `PipelineRegressor` Core ML messages.
+   - Modern `.mlpackage` directory bundle serializer and FP16 ANE quantization flags.
+2. **Out-of-Core & Large-Scale Data Processing (`SwiftDataFrame`)**:
+   - `ChunkedDataFrame` and `LazyMemoryMappedCSVReader` for processing 100M+ row datasets exceeding RAM.
+   - Pure-Swift zero-dependency Apache Parquet reader/writer with Snappy/Zstandard decompression.
+3. **On-Device LLMs, Embeddings & Vector Search (`SwiftLLM`, `SwiftCluster`, `SwiftNLP`)**:
+   - In-memory HNSW vector index (`VectorStore`) supporting Cosine Similarity and Dot Product.
+   - Local text embedding engine (`LocalEmbeddingModel`) for on-device RAG without external API dependencies.
+   - 4-bit / 8-bit quantized execution (GGUF / AWQ) on MLX Metal for Llama-3, Qwen-2.5, Gemma-2.
+4. **Advanced Vision & Multimodal Perception (`SwiftVision`)**:
+   - YOLOv8-Seg instance segmentation with proto mask heads.
+   - CLIP-style vision-language feature matching on MLX Metal GPU.
+5. **Enterprise Database Resilience (`SwiftDatabase`)**:
+   - Apple `Network.framework` (`NWConnection`) TLS/SSL socket handshakes for PostgreSQL and MySQL.
+   - High-throughput batch `DataFrame.toSQL` bulk insert and upsert operations.
+6. **Multi-Agent Orchestration & Structured Decoding (`SwiftAgent`)**:
+   - ReAct reasoning loops with multi-tool AST pipelines.
+   - Token-level JSON Schema constrained grammar decoding for local LLM output conforming to Swift `Codable`.
+
+---
+
 ## 🏛 Integration Guidelines for Client Applications
 
 Thanks to its modular design, SwiftSci seamlessly integrates into applications following clean architecture:

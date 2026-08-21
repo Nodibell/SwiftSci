@@ -21,6 +21,26 @@ public enum DatabaseError: Error, LocalizedError {
     }
 }
 
+/// Mode determining how existing tables and rows are handled during ``SwiftDataFrame/DataFrame/toSQL(table:connection:mode:batchSize:)``.
+public enum SQLWriteMode: String, Sendable, Codable {
+    /// Appends rows to the existing table, or creates the table if it does not exist.
+    case append
+    /// Drops the existing table if it exists, creates a fresh schema, and inserts rows.
+    case replace
+    /// Throws an error if the destination table already exists.
+    case failIfExists
+}
+
+/// SSL/TLS encryption mode for remote relational database connections.
+public enum SSLMode: String, Sendable, Codable {
+    /// Plaintext TCP socket connection (no encryption).
+    case disable
+    /// Attempts encrypted TLS connection with fallback to plaintext.
+    case prefer
+    /// Enforces TLS encrypted connection (fails if server does not support TLS).
+    case require
+}
+
 /// Protocol for relational database drivers.
 public protocol DatabaseConnection: Sendable {
     func executeQuery(_ sql: String) async throws -> SQLQueryResult
@@ -179,10 +199,14 @@ public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable
     public let password: String
     /// The database name.
     public let database: String
+    /// The SSL/TLS connection mode.
+    public let sslMode: SSLMode
 
     /// Creates a new PostgreSQL connection instance.
-    /// - Parameter connectionURL: Connection URL (e.g. `postgres://user:pass@host:5432/dbname`).
-    public init(connectionURL: String) {
+    /// - Parameters:
+    ///   - connectionURL: Connection URL (e.g. `postgres://user:pass@host:5432/dbname?sslmode=require`).
+    ///   - sslMode: Explicit SSL mode override (if `nil`, parsed from URL or defaults to `.disable`).
+    public init(connectionURL: String, sslMode: SSLMode? = nil) {
         self.connectionURL = connectionURL
         let parsed = Self.parseURL(connectionURL)
         self.host = parsed.host
@@ -190,11 +214,12 @@ public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable
         self.user = parsed.user
         self.password = parsed.password
         self.database = parsed.database
+        self.sslMode = sslMode ?? parsed.sslMode
     }
 
-    private static func parseURL(_ urlStr: String) -> (host: String, port: Int, user: String, password: String, database: String) {
+    private static func parseURL(_ urlStr: String) -> (host: String, port: Int, user: String, password: String, database: String, sslMode: SSLMode) {
         guard let url = URL(string: urlStr) else {
-            return ("127.0.0.1", 5432, "postgres", "", "postgres")
+            return ("127.0.0.1", 5432, "postgres", "", "postgres", .disable)
         }
         let h = url.host ?? "127.0.0.1"
         let p = url.port ?? 5432
@@ -203,7 +228,16 @@ public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable
         var db = url.path
         if db.hasPrefix("/") { db.removeFirst() }
         if db.isEmpty { db = "postgres" }
-        return (h, p, u, pass, db)
+
+        var parsedSSL: SSLMode = .disable
+        if let query = url.query?.lowercased() {
+            if query.contains("sslmode=require") || query.contains("ssl=true") || query.contains("ssl=require") {
+                parsedSSL = .require
+            } else if query.contains("sslmode=prefer") {
+                parsedSSL = .prefer
+            }
+        }
+        return (h, p, u, pass, db, parsedSSL)
     }
 
     /// Executes a SQL query against the PostgreSQL database.
@@ -373,10 +407,14 @@ public final class MySQLConnection: DatabaseConnection, @unchecked Sendable {
     public let password: String
     /// The database name.
     public let database: String
+    /// The SSL/TLS connection mode.
+    public let sslMode: SSLMode
 
     /// Creates a new MySQL connection instance.
-    /// - Parameter connectionURL: Connection URL (e.g. `mysql://user:pass@host:3306/dbname`).
-    public init(connectionURL: String) {
+    /// - Parameters:
+    ///   - connectionURL: Connection URL (e.g. `mysql://user:pass@host:3306/dbname?ssl=true`).
+    ///   - sslMode: Explicit SSL mode override (if `nil`, parsed from URL or defaults to `.disable`).
+    public init(connectionURL: String, sslMode: SSLMode? = nil) {
         self.connectionURL = connectionURL
         let parsed = Self.parseURL(connectionURL)
         self.host = parsed.host
@@ -384,11 +422,12 @@ public final class MySQLConnection: DatabaseConnection, @unchecked Sendable {
         self.user = parsed.user
         self.password = parsed.password
         self.database = parsed.database
+        self.sslMode = sslMode ?? parsed.sslMode
     }
 
-    private static func parseURL(_ urlStr: String) -> (host: String, port: Int, user: String, password: String, database: String) {
+    private static func parseURL(_ urlStr: String) -> (host: String, port: Int, user: String, password: String, database: String, sslMode: SSLMode) {
         guard let url = URL(string: urlStr) else {
-            return ("127.0.0.1", 3306, "root", "", "mysql")
+            return ("127.0.0.1", 3306, "root", "", "mysql", .disable)
         }
         let h = url.host ?? "127.0.0.1"
         let p = url.port ?? 3306
@@ -397,7 +436,16 @@ public final class MySQLConnection: DatabaseConnection, @unchecked Sendable {
         var db = url.path
         if db.hasPrefix("/") { db.removeFirst() }
         if db.isEmpty { db = "mysql" }
-        return (h, p, u, pass, db)
+
+        var parsedSSL: SSLMode = .disable
+        if let query = url.query?.lowercased() {
+            if query.contains("sslmode=require") || query.contains("ssl=true") || query.contains("ssl=require") {
+                parsedSSL = .require
+            } else if query.contains("sslmode=prefer") {
+                parsedSSL = .prefer
+            }
+        }
+        return (h, p, u, pass, db, parsedSSL)
     }
 
     /// Executes a SQL query against the MySQL database.
@@ -582,5 +630,102 @@ extension DataFrame {
             }
         }
         return try DataFrame(columns: cols)
+    }
+
+    /// Writes the contents of this DataFrame into a relational SQL database table.
+    ///
+    /// - Parameters:
+    ///   - table: Destination table name.
+    ///   - connection: Target database driver conforming to ``DatabaseConnection``.
+    ///   - mode: Write mode determining how existing tables are handled (default ``SQLWriteMode/append``).
+    ///   - batchSize: Maximum number of rows per batch `INSERT` statement (default `500`).
+    /// - Throws: ``DatabaseError`` if table creation or insertion fails.
+    public func toSQL(
+        table: String,
+        connection: any DatabaseConnection,
+        mode: SQLWriteMode = .append,
+        batchSize: Int = 500
+    ) async throws {
+        guard !table.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw DatabaseError.queryFailed("Destination table name cannot be empty")
+        }
+        guard !columns.isEmpty else { return }
+
+        let escapedTableName = "\"\(table.replacingOccurrences(of: "\"", with: "\"\""))\""
+        let colNames = columns.map { $0.name }
+        let escapedColNames = colNames.map { "\"\(String($0).replacingOccurrences(of: "\"", with: "\"\""))\"" }.joined(separator: ", ")
+
+        // Handle table creation & modes
+        if mode == .replace {
+            _ = try await connection.executeQuery("DROP TABLE IF EXISTS \(escapedTableName);")
+        }
+
+        // Generate schema columns based on DataFrame types
+        var colDefs: [String] = []
+        for col in columns {
+            let colNameEscaped = "\"\(col.name.replacingOccurrences(of: "\"", with: "\"\""))\""
+            let colType: String
+            switch col.dtype {
+            case .int32, .int64:
+                colType = "INTEGER"
+            case .float32, .float64:
+                colType = "REAL"
+            case .boolean:
+                colType = "BOOLEAN"
+            default:
+                colType = "TEXT"
+            }
+            colDefs.append("\(colNameEscaped) \(colType)")
+        }
+
+        if mode == .failIfExists {
+            let checkResult = try await connection.executeQuery("SELECT 1 FROM \(escapedTableName) LIMIT 1;")
+            if !checkResult.columns.isEmpty {
+                throw DatabaseError.queryFailed("Table \(table) already exists and mode is .failIfExists")
+            }
+        }
+
+        let createTableSQL = "CREATE TABLE IF NOT EXISTS \(escapedTableName) (\(colDefs.joined(separator: ", ")));"
+        _ = try await connection.executeQuery(createTableSQL)
+
+        // Insert rows in batches
+        let nRows = self.shape.rows
+        guard nRows > 0 else { return }
+
+        let effectiveBatchSize = max(1, batchSize)
+        var rowStart = 0
+        while rowStart < nRows {
+            let rowEnd = min(rowStart + effectiveBatchSize, nRows)
+            var valuesClauses: [String] = []
+            valuesClauses.reserveCapacity(rowEnd - rowStart)
+
+            for r in rowStart..<rowEnd {
+                var rowVals: [String] = []
+                rowVals.reserveCapacity(columns.count)
+                for col in columns {
+                    if let v = col.value(at: r) {
+                        if let d = v as? Double {
+                            rowVals.append(d.isNaN ? "NULL" : "\(d)")
+                        } else if let i = v as? Int {
+                            rowVals.append("\(i)")
+                        } else if let i64 = v as? Int64 {
+                            rowVals.append("\(i64)")
+                        } else if let b = v as? Bool {
+                            rowVals.append(b ? "1" : "0")
+                        } else {
+                            let strVal = "\(v)".replacingOccurrences(of: "'", with: "''")
+                            rowVals.append("'\(strVal)'")
+                        }
+                    } else {
+                        rowVals.append("NULL")
+                    }
+                }
+                valuesClauses.append("(\(rowVals.joined(separator: ", ")))")
+            }
+
+            let insertSQL = "INSERT INTO \(escapedTableName) (\(escapedColNames)) VALUES \(valuesClauses.joined(separator: ", "));"
+            _ = try await connection.executeQuery(insertSQL)
+            rowStart = rowEnd
+        }
     }
 }

@@ -5,6 +5,7 @@ import SwiftDataFrame
 
 @Suite("SwiftDatabase Tests (Phase 5)")
 struct SwiftDatabaseTests {
+
     @Test("Test real SQLite query execution and DataFrame ingestion")
     func testSQLiteDataFrameIngestion() async throws {
         let dbURI = "file:test_\(UUID().uuidString)?mode=memory&cache=shared"
@@ -39,6 +40,11 @@ struct SwiftDatabaseTests {
     @Test("Test PostgreSQL wire connection error handling on unreachable host")
     func testPostgreSQLIngestion() async throws {
         let conn = PostgreSQLConnection(connectionURL: "postgres://user:pass@127.0.0.1:5432/testdb")
+        #expect(conn.host == "127.0.0.1")
+        #expect(conn.port == 5432)
+        #expect(conn.user == "user")
+        #expect(conn.password == "pass")
+        #expect(conn.database == "testdb")
         await #expect(throws: DatabaseError.self) {
             _ = try await conn.executeQuery("CREATE TABLE users (id INTEGER PRIMARY KEY, score REAL);")
         }
@@ -58,10 +64,15 @@ struct SwiftDatabaseTests {
     }
 
     @Test("Test MySQL wire connection error handling on unreachable host")
-    func testMySQLQueryThrowsConnectionError() async {
+    func testMySQLIngestion() async throws {
         let conn = MySQLConnection(connectionURL: "mysql://user:pass@127.0.0.1:3306/testdb")
+        #expect(conn.host == "127.0.0.1")
+        #expect(conn.port == 3306)
+        #expect(conn.user == "user")
+        #expect(conn.password == "pass")
+        #expect(conn.database == "testdb")
         await #expect(throws: DatabaseError.self) {
-            _ = try await conn.executeQuery("SELECT 1;")
+            _ = try await conn.executeQuery("CREATE TABLE orders (id INT PRIMARY KEY, amount DOUBLE);")
         }
     }
 
@@ -76,5 +87,62 @@ struct SwiftDatabaseTests {
         await #expect(throws: DatabaseError.self) {
             _ = try await conn.executeQuery("")
         }
+    }
+
+    @Test("Test AnySendableValue description and custom conversion")
+    func testAnySendableValue() {
+        let d: AnySendableValue = .double(3.14)
+        let i: AnySendableValue = .int(42)
+        let s: AnySendableValue = .string("hello")
+        let n: AnySendableValue = .null
+
+        #expect(d.description == "3.14")
+        #expect(i.description == "42")
+        #expect(s.description == "hello")
+        #expect(n.description == "NULL")
+    }
+
+    @Test("Test DatabaseError errorDescription messages")
+    func testDatabaseErrorMessages() {
+        let err1 = DatabaseError.connectionFailed("Host unreachable")
+        let err2 = DatabaseError.queryFailed("Syntax error")
+        let err3 = DatabaseError.notImplemented("Feature Z")
+
+        #expect(err1.errorDescription?.contains("Host unreachable") == true)
+        #expect(err2.errorDescription?.contains("Syntax error") == true)
+        #expect(err3.errorDescription?.contains("Feature Z") == true)
+    }
+
+    @Test("Test DataFrame fromSQL with mock query results")
+    func testDataFrameFromSQLMock() async throws {
+        struct MockConnection: DatabaseConnection {
+            func executeQuery(_ sql: String) async throws -> SQLQueryResult {
+                return SQLQueryResult(
+                    columns: ["col_d", "col_i", "col_s", "col_n"],
+                    rows: [
+                        [.double(1.5), .int(10), .string("first"), .null],
+                        [.double(2.5), .int(20), .string("second"), .null]
+                    ]
+                )
+            }
+        }
+
+        let mockConn = MockConnection()
+        let df = try await DataFrame.fromSQL("SELECT * FROM mock", connection: mockConn)
+        #expect(df.rowCount == 2)
+        #expect(df.columnNames.count == 4)
+        #expect(df.columnNames == ["col_d", "col_i", "col_s", "col_n"])
+    }
+
+    @Test("Test DataFrame fromSQL with empty query results")
+    func testDataFrameFromSQLEmpty() async throws {
+        struct EmptyMockConnection: DatabaseConnection {
+            func executeQuery(_ sql: String) async throws -> SQLQueryResult {
+                return SQLQueryResult(columns: ["a", "b"], rows: [])
+            }
+        }
+
+        let df = try await DataFrame.fromSQL("SELECT a, b FROM empty", connection: EmptyMockConnection())
+        #expect(df.rowCount == 0)
     }
 }

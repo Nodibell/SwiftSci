@@ -38,6 +38,10 @@ let package = Package(
             from: "1.3.0"
         ),
         .package(
+            url: "https://github.com/google/flatbuffers.git",
+            exact: "25.2.10"
+        ),
+        .package(
             url: "https://github.com/apache/arrow-swift.git",
             from: "21.0.0"
         ),

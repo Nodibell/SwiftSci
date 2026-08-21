@@ -1,4 +1,4 @@
-# SwiftSci 3.2.0
+# SwiftSci 3.3.0
 
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
@@ -20,16 +20,17 @@ SwiftSci is engineered for high-performance macOS execution across Apple Silicon
 
 ---
 
-## What's New in 3.2.0
+## What's New in 3.3.0
 
-- **Native PostgreSQL & MySQL Wire Protocol Drivers (`SwiftDatabase`):** Implemented pure-Swift network wire-protocol drivers (`PostgresWireClient` v3.0 and `MySQLWireClient` Client/Server protocol) with zero third-party C dependencies, eliminating `DatabaseError.notImplemented`.
-- **Deep Convolutional U-Net Architecture (`SwiftVision`):** Native deep U-Net semantic segmentation network on Apple Silicon MLX (`UNetArchitecture`, `UNetDoubleConv`, `UNetDown`, `UNetUp`, `UNetOutConv`) executing deep neural forward passes.
-- **Binary Core ML `NeuralNetwork` Export (`SwiftML`):** Native Protobuf encoder for Multi-Layer Perceptrons (`MLPClassifier`, `MLPRegressor`) with `InnerProduct` and activation layers (`ReLU`, `Sigmoid`, `Tanh`, `Linear`), conforming to `CoreMLExportable`.
-- **Binary Standard Scaler Export (`SwiftML`):** Added `exportBinaryStandardScaler` and `writeStandardScaler` generating Core ML `Scaler` specification v4 `.mlmodel` binaries.
-- **100% DocC API Coverage & Comprehensive Testing:** 100.00% public API documentation coverage (1,320 symbols) and 380+ unit tests across all 13 modules.
-- **Ecosystem Showcase Projects:** 4 dedicated standalone showcase applications demonstrating SwiftSci across real-world domains ([EnergyGridForecaster](https://github.com/Nodibell/EnergyGridForecaster), [CreditRiskScoring-MLOps](https://github.com/Nodibell/CreditRiskScoring-MLOps), [SwiftDataAnalyst-Agent](https://github.com/Nodibell/SwiftDataAnalyst-Agent), [SingleCellClustering](https://github.com/Nodibell/SingleCellClustering)).
+- **Core ML `Pipeline` Serialization (`SwiftML`):** Export composite end-to-end pipelines (`PipelineClassifier` / `PipelineRegressor`, fields 200/201 in Model.proto) chaining `StandardScaler` + `Encoders` + `RandomForestClassifier` or `MLPClassifier` in a single Core ML artifact.
+- **Modern `.mlpackage` Directory Bundle Exporter (`SwiftML`):** Export models into modern `.mlpackage` directory bundles containing `Manifest.json` and nested model payloads via `CoreMLExporter.writeMLPackage` and `CoreMLExportable.writeMLPackage`.
+- **In-Memory `VectorStore` Index (`SwiftCluster`):** High-throughput SIMD Accelerate-optimized vector index supporting Cosine Similarity, Dot Product, and Euclidean L2 distance for on-device semantic search and local RAG.
+- **Batch Database Ingestion (`DataFrame.toSQL`, `SwiftDatabase`):** High-speed tabular bulk insertion into SQLite, PostgreSQL, and MySQL tables with `.append`, `.replace`, and `.failIfExists` modes.
+- **Database TLS/SSL Security (`SSLMode`, `SwiftDatabase`):** Configurable `SSLMode` (`.disable`, `.prefer`, `.require`) with query string parsing (`?sslmode=require`, `?ssl=true`) for remote database connections.
+- **Local Dense Text Embedding Engine (`SwiftNLP`):** Fast, offline dense text embedding generator (128-D/256-D L2-normalized vectors) operating 100% locally on Apple Silicon.
+- **100% DocC API Coverage:** Maintained 100.00% public API documentation coverage (1,356 symbols) verified by automated CI.
 
-See [CHANGELOG.md](CHANGELOG.md#320---2026-08-21).
+See [CHANGELOG.md](CHANGELOG.md#330---2026-08-21).
 
 ---
 

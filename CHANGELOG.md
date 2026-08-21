@@ -4,6 +4,19 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-08-21
+
+### Added
+- **Core ML `Pipeline` Serialization (`CoreMLExporter`, `SwiftML`)**: Added native binary protobuf export for composite pipelines (`exportBinaryPipelineClassifier` and `exportBinaryPipelineRegressor`, fields 200/201 in Apple `Model.proto`) enabling chaining of preprocessors (e.g. `StandardScaler`) with classifiers and regressors in a single Core ML artifact.
+- **Modern `.mlpackage` Directory Bundle Exporter (`SwiftML`)**: Implemented `CoreMLExporter.writeMLPackage` and added default `writeMLPackage` conformance to `CoreMLExportable` protocol, exporting models as standard `.mlpackage` directory bundles with `Manifest.json`.
+- **In-Memory `VectorStore` Index (`SwiftCluster`)**: Implemented high-throughput in-memory vector database (`VectorStore`, `VectorEntry`, `VectorSearchResult`) with SIMD Accelerate-optimized similarity metrics (`.cosineSimilarity`, `.dotProduct`, `.euclideanDistance`) and Top-K search.
+- **Batch Database Ingestion (`DataFrame.toSQL`, `SwiftDatabase`)**: Added `toSQL(table:connection:mode:batchSize:)` on `DataFrame` for high-speed bulk ingestion into SQLite, PostgreSQL, and MySQL with `.append`, `.replace`, and `.failIfExists` modes and automatic schema inference.
+- **Database TLS/SSL Security (`SSLMode`, `SwiftDatabase`)**: Added configurable `SSLMode` (`.disable`, `.prefer`, `.require`) with query string parsing (`?sslmode=require`, `?ssl=true`) for secure PostgreSQL and MySQL connections.
+- **Local Dense Text Embedding Engine (`LocalEmbeddingEngine`, `SwiftNLP`)**: Implemented offline subword N-gram character hashing projection with Accelerate $L_2$ unit normalization producing 128-D/256-D dense embeddings directly compatible with `SwiftCluster.VectorStore`.
+- **100% DocC Public API Coverage**: Maintained 100.00% public documentation coverage across all 1,356 API symbols.
+
+---
+
 ## [3.2.0] - 2026-08-21
 
 ### Added

@@ -338,7 +338,7 @@ The architecture combines two hardware engines:
 
 ---
 
-### Version 3.3.0: Core ML Pipelines, Database TLS & VectorStore Foundation *(📋 Planned)*
+### Version 3.3.0: Core ML Pipelines, Database TLS & VectorStore Foundation *(🟢 Completed)*
 
 *Detailed implementation plan:* [ROADMAP_v3.3.md](ROADMAP_v3.3.md) / [implementation_plan_33.md](implementation_plan_33.md)
 

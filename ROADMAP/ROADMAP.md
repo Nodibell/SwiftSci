@@ -338,29 +338,38 @@ The architecture combines two hardware engines:
 
 ---
 
-### Version 3.3.0 – 3.4.0: MLOps Pipelines, Large-Scale Data & On-Device GenAI *(📋 Planned)*
+### Version 3.3.0: Core ML Pipelines, Database TLS & VectorStore Foundation *(📋 Planned)*
 
-*Detailed architecture document:* [ROADMAP_v3.4.md](ROADMAP_v3.4.md)
+*Detailed implementation plan:* [ROADMAP_v3.3.md](ROADMAP_v3.3.md) / [implementation_plan_33.md](implementation_plan_33.md)
 
 1. **End-to-End Core ML `Pipeline` Export (`SwiftML`, `SwiftPreprocessing`)**:
    - Chaining preprocessors (`StandardScaler`, `OneHotEncoder`) with estimators (`RandomForestClassifier`, `MLPClassifier`) into composite `PipelineClassifier` / `PipelineRegressor` Core ML messages.
-   - Modern `.mlpackage` directory bundle serializer and FP16 ANE quantization flags.
-2. **Out-of-Core & Large-Scale Data Processing (`SwiftDataFrame`)**:
+   - Modern `.mlpackage` directory bundle serializer format.
+   - FP16 ANE quantization flags (`quantizeFP16: true`).
+2. **Enterprise Database Security & Writeback (`SwiftDatabase`)**:
+   - Apple `Network.framework` (`NWConnection`) TLS/SSL socket handshakes for remote PostgreSQL and MySQL.
+   - High-throughput batch `DataFrame.toSQL` bulk insert and upsert operations.
+3. **In-Memory Vector Store & Local Text Embeddings (`SwiftCluster`, `SwiftNLP`)**:
+   - In-memory `VectorStore` index supporting Cosine Similarity, Dot Product, and L2 distance.
+   - Native `LocalEmbeddingEngine` for on-device RAG text embeddings.
+
+---
+
+### Version 3.4.0: Out-of-Core Data, Parquet Engine & Multimodal Perception *(📋 Planned)*
+
+*Detailed architecture document:* [ROADMAP_v3.4.md](ROADMAP_v3.4.md) / [implementation_plan_34.md](implementation_plan_34.md)
+
+1. **Out-of-Core & Large-Scale Data Processing (`SwiftDataFrame`)**:
    - `ChunkedDataFrame` and `LazyMemoryMappedCSVReader` for processing 100M+ row datasets exceeding RAM.
    - Pure-Swift zero-dependency Apache Parquet reader/writer with Snappy/Zstandard decompression.
-3. **On-Device LLMs, Embeddings & Vector Search (`SwiftLLM`, `SwiftCluster`, `SwiftNLP`)**:
-   - In-memory HNSW vector index (`VectorStore`) supporting Cosine Similarity and Dot Product.
-   - Local text embedding engine (`LocalEmbeddingModel`) for on-device RAG without external API dependencies.
+2. **On-Device LLMs & Quantized Execution (`SwiftLLM`)**:
    - 4-bit / 8-bit quantized execution (GGUF / AWQ) on MLX Metal for Llama-3, Qwen-2.5, Gemma-2.
-4. **Advanced Vision & Multimodal Perception (`SwiftVision`)**:
+   - Token-level JSON Schema constrained grammar decoding for local LLM output conforming to Swift `Codable`.
+3. **Advanced Vision & Multimodal Perception (`SwiftVision`)**:
    - YOLOv8-Seg instance segmentation with proto mask heads.
    - CLIP-style vision-language feature matching on MLX Metal GPU.
-5. **Enterprise Database Resilience (`SwiftDatabase`)**:
-   - Apple `Network.framework` (`NWConnection`) TLS/SSL socket handshakes for PostgreSQL and MySQL.
-   - High-throughput batch `DataFrame.toSQL` bulk insert and upsert operations.
-6. **Multi-Agent Orchestration & Structured Decoding (`SwiftAgent`)**:
-   - ReAct reasoning loops with multi-tool AST pipelines.
-   - Token-level JSON Schema constrained grammar decoding for local LLM output conforming to Swift `Codable`.
+4. **Multi-Agent Orchestration (`SwiftAgent`)**:
+   - ReAct reasoning loops with multi-tool AST pipelines and dynamic backtracking.
 
 ---
 

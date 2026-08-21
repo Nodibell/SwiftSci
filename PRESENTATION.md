@@ -1,4 +1,4 @@
-#  SwiftSci 3.2.0 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 3.3.0 — Apple Keynote Ecosystem Presentation
 
 > **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
 > **Date**: August 2026
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-SwiftSci 3.2.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, native **binary Apple Core ML (`.mlmodel`) export** (including Neural Networks and Scalers), zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), pure-Swift network wire-protocol database drivers, deep U-Net & YOLOv8 neural vision models, WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
+SwiftSci 3.3.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, native **binary Apple Core ML (`.mlmodel`) export** (including Neural Networks and Scalers), zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), pure-Swift network wire-protocol database drivers, deep U-Net & YOLOv8 neural vision models, WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
 
 ---
 
@@ -163,8 +163,8 @@ let sentiment = VADERSentimentAnalyzer().polarityScores(text: text)
 **Empirical Console Output (`stdout`):**
 ```text
   Synsets      : [dog.n.01, dog.n.02] | Wu-Palmer Similarity: 0.8571
-  Tokens       : ["SwiftSci", "3.2.0", "is", "an", "extraordinarily"]
-  Porter Stems : ["swiftsci", "3.2.0", "is", "an", "extraordinarili"]
+  Tokens       : ["SwiftSci", "3.3.0", "is", "an", "extraordinarily"]
+  Porter Stems : ["swiftsci", "3.3.0", "is", "an", "extraordinarili"]
 ```
 
 ---
@@ -198,7 +198,7 @@ let truncated = contextWindow.truncate(text: prompt, maxTokens: 5)
 **Empirical Console Output (`stdout`):**
 ```text
   Prompt Token Count: 7
-  Truncated Text    : "SwiftSci 3.2.0 is an amazingly"
+  Truncated Text    : "SwiftSci 3.3.0 is an amazingly"
 ```
 
 ---

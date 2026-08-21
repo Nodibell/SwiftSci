@@ -55,15 +55,15 @@ See [CHANGELOG.md](CHANGELOG.md#330---2026-08-21).
 
 ---
 
-## 📊 Complete Performance Comparison (SwiftSci 3.2.0 vs Python)
+## 📊 Complete Performance Comparison (SwiftSci 3.3.0 vs Python)
 
-Official comparative benchmark suite results comparing **SwiftSci 3.2.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comparative benchmark suite results comparing **SwiftSci 3.3.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
 
 Values are median times from the latest benchmark run. `n/a` means that the Python suite did not include an equivalent benchmark.
 
 ### 👁️ 1. Computer Vision & Neural Inference
 
-| Benchmark Scenario                              | SwiftSci 3.2.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 3.3.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **YOLOv8Detector Detect** (640×640, real GPU) | **12.317 ms** (~81 FPS) | n/a | n/a | — |
 | **YOLOPreprocessor Letterbox** (1920×1080 → 640×640) | **0.414 ms** | n/a | n/a | — |
@@ -71,7 +71,7 @@ Values are median times from the latest benchmark run. `n/a` means that the Pyth
 
 ### 📈 2. Forecasting
 
-| Benchmark Scenario                              | SwiftSci 3.2.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
+| Benchmark Scenario                              | SwiftSci 3.3.0 (Swift) |       Python Baseline       |    Swift Speedup    |  Winner  |
 | :---------------------------------------------- | :------------------: | :-------------------------: | :-----------------: | :------: |
 | **ARIMA(1,1,1) Fit** (50k pts) | **2.463 ms** | 212.621 ms (*Statsmodels*) | ⚡**86.34×** | 🟢 Swift |
 | **ARIMA(1,1,1) Forecast** (horizon=24) | **2.566 ms** | 213.709 ms (*Statsmodels*) | ⚡**83.27×** | 🟢 Swift |
@@ -79,7 +79,7 @@ Values are median times from the latest benchmark run. `n/a` means that the Pyth
 
 ### 🤖 3. Machine Learning & Clustering
 
-| Benchmark Scenario                           | SwiftSci 3.2.0 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                           | SwiftSci 3.3.0 (Swift) |       Python Baseline       |   Swift Speedup   |  Winner  |
 | :------------------------------------------- | :--------------------: | :-------------------------: | :---------------: | :------: |
 | **LinearSVC Fit** (1k×4, Metal GPU) | **0.463 ms** | n/a | n/a | — |
 | **RandomForest Fit** (1k×4, 50 trees) | **3.838 ms** | 25.300 ms (*Scikit-Learn*) | ⚡**6.59×** | 🟢 Swift |
@@ -89,7 +89,7 @@ Values are median times from the latest benchmark run. `n/a` means that the Pyth
 
 ### 📝 4. Natural Language & Explainability
 
-| Benchmark Scenario                            | SwiftSci 3.2.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                            | SwiftSci 3.3.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
 | **KernelSHAP Explain** (5 features, 100 coalitions) | **0.168 ms** | 0.413 ms (*SHAP*) | ⚡**2.45×** | 🟢 Swift |
 | **LLM Forward Pass** (seqLen=64) | **0.437 ms** | 0.531 ms (*PyTorch*) | ⚡**1.21×** | 🟢 Swift |
@@ -97,7 +97,7 @@ Values are median times from the latest benchmark run. `n/a` means that the Pyth
 
 ### 📊 5. Core Data Engines & Vector Stats
 
-| Benchmark Scenario                            | SwiftSci 3.2.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
+| Benchmark Scenario                            | SwiftSci 3.3.0 (Swift) |    Python Baseline    |   Swift Speedup   |  Winner  |
 | :-------------------------------------------- | :------------------: | :-------------------: | :----------------: | :------: |
 | **Mean Reduction** (vDSP 1M elements) | **0.082 ms** | 0.121 ms (*NumPy*) | ⚡**1.48×** | 🟢 Swift |
 | **StdDev Reduction** (vDSP 1M elements) | **0.275 ms** | 0.533 ms (*NumPy*) | ⚡**1.94×** | 🟢 Swift |
@@ -151,6 +151,6 @@ try regressor.fit(features: X, target: y)
 
 // 3. Native Tokenization & Sentiment Analysis
 let vader = VADERSentimentAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 3.2.0 is super fast!")
+let score = vader.polarityScores(text: "SwiftSci 3.3.0 is super fast!")
 print("Sentiment compound score:", score.compound)
 ```

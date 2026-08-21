@@ -127,7 +127,9 @@ public class UNetArchitecture: Module, UnaryLayer {
     @ModuleInfo public var up2: UNetUp
     @ModuleInfo public var outc: UNetOutConv
 
+    /// Number of input channels.
     public let inChannels: Int
+    /// Number of output segmentation classes.
     public let numClasses: Int
 
     /// Creates a complete U-Net architecture.

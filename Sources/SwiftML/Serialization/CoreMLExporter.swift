@@ -393,7 +393,7 @@ public enum CoreMLExporter {
     /// - Parameters:
     ///   - name: Model display name.
     ///   - inputNames: Input feature identifiers.
-    ///   - outputName: Output scaled feature identifier.
+    ///   - outputNames: Output scaled feature identifiers.
     ///   - shiftValues: Shift offsets (typically `-mean`).
     ///   - scaleValues: Scale multipliers (typically `1 / std`).
     /// - Returns: Binary `.mlmodel` `Data`.
@@ -417,6 +417,7 @@ public enum CoreMLExporter {
     ///
     /// - Parameters:
     ///   - url: Destination file URL.
+    ///   - name: Model display name.
     ///   - inputNames: Input feature identifiers.
     ///   - outputNames: Output scaled feature identifiers.
     ///   - shiftValues: Shift offsets.

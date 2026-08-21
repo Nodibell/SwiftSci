@@ -80,7 +80,6 @@ public class UNetUp: Module {
         let b = shape[0]
         let h = shape[1]
         let w = shape[2]
-        let c = shape[3]
 
         // Spatial 2x repeat interpolation
         let x1Up = upConv(x1)

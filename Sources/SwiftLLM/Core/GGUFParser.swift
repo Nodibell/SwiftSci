@@ -205,6 +205,35 @@ public enum GGUFParser {
         return tensors
     }
 
+    private static func halfToFloat(_ h: UInt16) -> Float {
+        let sign = UInt32(h & 0x8000) << 16
+        let exp = UInt32((h >> 10) & 0x1F)
+        let mant = UInt32(h & 0x03FF)
+
+        if exp == 0 {
+            if mant == 0 {
+                return Float(bitPattern: sign)
+            }
+            var m = mant
+            var e: Int32 = -14
+            while (m & 0x0400) == 0 {
+                m <<= 1
+                e -= 1
+            }
+            let singleMant = (m & 0x03FF) << 13
+            let singleExp = UInt32(bitPattern: (e + 127)) << 23
+            return Float(bitPattern: sign | singleExp | singleMant)
+        } else if exp == 0x1F {
+            let singleExp = UInt32(0xFF) << 23
+            let singleMant = mant << 13
+            return Float(bitPattern: sign | singleExp | singleMant)
+        } else {
+            let singleExp = (exp - 15 + 127) << 23
+            let singleMant = mant << 13
+            return Float(bitPattern: sign | singleExp | singleMant)
+        }
+    }
+
     private static func dequantizeQ4_0(data: Data, offset: Int, numBlocks: Int, elementCount: Int) -> [Float] {
         var result = [Float]()
         result.reserveCapacity(elementCount)
@@ -212,7 +241,7 @@ public enum GGUFParser {
 
         for _ in 0..<numBlocks {
             let scaleRaw = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: cur, as: UInt16.self) }
-            let scale = Float(Float16(bitPattern: scaleRaw.littleEndian))
+            let scale = halfToFloat(scaleRaw.littleEndian)
             cur += 2
 
             for _ in 0..<16 {
@@ -235,11 +264,11 @@ public enum GGUFParser {
 
         for _ in 0..<numBlocks {
             let scaleRaw = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: cur, as: UInt16.self) }
-            let scale = Float(Float16(bitPattern: scaleRaw.littleEndian))
+            let scale = halfToFloat(scaleRaw.littleEndian)
             cur += 2
 
             let minRaw = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: cur, as: UInt16.self) }
-            let minVal = Float(Float16(bitPattern: minRaw.littleEndian))
+            let minVal = halfToFloat(minRaw.littleEndian)
             cur += 2
 
             for _ in 0..<16 {
@@ -262,7 +291,7 @@ public enum GGUFParser {
 
         for _ in 0..<numBlocks {
             let scaleRaw = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: cur, as: UInt16.self) }
-            let scale = Float(Float16(bitPattern: scaleRaw.littleEndian))
+            let scale = halfToFloat(scaleRaw.littleEndian)
             cur += 2
 
             for _ in 0..<32 {

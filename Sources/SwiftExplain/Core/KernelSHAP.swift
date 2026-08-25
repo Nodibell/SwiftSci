@@ -137,9 +137,12 @@ public actor KernelSHAP {
 // MARK: - Top-Level Helpers (Free from Actor Isolation)
 
 private func choose(_ n: Int, _ k: Int) -> Double {
-    if k < 0 || k > n { return 0 }
+    if k < 0 || k > n { return 0.0 }
+    if k == 0 || k == n { return 1.0 }
+    let bound = min(k, n - k)
+    if bound < 1 { return 1.0 }
     var val = 1.0
-    for i in 1...min(k, n - k) {
+    for i in 1...bound {
         val *= Double(n - i + 1) / Double(i)
     }
     return val

@@ -28,4 +28,4 @@ Accelerated exponential smoothing eliminates high-frequency noise while preservi
 ## Topics
 
 ### Time Series APIs
-- ``DataFrame/withLaggedColumn(column:by:targetColumn:)``
+- ``DataFrame/withLaggedColumn(column:by:newName:)``

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 3.3.0 — Complete Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 3.4.0 — Complete Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -643,8 +643,8 @@
 
     <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.3.0 Ecosystem</h1>
-      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.3.0 release changes & Apple Silicon acceleration.</p>
+      <h1 class="title-large">SwiftSci 3.4.0 Ecosystem</h1>
+      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.4.0 release changes & Apple Silicon acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
           <div class="stat-val">66</div>
@@ -3704,33 +3704,33 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     </div>
 
     <div class="slide" data-slide="66">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.3.0 — SLIDE 66 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.3.0 — Release Evolution</h1>
-      <p class="subtitle">3.3.0 delivers Core ML Pipeline chaining, .mlpackage bundles, in-memory VectorStore, DataFrame.toSQL, and pure-Swift network wire protocols, deep U-Net vision, binary MLP Core ML export, and 100% DocC coverage.</p>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.4.0 — SLIDE 66 OF 66</div>
+      <h1 class="title-large">SwiftSci 3.4.0 — Release Evolution</h1>
+      <p class="subtitle">3.4.0 delivers out-of-core Chunked streaming, pure-Swift Parquet engine, SIMD hash joins, Quantized LLM Metal GPU inference, Paged KV-Cache, YOLOv8-Seg instance segmentation, CLIP projector, and ReAct autonomous agent.</p>
       <div class="grid-2">
         <div class="card">
-          <div class="card-header"><span class="card-title">3.3.0 Core ML Pipelines & VectorStore</span><span class="swiftui-pill" style="color:var(--sf-green);">3.3.0</span></div>
+          <div class="card-header"><span class="card-title">3.4.0 Parquet, Quantized LLM & ReAct Agent</span><span class="swiftui-pill" style="color:var(--sf-green);">3.4.0</span></div>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">📦</span><span>Pure-Swift <b>ParquetReader/Writer</b> + <b>ChunkedDataFrame</b> mmap streaming</span></div>
+            <div class="highlight-item"><span class="highlight-icon">⚡</span><span><b>QuantizedLinear</b> (4-bit/8-bit GPU) + <b>JSONGrammarDecoder</b> + <b>PagedKVCache</b></span></div>
+            <div class="highlight-item"><span class="highlight-icon">👁️</span><span><b>YOLOv8-Seg</b> proto masks + <b>CLIPProjector</b> multimodal zero-shot classifier</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🤖</span><span><b>ReActAgent</b> autonomous reasoning loop + <b>DataFrameAgentTool</b></span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">3.3.0 Core ML Pipelines & VectorStore</span><span class="swiftui-pill" style="color:var(--sf-blue);">3.3.0</span></div>
           <div class="feature-highlights">
             <div class="highlight-item"><span class="highlight-icon">🍏</span><span>Composite <b>PipelineClassifier & Regressor</b> Core ML export + <b>.mlpackage</b> bundles</span></div>
             <div class="highlight-item"><span class="highlight-icon">🧠</span><span>In-memory <b>VectorStore</b> with Accelerate Cosine/Dot/L2 similarity search</span></div>
             <div class="highlight-item"><span class="highlight-icon">🗄️</span><span><b>DataFrame.toSQL</b> bulk ingestion + TLS/SSL database encryption</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🔤</span><span><b>LocalEmbeddingEngine</b> for offline on-device RAG dense vector generation</span></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">3.1.0 Binary Core ML Exporter</span><span class="swiftui-pill" style="color:var(--sf-blue);">3.1.0</span></div>
-          <div class="feature-highlights">
-            <div class="highlight-item"><span class="highlight-icon">🍏</span><span>Native <b>.mlmodel</b> (Model.proto v4) serializer for Linear, Logistic, DecisionTree, and RandomForest</span></div>
-            <div class="highlight-item"><span class="highlight-icon">📦</span><span>Shared zero-dependency <b>ProtobufWriter</b> wire encoder</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span><b>CoreMLExportable</b> protocol & <b>SwiftMLError.exportFailed</b> unified error case</span></div>
           </div>
         </div>
         <div class="card" style="grid-column: span 2;">
-          <div class="card-header"><span class="card-title">3.0.0 Architecture & Concurrency Freeze</span><span class="swiftui-pill" style="color:var(--sf-purple);">3.0.0</span></div>
+          <div class="card-header"><span class="card-title">3.1.0 Binary Core ML & Protobuf Writer</span><span class="swiftui-pill" style="color:var(--sf-purple);">3.1.0</span></div>
           <div class="feature-highlights" style="grid-template-columns: repeat(3, 1fr);">
-            <div class="highlight-item"><span class="highlight-icon">🧵</span><span>Actor-based <b>NaiveBayesClassifier</b> & <b>ComplementNaiveBayesClassifier</b></span></div>
-            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span>12 preprocessing transformers migrated to value-semantic <b>Sendable</b> structs</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🔧</span><span><b>SwiftMLError</b> consolidated error hierarchy & shared numerical primitives</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🍏</span><span>Native <b>.mlmodel</b> (Model.proto v4) serializer for Linear, Trees & Forests</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📦</span><span>Shared zero-dependency <b>ProtobufWriter</b> wire encoder</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span><b>CoreMLExportable</b> protocol & 100% DocC documentation coverage</span></div>
           </div>
         </div>
       </div>
@@ -3771,7 +3771,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       { name: "Database", start: 61, end: 62 },
       { name: "Agent", start: 63, end: 64 },
       { name: "M4 Pro", start: 65, end: 65 },
-      { name: "v3.3.0", start: 66, end: 66 }
+      { name: "v3.4.0", start: 66, end: 66 }
     ];
 
 

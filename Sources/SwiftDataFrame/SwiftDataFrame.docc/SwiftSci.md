@@ -8,8 +8,9 @@ High-Performance Columnar Data Tables built on Apache Arrow.
 
 ### Key Capabilities
 
-- **Apache Arrow Integration**: Zero-copy memory sharing and Arrow IPC buffer conversions.
-- **Relational Operations**: Fast hash-joins (`inner`, `left`, `right`, `outer`), grouping, and aggregations.
+- **Apache Arrow & Parquet Integration**: Zero-copy memory sharing, Arrow IPC buffer conversions, and pure-Swift Apache Parquet reader/writer (`ParquetReader`/`ParquetWriter`) with Snappy decompression.
+- **Out-of-Core Data Streaming**: `ChunkedDataFrame` streaming pipeline with zero-copy POSIX `MemoryMappedReader` partitioning.
+- **Relational Operations & SIMD Joins**: SIMD-accelerated typed hash-joins (`inner`, `left`, `right`, `outer`), grouping, and aggregations.
 - **Reshaping & Filtering**: Pivot, melt, index-based row gathering, and vDSP mask filtering.
 - **Deduplication**: `DataFrame.unique`, `AnyColumn.unique`, and `TypedColumn.unique` with first-occurrence order preservation.
 - **Streaming I/O**: Direct HTTP/HTTPS dataset streaming via `DataFrame.readURL` and zero-allocation CSV parsing.
@@ -19,9 +20,10 @@ High-Performance Columnar Data Tables built on Apache Arrow.
 ```swift
 import SwiftDataFrame
 
+// Read Parquet / CSV / Chunked Streams
 let df = try await DataFrame(csv: fileURL)
-let summary = df.filter("Age" > 18.0).groupBy("Pclass").mean()
-summary.debugPrint()
+let parquetData = try ParquetWriter.write(df)
+let loadedDF = try ParquetReader.read(from: parquetData)
 ```
 
 ## Topics

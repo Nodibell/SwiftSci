@@ -1,9 +1,9 @@
-# SwiftSci 3.3.0 Complete Performance Benchmarks
+# SwiftSci 3.4.0 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.3.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.4.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **Ultralytics**) on Apple Silicon (M-series / macOS 15 arm64).
 
 > [!NOTE]
-> 3.3.0 includes Core ML pipeline serialization, .mlpackage bundles, and in-memory VectorStore; benchmark medians are unchanged from the 3.0.0 release run.
+> 3.4.0 introduces out-of-core streaming `ChunkedDataFrame`, pure-Swift `ParquetReader`/`ParquetWriter`, SIMD-accelerated hash joins, `QuantizedLinear` GPU inference, `PagedKVCache`, `YOLOSegHead`, `CLIPProjector`, and `ReActAgent`.
 
 
 > [!NOTE]
@@ -15,7 +15,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 The values below are median times from the latest release benchmark run. Speedups are computed as `Python / Swift`; values above `1×` favor Swift. `n/a` means that the Python suite did not include an equivalent benchmark.
 
-| Benchmark Scenario | SwiftSci 3.3.0 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
+| Benchmark Scenario | SwiftSci 3.4.0 (Swift) | Python Baseline | Speedup | Winner | Status / Notes |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | Mean (1M elements) | **0.082 ms** | 0.121 ms (*NumPy*) | ⚡ **1.48×** | 🟢 **Swift** | vDSP reduction |
 | StdDev (1M elements) | **0.275 ms** | 0.533 ms (*NumPy*) | ⚡ **1.94×** | 🟢 **Swift** | vDSP reduction |

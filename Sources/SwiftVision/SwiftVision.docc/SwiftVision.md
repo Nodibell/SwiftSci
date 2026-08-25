@@ -8,7 +8,8 @@ Computer Vision Neural Inference, Object Detection & Image Datasets.
 
 ### Key Capabilities
 
-- **Real YOLOv8 Object Detection**: Full GPU-accelerated forward pass (`YOLOv8Detector`) featuring CSPDarknet backbone, PANet feature pyramid, decoupled DFL detection head, and non-maximum suppression (NMS).
+- **Real YOLOv8 Object Detection & Instance Segmentation**: Full GPU-accelerated forward pass featuring CSPDarknet backbone, PANet feature pyramid, decoupled DFL detection head, `YOLOSegHead` prototype mask generator (`160x160` proto masks), and `decodeMask` pixel-level segmentation.
+- **CLIP Vision-Language Multimodal Projector**: Dual visual and text linear projection layers (`CLIPProjector`) mapping multi-modal embeddings into a shared latent metric space with temperature-scaled cosine similarity logits and zero-shot softmax classification.
 - **ONNX Weight Parsing**: `ONNXWeightReader` native binary Protobuf wire-format parser extracting model weights directly into `[String: MLXArray]` instances.
 - **Letterbox Preprocessor**: `YOLOPreprocessor` aspect-ratio preserving resizer with `(114, 114, 114)` gray padding and normalization.
 - **Segmentation Models**: `UNetSegmentationModel` neural architecture for semantic image segmentation.

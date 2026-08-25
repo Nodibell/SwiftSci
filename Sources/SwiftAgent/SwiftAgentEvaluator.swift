@@ -103,9 +103,17 @@ public actor SwiftAgentEvaluator {
 
         let lower = trimmed.lowercased()
 
+        func cleanBody(_ prefix: String) -> String {
+            var body = trimmed.dropFirst(prefix.count).trimmingCharacters(in: .whitespacesAndNewlines)
+            if body.hasPrefix(":") {
+                body = body.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            return body
+        }
+
         // 1. filter command
         if lower.hasPrefix("filter") {
-            let body = trimmed.dropFirst("filter".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("filter")
             
             // Special cases: isNull, isNotNull
             if body.lowercased().hasSuffix("isnull") {
@@ -152,7 +160,7 @@ public actor SwiftAgentEvaluator {
 
         // 2. sample command
         if lower.hasPrefix("sample") {
-            let body = trimmed.dropFirst("sample".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("sample")
             let cleaned = body.replacingOccurrences(of: "n=", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             let n = Int(cleaned) ?? 5
             guard n > 0 else { throw AgentError.unparseable(command) }
@@ -161,7 +169,7 @@ public actor SwiftAgentEvaluator {
 
         // 3. select command
         if lower.hasPrefix("select") {
-            let body = trimmed.dropFirst("select".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("select")
             let cols = body.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
             guard !cols.isEmpty else { throw AgentError.unparseable(command) }
             return .select(columns: cols)
@@ -169,7 +177,7 @@ public actor SwiftAgentEvaluator {
 
         // 4. head command
         if lower.hasPrefix("head") {
-            let body = trimmed.dropFirst("head".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("head")
             let cleaned = body.replacingOccurrences(of: "n=", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             let n = Int(cleaned) ?? 5
             guard n >= 0 else { throw AgentError.unparseable(command) }
@@ -178,7 +186,7 @@ public actor SwiftAgentEvaluator {
 
         // 5. tail command
         if lower.hasPrefix("tail") {
-            let body = trimmed.dropFirst("tail".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("tail")
             let cleaned = body.replacingOccurrences(of: "n=", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             let n = Int(cleaned) ?? 5
             guard n >= 0 else { throw AgentError.unparseable(command) }
@@ -187,7 +195,7 @@ public actor SwiftAgentEvaluator {
 
         // 6. rename command
         if lower.hasPrefix("rename") {
-            let body = trimmed.dropFirst("rename".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("rename")
             guard let toRange = body.range(of: " to ", options: .caseInsensitive) else {
                 throw AgentError.unparseable(command)
             }
@@ -199,7 +207,7 @@ public actor SwiftAgentEvaluator {
 
         // 7. dropnulls command
         if lower.hasPrefix("dropnulls") {
-            let body = trimmed.dropFirst("dropnulls".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("dropnulls")
             if body.isEmpty {
                 return .dropNulls(columns: nil)
             }
@@ -210,7 +218,7 @@ public actor SwiftAgentEvaluator {
 
         // 8. fillnulls command
         if lower.hasPrefix("fillnulls") {
-            let body = trimmed.dropFirst("fillnulls".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("fillnulls")
             let parts = body.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
             guard parts.count == 2, let value = Double(parts[1]) else {
                 throw AgentError.unparseable(command)
@@ -220,7 +228,7 @@ public actor SwiftAgentEvaluator {
 
         // 9. groupby command
         if lower.hasPrefix("groupby") {
-            let body = trimmed.dropFirst("groupby".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = cleanBody("groupby")
             let parts = body.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
             guard parts.count == 2 || parts.count == 3 else {
                 throw AgentError.unparseable(command)

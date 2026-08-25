@@ -14,6 +14,8 @@ public enum QueryPlanNode: Sendable {
         case csv(url: URL, options: CSVReadOptions)
         /// Disk-based Apache Arrow Feather file source.
         case feather(url: URL)
+        /// Disk-based Apache Parquet file source.
+        case parquet(url: URL)
     }
 }
 

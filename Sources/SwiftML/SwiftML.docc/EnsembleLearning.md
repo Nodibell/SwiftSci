@@ -53,5 +53,3 @@ print("Feature importances: \(importances)")
 ### Tree Estimators
 - ``RandomForestClassifier``
 - ``RandomForestRegressor``
-- ``GradientBoostingClassifier``
-- ``GradientBoostingRegressor``

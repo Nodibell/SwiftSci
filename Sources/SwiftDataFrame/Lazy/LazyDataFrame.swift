@@ -61,6 +61,8 @@ public struct LazyDataFrame: Sendable {
                     currentDF = try await CSVReader.read(url: url, options: options)
                 case .feather(let url):
                     currentDF = try await FeatherReader.read(url: url)
+                case .parquet(let url):
+                    currentDF = try await ParquetReader.read(url: url)
                 }
             case .filter(let predicate):
                 guard let df = currentDF else {
@@ -93,5 +95,10 @@ extension DataFrame {
     /// Creates a `LazyDataFrame` reading from a Feather file.
     public static func lazyFeather(url: URL) -> LazyDataFrame {
         LazyDataFrame(source: .feather(url: url))
+    }
+
+    /// Creates a `LazyDataFrame` reading from an Apache Parquet file.
+    public static func lazyParquet(url: URL) -> LazyDataFrame {
+        LazyDataFrame(source: .parquet(url: url))
     }
 }

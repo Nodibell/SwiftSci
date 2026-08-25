@@ -8,6 +8,9 @@ Local Causal Transformer Decoder & Weight Parsers.
 
 ### Key Capabilities
 
+- **Quantized Metal GPU Execution**: 4-bit / 8-bit quantized linear layers (`QuantizedLinear`) supporting `q4_0`, `q4_1`, `q8_0`, `awq4`, and `awq8` formats with on-the-fly dequantization.
+- **Constrained JSON Grammar Decoding**: Token-level state machine (`JSONGrammarDecoder`) enforcing strict `Codable` JSON schema adherence via logit masking.
+- **Dynamic Paged KV-Cache**: Unified memory block allocator (`PagedKVCache`) managing physical pages (`pageSize: 16`) to prevent memory fragmentation.
 - **Decoder Architecture**: Causal self-attention, Rotary Position Embeddings (RoPE), and SwiGLU activation functions.
 - **Weight Parsers**: Zero-copy `GGUFParser` and `SafeTensorsParser` weight loaders.
 - **Token Sampler**: Temperature scaling, Top-K, and greedy argmax `Sampler`.

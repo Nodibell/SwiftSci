@@ -89,6 +89,17 @@ public struct DataFrame: Sendable {
         try await FeatherReader.read(url: url)
     }
 
+    /// Creates a DataFrame by reading an Apache Parquet binary file.
+    public init(parquet url: URL) async throws {
+        let df = try await ParquetReader.read(url: url)
+        self = df
+    }
+
+    /// Reads an Apache Parquet binary file into a DataFrame.
+    public static func readParquet(from url: URL) async throws -> DataFrame {
+        try await ParquetReader.read(url: url)
+    }
+
 
     /// Downloads a dataset directly from an HTTP/HTTPS URL into a DataFrame.
     /// - Parameters:
@@ -458,6 +469,11 @@ public struct DataFrame: Sendable {
     /// Serializes the DataFrame into Feather / Arrow IPC binary Data.
     public func writeFeatherData() throws -> Data {
         try FeatherWriter.write(self)
+    }
+
+    /// Writes the DataFrame to an Apache Parquet binary file.
+    public func writeParquet(to url: URL) async throws {
+        try await ParquetWriter.write(dataFrame: self, to: url)
     }
 
 

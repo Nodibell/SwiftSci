@@ -55,6 +55,6 @@ let uniqueDF = df.unique
 ## Topics
 
 ### Reshaping APIs
-- ``DataFrame/pivot(index:columns:values:aggregate:)``
-- ``DataFrame/melt(idVariables:valueVariables:variableColumnName:valueColumnName:)``
+- ``DataFrame/pivot(index:columns:values:aggFunc:)``
+- ``DataFrame/melt(idVars:valueVars:varName:valueName:)``
 - ``DataFrame/unique``

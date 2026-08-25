@@ -168,14 +168,113 @@ public enum GGUFParser {
                 }
                 let tensorData = fileData.subdata(in: start..<end)
                 array = MLXArray(tensorData, info.shape, dtype: .float16)
+            case 2: // Q4_0 (32 weights per block: 2 bytes fp16 scale + 16 bytes nibbles)
+                let numBlocks = (elementCount + 31) / 32
+                let totalBytes = numBlocks * 18
+                let end = start + totalBytes
+                guard end <= fileData.count else {
+                    throw SwiftMLError.invalidInput("GGUF Q4_0 tensor '\(info.name)' offset out of bounds")
+                }
+                let dequantized = dequantizeQ4_0(data: fileData, offset: start, numBlocks: numBlocks, elementCount: elementCount)
+                array = MLXArray(dequantized, info.shape)
+            case 3: // Q4_1 (32 weights per block: 2 bytes fp16 scale + 2 bytes fp16 min + 16 bytes nibbles)
+                let numBlocks = (elementCount + 31) / 32
+                let totalBytes = numBlocks * 20
+                let end = start + totalBytes
+                guard end <= fileData.count else {
+                    throw SwiftMLError.invalidInput("GGUF Q4_1 tensor '\(info.name)' offset out of bounds")
+                }
+                let dequantized = dequantizeQ4_1(data: fileData, offset: start, numBlocks: numBlocks, elementCount: elementCount)
+                array = MLXArray(dequantized, info.shape)
+            case 7: // Q8_0 (32 weights per block: 2 bytes fp16 scale + 32 bytes int8)
+                let numBlocks = (elementCount + 31) / 32
+                let totalBytes = numBlocks * 34
+                let end = start + totalBytes
+                guard end <= fileData.count else {
+                    throw SwiftMLError.invalidInput("GGUF Q8_0 tensor '\(info.name)' offset out of bounds")
+                }
+                let dequantized = dequantizeQ8_0(data: fileData, offset: start, numBlocks: numBlocks, elementCount: elementCount)
+                array = MLXArray(dequantized, info.shape)
             default:
-                throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' uses unsupported quantization type \(info.type) (only unquantized Float32 and Float16 supported).")
+                throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' uses unsupported quantization type \(info.type).")
             }
             
             tensors[info.name] = array
         }
         
         return tensors
+    }
+
+    private static func dequantizeQ4_0(data: Data, offset: Int, numBlocks: Int, elementCount: Int) -> [Float] {
+        var result = [Float]()
+        result.reserveCapacity(elementCount)
+        var cur = offset
+
+        for _ in 0..<numBlocks {
+            let scaleRaw = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: cur, as: UInt16.self) }
+            let scale = Float(Float16(bitPattern: scaleRaw.littleEndian))
+            cur += 2
+
+            for _ in 0..<16 {
+                guard cur < data.count else { break }
+                let byte = data[cur]
+                cur += 1
+                let low = Float(Int(byte & 0x0F) - 8) * scale
+                let high = Float(Int(byte >> 4) - 8) * scale
+                if result.count < elementCount { result.append(low) }
+                if result.count < elementCount { result.append(high) }
+            }
+        }
+        return result
+    }
+
+    private static func dequantizeQ4_1(data: Data, offset: Int, numBlocks: Int, elementCount: Int) -> [Float] {
+        var result = [Float]()
+        result.reserveCapacity(elementCount)
+        var cur = offset
+
+        for _ in 0..<numBlocks {
+            let scaleRaw = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: cur, as: UInt16.self) }
+            let scale = Float(Float16(bitPattern: scaleRaw.littleEndian))
+            cur += 2
+
+            let minRaw = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: cur, as: UInt16.self) }
+            let minVal = Float(Float16(bitPattern: minRaw.littleEndian))
+            cur += 2
+
+            for _ in 0..<16 {
+                guard cur < data.count else { break }
+                let byte = data[cur]
+                cur += 1
+                let low = Float(byte & 0x0F) * scale + minVal
+                let high = Float(byte >> 4) * scale + minVal
+                if result.count < elementCount { result.append(low) }
+                if result.count < elementCount { result.append(high) }
+            }
+        }
+        return result
+    }
+
+    private static func dequantizeQ8_0(data: Data, offset: Int, numBlocks: Int, elementCount: Int) -> [Float] {
+        var result = [Float]()
+        result.reserveCapacity(elementCount)
+        var cur = offset
+
+        for _ in 0..<numBlocks {
+            let scaleRaw = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: cur, as: UInt16.self) }
+            let scale = Float(Float16(bitPattern: scaleRaw.littleEndian))
+            cur += 2
+
+            for _ in 0..<32 {
+                guard cur < data.count else { break }
+                let val = Int8(bitPattern: data[cur])
+                cur += 1
+                if result.count < elementCount {
+                    result.append(Float(val) * scale)
+                }
+            }
+        }
+        return result
     }
 }
 #endif // os(macOS)

@@ -88,4 +88,33 @@ final class ChunkedDataFrameTests: XCTestCase {
         }
         XCTAssertEqual(assembled, content)
     }
+
+    func testChunkedDataFrameMapAndForEach() async throws {
+        let df = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "val", values: [10, 20, 30])
+        ])
+        let chunked = df.chunked(by: 1)
+
+        let mapped = chunked.mapChunk { chunk in
+            let col = (chunk[column: "val"] as? TypedColumn<Int64>)?.values.compactMap { v -> Int64? in
+                guard let v = v else { return nil }
+                return v * 2
+            } ?? []
+            return try DataFrame(columns: [TypedColumn<Int64>(name: "doubled", values: col)])
+        }
+        let collected = try await mapped.collect()
+        XCTAssertEqual(collected.rowCount, 3)
+        let doubledVals = (collected[column: "doubled"] as? TypedColumn<Int64>)?.values
+        XCTAssertEqual(doubledVals, [20, 40, 60])
+    }
+
+    func testDataFrameConcatMismatchedSchemaThrows() throws {
+        let emptyDF = try DataFrame.concat([])
+        XCTAssertEqual(emptyDF.rowCount, 0)
+
+        let df1 = try DataFrame(columns: [TypedColumn<Int64>(name: "a", values: [1])])
+        let df2 = try DataFrame(columns: [TypedColumn<String>(name: "b", values: ["x"])])
+
+        XCTAssertThrowsError(try DataFrame.concat([df1, df2]))
+    }
 }

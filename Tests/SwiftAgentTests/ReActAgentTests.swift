@@ -61,6 +61,38 @@ struct ReActAgentTests {
         """
         let parsed2 = await agent.parseResponse(response2)
         #expect(parsed2.thought == "Done thinking.")
+        #expect(parsed2.action == nil)
         #expect(parsed2.finalAnswer == "The result is 42.")
+    }
+
+    @Test("CustomAgentTool and tool error handling in ReActAgent")
+    func testCustomAgentToolAndErrors() async throws {
+        let customTool = CustomAgentTool(name: "WeatherTool", description: "Provides weather") { input in
+            return "Sunny in \(input)"
+        }
+
+        let agent = ReActAgent(tools: [customTool], maxSteps: 2)
+
+        let mockLLM: @Sendable (String) async throws -> String = { prompt in
+            if !prompt.contains("Previous History:") {
+                return """
+                Thought: Checking unknown tool first.
+                Action: UnknownTool
+                Action Input: test
+                """
+            } else {
+                return """
+                Thought: Fallback to weather.
+                Action: WeatherTool
+                Action Input: Kyiv
+                """
+            }
+        }
+
+        let (answer, trace) = try await agent.run(query: "Weather", llm: mockLLM)
+        #expect(trace.count == 2)
+        #expect(trace[0].observation?.contains("Tool 'UnknownTool' not recognized") == true)
+        #expect(trace[1].observation == "Sunny in Kyiv")
+        #expect(answer.contains("Sunny in Kyiv"))
     }
 }

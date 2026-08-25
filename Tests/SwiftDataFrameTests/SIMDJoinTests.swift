@@ -66,4 +66,67 @@ final class SIMDJoinTests: XCTestCase {
         XCTAssertEqual(joined.rowCount, 3)
         XCTAssertEqual(joined.columnNames, ["country", "pop_m", "capital"])
     }
+
+    func testSIMDRightJoinInt32() throws {
+        let left = try DataFrame(columns: [
+            TypedColumn<Int32>(name: "id", values: [1, 2]),
+            TypedColumn<String>(name: "value", values: ["A", "B"])
+        ])
+
+        let right = try DataFrame(columns: [
+            TypedColumn<Int32>(name: "id", values: [2, 3]),
+            TypedColumn<String>(name: "value", values: ["B2", "C2"])
+        ])
+
+        let joined = try left.joinSIMD(right, on: "id", how: .right)
+        XCTAssertEqual(joined.rowCount, 2)
+        XCTAssertEqual(joined.columnNames, ["id", "value_x", "value_y"])
+    }
+
+    func testSIMDJoinFloat32AndBool() throws {
+        let left = try DataFrame(columns: [
+            TypedColumn<Float>(name: "f_key", values: [1.0, 2.0]),
+            TypedColumn<Bool>(name: "b_key", values: [true, false])
+        ])
+
+        let right = try DataFrame(columns: [
+            TypedColumn<Float>(name: "f_key", values: [2.0, 3.0]),
+            TypedColumn<Bool>(name: "b_key", values: [false, true])
+        ])
+
+        let floatJoined = try left.joinSIMD(right, on: "f_key", how: .inner)
+        XCTAssertEqual(floatJoined.rowCount, 1)
+
+        let boolJoined = try left.joinSIMD(right, on: "b_key", how: .inner)
+        XCTAssertEqual(boolJoined.rowCount, 2)
+    }
+
+    func testSIMDJoinErrorHandlingAndEmpty() throws {
+        let df1 = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [1, 2])
+        ])
+        let df2 = try DataFrame(columns: [
+            TypedColumn<Double>(name: "id", values: [1.0, 2.0])
+        ])
+        let df3 = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "other_id", values: [1, 2])
+        ])
+
+        // Column not found
+        XCTAssertThrowsError(try df1.joinSIMD(df3, on: "id", how: .inner))
+        XCTAssertThrowsError(try df3.joinSIMD(df1, on: "id", how: .inner))
+
+        // Type mismatch
+        XCTAssertThrowsError(try df1.joinSIMD(df2, on: "id", how: .inner))
+
+        // Empty DataFrames
+        let emptyDF = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [])
+        ])
+        let innerEmpty = try emptyDF.joinSIMD(df1, on: "id", how: .inner)
+        XCTAssertEqual(innerEmpty.rowCount, 0)
+
+        let leftEmpty = try emptyDF.joinSIMD(df1, on: "id", how: .left)
+        XCTAssertEqual(leftEmpty.rowCount, 0)
+    }
 }

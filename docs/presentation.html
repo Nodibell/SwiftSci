@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 3.4.0 — Complete Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 3.5.0 — Complete Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -600,11 +600,115 @@
       font-size: 0.95rem;
       color: var(--text-sub);
     }
+
+    /* Copy Code Button */
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--text-sub);
+      font-size: 0.68rem;
+      font-family: var(--font-display);
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-left: auto;
+      margin-right: 0.6rem;
+    }
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: var(--text-main);
+    }
+    .copy-btn.copied {
+      background: rgba(52, 199, 89, 0.25);
+      border-color: rgba(52, 199, 89, 0.6);
+      color: var(--sf-green);
+    }
+
+    /* Speedup Animated Bars */
+    .speedup-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      width: 100%;
+      margin-top: 0.6rem;
+    }
+    .speedup-row {
+      display: grid;
+      grid-template-columns: 200px 1fr 90px;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.85rem;
+    }
+    .speedup-name {
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .speedup-track {
+      background: rgba(255, 255, 255, 0.08);
+      height: 18px;
+      border-radius: 99px;
+      overflow: hidden;
+      position: relative;
+    }
+    .speedup-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #007aff, #34c759);
+      transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .speedup-val {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--sf-green);
+      text-align: right;
+    }
+
+    /* Blackout Overlay */
+    .blackout-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--text-dim);
+    }
+    .blackout-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* Nav icon buttons */
+    .nav-icon-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-sub);
+      padding: 0.35rem 0.65rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .nav-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: var(--text-main);
+    }
   </style>
 </head>
 
 <body>
 
+  <div class="blackout-overlay" id="blackoutScreen"><span>Screen Paused (Press B or Space to resume)</span></div>
   <div class="ambient-glow" id="glow"></div>
 
   <!-- Top Module Quick-Jump Pill Slider Bar -->
@@ -625,7 +729,8 @@
     <div class="chip" onclick="showSlide(59)">Vision (59-60)</div>
     <div class="chip" onclick="showSlide(61)">Database (61-62)</div>
     <div class="chip" onclick="showSlide(63)">Agent (63-64)</div>
-    <div class="chip" onclick="showSlide(65)" style="color:var(--sf-green);">⚡ M4 Pro (65)</div>
+    <div class="chip" onclick="showSlide(65)" style="color:var(--sf-green);">⚡ Benchmarks (65)</div>
+    <div class="chip" onclick="showSlide(66)" style="color:var(--sf-purple);">🚀 v3.5.0 (66)</div>
   </div>
 
   <!-- Sub-Module Intra-Slide Sub-Slider Bar -->
@@ -643,8 +748,8 @@
 
     <div class="slide active" data-slide="1">
       <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.4.0 Ecosystem</h1>
-      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.4.0 release changes & Apple Silicon acceleration.</p>
+      <h1 class="title-large">SwiftSci 3.5.0 Ecosystem</h1>
+      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.5.0 multi-round statistical benchmarks, OneHotEncoder 5× speedup & Apple Silicon UMA acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
           <div class="stat-val">66</div>
@@ -3692,24 +3797,96 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     </div>
 
     <div class="slide" data-slide="65">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 65 OF 66</div>
-      <h1 class="title-large">Apple Silicon Release Benchmarks</h1>
-      <p class="subtitle">SwiftSci 3.0.1 release-build medians compared with established Python data-science baselines on Apple Silicon.</p>
-      <div class="grid-3" style="grid-template-columns: repeat(2, 1fr); max-width: 1000px;">
-        <div class="stat-box"><div class="stat-val">100.1×</div><div class="stat-lbl">ARIMA Fit · 2.27 ms vs 227.34 ms</div></div>
-        <div class="stat-box"><div class="stat-val">8.02×</div><div class="stat-lbl">LinearSVC GPU · 0.48 ms vs 3.85 ms</div></div>
-        <div class="stat-box"><div class="stat-val">1.72×</div><div class="stat-lbl">YOLOv8 Detect · 16.61 ms vs 28.50 ms</div></div>
-        <div class="stat-box"><div class="stat-val">1.36×</div><div class="stat-lbl">CSV Read · 14.75 ms vs 20.11 ms</div></div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.5.0 — SLIDE 65 OF 66</div>
+      <h1 class="title-large">Multi-Round Scientific Benchmarks</h1>
+      <p class="subtitle">Multi-round execution (3 rounds × 7 iters, 95% CI & RSS RAM profiling) vs Python (Scikit-Learn, Statsmodels, SciPy, NumPy, SHAP) on Apple Silicon.</p>
+      
+      <div class="grid-2" style="max-width: 1100px; margin-top: 1rem;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚡ Speedup Comparison (Swift vs Python)</span><span class="swiftui-pill" style="color:var(--sf-green);">95% CI Bounds</span></div>
+          <div class="speedup-grid">
+            <div class="speedup-row">
+              <span class="speedup-name">ARIMA(1,1,1) Forecast</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 100%;"></div></div>
+              <span class="speedup-val">86.3×</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">RandomForest (50 trees)</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 48%;"></div></div>
+              <span class="speedup-val">6.76×</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">OneHotEncoder (50k rows)</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 42%;"></div></div>
+              <span class="speedup-val">5.03×</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">GBDT Regressor (50 est)</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 36%;"></div></div>
+              <span class="speedup-val">4.03×</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">Welch's Two-Sample T-Test</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 34%;"></div></div>
+              <span class="speedup-val">3.93×</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">KernelSHAP (100 coal.)</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 26%;"></div></div>
+              <span class="speedup-val">2.40×</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">🧠 Resident Memory Footprint (RAM RSS)</span><span class="swiftui-pill" style="color:var(--sf-purple);">Mach Kernel RSS</span></div>
+          <div class="speedup-grid">
+            <div class="speedup-row">
+              <span class="speedup-name">OneHotEncoder (50k rows)</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 12%; background: linear-gradient(90deg, #af52de, #55bef0);"></div></div>
+              <span class="speedup-val" style="color:var(--sf-cyan);">13× Less</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">ROC-AUC (50k preds)</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 15%; background: linear-gradient(90deg, #af52de, #55bef0);"></div></div>
+              <span class="speedup-val" style="color:var(--sf-cyan);">17× Less</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">Forecast Errors Suite</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 14%; background: linear-gradient(90deg, #af52de, #55bef0);"></div></div>
+              <span class="speedup-val" style="color:var(--sf-cyan);">19× Less</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">Two-Sample T-Test</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 16%; background: linear-gradient(90deg, #af52de, #55bef0);"></div></div>
+              <span class="speedup-val" style="color:var(--sf-cyan);">6.1× Less</span>
+            </div>
+            <div class="speedup-row">
+              <span class="speedup-name">VADER Sentiment (1k)</span>
+              <div class="speedup-track"><div class="speedup-fill" style="width: 26%; background: linear-gradient(90deg, #af52de, #55bef0);"></div></div>
+              <span class="speedup-val" style="color:var(--sf-cyan);">3.8× Less</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="slide" data-slide="66">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.4.0 — SLIDE 66 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.4.0 — Release Evolution</h1>
-      <p class="subtitle">3.4.0 delivers out-of-core Chunked streaming, pure-Swift Parquet engine, SIMD hash joins, Quantized LLM Metal GPU inference, Paged KV-Cache, YOLOv8-Seg instance segmentation, CLIP projector, and ReAct autonomous agent.</p>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.5.0 — SLIDE 66 OF 66</div>
+      <h1 class="title-large">SwiftSci 3.5.0 — Release Evolution</h1>
+      <p class="subtitle">3.5.0 delivers scientific multi-round statistical benchmarks (95% CI & RSS RAM), 5.03× OneHotEncoder speedup over Scikit-Learn (13× RAM saving), sub-ms Forecast Error Metrics Suite, ROC-AUC, Welch's T-Test (3.93× vs SciPy), and VectorStore Cosine Index.</p>
       <div class="grid-2">
         <div class="card">
-          <div class="card-header"><span class="card-title">3.4.0 Parquet, Quantized LLM & ReAct Agent</span><span class="swiftui-pill" style="color:var(--sf-green);">3.4.0</span></div>
+          <div class="card-header"><span class="card-title">3.5.0 Statistical Benchmarks & Error Metrics</span><span class="swiftui-pill" style="color:var(--sf-green);">3.5.0</span></div>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">🔬</span><span><b>Multi-Round Benchmark Runner</b> (95% CI, 20% Trimmed Mean, RSS RAM MB)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">⚡</span><span><b>OneHotEncoder</b> (5.10 ms vs 25.68 ms Sklearn — <b>5.03× speedup</b>, 13× less RAM)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📊</span><span><b>Forecast Error Metrics Suite</b> (RMSE, MAE, MAPE, R² 100k in <b>0.84 ms</b>)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📈</span><span><b>ROC-AUC</b> (2.61 ms vs 4.76 ms) + <b>Two-Sample T-Test</b> (0.28 ms vs 1.12 ms)</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">3.4.0 Parquet, Quantized LLM & ReAct Agent</span><span class="swiftui-pill" style="color:var(--sf-blue);">3.4.0</span></div>
           <div class="feature-highlights">
             <div class="highlight-item"><span class="highlight-icon">📦</span><span>Pure-Swift <b>ParquetReader/Writer</b> + <b>ChunkedDataFrame</b> mmap streaming</span></div>
             <div class="highlight-item"><span class="highlight-icon">⚡</span><span><b>QuantizedLinear</b> (4-bit/8-bit GPU) + <b>JSONGrammarDecoder</b> + <b>PagedKVCache</b></span></div>
@@ -3717,20 +3894,12 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
             <div class="highlight-item"><span class="highlight-icon">🤖</span><span><b>ReActAgent</b> autonomous reasoning loop + <b>DataFrameAgentTool</b></span></div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">3.3.0 Core ML Pipelines & VectorStore</span><span class="swiftui-pill" style="color:var(--sf-blue);">3.3.0</span></div>
-          <div class="feature-highlights">
-            <div class="highlight-item"><span class="highlight-icon">🍏</span><span>Composite <b>PipelineClassifier & Regressor</b> Core ML export + <b>.mlpackage</b> bundles</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🧠</span><span>In-memory <b>VectorStore</b> with Accelerate Cosine/Dot/L2 similarity search</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🗄️</span><span><b>DataFrame.toSQL</b> bulk ingestion + TLS/SSL database encryption</span></div>
-          </div>
-        </div>
         <div class="card" style="grid-column: span 2;">
-          <div class="card-header"><span class="card-title">3.1.0 Binary Core ML & Protobuf Writer</span><span class="swiftui-pill" style="color:var(--sf-purple);">3.1.0</span></div>
+          <div class="card-header"><span class="card-title">🎯 Model Accuracy & Forecast Quality Scorecard</span><span class="swiftui-pill" style="color:var(--sf-green);">Verified Accuracy</span></div>
           <div class="feature-highlights" style="grid-template-columns: repeat(3, 1fr);">
-            <div class="highlight-item"><span class="highlight-icon">🍏</span><span>Native <b>.mlmodel</b> (Model.proto v4) serializer for Linear, Trees & Forests</span></div>
-            <div class="highlight-item"><span class="highlight-icon">📦</span><span>Shared zero-dependency <b>ProtobufWriter</b> wire encoder</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span><b>CoreMLExportable</b> protocol & 100% DocC documentation coverage</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📈</span><span><b>Holt-Winters & ARIMA</b>: RMSE 9.76 / 10.22, MAPE 6.11% / 5.87% (horizon=24)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🌲</span><span><b>GBDT & Random Forest</b>: Regressor R² <b>0.9879</b>, Classifier Accuracy <b>98.50%</b> (F1 0.986)</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📝</span><span><b>NaiveBayes & VADER</b>: Multi-class macro-F1 0.342, 7.5k-word sentiment polarity</span></div>
           </div>
         </div>
       </div>
@@ -3745,6 +3914,8 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       <span class="footer-pos" id="slideNum">1 / 66</span>
       <input type="range" id="slideSlider" min="1" max="66" value="1" style="width: min(350px, 40vw);">
     </div>
+    <button class="nav-icon-btn" id="blackoutBtn" title="Blackout / Pause Stage (B)">⏸</button>
+    <button class="nav-icon-btn" id="fullscreenBtn" title="Toggle Fullscreen (F)">⛶</button>
     <button class="nav-btn" id="nextBtn">Next →</button>
   </div>
 
@@ -3770,10 +3941,9 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       { name: "Vision", start: 59, end: 60 },
       { name: "Database", start: 61, end: 62 },
       { name: "Agent", start: 63, end: 64 },
-      { name: "M4 Pro", start: 65, end: 65 },
-      { name: "v3.4.0", start: 66, end: 66 }
+      { name: "Benchmarks", start: 65, end: 65 },
+      { name: "v3.5.0", start: 66, end: 66 }
     ];
-
 
     function showSlide(index) {
       if (index < 1) index = 1;
@@ -3842,9 +4012,93 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     document.getElementById('nextBtn').addEventListener('click', () => showSlide(currentSlide + 1));
     document.getElementById('slideSlider').addEventListener('input', (e) => showSlide(parseInt(e.target.value)));
 
+    // Blackout / Stage Pause
+    const blackoutEl = document.getElementById('blackoutScreen');
+    function toggleBlackout() {
+      blackoutEl.classList.toggle('active');
+    }
+    document.getElementById('blackoutBtn').addEventListener('click', toggleBlackout);
+    blackoutEl.addEventListener('click', toggleBlackout);
+
+    // Fullscreen Toggle
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+
+    // Presenter Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'Space') showSlide(currentSlide + 1);
-      if (e.key === 'ArrowLeft') showSlide(currentSlide - 1);
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'Enter' || e.key === 'PageDown') {
+        e.preventDefault();
+        showSlide(currentSlide + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'Backspace' || e.key === 'PageUp') {
+        e.preventDefault();
+        showSlide(currentSlide - 1);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        showSlide(1);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        showSlide(totalSlides);
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen?.();
+        }
+      } else if (e.key === 'b' || e.key === 'B' || e.key === '.') {
+        e.preventDefault();
+        toggleBlackout();
+      }
+    });
+
+    // Touch Swipe Gestures (iOS / iPad Safari)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      const deltaX = e.changedTouches[0].screenX - touchStartX;
+      const deltaY = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+        if (deltaX < 0) showSlide(currentSlide + 1);
+        else showSlide(currentSlide - 1);
+      }
+    }, { passive: true });
+
+    // Inject Copy Code Buttons onto all pre/code blocks
+    document.querySelectorAll('.card').forEach(card => {
+      const pre = card.querySelector('pre');
+      const header = card.querySelector('.card-header');
+      if (pre && header && !header.querySelector('.copy-btn')) {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const text = pre.innerText;
+          try {
+            await navigator.clipboard.writeText(text);
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy';
+              copyBtn.classList.remove('copied');
+            }, 2000);
+          } catch (err) {}
+        });
+        const dots = header.querySelector('.terminal-dots');
+        if (dots) header.insertBefore(copyBtn, dots);
+        else header.appendChild(copyBtn);
+      }
     });
 
     // Initial call to populate UI controls

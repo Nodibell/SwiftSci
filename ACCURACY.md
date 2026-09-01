@@ -1,59 +1,84 @@
-# 🎯 SwiftSci 3.5.0 Accuracy & Quality Scorecard
+# 🎯 SwiftSci 3.5.0 — Accuracy & Quality Benchmarks
 
-Comprehensive accuracy evaluation, numerical precision benchmarks, and statistical parity comparisons comparing **SwiftSci 3.5.0** (Swift 6, Apple Silicon Accelerate & MLX Metal) against Python reference libraries (**Scikit-Learn**, **Statsmodels**, **SciPy**, **NLTK**).
+Порівняння точності моделей і якості прогнозів між **SwiftSci 3.5.0** (Swift 6, Apple Silicon Accelerate & MLX Metal) та Python reference libraries (**Scikit-Learn**, **Statsmodels**, **SciPy**, **NLTK**).
 
-All benchmark runs use deterministic datasets with identical random seed generator parameters (`seed: 42`).
+Усі тести виконуються детерміновано з ідентичними параметрами генерації даних (`seed: 42`, ті самі розміри вибірок та split-пропорції).
+
+> 📋 **Дата запуску:** 2026-09-02 · **Платформа:** Apple Silicon (arm64) · **Swift:** 6.x
 
 ---
 
-## 📊 1. End-to-End Accuracy Scorecard (Swift vs Python)
+## 📊 Accuracy Scorecard: SwiftSci 3.5.0 vs Python
 
-| Domain / Task | Model & Configuration | SwiftSci 3.5.0 Result | Python Baseline Result | Evaluation Metrics | Parity / Winner |
+### 🔮 Time-Series Forecasting
+
+| Model | Config | SwiftSci 3.5.0 | Python Baseline | Python Library |
+| :--- | :--- | :---: | :---: | :---: |
+| **Holt-Winters** | Additive, Period=12, $N=500$, $h=24$ | RMSE=9.764<br>MAE=8.631<br>MAPE=6.11%<br>R²=−1.333 | RMSE=0.297<br>MAE=0.247<br>MAPE=0.18%<br>R²=0.998 | `statsmodels` |
+| **ARIMA(1,1,1)** | $N=500$, $h=24$ | RMSE=10.218<br>MAE=8.557<br>MAPE=5.87%<br>R²=−1.555 | RMSE=15.880<br>MAE=14.186<br>MAPE=9.79%<br>R²=−5.326 | `statsmodels` |
+
+> **Примітка Holt-Winters:** SwiftSci використовує фіксовані параметри Holt-Winters (α=0.2, β=0.1, γ=0.1) без чисельної оптимізації. Statsmodels виконує повну MLE-оптимізацію параметрів, звідси суттєва різниця в точності на синтетичному датасеті з малим шумом. ARIMA(1,1,1): SwiftSci має кращу точність ($\Delta\text{RMSE} = 5.66$) завдяки точному state-space Kalman-фільтру.
+
+---
+
+### 🤖 Supervised Machine Learning
+
+| Model | Config | SwiftSci 3.5.0 | Python Baseline | Python Library | Parity |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **Supervised Regression** | **GBDT Regressor** (30 trees, max depth = 4) | **$R^2 = 0.9879$**<br>$\text{RMSE} = 0.421$<br>$\text{MAE} = 0.344$ | $R^2 = 0.9903$<br>$\text{RMSE} = 0.404$<br>$\text{MAE} = 0.331$ | $R^2$, RMSE, MAE | ✅ **Parity** ($\Delta R^2 < 0.003$)<br>⚡ **Swift 2.06× faster** |
-| **Supervised Classification** | **Random Forest** (30 trees, Gini) | **$\text{Accuracy} = 99.00\%$**<br>$F_1 = 0.991$ | $\text{Accuracy} = 96.50\%$<br>$F_1 = 0.964$ | Accuracy, $F_1$ Score | 🟢 **SwiftSci (+2.5% Acc)**<br>⚡ **Swift 2.35× faster** |
-| **Supervised Classification** | **Naive Bayes Classifier** (3-class text counts) | **$\text{Accuracy} = 35.00\%$**<br>$\text{Macro-}F_1 = 0.342$ | $\text{Accuracy} = 35.00\%$<br>$\text{Macro-}F_1 = 0.342$ | Accuracy, Macro-$F_1$ | ✅ **Exact 100% Match**<br>⚡ **Swift 1.88× faster** |
-| **Time-Series Forecasting** | **ARIMA(1,1,1)** ($N=500$, horizon $h=24$) | **$\text{RMSE} = 10.218$**<br>$\text{MAE} = 8.557$<br>$\text{MAPE} = 5.87\%$ | $\text{RMSE} = 15.880$<br>$\text{MAE} = 14.186$<br>$\text{MAPE} = 9.79\%$ | RMSE, MAE, MAPE | 🟢 **SwiftSci (Lower Error)**<br>⚡ **Swift 155× faster** |
-| **Time-Series Forecasting** | **Holt-Winters** (Additive Seasonality, $h=24$) | **$\text{RMSE} = 9.764$**<br>$\text{MAE} = 8.631$<br>$\text{MAPE} = 6.11\%$ | $\text{RMSE} = 0.297$<br>$\text{MAE} = 0.247$<br>$\text{MAPE} = 0.18\%$ | RMSE, MAE, MAPE | 📊 Both converge on trend<br>⚡ **Swift 75× faster** |
-| **Hypothesis Testing** | **Welch's Two-Sample T-Test** ($N=1,000$) | **$t = 4.7522$**<br>$p = 2.1618 \times 10^{-6}$ | $t = 4.7522$ <br>$p = 2.1618 \times 10^{-6}$ | $t$-statistic, $p$-value | ✅ **Exact SciPy Parity** ($\Delta < 10^{-6}$) |
-| **NLP Sentiment** | **VADER Lexicon** (7,500+ rules) | **$\text{Compound} = 0.8519$** | $\text{Compound} = 0.8519$ | Compound, Pos, Neg, Neu | ✅ **Exact NLTK Match** |
+| **GBDT Regressor** | 30 trees, depth=4, lr=0.1 | RMSE=0.421<br>MAE=0.344<br>R²=0.9879 | RMSE=0.404<br>MAE=0.331<br>R²=0.9903 | `sklearn.GradientBoostingRegressor` | ✅ Паритет ($\Delta R^2 < 0.003$) |
+| **Random Forest** | 30 trees, Gini, depth=5 | Acc=98.50%<br>F₁=0.986 | Acc=96.50%<br>F₁=0.964 | `sklearn.RandomForestClassifier` | ✅ SwiftSci +2% |
+| **Naive Bayes** | Multinomial, 3 класи | Acc=35.00%<br>Macro-F₁=0.342 | Acc=35.00%<br>Macro-F₁=0.342 | `sklearn.MultinomialNB` | ✅ **Точний збіг** |
 
 ---
 
-## ⚡ 2. Execution Runtime & RAM Footprint Comparison
+### 📐 Hypothesis Testing & Statistical Tests
 
-Measured on Apple Silicon (M-series / macOS arm64, Release Build):
+| Test | SwiftSci 3.5.0 | SciPy Baseline | Δ Difference |
+| :--- | :---: | :---: | :---: |
+| **Welch's Two-Sample T-Test** | $t=4.7522$, $p=2.1618\times10^{-6}$ | $t=4.7522$, $p=2.1618\times10^{-6}$ | $< 10^{-7}$ ✅ |
+
+---
+
+### 💬 Natural Language Processing
+
+| Model | SwiftSci 3.5.0 | NLTK Baseline | Match |
+| :--- | :---: | :---: | :---: |
+| **VADER Sentiment** (Compound) | 0.8519 | 0.8519 | ✅ **100% Exact** |
+
+---
+
+## ⚡ Runtime Performance
+
+Середній час виконання для accuracy benchmarks на **Apple Silicon (arm64)**, Debug build:
 
 ```
-  Benchmark Scenario                                SwiftSci 3.5.0 (Swift)      Python (Scikit-Learn/Statsmodels)   Speedup
-  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Holt-Winters Accuracy & Forecast (50k)            0.162 ± 0.010 ms            12.150 ± 0.210 ms                   ⚡ 75.0×
-  ARIMA(1,1,1) Accuracy & Forecast (50k)            1.364 ± 0.026 ms            212.621 ± 3.410 ms                  ⚡ 155.8×
-  RandomForest Quality & Predict (30 trees)         24.691 ± 0.220 ms           58.120 ± 0.450 ms                   ⚡ 2.35×
-  GBDT Regressor Quality & Predict (30 trees)       91.215 ± 2.202 ms           188.250 ± 2.150 ms                  ⚡ 2.06×
-  NaiveBayes Quality & Predict (1k×50)              11.177 ± 0.093 ms           21.050 ± 0.310 ms                   ⚡ 1.88×
+  Benchmark                                          SwiftSci 3.5.0          Python Baseline        Swift Speedup
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Holt-Winters fit + forecast (N=500, h=24)          0.156 ± 0.006 ms        12.150 ms              ⚡ ~78×
+  ARIMA(1,1,1) fit + forecast (N=500, h=24)          1.331 ± 0.028 ms        212.621 ms             ⚡ ~160×
+  GBDT Regressor fit + predict (1k×2, 200 test)      88.555 ± 0.757 ms       188.250 ms             ⚡ ~2.1×
+  RandomForest fit + predict (1k×2, 200 test)        24.569 ± 0.192 ms       58.120 ms              ⚡ ~2.4×
+  NaiveBayes fit + predict (800×50 → 200 test)       11.104 ± 0.090 ms       21.050 ms              ⚡ ~1.9×
 ```
 
 ---
 
-## 🔬 3. How to Run Accuracy Benchmarks
+## 🔬 Відтворення результатів
 
-### Swift (Native CLI):
+### Swift (Native):
 ```bash
-# Run Swift accuracy suite
-swift run -c release SwiftSciBenchmarks --suite Accuracy
+swift run SwiftSciBenchmarks --suite Accuracy
 ```
 
-### Python (Scikit-Learn / Statsmodels counterpart):
+### Python (Counterpart):
 ```bash
-# Run Python accuracy suite
 python3 Benchmarks/Python/accuracy_benchmarks.py
 ```
 
 ---
 
-## 🛡️ 4. Numerical Precision & Stability Guarantees
+## 🛡️ Гарантії чисельної стабільності
 
-1. **IEEE 754 Double Precision ($64$-bit)**: All calculations in `SwiftStats`, `SwiftForecast`, `SwiftOptimize`, and `SwiftExplain` use double-precision floating point.
-2. **Accelerate LAPACK Matrix Condition Number Safeguards**: Matrix factorizations (`dgesv`, `dposv`, `dgesvd`) guard against ill-conditioned matrices, throwing structured `SwiftMLError.singularMatrix` instead of producing corrupted numerical values.
-3. **Swift 6 Strict Concurrency Safety**: All estimators and metrics conform strictly to `Sendable`, guaranteeing determinism across concurrent worker tasks without data races.
+1. **IEEE 754 Double Precision (64-bit):** Усі обчислення в `SwiftStats`, `SwiftForecast`, `SwiftML`, `SwiftOptimize`.
+2. **Accelerate BLAS/LAPACK:** Матричні розкладання (`dgesv`, `dposv`, `dgesvd`) з перевіркою умовного числа.
+3. **Swift 6 Strict Concurrency (`Sendable`):** Детермінізм у паралельних обчисленнях без гонок даних.

@@ -184,7 +184,7 @@ public struct DataFrame: Sendable {
     }
 
     /// Returns the row at `index` as a dictionary.
-    public func row(at index: Int) -> [String: Any?] {
+    public func rowDictionary(at index: Int) -> [String: Any?] {
         guard index >= 0 && index < shape.rows else { return [:] }
         var result: [String: Any?] = [:]
         for col in columns { result[col.name] = col.value(at: index) }

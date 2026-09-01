@@ -20,7 +20,7 @@ struct DataFrameBenchmarks: BenchmarkSuite {
         var lines: [String] = ["id,category,value_a,value_b,flag"]
 
         let categories = ["alpha", "beta", "gamma", "delta"]
-        var rng = LCG(seed: 42)
+        var rng = BenchmarkLCG(seed: 42)
 
         for i in 0..<rows {
             let cat = categories[Int(rng.next() % 4)]
@@ -181,7 +181,7 @@ struct DataFrameBenchmarks: BenchmarkSuite {
             module: module
         ) {
 
-            _ = try? df.filter(
+            _ = try df.filter(
                 column: "value_a",
                 where: .greaterThan(50.0)
             )
@@ -216,7 +216,7 @@ struct DataFrameBenchmarks: BenchmarkSuite {
             module: module
         ) {
 
-            _ = try? df.sortBy(
+            _ = try df.sortBy(
                 "value_a",
                 ascending: true
             )
@@ -231,7 +231,7 @@ struct DataFrameBenchmarks: BenchmarkSuite {
             name: "toFlatFeatureMatrix (100k rows)",
             module: module
         ) {
-            _ = try? df.toFlatFeatureMatrix(["value_a", "value_b"])
+            _ = try df.toFlatFeatureMatrix(["value_a", "value_b"])
         }
         results.append(flatResult)
 
@@ -254,25 +254,5 @@ struct DataFrameBenchmarks: BenchmarkSuite {
         try? FileManager.default.removeItem(at: csvURL)
 
         return results
-    }
-}
-
-// MARK: - Deterministic RNG
-
-private struct LCG {
-
-    private var state: UInt64
-
-    init(seed: UInt64) {
-        state = seed
-    }
-
-    mutating func next() -> UInt64 {
-
-        state = state
-            &* 6_364_136_223_846_793_005
-            &+ 1_442_695_040_888_963_407
-
-        return state
     }
 }

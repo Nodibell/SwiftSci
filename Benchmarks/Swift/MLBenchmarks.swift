@@ -16,7 +16,7 @@ struct MLBenchmarks: BenchmarkSuite {
     // MARK: – Data generators
 
     private static func makeRegression(rows: Int, cols: Int, seed: UInt64 = 42) -> ([[Double]], [Double]) {
-        var rng = LCGML(seed: seed)
+        var rng = BenchmarkLCG(seed: seed)
         let weights = (0..<cols).map { Double($0 + 1) }   // w_i = i+1
         let X = (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 1000) / 100.0 - 5.0 } }
         let y = X.map { row in zip(row, weights).map(*).reduce(0, +) + 1.0 }
@@ -24,14 +24,14 @@ struct MLBenchmarks: BenchmarkSuite {
     }
 
     private static func makeClassification(rows: Int, cols: Int = 4, seed: UInt64 = 42) -> ([[Double]], [Double]) {
-        var rng = LCGML(seed: seed)
+        var rng = BenchmarkLCG(seed: seed)
         let X = (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 1000) / 100.0 - 5.0 } }
         let y = X.map { row in row[0] > 0 && row[1] > 0 ? 0.0 : 1.0 }
         return (X, y)
     }
 
     private static func makeCluster(rows: Int, cols: Int = 4, seed: UInt64 = 42) -> [[Double]] {
-        var rng = LCGML(seed: seed)
+        var rng = BenchmarkLCG(seed: seed)
         return (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 2000) / 100.0 - 10.0 } }
     }
 
@@ -130,15 +130,26 @@ struct MLBenchmarks: BenchmarkSuite {
         }
         results.append(svcResult)
 
-        return results
-    }
-}
+        // ── 8. VectorStore Similarity Search (5k vectors × 128 dim) ───────
+        let store = VectorStore(metric: .cosineSimilarity)
+        var vRng = BenchmarkLCG(seed: 777)
+        let dim = 128
+        let entries = (0..<5_000).map { i in
+            VectorEntry(id: "doc_\(i)", vector: (0..<dim).map { _ in vRng.nextDouble(in: -1.0...1.0) })
+        }
+        store.addBatch(entries: entries)
+        let queryVec = (0..<dim).map { _ in vRng.nextDouble(in: -1.0...1.0) }
 
-private struct LCGML {
-    private var state: UInt64
-    init(seed: UInt64) { state = seed }
-    mutating func next() -> UInt64 {
-        state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
-        return state
+        let vstoreResult = await BenchmarkRunner.run(
+            name: "VectorStore Cosine Search (5k × 128d, top 10)",
+            module: "SwiftCluster",
+            warmup: 2,
+            iterations: 10
+        ) {
+            _ = store.search(query: queryVec, topK: 10)
+        }
+        results.append(vstoreResult)
+
+        return results
     }
 }

@@ -110,6 +110,7 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
 
         let cols = mean.count
         var transformed = [[Double]](repeating: [Double](repeating: 0.0, count: cols), count: data.count)
+        let negMean = mean.map { -$0 }
 
         for (r, row) in data.enumerated() {
             guard row.count == cols else {
@@ -117,7 +118,6 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
             }
             // vDSP: (row - mean) / std  element-wise
             var shifted = [Double](repeating: 0.0, count: cols)
-            var negMean = mean.map { -$0 }
             vDSP_vaddD(row, 1, negMean, 1, &shifted, 1, vDSP_Length(cols))
             vDSP_vdivD(std, 1, shifted, 1, &transformed[r], 1, vDSP_Length(cols))
         }

@@ -105,6 +105,7 @@ public struct MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
 
         var transformed = [[Double]](repeating: [Double](repeating: range.min, count: cols),
                                      count: data.count)
+        let negMin = dataMin.map { -$0 }
 
         for (r, row) in data.enumerated() {
             guard row.count == cols else {
@@ -112,7 +113,6 @@ public struct MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
             }
             // shifted = row - dataMin
             var shifted = [Double](repeating: 0.0, count: cols)
-            var negMin  = dataMin.map { -$0 }
             vDSP_vaddD(row, 1, negMin, 1, &shifted, 1, vDSP_Length(cols))
 
             // scaled = shifted * scales

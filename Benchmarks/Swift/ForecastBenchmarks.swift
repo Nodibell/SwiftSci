@@ -14,7 +14,7 @@ struct ForecastBenchmarks: BenchmarkSuite {
 
     /// Seasonal series: trend + sine seasonality + small noise.
     private static func makeSeasonal(n: Int, period: Int = 12, seed: UInt64 = 42) -> [Double] {
-        var rng = LCGFC(seed: seed)
+        var rng = BenchmarkLCG(seed: seed)
         return (0..<n).map { t in
             let trend    = Double(t) * 0.3
             let seasonal = 5.0 * sin(Double(t) * 2.0 * .pi / Double(period))
@@ -25,7 +25,7 @@ struct ForecastBenchmarks: BenchmarkSuite {
 
     /// Random walk for ARIMA.
     private static func makeRandomWalk(n: Int, seed: UInt64 = 42) -> [Double] {
-        var rng = LCGFC(seed: seed)
+        var rng = BenchmarkLCG(seed: seed)
         var series = [0.0]
         for _ in 1..<n {
             let step = Double(rng.next() % 200) / 100.0 - 1.0
@@ -111,14 +111,5 @@ struct ForecastBenchmarks: BenchmarkSuite {
         results.append(decompResult)
 
         return results
-    }
-}
-
-private struct LCGFC {
-    private var state: UInt64
-    init(seed: UInt64) { state = seed }
-    mutating func next() -> UInt64 {
-        state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
-        return state
     }
 }

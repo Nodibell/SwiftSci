@@ -17,6 +17,9 @@ struct BenchmarkArgs {
     var jsonOutputPath: String? = nil
     var filter: String? = nil      // optional: run only benchmarks whose name contains this string
     var suite: String? = nil       // optional: run only suites whose module contains this string
+    var rounds: Int? = nil         // optional: number of measurement rounds
+    var iterations: Int? = nil     // optional: iterations per round
+    var warmup: Int? = nil         // optional: warmup iterations
     var isPresentation: Bool = false
 
     static func parse() -> BenchmarkArgs {
@@ -31,6 +34,18 @@ struct BenchmarkArgs {
                 args.filter = iter.next()
             case "--suite":
                 args.suite = iter.next()
+            case "--rounds":
+                if let val = iter.next(), let n = Int(val), n > 0 {
+                    args.rounds = n
+                }
+            case "--iterations":
+                if let val = iter.next(), let n = Int(val), n > 0 {
+                    args.iterations = n
+                }
+            case "--warmup":
+                if let val = iter.next(), let n = Int(val), n >= 0 {
+                    args.warmup = n
+                }
             case "--presentation":
                 args.isPresentation = true
             default:
@@ -48,6 +63,10 @@ struct BenchmarkEntryPoint {
     static func main() async {
         let args = BenchmarkArgs.parse()
 
+        if let r = args.rounds { BenchmarkConfig.defaultRounds = r }
+        if let it = args.iterations { BenchmarkConfig.defaultIterations = it }
+        if let w = args.warmup { BenchmarkConfig.defaultWarmup = w }
+
         if args.isPresentation {
             do {
                 try await PresentationCodeRunner.runAll()
@@ -60,14 +79,14 @@ struct BenchmarkEntryPoint {
         print("╔════════════════════════════════════════════════════╗")
         print("║        SwiftSci Benchmark Suite — v3.5.0           ║")
         print("╚════════════════════════════════════════════════════╝")
-        print("Platform : \(platformString())")
-        print("Swift    : \(swiftVersion())")
-        print("Config   : Release")
+        print("Platform   : \(platformString())")
+        print("Swift      : \(swiftVersion())")
+        print("Config     : Release (\(BenchmarkConfig.defaultRounds) rounds × \(BenchmarkConfig.defaultIterations) iters, warmup=\(BenchmarkConfig.defaultWarmup))")
         if let filter = args.filter {
-            print("Filter   : \"\(filter)\"")
+            print("Filter     : \"\(filter)\"")
         }
         if let suite = args.suite {
-            print("Suite    : \"\(suite)\"")
+            print("Suite      : \"\(suite)\"")
         }
         print("")
 
@@ -81,6 +100,7 @@ struct BenchmarkEntryPoint {
             VisionBenchmarks(),
             ExplainBenchmarks(),
             ExtensionBenchmarks(),
+            AccuracyBenchmarks(),
         ]
 
         var allResults: [BenchmarkResult] = []

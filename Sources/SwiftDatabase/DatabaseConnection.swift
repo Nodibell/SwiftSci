@@ -1,7 +1,9 @@
 import Foundation
 import SQLite3
 import SwiftDataFrame
-#if canImport(CommonCrypto)
+#if canImport(CryptoKit)
+import CryptoKit
+#elseif canImport(CommonCrypto)
 import CommonCrypto
 #endif
 
@@ -458,12 +460,19 @@ public actor PostgreSQLConnection: DatabaseConnection {
     /// `"md5" + md5( md5(password + user) + salt )`
     private func pgMD5Password(password: String, user: String, salt: [UInt8]) -> String {
         func md5Hex(_ input: [UInt8]) -> String {
+            #if canImport(CryptoKit)
+            let digest = Insecure.MD5.hash(data: Data(input))
+            return digest.map { String(format: "%02x", $0) }.joined()
+            #elseif canImport(CommonCrypto)
             var digest = [UInt8](repeating: 0, count: 16)
             var ctx = CC_MD5_CTX()
             CC_MD5_Init(&ctx)
-            input.withUnsafeBytes { CC_MD5_Update(&ctx, $0.baseAddress, CC_LONG($0.count)) }
+            _ = input.withUnsafeBytes { CC_MD5_Update(&ctx, $0.baseAddress, CC_LONG($0.count)) }
             CC_MD5_Final(&digest, &ctx)
             return digest.map { String(format: "%02x", $0) }.joined()
+            #else
+            return ""
+            #endif
         }
         let inner = md5Hex(Array((password + user).utf8))
         let outer = md5Hex(Array(inner.utf8) + salt)

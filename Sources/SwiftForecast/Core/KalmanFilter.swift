@@ -10,7 +10,10 @@ import Accelerate
 
 /// Linear Kalman Filter state estimation actor for 1D/multivariate tracking.
 public actor KalmanFilter {
+    /// The dimension of the state vector.
     public let stateSize: Int
+
+    /// The dimension of the measurement observation vector.
     public let observationSize: Int
 
     // Row-major flat matrix buffers

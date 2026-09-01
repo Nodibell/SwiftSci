@@ -110,7 +110,7 @@ public struct RobustScaler: PreprocessingTransformer, @unchecked Sendable {
                                      count: data.count)
 
         // Prepare subtracted center buffer (negated median for vDSP add)
-        var negCenter = center.map { -$0 }
+        let negCenter = center.map { -$0 }
 
         for (r, row) in data.enumerated() {
             guard row.count == cols else {

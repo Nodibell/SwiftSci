@@ -251,6 +251,50 @@ struct DataFrameBenchmarks: BenchmarkSuite {
         }
         results.append(rowIterResult)
 
+        // -----------------------------------------------------------------
+        // 10. SIMD Hash Join (100k rows)
+        // -----------------------------------------------------------------
+        let rightIds = TypedColumn<Int64>(name: "id", values: (0..<100_000).map { Int64($0) })
+        let rightWeights = TypedColumn<Double>(name: "weight", values: (0..<100_000).map { Double($0) * 0.05 })
+        if let rightDF = try? DataFrame(columns: [rightIds, rightWeights]) {
+            let joinResult = await BenchmarkRunner.run(
+                name: "DataFrame SIMD Hash Join (100k rows)",
+                module: module
+            ) {
+                _ = try df.joinSIMD(rightDF, on: "id", how: .inner)
+            }
+            results.append(joinResult)
+        }
+
+        // -----------------------------------------------------------------
+        // 11. Parquet Write & Read (100k rows)
+        // -----------------------------------------------------------------
+        let parquetURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("swiftsci_bench_\(UUID().uuidString).parquet")
+
+        let parquetWriteResult = await BenchmarkRunner.run(
+            name: "Parquet Write Snappy (100k rows)",
+            module: module,
+            rounds: 1,
+            warmup: 1,
+            iterations: 2
+        ) {
+            try await ParquetWriter.write(dataFrame: df, to: parquetURL)
+        }
+        results.append(parquetWriteResult)
+
+        let parquetReadResult = await BenchmarkRunner.run(
+            name: "Parquet Read Snappy (100k rows)",
+            module: module,
+            rounds: 1,
+            warmup: 1,
+            iterations: 2
+        ) {
+            _ = try await ParquetReader.read(url: parquetURL)
+        }
+        results.append(parquetReadResult)
+
+        try? FileManager.default.removeItem(at: parquetURL)
         try? FileManager.default.removeItem(at: csvURL)
 
         return results

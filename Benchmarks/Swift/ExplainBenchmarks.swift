@@ -15,13 +15,14 @@ struct ExplainBenchmarks: BenchmarkSuite {
         let numBackground = 20
         let numCoalitions = 100
 
+        var rng = BenchmarkLCG(seed: 42)
         // Background dataset: 20 samples of 5 features
         let background = (0..<numBackground).map { _ in
-            (0..<M).map { _ in Double.random(in: -2.0...2.0) }
+            (0..<M).map { _ in rng.nextDouble(in: -2.0...2.0) }
         }
 
         // Target instance to explain
-        let instance = (0..<M).map { _ in Double.random(in: -2.0...2.0) }
+        let instance = (0..<M).map { _ in rng.nextDouble(in: -2.0...2.0) }
 
         // Simple linear model: sum of features
         let model: @Sendable ([Double]) -> Double = { x in

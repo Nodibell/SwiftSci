@@ -335,6 +335,16 @@ public struct DataFrame: Sendable {
         return applyMask(mask)
     }
 
+    /// Returns a zero-allocation lightweight row view at the specified index.
+    public func row(at index: Int) -> DataFrameRow {
+        DataFrameRow(columnNames: columnNames, index: index, columnMap: _columns)
+    }
+
+    /// Returns a zero-allocation lazy sequence over the DataFrame's rows.
+    public var rows: DataFrameRowSequence {
+        DataFrameRowSequence(count: shape.rows, columnNames: columnNames, columnMap: _columns)
+    }
+
     /// Filters rows by a condition on a single column.
     public func filter(column name: String, where condition: FilterCondition) throws -> DataFrame {
         guard let col = _columns[name] else {

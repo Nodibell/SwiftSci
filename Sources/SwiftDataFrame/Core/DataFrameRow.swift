@@ -49,3 +49,43 @@ public struct DataFrameRow: @unchecked Sendable {
         return col.value(at: index) == nil
     }
 }
+
+/// A zero-allocation lazy sequence for iterating over DataFrame rows.
+public struct DataFrameRowSequence: Sequence, @unchecked Sendable {
+    /// Number of rows in the sequence.
+    public let count: Int
+    private let columnNames: [String]
+    private let columnMap: [String: any AnyColumn]
+
+    init(count: Int, columnNames: [String], columnMap: [String: any AnyColumn]) {
+        self.count = count
+        self.columnNames = columnNames
+        self.columnMap = columnMap
+    }
+
+    /// Creates an iterator for row iteration.
+    public func makeIterator() -> Iterator {
+        Iterator(count: count, row: DataFrameRow(columnNames: columnNames, index: 0, columnMap: columnMap))
+    }
+
+    /// Iterator over DataFrame rows reusing an internal row view.
+    public struct Iterator: IteratorProtocol {
+        private let count: Int
+        private var row: DataFrameRow
+        private var currentIndex: Int = 0
+
+        init(count: Int, row: DataFrameRow) {
+            self.count = count
+            self.row = row
+        }
+
+        /// Advances to the next row.
+        public mutating func next() -> DataFrameRow? {
+            guard currentIndex < count else { return nil }
+            row.index = currentIndex
+            currentIndex += 1
+            return row
+        }
+    }
+}
+

@@ -124,4 +124,24 @@ struct KernelSHAPTests {
         #expect(values.count == 5)
         #expect(values.last! > values.first!)
     }
+
+    @Test("LIMEExplainer recovers linear feature coefficients locally")
+    func testLIMEExplainer() async throws {
+        // Linear local model: f(x) = 5.0 * x[0] - 2.0 * x[1] + 3.0
+        let model: @Sendable ([Double]) async -> Double = { x in
+            guard x.count >= 2 else { return 0.0 }
+            return 5.0 * x[0] - 2.0 * x[1] + 3.0
+        }
+        
+        let instance = [2.0, 1.0]
+        let explainer = LIMEExplainer(kernelWidth: 1.0, regularization: 0.01)
+        let explanation = await explainer.explain(model: model, instance: instance, numSamples: 300)
+        
+        #expect(explanation.featureWeights.count == 2)
+        #expect(abs(explanation.featureWeights[0] - 5.0) < 0.25)
+        #expect(abs(explanation.featureWeights[1] - (-2.0)) < 0.25)
+        #expect(explanation.localR2 > 0.95)
+        #expect(abs(explanation.prediction - 11.0) < 1e-4)
+    }
 }
+

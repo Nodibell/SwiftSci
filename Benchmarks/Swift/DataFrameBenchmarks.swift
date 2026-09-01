@@ -224,6 +224,33 @@ struct DataFrameBenchmarks: BenchmarkSuite {
 
         results.append(sortResult)
 
+        // -----------------------------------------------------------------
+        // 8. toFlatFeatureMatrix (100k rows x 2 cols)
+        // -----------------------------------------------------------------
+        let flatResult = await BenchmarkRunner.run(
+            name: "toFlatFeatureMatrix (100k rows)",
+            module: module
+        ) {
+            _ = try? df.toFlatFeatureMatrix(["value_a", "value_b"])
+        }
+        results.append(flatResult)
+
+        // -----------------------------------------------------------------
+        // 9. Zero-Allocation Row Iteration (100k rows)
+        // -----------------------------------------------------------------
+        let rowIterResult = await BenchmarkRunner.run(
+            name: "Zero-Allocation df.rows iteration (100k)",
+            module: module
+        ) {
+            var sum = 0.0
+            for row in df.rows {
+                if let v = row.double("value_a") {
+                    sum += v
+                }
+            }
+        }
+        results.append(rowIterResult)
+
         try? FileManager.default.removeItem(at: csvURL)
 
         return results

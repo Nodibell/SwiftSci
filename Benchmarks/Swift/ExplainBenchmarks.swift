@@ -44,6 +44,22 @@ struct ExplainBenchmarks: BenchmarkSuite {
         }
         results.append(shapResult)
 
+        // ── 2. LIME Explainer (5 features, 300 perturbed samples) ────────
+        let limeResult = await BenchmarkRunner.run(
+            name: "LIME Explain (5 feats, 300 samples)",
+            module: module,
+            warmup: 2,
+            iterations: 5
+        ) {
+            let lime = LIMEExplainer(kernelWidth: 0.75, regularization: 0.01)
+            _ = await lime.explain(
+                model: model,
+                instance: instance,
+                numSamples: 300
+            )
+        }
+        results.append(limeResult)
+
         return results
     }
 }

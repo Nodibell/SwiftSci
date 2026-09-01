@@ -320,6 +320,19 @@ public actor PostgreSQLConnection: DatabaseConnection {
                 allData.append(contentsOf: chunk.prefix(n))
                 // 'Z' = ReadyForQuery — signals end of server response
                 if chunk.prefix(n).contains(0x5A) { break }
+                // 'E' = ErrorResponse — break once complete error packet is received
+                if allData.first == 0x45 && allData.count >= 5 {
+                    let packetLen = Int(allData[1]) << 24 | Int(allData[2]) << 16 | Int(allData[3]) << 8 | Int(allData[4])
+                    if allData.count >= packetLen + 1 { break }
+                }
+                // 'R' = AuthenticationRequest — break if challenge requires client action (authType != 0)
+                if allData.first == 0x52 && allData.count >= 9 {
+                    let authType = Int(allData[5]) << 24 | Int(allData[6]) << 16 | Int(allData[7]) << 8 | Int(allData[8])
+                    if authType != 0 {
+                        let packetLen = Int(allData[1]) << 24 | Int(allData[2]) << 16 | Int(allData[3]) << 8 | Int(allData[4])
+                        if allData.count >= packetLen + 1 { break }
+                    }
+                }
             }
             return allData
         }

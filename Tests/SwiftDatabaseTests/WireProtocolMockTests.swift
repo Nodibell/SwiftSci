@@ -7,7 +7,7 @@ import SwiftDataFrame
 struct WireProtocolMockTests {
 
     /// Helper to start a local TCP mock server on an ephemeral port.
-    private static func createMockServer(handler: @escaping (Int32) -> Void) -> (port: Int, stop: () -> Void) {
+    private static func createMockServer(handler: @escaping @Sendable (Int32) -> Void) -> (port: Int, stop: () -> Void) {
         let serverFd = socket(AF_INET, SOCK_STREAM, 0)
         var opt: Int32 = 1
         setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, socklen_t(MemoryLayout<Int32>.size))
@@ -22,7 +22,7 @@ struct WireProtocolMockTests {
                 _ = bind(serverFd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
             }
         }
-        listen(serverFd, 1)
+        listen(serverFd, 5)
 
         var assignedAddr = sockaddr_in()
         var len = socklen_t(MemoryLayout<sockaddr_in>.size)
@@ -33,9 +33,10 @@ struct WireProtocolMockTests {
         }
         let port = Int(UInt16(bigEndian: assignedAddr.sin_port))
 
-        let isRunning = ManagedAtomicBool(true)
+        let serverReady = DispatchSemaphore(value: 0)
 
-        DispatchQueue.global().async {
+        DispatchQueue.global(qos: .userInitiated).async {
+            serverReady.signal()
             var clientAddr = sockaddr_in()
             var clientLen = socklen_t(MemoryLayout<sockaddr_in>.size)
             let clientFd = withUnsafeMutablePointer(to: &clientAddr) {
@@ -44,22 +45,29 @@ struct WireProtocolMockTests {
                 }
             }
             if clientFd >= 0 {
+                var tv = timeval(tv_sec: 5, tv_usec: 0)
+                setsockopt(clientFd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+                setsockopt(clientFd, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+
                 handler(clientFd)
+
+                // Gracefully wait for client to read and finish
+                shutdown(clientFd, SHUT_WR)
+                var discard = [UInt8](repeating: 0, count: 256)
+                while recv(clientFd, &discard, discard.count, 0) > 0 {}
                 close(clientFd)
             }
         }
 
-        let stop = {
-            isRunning.value = false
-            close(serverFd)
+        serverReady.wait()
+        // Brief yield to ensure OS kernel has accept thread scheduled
+        Thread.sleep(forTimeInterval: 0.01)
+
+        let stop: () -> Void = {
+            _ = close(serverFd)
         }
 
         return (port, stop)
-    }
-
-    private final class ManagedAtomicBool: @unchecked Sendable {
-        var value: Bool
-        init(_ val: Bool) { self.value = val }
     }
 
     @Test("PostgreSQL trust auth and query response wire decoding")
@@ -68,10 +76,12 @@ struct WireProtocolMockTests {
             var buf = [UInt8](repeating: 0, count: 4096)
             _ = recv(clientFd, &buf, buf.count, 0)
 
+            // AuthOK (type 0) + ReadyForQuery ('Z')
             var authOk = Data([0x52, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00])
             authOk.append(contentsOf: [0x5A, 0x00, 0x00, 0x00, 0x05, 0x49])
             _ = authOk.withUnsafeBytes { send(clientFd, $0.baseAddress, authOk.count, 0) }
 
+            // Read query packet 'Q'
             _ = recv(clientFd, &buf, buf.count, 0)
 
             var resp = Data()
@@ -117,7 +127,7 @@ struct WireProtocolMockTests {
             _ = recv(clientFd, &buf, buf.count, 0)
 
             // Send MD5 challenge: 'R', len(12), type(5), 4-byte salt [1, 2, 3, 4]
-            var md5Req = Data([0x52, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x05, 0x01, 0x02, 0x03, 0x04])
+            let md5Req = Data([0x52, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x05, 0x01, 0x02, 0x03, 0x04])
             _ = md5Req.withUnsafeBytes { send(clientFd, $0.baseAddress, md5Req.count, 0) }
 
             // Read password response 'p'
@@ -131,7 +141,7 @@ struct WireProtocolMockTests {
             // Read Query
             _ = recv(clientFd, &buf, buf.count, 0)
 
-            // Send ReadyForQuery
+            // Send ReadyForQuery for the query
             let rfq = Data([0x5A, 0x00, 0x00, 0x00, 0x05, 0x49])
             _ = rfq.withUnsafeBytes { send(clientFd, $0.baseAddress, rfq.count, 0) }
         }
@@ -305,7 +315,7 @@ struct WireProtocolMockTests {
             _ = recv(clientFd, &buf, buf.count, 0)
 
             // 5. Send OK packet for DDL query (first byte 0x00)
-            var ddlOkPacket = Data([7, 0, 0, 1, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00])
+            let ddlOkPacket = Data([7, 0, 0, 1, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00])
             _ = ddlOkPacket.withUnsafeBytes { send(clientFd, $0.baseAddress, ddlOkPacket.count, 0) }
         }
         defer { stop() }

@@ -1,69 +1,98 @@
-# Text Feature Vectorization, Embeddings & Naive Bayes Classification
+# Text Feature Vectorization, Sparse TF-IDF & Local Embeddings
 
-Convert text corpora into numerical feature matrices using `CountVectorizer`, `HashingVectorizer`, and `TFIDFVectorizer`, query `WordEmbeddings` and `AppleNLEmbedding`, and train Naive Bayes classifiers with `TextPipeline`.
+Convert text corpora into numerical and sparse feature matrices using `TFIDFVectorizer`, `CountVectorizer`, `HashingVectorizer`, `SparseVector`, and `LocalEmbeddingEngine`.
 
 ## Overview
 
-Extract term frequency and inverse document frequency matrices for downstream classification and clustering.
+Natural language processing begins with translating text tokens into numerical vectors. `SwiftNLP` provides dense and sparse vectorization pipelines with min/max document frequency filtering, sublinear TF scaling, custom stop-words, and hardware-accelerated cosine similarities via Apple Accelerate `vDSP`.
 
-### 1. TF-IDF Vectorizer & Naive Bayes Classification
+---
+
+## 1. Memory-Efficient Sparse TF-IDF Vectorization
+
+When processing large text corpora with vocabularies of $100,000+$ words, dense matrices waste gigabytes of RAM storing zeros. `SparseVector` stores only non-zero index-value pairs:
+
+```swift
+import Foundation
+import SwiftNLP
+
+// 1. Text corpus
+let corpus = [
+    "SwiftSci provides high performance scientific computing on Apple Silicon",
+    "Machine learning models execute natively on unified memory architecture",
+    "Vectorized statistical analysis and linear algebra with Apple Accelerate",
+    "Natural language processing and tokenization in pure Swift 6"
+]
+
+// 2. Configure TFIDFVectorizer with custom stop words and sparsity constraints
+let customStopWords: Set<String> = ["and", "with", "on", "in", "the"]
+let vectorizer = TFIDFVectorizer(
+    minDF: 1,
+    maxDF: 0.9,
+    sublinearTF: true,
+    stopWords: customStopWords
+)
+
+// 3. Fit vocabulary and transform corpus into SparseVectors
+try await vectorizer.fit(corpus)
+let sparseMatrix: [SparseVector] = try await vectorizer.transformSparse(corpus)
+
+print("Vocabulary Size: \(await vectorizer.vocabulary.count) terms.")
+for (docIdx, sparseDoc) in sparseMatrix.enumerated() {
+    print("Doc \(docIdx + 1): \(sparseDoc.indices.count) non-zero features out of \(sparseDoc.dimension) dimensions.")
+}
+
+// 4. Convert to dense vector on-demand when required
+let denseDoc0: [Double] = sparseMatrix[0].toDense()
+print("First 5 dense weights: \(denseDoc0.prefix(5))")
+```
+
+---
+
+## 2. Naive Bayes Text Classification
+
+Train an actor-isolated Naive Bayes classifier on vectorized text features:
 
 ```swift
 import SwiftNLP
 
-let corpus = [
-    "soccer match goal score penalty stadium",
-    "football player tournament champion world cup",
-    "stock market economy investment finance bank",
-    "trading stocks profit dividend inflation interest"
+let trainingDocs = [
+    "soccer match goal penalty referee stadium",
+    "basketball tournament points rebound court",
+    "stock market earnings investment dividend treasury",
+    "inflation interest rates economy monetary policy"
 ]
+let targets = [0.0, 0.0, 1.0, 1.0] // 0: Sports, 1: Finance
 
-// Extract TF-IDF features
-let vectorizer = TFIDFVectorizer()
-try await vectorizer.fit(corpus)
-let X = try await vectorizer.transform(corpus)
+let docVectorizer = TFIDFVectorizer()
+try await docVectorizer.fit(trainingDocs)
+let trainFeatures = try await docVectorizer.transform(trainingDocs)
 
-// Train actor-based NaiveBayesClassifier
-let labels: [Double] = [0.0, 0.0, 1.0, 1.0] // 0: sports, 1: finance
-let nb = NaiveBayesClassifier(alpha: 1.0)
-try await nb.fit(features: X, targets: labels)
+let classifier = NaiveBayesClassifier(alpha: 1.0)
+try await classifier.fit(features: trainFeatures, targets: targets)
 
-let testDoc = try await vectorizer.transform(["goal score match"])
-let prediction = try await nb.predict(features: testDoc)
-print("Prediction: \(prediction.first ?? 0)") // 0
+// Predict topic of unseen text
+let testSample = try await docVectorizer.transform(["stocks and market economy"])
+let prediction = try await classifier.predict(features: testSample)
+
+print("Predicted Topic: \(prediction.first == 1.0 ? "Finance" : "Sports")")
 ```
 
-### 2. Word Embeddings (Accelerated vDSP Cosine Similarity)
+---
+
+## 3. Local On-Device Embeddings (`LocalEmbeddingEngine`)
+
+Generate dense, 100% offline text embeddings for Retrieval-Augmented Generation (RAG) and semantic similarity search:
 
 ```swift
-let embeddings = try WordEmbeddings(fromTextFile: "embeddings.txt")
-let similarity = embeddings.similarity("king", "queen")
+let embeddingEngine = LocalEmbeddingEngine(dimension: 128)
 
-let nearest = embeddings.topK(vector: queryVector, k: 5)
-```
-
-### 3. Fluent DataFrame Text Processing Extensions
-
-```swift
-import SwiftDataFrame
-
-var df = try DataFrame(columns: [
-    TypedColumn<String>(name: "text", values: ["I love SwiftSci!", "This error is bad."])
+let queryVector = embeddingEngine.embed("Apple Silicon M-Series GPU computing")
+let candidateVectors = embeddingEngine.embedBatch([
+    "Unified Memory Architecture acceleration",
+    "Cooking recipes and culinary arts",
+    "Neural Engine transformer token generation"
 ])
 
-// Chain NLP operations directly on DataFrames
-let processedDF = try df
-    .tokenizeColumn(column: "text", targetColumn: "tokens")
-    .stemColumn(column: "tokens", targetColumn: "stemmed")
-    .analyzeSentiment(column: "text", targetColumn: "sentiment")
-```
-
-### 4. Dense On-Device Text Embeddings (`LocalEmbeddingEngine`)
-
-```swift
-let engine = LocalEmbeddingEngine(dimension: 128)
-
-// Generate 100% offline, unit-normalized dense embeddings for local RAG
-let docVector = engine.embed("Apple Silicon M3 Max neural network computation")
-let batchVectors = engine.embedBatch(["Machine Learning", "Data Engineering"])
+print("Generated \(candidateVectors.count) dense vectors of dimension \(queryVector.count).")
 ```

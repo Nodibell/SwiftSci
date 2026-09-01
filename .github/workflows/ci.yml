@@ -98,7 +98,16 @@ jobs:
 
       - name: Run safe unit tests
         run: |
-          swift test --enable-code-coverage -v
+          swift test --enable-code-coverage -v \
+            --skip SwiftMLTests \
+            --skip SwiftClusterTests \
+            --skip SwiftForecastTests \
+            --skip SwiftPrivacyTests \
+            --skip SwiftExplainTests \
+            --skip SwiftPreprocessingTests \
+            --skip SwiftOptimizeTests \
+            --skip SwiftLLMTests \
+            --skip SwiftVisionTests
 
           # GPU-dependent suites are skipped because GitHub macOS runners
           # do not provide the Metal GPU environment required by MLX.

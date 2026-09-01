@@ -24,6 +24,7 @@ ignore:
   - "Sources/SwiftOptimize/**"
   - "Sources/SwiftLLM/**"
   - "Sources/SwiftVisualization/**"
+  - "Sources/SwiftVision/**"
   # Exclude test files from code coverage calculation
   - "Tests/**"
 

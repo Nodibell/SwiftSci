@@ -5,7 +5,26 @@ import Foundation
 @Suite("SwiftDataFrame Release 3.5.0 Coverage Tests")
 struct DataFrameRelease35CoverageTests {
 
-    // MARK: - ParquetWriter Typed Fast-Paths & Nulls
+    // Custom AnyColumn struct to exercise ParquetWriter generic fallback path
+    struct CustomGenericColumn: AnyColumn, @unchecked Sendable {
+        let name: String
+        let dtype: ColumnDType
+        let rawValues: [Any?]
+
+        var count: Int { rawValues.count }
+        var nullCount: Int { rawValues.filter { $0 == nil }.count }
+        func value(at index: Int) -> Any? { rawValues[index] }
+        func toDoubles() -> [Double]? { nil }
+        func toStrings() -> [String] { rawValues.map { $0 != nil ? "\($0!)" : "null" } }
+        func filtered(by mask: [Bool]) throws -> any AnyColumn { self }
+        func gathered(at indices: [Int]) -> any AnyColumn { self }
+        func sortedIndices(ascending: Bool) -> [Int] { Array(0..<count) }
+        var unique: any AnyColumn { self }
+        func lagged(by offset: Int) -> any AnyColumn { self }
+        func renamed(to newName: String) -> any AnyColumn { CustomGenericColumn(name: newName, dtype: dtype, rawValues: rawValues) }
+    }
+
+    // MARK: - ParquetWriter Typed Fast-Paths & Nulls & Generic Fallback
 
     @Test("ParquetWriter encodes all typed columns without nulls")
     func testParquetWriterAllTypedColumnsNoNulls() async throws {
@@ -60,6 +79,26 @@ struct DataFrameRelease35CoverageTests {
         #expect(!data.isEmpty)
         let footer = Array(data.suffix(4))
         #expect(String(bytes: footer, encoding: .utf8) == "PAR1")
+    }
+
+    @Test("ParquetWriter generic column fallback path and empty DataFrame error")
+    func testParquetWriterGenericFallback() async throws {
+        // Generic fallback with all DTypes
+        let gI32 = CustomGenericColumn(name: "g_i32", dtype: .int32, rawValues: [Int32(1), nil, Int32(3)])
+        let gI64 = CustomGenericColumn(name: "g_i64", dtype: .int64, rawValues: [Int64(10), Int64(20), nil])
+        let gF32 = CustomGenericColumn(name: "g_f32", dtype: .float32, rawValues: [Float(1.1), nil, Float(3.3)])
+        let gF64 = CustomGenericColumn(name: "g_f64", dtype: .float64, rawValues: [Double(10.5), Double(20.5), nil])
+        let gBool = CustomGenericColumn(name: "g_bool", dtype: .boolean, rawValues: [true, nil, false])
+        let gStr = CustomGenericColumn(name: "g_str", dtype: .utf8, rawValues: ["str1", nil, "str3"])
+        let gDate = CustomGenericColumn(name: "g_date", dtype: .date32, rawValues: [Date(timeIntervalSince1970: 0), nil, Date(timeIntervalSince1970: 86400)])
+
+        let genericDf = try DataFrame(columns: [gI32, gI64, gF32, gF64, gBool, gStr, gDate])
+        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("generic_\(UUID().uuidString).parquet")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        try await ParquetWriter.write(dataFrame: genericDf, to: tempURL)
+        let data = try Data(contentsOf: tempURL)
+        #expect(!data.isEmpty)
     }
 
     // MARK: - DataFrame + Flat Feature Matrix

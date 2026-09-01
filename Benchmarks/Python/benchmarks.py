@@ -340,12 +340,80 @@ def bench_extensions():
     return results
 
 
+# ── Accuracy & Quality benchmarks: Scikit-Learn, Statsmodels ─────────────────
+
+def bench_accuracy():
+    print("▶ Running Accuracy & Quality (Holt-Winters, ARIMA, GBDT, RF, NB) benchmarks …")
+    np.random.seed(42)
+
+    # 1. Holt-Winters
+    t = np.arange(500)
+    series_hw = 20.0 + t * 0.25 + 8.0 * np.sin(t * 2.0 * np.pi / 12.0) + np.random.uniform(-0.5, 0.5, size=500)
+    train_hw, test_hw = series_hw[:476], series_hw[476:]
+    def hw_fn():
+        m = ExponentialSmoothing(train_hw, trend="add", seasonal="add", seasonal_periods=12).fit()
+        pred = m.forecast(24)
+        _ = math.sqrt(mean_squared_error(test_hw, pred))
+        _ = r2_score(test_hw, pred)
+
+    # 2. ARIMA(1,1,1)
+    def arima_fn():
+        m = ARIMA(train_hw, order=(1, 1, 1)).fit()
+        pred = m.forecast(24)
+        _ = math.sqrt(mean_squared_error(test_hw, pred))
+        _ = r2_score(test_hw, pred)
+
+    # 3. GBDT Regressor
+    x_reg = np.column_stack([np.random.uniform(-3.0, 3.0, size=1000), np.random.uniform(-3.0, 3.0, size=1000)])
+    y_reg = 2.0 * x_reg[:, 0] + np.sin(x_reg[:, 1]) * 3.0 + np.random.uniform(-0.2, 0.2, size=1000)
+    x_tr_reg, x_te_reg = x_reg[:800], x_reg[800:]
+    y_tr_reg, y_te_reg = y_reg[:800], y_reg[800:]
+    def gbdt_fn():
+        g = GradientBoostingRegressor(n_estimators=30, max_depth=4, learning_rate=0.1, random_state=42)
+        g.fit(x_tr_reg, y_tr_reg)
+        pred = g.predict(x_te_reg)
+        _ = math.sqrt(mean_squared_error(y_te_reg, pred))
+        _ = r2_score(y_te_reg, pred)
+
+    # 4. Random Forest Classifier
+    x_cls = np.column_stack([np.random.uniform(-2.0, 2.0, size=1000), np.random.uniform(-2.0, 2.0, size=1000)])
+    y_cls = ((x_cls[:, 0] * 0.8 + x_cls[:, 1] * 0.6) > 0.0).astype(int)
+    x_tr_cls, x_te_cls = x_cls[:800], x_cls[800:]
+    y_tr_cls, y_te_cls = y_cls[:800], y_cls[800:]
+    def rf_fn():
+        m = RandomForestClassifier(n_estimators=30, max_depth=5, criterion="gini", random_state=42)
+        m.fit(x_tr_cls, y_tr_cls)
+        pred = m.predict(x_te_cls)
+        _ = accuracy_score(y_te_cls, pred)
+        _ = f1_score(y_te_cls, pred, pos_label=1)
+
+    # 5. Naive Bayes
+    x_nb_tr = np.array([[(i + j) % 5 for j in range(50)] for i in range(800)])
+    y_nb_tr = np.array([i % 3 for i in range(800)])
+    x_nb_te = np.array([[(i + j) % 5 for j in range(50)] for i in range(200)])
+    y_nb_te = np.array([i % 3 for i in range(200)])
+    def nb_fn():
+        m = MultinomialNB(alpha=1.0)
+        m.fit(x_nb_tr, y_nb_tr)
+        pred = m.predict(x_nb_te)
+        _ = accuracy_score(y_nb_te, pred)
+
+    results = []
+    results.append(run_benchmark("Holt-Winters Accuracy (RMSE, MAE, MAPE, R²)", "Statsmodels", hw_fn, warmup=1, iterations=5))
+    results.append(run_benchmark("ARIMA(1,1,1) Accuracy (RMSE, MAE, MAPE, R²)", "Statsmodels", arima_fn, warmup=1, iterations=5))
+    results.append(run_benchmark("GBDT Regressor Quality (RMSE, MAE, R²)", "Scikit-Learn", gbdt_fn, warmup=1, iterations=5))
+    results.append(run_benchmark("RandomForest Quality (Accuracy, F1)", "Scikit-Learn", rf_fn, warmup=1, iterations=5))
+    results.append(run_benchmark("NaiveBayes Quality (Accuracy, Macro-F1)", "Scikit-Learn", nb_fn, warmup=1, iterations=5))
+    print()
+    return results
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(description="SwiftSci Python Benchmark Suite v3.5.0")
     parser.add_argument("--json", metavar="PATH", help="Export results to JSON file")
-    parser.add_argument("--suite", help="Filter by suite name (stats, dataframe, ml, forecast, extensions)")
+    parser.add_argument("--suite", help="Filter by suite name (stats, dataframe, ml, forecast, extensions, accuracy)")
     parser.add_argument("--filter", help="Filter by benchmark name substring")
     parser.add_argument("--rounds", type=int, default=3, help="Number of measurement rounds")
     parser.add_argument("--iterations", type=int, default=7, help="Iterations per round")
@@ -376,6 +444,7 @@ def main():
         ("ml", bench_ml),
         ("forecast", bench_forecast),
         ("extensions", bench_extensions),
+        ("accuracy", bench_accuracy),
     ]
 
     all_results = []

@@ -246,32 +246,40 @@ public actor MLPClassifier: ClassifierEstimator {
                         let t = Double(adamStates[l].t)
                         let b1_corr = 1.0 - pow(beta1, t)
                         let b2_corr = 1.0 - pow(beta2, t)
+                        let oneMinusBeta1 = 1.0 - beta1
+                        let oneMinusBeta2 = 1.0 - beta2
+                        let lr = learningRate
+                        let eps = epsilon
+                        let wCount = layers[l].W.count
 
-                        for p in 0..<layers[l].W.count {
+                        for p in 0..<wCount {
                             let g = gradW[p]
-                            adamStates[l].mW[p] = beta1 * adamStates[l].mW[p] + (1.0 - beta1) * g
-                            adamStates[l].vW[p] = beta2 * adamStates[l].vW[p] + (1.0 - beta2) * g * g
+                            adamStates[l].mW[p] = beta1 * adamStates[l].mW[p] + oneMinusBeta1 * g
+                            adamStates[l].vW[p] = beta2 * adamStates[l].vW[p] + oneMinusBeta2 * g * g
                             let mHat = adamStates[l].mW[p] / b1_corr
                             let vHat = adamStates[l].vW[p] / b2_corr
-                            layers[l].W[p] -= learningRate * mHat / (sqrt(vHat) + epsilon)
+                            layers[l].W[p] -= lr * mHat / (sqrt(vHat) + eps)
                         }
 
                         for j in 0..<outD {
                             let g = gradB[j]
-                            adamStates[l].mB[j] = beta1 * adamStates[l].mB[j] + (1.0 - beta1) * g
-                            adamStates[l].vB[j] = beta2 * adamStates[l].vB[j] + (1.0 - beta2) * g * g
+                            adamStates[l].mB[j] = beta1 * adamStates[l].mB[j] + oneMinusBeta1 * g
+                            adamStates[l].vB[j] = beta2 * adamStates[l].vB[j] + oneMinusBeta2 * g * g
                             let mHat = adamStates[l].mB[j] / b1_corr
                             let vHat = adamStates[l].vB[j] / b2_corr
-                            layers[l].b[j] -= learningRate * mHat / (sqrt(vHat) + epsilon)
+                            layers[l].b[j] -= lr * mHat / (sqrt(vHat) + eps)
                         }
                     } else {
-                        // SGD
-                        for p in 0..<layers[l].W.count {
-                            layers[l].W[p] -= learningRate * gradW[p]
-                        }
-                        for j in 0..<outD {
-                            layers[l].b[j] -= learningRate * gradB[j]
-                        }
+                        // SGD via vDSP
+                        let wCount = layers[l].W.count
+                        var negLr = -learningRate
+                        var stepW = [Double](repeating: 0.0, count: wCount)
+                        vDSP_vsmulD(gradW, 1, &negLr, &stepW, 1, vDSP_Length(wCount))
+                        vDSP_vaddD(layers[l].W, 1, stepW, 1, &layers[l].W, 1, vDSP_Length(wCount))
+
+                        var stepB = [Double](repeating: 0.0, count: outD)
+                        vDSP_vsmulD(gradB, 1, &negLr, &stepB, 1, vDSP_Length(outD))
+                        vDSP_vaddD(layers[l].b, 1, stepB, 1, &layers[l].b, 1, vDSP_Length(outD))
                     }
 
                     delta = nextDelta
@@ -520,32 +528,40 @@ public actor MLPRegressor: RegressorEstimator {
                         let t = Double(adamStates[l].t)
                         let b1_corr = 1.0 - pow(beta1, t)
                         let b2_corr = 1.0 - pow(beta2, t)
+                        let oneMinusBeta1 = 1.0 - beta1
+                        let oneMinusBeta2 = 1.0 - beta2
+                        let lr = learningRate
+                        let eps = epsilon
+                        let wCount = layers[l].W.count
 
-                        for p in 0..<layers[l].W.count {
+                        for p in 0..<wCount {
                             let g = gradW[p]
-                            adamStates[l].mW[p] = beta1 * adamStates[l].mW[p] + (1.0 - beta1) * g
-                            adamStates[l].vW[p] = beta2 * adamStates[l].vW[p] + (1.0 - beta2) * g * g
+                            adamStates[l].mW[p] = beta1 * adamStates[l].mW[p] + oneMinusBeta1 * g
+                            adamStates[l].vW[p] = beta2 * adamStates[l].vW[p] + oneMinusBeta2 * g * g
                             let mHat = adamStates[l].mW[p] / b1_corr
                             let vHat = adamStates[l].vW[p] / b2_corr
-                            layers[l].W[p] -= learningRate * mHat / (sqrt(vHat) + epsilon)
+                            layers[l].W[p] -= lr * mHat / (sqrt(vHat) + eps)
                         }
 
                         for j in 0..<outD {
                             let g = gradB[j]
-                            adamStates[l].mB[j] = beta1 * adamStates[l].mB[j] + (1.0 - beta1) * g
-                            adamStates[l].vB[j] = beta2 * adamStates[l].vB[j] + (1.0 - beta2) * g * g
+                            adamStates[l].mB[j] = beta1 * adamStates[l].mB[j] + oneMinusBeta1 * g
+                            adamStates[l].vB[j] = beta2 * adamStates[l].vB[j] + oneMinusBeta2 * g * g
                             let mHat = adamStates[l].mB[j] / b1_corr
                             let vHat = adamStates[l].vB[j] / b2_corr
-                            layers[l].b[j] -= learningRate * mHat / (sqrt(vHat) + epsilon)
+                            layers[l].b[j] -= lr * mHat / (sqrt(vHat) + eps)
                         }
                     } else {
-                        // SGD
-                        for p in 0..<layers[l].W.count {
-                            layers[l].W[p] -= learningRate * gradW[p]
-                        }
-                        for j in 0..<outD {
-                            layers[l].b[j] -= learningRate * gradB[j]
-                        }
+                        // SGD via vDSP
+                        let wCount = layers[l].W.count
+                        var negLr = -learningRate
+                        var stepW = [Double](repeating: 0.0, count: wCount)
+                        vDSP_vsmulD(gradW, 1, &negLr, &stepW, 1, vDSP_Length(wCount))
+                        vDSP_vaddD(layers[l].W, 1, stepW, 1, &layers[l].W, 1, vDSP_Length(wCount))
+
+                        var stepB = [Double](repeating: 0.0, count: outD)
+                        vDSP_vsmulD(gradB, 1, &negLr, &stepB, 1, vDSP_Length(outD))
+                        vDSP_vaddD(layers[l].b, 1, stepB, 1, &layers[l].b, 1, vDSP_Length(outD))
                     }
 
                     delta = nextDelta

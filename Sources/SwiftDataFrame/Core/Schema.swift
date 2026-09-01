@@ -24,12 +24,14 @@ public struct Schema: Sendable, CustomStringConvertible {
 
     /// The fields.
     public let fields: [Field]
+    private let fieldMap: [String: Field]
 
     /// Creates a new instance.
     /// - Parameters:
     ///   - fields: The fields.
     public init(fields: [Field]) {
         self.fields = fields
+        self.fieldMap = Dictionary(fields.map { ($0.name, $0) }, uniquingKeysWith: { _, last in last })
     }
 
     /// Ordered list of column names.
@@ -44,7 +46,7 @@ public struct Schema: Sendable, CustomStringConvertible {
     /// - Parameters:
     ///   - name: The name.
     public subscript(name: String) -> Field? {
-        fields.first { $0.name == name }
+        fieldMap[name]
     }
 
     /// The description.

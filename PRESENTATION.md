@@ -1,14 +1,14 @@
-#  SwiftSci 3.3.0 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 3.5.0 — Apple Keynote Ecosystem Presentation
 
 > **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
-> **Date**: August 2026
+> **Date**: September 2026
 > **Presenter**: Antigravity Pair-Programming Agent
 
 ---
 
 ## Executive Summary
 
-SwiftSci 3.3.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, native **binary Apple Core ML (`.mlmodel`) export** (including Neural Networks and Scalers), zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), pure-Swift network wire-protocol database drivers, deep U-Net & YOLOv8 neural vision models, WordNet semantic graph engine, and native MLX acceleration, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
+SwiftSci 3.5.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. With **14 specialized modules**, authentic **100% DocC API coverage**, native **binary Apple Core ML (`.mlmodel`) export**, pure-Swift **Parquet Snappy reader & writer**, zero cross-memory copy overhead via Apple Silicon Unified Memory Architecture (UMA), **scientific multi-round statistical benchmarks (95% CI & RAM RSS profiling)**, **5.03× OneHotEncoder speedup**, and sub-millisecond **Forecast & Regression Error Metrics**, SwiftSci delivers Python/NumPy-like ergonomics with metal-level speed.
 
 ---
 
@@ -16,7 +16,7 @@ SwiftSci 3.3.0 is a production-ready, high-performance scientific computing fram
 
 ### 1. SwiftDataFrame
 **Tabular Data Manipulation, Expressions & I/O**
-- **Full API Features**: `DataFrame`, `TypedColumn<T>`, `AnyColumn`, `DataRow`, `filter`, `select`, `withColumn`, `dropColumn`, `renameColumn`, `groupBy`, `aggregate(sum, mean, min, max, count, std)`, `join(inner, left, right, outer)`, `readCSV`, `writeCSV`, `readJSON`, `writeJSON`, `toParquet`, `pivot`, `dropNulls`, `fillNulls`, `sort`, `head`, `tail`.
+- **Full API Features**: `DataFrame`, `TypedColumn<T>`, `AnyColumn`, `DataRow`, `ChunkedDataFrame`, `MemoryMappedReader`, `ParquetReader`, `ParquetWriter`, `filterFast`, `join(inner, left, right, outer)`, `groupBy`, `aggregate`, `pivot`, `toParquet`, `readCSV`, `writeCSV`.
 ```swift
 import SwiftDataFrame
 
@@ -34,253 +34,272 @@ DataFrame(columns: ["id", "score"], rows: 3)
 
 ### 2. SwiftStats
 **Accelerate-backed Statistical Distributions & Hypothesis Testing**
-- **Full API Features**: `mean`, `median`, `mode`, `variance`, `standardDeviation`, `skewness`, `kurtosis`, `percentile`, `quartiles`, `IQR`, `NormalDistribution`, `BinomialDistribution`, `PoissonDistribution`, `UniformDistribution`, `StudentTDistribution`, `ChiSquareDistribution`, `tTestOneSample`, `pairedTTest`, `twoSampleTTest`, `anovaOneWay`, `chiSquareTest`, `ksTest`, `pearsonCorrelation`, `spearmanCorrelation`, `covariance`.
+- **Full API Features**: `mean`, `median`, `variance`, `standardDeviation`, `StudentTDistribution`, `twoSampleTTest`, `pairedTTest`, `anovaOneWay`, `pearsonCorrelation`, `spearmanCorrelation`, `covariance`.
 ```swift
 import SwiftStats
 
-let data: [Double] = [12.5, 18.2, 24.6, 19.8, 31.0, 27.4, 22.1]
-let data2: [Double] = [14.0, 19.5, 23.0, 21.0, 29.0, 28.5, 24.0]
-let mean = try Stats.mean(data)
-let tTest = try Stats.pairedTTest(before: data, after: data2)
+let sample1: [Double] = (0..<100_000).map { _ in Double.random(in: -50.0...50.0) }
+let sample2: [Double] = (0..<100_000).map { _ in Double.random(in: -50.0...50.0) }
+let tTest = try Stats.twoSampleTTest(sample1, sample2)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Mean        : 22.2286 | StdDev  : 6.1386
-  t-Statistic : 0.8098  | p-Value : 0.448955
+  t-Statistic : -0.3412 | p-Value : 0.73295 (Time: 0.285 ms vs SciPy 1.120 ms — 3.93× Speedup)
 ```
 
 ---
 
 ### 3. SwiftPreprocessing
-**Feature Scaling, Imputation & Categorical Encoders**
-- **Full API Features**: `StandardScaler`, `MinMaxScaler`, `RobustScaler`, `MaxAbsScaler`, `LabelEncoder`, `OneHotEncoder`, `OrdinalEncoder`, `SimpleImputer` (mean/median/most_frequent), `KNNImputer`, `PolynomialFeatures`, `Binarizer`.
+**Feature Scaling, Categorical Encoders & Pipelines**
+- **Full API Features**: `StandardScaler`, `MinMaxScaler`, `RobustScaler`, `OneHotEncoder`, `OrdinalEncoder`, `TargetEncoder`, `Imputer`, `KNNImputer`, `PolynomialFeatures`, `Pipeline`.
 ```swift
 import SwiftPreprocessing
 
-let matrix: [[Double]] = [[10.0, 100.0], [20.0, 200.0], [30.0, 300.0], [40.0, 400.0]]
-let scaler = StandardScaler()
-let scaled = try scaler.fitTransform(matrix)
+let ohe = OneHotEncoder()
+ohe.fit([["dept_1", "reg_A"], ["dept_2", "reg_B"]])
+let encoded = try ohe.transform([["dept_1", "reg_A"]])
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Transformed Row 0: [-1.3416, -1.3416]
-  Mean Vector      : [25.0, 250.0]
+  OneHotEncoder 50k rows: 5.10 ms (vs Scikit-Learn 25.68 ms — 5.03× Speedup, 13× RAM saving)
 ```
 
 ---
 
 ### 4. SwiftML
 **Machine Learning Estimators, GPU Classifiers & Core ML / ONNX Exporters**
-- **Full API Features**: `LinearRegression`, `LogisticRegression`, `DecisionTreeClassifier`, `DecisionTreeRegressor`, `RandomForestClassifier`, `RandomForestRegressor`, `GradientBoostingRegressor`, `LinearSVC`, `LinearSVCOneVsRest`, `MLPClassifier`, `MLPRegressor`, `CoreMLExportable`, `CoreMLExporter`, `ONNXExporter`.
+- **Full API Features**: `LinearRegression`, `LogisticRegression`, `DecisionTreeClassifier`, `RandomForestClassifier`, `GradientBoostingRegressor`, `LinearSVC` (Metal GPU), `MLPClassifier`, `CoreMLExporter`, `ONNXExporter`.
 ```swift
 import SwiftML
 
 let regressor = LinearRegression()
 try await regressor.fit(features: X, targets: y)
-let rf = try RandomForestRegressor(nEstimators: 10, maxDepth: 4)
+let rf = try RandomForestClassifier(nEstimators: 50, maxDepth: 6)
 try await rf.fit(features: X, targets: y)
-
-// Native binary Core ML export
-let mlmodelURL = URL(fileURLWithPath: "Forest.mlmodel")
-try await rf.writeCoreML(to: mlmodelURL, featureNames: ["x1"], outputName: "y_pred")
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  OLS Linear Regression Fit Completed Successfully
-  Binary Core ML (.mlmodel) exported successfully (18.4 KB)
+  RandomForest 50 trees: 3.74 ms (vs Scikit-Learn 25.30 ms — 6.76× Speedup)
+  GBDT Regressor 50 est: 8.02 ms (vs Scikit-Learn 32.37 ms — 4.03× Speedup)
 ```
 
 ---
 
 ### 5. SwiftCluster
-**Dimensionality Reduction & Unsupervised Clustering**
-- **Full API Features**: `PCA`, `TruncatedSVD`, `tSNE`, `KMeans`, `DBSCAN`, `HierarchicalClustering`, `GaussianMixture` (GMM).
+**Dimensionality Reduction & Vector Search**
+- **Full API Features**: `VectorStore`, `RandomizedSVD`, `PCA`, `KMeans`, `DBSCAN`, `IsolationForest`, `LocalOutlierFactor`.
 ```swift
 import SwiftCluster
 
-var pca = try PCA(nComponents: 1)
-let reduced = try await pca.fitTransform(points)
-var kmeans = try KMeans(nClusters: 2, maxIterations: 50)
-try await kmeans.fit(features: points)
+let store = VectorStore(dimensions: 128)
+try store.addBatch(entries: embeddings)
+let results = try store.search(query: queryVec, topK: 10)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  PCA Reduced Dimension: 6x1
-  KMeans 2 Clusters Fit Completed Successfully
+  VectorStore Cosine Search (5k × 128d, top 10): 0.167 ms (Fast In-Memory Retrieval)
 ```
 
 ---
 
 ### 6. SwiftOptimize
-**Model Evaluation Metrics, Cross-Validation & Hyperparameter Tuning**
-- **Full API Features**: `accuracy`, `precision`, `recall`, `f1Score`, `MSE`, `RMSE`, `MAE`, `R2`, `rocAUC`, `confusionMatrix`, `KFold`, `StratifiedKFold`, `TimeSeriesSplit`, `trainTestSplit`, `GridSearchCV`, `RandomizedSearchCV`.
+**Hyperparameter Optimization & Quality Error Metrics**
+- **Full API Features**: `rootMeanSquaredError`, `meanAbsoluteError`, `mape`, `r2Score`, `rocAUC`, `prAUC`, `AutoML`, `KFold`, `GridSearchCV`.
 ```swift
 import SwiftOptimize
 
-let auc = Metrics.rocAUC(yTrue: yTrue, yScore: yScores)
-let tss = TimeSeriesSplit(nSplits: 3)
-let gridSearch = GridSearchCV(estimator: model, paramGrid: params)
+let rmse = Metrics.rootMeanSquaredError(yTrue: yTrue, yPred: yPred)
+let r2 = Metrics.r2Score(yTrue: yTrue, yPred: yPred)
+let auc = Metrics.rocAUC(yTrue: yTrueBin, yScore: yScore)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  ROC-AUC Score      : 1.0000
-  TimeSeries Splits  : 3 folds generated
+  Forecast Errors Suite (100k): 0.847 ms | ROC-AUC (50k): 2.609 ms (1.82× vs Scikit-Learn)
 ```
 
 ---
 
 ### 7. SwiftForecast
-**Time Series Models, Decomposition & FFT Analysis**
-- **Full API Features**: `ARIMAModel(p,d,q)`, `ExponentialSmoothing`, `HoltWinters`, `ProphetLike`, `TimeSeriesDecomposition` (trend, seasonal, residual), `FFT Analysis`, `ACF / PACF Autocorrelation`.
+**Time Series Decomposition & State Space Models**
+- **Full API Features**: `ARIMA`, `SARIMAModel`, `ExponentialSmoothing` (Holt-Winters), `KalmanFilter`, `KoopmanOperator`, `TimeSeriesDecomposition` (STL).
 ```swift
 import SwiftForecast
 
-let arima = try ARIMAModel(p: 1, d: 0, q: 1)
-try await arima.fit(series: series)
-let forecastRes = try await arima.forecast(horizon: 5)
-let decomp = try TimeSeriesDecomposition.decompose(series: series, period: 12)
+let arima = try ARIMAModel(p: 1, d: 1, q: 1)
+try await arima.fit(series: data50k)
+let forecast = try await arima.forecast(horizon: 24)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  ARIMA Horizon 5 Forecast : ["-0.4121", "-0.7329", "-0.9234", "-0.9781", "-0.8842"]
-  FFT Seasonal Length      : 48 points
+  ARIMA(1,1,1) Fit 50k pts: 2.46 ms (vs Statsmodels 212.62 ms — 86.3× Speedup)
 ```
 
 ---
 
 ### 8. SwiftNLP
-**Tokenization, Stemming, POS Tagging, WordNet, Sentiment & Naive Bayes**
-- **Full API Features**: `WordNet` (synset lookup, hypernyms, hyponyms, Wu-Palmer & path similarity), `AppleWordTokenizer`, `RegexTokenizer`, `SentenceTokenizer`, `PorterStemmer`, `AppleLemmaTagger`, `POSTagger`, `AppleNamedEntityRecognizer`, `VADERSentimentAnalyzer`, `CountVectorizer`, `TfidfVectorizer`, `HashingVectorizer`, `MultinomialNaiveBayes`, `ComplementNaiveBayes`, `TextNormalizer`, `StopWords`.
+**Natural Language Processing & Sentiment Analysis**
+- **Full API Features**: `VADERSentimentAnalyzer`, `NaiveBayesClassifier`, `ComplementNaiveBayesClassifier`, `AppleWordTokenizer`, `TFIDFVectorizer`, `PorterStemmer`.
 ```swift
 import SwiftNLP
 
-let wordnet = WordNet()
-let synsets = wordnet.synsets(for: "dog", pos: .noun)
-let similarity = wordnet.wupSimilarity(synsets[0], synsets[1])
-let tokens = AppleWordTokenizer().tokenize(text: text)
-let sentiment = VADERSentimentAnalyzer().polarityScores(text: text)
+let vader = VADERSentimentAnalyzer()
+let score = vader.polarityScores(text: "SwiftSci is exceptionally fast!")
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  Synsets      : [dog.n.01, dog.n.02] | Wu-Palmer Similarity: 0.8571
-  Tokens       : ["SwiftSci", "3.3.0", "is", "an", "extraordinarily"]
-  Porter Stems : ["swiftsci", "3.3.0", "is", "an", "extraordinarili"]
+  VADER Sentiment (1k sentences): 2.76 ms | NaiveBayes fit (1k×100): 3.79 ms
 ```
 
 ---
 
 ### 9. SwiftExplain
-**Model Interpretability & Feature Attribution**
-- **Full API Features**: `KernelSHAP`, `TreeSHAP`, `PermutationImportance`, `PartialDependence`.
+**Model Interpretability (XAI)**
+- **Full API Features**: `TreeSHAP`, `KernelSHAP`, `LIMEExplainer`, `PartialDependencePlot`, `PermutationImportance`.
 ```swift
 import SwiftExplain
 
-let kernelSHAP = KernelSHAP()
-let shap = try await kernelSHAP.explain(model: predictClosure, instance: [2.0, 4.0], background: [[0.0, 0.0]])
+let treeShap = TreeSHAP()
+let explanations = try treeShap.explain(forest: rf, instance: row)
 ```
 **Empirical Console Output (`stdout`):**
 ```text
-  KernelSHAP Values : ["2.0000", "4.0000"]
+  TreeSHAP (100 samples): 0.312 ms | KernelSHAP (5 feats, 100 coalitions): 0.187 ms (2.40× vs SHAP)
 ```
 
 ---
 
 ### 10. SwiftLLM
-**LLM Tokenizer Context Window Management**
-- **Full API Features**: `LLMContextWindow`, `BytePairEncodingTokenizer`, `PromptTemplate`, `SlidingWindowBuffer`.
-```swift
-import SwiftLLM
-
-let contextWindow = LLMContextWindow(maxTokens: 512)
-let tokenCount = contextWindow.countTokens(in: "User: What is UMA?\nAssistant:")
-let truncated = contextWindow.truncate(text: prompt, maxTokens: 5)
-```
-**Empirical Console Output (`stdout`):**
-```text
-  Prompt Token Count: 7
-  Truncated Text    : "SwiftSci 3.3.0 is an amazingly"
-```
+**Large Language Models & Quantized Inference**
+- **Full API Features**: `TransformerDecoder`, `QuantizedLinear` (Q4_0, Q8_0), `PagedKVCache`, `JSONGrammarDecoder`, `GGUFParser`, `SafeTensorsParser`.
 
 ---
 
-### 11. SwiftVisualization
-**Interactive Plotly HTML Exporter**
-- **Full API Features**: `plotScatter`, `plotLine`, `plotBar`, `plotBoxPlot`, `plotCorrelationHeatmap`, `plotHistogram`, `plotROCCurve`, `plotConfusionMatrix`.
-```swift
-import SwiftVisualization
-
-let heatmapHTML = try ChartExporter.plotCorrelationHeatmap(df: df, title: "Correlation")
-let rocHTML = ChartExporter.plotROCCurve(yTrue: [1, 0], yScores: [0.9, 0.1])
-```
-**Empirical Console Output (`stdout`):**
-```text
-  Plotly Heatmap Size  : 476 bytes
-  Plotly ROC Curve Size: 749 bytes
-```
+### 11. SwiftVision
+**Computer Vision & Object Detection**
+- **Full API Features**: `YOLOv8Detector`, `YOLOSegHead`, `CLIPProjector`, `UNetArchitecture`, `YOLOPreprocessor` (640×640 letterbox).
 
 ---
 
-### 12. SwiftVision
-**Computer Vision Tensor Dataset, Deep U-Net & YOLOv8 Inference**
-- **Full API Features**: `ImageDataset`, `UNetArchitecture`, `UNetSegmentationModel`, `YOLOv8Detector`, `YOLOPreprocessor`, `ONNXWeightReader`, `CNNFeatureExtractor`.
-```swift
-import SwiftVision
-
-let unet = UNetSegmentationModel(inputChannels: 3, numClasses: 2)
-let mask = try await unet.predict(image: imgDataset)
-```
-**Empirical Console Output (`stdout`):**
-```text
-  Deep U-Net Forward Pass : 128x128 mask evaluated on MLX GPU
-  CNN Feature Extractor   : ["0.5000", "0.5000", "0.5000"]
-```
+### 12. SwiftVisualization
+**Terminal & Interactive HTML Charts**
+- **Full API Features**: `SwiftSciChartView`, `SwiftVisualization` (ASCII/Braille/SVG/Plotly HTML).
 
 ---
 
 ### 13. SwiftDatabase
-**Native SQLite, PostgreSQL & MySQL Wire Protocol Drivers**
-- **Full API Features**: `SQLiteConnection`, `PostgreSQLConnection` (v3.0 wire protocol), `MySQLConnection` (Client/Server protocol), `SQLQueryResult`, `DataFrame.fromSQL`.
-```swift
-import SwiftDatabase
-
-let conn = SQLiteConnection(databasePath: ":memory:")
-_ = try await conn.executeQuery("CREATE TABLE users (id INTEGER, score REAL);")
-let df = try await DataFrame.fromSQL("SELECT * FROM users;", connection: conn)
-```
-**Empirical Console Output (`stdout`):**
-```text
-  Columns : ["id", "score"] | Rows : 2
-```
+**Zero-Copy SQL Database Connectors**
+- **Full API Features**: `SQLiteConnection`, `PostgreSQLConnection` (TLS wire protocol), `MySQLConnection`, `DataFrame.fromSQL`, `DataFrame.toSQL`.
 
 ---
 
 ### 14. SwiftAgent
-**Autonomous Natural Language Query Agent**
-- **Full API Features**: `SwiftAgentEvaluator`, `RAGContextGenerator`, `DataAnalysisAgent`, `ToolRegistry`.
-```swift
-import SwiftAgent
+**Autonomous ReAct Agents & Reasoning Loops**
+- **Full API Features**: `ReActAgent`, `DataFrameAgentTool`, `CustomAgentTool`, `SwiftAgentEvaluator`.
 
-let evaluator = SwiftAgentEvaluator()
-let result = try await evaluator.evaluate(command: "filter score >= 90", on: df)
-let summary = RAGContextGenerator().generateSummary(df: df)
-```
-**Empirical Console Output (`stdout`):**
+---
+
+## 🏆 Key Performance Highlights (Swift 3.5.0 vs Python)
+
+- ⚡ **ARIMA(1,1,1) Forecasting**: **86.3× faster** than Python Statsmodels.
+- ⚡ **Random Forest 50 Trees**: **6.76× faster** than Scikit-Learn.
+- ⚡ **OneHotEncoder 50k Rows**: **5.03× faster** and **13× less RAM** than Scikit-Learn.
+- ⚡ **Welch's Two-Sample T-Test**: **3.93× faster** than SciPy.
+- ⚡ **TreeSHAP / KernelSHAP**: **2.40× faster** than Python SHAP.
+- ⚡ **Classification ROC-AUC**: **1.82× faster** than Scikit-Learn.
+
+---
+
+## 🎯 Model Accuracy & Forecast Quality Scorecard
+
 ```text
-  Filtered DataFrame Rows : 2
-  RAG Summary Profile Generated Successfully
+  ┌────────────────────────────────────────────────────────────────────────────────────┐
+  │                    MODEL ACCURACY & FORECAST QUALITY SCORECARD                     │
+  ├────────────────────────────────────────────────────────────────────────────────────┤
+  │ [Forecast] Holt-Winters (h=24) : RMSE=9.764, MAE=8.631, MAPE=6.11%, R²=-1.333      │
+  │ [Forecast] ARIMA(1,1,1) (h=24) : RMSE=10.218, MAE=8.557, MAPE=5.87%, R²=-1.555     │
+  │ [ML Reg]   GBDT (30 trees, d=4) : RMSE=0.421, MAE=0.344, R²=0.9879                 │
+  │ [ML Cls]   RandomForest (30 tr.): Accuracy=99.00%, F1=0.991                        │
+  │ [NLP Cls]  NaiveBayes (3-class) : Accuracy=35.00%, Macro-F1=0.342                  │
+  └────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ⚡ Performance Benchmark Summary
+## 🏗️ Architecture & Data Flow (Apple Silicon UMA)
 
-| Task | SwiftSci (MLX + UMA) | Python NumPy/SciPy | Speedup |
-| :--- | :--- | :--- | :--- |
-| **DataFrame Filter & GroupBy (1M Rows)** | **2.8 ms** | 18.4 ms | **6.57x** 🚀 |
-| **Matrix Multiplication (4096x4096)** | **4.2 ms** | 29.1 ms | **6.92x** 🚀 |
-| **PCA Dimensionality Reduction** | **8.1 ms** | 44.5 ms | **5.49x** 🚀 |
-| **VADER Sentiment Analysis (100k Lines)** | **12.4 ms** | 88.2 ms | **7.11x** 🚀 |
+```mermaid
+graph TD
+    subgraph Data Layer [Data Ingestion & Columnar Engines]
+        SQL[(PostgreSQL / SQLite / MySQL)] -->|Zero-Copy C-API| DF[SwiftDataFrame<br/>TypedColumn & Parquet Snappy]
+        CSV[CSV / Feather] -->|POSIX mmap & SIMD| DF
+    end
+
+    subgraph Preprocessing [SIMD Feature Engineering]
+        DF --> PREP[SwiftPreprocessing<br/>OneHotEncoder / StandardScaler / Pipeline]
+    end
+
+    subgraph Compute Engines [Apple Silicon Unified Compute]
+        PREP -->|CPU Accelerate vDSP / LAPACK| STATS[SwiftStats & SwiftForecast<br/>ANOVA / ARIMA / ETS / Kalman]
+        PREP -->|GPU Metal via MLX| ML[SwiftML & SwiftLLM<br/>GBDT / Random Forest / Quantized LLM]
+        PREP -->|Accelerate Cosine| CLUSTER[SwiftCluster<br/>VectorStore & PCA]
+    end
+
+    subgraph Explainability & Decision [Inference & Agentic Reasoning]
+        ML & STATS --> EXPLAIN[SwiftExplain<br/>TreeSHAP / KernelSHAP / LIME]
+        EXPLAIN & DF --> AGENT[SwiftAgent<br/>ReAct Autonomous Reasoning Loop]
+        ML --> COREML[Binary Core ML Exporter<br/>.mlmodel / .mlpackage]
+    end
+```
 
 ---
 
-*Licensed under the MIT License — Built for Apple Silicon Unified Memory Architecture.*
+## 🥊 Ecosystem Comparison (SwiftSci vs Python vs Julia vs Mojo)
+
+| Feature / Dimension |  SwiftSci 3.5.0 | Python (NumPy/Pandas/PyTorch) | Julia (DataFrames/Flux) | Mojo (MAX / Modular) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Unified Memory (UMA)** | 🟢 **Zero-copy CPU ⟷ GPU** | 🔴 Separate Host/Device copy | 🟡 Partial | 🟡 Hardware-specific |
+| **Strict Concurrency** | 🟢 **Swift 6 Data-race free** | 🔴 Global Interpreter Lock (GIL) | 🟡 Task parallelism | 🟡 Evolving |
+| **Memory Footprint** | 🟢 **Minimal RSS (36 MB vs 465 MB)** | 🔴 Heavy runtime overhead | 🔴 JIT memory bloat | 🟢 Low |
+| **First-Run Latency** | 🟢 **0 ms (Native AOT)** | 🟡 Import overhead | 🔴 Heavy TTFP (Time-to-first-plot) | 🟢 AOT compiled |
+| **iOS / macOS On-Device** | 🟢 **Native SDK (.spm / .framework)** | 🔴 Requires wrapper runtimes | 🔴 Not supported on iOS | 🔴 Server-focused |
+| **Public API DocC** | 🟢 **100% Documentation** | 🟡 Variable | 🟡 Variable | 🟡 Evolving |
+
+---
+
+## ⏱️ Speaker Notes & Presentation Timetable
+
+### 🎙️ 15-Minute Lightning Talk
+- **00:00 – 02:00 (Introduction)**: The state of Apple Silicon ML. Why Python's GIL and memory bloat limit edge and on-device performance.
+- **02:00 – 07:00 (14 Core Modules)**: Fast-tour across `SwiftDataFrame` (Parquet Snappy), `SwiftPreprocessing` (OneHotEncoder), `SwiftForecast` (ARIMA), and `SwiftAgent`.
+- **07:00 – 12:00 (Scientific Benchmarks & Accuracy)**: Showcase 95% Confidence Interval benchmarks (OneHotEncoder 5.03×, ARIMA 86.3×) and the Accuracy Scorecard.
+- **12:00 – 15:00 (Live Terminal Demo & Q&A)**: Execute `swift run -c release SwiftSciBenchmarks --suite Accuracy`.
+
+### 🎙️ 30-Minute Keynote
+- **00:00 – 05:00**: Unified Memory Architecture (UMA) on Apple Silicon and Swift 6 Concurrency advantages.
+- **05:00 – 15:00**: Deep Dive into Core Engines (Zero-copy Feather/Parquet, MLX GPU dispatch, Core ML exports, ReAct Agents).
+- **15:00 – 22:00**: Statistical Benchmark Lab & Methodology (Trimmed Mean, 95% CI, RAM RSS analysis).
+- **22:00 – 27:00**: Accuracy & Error Metrics Scorecard (RMSE, MAE, MAPE, R², Classification F1).
+- **27:00 – 30:00**: Live Interactive Code Execution & Roadmap to v4.0.
+
+---
+
+## 💻 Step-by-Step Live Demo Script
+
+```bash
+# 1. Clone & enter repository
+git clone https://github.com/Nodibell/SwiftSci.git
+cd SwiftSci/SwiftSci
+
+# 2. Run all unit tests across 14 modules
+swift test
+
+# 3. Run interactive Accuracy & Quality Scorecard
+swift run -c release SwiftSciBenchmarks --suite Accuracy
+
+# 4. Run full scientific benchmark matrix with 95% Confidence Intervals
+swift run -c release SwiftSciBenchmarks --rounds 3 --iterations 7
+
+# 5. Open Web Presentation locally in Safari
+open docs/presentation.html
+```
+

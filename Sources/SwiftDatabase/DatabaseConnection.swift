@@ -1,12 +1,21 @@
 import Foundation
 import SQLite3
 import SwiftDataFrame
+#if canImport(CryptoKit)
+import CryptoKit
+#elseif canImport(CommonCrypto)
+import CommonCrypto
+#endif
 
 /// Errors specific to database operations.
 public enum DatabaseError: Error, LocalizedError {
     case connectionFailed(String)
     case queryFailed(String)
     case notImplemented(String)
+    /// Thrown by `toSQL` when mode is `.failIfExists` and the table exists.
+    case tableAlreadyExists(String)
+    /// Thrown when the server requests an unsupported authentication method.
+    case unsupportedAuth(String)
 
     /// The error description.
     public var errorDescription: String? {
@@ -17,6 +26,10 @@ public enum DatabaseError: Error, LocalizedError {
             return "SQL query execution failed: \(msg)"
         case .notImplemented(let feature):
             return "Feature not implemented: \(feature)"
+        case .tableAlreadyExists(let table):
+            return "Table '\(table)' already exists (mode is .failIfExists)"
+        case .unsupportedAuth(let method):
+            return "Unsupported authentication method: \(method)"
         }
     }
 }
@@ -81,15 +94,17 @@ public enum AnySendableValue: Sendable, CustomStringConvertible {
     }
 }
 
-/// Embedded SQLite database driver executing real SQL statements using SQLite C library.
-public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
+/// Embedded SQLite database driver executing real SQL statements using the SQLite3 C API.
+///
+/// ## Thread Safety
+/// Serialized through actor isolation, guaranteeing data-race safety across concurrent tasks.
+public actor SQLiteConnection: DatabaseConnection {
     /// The database path.
-    public let databasePath: String
+    nonisolated public let databasePath: String
     private let actualPath: String
 
-    /// Creates a new instance.
-    /// - Parameters:
-    ///   - databasePath: The database path.
+    /// Creates a new SQLiteConnection.
+    /// - Parameter databasePath: Path to the SQLite file, or `":memory:"` for an in-memory DB.
     public init(databasePath: String) {
         self.databasePath = databasePath
         if databasePath == ":memory:" {
@@ -108,9 +123,11 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
         }
     }
 
-    /// Execute query.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `SQLQueryResult` result.
+    /// Executes a SQL statement and returns the result set.
+    ///
+    /// - Parameter sql: A valid SQLite SQL statement.
+    /// - Throws: `DatabaseError.connectionFailed` or `DatabaseError.queryFailed`.
+    /// - Returns: `SQLQueryResult` with column names and typed rows.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
         var db: OpaquePointer?
         let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI
@@ -186,21 +203,28 @@ public final class SQLiteConnection: DatabaseConnection, @unchecked Sendable {
 // MARK: - Native PostgreSQL Wire Protocol Driver (Pure Swift)
 
 /// Native PostgreSQL database connection driver using PostgreSQL v3.0 wire protocol.
-public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable {
+///
+/// ## Supported authentication
+/// - `trust` (no password required)
+/// - `md5` (password hashed with MD5 + salt)
+///
+/// ## Thread Safety
+/// Isolated by actor, safe for concurrent async execution.
+public actor PostgreSQLConnection: DatabaseConnection {
     /// The connection URL.
-    public let connectionURL: String
+    nonisolated public let connectionURL: String
     /// The database host.
-    public let host: String
+    nonisolated public let host: String
     /// The database port.
-    public let port: Int
+    nonisolated public let port: Int
     /// The database user.
-    public let user: String
+    nonisolated public let user: String
     /// The database password.
-    public let password: String
+    nonisolated public let password: String
     /// The database name.
-    public let database: String
+    nonisolated public let database: String
     /// The SSL/TLS connection mode.
-    public let sslMode: SSLMode
+    nonisolated public let sslMode: SSLMode
 
     /// Creates a new PostgreSQL connection instance.
     /// - Parameters:
@@ -241,10 +265,12 @@ public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable
     }
 
     /// Executes a SQL query against the PostgreSQL database.
-    /// - Parameter sql: The SQL query statement.
-    /// - Throws: `DatabaseError` if connection fails or query execution fails.
-    /// - Returns: `SQLQueryResult` tabular data.
+    ///
+    /// - Parameter sql: The SQL statement to execute.
+    /// - Throws: `DatabaseError` on connection, auth, or query failure.
+    /// - Returns: `SQLQueryResult` with column names and typed rows.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
+
         guard !connectionURL.isEmpty else {
             throw DatabaseError.connectionFailed("Empty PostgreSQL connection URL")
         }
@@ -252,163 +278,242 @@ public final class PostgreSQLConnection: DatabaseConnection, @unchecked Sendable
             throw DatabaseError.queryFailed("SQL query cannot be empty")
         }
 
-        // Establish TCP connection via POSIX sockets
+        // Establish TCP connection
         let sockfd = socket(AF_INET, SOCK_STREAM, 0)
         guard sockfd >= 0 else {
             throw DatabaseError.connectionFailed("Failed to create socket for PostgreSQL host: \(host)")
         }
         defer { close(sockfd) }
 
-        // Set socket timeout (2 seconds)
-        var tv = timeval(tv_sec: 2, tv_usec: 0)
+        var tv = timeval(tv_sec: 5, tv_usec: 0)
         setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
         setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
 
         var serv_addr = sockaddr_in()
         serv_addr.sin_family = sa_family_t(AF_INET)
         serv_addr.sin_port = UInt16(port).bigEndian
-
-        var hostEntry: in_addr = in_addr()
+        var hostEntry = in_addr()
         if inet_pton(AF_INET, host, &hostEntry) <= 0 {
             guard let hostent = gethostbyname(host), let addrList = hostent.pointee.h_addr_list else {
                 throw DatabaseError.connectionFailed("Cannot resolve PostgreSQL host: \(host)")
             }
-            let rawAddr = addrList[0]!
-            memcpy(&serv_addr.sin_addr, rawAddr, MemoryLayout<in_addr>.size)
+            memcpy(&serv_addr.sin_addr, addrList[0]!, MemoryLayout<in_addr>.size)
         } else {
             serv_addr.sin_addr = hostEntry
         }
-
         let connectRes = withUnsafePointer(to: &serv_addr) {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
                 connect(sockfd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
             }
         }
         guard connectRes == 0 else {
-            throw DatabaseError.connectionFailed("Could not connect to PostgreSQL server at \(host):\(port)")
+            throw DatabaseError.connectionFailed("Could not connect to PostgreSQL at \(host):\(port)")
         }
 
-        // Send PostgreSQL v3.0 StartupMessage
+        // --- Helper: recv all bytes until ReadyForQuery ('Z') ---
+        func recvAll() throws -> Data {
+            var allData = Data()
+            var chunk = [UInt8](repeating: 0, count: 65_536) // 64KB chunks
+            while true {
+                let n = recv(sockfd, &chunk, chunk.count, 0)
+                guard n > 0 else { break }
+                allData.append(contentsOf: chunk.prefix(n))
+                // 'Z' = ReadyForQuery — signals end of server response
+                if chunk.prefix(n).contains(0x5A) { break }
+                // 'E' = ErrorResponse — break once complete error packet is received
+                if allData.first == 0x45 && allData.count >= 5 {
+                    let packetLen = Int(allData[1]) << 24 | Int(allData[2]) << 16 | Int(allData[3]) << 8 | Int(allData[4])
+                    if allData.count >= packetLen + 1 { break }
+                }
+                // 'R' = AuthenticationRequest — break if challenge requires client action (authType != 0)
+                if allData.first == 0x52 && allData.count >= 9 {
+                    let authType = Int(allData[5]) << 24 | Int(allData[6]) << 16 | Int(allData[7]) << 8 | Int(allData[8])
+                    if authType != 0 {
+                        let packetLen = Int(allData[1]) << 24 | Int(allData[2]) << 16 | Int(allData[3]) << 8 | Int(allData[4])
+                        if allData.count >= packetLen + 1 { break }
+                    }
+                }
+            }
+            return allData
+        }
+
+        // --- Send StartupMessage v3.0 ---
         var startup = Data()
-        startup.append(contentsOf: [0x00, 0x03, 0x00, 0x00]) // Protocol v3.0
+        startup.append(contentsOf: [0x00, 0x03, 0x00, 0x00])
         startup.append(contentsOf: "user\0\(user)\0".utf8)
         startup.append(contentsOf: "database\0\(database)\0".utf8)
         startup.append(0x00)
-        let totalLen = Int32(startup.count + 4).bigEndian
         var packet = Data()
-        withUnsafeBytes(of: totalLen) { packet.append(contentsOf: $0) }
+        withUnsafeBytes(of: Int32(startup.count + 4).bigEndian) { packet.append(contentsOf: $0) }
         packet.append(startup)
-
         _ = packet.withUnsafeBytes { send(sockfd, $0.baseAddress, packet.count, 0) }
 
-        // Read authentication & ready responses
-        var buffer = [UInt8](repeating: 0, count: 4096)
-        let bytesRead = recv(sockfd, &buffer, buffer.count, 0)
-        guard bytesRead > 0 else {
-            throw DatabaseError.connectionFailed("Server closed connection during PostgreSQL handshake")
+        // --- Handle authentication ---
+        let authData = try recvAll()
+        if authData.isEmpty {
+            throw DatabaseError.connectionFailed("Server closed connection during handshake")
         }
-
-        // Check if error response ('E')
-        if buffer[0] == 0x45 { // 'E'
-            let msg = String(decoding: buffer.prefix(bytesRead), as: UTF8.self)
-            throw DatabaseError.connectionFailed("PostgreSQL server rejected connection: \(msg)")
+        let authBytes = [UInt8](authData)
+        if authBytes[0] == 0x45 { // 'E'
+            throw DatabaseError.connectionFailed("PostgreSQL rejected connection: \(String(decoding: authBytes, as: UTF8.self))")
         }
-
-        // Send Query Message: 'Q' + len(int32) + sql + '\0'
-        var queryPacket = Data()
-        queryPacket.append(0x51) // 'Q'
-        let qLen = Int32(sql.utf8.count + 5).bigEndian
-        withUnsafeBytes(of: qLen) { queryPacket.append(contentsOf: $0) }
-        queryPacket.append(contentsOf: sql.utf8)
-        queryPacket.append(0x00)
-
-        _ = queryPacket.withUnsafeBytes { send(sockfd, $0.baseAddress, queryPacket.count, 0) }
-
-        // Parse RowDescription ('T') and DataRow ('D')
-        var columns: [String] = []
-        var rows: [[AnySendableValue]] = []
-        let qRead = recv(sockfd, &buffer, buffer.count, 0)
-        guard qRead > 0 else {
-            return SQLQueryResult(columns: [], rows: [])
-        }
-
-        var offset = 0
-        while offset < qRead {
-            let msgType = buffer[offset]
-            if msgType == 0x45 { // 'E' ErrorResponse
-                let errText = String(decoding: buffer[offset..<qRead], as: UTF8.self)
-                throw DatabaseError.queryFailed("PostgreSQL error: \(errText)")
-            } else if msgType == 0x54 { // 'T' RowDescription
-                if offset + 7 <= qRead {
-                    let numFields = Int(UInt16(buffer[offset + 5]) << 8 | UInt16(buffer[offset + 6]))
-                    var fOffset = offset + 7
-                    for _ in 0..<numFields {
-                        guard fOffset < qRead else { break }
-                        var nameChars: [UInt8] = []
-                        while fOffset < qRead && buffer[fOffset] != 0 {
-                            nameChars.append(buffer[fOffset])
-                            fOffset += 1
-                        }
-                        fOffset += 1 // skip null
-                        fOffset += 18 // skip type OID, size, modifier, format code
-                        columns.append(String(decoding: nameChars, as: UTF8.self))
-                    }
+        if authBytes[0] == 0x52 { // 'R' AuthenticationRequest
+            // authType is at bytes [5..8]
+            guard authBytes.count >= 9 else {
+                throw DatabaseError.connectionFailed("Truncated authentication packet")
+            }
+            let authType = Int32(authBytes[5]) << 24 | Int32(authBytes[6]) << 16
+                         | Int32(authBytes[7]) << 8  | Int32(authBytes[8])
+            switch authType {
+            case 0: // AuthenticationOk — trust mode
+                break
+            case 5: // MD5 password
+                guard authBytes.count >= 13 else {
+                    throw DatabaseError.connectionFailed("MD5 auth: missing salt")
                 }
-                offset += 4 + Int(UInt32(buffer[offset+1]) << 24 | UInt32(buffer[offset+2]) << 16 | UInt32(buffer[offset+3]) << 8 | UInt32(buffer[offset+4])) + 1
-            } else if msgType == 0x44 { // 'D' DataRow
-                var row: [AnySendableValue] = []
-                if offset + 7 <= qRead {
-                    let numCols = Int(UInt16(buffer[offset + 5]) << 8 | UInt16(buffer[offset + 6]))
-                    var dOffset = offset + 7
-                    for _ in 0..<numCols {
-                        guard dOffset + 4 <= qRead else { break }
-                        let colLen = Int(Int32(buffer[dOffset]) << 24 | Int32(buffer[dOffset+1]) << 16 | Int32(buffer[dOffset+2]) << 8 | Int32(buffer[dOffset+3]))
-                        dOffset += 4
-                        if colLen < 0 {
-                            row.append(.null)
-                        } else {
-                            let valBytes = buffer[dOffset..<(dOffset + colLen)]
-                            dOffset += colLen
-                            let valStr = String(decoding: valBytes, as: UTF8.self)
-                            if let intVal = Int(valStr) {
-                                row.append(.int(intVal))
-                            } else if let dblVal = Double(valStr) {
-                                row.append(.double(dblVal))
-                            } else {
-                                row.append(.string(valStr))
-                            }
-                        }
-                    }
+                let salt = Array(authBytes[9..<13])
+                let md5Password = pgMD5Password(password: password, user: user, salt: salt)
+                var pwPacket = Data([0x70]) // 'p'
+                let payload = md5Password + "\0"
+                withUnsafeBytes(of: Int32(payload.utf8.count + 4).bigEndian) { pwPacket.append(contentsOf: $0) }
+                pwPacket.append(contentsOf: payload.utf8)
+                _ = pwPacket.withUnsafeBytes { send(sockfd, $0.baseAddress, pwPacket.count, 0) }
+                let md5Response = try recvAll()
+                let md5Bytes = [UInt8](md5Response)
+                if md5Bytes.first == 0x45 { // 'E'
+                    throw DatabaseError.connectionFailed("PostgreSQL MD5 auth failed")
                 }
-                rows.append(row)
-                offset += 4 + Int(UInt32(buffer[offset+1]) << 24 | UInt32(buffer[offset+2]) << 16 | UInt32(buffer[offset+3]) << 8 | UInt32(buffer[offset+4])) + 1
-            } else {
-                offset += 1
+            default:
+                throw DatabaseError.unsupportedAuth(
+                    "PostgreSQL auth type \(authType) is not supported. " +
+                    "Configure pg_hba.conf to use 'trust' or 'md5'."
+                )
             }
         }
 
+        // --- Send Query ---
+        var queryPacket = Data([0x51]) // 'Q'
+        let qPayload = sql.utf8 + [0x00]
+        withUnsafeBytes(of: Int32(qPayload.count + 4).bigEndian) { queryPacket.append(contentsOf: $0) }
+        queryPacket.append(contentsOf: qPayload)
+        _ = queryPacket.withUnsafeBytes { send(sockfd, $0.baseAddress, queryPacket.count, 0) }
+
+        // --- Read full response ---
+        let responseData = try recvAll()
+        let buf = [UInt8](responseData)
+        let totalRead = buf.count
+
+        var columns: [String] = []
+        var rows: [[AnySendableValue]] = []
+        var offset = 0
+
+        while offset < totalRead {
+            guard offset + 5 <= totalRead else { break }
+            let msgType = buf[offset]
+            let msgLen  = Int(UInt32(buf[offset+1]) << 24 | UInt32(buf[offset+2]) << 16
+                            | UInt32(buf[offset+3]) << 8  | UInt32(buf[offset+4]))
+            let msgEnd  = offset + 1 + msgLen
+            guard msgEnd <= totalRead else { break }
+
+            switch msgType {
+            case 0x45: // 'E' ErrorResponse
+                let errText = String(decoding: buf[offset..<msgEnd], as: UTF8.self)
+                throw DatabaseError.queryFailed("PostgreSQL error: \(errText)")
+
+            case 0x54: // 'T' RowDescription
+                guard offset + 7 <= totalRead else { break }
+                let numFields = Int(UInt16(buf[offset + 5]) << 8 | UInt16(buf[offset + 6]))
+                var fOff = offset + 7
+                for _ in 0..<numFields {
+                    guard fOff < msgEnd else { break }
+                    var nameBytes: [UInt8] = []
+                    while fOff < msgEnd && buf[fOff] != 0 {
+                        nameBytes.append(buf[fOff]); fOff += 1
+                    }
+                    fOff += 1   // null terminator
+                    fOff += 18  // OID(4) + attrNum(2) + typeOID(4) + typeLen(2) + typeMod(4) + format(2)
+                    columns.append(String(decoding: nameBytes, as: UTF8.self))
+                }
+
+            case 0x44: // 'D' DataRow
+                guard offset + 7 <= totalRead else { break }
+                let numCols = Int(UInt16(buf[offset + 5]) << 8 | UInt16(buf[offset + 6]))
+                var dOff = offset + 7
+                var row: [AnySendableValue] = []
+                for _ in 0..<numCols {
+                    guard dOff + 4 <= totalRead else { break }
+                    let colLen = Int(Int32(bitPattern:
+                        UInt32(buf[dOff]) << 24 | UInt32(buf[dOff+1]) << 16 |
+                        UInt32(buf[dOff+2]) << 8 | UInt32(buf[dOff+3])))
+                    dOff += 4
+                    if colLen < 0 {
+                        row.append(.null)
+                    } else {
+                        guard dOff + colLen <= totalRead else { break }
+                        let valStr = String(decoding: buf[dOff..<(dOff + colLen)], as: UTF8.self)
+                        dOff += colLen
+                        if let i = Int(valStr)         { row.append(.int(i)) }
+                        else if let d = Double(valStr) { row.append(.double(d)) }
+                        else                           { row.append(.string(valStr)) }
+                    }
+                }
+                rows.append(row)
+
+            default: break
+            }
+            offset = msgEnd
+        }
+
         return SQLQueryResult(columns: columns, rows: rows)
+    }
+
+    // MARK: - MD5 password helper
+
+    /// Computes the PostgreSQL MD5 password string:
+    /// `"md5" + md5( md5(password + user) + salt )`
+    private func pgMD5Password(password: String, user: String, salt: [UInt8]) -> String {
+        func md5Hex(_ input: [UInt8]) -> String {
+            #if canImport(CryptoKit)
+            let digest = Insecure.MD5.hash(data: Data(input))
+            return digest.map { String(format: "%02x", $0) }.joined()
+            #elseif canImport(CommonCrypto)
+            var digest = [UInt8](repeating: 0, count: 16)
+            var ctx = CC_MD5_CTX()
+            CC_MD5_Init(&ctx)
+            _ = input.withUnsafeBytes { CC_MD5_Update(&ctx, $0.baseAddress, CC_LONG($0.count)) }
+            CC_MD5_Final(&digest, &ctx)
+            return digest.map { String(format: "%02x", $0) }.joined()
+            #else
+            return ""
+            #endif
+        }
+        let inner = md5Hex(Array((password + user).utf8))
+        let outer = md5Hex(Array(inner.utf8) + salt)
+        return "md5" + outer
     }
 }
 
 // MARK: - Native MySQL Wire Protocol Driver (Pure Swift)
 
-/// Native MySQL database connection driver using MySQL Client/Server protocol.
-public final class MySQLConnection: DatabaseConnection, @unchecked Sendable {
+/// Native MySQL database connection driver using MySQL Client/Server Protocol 4.1+.
+///
+/// ## Thread Safety
+/// Isolated by actor, safe for concurrent async execution.
+public actor MySQLConnection: DatabaseConnection {
     /// The connection URL.
-    public let connectionURL: String
+    nonisolated public let connectionURL: String
     /// The database host.
-    public let host: String
+    nonisolated public let host: String
     /// The database port.
-    public let port: Int
+    nonisolated public let port: Int
     /// The database user.
-    public let user: String
+    nonisolated public let user: String
     /// The database password.
-    public let password: String
+    nonisolated public let password: String
     /// The database name.
-    public let database: String
+    nonisolated public let database: String
     /// The SSL/TLS connection mode.
-    public let sslMode: SSLMode
+    nonisolated public let sslMode: SSLMode
 
     /// Creates a new MySQL connection instance.
     /// - Parameters:
@@ -449,10 +554,12 @@ public final class MySQLConnection: DatabaseConnection, @unchecked Sendable {
     }
 
     /// Executes a SQL query against the MySQL database.
-    /// - Parameter sql: The SQL query statement.
-    /// - Throws: `DatabaseError` if connection fails or query execution fails.
-    /// - Returns: `SQLQueryResult` tabular data.
+    ///
+    /// - Parameter sql: The SQL statement to execute.
+    /// - Throws: `DatabaseError` on connection or query failure.
+    /// - Returns: `SQLQueryResult` with real column names and typed rows.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
+
         guard !connectionURL.isEmpty else {
             throw DatabaseError.connectionFailed("Empty MySQL connection URL")
         }
@@ -466,115 +573,178 @@ public final class MySQLConnection: DatabaseConnection, @unchecked Sendable {
         }
         defer { close(sockfd) }
 
-        var tv = timeval(tv_sec: 2, tv_usec: 0)
+        var tv = timeval(tv_sec: 5, tv_usec: 0)
         setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
         setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
 
         var serv_addr = sockaddr_in()
         serv_addr.sin_family = sa_family_t(AF_INET)
         serv_addr.sin_port = UInt16(port).bigEndian
-
-        var hostEntry: in_addr = in_addr()
+        var hostEntry = in_addr()
         if inet_pton(AF_INET, host, &hostEntry) <= 0 {
             guard let hostent = gethostbyname(host), let addrList = hostent.pointee.h_addr_list else {
                 throw DatabaseError.connectionFailed("Cannot resolve MySQL host: \(host)")
             }
-            let rawAddr = addrList[0]!
-            memcpy(&serv_addr.sin_addr, rawAddr, MemoryLayout<in_addr>.size)
+            memcpy(&serv_addr.sin_addr, addrList[0]!, MemoryLayout<in_addr>.size)
         } else {
             serv_addr.sin_addr = hostEntry
         }
-
         let connectRes = withUnsafePointer(to: &serv_addr) {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
                 connect(sockfd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
             }
         }
         guard connectRes == 0 else {
-            throw DatabaseError.connectionFailed("Could not connect to MySQL server at \(host):\(port)")
+            throw DatabaseError.connectionFailed("Could not connect to MySQL at \(host):\(port)")
         }
 
-        // Read Initial Handshake Packet (Protocol 10)
-        var buffer = [UInt8](repeating: 0, count: 4096)
-        let handshakeBytes = recv(sockfd, &buffer, buffer.count, 0)
-        guard handshakeBytes > 4 else {
-            throw DatabaseError.connectionFailed("Server closed connection during MySQL initial handshake")
+        // Helper: read a single MySQL packet [len(3) + seq(1) + payload]
+        func readPacket() -> Data? {
+            var header = [UInt8](repeating: 0, count: 4)
+            guard recv(sockfd, &header, 4, MSG_WAITALL) == 4 else { return nil }
+            let payloadLen = Int(header[0]) | Int(header[1]) << 8 | Int(header[2]) << 16
+            guard payloadLen > 0 else { return Data() }
+            var payload = [UInt8](repeating: 0, count: payloadLen)
+            guard recv(sockfd, &payload, payloadLen, MSG_WAITALL) == payloadLen else { return nil }
+            return Data(payload)
         }
 
-        // Check if ERR packet (0xFF)
-        if buffer[4] == 0xFF {
-            let errMsg = String(decoding: buffer[7..<handshakeBytes], as: UTF8.self)
-            throw DatabaseError.connectionFailed("MySQL handshake rejected: \(errMsg)")
+        // Helper: read null-terminated string from Data at offset
+        func readCString(_ data: Data, from offset: inout Int) -> String {
+            var bytes: [UInt8] = []
+            while offset < data.count && data[offset] != 0 {
+                bytes.append(data[offset]); offset += 1
+            }
+            offset += 1 // skip null
+            return String(decoding: bytes, as: UTF8.self)
         }
 
-        // Send Handshake Response 41 (Client Capabilities, charset utf8, username, db)
+        // --- Read Server Greeting ---
+        guard let greeting = readPacket(), greeting.count > 1 else {
+            throw DatabaseError.connectionFailed("MySQL handshake: no greeting received")
+        }
+        if greeting[0] == 0xFF {
+            throw DatabaseError.connectionFailed("MySQL error in greeting")
+        }
+
+        // --- Send Handshake Response ---
         var responsePayload = Data()
-        // Client capabilities (CLIENT_LONG_PASSWORD | CLIENT_PROTOCOL_41 | CLIENT_SECURE_CONNECTION | CLIENT_CONNECT_WITH_DB)
-        responsePayload.append(contentsOf: [0x85, 0xA2, 0x1E, 0x00])
-        // Max packet size (16MB)
-        responsePayload.append(contentsOf: [0x00, 0x00, 0x00, 0x01])
-        // Charset (33 = utf8_general_ci)
-        responsePayload.append(33)
-        // 23 bytes reserved zeros
+        responsePayload.append(contentsOf: [0x85, 0xA2, 0x1E, 0x00]) // capabilities
+        responsePayload.append(contentsOf: [0x00, 0x00, 0x00, 0x01]) // max_packet_size
+        responsePayload.append(33)                                    // charset utf8
         responsePayload.append(contentsOf: [UInt8](repeating: 0, count: 23))
-        // Username null-terminated
         responsePayload.append(contentsOf: "\(user)\0".utf8)
-        // Password len (0 for empty or plain)
-        responsePayload.append(0x00)
-        // Database null-terminated
+        responsePayload.append(0x00) // auth_response length (empty password)
         if !database.isEmpty {
             responsePayload.append(contentsOf: "\(database)\0".utf8)
         }
-
-        var handshakePacket = Data()
         let pLen = responsePayload.count
-        handshakePacket.append(UInt8(pLen & 0xFF))
-        handshakePacket.append(UInt8((pLen >> 8) & 0xFF))
-        handshakePacket.append(UInt8((pLen >> 16) & 0xFF))
-        handshakePacket.append(1) // sequence id 1
+        var handshakePacket = Data([
+            UInt8(pLen & 0xFF), UInt8((pLen >> 8) & 0xFF), UInt8((pLen >> 16) & 0xFF), 1
+        ])
         handshakePacket.append(responsePayload)
-
         _ = handshakePacket.withUnsafeBytes { send(sockfd, $0.baseAddress, handshakePacket.count, 0) }
 
-        // Read Auth Response (OK packet or ERR packet)
-        let authRead = recv(sockfd, &buffer, buffer.count, 0)
-        guard authRead > 4 else {
-            throw DatabaseError.connectionFailed("No response to MySQL handshake")
+        guard let authResp = readPacket(), authResp.count > 0 else {
+            throw DatabaseError.connectionFailed("No response to MySQL auth")
         }
-        if buffer[4] == 0xFF {
-            let errMsg = String(decoding: buffer[7..<authRead], as: UTF8.self)
-            throw DatabaseError.connectionFailed("MySQL auth failed: \(errMsg)")
+        if authResp[0] == 0xFF {
+            throw DatabaseError.connectionFailed("MySQL auth failed")
         }
 
-        // Send COM_QUERY (0x03)
+        // --- Send COM_QUERY ---
         var queryPayload = Data([0x03])
         queryPayload.append(contentsOf: sql.utf8)
-        var queryPacket = Data()
         let qLen = queryPayload.count
-        queryPacket.append(UInt8(qLen & 0xFF))
-        queryPacket.append(UInt8((qLen >> 8) & 0xFF))
-        queryPacket.append(UInt8((qLen >> 16) & 0xFF))
-        queryPacket.append(0) // sequence id 0
+        var queryPacket = Data([UInt8(qLen & 0xFF), UInt8((qLen >> 8) & 0xFF), UInt8((qLen >> 16) & 0xFF), 0])
         queryPacket.append(queryPayload)
-
         _ = queryPacket.withUnsafeBytes { send(sockfd, $0.baseAddress, queryPacket.count, 0) }
 
-        // Read resultset
-        let resRead = recv(sockfd, &buffer, buffer.count, 0)
-        guard resRead > 4 else {
+        // --- Read Result Set ---
+        guard let firstPacket = readPacket(), firstPacket.count > 0 else {
             return SQLQueryResult(columns: [], rows: [])
         }
-        if buffer[4] == 0xFF {
-            let errMsg = String(decoding: buffer[7..<resRead], as: UTF8.self)
+        // 0x00 = OK, 0xFF = ERR, 0xFE = EOF, otherwise = column_count
+        if firstPacket[0] == 0xFF {
+            let errMsg = firstPacket.count > 3 ? String(decoding: firstPacket[3...], as: UTF8.self) : "Unknown"
             throw DatabaseError.queryFailed("MySQL error: \(errMsg)")
         }
+        if firstPacket[0] == 0x00 {
+            // OK packet — DDL or INSERT/UPDATE with no result set
+            return SQLQueryResult(columns: [], rows: [])
+        }
+        let columnCount = Int(firstPacket[0])
 
-        // Parse result columns and rows
+        // --- Read ColumnDefinition packets ---
         var columns: [String] = []
-        let rows: [[AnySendableValue]] = []
-        let columnCount = Int(buffer[4])
-        for c in 0..<columnCount {
-            columns.append("col_\(c + 1)")
+        for _ in 0..<columnCount {
+            guard let colDef = readPacket(), colDef.count > 4 else { break }
+            // ColumnDefinition41: catalog(lenc) db(lenc) table(lenc) org_table(lenc) name(lenc) ...
+            var off = 0
+            func skipLenc() {
+                guard off < colDef.count else { return }
+                let b = colDef[off]; off += 1
+                if b < 0xFB { off += Int(b) }
+                else if b == 0xFC { off += 2 + 2 }
+                else if b == 0xFD { off += 3 + 3 }
+                else { off += 8 + 8 }
+            }
+            func readLencStr() -> String {
+                guard off < colDef.count else { return "" }
+                let b = colDef[off]; off += 1
+                var len = 0
+                if b < 0xFB { len = Int(b) }
+                else if b == 0xFC { guard off + 2 <= colDef.count else { return "" }; len = Int(colDef[off]) | Int(colDef[off+1]) << 8; off += 2 }
+                else if b == 0xFD { guard off + 3 <= colDef.count else { return "" }; len = Int(colDef[off]) | Int(colDef[off+1]) << 8 | Int(colDef[off+2]) << 16; off += 3 }
+                guard off + len <= colDef.count else { return "" }
+                let s = String(decoding: colDef[off..<(off+len)], as: UTF8.self)
+                off += len
+                return s
+            }
+            skipLenc()  // catalog
+            skipLenc()  // schema
+            skipLenc()  // table (virtual)
+            skipLenc()  // org_table
+            let colName = readLencStr() // name
+            columns.append(colName.isEmpty ? "col_\(columns.count + 1)" : colName)
+        }
+
+        // Read EOF after column definitions
+        _ = readPacket()
+
+        // --- Read Row packets until EOF ---
+        var rows: [[AnySendableValue]] = []
+        while let rowPacket = readPacket() {
+            guard rowPacket.count > 0 else { break }
+            // 0xFE = EOF packet (len < 9)
+            if rowPacket[0] == 0xFE && rowPacket.count < 9 { break }
+            // 0xFF = ERR packet
+            if rowPacket[0] == 0xFF {
+                let errMsg = rowPacket.count > 3 ? String(decoding: rowPacket[3...], as: UTF8.self) : "error"
+                throw DatabaseError.queryFailed("MySQL row error: \(errMsg)")
+            }
+
+            var off = 0
+            var row: [AnySendableValue] = []
+            for _ in 0..<columnCount {
+                guard off < rowPacket.count else { row.append(.null); continue }
+                let b = rowPacket[off]
+                if b == 0xFB { // NULL
+                    off += 1; row.append(.null); continue
+                }
+                off += 1
+                var len = 0
+                if b < 0xFB { len = Int(b) }
+                else if b == 0xFC { guard off + 2 <= rowPacket.count else { break }; len = Int(rowPacket[off]) | Int(rowPacket[off+1]) << 8; off += 2 }
+                else if b == 0xFD { guard off + 3 <= rowPacket.count else { break }; len = Int(rowPacket[off]) | Int(rowPacket[off+1]) << 8 | Int(rowPacket[off+2]) << 16; off += 3 }
+                guard off + len <= rowPacket.count else { break }
+                let valStr = String(decoding: rowPacket[off..<(off+len)], as: UTF8.self)
+                off += len
+                if let i = Int(valStr)         { row.append(.int(i)) }
+                else if let d = Double(valStr) { row.append(.double(d)) }
+                else                           { row.append(.string(valStr)) }
+            }
+            rows.append(row)
         }
 
         return SQLQueryResult(columns: columns, rows: rows)
@@ -679,9 +849,20 @@ extension DataFrame {
         }
 
         if mode == .failIfExists {
-            let checkResult = try await connection.executeQuery("SELECT 1 FROM \(escapedTableName) LIMIT 1;")
-            if !checkResult.columns.isEmpty {
-                throw DatabaseError.queryFailed("Table \(table) already exists and mode is .failIfExists")
+            // Use sqlite_master for SQLite; for PostgreSQL/MySQL this query
+            // will fail (table not found) which is the correct "doesn't exist" signal.
+            let checkSQL: String
+            if connection is SQLiteConnection {
+                checkSQL = "SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='\(table.replacingOccurrences(of: "'", with: "''"))'"
+            } else {
+                // ANSI information_schema (PostgreSQL 8+, MySQL 5+)
+                checkSQL = "SELECT COUNT(*) as cnt FROM information_schema.tables WHERE table_name='\(table.replacingOccurrences(of: "'", with: "''"))'"
+            }
+            let checkResult = try await connection.executeQuery(checkSQL)
+            if let firstRow = checkResult.rows.first,
+               let firstVal = firstRow.first,
+               case .int(let cnt) = firstVal, cnt > 0 {
+                throw DatabaseError.tableAlreadyExists(table)
             }
         }
 

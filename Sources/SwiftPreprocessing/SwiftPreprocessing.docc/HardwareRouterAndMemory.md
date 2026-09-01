@@ -18,7 +18,7 @@ graph TD
     Router -->|Static Inference| ANE[Core ML Engine]
 ```
 
-* **Small Vectors ($N < 50{,}000$)**: Routed to CPU Accelerate (vDSP/BLAS/LAPACK) to eliminate GPU kernel dispatch latency.
+* **Small Vectors (`N < 50,000`)**: Routed to CPU Accelerate (vDSP/BLAS/LAPACK) to eliminate GPU kernel dispatch latency.
 * **Large Tensors & Deep Learning**: Routed to MLX Metal GPU for massive parallel throughput.
 
 ## 2. WiredMemoryManager & Ticket System

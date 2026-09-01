@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.1+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.5+)
 
 ## 📌 Vision & Architecture
 
@@ -353,7 +353,7 @@ The architecture combines two hardware engines:
 
 ---
 
-### Version 3.4.0: Out-of-Core Data, Parquet Engine & Multimodal Perception *(📋 Planned)*
+### Version 3.4.0 – 3.5.0: Out-of-Core Data, Parquet Engine & Multimodal Perception *(🟢 Completed)*
 
 1. **Out-of-Core & Large-Scale Data Processing (`SwiftDataFrame`)**:
    - `ChunkedDataFrame` and `LazyMemoryMappedCSVReader` for processing 100M+ row datasets exceeding RAM.
@@ -366,6 +366,79 @@ The architecture combines two hardware engines:
    - CLIP-style vision-language feature matching on MLX Metal GPU.
 4. **Multi-Agent Orchestration (`SwiftAgent`)**:
    - ReAct reasoning loops with multi-tool AST pipelines and dynamic backtracking.
+
+---
+
+### Version 3.6.0: Performance Hardening, Parameter Optimization & Sparse Structures *(🔵 Planned)*
+
+All items are tracked from the 14-module audit ([`coreproblems34.md`](../../coreproblems34.md)).
+
+#### 🟠 High Priority — Bug Fixes & Compiler Warnings
+
+1. **Compiler Warning Zero (`SwiftPreprocessing`)**:
+   - Replace `var` with `let` for never-mutated variables `negMean`, `negMin`, `negCenter` in `StandardScaler.swift:120`, `MinMaxScaler.swift:115`, `RobustScaler.swift:113`.
+2. **`CommonCrypto MD5` → `CryptoKit` Migration (`SwiftDatabase`)**:
+   - Replace deprecated `CC_MD5_Init` / `CC_MD5_Update` / `CC_MD5_Final` in `DatabaseConnection.swift:463–465` with `CryptoKit.Insecure.MD5` to eliminate macOS 10.15+ deprecation warnings.
+3. **Holt-Winters Parameter Optimization (`SwiftForecast`)**:
+   - Add Nelder-Mead simplex optimizer for automatic MLE fitting of α (level), β (trend), γ (seasonal) parameters in `ExponentialSmoothing`, matching Statsmodels accuracy on low-noise datasets.
+
+#### 🟡 Medium Priority — Performance & Algorithmic Improvements
+
+4. **GBDT Histogram Quantization (`SwiftML`)**:
+   - Replace exhaustive $O(N \cdot M \log N)$ split search in `GradientBoostedTreesRegressor` with 256-bin feature quantization (LightGBM / XGBoost style), enabling training on 1M+ row datasets.
+5. **`OneVsRestClassifier` Parallel Training (`SwiftML`)**:
+   - Replace sequential per-class training loop with Swift Concurrency `TaskGroup` for concurrent binary classifier fitting.
+6. **Early Stopping with `patience` (`SwiftML`)**:
+   - Add `patience` parameter for automatic training halt when validation loss stagnates over N epochs (MLP, GBDT).
+7. **`AutoML` Parallel Cross-Validation (`SwiftOptimize`)**:
+   - Parallelize $k$-fold evaluation of each candidate model across independent folds via `TaskGroup`.
+8. **Bayesian Optimization — TPE (`SwiftOptimize`)**:
+   - Implement Tree-structured Parzen Estimator (TPE) as a third search strategy alongside `GridSearchCV` and `RandomizedSearchCV`.
+9. **`KNNImputer` Spatial Indexing (`SwiftPreprocessing`)**:
+   - Replace $O(N^2 \cdot D)$ brute-force distance matrix in `KNNImputer` with KD-Tree nearest neighbour search for datasets >50k rows.
+10. **Spearman Rank Correlation — Zero-Allocation (`SwiftStats`)**:
+    - Eliminate intermediate array copies and full re-sort in `Spearman Rank Correlation`; use in-place rank computation via vDSP index sort.
+11. **`VectorStore` HNSW Index (`SwiftCluster`)**:
+    - Add approximate nearest neighbour graph index (Hierarchical Navigable Small World) for vector collections >100k, replacing brute-force cosine search.
+12. **`SilhouetteScore` Approximation (`SwiftCluster`)**:
+    - Replace $O(N^2)$ pairwise distance matrix with mini-batch sampling approximation for $N > 10,000$.
+13. **`ARIMA` SARIMA Parallel Grid Search (`SwiftForecast`)**:
+    - Parallelize $(P, D, Q)_s$ seasonal parameter enumeration in `SARIMAModel` via `TaskGroup`.
+14. **`KernelSHAP` Adaptive Sampling & Caching (`SwiftExplain`)**:
+    - Add coalition result caching and adaptive sampling to reduce $O(2^M)$ model calls.
+15. **`LIME` Batch Perturbation via vDSP (`SwiftExplain`)**:
+    - Replace per-sample perturbation loop with batched normal noise matrix generation via `vDSP_vgen` / BLAS.
+16. **Agent Parallel Tool Calling (`SwiftAgent`)**:
+    - Replace sequential tool execution loop with `TaskGroup` for concurrent multi-tool dispatch.
+17. **Agent Trajectory Parser Robustness (`SwiftAgent`)**:
+    - Replace `NSRegularExpression` for `Action:`/`Action Input:` parsing with a structured token-based DSL parser resilient to long/formatted LLM responses.
+
+#### 🔵 Low Priority — Structural & Architectural Improvements
+
+18. **Sparse Matrix Support — CSR/CSC (`SwiftNLP`, `SwiftPreprocessing`)**:
+    - Implement `SparseMatrix<T>` (Compressed Sparse Row / Column) output for `TFIDFVectorizer` and `OneHotEncoder` to reduce RAM usage for vocabularies >20k and categories >1k.
+19. **`TFIDFVectorizer` / `PorterStemmer` String Interning (`SwiftNLP`)**:
+    - Add term dictionary string interning to eliminate repeated `hasSuffix` allocations in `PorterStemmer` at scale.
+20. **SVG Scatter Plot Streaming (`SwiftVisualization`)**:
+    - Replace single-pass concatenated SVG string builder with incremental `OutputStream`-based renderer to avoid >50MB heap strings for >100k-point scatter plots.
+21. **SafeTensors Zero-Copy Header Parser (`SwiftLLM`)**:
+    - Replace `JSONSerialization`-based header parsing with a direct zero-copy byte-level reader for `SafeTensors` files with hundreds of tensors.
+22. **`QuantizedLinear` Metal MSL Kernel (`SwiftLLM`)**:
+    - Implement native Metal Shading Language SIMD dequantization kernel for Q4_0 / Q4_K weights to maximize tokens/sec throughput.
+23. **Prompt Prefix KV-Cache Reuse (`SwiftLLM`)**:
+    - Add prefix caching in `PagedKVCache` to reuse shared system-prompt KV blocks across multi-session generation.
+24. **Metal NMS in `YOLOHead` (`SwiftVision`)**:
+    - Implement GPU-parallel Non-Maximum Suppression (IoU filter) in Metal to remove CPU bottleneck when processing large candidate bounding box sets.
+25. **Async DataLoader Prefetching (`SwiftVision`)**:
+    - Add background-queue image decode prefetching in `ImageDataset` to prevent main-thread stalls during batch training.
+26. **`DataFrame` Typed `RowView` (`SwiftDataFrame`)**:
+    - Replace heap-allocated `[String: Any]` dictionary in `df.row(at:)` return value with a struct-based `RowView` with typed subscripts to eliminate boxing overhead at scale.
+27. **Radix Sort GroupBy for High-Cardinality Keys (`SwiftDataFrame`)**:
+    - Use Radix Sort on hashed group keys in `GroupedDataFrame` for datasets with >100k unique groups, replacing per-group index array allocation.
+28. **`KS Test` Exact Critical Values for Small Samples (`SwiftStats`)**:
+    - Replace asymptotic approximation in Kolmogorov-Smirnov test for $N < 20$ with exact tabulated critical values.
+29. **SQLite Buffered Column Reads (`SwiftDatabase`)**:
+    - Batch `sqlite3_column_text` and `sqlite3_column_int64` calls into a row buffer instead of one C API call per column per row.
 
 ---
 

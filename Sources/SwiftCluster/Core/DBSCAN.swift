@@ -43,24 +43,8 @@ public actor DBSCAN {
         var labelsLocal = [Int](repeating: -1, count: numSamples) // -1 denotes noise/unassigned
         var visited = [Bool](repeating: false, count: numSamples)
         
-        let epsSq = eps * eps
-        
-        func getNeighbors(_ idx: Int) -> [Int] {
-            var nbrs = [Int]()
-            let pt = features[idx]
-            for i in 0..<numSamples {
-                guard features[i].count == numFeatures else { continue }
-                var distSq = 0.0
-                for j in 0..<numFeatures {
-                    let diff = pt[j] - features[i][j]
-                    distSq += diff * diff
-                }
-                if distSq <= epsSq {
-                    nbrs.append(i)
-                }
-            }
-            return nbrs
-        }
+        // Build KD-Tree for O(N log N) range neighborhood search
+        let tree = KDTree(points: features)
         
         var currentClusterId = 0
         
@@ -72,7 +56,7 @@ public actor DBSCAN {
             if visited[i] { continue }
             visited[i] = true
             
-            let neighbors = getNeighbors(i)
+            let neighbors = tree.queryRadius(point: features[i], radius: eps)
             if neighbors.count < minSamples {
                 labelsLocal[i] = -1 // Noise
             } else {
@@ -90,7 +74,7 @@ public actor DBSCAN {
                     
                     if !visited[currentPt] {
                         visited[currentPt] = true
-                        let currentNeighbors = getNeighbors(currentPt)
+                        let currentNeighbors = tree.queryRadius(point: features[currentPt], radius: eps)
                         if currentNeighbors.count >= minSamples {
                             for neighbor in currentNeighbors {
                                 if !inQueue.contains(neighbor) {

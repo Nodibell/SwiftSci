@@ -142,6 +142,9 @@ public actor ExponentialSmoothing {
     // MARK: - Private helper methods
     
     private func optimizeParameters() async throws {
+        let optimizer = NelderMead(maxIterations: 100, tolerance: 1e-5)
+        let localSeries = self.series
+        
         // Simple ES optimization
         if case .simple = method {
             if let fixedAlpha = alphaInput {
@@ -152,27 +155,24 @@ public actor ExponentialSmoothing {
                 return
             }
             
-            // Search alpha over grid [0.1, 0.2, ..., 0.9]
-            var bestAlpha: Double? = nil
-            var minMse = Double.greatestFiniteMagnitude
-            var lastError: (any Error)? = nil
-            
-            for a in stride(from: 0.1, through: 0.9, by: 0.1) {
-                do {
-                    try runSmoothing(alpha: a, beta: 0.0, gamma: 0.0)
-                    let mse = try computeTrainingMse()
-                    if mse < minMse {
-                        minMse = mse
-                        bestAlpha = a
+            let optimal = optimizer.minimize(
+                objective: { params in
+                    let a = params[0]
+                    var lvl = [Double](repeating: 0.0, count: localSeries.count)
+                    lvl[0] = localSeries[0]
+                    var sumSq = 0.0
+                    for t in 1..<localSeries.count {
+                        lvl[t] = a * localSeries[t] + (1.0 - a) * lvl[t-1]
+                        let err = localSeries[t] - lvl[t-1]
+                        sumSq += err * err
                     }
-                } catch {
-                    lastError = error
-                }
-            }
-            guard let resolvedAlpha = bestAlpha else {
-                throw ForecastError.trainingFailed("Simple exponential smoothing parameter optimization failed for all alpha candidates. Last error: \(lastError?.localizedDescription ?? "unknown")")
-            }
-            self.alpha = resolvedAlpha
+                    return sumSq / Double(localSeries.count)
+                },
+                initialGuess: [0.5],
+                lowerBounds: [0.01],
+                upperBounds: [0.99]
+            )
+            self.alpha = optimal[0]
         }
         
         // Double ES optimization
@@ -190,30 +190,33 @@ public actor ExponentialSmoothing {
                 return
             }
             
-            // Search alpha
-            var bestAlpha: Double? = nil
-            var minMse = Double.greatestFiniteMagnitude
-            var lastError: (any Error)? = nil
-            for a in stride(from: 0.1, through: 0.9, by: 0.1) {
-                do {
-                    try runSmoothing(alpha: a, beta: fixedBeta, gamma: 0.0)
-                    let mse = try computeTrainingMse()
-                    if mse < minMse {
-                        minMse = mse
-                        bestAlpha = a
+            let optimal = optimizer.minimize(
+                objective: { params in
+                    let a = params[0]
+                    let n = localSeries.count
+                    var lvl = [Double](repeating: 0.0, count: n)
+                    var trd = [Double](repeating: 0.0, count: n)
+                    lvl[0] = localSeries[0]
+                    trd[0] = localSeries[1] - localSeries[0]
+                    var sumSq = 0.0
+                    for t in 1..<n {
+                        lvl[t] = a * localSeries[t] + (1.0 - a) * (lvl[t-1] + trd[t-1])
+                        trd[t] = fixedBeta * (lvl[t] - lvl[t-1]) + (1.0 - fixedBeta) * trd[t-1]
+                        let pred = lvl[t-1] + trd[t-1]
+                        let err = localSeries[t] - pred
+                        sumSq += err * err
                     }
-                } catch {
-                    lastError = error
-                }
-            }
-            guard let resolvedAlpha = bestAlpha else {
-                throw ForecastError.trainingFailed("Double exponential smoothing parameter optimization failed for all alpha candidates. Last error: \(lastError?.localizedDescription ?? "unknown")")
-            }
-            self.alpha = resolvedAlpha
+                    return sumSq / Double(n)
+                },
+                initialGuess: [0.5],
+                lowerBounds: [0.01],
+                upperBounds: [0.99]
+            )
+            self.alpha = optimal[0]
         }
         
         // Holt-Winters optimization
-        if case let .holtWinters(fixedBeta, fixedGamma, _, _) = method {
+        if case let .holtWinters(fixedBeta, fixedGamma, period, model) = method {
             guard fixedBeta > 0 && fixedBeta < 1 else {
                 throw ForecastError.invalidBeta(fixedBeta)
             }
@@ -231,26 +234,61 @@ public actor ExponentialSmoothing {
                 return
             }
             
-            // Grid search alpha
-            var bestAlpha: Double? = nil
-            var minMse = Double.greatestFiniteMagnitude
-            var lastError: (any Error)? = nil
-            for a in stride(from: 0.1, through: 0.9, by: 0.2) {
-                do {
-                    try runSmoothing(alpha: a, beta: fixedBeta, gamma: fixedGamma)
-                    let mse = try computeTrainingMse()
-                    if mse < minMse {
-                        minMse = mse
-                        bestAlpha = a
+            let optimal = optimizer.minimize(
+                objective: { params in
+                    let a = params[0]
+                    let n = localSeries.count
+                    guard n >= period * 2 else { return Double.greatestFiniteMagnitude }
+                    var lvl = [Double](repeating: 0.0, count: n)
+                    var trd = [Double](repeating: 0.0, count: n)
+                    var sea = [Double](repeating: 0.0, count: n)
+                    
+                    let level0 = vDSP.mean(localSeries[0..<period])
+                    let level1 = vDSP.mean(localSeries[period..<(period * 2)])
+                    let trend0 = (level1 - level0) / Double(period)
+                    lvl[period - 1] = level0
+                    trd[period - 1] = trend0
+                    
+                    for i in 0..<period {
+                        sea[i] = model == .additive ? (localSeries[i] - level0) : (level0 > 0 ? localSeries[i] / level0 : 1.0)
                     }
-                } catch {
-                    lastError = error
-                }
-            }
-            guard let resolvedAlpha = bestAlpha else {
-                throw ForecastError.trainingFailed("Holt-Winters exponential smoothing parameter optimization failed for all alpha candidates. Last error: \(lastError?.localizedDescription ?? "unknown")")
-            }
-            self.alpha = resolvedAlpha
+                    
+                    var sumSq = 0.0
+                    for t in period..<n {
+                        let obs = localSeries[t]
+                        let prevLvl = lvl[t-1]
+                        let prevTrd = trd[t-1]
+                        let prevSea = sea[t - period]
+                        let curLvl: Double
+                        if model == .additive {
+                            curLvl = a * (obs - prevSea) + (1.0 - a) * (prevLvl + prevTrd)
+                        } else {
+                            let adj = abs(prevSea) > 1e-15 ? obs / prevSea : obs
+                            curLvl = a * adj + (1.0 - a) * (prevLvl + prevTrd)
+                        }
+                        lvl[t] = curLvl
+                        let curTrd = fixedBeta * (curLvl - prevLvl) + (1.0 - fixedBeta) * prevTrd
+                        trd[t] = curTrd
+                        let curSea: Double
+                        if model == .additive {
+                            curSea = fixedGamma * (obs - curLvl) + (1.0 - fixedGamma) * prevSea
+                        } else {
+                            let ratio = abs(curLvl) > 1e-15 ? obs / curLvl : 1.0
+                            curSea = fixedGamma * ratio + (1.0 - fixedGamma) * prevSea
+                        }
+                        sea[t] = curSea
+                        let base = prevLvl + prevTrd
+                        let pred = model == .additive ? (base + prevSea) : (base * prevSea)
+                        let err = obs - pred
+                        sumSq += err * err
+                    }
+                    return sumSq / Double(n - period)
+                },
+                initialGuess: [0.5],
+                lowerBounds: [0.01],
+                upperBounds: [0.99]
+            )
+            self.alpha = optimal[0]
         }
     }
     

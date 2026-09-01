@@ -296,6 +296,10 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     public let criterion: SplitCriterion
 
     private var nodes: [FlatTreeNode] = []
+    
+    /// The collection of fitted tree nodes in contiguous flat array.
+    public var flatNodes: [FlatTreeNode] { nodes }
+    
     private var numFeatures: Int = 0
 
     /// The feature importances.
@@ -365,6 +369,34 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         return nodes
     }
 
+    /// Prunes the decision tree using Minimal Cost-Complexity Pruning with threshold parameter `alpha`.
+    /// - Parameter alpha: Complexity parameter used for pruning. Subtrees with impurity gain <= alpha are collapsed into leaf nodes.
+    public func prune(alpha: Double) {
+        guard alpha > 0, !nodes.isEmpty else { return }
+        func pruneNode(_ idx: Int) -> Bool {
+            guard idx >= 0 && idx < nodes.count else { return true }
+            if nodes[idx].isLeaf { return true }
+
+            let leftLeaf = pruneNode(nodes[idx].leftChild)
+            let rightLeaf = pruneNode(nodes[idx].rightChild)
+
+            if leftLeaf && rightLeaf && nodes[idx].impurityGain <= alpha {
+                nodes[idx] = FlatTreeNode(
+                    featureIndex: -1,
+                    threshold: 0.0,
+                    leftChild: -1,
+                    rightChild: -1,
+                    value: nodes[idx].value,
+                    isLeaf: true,
+                    impurityGain: 0.0
+                )
+                return true
+            }
+            return false
+        }
+        _ = pruneNode(0)
+    }
+
     private func buildTree(X: [[Double]], y: [Double], indices: [Int], presortedIndices: [[Int]], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
         let labels = indices.map { y[$0] }
         let majority = labels.mostFrequent()
@@ -429,6 +461,10 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     public let minSamplesSplit: Int
 
     private var nodes: [FlatTreeNode] = []
+    
+    /// The collection of fitted tree nodes in contiguous flat array.
+    public var flatNodes: [FlatTreeNode] { nodes }
+    
     private var numFeatures: Int = 0
 
     /// The feature importances.
@@ -470,6 +506,34 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !nodes.isEmpty else { throw SwiftMLError.notFitted }
         return features.map { predictSample($0, nodes: nodes) }
+    }
+
+    /// Prunes the regression tree using Minimal Cost-Complexity Pruning with threshold parameter `alpha`.
+    /// - Parameter alpha: Complexity parameter used for pruning. Subtrees with impurity gain <= alpha are collapsed into leaf nodes.
+    public func prune(alpha: Double) {
+        guard alpha > 0, !nodes.isEmpty else { return }
+        func pruneNode(_ idx: Int) -> Bool {
+            guard idx >= 0 && idx < nodes.count else { return true }
+            if nodes[idx].isLeaf { return true }
+
+            let leftLeaf = pruneNode(nodes[idx].leftChild)
+            let rightLeaf = pruneNode(nodes[idx].rightChild)
+
+            if leftLeaf && rightLeaf && nodes[idx].impurityGain <= alpha {
+                nodes[idx] = FlatTreeNode(
+                    featureIndex: -1,
+                    threshold: 0.0,
+                    leftChild: -1,
+                    rightChild: -1,
+                    value: nodes[idx].value,
+                    isLeaf: true,
+                    impurityGain: 0.0
+                )
+                return true
+            }
+            return false
+        }
+        _ = pruneNode(0)
     }
 
     /// Get tree nodes.

@@ -184,7 +184,7 @@ public struct DataFrame: Sendable {
     }
 
     /// Returns the row at `index` as a dictionary.
-    public func row(at index: Int) -> [String: Any?] {
+    public func rowDictionary(at index: Int) -> [String: Any?] {
         guard index >= 0 && index < shape.rows else { return [:] }
         var result: [String: Any?] = [:]
         for col in columns { result[col.name] = col.value(at: index) }
@@ -333,6 +333,16 @@ public struct DataFrame: Sendable {
             mask[i] = predicate(row)
         }
         return applyMask(mask)
+    }
+
+    /// Returns a zero-allocation lightweight row view at the specified index.
+    public func row(at index: Int) -> DataFrameRow {
+        DataFrameRow(columnNames: columnNames, index: index, columnMap: _columns)
+    }
+
+    /// Returns a zero-allocation lazy sequence over the DataFrame's rows.
+    public var rows: DataFrameRowSequence {
+        DataFrameRowSequence(count: shape.rows, columnNames: columnNames, columnMap: _columns)
     }
 
     /// Filters rows by a condition on a single column.

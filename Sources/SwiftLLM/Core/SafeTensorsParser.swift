@@ -74,8 +74,19 @@ public enum SafeTensorsParser {
                 array = MLXArray(tensorData, shape, dtype: .int32)
             case "I64":
                 array = MLXArray(tensorData, shape, dtype: .int64)
+            case "BF16":
+                // BF16 is stored as raw UInt16 bytes — reinterpret as float16
+                // and rely on MLX's BFloat16 dtype when available.
+                array = MLXArray(tensorData, shape, dtype: .bfloat16)
+            case "I8":
+                array = MLXArray(tensorData, shape, dtype: .int8)
             default:
-                array = MLXArray(tensorData, shape, dtype: .float32)
+                // Strict validation: unknown dtypes must NOT be silently coerced
+                // to float32 — this would cause silent data corruption.
+                throw SwiftMLError.invalidInput(
+                    "SafeTensors: unsupported dtype '\(dtype)' for tensor '\(name)'. " +
+                    "Supported: F32, F16, BF16, I32, I64, I8."
+                )
             }
             
             tensors[name] = array

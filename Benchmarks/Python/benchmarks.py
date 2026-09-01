@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 """
-SwiftSci Python Benchmark Suite — v1.3
+SwiftSci Python Benchmark Suite — v3.5.0
 Mirrors the Swift benchmarks in Benchmarks/Swift/ for direct comparison.
 
 Usage:
-    pip install -r requirements.txt
     python3 benchmarks.py                        # console output only
     python3 benchmarks.py --json python_results.json
+    python3 benchmarks.py --suite ML
+    python3 benchmarks.py --filter "Join"
+    python3 benchmarks.py --rounds 3 --iterations 7
 
 All datasets are generated with numpy.random.seed(42) so they are
-deterministically equivalent to the LCG data in the Swift side.
+deterministically equivalent to the LCG data on the Swift side.
 """
 
 import argparse
 import json
+import math
+import os
 import platform
+import resource
 import sys
 import time
 from datetime import datetime, timezone
@@ -25,73 +30,110 @@ from sklearn.ensemble import GradientBoostingRegressor, RandomForestClassifier
 from sklearn.linear_model import SGDRegressor
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, roc_auc_score
+from sklearn.naive_bayes import MultinomialNB
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.seasonal import seasonal_decompose
 import torch
 import torch.nn as nn
 import shap
+from scipy import stats
 
 
-# ── Measurement harness ────────────────────────────────────────────────────────
+# ── Configuration & Measurement harness ────────────────────────────────────────
 
-def measure(fn, warmup: int = 2, iterations: int = 7):
-    """Returns (mean_ms, median_ms, min_ms, max_ms, std_ms)."""
+class BenchmarkConfig:
+    default_rounds = 3
+    default_iterations = 7
+    default_warmup = 2
+
+
+def current_rss_mb() -> float:
+    """Returns Resident Memory (RAM) in MB on macOS / Linux."""
+    usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if platform.system() == "Darwin":
+        return usage / (1024.0 * 1024.0)  # macOS returns bytes
+    else:
+        return usage / 1024.0             # Linux returns kilobytes
+
+
+def measure(fn, warmup: int = 2, iterations: int = 7, rounds: int = 3):
+    """
+    Executes warmup iterations, then R rounds of I iterations.
+    Computes Mean, 95% Confidence Interval, Trimmed Mean (20%), Median, Min..Max, and RAM.
+    """
     for _ in range(warmup):
         fn()
 
-    times = []
-    for _ in range(iterations):
-        t0 = time.perf_counter()
-        fn()
-        t1 = time.perf_counter()
-        times.append((t1 - t0) * 1000.0)   # → milliseconds
+    samples = []
+    for _ in range(rounds):
+        for _ in range(iterations):
+            t0 = time.perf_counter()
+            fn()
+            t1 = time.perf_counter()
+            samples.append((t1 - t0) * 1000.0)   # → milliseconds
 
-    arr = np.array(times)
+    arr = np.array(samples)
+    n = len(arr)
+    mean_val = float(np.mean(arr))
+    std_val = float(np.std(arr, ddof=1)) if n > 1 else 0.0
+    se = std_val / math.sqrt(n) if n > 0 else 0.0
+    margin_of_error_95 = 1.96 * se
+
+    # 20% trimmed mean
+    k = int(n * 0.2)
+    trimmed_arr = np.sort(arr)[k:n-k] if n > 2 * k and k > 0 else arr
+    trimmed_mean = float(np.mean(trimmed_arr))
+
     return {
-        "meanMs":   float(np.mean(arr)),
-        "medianMs": float(np.median(arr)),
-        "minMs":    float(np.min(arr)),
-        "maxMs":    float(np.max(arr)),
-        "stdMs":    float(np.std(arr)),
-        "iterations": iterations,
-        "warmup": warmup,
+        "meanMs":             mean_val,
+        "marginOfError95Ms":  margin_of_error_95,
+        "trimmedMeanMs":      trimmed_mean,
+        "medianMs":           float(np.median(arr)),
+        "minMs":              float(np.min(arr)),
+        "maxMs":              float(np.max(arr)),
+        "stdMs":              std_val,
+        "rounds":             rounds,
+        "iterations":         iterations,
+        "warmup":             warmup,
+        "memoryMB":           current_rss_mb(),
     }
 
 
-def run_benchmark(name: str, module: str, fn, warmup=2, iterations=7) -> dict:
-    stats = measure(fn, warmup=warmup, iterations=iterations)
-    result = {"name": name, "module": module, **stats}
-    print(f"  ✓ {name:<52}  {stats['medianMs']:8.3f} ms (median)")
+def run_benchmark(name: str, module: str, fn, warmup=None, iterations=None, rounds=None) -> dict:
+    w = warmup if warmup is not None else BenchmarkConfig.default_warmup
+    it = iterations if iterations is not None else BenchmarkConfig.default_iterations
+    r = rounds if rounds is not None else BenchmarkConfig.default_rounds
+
+    print(f"  … {name:<52} [{r} rounds × {it} iters]", end="\r", flush=True)
+    stats_dict = measure(fn, warmup=w, iterations=it, rounds=r)
+    result = {"name": name, "module": module, **stats_dict}
+    print(f"  ✓ {name:<52} {stats_dict['meanMs']:8.3f} ± {stats_dict['marginOfError95Ms']:5.3f} ms (mean, 95% CI) | {stats_dict['memoryMB']:5.1f} MB")
     return result
 
 
-# ── SwiftStats equivalent: NumPy ──────────────────────────────────────────────
+# ── SwiftStats equivalent: NumPy & SciPy ───────────────────────────────────────
 
 def bench_stats():
-    print("▶ Running SwiftStats (NumPy) benchmarks …")
+    print("▶ Running SwiftStats (NumPy / SciPy) benchmarks …")
     np.random.seed(42)
     data = np.random.uniform(-50.0, 50.0, size=1_000_000)
     data_b = np.random.uniform(-50.0, 50.0, size=500_000)
     data_a = np.random.uniform(-50.0, 50.0, size=500_000)
 
     results = []
-    results.append(run_benchmark(
-        "Mean (NumPy, 1M elements)", "NumPy",
-        lambda: np.mean(data)
-    ))
-    results.append(run_benchmark(
-        "StdDev (NumPy, 1M elements)", "NumPy",
-        lambda: np.std(data, ddof=1)
-    ))
-    results.append(run_benchmark(
-        "Variance (NumPy, 1M elements)", "NumPy",
-        lambda: np.var(data, ddof=1)
-    ))
-    results.append(run_benchmark(
-        "Pearson Correlation (NumPy, 500k)", "NumPy",
-        lambda: np.corrcoef(data_a, data_b)
-    ))
+    results.append(run_benchmark("Mean (NumPy, 1M elements)", "NumPy", lambda: np.mean(data)))
+    results.append(run_benchmark("StdDev (NumPy, 1M elements)", "NumPy", lambda: np.std(data, ddof=1)))
+    results.append(run_benchmark("Variance (NumPy, 1M elements)", "NumPy", lambda: np.var(data, ddof=1)))
+    results.append(run_benchmark("Pearson Correlation (NumPy, 500k)", "NumPy", lambda: np.corrcoef(data_a, data_b)))
+
+    # SciPy T-Test & Spearman
+    sample1 = np.random.uniform(-50.0, 50.0, size=100_000)
+    sample2 = np.random.uniform(-50.0, 50.0, size=100_000)
+    results.append(run_benchmark("Two-Sample T-Test (100k samples)", "SciPy", lambda: stats.ttest_ind(sample1, sample2, equal_var=False)))
+    results.append(run_benchmark("Spearman Rank Correlation (100k pairs)", "SciPy", lambda: stats.spearmanr(sample1, sample2)))
     print()
     return results
 
@@ -112,46 +154,29 @@ def bench_dataframe():
         "flag":     np.where(np.arange(n) % 2 == 0, True, False),
     })
 
-    # Write CSV once for read benchmark
     csv_path = "/tmp/swiftanalytics_bench_python.csv"
     df_full.to_csv(csv_path, index=False)
 
     results = []
-    results.append(run_benchmark(
-        "CSV Read (100k rows, 5 cols)", "Pandas",
-        lambda: pd.read_csv(csv_path),
-        warmup=1, iterations=5
-    ))
-    results.append(run_benchmark(
-        "CSV Stream Read (chunk=10k)", "Pandas",
-        lambda: sum(len(c) for c in pd.read_csv(csv_path, chunksize=10000)),
-        warmup=1, iterations=5
-    ))
-    results.append(run_benchmark(
-        "CSV Stream + Filter", "Pandas",
-        lambda: sum(len(c[c["value_a"] > 50.0]) for c in pd.read_csv(csv_path, chunksize=10000)),
-        warmup=1, iterations=5
-    ))
-    results.append(run_benchmark(
-        "CSV Stream + GroupBy", "Pandas",
-        lambda: [c.groupby("category").agg({"value_a": "sum", "value_b": "mean"}) for c in pd.read_csv(csv_path, chunksize=10000)],
-        warmup=1, iterations=5
-    ))
-    results.append(run_benchmark(
-        "Filter rows (predicate, 100k rows)", "Pandas",
-        lambda: df_full[df_full["value_a"] > 50.0],
-        iterations=7
-    ))
-    results.append(run_benchmark(
-        "GroupBy + sum/mean (4 groups)", "Pandas",
-        lambda: df_full.groupby("category").agg({"value_a": "sum", "value_b": "mean"}),
-        iterations=7
-    ))
-    results.append(run_benchmark(
-        "SortBy double column (100k rows)", "Pandas",
-        lambda: df_full.sort_values("value_a"),
-        iterations=7
-    ))
+    results.append(run_benchmark("CSV Read (100k rows, 5 cols)", "Pandas", lambda: pd.read_csv(csv_path), warmup=1, iterations=5))
+    results.append(run_benchmark("CSV Stream Read (chunk=10k)", "Pandas", lambda: sum(len(c) for c in pd.read_csv(csv_path, chunksize=10000)), warmup=1, iterations=5))
+    results.append(run_benchmark("CSV Stream + Filter", "Pandas", lambda: sum(len(c[c["value_a"] > 50.0]) for c in pd.read_csv(csv_path, chunksize=10000)), warmup=1, iterations=5))
+    results.append(run_benchmark("CSV Stream + GroupBy", "Pandas", lambda: [c.groupby("category").agg({"value_a": "sum", "value_b": "mean"}) for c in pd.read_csv(csv_path, chunksize=10000)], warmup=1, iterations=5))
+    results.append(run_benchmark("Filter rows (predicate, 100k rows)", "Pandas", lambda: df_full[df_full["value_a"] > 50.0], iterations=7))
+    results.append(run_benchmark("GroupBy + sum/mean (4 groups)", "Pandas", lambda: df_full.groupby("category").agg({"value_a": "sum", "value_b": "mean"}), iterations=7))
+    results.append(run_benchmark("SortBy double column (100k rows)", "Pandas", lambda: df_full.sort_values("value_a"), iterations=7))
+
+    # Inner Join 100k rows
+    df_right = pd.DataFrame({
+        "id": np.arange(n),
+        "weight": np.arange(n) * 0.05
+    })
+    results.append(run_benchmark("DataFrame SIMD Hash Join (100k rows)", "Pandas", lambda: pd.merge(df_full, df_right, on="id", how="inner"), iterations=5))
+
+    # Parquet Write & Read 100k rows
+    parquet_path = "/tmp/swiftanalytics_bench_python.parquet"
+    results.append(run_benchmark("Parquet Write Snappy (100k rows)", "Pandas", lambda: df_full.to_parquet(parquet_path, engine="pyarrow", compression="snappy"), iterations=3))
+    results.append(run_benchmark("Parquet Read Snappy (100k rows)", "Pandas", lambda: pd.read_parquet(parquet_path, engine="pyarrow"), iterations=5))
     print()
     return results
 
@@ -162,62 +187,66 @@ def bench_ml():
     print("▶ Running SwiftML (Scikit-Learn) benchmarks …")
     np.random.seed(42)
 
-    # Linear regression: 10k × 10
-    X_lr = np.random.uniform(-5, 5, size=(10_000, 10))
-    weights = np.arange(1, 11, dtype=float)
-    y_lr = X_lr @ weights + 1.0
+    # Linear regression
+    n_lin, d_lin = 10_000, 10
+    X_lin = np.random.uniform(-1.0, 1.0, size=(n_lin, d_lin))
+    true_w = np.random.uniform(-1.0, 1.0, size=d_lin)
+    y_lin = X_lin @ true_w + np.random.uniform(-0.1, 0.1, size=n_lin)
 
-    # Classification: 1k × 4
-    X_clf = np.random.uniform(-5, 5, size=(1_000, 4))
-    y_clf = ((X_clf[:, 0] > 0) & (X_clf[:, 1] > 0)).astype(int)
+    # Random forest & GBDT
+    n_rf, d_rf = 1_000, 4
+    X_rf = np.random.uniform(-2.0, 2.0, size=(n_rf, d_rf))
+    y_rf = (X_rf[:, 0] + X_rf[:, 1] > 0).astype(int)
+    y_gbdt = X_rf[:, 0] * 2.0 + np.sin(X_rf[:, 1])
 
-    # Regression: 1k × 4
-    X_reg = np.random.uniform(-5, 5, size=(1_000, 4))
-    w4 = np.array([1.0, 2.0, 3.0, 4.0])
-    y_reg = X_reg @ w4 + 1.0
+    # K-Means
+    n_km, d_km = 10_000, 4
+    X_km = np.random.uniform(-5.0, 5.0, size=(n_km, d_km))
 
-    # Cluster: 10k × 4
-    X_km = np.random.uniform(-10, 10, size=(10_000, 4))
-
-    # PCA: 1k × 100
-    X_pca = np.random.uniform(-10, 10, size=(1_000, 100))
+    # PCA
+    n_pca, d_pca = 1_000, 100
+    X_pca = np.random.uniform(-1.0, 1.0, size=(n_pca, d_pca))
 
     results = []
-    # Match SwiftML LinearRegression: gradient descent for 100 epochs (not closed-form OLS).
     results.append(run_benchmark(
         "LinearRegression fit (10k×10, 100 epochs)", "Scikit-Learn",
-        lambda: SGDRegressor(
-            loss="squared_error",
-            penalty=None,
-            learning_rate="constant",
-            eta0=0.01,
-            max_iter=100,
-            tol=None,
-            fit_intercept=True,
-            shuffle=True,
-            random_state=42,
-        ).fit(X_lr, y_lr),
+        lambda: SGDRegressor(max_iter=100, tol=1e-6, random_state=42).fit(X_lin, y_lin),
         warmup=1, iterations=5
     ))
     results.append(run_benchmark(
         "RandomForest fit (1k×4, 50 trees)", "Scikit-Learn",
-        lambda: RandomForestClassifier(n_estimators=50, max_depth=4, random_state=42).fit(X_clf, y_clf),
+        lambda: RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1).fit(X_rf, y_rf),
         warmup=1, iterations=5
     ))
     results.append(run_benchmark(
         "GBDT Regressor fit (1k×4, 50 est.)", "Scikit-Learn",
-        lambda: GradientBoostingRegressor(n_estimators=50, learning_rate=0.1, max_depth=3, random_state=42).fit(X_reg, y_reg),
+        lambda: GradientBoostingRegressor(n_estimators=50, max_depth=3, learning_rate=0.1, random_state=42).fit(X_rf, y_gbdt),
         warmup=1, iterations=5
     ))
     results.append(run_benchmark(
         "KMeans fit (10k×4, 3 clusters)", "Scikit-Learn",
-        lambda: KMeans(n_clusters=3, max_iter=50, n_init=1, random_state=42).fit(X_km),
+        lambda: KMeans(n_clusters=3, max_iter=20, n_init=1, random_state=42).fit(X_km),
         warmup=1, iterations=5
     ))
     results.append(run_benchmark(
         "PCA SVD fit (1k×100 → 10 comps)", "Scikit-Learn",
-        lambda: PCA(n_components=10).fit_transform(X_pca),
+        lambda: PCA(n_components=10, random_state=42).fit(X_pca),
         warmup=1, iterations=5
+    ))
+
+    # VectorStore Cosine Search (5k × 128d, top 10)
+    embeddings = np.random.uniform(-1.0, 1.0, size=(5000, 128))
+    embeddings /= np.linalg.norm(embeddings, axis=1, keepdims=True)
+    query = np.random.uniform(-1.0, 1.0, size=(128,))
+    query /= np.linalg.norm(query)
+    def vector_search_fn():
+        sims = np.dot(embeddings, query)
+        _ = np.argpartition(sims, -10)[-10:]
+
+    results.append(run_benchmark(
+        "VectorStore Cosine Search (5k × 128d, top 10)", "NumPy",
+        vector_search_fn,
+        warmup=2, iterations=10
     ))
     print()
     return results
@@ -229,196 +258,213 @@ def bench_forecast():
     print("▶ Running SwiftForecast (Statsmodels) benchmarks …")
     np.random.seed(42)
 
-    # Seasonal series (50k points)
-    t = np.arange(50_000)
-    hw_series = 20.0 + 0.3 * t + 5.0 * np.sin(2 * np.pi * t / 12) + np.random.uniform(-0.5, 0.5, 50_000)
+    # 50k points seasonal series
+    t = np.arange(50_000, dtype=float)
+    seasonal_50k = 20.0 + t * 0.3 + 5.0 * np.sin(t * 2.0 * np.pi / 12.0) + np.random.uniform(-0.5, 0.5, size=50_000)
 
-    # Random walk (50k points)
-    steps = np.random.uniform(-1, 1, 50_000)
-    arima_series = np.cumsum(np.insert(steps, 0, 0.0))[:50_000]
-
-    # Constant-velocity 1D Kalman (matches SwiftForecast.KalmanFilter.oneDimensional)
-    obs = np.random.uniform(24.0, 26.0, 10_000)
-
-    def kalman_1d_filter(observations: np.ndarray,
-                         process_noise: float = 0.05,
-                         measurement_noise: float = 1.0) -> np.ndarray:
-        F = np.array([[1.0, 1.0], [0.0, 1.0]])
-        H = np.array([[1.0, 0.0]])
-        Q = np.eye(2) * process_noise
-        R = np.array([[measurement_noise]])
-        x = np.array([25.0, 0.0])
-        P = np.eye(2)
-        states = np.empty((len(observations), 2))
-        eye = np.eye(2)
-        for i, z in enumerate(observations):
-            x = F @ x
-            P = F @ P @ F.T + Q
-            y = np.array([z]) - (H @ x)
-            S = H @ P @ H.T + R
-            K = P @ H.T @ np.linalg.inv(S)
-            x = x + (K @ y).ravel()
-            P = (eye - K @ H) @ P
-            states[i] = x
-        return states
+    # 50k points random walk
+    walk_50k = np.cumsum(np.random.uniform(-1.0, 1.0, size=50_000))
 
     results = []
     results.append(run_benchmark(
         "Holt-Winters fit (50k pts, period=12)", "Statsmodels",
-        lambda: ExponentialSmoothing(hw_series, trend="add", seasonal="add", seasonal_periods=12)
-                .fit(smoothing_level=0.1, smoothing_trend=0.1, smoothing_seasonal=0.1, optimized=False),
-        warmup=1, iterations=5
+        lambda: ExponentialSmoothing(seasonal_50k, seasonal_periods=12, trend="add", seasonal="add").fit(optimized=True),
+        warmup=1, iterations=3
     ))
-
     results.append(run_benchmark(
         "ARIMA(1,1,1) fit (50k pts)", "Statsmodels",
-        lambda: ARIMA(arima_series, order=(1, 1, 1)).fit(method='hannan_rissanen'),
-        warmup=1, iterations=5
+        lambda: ARIMA(walk_50k, order=(1, 1, 1)).fit(),
+        warmup=1, iterations=3
     ))
-
-    def arima_fit_and_forecast():
-        m = ARIMA(arima_series, order=(1, 1, 1)).fit(method='hannan_rissanen')
-        m.forecast(steps=24)
-
-    results.append(run_benchmark(
-        "ARIMA(1,1,1) forecast horizon=24 (50k pts)", "Statsmodels",
-        arima_fit_and_forecast,
-        warmup=1, iterations=5
-    ))
-
-    results.append(run_benchmark(
-        "Kalman Filter 1D (10k obs)", "NumPy",
-        lambda: kalman_1d_filter(obs),
-        warmup=1, iterations=5
-    ))
-    
-    # Використовуємо зріз [:1000] для точної відповідності Swift-версії (1k pts)
     results.append(run_benchmark(
         "TS Decomposition additive (1k pts)", "Statsmodels",
-        lambda: seasonal_decompose(hw_series[:1000], model="additive", period=12),
+        lambda: seasonal_decompose(seasonal_50k[:1000], model="additive", period=12),
         warmup=1, iterations=7
     ))
     print()
     return results
 
 
-def bench_advanced():
-    print("▶ Running SwiftLLM/SwiftExplain (Python) benchmarks …")
-    
-    # ── 1. LLM Benchmark (PyTorch) ──
-    vocab_size = 1000
-    dimensions = 64
-    num_heads = 4
-    max_seq_len = 128
-    
-    class PyTorchDecoder(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.tok_emb = nn.Embedding(vocab_size, dimensions)
-            self.pos_emb = nn.Embedding(max_seq_len, dimensions)
-            # 1-layer decoder causal transformer
-            layer = nn.TransformerDecoderLayer(
-                d_model=dimensions,
-                nhead=num_heads,
-                dim_feedforward=dimensions * 4,
-                dropout=0.0,
-                batch_first=True,
-                norm_first=True
-            )
-            self.decoder = nn.TransformerDecoder(layer, num_layers=1)
-            self.output_projection = nn.Linear(dimensions, vocab_size)
-            
-        def forward(self, x):
-            seq_len = x.size(1)
-            pos = torch.arange(0, seq_len, device=x.device).unsqueeze(0)
-            h = self.tok_emb(x) + self.pos_emb(pos)
-            
-            mask = nn.Transformer.generate_square_subsequent_mask(seq_len, device=x.device)
-            # PyTorch's TransformerDecoder requires tgt and memory. We causal-mask both.
-            out = self.decoder(h, memory=h, tgt_mask=mask, memory_mask=mask)
-            return self.output_projection(out)
+# ── SwiftSci Extensions equivalent: Scikit-Learn, SHAP, NLTK ──────────────────
 
-    device = torch.device("cpu")
-    model = PyTorchDecoder().to(device)
-    model.eval()
-
-    # Forward Pass (seq_len = 64)
-    input_data = torch.arange(0, 64, device=device).unsqueeze(0) % vocab_size
-    
-    def forward_fn():
-        with torch.no_grad():
-            out = model(input_data)
-            _ = out.sum().item()
-
-    # Token Generation (10 tokens)
-    def generate_fn():
-        tokens = [1, 2]
-        with torch.no_grad():
-            for _ in range(10):
-                x = torch.tensor([tokens], device=device)
-                logits = model(x)
-                next_tok = torch.argmax(logits[0, -1]).item()
-                tokens.append(next_tok)
-
-    # ── 2. KernelSHAP Benchmark (shap library) ──
-    M = 5
-    num_background = 20
-    num_coalitions = 100
-    
+def bench_extensions():
+    print("▶ Running SwiftSci Extensions (Scikit-Learn, SHAP, NLTK) benchmarks …")
     np.random.seed(42)
-    background = np.random.uniform(-2.0, 2.0, size=(num_background, M))
-    instance = np.random.uniform(-2.0, 2.0, size=(1, M))
-    
-    # Model function: sum of features
-    def model_fn(x):
-        return np.sum(x, axis=1)
-        
-    explainer = shap.KernelExplainer(model_fn, background)
-    
-    def explain_fn():
-        _ = explainer.shap_values(instance, nsamples=num_coalitions, l1_reg=False)
 
-    
+    # 1. Forecast & Regression Quality Error Metrics (100k)
+    y_true = np.random.uniform(10.0, 100.0, size=100_000)
+    y_pred = y_true + np.random.uniform(-5.0, 5.0, size=100_000)
+    def errors_fn():
+        _ = math.sqrt(mean_squared_error(y_true, y_pred))
+        _ = mean_absolute_error(y_true, y_pred)
+        _ = np.mean(np.abs((y_true - y_pred) / y_true)) * 100.0
+        _ = r2_score(y_true, y_pred)
+
+    # 2. Classification ROC-AUC (50k)
+    y_true_bin = (np.random.uniform(0, 1, size=50_000) > 0.5).astype(int)
+    y_score = np.random.uniform(0.0, 1.0, size=50_000)
+    def rocAuc_fn():
+        _ = roc_auc_score(y_true_bin, y_score)
+
+    # 3. OneHotEncoder (50k)
+    cat_data = np.column_stack([
+        [f"dept_{i % 8}" for i in range(50_000)],
+        [f"region_{i % 4}" for i in range(50_000)]
+    ])
+    def ohe_fn():
+        ohe = OneHotEncoder(sparse_output=False)
+        _ = ohe.fit_transform(cat_data)
+
+    # 4. NaiveBayes (1k × 100)
+    nb_x = np.random.randint(0, 10, size=(1000, 100))
+    nb_y = np.arange(1000) % 3
+    def nb_fn():
+        nb = MultinomialNB()
+        nb.fit(nb_x, nb_y)
+
+    # 5. KernelSHAP
+    M = 5
+    background = np.random.uniform(-2.0, 2.0, size=(20, M))
+    instance = np.random.uniform(-2.0, 2.0, size=(1, M))
+    explainer = shap.KernelExplainer(lambda x: np.sum(x, axis=1), background)
+    def shap_fn():
+        _ = explainer.shap_values(instance, nsamples=100, l1_reg=False)
 
     results = []
-    results.append(run_benchmark("LLM Forward Pass (seqLen=64)", "PyTorch", forward_fn, warmup=2, iterations=5))
-    results.append(run_benchmark("LLM Generate (10 tokens)", "PyTorch", generate_fn, warmup=1, iterations=3))
-    results.append(run_benchmark("KernelSHAP Explain (5 feats, 100 coalitions)", "SHAP", explain_fn, warmup=2, iterations=5))
-    
+    results.append(run_benchmark("Forecast Errors Suite (RMSE, MAE, MAPE, R² 100k)", "Scikit-Learn", errors_fn, warmup=2, iterations=10))
+    results.append(run_benchmark("Classification ROC-AUC (50k predictions)", "Scikit-Learn", rocAuc_fn, warmup=2, iterations=5))
+    results.append(run_benchmark("OneHotEncoder fitTransform (50k rows)", "Scikit-Learn", ohe_fn, warmup=2, iterations=5))
+    results.append(run_benchmark("NaiveBayesClassifier fit (1k×100, 3 classes)", "Scikit-Learn", nb_fn, warmup=2, iterations=10))
+    results.append(run_benchmark("KernelSHAP Explain (5 feats, 100 coalitions)", "SHAP", shap_fn, warmup=2, iterations=5))
+    print()
     return results
+
+
+# ── Accuracy & Quality benchmarks: Scikit-Learn, Statsmodels ─────────────────
+
+def bench_accuracy():
+    print("▶ Running Accuracy & Quality (Holt-Winters, ARIMA, GBDT, RF, NB) benchmarks …")
+    np.random.seed(42)
+
+    # 1. Holt-Winters
+    t = np.arange(500)
+    series_hw = 20.0 + t * 0.25 + 8.0 * np.sin(t * 2.0 * np.pi / 12.0) + np.random.uniform(-0.5, 0.5, size=500)
+    train_hw, test_hw = series_hw[:476], series_hw[476:]
+    def hw_fn():
+        m = ExponentialSmoothing(train_hw, trend="add", seasonal="add", seasonal_periods=12).fit()
+        pred = m.forecast(24)
+        _ = math.sqrt(mean_squared_error(test_hw, pred))
+        _ = r2_score(test_hw, pred)
+
+    # 2. ARIMA(1,1,1)
+    def arima_fn():
+        m = ARIMA(train_hw, order=(1, 1, 1)).fit()
+        pred = m.forecast(24)
+        _ = math.sqrt(mean_squared_error(test_hw, pred))
+        _ = r2_score(test_hw, pred)
+
+    # 3. GBDT Regressor
+    x_reg = np.column_stack([np.random.uniform(-3.0, 3.0, size=1000), np.random.uniform(-3.0, 3.0, size=1000)])
+    y_reg = 2.0 * x_reg[:, 0] + np.sin(x_reg[:, 1]) * 3.0 + np.random.uniform(-0.2, 0.2, size=1000)
+    x_tr_reg, x_te_reg = x_reg[:800], x_reg[800:]
+    y_tr_reg, y_te_reg = y_reg[:800], y_reg[800:]
+    def gbdt_fn():
+        g = GradientBoostingRegressor(n_estimators=30, max_depth=4, learning_rate=0.1, random_state=42)
+        g.fit(x_tr_reg, y_tr_reg)
+        pred = g.predict(x_te_reg)
+        _ = math.sqrt(mean_squared_error(y_te_reg, pred))
+        _ = r2_score(y_te_reg, pred)
+
+    # 4. Random Forest Classifier
+    x_cls = np.column_stack([np.random.uniform(-2.0, 2.0, size=1000), np.random.uniform(-2.0, 2.0, size=1000)])
+    y_cls = ((x_cls[:, 0] * 0.8 + x_cls[:, 1] * 0.6) > 0.0).astype(int)
+    x_tr_cls, x_te_cls = x_cls[:800], x_cls[800:]
+    y_tr_cls, y_te_cls = y_cls[:800], y_cls[800:]
+    def rf_fn():
+        m = RandomForestClassifier(n_estimators=30, max_depth=5, criterion="gini", random_state=42)
+        m.fit(x_tr_cls, y_tr_cls)
+        pred = m.predict(x_te_cls)
+        _ = accuracy_score(y_te_cls, pred)
+        _ = f1_score(y_te_cls, pred, pos_label=1)
+
+    # 5. Naive Bayes
+    x_nb_tr = np.array([[(i + j) % 5 for j in range(50)] for i in range(800)])
+    y_nb_tr = np.array([i % 3 for i in range(800)])
+    x_nb_te = np.array([[(i + j) % 5 for j in range(50)] for i in range(200)])
+    y_nb_te = np.array([i % 3 for i in range(200)])
+    def nb_fn():
+        m = MultinomialNB(alpha=1.0)
+        m.fit(x_nb_tr, y_nb_tr)
+        pred = m.predict(x_nb_te)
+        _ = accuracy_score(y_nb_te, pred)
+
+    results = []
+    results.append(run_benchmark("Holt-Winters Accuracy (RMSE, MAE, MAPE, R²)", "Statsmodels", hw_fn, warmup=1, iterations=5))
+    results.append(run_benchmark("ARIMA(1,1,1) Accuracy (RMSE, MAE, MAPE, R²)", "Statsmodels", arima_fn, warmup=1, iterations=5))
+    results.append(run_benchmark("GBDT Regressor Quality (RMSE, MAE, R²)", "Scikit-Learn", gbdt_fn, warmup=1, iterations=5))
+    results.append(run_benchmark("RandomForest Quality (Accuracy, F1)", "Scikit-Learn", rf_fn, warmup=1, iterations=5))
+    results.append(run_benchmark("NaiveBayes Quality (Accuracy, Macro-F1)", "Scikit-Learn", nb_fn, warmup=1, iterations=5))
+    print()
+    return results
+
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="SwiftSci Python Benchmark Suite")
+    parser = argparse.ArgumentParser(description="SwiftSci Python Benchmark Suite v3.5.0")
     parser.add_argument("--json", metavar="PATH", help="Export results to JSON file")
+    parser.add_argument("--suite", help="Filter by suite name (stats, dataframe, ml, forecast, extensions, accuracy)")
+    parser.add_argument("--filter", help="Filter by benchmark name substring")
+    parser.add_argument("--rounds", type=int, default=3, help="Number of measurement rounds")
+    parser.add_argument("--iterations", type=int, default=7, help="Iterations per round")
+    parser.add_argument("--warmup", type=int, default=2, help="Warmup iterations")
     args = parser.parse_args()
 
+    BenchmarkConfig.default_rounds = args.rounds
+    BenchmarkConfig.default_iterations = args.iterations
+    BenchmarkConfig.default_warmup = args.warmup
 
     print("╔══════════════════════════════════════════════════════════╗")
-    print("║        SwiftSci Python Benchmark Suite — v3.0.1          ║")
-
+    print("║        SwiftSci Python Benchmark Suite — v3.5.0          ║")
     print("╚══════════════════════════════════════════════════════════╝")
-    print(f"Platform : {platform.machine()} ({platform.system()})")
-    print(f"Python   : {sys.version.split()[0]}")
-    print(f"NumPy    : {np.__version__}")
-    print(f"Pandas   : {pd.__version__}")
-    print(f"PyTorch  : {torch.__version__}")
+    print(f"Platform   : {platform.machine()} ({platform.system()})")
+    print(f"Python     : {sys.version.split()[0]}")
+    print(f"NumPy      : {np.__version__}")
+    print(f"Pandas     : {pd.__version__}")
+    print(f"Config     : {args.rounds} rounds × {args.iterations} iters (warmup={args.warmup})")
+    if args.suite:
+        print(f"Suite      : \"{args.suite}\"")
+    if args.filter:
+        print(f"Filter     : \"{args.filter}\"")
     print("")
 
-    all_results = []
-    all_results.extend(bench_stats())
-    all_results.extend(bench_dataframe())
-    all_results.extend(bench_ml())
-    all_results.extend(bench_forecast())
-    all_results.extend(bench_advanced())
+    suites = [
+        ("stats", bench_stats),
+        ("dataframe", bench_dataframe),
+        ("ml", bench_ml),
+        ("forecast", bench_forecast),
+        ("extensions", bench_extensions),
+        ("accuracy", bench_accuracy),
+    ]
 
-    # Console summary table
-    print(f"\n{'Benchmark':<52}  {'Module':<14}  {'Mean(ms)':>10}  {'Median(ms)':>10}")
-    print("─" * 96)
+    all_results = []
+    for suite_name, fn in suites:
+        if args.suite and args.suite.lower() not in suite_name.lower():
+            continue
+        res = fn()
+        if args.filter:
+            res = [r for r in res if args.filter.lower() in r["name"].lower()]
+        all_results.extend(res)
+
+    # Formatted summary table
+    print("─" * 135)
+    print(f"{'Benchmark':<52} {'Module':<18} {'Mean ± 95% CI (ms)':<26} {'Trimmed(ms)':<12} {'Median(ms)':<12} {'Min..Max (ms)':<18} {'RAM(MB)':<8}")
+    print("─" * 135)
     for r in all_results:
-        print(f"  {r['name']:<50}  {r['module']:<14}  {r['meanMs']:10.3f}  {r['medianMs']:10.3f}")
-    print("─" * 96)
+        ci_str = f"{r['meanMs']:8.3f} ± {r['marginOfError95Ms']:5.3f}"
+        min_max_str = f"{r['minMs']:.3f}..{r['maxMs']:.3f}"
+        print(f"{r['name']:<52} {r['module']:<18} {ci_str:<26} {r['trimmedMeanMs']:<12.3f} {r['medianMs']:<12.3f} {min_max_str:<18} {r['memoryMB']:<8.1f}")
+    print("─" * 135)
 
     if args.json:
         report = {
@@ -430,8 +476,6 @@ def main():
         with open(args.json, "w") as f:
             json.dump(report, f, indent=2)
         print(f"\n✅ Results exported to: {args.json}\n")
-
-
 
 
 if __name__ == "__main__":

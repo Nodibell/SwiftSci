@@ -8,7 +8,7 @@ GPU-accelerated real-time object detection inference using YOLOv8 architectures 
 
 ### 1. Preprocessing Images with Letterbox
 
-`YOLOPreprocessor` resizes input images to the model's expected $640 \times 640$ resolution while strictly preserving original aspect ratios using symmetric $(114, 114, 114)$ gray padding:
+`YOLOPreprocessor` resizes input images to the model's expected `640 × 640` resolution while strictly preserving original aspect ratios using symmetric `(114, 114, 114)` gray padding:
 
 ```swift
 import SwiftVision

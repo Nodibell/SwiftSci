@@ -20,7 +20,7 @@ struct DataFrameBenchmarks: BenchmarkSuite {
         var lines: [String] = ["id,category,value_a,value_b,flag"]
 
         let categories = ["alpha", "beta", "gamma", "delta"]
-        var rng = LCG(seed: 42)
+        var rng = BenchmarkLCG(seed: 42)
 
         for i in 0..<rows {
             let cat = categories[Int(rng.next() % 4)]
@@ -181,7 +181,7 @@ struct DataFrameBenchmarks: BenchmarkSuite {
             module: module
         ) {
 
-            _ = try? df.filter(
+            _ = try df.filter(
                 column: "value_a",
                 where: .greaterThan(50.0)
             )
@@ -216,7 +216,7 @@ struct DataFrameBenchmarks: BenchmarkSuite {
             module: module
         ) {
 
-            _ = try? df.sortBy(
+            _ = try df.sortBy(
                 "value_a",
                 ascending: true
             )
@@ -224,28 +224,79 @@ struct DataFrameBenchmarks: BenchmarkSuite {
 
         results.append(sortResult)
 
+        // -----------------------------------------------------------------
+        // 8. toFlatFeatureMatrix (100k rows x 2 cols)
+        // -----------------------------------------------------------------
+        let flatResult = await BenchmarkRunner.run(
+            name: "toFlatFeatureMatrix (100k rows)",
+            module: module
+        ) {
+            _ = try df.toFlatFeatureMatrix(["value_a", "value_b"])
+        }
+        results.append(flatResult)
+
+        // -----------------------------------------------------------------
+        // 9. Zero-Allocation Row Iteration (100k rows)
+        // -----------------------------------------------------------------
+        let rowIterResult = await BenchmarkRunner.run(
+            name: "Zero-Allocation df.rows iteration (100k)",
+            module: module
+        ) {
+            var sum = 0.0
+            for row in df.rows {
+                if let v = row.double("value_a") {
+                    sum += v
+                }
+            }
+        }
+        results.append(rowIterResult)
+
+        // -----------------------------------------------------------------
+        // 10. SIMD Hash Join (100k rows)
+        // -----------------------------------------------------------------
+        let rightIds = TypedColumn<Int64>(name: "id", values: (0..<100_000).map { Int64($0) })
+        let rightWeights = TypedColumn<Double>(name: "weight", values: (0..<100_000).map { Double($0) * 0.05 })
+        if let rightDF = try? DataFrame(columns: [rightIds, rightWeights]) {
+            let joinResult = await BenchmarkRunner.run(
+                name: "DataFrame SIMD Hash Join (100k rows)",
+                module: module
+            ) {
+                _ = try df.joinSIMD(rightDF, on: "id", how: .inner)
+            }
+            results.append(joinResult)
+        }
+
+        // -----------------------------------------------------------------
+        // 11. Parquet Write & Read (100k rows)
+        // -----------------------------------------------------------------
+        let parquetURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("swiftsci_bench_\(UUID().uuidString).parquet")
+
+        let parquetWriteResult = await BenchmarkRunner.run(
+            name: "Parquet Write Snappy (100k rows)",
+            module: module,
+            rounds: 1,
+            warmup: 1,
+            iterations: 2
+        ) {
+            try await ParquetWriter.write(dataFrame: df, to: parquetURL)
+        }
+        results.append(parquetWriteResult)
+
+        let parquetReadResult = await BenchmarkRunner.run(
+            name: "Parquet Read Snappy (100k rows)",
+            module: module,
+            rounds: 1,
+            warmup: 1,
+            iterations: 2
+        ) {
+            _ = try await ParquetReader.read(url: parquetURL)
+        }
+        results.append(parquetReadResult)
+
+        try? FileManager.default.removeItem(at: parquetURL)
         try? FileManager.default.removeItem(at: csvURL)
 
         return results
-    }
-}
-
-// MARK: - Deterministic RNG
-
-private struct LCG {
-
-    private var state: UInt64
-
-    init(seed: UInt64) {
-        state = seed
-    }
-
-    mutating func next() -> UInt64 {
-
-        state = state
-            &* 6_364_136_223_846_793_005
-            &+ 1_442_695_040_888_963_407
-
-        return state
     }
 }

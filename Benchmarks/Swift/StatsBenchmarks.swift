@@ -10,7 +10,7 @@ struct StatsBenchmarks: BenchmarkSuite {
 
     /// Deterministic data via LCG (same seed as Python counterpart uses `numpy.random.seed(42)`).
     private static func makeVector(_ n: Int, seed: UInt64 = 42) -> [Double] {
-        var rng = LCGStats(seed: seed)
+        var rng = BenchmarkLCG(seed: seed)
         return (0..<n).map { _ in Double(rng.next() % 100_000) / 1000.0 - 50.0 }
     }
 
@@ -57,16 +57,28 @@ struct StatsBenchmarks: BenchmarkSuite {
         }
         results.append(corrResult)
 
-        return results
-    }
-}
+        // ── 5. Two-Sample T-Test (100k samples) ───────────────────────────
+        let sample1 = StatsBenchmarks.makeVector(100_000, seed: 101)
+        let sample2 = StatsBenchmarks.makeVector(100_000, seed: 202)
+        let ttestResult = await BenchmarkRunner.run(
+            name: "Two-Sample T-Test (100k)",
+            module: module
+        ) {
+            _ = try Stats.tTest(sample1: sample1, sample2: sample2)
+        }
+        results.append(ttestResult)
 
-// Separate struct name to avoid conflict with DataFrameBenchmarks.LCG
-private struct LCGStats {
-    private var state: UInt64
-    init(seed: UInt64) { state = seed }
-    mutating func next() -> UInt64 {
-        state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
-        return state
+        // ── 6. Spearman Rank Correlation (100k pairs) ─────────────────────
+        let sDataA = StatsBenchmarks.makeVector(100_000, seed: 303)
+        let sDataB = StatsBenchmarks.makeVector(100_000, seed: 404)
+        let spearmanResult = await BenchmarkRunner.run(
+            name: "Spearman Correlation (100k)",
+            module: module
+        ) {
+            _ = try Stats.spearmanCorrelation(sDataA, sDataB)
+        }
+        results.append(spearmanResult)
+
+        return results
     }
 }

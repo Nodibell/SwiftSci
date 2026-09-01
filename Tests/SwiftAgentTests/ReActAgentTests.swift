@@ -77,7 +77,7 @@ struct ReActAgentTests {
             if !prompt.contains("Previous History:") {
                 return """
                 Thought: Checking unknown tool first.
-                Action: UnknownTool
+                Action: NonExistentTool
                 Action Input: test
                 """
             } else {
@@ -91,8 +91,46 @@ struct ReActAgentTests {
 
         let (answer, trace) = try await agent.run(query: "Weather", llm: mockLLM)
         #expect(trace.count == 2)
-        #expect(trace[0].observation?.contains("Tool 'UnknownTool' not recognized") == true)
+        #expect(trace[0].observation?.contains("Tool 'NonExistentTool' not recognized") == true)
         #expect(trace[1].observation == "Sunny in Kyiv")
         #expect(answer.contains("Sunny in Kyiv"))
+    }
+
+    @Test("ReActAgent findTool fuzzy matching")
+    func testFindToolFuzzyMatching() async {
+        let tool1 = CustomAgentTool(name: "DataFrameQuery", description: "Query dataframe") { _ in "" }
+        let tool2 = CustomAgentTool(name: "Web_Search_Engine", description: "Search web") { _ in "" }
+        let agent = ReActAgent(tools: [tool1, tool2])
+
+        // Direct exact match
+        #expect(await agent.findTool(named: "DataFrameQuery")?.name == "DataFrameQuery")
+
+        // Case-insensitive / whitespace / underscores / hyphens match
+        #expect(await agent.findTool(named: "dataframequery")?.name == "DataFrameQuery")
+        #expect(await agent.findTool(named: "data_frame_query")?.name == "DataFrameQuery")
+        #expect(await agent.findTool(named: "  dataframe-query  ")?.name == "DataFrameQuery")
+        #expect(await agent.findTool(named: "web-search-engine")?.name == "Web_Search_Engine")
+        #expect(await agent.findTool(named: "WEBSEARCHENGINE")?.name == "Web_Search_Engine")
+
+        // Non existent
+        #expect(await agent.findTool(named: "completely_unrelated_tool") == nil)
+    }
+
+    @Test("ReActAgent reaches maxSteps without final answer")
+    func testMaxStepsReached() async throws {
+        let tool = CustomAgentTool(name: "EchoTool", description: "Echo input") { "Echo: \($0)" }
+        let agent = ReActAgent(tools: [tool], maxSteps: 2)
+
+        let mockLLM: @Sendable (String) async throws -> String = { _ in
+            return """
+            Thought: Keep executing tool indefinitely.
+            Action: EchoTool
+            Action Input: loop
+            """
+        }
+
+        let (answer, trace) = try await agent.run(query: "Loop forever", llm: mockLLM)
+        #expect(trace.count == 2)
+        #expect(answer == "Echo: loop")
     }
 }

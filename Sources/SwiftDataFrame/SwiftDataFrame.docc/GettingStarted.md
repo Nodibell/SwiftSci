@@ -1,55 +1,125 @@
 # Getting Started with SwiftSci DataFrame
 
-Learn how to load CSV data, manipulate columns, filter rows, perform group-by aggregations, and join datasets.
+A complete guide to columnar data loading, O(1) indexing, zero-allocation row iteration, group-by aggregations, joins, and machine learning exports.
 
 ## Overview
 
-`SwiftDataFrame` is a high-performance, column-oriented data framework built natively in Swift for Apple Silicon and modern Swift 6 strict concurrency.
+`SwiftDataFrame` is an immutable, columnar data analysis engine built natively in Swift 6 for Apple Silicon. It combines Apache Arrow / Feather zero-copy memory buffers, O(1) schema lookups, and SIMD bitmask filtering.
 
-### 1. Loading CSV Data
+```
+DataFrame (Value Type: Immutable Struct + Copy-On-Write)
+┌─────────────────────────────────────────────────────────────┐
+│ Schema (FieldMap: O(1) dictionary lookup by column name)    │
+├─────────────────────────────────────────────────────────────┤
+│ Column 0: TypedColumn<Int64>   [ 101, 102, 103, 104 ]       │
+│ Column 1: TypedColumn<String>  [ "A", "B", "A", nil ]       │
+│ Column 2: TypedColumn<Double>  [ 12.5, 45.0, 33.2, 98.1 ]   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 1. Loading Datasets (CSV, Feather & Parquet)
+
+Load data from local files or memory buffers using streaming asynchronous APIs:
 
 ```swift
 import Foundation
 import SwiftDataFrame
 
-let fileURL = URL(filePath: "/path/to/data.csv")
-let df = try await DataFrame(csv: fileURL)
+// 1. Load CSV with automatic delimiter and type inference
+let csvURL = URL(fileURLWithPath: "passengers.csv")
+let df = try await DataFrame(csv: csvURL)
 
-print("Shape: \(df.shape.rows) rows × \(df.shape.columns) columns")
+print("Loaded DataFrame: \(df.shape.rows) rows x \(df.shape.columns) columns")
 df.head(5).debugPrint()
+
+// 2. Load binary Feather / Apache Arrow IPC format (Zero-Copy)
+let featherURL = URL(fileURLWithPath: "dataset.feather")
+let featherDF = try await DataFrame(feather: featherURL)
+
+// 3. Load compressed Apache Parquet format
+let parquetURL = URL(fileURLWithPath: "telemetry.parquet")
+let parquetDF = try await DataFrame(parquet: parquetURL)
 ```
 
-### 2. Feature Engineering
+---
+
+## 2. O(1) Column Access & Zero-Allocation Row Iteration
+
+Access typed columns by name or iterate through rows using `DataFrameRowSequence`:
 
 ```swift
-let engineered = try df
-    .addColumn("AgeImputed", as: Double.self) { row in
-        row.value(column: "Age", as: Double.self) ?? 29.0
+// 1. O(1) Typed Column Subscript
+if let ageCol = df[column: "Age", as: Double.self] {
+    let meanAge = ageCol.mean
+    print("Mean Age: \(meanAge ?? 0.0)")
+}
+
+// 2. Zero-Allocation Row Iteration (Bypasses heap dictionary creation)
+for row in df.rows {
+    if let city = row.string("City"), let score = row.double("Score") {
+        if score > 90.0 {
+            print("Top Performer in \(city): Score = \(score)")
+        }
     }
-    .addColumn("IsAlone", as: Double.self) { row in
-        let sibSp = row.value(column: "SibSp", as: Int64.self) ?? 0
-        let parch = row.value(column: "Parch", as: Int64.self) ?? 0
-        return (sibSp + parch) == 0 ? 1.0 : 0.0
-    }
+}
 ```
 
-### 3. Aggregations & Joins
+---
+
+## 3. High-Performance Filtering & Feature Transformation
+
+Filter datasets using SIMD bitmasks or transform columns functional-style:
 
 ```swift
-let summary = df.groupBy("Pclass").mean()
-summary.debugPrint()
+// 1. Fast condition-based filtering
+let filtered = try df.filter(column: "Fare", where: .greaterThan(50.0))
 
-let joined = try df1.join(df2, on: "id", how: .inner)
+// 2. Predicate filter closure
+let adultFirstClass = df.filter { row in
+    (row.int("Pclass") == 1) && ((row.double("Age") ?? 0) >= 18.0)
+}
+
+// 3. Add calculated feature column
+let engineeredDF = try df.addColumn("FarePerYear", as: Double.self) { row in
+    guard let fare = row.double("Fare"), let age = row.double("Age"), age > 0 else { return nil }
+    return fare / age
+}
 ```
 
-### 4. Deduplication
+---
 
-`DataFrame.unique` removes duplicate rows while preserving first-occurrence order:
+## 4. GroupBy Aggregations & Joins
+
+Group by categorical columns and aggregate numeric columns:
 
 ```swift
-// Remove duplicate rows across all columns
-let deduplicated = df.unique
+// 1. GroupBy with Mean Aggregation
+let deptAverages = df.groupBy("Department").mean()
+deptAverages.debugPrint()
 
-// Deduplicate a single column's values
-let uniqueCategories = df["category"].unique
+// 2. High-Performance SIMD Hash Join
+let employees = try DataFrame(columns: [
+    TypedColumn<Int64>(name: "id", values: [1, 2, 3]),
+    TypedColumn<String>(name: "name", values: ["Alice", "Bob", "Charlie"])
+])
+let departments = try DataFrame(columns: [
+    TypedColumn<Int64>(name: "id", values: [1, 2, 3]),
+    TypedColumn<String>(name: "dept", values: ["AI", "Cloud", "Security"])
+])
+
+let merged = try employees.join(departments, on: "id", how: .inner)
+merged.debugPrint()
+```
+
+---
+
+## 5. Exporting Flat 1D Matrices for ML
+
+Export tabular data directly into contiguous flat buffers for machine learning training:
+
+```swift
+let (flatMatrix, rows, cols) = try df.toFlatFeatureMatrix(["Age", "Fare", "Pclass"])
+print("Generated flat feature matrix: \(rows) samples x \(cols) features.")
 ```

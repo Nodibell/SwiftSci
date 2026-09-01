@@ -15,13 +15,14 @@ struct ExplainBenchmarks: BenchmarkSuite {
         let numBackground = 20
         let numCoalitions = 100
 
+        var rng = BenchmarkLCG(seed: 42)
         // Background dataset: 20 samples of 5 features
         let background = (0..<numBackground).map { _ in
-            (0..<M).map { _ in Double.random(in: -2.0...2.0) }
+            (0..<M).map { _ in rng.nextDouble(in: -2.0...2.0) }
         }
 
         // Target instance to explain
-        let instance = (0..<M).map { _ in Double.random(in: -2.0...2.0) }
+        let instance = (0..<M).map { _ in rng.nextDouble(in: -2.0...2.0) }
 
         // Simple linear model: sum of features
         let model: @Sendable ([Double]) -> Double = { x in
@@ -43,6 +44,22 @@ struct ExplainBenchmarks: BenchmarkSuite {
             )
         }
         results.append(shapResult)
+
+        // ── 2. LIME Explainer (5 features, 300 perturbed samples) ────────
+        let limeResult = await BenchmarkRunner.run(
+            name: "LIME Explain (5 feats, 300 samples)",
+            module: module,
+            warmup: 2,
+            iterations: 5
+        ) {
+            let lime = LIMEExplainer(kernelWidth: 0.75, regularization: 0.01)
+            _ = await lime.explain(
+                model: model,
+                instance: instance,
+                numSamples: 300
+            )
+        }
+        results.append(limeResult)
 
         return results
     }

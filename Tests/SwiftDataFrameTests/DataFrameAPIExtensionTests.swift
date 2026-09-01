@@ -10,7 +10,7 @@ struct DataFrameAPIExtensionTests {
         let priceCol = TypedColumn<Double>(name: "price", values: [10.0, 20.0, nil])
         let df = try DataFrame(columns: [priceCol])
         
-        let df2 = try df.mapColumn("price", as: Double.self) { val in
+        let df2 = try df.mapColumn("price", as: Double.self) { (val: Double?) -> Double? in
             val.map { $0 * 1.2 }
         }
         
@@ -37,7 +37,7 @@ struct DataFrameAPIExtensionTests {
         
         #expect(filtered.shape.rows == 1)
         let matchedRow = filtered.row(at: 0)
-        #expect(matchedRow["city"] as? String == "Lviv")
+        #expect(matchedRow.string("city") == "Lviv")
     }
 
     @Test("GroupedDataFrame.transform expands aggregated results back to original rows")

@@ -21,7 +21,7 @@ let laggedDF = try priceDF.withLaggedColumn(column: "price", by: 1, targetColumn
 
 ## 2. Exponentially Weighted Moving Average (EMA)
 
-$$\text{EMA}_t = \alpha \cdot x_t + (1 - \alpha) \cdot \text{EMA}_{t-1}, \quad \alpha = \frac{2}{N + 1}$$
+> **Formula:** `EMA_t = α · x_t + (1 - α) · EMA_{t-1}`, where `α = 2 / (N + 1)`
 
 Accelerated exponential smoothing eliminates high-frequency noise while preserving phase alignment.
 

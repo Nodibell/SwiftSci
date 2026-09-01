@@ -114,7 +114,10 @@ let package = Package(
                 .process("SwiftPreprocessing.docc")
             ],
             cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            linkerSettings: [
+                .linkedFramework("Accelerate"),
+            ]
         ),
         .testTarget(
             name: "SwiftPreprocessingTests",
@@ -357,7 +360,7 @@ let package = Package(
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings,
             linkerSettings: [
-                .linkedLibrary("sqlite3")
+                .linkedLibrary("sqlite3"),
             ]
         ),
         .testTarget(

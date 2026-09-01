@@ -44,13 +44,35 @@ extension Stats {
 
         let popVariance = meanSquareVal - (meanVal * meanVal)
         let besselCorrection = n / (n - Double(ddof))
-        let v = Swift.max(0.0, popVariance * besselCorrection)
-        return v
+        return Swift.max(0.0, popVariance * besselCorrection)
     }
 
-    /// Standard deviation.
+    /// Sample or population variance for Float values using Accelerate vDSP.
+    public static func variance(_ values: [Float], ddof: Int = 1) throws -> Float {
+        guard !values.isEmpty else { throw StatsError.emptyInput }
+        guard ddof >= 0 else { throw StatsError.invalidDDOF(ddof) }
+        let n = Float(values.count)
+        guard n > Float(ddof) else { throw StatsError.insufficientData(minimum: ddof + 1, got: values.count) }
+
+        var meanVal: Float = 0.0
+        var meanSquareVal: Float = 0.0
+        let len = vDSP_Length(values.count)
+        vDSP_meanv(values, 1, &meanVal, len)
+        vDSP_measqv(values, 1, &meanSquareVal, len)
+
+        let popVariance = meanSquareVal - (meanVal * meanVal)
+        let besselCorrection = n / (n - Float(ddof))
+        return Swift.max(0.0, popVariance * besselCorrection)
+    }
+
+    /// Standard deviation for Double values.
     public static func standardDeviation(_ values: [Double], ddof: Int = 1, checkNaN: Bool = true) throws -> Double {
         try variance(values, ddof: ddof, checkNaN: checkNaN).squareRoot()
+    }
+
+    /// Standard deviation for Float values.
+    public static func standardDeviation(_ values: [Float], ddof: Int = 1) throws -> Float {
+        try variance(values, ddof: ddof).squareRoot()
     }
 
     /// Median via vDSP.sort.

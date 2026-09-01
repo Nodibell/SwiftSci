@@ -118,38 +118,47 @@ public enum ParquetWriter: Sendable {
         var pageBytes = [UInt8]()
 
         // 1. Definition Levels (1 for present, 0 for null)
-        var defLevels = [UInt8]()
-        defLevels.reserveCapacity(rowCount)
-
-        for r in 0..<rowCount {
-            defLevels.append(column.value(at: r) != nil ? 1 : 0)
-        }
-
-        // Encode 1-bit definition levels in bit-packed format
-        var bitPackedBytes = [UInt8]()
-        var currentByte: UInt8 = 0
-        var bitCount = 0
-
-        for lvl in defLevels {
-            if lvl != 0 {
-                currentByte |= (1 << bitCount)
-            }
-            bitCount += 1
-            if bitCount == 8 {
-                bitPackedBytes.append(currentByte)
-                currentByte = 0
-                bitCount = 0
-            }
-        }
-        if bitCount > 0 {
-            bitPackedBytes.append(currentByte)
-        }
-
-        // Def level header: bit-packed run header = (num_groups << 1) | 1
-        var defPayload = [UInt8]()
         let numGroups = (rowCount + 7) / 8
-        let headerByte = UInt8((numGroups << 1) | 1)
-        defPayload.append(headerByte)
+        var bitPackedBytes: [UInt8]
+
+        if column.nullCount == 0 {
+            // Fast-path: all values present (all bits set to 1)
+            bitPackedBytes = [UInt8](repeating: 0xFF, count: numGroups)
+            let remainder = rowCount % 8
+            if remainder != 0 {
+                bitPackedBytes[numGroups - 1] = UInt8((1 << remainder) - 1)
+            }
+        } else {
+            bitPackedBytes = [UInt8]()
+            bitPackedBytes.reserveCapacity(numGroups)
+            var currentByte: UInt8 = 0
+            var bitCount = 0
+
+            for r in 0..<rowCount {
+                if column.value(at: r) != nil {
+                    currentByte |= (1 << bitCount)
+                }
+                bitCount += 1
+                if bitCount == 8 {
+                    bitPackedBytes.append(currentByte)
+                    currentByte = 0
+                    bitCount = 0
+                }
+            }
+            if bitCount > 0 {
+                bitPackedBytes.append(currentByte)
+            }
+        }
+
+        // Def level header: bit-packed run header = (num_groups << 1) | 1 as ULEB128 varint
+        var defPayload = [UInt8]()
+        defPayload.reserveCapacity(5 + bitPackedBytes.count)
+        var headerVal = (numGroups << 1) | 1
+        while headerVal >= 0x80 {
+            defPayload.append(UInt8((headerVal & 0x7F) | 0x80))
+            headerVal >>= 7
+        }
+        defPayload.append(UInt8(headerVal & 0x7F))
         defPayload.append(contentsOf: bitPackedBytes)
 
         // Prefix with 4-byte little endian definition level byte length
@@ -157,46 +166,113 @@ public enum ParquetWriter: Sendable {
         withUnsafeBytes(of: &defLen) { pageBytes.append(contentsOf: $0) }
         pageBytes.append(contentsOf: defPayload)
 
-        // 2. Plain Encoded Values
-        for r in 0..<rowCount {
-            guard let val = column.value(at: r) else { continue }
-
-            switch column.dtype {
-            case .int32:
-                if let i = val as? Int32 {
-                    var v = i.littleEndian
+        // 2. Plain Encoded Values (Direct typed fast-path)
+        if let c = column as? TypedColumn<Int64> {
+            pageBytes.reserveCapacity(pageBytes.count + rowCount * 8)
+            for vOpt in c.values {
+                if let val = vOpt {
+                    var v = val.littleEndian
                     withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
                 }
-            case .int64:
-                if let i = val as? Int64 {
-                    var v = i.littleEndian
+            }
+        } else if let c = column as? TypedColumn<Int32> {
+            pageBytes.reserveCapacity(pageBytes.count + rowCount * 4)
+            for vOpt in c.values {
+                if let val = vOpt {
+                    var v = val.littleEndian
                     withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
                 }
-            case .float32:
-                if let f = val as? Float {
-                    var v = f.bitPattern.littleEndian
+            }
+        } else if let c = column as? TypedColumn<Double> {
+            pageBytes.reserveCapacity(pageBytes.count + rowCount * 8)
+            for vOpt in c.values {
+                if let val = vOpt {
+                    var v = val.bitPattern.littleEndian
                     withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
                 }
-            case .float64:
-                if let d = val as? Double {
-                    var v = d.bitPattern.littleEndian
+            }
+        } else if let c = column as? TypedColumn<Float> {
+            pageBytes.reserveCapacity(pageBytes.count + rowCount * 4)
+            for vOpt in c.values {
+                if let val = vOpt {
+                    var v = val.bitPattern.littleEndian
                     withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
                 }
-            case .boolean:
-                if let b = val as? Bool {
-                    pageBytes.append(b ? 1 : 0)
+            }
+        } else if let c = column as? TypedColumn<Bool> {
+            pageBytes.reserveCapacity(pageBytes.count + rowCount)
+            for vOpt in c.values {
+                if let val = vOpt {
+                    pageBytes.append(val ? 1 : 0)
                 }
-            case .utf8:
-                let s = "\(val)"
-                let utf8Bytes = [UInt8](s.utf8)
-                var strLen = UInt32(utf8Bytes.count).littleEndian
-                withUnsafeBytes(of: &strLen) { pageBytes.append(contentsOf: $0) }
-                pageBytes.append(contentsOf: utf8Bytes)
-            case .date32:
-                if let date = val as? Date {
-                    let days = Int32(date.timeIntervalSince1970 / 86400.0)
+            }
+        } else if let c = column as? TypedColumn<String> {
+            pageBytes.reserveCapacity(pageBytes.count + rowCount * 12)
+            for vOpt in c.values {
+                if let val = vOpt {
+                    let written = val.utf8.withContiguousStorageIfAvailable { strBuf in
+                        var strLen = UInt32(strBuf.count).littleEndian
+                        withUnsafeBytes(of: &strLen) { pageBytes.append(contentsOf: $0) }
+                        pageBytes.append(contentsOf: strBuf)
+                        return true
+                    } ?? false
+                    if !written {
+                        let utf8Bytes = Array(val.utf8)
+                        var strLen = UInt32(utf8Bytes.count).littleEndian
+                        withUnsafeBytes(of: &strLen) { pageBytes.append(contentsOf: $0) }
+                        pageBytes.append(contentsOf: utf8Bytes)
+                    }
+                }
+            }
+        } else if let c = column as? TypedColumn<Date> {
+            for vOpt in c.values {
+                if let val = vOpt {
+                    let days = Int32(val.timeIntervalSince1970 / 86400.0)
                     var v = days.littleEndian
                     withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                }
+            }
+        } else {
+            // Generic fallback
+            for r in 0..<rowCount {
+                guard let val = column.value(at: r) else { continue }
+                switch column.dtype {
+                case .int32:
+                    if let i = val as? Int32 {
+                        var v = i.littleEndian
+                        withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                    }
+                case .int64:
+                    if let i = val as? Int64 {
+                        var v = i.littleEndian
+                        withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                    }
+                case .float32:
+                    if let f = val as? Float {
+                        var v = f.bitPattern.littleEndian
+                        withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                    }
+                case .float64:
+                    if let d = val as? Double {
+                        var v = d.bitPattern.littleEndian
+                        withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                    }
+                case .boolean:
+                    if let b = val as? Bool {
+                        pageBytes.append(b ? 1 : 0)
+                    }
+                case .utf8:
+                    let s = "\(val)"
+                    let utf8Bytes = [UInt8](s.utf8)
+                    var strLen = UInt32(utf8Bytes.count).littleEndian
+                    withUnsafeBytes(of: &strLen) { pageBytes.append(contentsOf: $0) }
+                    pageBytes.append(contentsOf: utf8Bytes)
+                case .date32:
+                    if let date = val as? Date {
+                        let days = Int32(date.timeIntervalSince1970 / 86400.0)
+                        var v = days.littleEndian
+                        withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                    }
                 }
             }
         }
@@ -210,6 +286,7 @@ public enum ParquetWriter: Sendable {
         )
 
         var fullPage = [UInt8]()
+        fullPage.reserveCapacity(pageHeaderBytes.count + pageBytes.count)
         fullPage.append(contentsOf: pageHeaderBytes)
         fullPage.append(contentsOf: pageBytes)
 
@@ -338,7 +415,7 @@ public enum ParquetWriter: Sendable {
 
         // field 6: created_by (string)
         writer.writeFieldBegin(fieldId: 6, type: .binary)
-        writer.writeString("SwiftSci v3.4.0 (Pure Swift)")
+        writer.writeString("SwiftSci v3.5.0 (Pure Swift)")
 
         writer.writeFieldStop()
         writer.popStruct()

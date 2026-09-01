@@ -143,6 +143,7 @@ public enum SnappyDecompressor: Sendable {
             let count = rawBuffer.count
 
             var output = [UInt8]()
+            output.reserveCapacity(count + 32)
             // 1. Write varint32 uncompressed length
             var len = count
             while len >= 0x80 {
@@ -153,7 +154,7 @@ public enum SnappyDecompressor: Sendable {
 
             // 2. LZ77 Compression Table
             let tableSize = 4096
-            var table = [Int](repeating: -1, count: tableSize)
+            var table = [Int32](repeating: -1, count: tableSize)
 
             func emitLiteral(start: Int, end: Int) {
                 let litLen = end - start
@@ -174,11 +175,12 @@ public enum SnappyDecompressor: Sendable {
 
             var litStart = 0
             var i = 0
+            var step = 1
 
             while i + 4 <= count {
                 let h = ((Int(ptr[i]) | (Int(ptr[i + 1]) << 8) | (Int(ptr[i + 2]) << 16) | (Int(ptr[i + 3]) << 24)) &* 0x1e35a7bd) & (tableSize - 1)
-                let matchPos = table[h]
-                table[h] = i
+                let matchPos = Int(table[h])
+                table[h] = Int32(i)
 
                 if matchPos >= 0 && (i - matchPos) < 65535 && (i - matchPos) > 0 {
                     // Check if 4 bytes match
@@ -214,10 +216,12 @@ public enum SnappyDecompressor: Sendable {
 
                         i += matchLen
                         litStart = i
+                        step = 1
                         continue
                     }
                 }
-                i += 1
+                i += step
+                step = 1 + ((i - litStart) >> 5)
             }
 
             // Emit remaining trailing literals

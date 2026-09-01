@@ -45,9 +45,9 @@ for hit in results {
 
 ## 3. Supported Metrics
 
-* **`.cosineSimilarity`**: Ideal for normalized text embeddings (returns $[-1.0, 1.0]$).
+* **`.cosineSimilarity`**: Ideal for normalized text embeddings (returns `[-1.0, 1.0]`).
 * **`.dotProduct`**: Direct inner product for unnormalized projections.
-* **`.euclideanDistance`**: Geometric $L_2$ distance for spatial clustering.
+* **`.euclideanDistance`**: Geometric L2 distance for spatial clustering.
 
 ## Topics
 

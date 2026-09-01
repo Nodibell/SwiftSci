@@ -177,18 +177,22 @@ public final class IsolationForest: Sendable {
 
 /// Local Outlier Factor (LOF) algorithm for local density-based anomaly detection.
 public final class LocalOutlierFactor: Sendable {
-    /// The k.
+    /// The number of neighbors.
     public let k: Int
-    /// The contamination.
+    /// The proportion of outliers in the dataset.
     public let contamination: Double
+    /// Optional maximum number of samples for fitting the spatial index.
+    public let maxSamples: Int?
     
     /// Creates a new instance.
     /// - Parameters:
-    ///   - k: The k.
-    ///   - contamination: The contamination.
-    public init(k: Int = 20, contamination: Double = 0.1) {
+    ///   - k: The number of nearest neighbors (default: 20).
+    ///   - contamination: Expected outlier ratio in [0, 0.5] (default: 0.1).
+    ///   - maxSamples: Optional maximum number of samples to index for density estimation.
+    public init(k: Int = 20, contamination: Double = 0.1, maxSamples: Int? = nil) {
         self.k = k
         self.contamination = max(0.0, min(0.5, contamination))
+        self.maxSamples = maxSamples
     }
     
     /// Alias for fitPredict using features label.
@@ -196,57 +200,71 @@ public final class LocalOutlierFactor: Sendable {
         try fitPredict(data: features)
     }
 
-    /// Computes Local Outlier Factors for dataset.
+    /// Computes Local Outlier Factors for dataset using KD-Tree spatial indexing.
     public func fitPredict(data: [[Double]]) throws -> AnomalyPrediction {
         guard data.count > k else {
             throw PreprocessingError.emptyInput
         }
         let numSamples = data.count
-        let numFeatures = data[0].count
         
-        // 1. Distance matrix
-        var distMatrix = [[Double]](repeating: [Double](repeating: 0.0, count: numSamples), count: numSamples)
-        for i in 0..<numSamples {
-            for j in (i+1)..<numSamples {
-                var d = 0.0
-                for f in 0..<numFeatures {
-                    let diff = data[i][f] - data[j][f]
-                    d += diff * diff
-                }
-                d = sqrt(d)
-                distMatrix[i][j] = d
-                distMatrix[j][i] = d
-            }
+        // Subsample if maxSamples is specified and smaller than numSamples
+        let refData: [[Double]]
+        let refIndices: [Int]
+        if let maxSamples = maxSamples, maxSamples < numSamples, maxSamples > k {
+            var rng = SeededRandom(seed: 42)
+            refIndices = (0..<maxSamples).map { _ in rng.nextInt(upperBound: numSamples) }
+            refData = refIndices.map { data[$0] }
+        } else {
+            refIndices = Array(0..<numSamples)
+            refData = data
         }
         
-        // 2. k-distance and k-neighbors for each sample
-        var kDistances = [Double](repeating: 0.0, count: numSamples)
-        var kNeighbors = [[Int]](repeating: [], count: numSamples)
+        let tree = KDTree(points: refData)
+        let numRef = refData.count
         
-        for i in 0..<numSamples {
-            let sortedIdx = (0..<numSamples).filter { $0 != i }.sorted { distMatrix[i][$0] < distMatrix[i][$1] }
-            let neighbors = Array(sortedIdx.prefix(k))
-            kNeighbors[i] = neighbors
-            kDistances[i] = distMatrix[i][neighbors.last!]
+        // 1. k-distance and k-neighbors for each reference sample using KDTree
+        var kDistances = [Double](repeating: 0.0, count: numRef)
+        var kNeighbors = [[(index: Int, distance: Double)]](repeating: [], count: numRef)
+        
+        for i in 0..<numRef {
+            let knn = tree.queryKNN(point: refData[i], k: min(k + 1, numRef))
+            // Filter out the point itself if present
+            let filtered = knn.filter { $0.index != i }
+            let actualNeighbors = Array(filtered.prefix(k))
+            kNeighbors[i] = actualNeighbors
+            kDistances[i] = actualNeighbors.last?.distance ?? 0.0
         }
         
-        // 3. Local Reachability Density (LRD)
-        var lrd = [Double](repeating: 0.0, count: numSamples)
-        for i in 0..<numSamples {
+        // 2. Local Reachability Density (LRD) of reference samples
+        var lrd = [Double](repeating: 0.0, count: numRef)
+        for i in 0..<numRef {
+            let neighbors = kNeighbors[i]
+            guard !neighbors.isEmpty else { continue }
             var sumReachDist = 0.0
-            for n in kNeighbors[i] {
-                let reachDist = max(distMatrix[i][n], kDistances[n])
+            for n in neighbors {
+                let reachDist = max(n.distance, kDistances[n.index])
                 sumReachDist += reachDist
             }
-            lrd[i] = sumReachDist > 0 ? Double(kNeighbors[i].count) / sumReachDist : 0.0
+            lrd[i] = sumReachDist > 0 ? Double(neighbors.count) / sumReachDist : 0.0
         }
         
-        // 4. Local Outlier Factor (LOF)
+        // 3. Compute LOF score for all input samples
         var lofScores = [Double](repeating: 1.0, count: numSamples)
         for i in 0..<numSamples {
-            guard lrd[i] > 0 else { continue }
-            let sumLrdRatio = kNeighbors[i].reduce(0.0) { $0 + (lrd[$1] / lrd[i]) }
-            lofScores[i] = sumLrdRatio / Double(kNeighbors[i].count)
+            let knn = tree.queryKNN(point: data[i], k: min(k + 1, numRef))
+            let neighbors = Array(knn.prefix(k))
+            guard !neighbors.isEmpty else { continue }
+            
+            var sumReachDist = 0.0
+            for n in neighbors {
+                let reachDist = max(n.distance, kDistances[n.index])
+                sumReachDist += reachDist
+            }
+            let sampleLrd = sumReachDist > 0 ? Double(neighbors.count) / sumReachDist : 0.0
+            guard sampleLrd > 0 else { continue }
+            
+            let sumLrdRatio = neighbors.reduce(0.0) { $0 + (lrd[$1.index] / sampleLrd) }
+            lofScores[i] = sumLrdRatio / Double(neighbors.count)
         }
         
         let sortedLof = lofScores.sorted(by: >)

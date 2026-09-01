@@ -25,7 +25,7 @@ public class YOLOHead: Module {
     public let numClasses: Int
     /// Distribution Focal Loss maximum regression bin count (default 16).
     public let regMax: Int
-    
+
     // Scale 0 (P3, stride 8, cIn=64)
     @ModuleInfo public var cv2_0_0: ConvBlock
     @ModuleInfo public var cv2_0_1: ConvBlock
@@ -160,7 +160,6 @@ public class YOLOHead: Module {
             let distR = distances[.ellipsis, 2].reshaped(batchSize, h * w, 1) * stride
             let distB = distances[.ellipsis, 3].reshaped(batchSize, h * w, 1) * stride
 
-
             let xMin = cx - distL
             let yMin = cy - distT
             let xMax = cx + distR
@@ -176,5 +175,52 @@ public class YOLOHead: Module {
         let totalScores = concatenated(allScores, axis: 1)
 
         return YOLOHeadOutput(boxes: totalBoxes, scores: totalScores)
+    }
+
+    /// Loads weights for the decoupled detection head from the given loader.
+    public func loadWeights(from loader: YOLOWeightLoader, prefix: String = "model.22") {
+        var params: [String: MLXArray] = [:]
+
+        func mapConvBlock(srcPfx: String, dstName: String) {
+            if let w = loader.get("\(srcPfx).conv.weight") { params["\(dstName).conv.weight"] = w }
+            if let b = loader.get("\(srcPfx).conv.bias") { params["\(dstName).conv.bias"] = b }
+            if let w = loader.get("\(srcPfx).bn.weight") { params["\(dstName).bn.weight"] = w }
+            if let b = loader.get("\(srcPfx).bn.bias") { params["\(dstName).bn.bias"] = b }
+            if let rm = loader.get("\(srcPfx).bn.running_mean") { params["\(dstName).bn.runningMean"] = rm }
+            if let rv = loader.get("\(srcPfx).bn.running_var") { params["\(dstName).bn.runningVar"] = rv }
+        }
+
+        func mapConv2d(srcPfx: String, dstName: String) {
+            if let w = loader.get("\(srcPfx).weight") { params["\(dstName).weight"] = w }
+            if let b = loader.get("\(srcPfx).bias") { params["\(dstName).bias"] = b }
+        }
+
+        // P3 scale (scale 0)
+        mapConvBlock(srcPfx: "\(prefix).cv2.0.0", dstName: "cv2_0_0")
+        mapConvBlock(srcPfx: "\(prefix).cv2.0.1", dstName: "cv2_0_1")
+        mapConv2d(srcPfx: "\(prefix).cv2.0.2", dstName: "cv2_0_2")
+        mapConvBlock(srcPfx: "\(prefix).cv3.0.0", dstName: "cv3_0_0")
+        mapConvBlock(srcPfx: "\(prefix).cv3.0.1", dstName: "cv3_0_1")
+        mapConv2d(srcPfx: "\(prefix).cv3.0.2", dstName: "cv3_0_2")
+
+        // P4 scale (scale 1)
+        mapConvBlock(srcPfx: "\(prefix).cv2.1.0", dstName: "cv2_1_0")
+        mapConvBlock(srcPfx: "\(prefix).cv2.1.1", dstName: "cv2_1_1")
+        mapConv2d(srcPfx: "\(prefix).cv2.1.2", dstName: "cv2_1_2")
+        mapConvBlock(srcPfx: "\(prefix).cv3.1.0", dstName: "cv3_1_0")
+        mapConvBlock(srcPfx: "\(prefix).cv3.1.1", dstName: "cv3_1_1")
+        mapConv2d(srcPfx: "\(prefix).cv3.1.2", dstName: "cv3_1_2")
+
+        // P5 scale (scale 2)
+        mapConvBlock(srcPfx: "\(prefix).cv2.2.0", dstName: "cv2_2_0")
+        mapConvBlock(srcPfx: "\(prefix).cv2.2.1", dstName: "cv2_2_1")
+        mapConv2d(srcPfx: "\(prefix).cv2.2.2", dstName: "cv2_2_2")
+        mapConvBlock(srcPfx: "\(prefix).cv3.2.0", dstName: "cv3_2_0")
+        mapConvBlock(srcPfx: "\(prefix).cv3.2.1", dstName: "cv3_2_1")
+        mapConv2d(srcPfx: "\(prefix).cv3.2.2", dstName: "cv3_2_2")
+
+        if !params.isEmpty {
+            self.update(parameters: NestedDictionary.unflattened(params))
+        }
     }
 }

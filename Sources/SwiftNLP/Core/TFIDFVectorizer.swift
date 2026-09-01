@@ -40,7 +40,8 @@ public actor TFIDFVectorizer {
     /// - Parameter doc: Input string document.
     /// - Returns: A list of clean tokens.
     private func tokenize(_ doc: String) -> [String] {
-        return doc.lowercased().components(separatedBy: .whitespacesAndNewlines)
+        return doc.lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty && !Self.stopWords.contains($0) }
     }

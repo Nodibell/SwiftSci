@@ -204,14 +204,12 @@ public final class VectorStore: @unchecked Sendable {
     ///   - topK: Maximum number of nearest neighbors to return (default `5`).
     /// - Returns: Ordered list of ``VectorSearchResult`` sorted by closest match.
     public func search(query: [Double], topK: Int = 5) -> [VectorSearchResult] {
+        guard topK > 0 else { return [] }
+        
         lock.lock()
-        let snapshot = entries
-        lock.unlock()
-
-        guard !snapshot.isEmpty, topK > 0 else { return [] }
-
-        var scored: [(entry: VectorEntry, score: Double)] = []
-        scored.reserveCapacity(snapshot.count)
+        defer { lock.unlock() }
+        
+        guard !entries.isEmpty else { return [] }
 
         let queryNorm: Double
         if metric == .cosineSimilarity {
@@ -222,7 +220,13 @@ public final class VectorStore: @unchecked Sendable {
             queryNorm = 1.0
         }
 
-        for entry in snapshot {
+        // Bounded topK structure avoiding full array allocation and sorting
+        var topResults = [(id: String, score: Double, metadata: [String: String])]()
+        topResults.reserveCapacity(topK + 1)
+
+        let isAscending = metric == .euclideanDistance
+
+        for entry in entries {
             let dim = min(query.count, entry.vector.count)
             guard dim > 0 else { continue }
 
@@ -248,17 +252,29 @@ public final class VectorStore: @unchecked Sendable {
                 score = sqrt(distSq)
             }
 
-            scored.append((entry: entry, score: score))
+            let item = (id: entry.id, score: score, metadata: entry.metadata)
+            
+            if topResults.count < topK {
+                topResults.append(item)
+                if isAscending {
+                    topResults.sort { $0.score < $1.score }
+                } else {
+                    topResults.sort { $0.score > $1.score }
+                }
+            } else {
+                let worstScore = topResults.last!.score
+                let isBetter = isAscending ? (score < worstScore) : (score > worstScore)
+                if isBetter {
+                    topResults[topResults.count - 1] = item
+                    if isAscending {
+                        topResults.sort { $0.score < $1.score }
+                    } else {
+                        topResults.sort { $0.score > $1.score }
+                    }
+                }
+            }
         }
 
-        switch metric {
-        case .cosineSimilarity, .dotProduct:
-            scored.sort { $0.score > $1.score }
-        case .euclideanDistance:
-            scored.sort { $0.score < $1.score }
-        }
-
-        let slice = scored.prefix(topK)
-        return slice.map { VectorSearchResult(id: $0.entry.id, score: $0.score, metadata: $0.entry.metadata) }
+        return topResults.map { VectorSearchResult(id: $0.id, score: $0.score, metadata: $0.metadata) }
     }
 }

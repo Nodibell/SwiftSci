@@ -40,6 +40,10 @@ public actor RandomForestClassifier: ClassifierEstimator {
 
     // DOD Architecture: the forest is stored as an array of flat node arrays
     private var trees: [[FlatTreeNode]] = []
+    
+    /// The collection of fitted trees as flat node arrays.
+    public var flatTrees: [[FlatTreeNode]] { trees }
+    
     private var numClasses: Int = 0
     private var numFeatures: Int = 0
 
@@ -284,6 +288,10 @@ public actor RandomForestRegressor: RegressorEstimator {
     public let minSamplesSplit: Int
 
     private var trees: [[FlatTreeNode]] = []
+    
+    /// The collection of fitted trees as flat node arrays.
+    public var flatTrees: [[FlatTreeNode]] { trees }
+    
     private var numFeatures: Int = 0
 
     /// The feature importances.

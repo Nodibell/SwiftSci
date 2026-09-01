@@ -73,4 +73,47 @@ public class YOLONeck: Module {
 
         return YOLONeckOutput(headP3: headP3, headP4: headP4, headP5: headP5)
     }
+
+    /// Loads weights for the PANet feature pyramid from the given loader.
+    public func loadWeights(from loader: YOLOWeightLoader, prefix: String = "model") {
+        var params: [String: MLXArray] = [:]
+
+        func mapC2f(srcPfx: String, dstName: String) {
+            if let w = loader.get("\(srcPfx).cv1.conv.weight") { params["\(dstName).cv1.conv.weight"] = w }
+            if let w = loader.get("\(srcPfx).cv1.bn.weight") { params["\(dstName).cv1.bn.weight"] = w }
+            if let b = loader.get("\(srcPfx).cv1.bn.bias") { params["\(dstName).cv1.bn.bias"] = b }
+            if let w = loader.get("\(srcPfx).cv2.conv.weight") { params["\(dstName).cv2.conv.weight"] = w }
+            if let w = loader.get("\(srcPfx).cv2.bn.weight") { params["\(dstName).cv2.bn.weight"] = w }
+            if let b = loader.get("\(srcPfx).cv2.bn.bias") { params["\(dstName).cv2.bn.bias"] = b }
+
+            for mIdx in 0..<10 {
+                if let w = loader.get("\(srcPfx).m.\(mIdx).cv1.conv.weight") { params["\(dstName).bottleneckList.\(mIdx).cv1.conv.weight"] = w }
+                if let w = loader.get("\(srcPfx).m.\(mIdx).cv1.bn.weight") { params["\(dstName).bottleneckList.\(mIdx).cv1.bn.weight"] = w }
+                if let b = loader.get("\(srcPfx).m.\(mIdx).cv1.bn.bias") { params["\(dstName).bottleneckList.\(mIdx).cv1.bn.bias"] = b }
+                if let w = loader.get("\(srcPfx).m.\(mIdx).cv2.conv.weight") { params["\(dstName).bottleneckList.\(mIdx).cv2.conv.weight"] = w }
+                if let w = loader.get("\(srcPfx).m.\(mIdx).cv2.bn.weight") { params["\(dstName).bottleneckList.\(mIdx).cv2.bn.weight"] = w }
+                if let b = loader.get("\(srcPfx).m.\(mIdx).cv2.bn.bias") { params["\(dstName).bottleneckList.\(mIdx).cv2.bn.bias"] = b }
+            }
+        }
+
+        func mapConv(srcPfx: String, dstName: String) {
+            if let w = loader.get("\(srcPfx).conv.weight") { params["\(dstName).conv.weight"] = w }
+            if let b = loader.get("\(srcPfx).conv.bias") { params["\(dstName).conv.bias"] = b }
+            if let w = loader.get("\(srcPfx).bn.weight") { params["\(dstName).bn.weight"] = w }
+            if let b = loader.get("\(srcPfx).bn.bias") { params["\(dstName).bn.bias"] = b }
+            if let rm = loader.get("\(srcPfx).bn.running_mean") { params["\(dstName).bn.runningMean"] = rm }
+            if let rv = loader.get("\(srcPfx).bn.running_var") { params["\(dstName).bn.runningVar"] = rv }
+        }
+
+        mapC2f(srcPfx: "\(prefix).12", dstName: "c2f_p4")
+        mapC2f(srcPfx: "\(prefix).15", dstName: "c2f_p3")
+        mapConv(srcPfx: "\(prefix).16", dstName: "conv_p4")
+        mapC2f(srcPfx: "\(prefix).18", dstName: "c2f_n4")
+        mapConv(srcPfx: "\(prefix).19", dstName: "conv_p5")
+        mapC2f(srcPfx: "\(prefix).21", dstName: "c2f_n5")
+
+        if !params.isEmpty {
+            self.update(parameters: NestedDictionary.unflattened(params))
+        }
+    }
 }

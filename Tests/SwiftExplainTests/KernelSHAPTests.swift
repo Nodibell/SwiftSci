@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import SwiftML
 @testable import SwiftExplain
 
 @Suite("Kernel SHAP Tests")
@@ -61,6 +62,27 @@ struct KernelSHAPTests {
         
         #expect(result.count == 2)
         #expect(result[0].count == 2)
+    }
+
+    @Test("Exact TreeSHAP on FlatTreeNode array")
+    func testExactTreeSHAP() async throws {
+        // Build a simple decision tree: split on feature 0 at 2.5 (left: leaf 10.0, right: leaf 50.0)
+        let root = FlatTreeNode(featureIndex: 0, threshold: 2.5, leftChild: 1, rightChild: 2, value: 30.0, isLeaf: false)
+        let leftLeaf = FlatTreeNode(featureIndex: -1, threshold: 0.0, leftChild: -1, rightChild: -1, value: 10.0, isLeaf: true)
+        let rightLeaf = FlatTreeNode(featureIndex: -1, threshold: 0.0, leftChild: -1, rightChild: -1, value: 50.0, isLeaf: true)
+        let tree = [root, leftLeaf, rightLeaf]
+
+        let explainer = TreeSHAP()
+        let leftShap = explainer.explain(tree: tree, instance: [1.0, 5.0], numFeatures: 2)
+        let rightShap = explainer.explain(tree: tree, instance: [4.0, 5.0], numFeatures: 2)
+
+        #expect(leftShap.count == 2)
+        #expect(rightShap.count == 2)
+        #expect(leftShap[0] != 0.0)
+        #expect(rightShap[0] != 0.0)
+        // Feature 1 was not split on, so its contribution is 0.0
+        #expect(leftShap[1] == 0.0)
+        #expect(rightShap[1] == 0.0)
     }
 
     @Test("PermutationImportance identifies most influential feature")

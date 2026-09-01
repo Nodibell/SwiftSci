@@ -1,10 +1,12 @@
 import Foundation
+import Accelerate
+import Accelerate.vImage
 import MLX
 
 /// Letterbox image preprocessor for YOLOv8 neural network inference.
-/// Preserves aspect ratio, resizes to target 640x640 resolution, pads with gray `(114, 114, 114)` pixels,
-/// and normalizes to `[0, 1]` tensor shape `[1, 640, 640, 3]`.
-public struct YOLOPreprocessor {
+/// Preserves aspect ratio, resizes using Apple Accelerate `vImageScale_PlanarF` high-performance
+/// bilinear resampling, pads with gray `(114, 114, 114)` pixels, and normalizes to `[0, 1]` tensor shape `[1, 640, 640, 3]`.
+public struct YOLOPreprocessor: Sendable {
     /// Target image tensor width in pixels (default 640).
     public let targetWidth: Int
     /// Target image tensor height in pixels (default 640).
@@ -23,10 +25,15 @@ public struct YOLOPreprocessor {
         self.paddingColor = paddingColor
     }
 
-    /// Preprocesses input `ImageDataset` into a normalized `MLXArray` tensor [1, 640, 640, 3].
+    /// Preprocesses input `ImageDataset` into a normalized `MLXArray` tensor [1, targetHeight, targetWidth, 3].
     /// - Parameter image: The input image dataset.
-    /// - Returns: `MLXArray` of shape `[1, 640, 640, 3]` in `NHWC` layout.
+    /// - Returns: `MLXArray` of shape `[1, targetHeight, targetWidth, 3]` in `NHWC` layout.
     public func preprocess(image: ImageDataset) -> MLXArray {
+        guard image.width > 0, image.height > 0 else {
+            let buffer = [Float](repeating: Float(paddingColor), count: targetWidth * targetHeight * 3)
+            return MLXArray(buffer, [1, targetHeight, targetWidth, 3])
+        }
+
         let w = Double(image.width)
         let h = Double(image.height)
         let scale = min(Double(targetWidth) / max(1.0, w), Double(targetHeight) / max(1.0, h))
@@ -38,27 +45,86 @@ public struct YOLOPreprocessor {
         let padY = (targetHeight - newH) / 2
 
         var buffer = [Float](repeating: Float(paddingColor), count: targetWidth * targetHeight * 3)
+        let srcPixelCount = image.width * image.height
+        let isRGB = image.channels >= 3 && image.data.count >= srcPixelCount * 3
 
-        // Bilinear or nearest sampling from input image
-        for ty in 0..<newH {
-            let sy = Int(min(h - 1, max(0.0, Double(ty) / scale)))
-            let outY = padY + ty
-
-            for tx in 0..<newW {
-                let sx = Int(min(w - 1, max(0.0, Double(tx) / scale)))
-                let outX = padX + tx
-
-                let inIdx = sy * image.width + sx
-                let val = Float(inIdx < image.data.count ? image.data[inIdx] : 0.0)
-
-                let outIdx = (outY * targetWidth + outX) * 3
-                buffer[outIdx + 0] = val
-                buffer[outIdx + 1] = val
-                buffer[outIdx + 2] = val
+        if isRGB {
+            // Planar scale each of R, G, B channels with vImage
+            var rSrc = [Float](repeating: 0, count: srcPixelCount)
+            var gSrc = [Float](repeating: 0, count: srcPixelCount)
+            var bSrc = [Float](repeating: 0, count: srcPixelCount)
+            
+            for p in 0..<srcPixelCount {
+                rSrc[p] = Float(image.data[p])
+                gSrc[p] = Float(image.data[srcPixelCount + p])
+                bSrc[p] = Float(image.data[srcPixelCount * 2 + p])
+            }
+            
+            var rDst = [Float](repeating: 0, count: newW * newH)
+            var gDst = [Float](repeating: 0, count: newW * newH)
+            var bDst = [Float](repeating: 0, count: newW * newH)
+            
+            scalePlanar(src: &rSrc, srcW: image.width, srcH: image.height, dst: &rDst, dstW: newW, dstH: newH)
+            scalePlanar(src: &gSrc, srcW: image.width, srcH: image.height, dst: &gDst, dstW: newW, dstH: newH)
+            scalePlanar(src: &bSrc, srcW: image.width, srcH: image.height, dst: &bDst, dstW: newW, dstH: newH)
+            
+            // Scatter into letterboxed NHWC buffer
+            for ty in 0..<newH {
+                let outY = padY + ty
+                for tx in 0..<newW {
+                    let outX = padX + tx
+                    let dstIdx = (outY * targetWidth + outX) * 3
+                    let sIdx = ty * newW + tx
+                    buffer[dstIdx + 0] = rDst[sIdx]
+                    buffer[dstIdx + 1] = gDst[sIdx]
+                    buffer[dstIdx + 2] = bDst[sIdx]
+                }
+            }
+        } else {
+            // Grayscale planar scaling
+            var srcPlanar = [Float](repeating: 0, count: srcPixelCount)
+            for p in 0..<srcPixelCount {
+                srcPlanar[p] = p < image.data.count ? Float(image.data[p]) : 0.0
+            }
+            
+            var dstPlanar = [Float](repeating: 0, count: newW * newH)
+            scalePlanar(src: &srcPlanar, srcW: image.width, srcH: image.height, dst: &dstPlanar, dstW: newW, dstH: newH)
+            
+            // Scatter grayscale into 3-channel letterbox buffer
+            for ty in 0..<newH {
+                let outY = padY + ty
+                for tx in 0..<newW {
+                    let outX = padX + tx
+                    let dstIdx = (outY * targetWidth + outX) * 3
+                    let val = dstPlanar[ty * newW + tx]
+                    buffer[dstIdx + 0] = val
+                    buffer[dstIdx + 1] = val
+                    buffer[dstIdx + 2] = val
+                }
             }
         }
 
-        let array = MLXArray(buffer, [1, targetHeight, targetWidth, 3])
-        return array
+        return MLXArray(buffer, [1, targetHeight, targetWidth, 3])
+    }
+    
+    private func scalePlanar(src: inout [Float], srcW: Int, srcH: Int, dst: inout [Float], dstW: Int, dstH: Int) {
+        src.withUnsafeMutableBufferPointer { srcPtr in
+            dst.withUnsafeMutableBufferPointer { dstPtr in
+                var srcBuffer = vImage_Buffer(
+                    data: srcPtr.baseAddress,
+                    height: vImagePixelCount(srcH),
+                    width: vImagePixelCount(srcW),
+                    rowBytes: srcW * MemoryLayout<Float>.stride
+                )
+                var dstBuffer = vImage_Buffer(
+                    data: dstPtr.baseAddress,
+                    height: vImagePixelCount(dstH),
+                    width: vImagePixelCount(dstW),
+                    rowBytes: dstW * MemoryLayout<Float>.stride
+                )
+                _ = vImageScale_PlanarF(&srcBuffer, &dstBuffer, nil, vImage_Flags(kvImageHighQualityResampling))
+            }
+        }
     }
 }
+

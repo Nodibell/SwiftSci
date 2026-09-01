@@ -282,7 +282,9 @@ public actor YOLOv8Detector {
     /// Binds pre-trained model weights into the neural network layers.
     /// - Parameter loader: Mapped tensor weight loader.
     public func loadWeights(_ loader: YOLOWeightLoader) {
-        // Loads model weights into backbone, neck, and head modules
+        backbone.loadWeights(from: loader, prefix: "model")
+        neck.loadWeights(from: loader, prefix: "model")
+        head.loadWeights(from: loader, prefix: "model.22")
     }
 
     /// Detects object bounding boxes in an input image dataset using real neural network forward pass.

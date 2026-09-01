@@ -296,6 +296,10 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     public let criterion: SplitCriterion
 
     private var nodes: [FlatTreeNode] = []
+    
+    /// The collection of fitted tree nodes in contiguous flat array.
+    public var flatNodes: [FlatTreeNode] { nodes }
+    
     private var numFeatures: Int = 0
 
     /// The feature importances.
@@ -429,6 +433,10 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     public let minSamplesSplit: Int
 
     private var nodes: [FlatTreeNode] = []
+    
+    /// The collection of fitted tree nodes in contiguous flat array.
+    public var flatNodes: [FlatTreeNode] { nodes }
+    
     private var numFeatures: Int = 0
 
     /// The feature importances.

@@ -205,7 +205,7 @@ public actor ReActAgent {
                 return (finalAnswer: answer, trace: trace)
             }
 
-            guard let actName = parsed.action, let actTool = tools[actName] else {
+            guard let actName = parsed.action, let actTool = findTool(named: actName) else {
                 let fallbackStep = AgentStep(thought: parsed.thought, observation: "Error: Tool '\(parsed.action ?? "nil")' not recognized.")
                 trace.append(fallbackStep)
                 continue
@@ -213,10 +213,30 @@ public actor ReActAgent {
 
             let input = parsed.actionInput ?? ""
             let obs = try await actTool.execute(input: input)
-            let step = AgentStep(thought: parsed.thought, action: actName, actionInput: input, observation: obs)
+            let step = AgentStep(thought: parsed.thought, action: actTool.name, actionInput: input, observation: obs)
             trace.append(step)
         }
 
         return (finalAnswer: trace.last?.observation ?? "Max steps reached without conclusive answer.", trace: trace)
+    }
+
+    /// Resolves tool by exact or fuzzy name matching (case/punctuation-insensitive).
+    public func findTool(named name: String) -> (any AgentTool)? {
+        if let direct = tools[name] { return direct }
+        let clean = name.lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: " ", with: "")
+        for (tName, tool) in tools {
+            let tClean = tName.lowercased()
+                .replacingOccurrences(of: "_", with: "")
+                .replacingOccurrences(of: "-", with: "")
+                .replacingOccurrences(of: " ", with: "")
+            if tClean == clean || tClean.contains(clean) || clean.contains(tClean) {
+                return tool
+            }
+        }
+        return nil
     }
 }

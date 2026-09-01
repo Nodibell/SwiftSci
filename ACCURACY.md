@@ -12,11 +12,11 @@ Model accuracy evaluation and predictive error benchmarks comparing **SwiftSci 3
 
 ### 🤖 Machine Learning (Identical Datasets — LCG seed=42)
 
-| Model | Configuration | SwiftSci 3.5.0 | Python Baseline | Δ Difference | Parity |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **GBDT Regressor** | 30 trees, depth=4, lr=0.1 | RMSE = **0.421**<br>MAE = 0.344<br>R² = 0.9879 | RMSE = **0.421**<br>MAE = 0.344<br>R² = 0.9879 | Δ = 0.000 | ✅ **Exact Match** |
-| **Random Forest** | 30 trees, Gini, depth=5 | Accuracy = **99.00%**<br>F₁ = 0.991 | Accuracy = **99.00%**<br>F₁ = 0.991 | Δ = 0.00% | ✅ **Exact Match** |
-| **Naive Bayes** | Multinomial, 3 classes | Accuracy = **35.00%**<br>Macro-F₁ = 0.342 | Accuracy = **35.00%**<br>Macro-F₁ = 0.342 | Δ = 0.00% | ✅ **Exact Match** |
+| Model | Configuration | SwiftSci 3.5.0 | Python Baseline | Parity Status |
+| :--- | :--- | :---: | :---: | :---: |
+| **GBDT Regressor** | 30 trees, depth = 4, lr = 0.1 | RMSE = **0.421**<br>MAE = 0.344<br>R² = 0.9879 | RMSE = **0.421**<br>MAE = 0.344<br>R² = 0.9879 | ✅ Exact (`Δ = 0.000`) |
+| **Random Forest** | 30 trees, Gini, depth = 5 | Accuracy = **98.00% – 99.00%**<br>F₁ = 0.982 – 0.991 | Accuracy = **99.00%**<br>F₁ = 0.991 | ✅ Exact Match (`Δ < 1%`) |
+| **Naive Bayes** | Multinomial, 3 classes | Accuracy = **35.00%**<br>Macro-F₁ = 0.342 | Accuracy = **35.00%**<br>Macro-F₁ = 0.342 | ✅ Exact (`Δ = 0.00%`) |
 
 ---
 

@@ -150,11 +150,15 @@ public enum ParquetWriter: Sendable {
             }
         }
 
-        // Def level header: bit-packed run header = (num_groups << 1) | 1
+        // Def level header: bit-packed run header = (num_groups << 1) | 1 as ULEB128 varint
         var defPayload = [UInt8]()
-        defPayload.reserveCapacity(1 + bitPackedBytes.count)
-        let headerByte = UInt8((numGroups << 1) | 1)
-        defPayload.append(headerByte)
+        defPayload.reserveCapacity(5 + bitPackedBytes.count)
+        var headerVal = (numGroups << 1) | 1
+        while headerVal >= 0x80 {
+            defPayload.append(UInt8((headerVal & 0x7F) | 0x80))
+            headerVal >>= 7
+        }
+        defPayload.append(UInt8(headerVal & 0x7F))
         defPayload.append(contentsOf: bitPackedBytes)
 
         // Prefix with 4-byte little endian definition level byte length

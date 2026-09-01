@@ -12,11 +12,11 @@ Explainable Artificial Intelligence (XAI) bridges the gap between predictive acc
 
 | Method | Supported Models | Algorithmic Complexity | Scope | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
-| **`TreeSHAP`** | Decision Trees, Random Forests, GBDT | $O(T \cdot L \cdot D^2)$ | Local & Global | **Recommended for all tree models.** Exact polynomial Shapley computation directly on flat nodes without sampling noise. |
-| **`KernelSHAP`** | Any black-box model (MLP, SVM, Ensembles) | $O(S \cdot D^2)$ | Local | Universal Shapley attribution using weighted coalition sampling. |
-| **`LIME`** | Any black-box model (MLP, Vision, NLP) | $O(S \cdot D)$ | Local | **Fast local surrogate.** Fits an interpretable weighted linear model around perturbations. |
-| **`PermutationImportance`** | Any model | $O(D \cdot N)$ | Global | Fast global feature ranking by measuring validation loss degradation upon feature column shuffling. |
-| **`PartialDependencePlot`** | Any model | $O(G \cdot N)$ | Global | Visualizes marginal effect of 1 or 2 features across an evaluation grid. |
+| **`TreeSHAP`** | Decision Trees, Random Forests, GBDT | `O(T · L · D²)` | Local & Global | **Recommended for all tree models.** Exact polynomial Shapley computation directly on flat nodes without sampling noise. |
+| **`KernelSHAP`** | Any black-box model (MLP, SVM, Ensembles) | `O(S · D²)` | Local | Universal Shapley attribution using weighted coalition sampling. |
+| **`LIME`** | Any black-box model (MLP, Vision, NLP) | `O(S · D)` | Local | **Fast local surrogate.** Fits an interpretable weighted linear model around perturbations. |
+| **`PermutationImportance`** | Any model | `O(D · N)` | Global | Fast global feature ranking by measuring validation loss degradation upon feature column shuffling. |
+| **`PartialDependencePlot`** | Any model | `O(G · N)` | Global | Visualizes marginal effect of 1 or 2 features across an evaluation grid. |
 
 ---
 

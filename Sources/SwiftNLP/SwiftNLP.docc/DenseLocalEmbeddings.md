@@ -11,14 +11,12 @@ Modern Retrieval-Augmented Generation (RAG) and semantic search systems require 
 The `LocalEmbeddingEngine` operates through a three-stage mathematical pipeline:
 
 1. **Subword N-gram Hashing**: Text is tokenized into word and character n-grams (sizes 3 to 6). Each n-gram is hashed into a fixed integer space using FNV-1a hash functions.
-2. **Dimension Projection**: Hashes are projected onto a $D$-dimensional vector space (e.g., $D=128$ or $D=256$) with deterministic sign flips to prevent feature collision bias.
-3. **Unit $L_2$ Normalization**: The resulting dense vector is projected onto the unit hypersphere:
+2. **Dimension Projection**: Hashes are projected onto a `D`-dimensional vector space (e.g., `D = 128` or `D = 256`) with deterministic sign flips to prevent feature collision bias.
+3. **Unit L2 Normalization**: The resulting dense vector is projected onto the unit hypersphere:
+   > **Formula:** `v_norm = v / ||v||_2 = v / sqrt(Σ v_i²)`
 
-$$v_{\text{norm}} = \frac{v}{\|v\|_2} = \frac{v}{\sqrt{\sum_{i=1}^{D} v_i^2}}$$
-
-Because all embeddings have $\|v\|_2 = 1.0$, the **Cosine Similarity** between two embeddings is equivalent to their direct **Dot Product**, allowing single-instruction vector evaluation via Apple Accelerate `vDSP_dotprD`:
-
-$$\text{CosineSimilarity}(u, v) = u \cdot v$$
+Because all embeddings have `||v||_2 = 1.0`, the **Cosine Similarity** between two embeddings is equivalent to their direct **Dot Product**, allowing single-instruction vector evaluation via Apple Accelerate `vDSP_dotprD`:
+   > **Formula:** `CosineSimilarity(u, v) = u · v`
 
 ## 2. Generating Embeddings
 

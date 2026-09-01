@@ -6,7 +6,7 @@ Measure true feature importance by evaluating loss degradation after shuffling f
 
 **Permutation Feature Importance** measures how much a trained model's error increases when a single feature column is randomly shuffled, breaking the relationship between that feature and the target outcome.
 
-$$\text{Importance}(f_j) = L(X_{\text{shuffled}(j)}, y) - L(X, y)$$
+> **Importance Metric:** `Importance(f_j) = Loss(X_shuffled(j), y) - Loss(X, y)`
 
 ## 1. Computing Permutation Importance
 

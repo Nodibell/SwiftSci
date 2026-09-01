@@ -11,7 +11,7 @@ The `KoopmanOperator` presents an infinite-dimensional linear operator framework
 - **Observable Dictionaries**: Polynomial, Radial Basis Functions (RBF), Fourier trigonometric, and custom/combined dictionaries (`ObservableDictionary`).
 - **Hankel Time-Delay Embedding**: Reconstructs hidden attractor manifolds for 1D scalar time series.
 - **Extended Dynamic Mode Decomposition (EDMD)**: Ridge-regularized linear operator regression in lifted observable spaces.
-- **Spectral Stability Analysis**: Computes complex eigenvalues $\lambda_i$ via LAPACK `dgeev` for stability and frequency decomposition.
+- **Spectral Stability Analysis**: Computes complex eigenvalues `λ_i` via LAPACK `dgeev` for stability and frequency decomposition.
 
 ### Example Usage
 

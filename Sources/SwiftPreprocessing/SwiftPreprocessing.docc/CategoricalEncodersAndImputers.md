@@ -24,7 +24,8 @@ let encodedMatrix = try await encoder.transform(["Blue", "Red"])
 
 ## 2. Standard Scaling & Robust Scaling
 
-$$z = \frac{x - \mu}{\sigma}, \quad z_{\text{robust}} = \frac{x - \text{median}}{\text{IQR}}$$
+> **Standard Scaling:** `z = (x - μ) / σ`  
+> **Robust Scaling:** `z_robust = (x - Median) / IQR`
 
 ```swift
 let scaler = StandardScaler()

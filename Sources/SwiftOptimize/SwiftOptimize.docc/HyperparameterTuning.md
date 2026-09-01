@@ -10,7 +10,7 @@ Finding the optimal combination of hyperparameters is critical for maximizing ge
 
 ## 1. AutoML — Automated Model & Parameter Selection
 
-`AutoML` evaluates candidate model architectures (Decision Trees, Random Forests, Logistic Regression, Linear Regression, and Multi-Layer Perceptrons) using cross-validation, ranking candidates by performance metrics ($F_1$-score for classification, $R^2$ for regression).
+`AutoML` evaluates candidate model architectures (Decision Trees, Random Forests, Logistic Regression, Linear Regression, and Multi-Layer Perceptrons) using cross-validation, ranking candidates by performance metrics (F1-score for classification, R² for regression).
 
 ```swift
 import Foundation

@@ -10,11 +10,11 @@ Temporal data analysis requires separating underlying long-term trends, periodic
 
 ## 1. Holt-Winters Exponential Smoothing & Nelder-Mead Optimization
 
-`ExponentialSmoothing` models level ($\alpha$), trend ($\beta$), and seasonal ($\gamma$) components with additive or multiplicative adjustments:
+`ExponentialSmoothing` models level (`α`), trend (`β`), and seasonal (`γ`) components with additive or multiplicative adjustments:
 
-$$\hat{y}_{t+h|t} = \ell_t + h b_t + s_{t+h-m(k+1)}$$
+> **Additive Formulation:** `ŷ_{t+h|t} = ℓ_t + h · b_t + s_{t+h-m(k+1)}`
 
-Parameters $\alpha, \beta, \gamma$ are automatically optimized using the **Nelder-Mead simplex optimizer** minimizing Mean Squared Error (MSE):
+Parameters `α, β, γ` are automatically optimized using the **Nelder-Mead simplex optimizer** minimizing Mean Squared Error (MSE):
 
 ```swift
 import Foundation
@@ -52,9 +52,9 @@ print("12-Month Out-of-Sample Forecast: \(forecast)")
 
 `KalmanFilter` estimates the hidden state vector of a linear dynamic system over time from noisy observations. The implementation uses contiguous 1D flat buffers with Apple Accelerate LAPACK `dgesv` matrix inversions:
 
-$$\mathbf{x}_{k|k-1} = \mathbf{F}_k \mathbf{x}_{k-1|k-1} + \mathbf{B}_k \mathbf{u}_k$$
-$$\mathbf{P}_{k|k-1} = \mathbf{F}_k \mathbf{P}_{k-1|k-1} \mathbf{F}_k^T + \mathbf{Q}_k$$
-$$\mathbf{K}_k = \mathbf{P}_{k|k-1} \mathbf{H}_k^T (\mathbf{H}_k \mathbf{P}_{k|k-1} \mathbf{H}_k^T + \mathbf{R}_k)^{-1}$$
+> **State Prediction:** `x_{k|k-1} = F_k · x_{k-1|k-1} + B_k · u_k`  
+> **Covariance Prediction:** `P_{k|k-1} = F_k · P_{k-1|k-1} · F_k^T + Q_k`  
+> **Kalman Gain:** `K_k = P_{k|k-1} · H_k^T · (H_k · P_{k|k-1} · H_k^T + R_k)^{-1}`
 
 ```swift
 import SwiftForecast

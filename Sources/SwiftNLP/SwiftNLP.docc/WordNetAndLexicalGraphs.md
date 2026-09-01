@@ -25,12 +25,10 @@ for s in synsets {
 SwiftSci implements standard lexical similarity algorithms:
 
 * **Path Similarity**: Shortest path distance in the hypernym taxonomy:
-
-$$\text{Sim}_{\text{path}}(s_1, s_2) = \frac{1}{1 + \text{distance}(s_1, s_2)}$$
+  > **Formula:** `Sim_path(s1, s2) = 1 / (1 + distance(s1, s2))`
 
 * **Wu-Palmer Similarity (WUP)**: Measures depth of least common subsumer (LCS) relative to synset depths:
-
-$$\text{Sim}_{\text{wup}}(s_1, s_2) = \frac{2 \cdot \text{depth}(\text{LCS})}{\text{depth}(s_1) + \text{depth}(s_2)}$$
+  > **Formula:** `Sim_wup(s1, s2) = (2 · depth(LCS)) / (depth(s1) + depth(s2))`
 
 ```swift
 let dog = wordnet.synset("dog.n.01")!

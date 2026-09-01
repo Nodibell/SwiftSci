@@ -4,23 +4,23 @@ High-performance clustering and density-based anomaly detection powered by `KDTr
 
 ## Overview
 
-Clustering and outlier detection algorithms often suffer from quadratic distance computation bottlenecks ($O(N^2)$). `SwiftCluster` employs a balanced **KD-Tree spatial index** reducing neighbor queries to $O(N \log N)$, enabling instant processing of large spatial datasets.
+Clustering and outlier detection algorithms often suffer from quadratic distance computation bottlenecks (`O(N²)`). `SwiftCluster` employs a balanced **KD-Tree spatial index** reducing neighbor queries to `O(N · log N)`, enabling instant processing of large spatial datasets.
 
 ---
 
 ## ⚡ Spatial Indexing: KD-Tree vs Brute-Force
 
-| Dataset Size ($N$) | Brute-Force DBSCAN ($O(N^2)$ Distance Matrix) | SwiftCluster KD-Tree DBSCAN ($O(N \log N)$) | Speedup |
+| Dataset Size (N) | Brute-Force DBSCAN (`O(N²)` Distance Matrix) | SwiftCluster KD-Tree DBSCAN (`O(N · log N)`) | Speedup |
 | :--- | :--- | :--- | :--- |
 | **1,000 points** | 42 ms | 1.8 ms | **23.3× faster** |
 | **10,000 points** | 4,250 ms (4.25 s) | 28 ms | **151.7× faster** |
-| **100,000 points** | *Out of Memory ($100k \times 100k$ matrix = 80 GB RAM)* | 380 ms (0.38 s) | **∞ (Memory Safe)** |
+| **100,000 points** | *Out of Memory (100k × 100k matrix = 80 GB RAM)* | 380 ms (0.38 s) | **∞ (Memory Safe)** |
 
 ---
 
 ## 1. Density-Based Clustering (`DBSCAN`)
 
-`DBSCAN` discovers clusters of arbitrary shapes and isolates noise points without requiring a pre-specified cluster count $K$.
+`DBSCAN` discovers clusters of arbitrary shapes and isolates noise points without requiring a pre-specified cluster count `K`.
 
 ```swift
 import Foundation
@@ -47,7 +47,7 @@ print("DBSCAN identified \(clusterCount) clusters and \(noiseCount) noise outlie
 
 ## 2. K-Means++ Clustering (`KMeans`)
 
-Fast centroid-based clustering using $D^2$ weighted probabilistic initialization for accelerated convergence:
+Fast centroid-based clustering using D² weighted probabilistic initialization for accelerated convergence:
 
 ```swift
 import SwiftCluster
@@ -67,7 +67,7 @@ print("Within-Cluster Sum of Squares (Inertia): \(String(format: "%.2f", inertia
 
 ## 3. Density-Based Outlier Detection (`LocalOutlierFactor`)
 
-`LocalOutlierFactor` measures local density deviation of an observation relative to its $K$-nearest neighbors:
+`LocalOutlierFactor` measures local density deviation of an observation relative to its K-nearest neighbors:
 
 ```swift
 import SwiftCluster

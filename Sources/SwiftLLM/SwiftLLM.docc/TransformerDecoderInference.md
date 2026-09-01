@@ -8,10 +8,10 @@ Explore the low-level mechanics of Metal GPU-accelerated transformer decoders an
 
 ## 1. Key Architectural Blocks
 
-* **Rotary Position Embedding (RoPE)**: Encodes positional information by rotating query and key vectors in complex 2D planes, preserving relative distance relationships.
+* **Rotary Position Embedding (RoPE)**: Encodes positional information by rotating query and key vectors in 2D planes, preserving relative distance relationships.
 * **RMSNorm**: Root Mean Square Layer Normalization provides training stability with reduced computational overhead compared to LayerNorm.
-* **SwiGLU Activation**: Gated linear unit activation $\text{SwiGLU}(x) = \text{Swish}(x W_1) \otimes (x W_2)$ for enhanced non-linear representation.
-* **Paged KV-Cache**: Stores precomputed Key and Value projection matrices across generation steps, eliminating $O(N^2)$ recomputation.
+* **SwiGLU Activation**: Gated linear unit activation `SwiGLU(x) = Swish(x · W_1) ⊙ (x · W_2)` for enhanced non-linear representation.
+* **Paged KV-Cache**: Stores precomputed Key and Value projection matrices across generation steps, eliminating `O(N²)` recomputation.
 
 ## 2. Generating Tokens
 

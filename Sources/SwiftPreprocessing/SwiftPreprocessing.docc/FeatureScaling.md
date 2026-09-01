@@ -31,8 +31,9 @@ All arithmetic operations (`vDSP_vsubD`, `vDSP_vsdivD`, `vDSP.sort`) execute SIM
 
 ## 1. `StandardScaler` (Z-Score Standardization)
 
-Transforms features to have zero mean ($\mu = 0$) and unit variance ($\sigma^2 = 1$):
-$$z = \frac{x - \mu}{\sigma}$$
+Transforms features to have zero mean (`μ = 0`) and unit variance (`σ² = 1`):
+
+> **Formula:** `z = (x - μ) / σ`
 
 ```swift
 import Foundation
@@ -68,8 +69,9 @@ print("Reconstructed matches original: \(reconstructed == flatData)")
 
 ## 2. `MinMaxScaler` (Bounded Range Scaling)
 
-Linearly transforms features into a bounded range $[a, b]$ (defaults to $[0, 1]$):
-$$x' = a + \frac{x - x_{\min}}{x_{\max} - x_{\min}} \cdot (b - a)$$
+Linearly transforms features into a bounded range `[a, b]` (defaults to `[0, 1]`):
+
+> **Formula:** `x' = a + ((x - x_min) / (x_max - x_min)) · (b - a)`
 
 ```swift
 import SwiftPreprocessing
@@ -85,7 +87,8 @@ print("Min-Max scaled to [0, 1]: \(normalized)")
 ## 3. `RobustScaler` (Median & IQR Scaling)
 
 When datasets contain extreme outliers, mean and standard deviation are distorted. `RobustScaler` scales features using the **Median** and **Interquartile Range (IQR = Q3 - Q1)**:
-$$x' = \frac{x - \text{median}}{\text{IQR}}$$
+
+> **Formula:** `x' = (x - Median) / IQR`
 
 ```swift
 import SwiftPreprocessing
@@ -109,7 +112,7 @@ print("Robust scaled IQR data: \(robustScaled)")
 
 ## 4. `Normalizer` (Row-wise Unit Norm Vector Scaling)
 
-Scales each sample independently to have unit $L_1$, $L_2$, or $\max$ norm:
+Scales each sample independently to have unit L1, L2, or Max norm:
 
 ```swift
 import SwiftPreprocessing

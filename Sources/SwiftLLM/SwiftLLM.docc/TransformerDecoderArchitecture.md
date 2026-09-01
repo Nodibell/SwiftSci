@@ -56,11 +56,12 @@ High-throughput, on-device causal language model execution on Apple Silicon Unif
 ## 1. Core Architectural Components
 
 ### RoPE (Rotary Position Embedding)
-Applies complex rotation to query and key vectors based on absolute position $m$, preserving relative token distance properties without learned position embeddings.
+Applies 2D rotation to query and key vectors based on absolute position index `m`, preserving relative token distance properties without learned position embeddings.
 
 ### SwiGLU Feed-Forward Network
 Replaces legacy ReLU/GELU activations with Swish-Gated Linear Units (Llama-style):
-$$\text{SwiGLU}(x) = (\text{SiLU}(x W_{\text{gate}}) \odot (x W_{\text{up}})) W_{\text{down}}$$
+
+> **Formula:** `SwiGLU(x) = (SiLU(x · W_gate) ⊙ (x · W_up)) · W_down`
 
 ### Paged KV-Cache
 Manages attention Key-Value projection states in fixed-size contiguous memory pages (vLLM architecture), eliminating RAM fragmentation during dynamic multi-turn autoregressive decoding.

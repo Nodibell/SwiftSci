@@ -1,10 +1,10 @@
 # Getting Started with SwiftSci DataFrame
 
-A complete guide to columnar data loading, $O(1)$ indexing, zero-allocation row iteration, group-by aggregations, joins, and machine learning exports.
+A complete guide to columnar data loading, O(1) indexing, zero-allocation row iteration, group-by aggregations, joins, and machine learning exports.
 
 ## Overview
 
-`SwiftDataFrame` is an immutable, columnar data analysis engine built natively in Swift 6 for Apple Silicon. It combines Apache Arrow / Feather zero-copy memory buffers, $O(1)$ schema lookups, and SIMD bitmask filtering.
+`SwiftDataFrame` is an immutable, columnar data analysis engine built natively in Swift 6 for Apple Silicon. It combines Apache Arrow / Feather zero-copy memory buffers, O(1) schema lookups, and SIMD bitmask filtering.
 
 ```
 DataFrame (Value Type: Immutable Struct + Copy-On-Write)
@@ -45,7 +45,7 @@ let parquetDF = try await DataFrame(parquet: parquetURL)
 
 ---
 
-## 2. $O(1)$ Column Access & Zero-Allocation Row Iteration
+## 2. O(1) Column Access & Zero-Allocation Row Iteration
 
 Access typed columns by name or iterate through rows using `DataFrameRowSequence`:
 

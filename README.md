@@ -60,6 +60,8 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 Official comparative benchmark suite results comparing **SwiftSci 3.5.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
 
+> 📖 **Detailed Reports:** See [ACCURACY.md](ACCURACY.md) for end-to-end model accuracy verification vs Python, and [PERFORMANCE.md](PERFORMANCE.md) for comprehensive runtime and RAM benchmarks.
+
 Values represent **Mean ± 95% Confidence Interval** with RAM RSS tracking.
 
 ### ⚙️ 1. Transforms, Preprocessing & Evaluation

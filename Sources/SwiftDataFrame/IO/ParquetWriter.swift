@@ -411,7 +411,7 @@ public enum ParquetWriter: Sendable {
 
         // field 6: created_by (string)
         writer.writeFieldBegin(fieldId: 6, type: .binary)
-        writer.writeString("SwiftSci v3.4.0 (Pure Swift)")
+        writer.writeString("SwiftSci v3.5.0 (Pure Swift)")
 
         writer.writeFieldStop()
         writer.popStruct()

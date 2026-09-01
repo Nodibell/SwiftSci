@@ -4,7 +4,7 @@ import XCTest
 final class ParquetIOTests: XCTestCase {
 
     func testSnappyCompressionAndDecompressionRoundTrip() throws {
-        let originalText = "SwiftSci v3.4.0 High-Performance Out-of-Core Parquet Processing with Pure Swift! " +
+        let originalText = "SwiftSci v3.5.0 High-Performance Out-of-Core Parquet Processing with Pure Swift! " +
             String(repeating: "Repeating pattern for LZ77 compression testing. ", count: 50)
         let originalData = Data(originalText.utf8)
 

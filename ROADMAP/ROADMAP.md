@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.1+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.5+)
 
 ## 📌 Vision & Architecture
 
@@ -353,7 +353,7 @@ The architecture combines two hardware engines:
 
 ---
 
-### Version 3.4.0: Out-of-Core Data, Parquet Engine & Multimodal Perception *(📋 Planned)*
+### Version 3.4.0 – 3.5.0: Out-of-Core Data, Parquet Engine & Multimodal Perception *(🟢 Completed)*
 
 1. **Out-of-Core & Large-Scale Data Processing (`SwiftDataFrame`)**:
    - `ChunkedDataFrame` and `LazyMemoryMappedCSVReader` for processing 100M+ row datasets exceeding RAM.

@@ -1,4 +1,4 @@
-# SwiftSci 3.5.1
+# SwiftSci 3.5.2
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -16,6 +16,16 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 SwiftSci is engineered for high-performance macOS execution across Apple Silicon ecosystems:
 
 * **macOS 14+ (Apple Silicon M-Series)**: Supports all **14 core modules**, leveraging Accelerate (vDSP/LAPACK/BLAS) and MLX Metal GPU acceleration (`SwiftPreprocessing`, `SwiftML`, `SwiftCluster`, `SwiftLLM`, `SwiftExplain`, `SwiftVision`, `SwiftAgent`).
+
+---
+
+## What's New in 3.5.2
+
+- **Standard Apache Parquet Engine (`SwiftDataFrame`):** Full 100% compatibility with standard Apache Parquet (DuckDB, PyArrow, Pandas, and Hugging Face). Correctly decouples uncompressed Thrift `PageHeader` from page data payloads, unpacks `RLE_DICTIONARY` and `PLAIN_DICTIONARY` encodings with dynamic bit-widths, decodes repetition and definition levels, and aggregates nested list schemas (`labels.list.item`). Bit-exact verified on Hugging Face `go_emotions` (5,427 rows).
+- **Pure-Swift NumPy NPY & NPZ Tensor Reader (`SwiftDataFrame`):** Zero-dependency pure-Swift reader for `.npy` and `.npz` archive files (`NPYReader`, `NPZReader`) with ZIP64 extra field and Deflate support. Enables direct conversion into tabular DataFrames via `DataFrame(npy:)` and `DataFrame(npz:)`.
+- **SQLite Table Auto-Discovery (`SwiftDatabase`):** Added `DataFrame(sqlite: URL, table: String? = nil)` in `SwiftDatabase`, automatically inspecting `sqlite_master` and reading tables into DataFrames without SQL boilerplate.
+- **Quantile Regression (Pinball Loss) in GBDT (`SwiftML`):** Added `GBDTLoss` (`.squaredError`, `.absoluteError`, `.quantile(alpha:)`) to `GradientBoostedTreesRegressor`. Optimizes asymmetric check/pinball losses for arbitrary tabular quantiles, producing non-parametric confidence bands.
+- **CLI Dataset Conversion & Summary Extensions (`SwiftSciCLI`):** `swiftsci summary` and `swiftsci convert` extended to support `.parquet`, `.npy`, and `.npz` files alongside CSV and Feather.
 
 ---
 

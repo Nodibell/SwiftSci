@@ -8,7 +8,7 @@ struct SwiftSciCLI: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "swiftsci",
         abstract: "SwiftSci Ecosystem Command-Line Utility for DataFrames, Conversions, and Models.",
-        version: "3.5.1",
+        version: "3.5.2",
         subcommands: [Summary.self, Convert.self, ExportModel.self]
     )
 }
@@ -19,14 +19,21 @@ extension SwiftSciCLI {
             abstract: "Print dataset summary (rows, columns, dtypes)."
         )
 
-        @Argument(help: "Path to input dataset file (.csv or .feather).")
+        @Argument(help: "Path to input dataset file (.csv, .feather, .parquet, .npy, .npz).")
         var filePath: String
 
         func run() async throws {
             let url = URL(fileURLWithPath: filePath)
+            let ext = url.pathExtension.lowercased()
             let df: DataFrame
-            if url.pathExtension.lowercased() == "feather" || url.pathExtension.lowercased() == "arrow" {
+            if ext == "feather" || ext == "arrow" {
                 df = try await DataFrame(feather: url)
+            } else if ext == "parquet" {
+                df = try await DataFrame(parquet: url)
+            } else if ext == "npz" {
+                df = try DataFrame(npz: url)
+            } else if ext == "npy" {
+                df = try DataFrame(npy: url)
             } else {
                 df = try await DataFrame(csv: url)
             }
@@ -45,7 +52,7 @@ extension SwiftSciCLI {
 
     struct Convert: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
-            abstract: "Convert dataset between CSV and Feather binary format."
+            abstract: "Convert dataset between CSV, Feather, and Parquet binary formats."
         )
 
         @Argument(help: "Input dataset file path.")
@@ -58,15 +65,25 @@ extension SwiftSciCLI {
             let inURL = URL(fileURLWithPath: inputPath)
             let outURL = URL(fileURLWithPath: outputPath)
 
+            let inExt = inURL.pathExtension.lowercased()
             let df: DataFrame
-            if inURL.pathExtension.lowercased() == "feather" || inURL.pathExtension.lowercased() == "arrow" {
+            if inExt == "feather" || inExt == "arrow" {
                 df = try await DataFrame(feather: inURL)
+            } else if inExt == "parquet" {
+                df = try await DataFrame(parquet: inURL)
+            } else if inExt == "npz" {
+                df = try DataFrame(npz: inURL)
+            } else if inExt == "npy" {
+                df = try DataFrame(npy: inURL)
             } else {
                 df = try await DataFrame(csv: inURL)
             }
 
-            if outURL.pathExtension.lowercased() == "feather" || outURL.pathExtension.lowercased() == "arrow" {
+            let outExt = outURL.pathExtension.lowercased()
+            if outExt == "feather" || outExt == "arrow" {
                 try await df.writeFeather(to: outURL)
+            } else if outExt == "parquet" {
+                try await df.writeParquet(to: outURL)
             } else {
                 try await df.writeCSV(to: outURL)
             }

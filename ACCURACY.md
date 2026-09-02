@@ -1,6 +1,6 @@
-# 🎯 SwiftSci 3.5.1 — Accuracy & Quality Benchmarks
+# 🎯 SwiftSci 3.5.2 — Accuracy & Quality Benchmarks
 
-Model accuracy evaluation and predictive error benchmarks comparing **SwiftSci 3.5.1** (Swift 6, Apple Silicon Accelerate & MLX Metal) against Python reference libraries (**Scikit-Learn**, **Statsmodels**, **SciPy**, **NLTK**).
+Model accuracy evaluation and predictive error benchmarks comparing **SwiftSci 3.5.2** (Swift 6, Apple Silicon Accelerate & MLX Metal) against Python reference libraries (**Scikit-Learn**, **Statsmodels**, **SciPy**, **NLTK**).
 
 **Identical Datasets**: The Python benchmark harness uses an exact replica of `BenchmarkLCG` from [`BenchmarkSuite.swift`](Benchmarks/Swift/BenchmarkSuite.swift) (`a = 6364136223846793005`, `c = 1442695040888963407`, `seed = 42`), guaranteeing bit-identical synthetic datasets for a 100% fair apples-to-apples comparison.
 

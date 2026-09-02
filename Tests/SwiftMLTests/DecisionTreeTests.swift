@@ -62,7 +62,7 @@ struct DecisionTreeTests {
     @Test("DecisionTreeClassifier throws on empty input")
     func testClassifierEmptyInput() async throws {
         let tree = DecisionTreeClassifier()
-        await #expect(throws: MLError.self) {
+        await #expect(throws: SwiftMLError.self) {
             try await tree.fit(features: [], targets: [])
         }
     }
@@ -70,7 +70,7 @@ struct DecisionTreeTests {
     @Test("DecisionTreeClassifier throws when not fitted")
     func testClassifierNotFitted() async throws {
         let tree = DecisionTreeClassifier()
-        await #expect(throws: MLError.self) {
+        await #expect(throws: SwiftMLError.self) {
             _ = try await tree.predict(features: [[1.0, 2.0]])
         }
     }
@@ -95,7 +95,7 @@ struct DecisionTreeTests {
     @Test("DecisionTreeRegressor throws when not fitted")
     func testRegressorNotFitted() async throws {
         let tree = DecisionTreeRegressor()
-        await #expect(throws: MLError.self) {
+        await #expect(throws: SwiftMLError.self) {
             _ = try await tree.predict(features: [[1.0]])
         }
     }
@@ -137,7 +137,7 @@ struct RandomForestTests {
 
     @Test("RandomForestClassifier throws on invalid nEstimators")
     func testRFInvalidParams() {
-        #expect(throws: MLError.self) {
+        #expect(throws: SwiftMLError.self) {
             _ = try RandomForestClassifier(nEstimators: 0)
         }
     }
@@ -171,8 +171,39 @@ struct GradientBoostingTests {
     @Test("GradientBoostedTreesRegressor throws when not fitted")
     func testGBDTNotFitted() async throws {
         let gbdt = try GradientBoostedTreesRegressor(nEstimators: 5)
-        await #expect(throws: MLError.self) {
+        await #expect(throws: SwiftMLError.self) {
             _ = try await gbdt.predict(features: [[1.0]])
         }
+    }
+
+    @Test("GradientBoostedTreesRegressor quantile regression (10th, 50th, and 90th percentiles)")
+    func testGBDTQuantileRegression() async throws {
+        let features: [[Double]] = (1...30).map { [Double($0)] }
+        var targets: [Double] = []
+        targets.reserveCapacity(30)
+        for i in 1...30 {
+            let base: Double = Double(i) * 2.0
+            let noise: Double = (i % 2 == 0) ? 5.0 : -5.0
+            targets.append(base + noise)
+        }
+
+        let q10 = try GradientBoostedTreesRegressor(nEstimators: 40, learningRate: 0.1, maxDepth: 2, loss: .quantile(alpha: 0.1))
+        let q50 = try GradientBoostedTreesRegressor(nEstimators: 40, learningRate: 0.1, maxDepth: 2, loss: .quantile(alpha: 0.5))
+        let q90 = try GradientBoostedTreesRegressor(nEstimators: 40, learningRate: 0.1, maxDepth: 2, loss: .quantile(alpha: 0.9))
+
+        try await q10.fit(features: features, targets: targets)
+        try await q50.fit(features: features, targets: targets)
+        try await q90.fit(features: features, targets: targets)
+
+        let testFeatures = [[10.0], [20.0]]
+        let pred10 = try await q10.predict(features: testFeatures)
+        let pred50 = try await q50.predict(features: testFeatures)
+        let pred90 = try await q90.predict(features: testFeatures)
+
+        // Monotonic ordering of quantiles: q10 <= q50 <= q90
+        #expect(pred10[0] <= pred50[0])
+        #expect(pred50[0] <= pred90[0])
+        #expect(pred10[1] <= pred50[1])
+        #expect(pred50[1] <= pred90[1])
     }
 }

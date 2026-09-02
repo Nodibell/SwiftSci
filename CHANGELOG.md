@@ -4,6 +4,44 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1] - 2026-09-02
+
+### Added
+- **Pure-Swift Non-Maximum Suppression (`NonMaximumSuppression`, `SwiftVision`)**: Implemented 100% native pure-Swift NMS algorithm (`NonMaximumSuppression.filter`) with `BoundingBox.area` and `BoundingBox.intersectionOverUnion(with:)` (IoU), completely eliminating `torchvision.ops.nms` and OpenCV dependencies.
+- **Seasonal ESD Time Series Anomaly Detection (`TimeSeriesAnomalyDetector`, `SwiftForecast`)**: Implemented native statistical anomaly detection (`TimeSeriesAnomalyDetector`, `TimeSeriesAnomaly`, `AnomalyDetectionResult`) based on Seasonal Hybrid ESD (S-ESD) and Median Absolute Deviation (MAD), fully resolving G-008 without `statsmodels`.
+- **Out-of-Core Hash Join on Chunked DataFrames (`ChunkedDataFrame.join`, `SwiftDataFrame`)**: Added streaming relational `join(_:on:how:)` supporting inner, left, and outer join semantics without full dataset in-memory allocations.
+- **95% Confidence Prediction Bounds (`ExponentialSmoothing`, `SwiftForecast`)**: Extended `ForecastResult` with analytical 95% uncertainty intervals (`lowerBound`, `upperBound`) computed via residual standard error expansion.
+- **Unified `LLMModel` Conformance (`TransformerDecoder`, `SwiftLLM`)**: Conformed `TransformerDecoder` to the public `LLMModel` protocol for uniform streaming token generation across models.
+- **Local Native LLM Reasoning Overload (`ReActAgent`, `SwiftAgent`)**: Added `run(query:model:options:)` overload executing autonomous ReAct agent reasoning loops directly on Apple Silicon without network latency or external APIs.
+- **Lineage Audit Trail & Syntax Extensions (`SwiftAgentEvaluator`, `SwiftAgent`)**: Added support for parameter-labeled AST syntax (`filter(column:condition:)`, `select(columns:)`, `sample(n:)`, `head(n:)`, `tail(n:)`) and transformation lineage tracking.
+- **100% DocC Public API Documentation**: Added rich DocC comments (`///`) to all new public structs, initializers, and properties across `SwiftForecast` and `SwiftVision`.
+
+---
+
+## [3.5.0] - 2026-09-01
+
+### Added
+- **Flat 1D Buffer Accelerate Vectorization (`SwiftPreprocessing`, `SwiftForecast`)**: Migrated scaler and Kalman filter matrices to contiguous 1D row-major buffers vectorized via `vDSP_vsubD`, `vDSP_vsdivD`, and `vDSP.sort`.
+- **Swift 6 Actor-Isolated Database Drivers (`SwiftDatabase`)**: Migrated `SQLiteConnection`, `PostgreSQLConnection`, and `MySQLConnection` to `public actor` types for complete data-race freedom.
+- **Exact Polynomial TreeSHAP (`SwiftExplain`)**: Implemented $O(T \cdot L \cdot D^2)$ exact Shapley value algorithm on Data-Oriented Design flat tree node buffers.
+- **Spatial Indexing & Zero-Copy Clustering (`SwiftCluster`)**: Implemented `KDTree` spatial index reducing `DBSCAN` neighbor search to $O(N \log N)$ and added `VectorStore` zero-copy bounded heap search.
+- **Nelder-Mead Simplex Optimizer (`SwiftForecast`)**: Added derivative-free simplex optimization for parameter estimation in exponential smoothing models.
+- **Apple Accelerate Hardware YOLO Resizing (`SwiftVision`)**: Reimplemented `YOLOPreprocessor` using Apple Accelerate `vImageScale_PlanarF` with high-quality resampling.
+- **Sequential AutoML Engine (`SwiftOptimize`)**: Added automated model selection with 3-fold cross-validation.
+- **O(1) DataFrame & Schema Lookup (`SwiftDataFrame`)**: Added precomputed dictionary field maps for instantaneous column resolution.
+- **Native SwiftUI 2D Charts (`SwiftVisualization`)**: Enhanced `SwiftSciChartView` with 2D Heatmaps, Scatter plots, and Histograms.
+
+---
+
+## [3.4.0] - 2026-08-25
+
+### Added
+- **Out-of-Core Data Engine & Parquet Engine (`SwiftDataFrame`)**: Introduced `ChunkedDataFrame` and `MemoryMappedReader` with built-in pure-Swift Apache Parquet reader and writer supporting Snappy decompression and Thrift Compact Protocol parsing.
+- **On-Device LLM Primitives (`SwiftLLM`)**: Added GGUF and SafeTensors parsing, quantized linear layers (Q4/Q8), and constrained JSON grammar decoding.
+- **Autonomous Reasoning Loops (`SwiftAgent`)**: Implemented `ReActAgent` multi-step reasoning trajectory (`Thought -> Action -> Observation`).
+
+---
+
 ## [3.3.0] - 2026-08-21
 
 ### Added

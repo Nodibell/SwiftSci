@@ -1,4 +1,4 @@
-# SwiftSci 3.5.0
+# SwiftSci 3.5.1
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -16,6 +16,19 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 SwiftSci is engineered for high-performance macOS execution across Apple Silicon ecosystems:
 
 * **macOS 14+ (Apple Silicon M-Series)**: Supports all **14 core modules**, leveraging Accelerate (vDSP/LAPACK/BLAS) and MLX Metal GPU acceleration (`SwiftPreprocessing`, `SwiftML`, `SwiftCluster`, `SwiftLLM`, `SwiftExplain`, `SwiftVision`, `SwiftAgent`).
+
+---
+
+## What's New in 3.5.1
+
+- **Pure-Swift Non-Maximum Suppression (`SwiftVision`):** 100% native pure-Swift NMS algorithm (`NonMaximumSuppression.filter`) with `BoundingBox.area` and IoU overlap calculation (`intersectionOverUnion(with:)`), eliminating torchvision/OpenCV dependencies.
+- **Seasonal ESD Anomaly Detection (`SwiftForecast`):** Native statistical time-series anomaly detector (`TimeSeriesAnomalyDetector`) using Seasonal Hybrid ESD and Median Absolute Deviation (MAD), fully resolving G-008.
+- **Out-of-Core ChunkedDataFrame Hash Join (`SwiftDataFrame`):** Streaming relational `join(_:on:how:)` supporting chunk-by-chunk hash joins without loading entire datasets into memory.
+- **95% Confidence Prediction Intervals (`SwiftForecast`):** `ForecastResult` now provides analytical `lowerBound` and `upperBound` uncertainty bounds based on residual standard errors.
+- **Unified `LLMModel` Protocol Conformance (`SwiftLLM`):** `TransformerDecoder` now conforms to `LLMModel`, standardizing local autoregressive token streaming.
+- **Local `LLMModel` ReAct Agent Loop (`SwiftAgent`):** `ReActAgent.run(query:model:options:)` enables multi-step autonomous reasoning directly on Apple Silicon models without network dependencies.
+- **Agent Lineage Audit Trail (`SwiftAgent`):** Step-by-step transformation lineage tracking in `SwiftAgentEvaluator`.
+- **100% Verified DocC Coverage:** All 1,537 public symbols fully documented with zero warnings.
 
 ---
 
@@ -39,20 +52,20 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 | Module | Description | Docs |
 | :--- | :--- | :---: |
-| **`SwiftDataFrame`** | SIMD vectorised `filterFast`, Accelerate Double sorting, Arrow zero-copy Feather (`FeatherReader`/`FeatherWriter`), **pure-Swift Parquet engine** (`ParquetReader`/`ParquetWriter`), out-of-core streaming **`ChunkedDataFrame`**, **`MemoryMappedReader`**, and SIMD hash joins. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/) |
+| **`SwiftDataFrame`** | SIMD vectorised `filterFast`, Accelerate Double sorting, Arrow zero-copy Feather (`FeatherReader`/`FeatherWriter`), **pure-Swift Parquet engine** (`ParquetReader`/`ParquetWriter`), out-of-core streaming **`ChunkedDataFrame`** with relational `join`, **`MemoryMappedReader`**, and SIMD hash joins. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/) |
 | **`SwiftStats`** | Vectorized descriptive statistics, SIMD vDSP sorting, Student-t/Chi-Square/F distributions, Two-Sample t-test, Spearman correlation, ANOVA powered by `Accelerate vDSP`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftstats/) |
 | **`SwiftPreprocessing`** | Feature scaling (`StandardScaler`, `MinMaxScaler`, `RobustScaler`), categorical encoding (**`OneHotEncoder`**, `OrdinalEncoder`, `TargetEncoder`), imputation (`Imputer`, `KNNImputer`), `Pipeline`, `ColumnTransformer`, `HardwareRouter`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
 | **`SwiftML`** | Linear/Logistic Regression (LAPACK OLS `dgels_`), Decision Trees, Random Forests, GBDTs, **`LinearSVC`**, **`MLPClassifier`** & **`MLPRegressor`**, **Binary Core ML Exporter (`.mlmodel` / `.mlpackage`)**, binary **ONNX exporter**, **`SwiftMLError`**. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftml/) |
 | **`SwiftCluster`** | In-memory **`VectorStore`** cosine index, Halko (2011) $O(MNk)$ `RandomizedSVD` for fast `PCA`, divide-and-conquer SVD (`dgesdd_`), DBSCAN, `IsolationForest`, `LocalOutlierFactor`, `KMeans`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/) |
 | **`SwiftOptimize`** | `KFold`, `StratifiedKFold`, `TimeSeriesSplit` cross-validation, **`Forecast Errors Suite (RMSE, MAE, MAPE, R²)`**, **`ROC-AUC`**, PR-AUC, MCC, `AutoML`, `GridSearchCV`, `RandomizedSearchCV`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftoptimize/) |
-| **`SwiftForecast`** | 1D FIR moving average via `vDSP_convD`, ETS State Space model, Prophet-style `PiecewiseTrendDecomposition`, Exponential Smoothing, ARIMA, SARIMA, GARCH, Kalman filter, **`KoopmanOperator`** EDMD. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/) |
+| **`SwiftForecast`** | 1D FIR moving average via `vDSP_convD`, ETS State Space model, Prophet-style `PiecewiseTrendDecomposition`, Exponential Smoothing with 95% confidence bounds, **`TimeSeriesAnomalyDetector`** (S-ESD + MAD), ARIMA, SARIMA, GARCH, Kalman filter, **`KoopmanOperator`** EDMD. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/) |
 | **`SwiftNLP`** | NLTK-equivalent engine: `AppleWordTokenizer`, `SentenceTokenizer`, `RegexTokenizer`, `PorterStemmer`, `POSTagger`, `AppleLemmaTagger`, **`VADERSentimentAnalyzer`**, `NGramTokenizer`, `HashingVectorizer`, actor-based **`NaiveBayesClassifier`**, **Local Dense Text Embeddings**. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/) |
 | **`SwiftExplain`** | Black-box explainability via parallelized `KernelSHAP`, model-aware `TreeSHAP`, `LIMEExplainer`, `PartialDependencePlot`, `PermutationImportance`, `TextExplainer`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftexplain/) |
-| **`SwiftLLM`** | **Quantized Linear Layers** (`QuantizedLinear` 4-bit/8-bit), **Paged KV-Cache** allocator (`PagedKVCache`), **Constrained JSON Grammar Decoder** (`JSONGrammarDecoder`), `MLX.compile` forward pass caching per sequence-length bucket, and `generateStream` streaming output. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftllm/) |
+| **`SwiftLLM`** | **`LLMModel` unified protocol**, **Quantized Linear Layers** (`QuantizedLinear` 4-bit/8-bit), **Paged KV-Cache** allocator (`PagedKVCache`), **Constrained JSON Grammar Decoder** (`JSONGrammarDecoder`), `MLX.compile` forward pass caching, and `generateStream` streaming output. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftllm/) |
 | **`SwiftVisualization`** | Native SwiftUI `Canvas` charting (`SwiftSciChartView` for line, bar, heatmap) + Plotly HTML chart exporters + Terminal ASCII/Braille charts. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftvisualization/) |
-| **`SwiftVision`** | Computer vision & neural inference: **Real YOLOv8n Object Detection**, **YOLOv8-Seg Instance Segmentation** (`YOLOSegHead`), **CLIP Multimodal Projector** (`CLIPProjector`), **`ONNXWeightReader`** Protobuf binary weight parser, `YOLOPreprocessor` (640x640 letterbox), **Deep Convolutional U-Net** segmentation. | [📖](https://nodibell.github.io/SwiftVision/documentation/swiftvision/) |
+| **`SwiftVision`** | Computer vision & neural inference: **Pure-Swift Non-Maximum Suppression (`NonMaximumSuppression`)**, **Real YOLOv8n Object Detection**, **YOLOv8-Seg Instance Segmentation** (`YOLOSegHead`), **CLIP Multimodal Projector** (`CLIPProjector`), **`ONNXWeightReader`** Protobuf binary weight parser, `YOLOPreprocessor` (640x640 letterbox), **Deep Convolutional U-Net** segmentation. | [📖](https://nodibell.github.io/SwiftVision/documentation/swiftvision/) |
 | **`SwiftDatabase`** | Native SQLite C-driver connector, **native PostgreSQL (v3.0 wire protocol with TLS)**, and **native MySQL (Client/Server protocol with TLS)** drivers for zero-copy DataFrame ingestion via `DataFrame.fromSQL` and bulk exports via `DataFrame.toSQL`. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftdatabase/) |
-| **`SwiftAgent`** | **Autonomous `ReActAgent` Reasoning Loop** (`Thought -> Action -> Observation -> Final Answer`), `DataFrameAgentTool`, `CustomAgentTool`, structured DSL command parser (`filter`, `sample`, `select`, `head`, `tail`, `rename`, `dropnulls`, `fillnulls`, `groupby`) & RAG Context Summary Generator. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftagent/) |
+| **`SwiftAgent`** | **Autonomous `ReActAgent` Reasoning Loop** with local `LLMModel` support (`run(query:model:)`), `DataFrameAgentTool`, `CustomAgentTool`, lineage audit tracking, structured DSL command parser (`filter`, `sample`, `select`, `head`, `tail`, `rename`, `dropnulls`, `fillnulls`, `groupby`) & RAG Context Summary Generator. | [📖](https://nodibell.github.io/SwiftSci/documentation/swiftagent/) |
 
 ---
 
@@ -153,6 +166,6 @@ let encoded = try ohe.transform([["cat"], ["dog"]])
 
 // 4. Native Sentiment Analysis
 let vader = VADERSentimentAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 3.5.0 is incredibly fast and robust!")
+let score = vader.polarityScores(text: "SwiftSci 3.5.1 is incredibly fast and robust!")
 print("Sentiment compound score:", score.compound)
 ```

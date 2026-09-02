@@ -33,6 +33,16 @@ struct ExponentialSmoothingTests {
         #expect(forecast.predictions.count == 2)
         // Check that mse is calculated
         #expect(forecast.mse > 0.0)
+        #expect(forecast.lowerBound != nil)
+        #expect(forecast.upperBound != nil)
+        if let lower = forecast.lowerBound, let upper = forecast.upperBound {
+            #expect(lower.count == 2)
+            #expect(upper.count == 2)
+            for i in 0..<2 {
+                #expect(lower[i] <= forecast.predictions[i])
+                #expect(forecast.predictions[i] <= upper[i])
+            }
+        }
     }
     
     @Test("Holt's Double Exponential Smoothing on linear trend series")

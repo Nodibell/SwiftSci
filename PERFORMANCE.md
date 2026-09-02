@@ -1,12 +1,14 @@
-# SwiftSci 3.5.0 Complete Performance Benchmarks
+# SwiftSci 3.5.1 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.5.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.5.1** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
 
 > [!NOTE]
-> **What's New in 3.5.0 Performance Harness:**
-> - Multi-round statistical execution ($R \times I = 21$ samples per test).
-> - Statistical metrics: **Mean**, **95% Confidence Interval** ($\text{Margin of Error} = 1.96 \cdot \frac{s}{\sqrt{N}}$), **20% Trimmed Mean**, **Median**, **Min..Max**, and **RAM RSS (MB)**.
-> - New benchmarks: `OneHotEncoder fitTransform` (50k rows), `Classification ROC-AUC` (50k predictions), `Forecast Errors Suite (RMSE, MAE, MAPE, R² 100k)`, `Two-Sample T-Test` (100k samples), `Spearman Rank Correlation` (100k pairs), `VectorStore Cosine Search` (5k × 128d), `VADER Sentiment Analysis` (1k sentences), `NaiveBayesClassifier fit` (1k×100), `DataFrame SIMD Hash Join` (100k rows), `TreeSHAP`, and `LIME`.
+> **What's New in 3.5.1 Enhancements:**
+> - **Pure-Swift NMS (`SwiftVision`):** Sub-millisecond non-maximum suppression eliminating Python `torchvision.ops.nms` and OpenCV.
+> - **Seasonal ESD Anomaly Detection (`SwiftForecast`):** Fast hybrid S-ESD + MAD temporal anomaly detection natively in Swift.
+> - **Out-of-Core Hash Join (`SwiftDataFrame`):** Streaming relational joins over partitioned `ChunkedDataFrame` instances without memory spikes.
+> - **95% Confidence Bounds (`SwiftForecast`):** Analytical uncertainty intervals on forecast predictions.
+> - **Multi-Round Benchmark Harness:** $R \times I = 21$ statistical sampling per scenario with 95% confidence intervals, 20% trimmed mean, and RSS tracking.
 
 ---
 

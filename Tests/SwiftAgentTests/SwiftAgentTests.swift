@@ -38,6 +38,26 @@ struct SwiftAgentTests {
         // 4. Sample 2
         let sampled = try await eval.evaluate(command: "sample 2", on: df)
         #expect(sampled.rowCount == 2)
+
+        // 5. Tail 1
+        let tailDF = try await eval.evaluate(command: "tail 1", on: df)
+        #expect(tailDF.rowCount == 1)
+
+        // 6. Parenthesis / key-value syntaxes
+        let filteredFunc = try await eval.evaluate(command: "filter(column: \"age\", condition: \"> 30\")", on: df)
+        #expect(filteredFunc.rowCount == 2)
+
+        let selectedFunc = try await eval.evaluate(command: "select(columns: [\"age\", \"score\"])", on: df)
+        #expect(selectedFunc.columnNames == ["age", "score"])
+
+        let sampledFunc = try await eval.evaluate(command: "sample(n: 2)", on: df)
+        #expect(sampledFunc.rowCount == 2)
+
+        let headFunc = try await eval.evaluate(command: "head(n: 1)", on: df)
+        #expect(headFunc.rowCount == 1)
+
+        let tailFunc = try await eval.evaluate(command: "tail(n: 1)", on: df)
+        #expect(tailFunc.rowCount == 1)
     }
 
     @Test("Test Agent Evaluator rename command")

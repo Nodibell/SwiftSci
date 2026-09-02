@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import SwiftDataFrame
+import SwiftLLM
 @testable import SwiftAgent
 
 @Suite("ReAct Agent Reasoning Loop Tests")
@@ -132,5 +133,27 @@ struct ReActAgentTests {
         let (answer, trace) = try await agent.run(query: "Loop forever", llm: mockLLM)
         #expect(trace.count == 2)
         #expect(answer == "Echo: loop")
+    }
+
+    @Test("ReActAgent runs with native LLMModel instance")
+    func testReActAgentWithLocalLLMModel() async throws {
+        struct MockModel: LLMModel {
+            func generate(prompt: String, options: LLMOptions) async throws -> AsyncStream<String> {
+                AsyncStream { continuation in
+                    continuation.yield("""
+                    Thought: Thinking locally on device.
+                    Final Answer: Computed locally on Apple Silicon.
+                    """)
+                    continuation.finish()
+                }
+            }
+        }
+
+        let agent = ReActAgent()
+        let model = MockModel()
+        let (answer, trace) = try await agent.run(query: "Compute something", model: model)
+        #expect(answer == "Computed locally on Apple Silicon.")
+        #expect(trace.count == 1)
+        #expect(trace[0].thought == "Thinking locally on device.")
     }
 }

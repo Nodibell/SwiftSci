@@ -9,7 +9,8 @@ Time Series & Volatility Forecasting Models.
 ### Key Capabilities
 
 - **Statistical Models**: `ARIMA(p, d, q)` and Seasonal `SARIMA` for trend and seasonality forecasting.
-- **Exponential Smoothing**: Holt-Winters single, double, and triple exponential smoothing.
+- **Exponential Smoothing**: Holt-Winters single, double, and triple exponential smoothing with analytical 95% confidence intervals (`lowerBound`, `upperBound`).
+- **Anomaly Detection**: `TimeSeriesAnomalyDetector` based on Seasonal Hybrid ESD (S-ESD) and Median Absolute Deviation (MAD) for automatic temporal outlier flagging.
 - **Volatility Modeling**: `GARCHModel` for financial volatility forecasting.
 - **Nonlinear & Dynamic Systems**: `KoopmanOperator` for Extended Dynamic Mode Decomposition (EDMD) and spectral analysis.
 - **Decomposition & Filtering**: Additive/multiplicative `TimeSeriesDecomposition` and 1D `KalmanFilter`.

@@ -198,6 +198,35 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
             try await body(chunk)
         }
     }
+    /// Performs an out-of-core hash join between each chunk in this sequence and an in-memory right `DataFrame`.
+    ///
+    /// - Parameters:
+    ///   - other: The right-side `DataFrame` (typically smaller or pre-loaded dimension table).
+    ///   - key: The common join column name.
+    ///   - how: The kind of join (inner, left, outer).
+    /// - Returns: A new `ChunkedDataFrame` yielding the joined partitions.
+    public func join(
+        _ other: DataFrame,
+        on key: String,
+        how: JoinKind = .inner
+    ) -> ChunkedDataFrame {
+        let upstream = self.streamProducer
+        return ChunkedDataFrame {
+            AsyncThrowingStream { continuation in
+                Task {
+                    do {
+                        for try await chunk in upstream() {
+                            let joinedChunk = try chunk.join(other, on: key, how: how)
+                            continuation.yield(joinedChunk)
+                        }
+                        continuation.finish()
+                    } catch {
+                        continuation.finish(throwing: error)
+                    }
+                }
+            }
+        }
+    }
 }
 
 extension DataFrame {
@@ -272,4 +301,6 @@ extension DataFrame {
 
         return try DataFrame(columns: combinedColumns)
     }
+
+
 }

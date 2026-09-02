@@ -1,3 +1,4 @@
+import SwiftLLM
 import Foundation
 import SwiftDataFrame
 
@@ -239,4 +240,27 @@ public actor ReActAgent {
         }
         return nil
     }
+
+    /// Executes the ReAct reasoning cycle directly using a native `LLMModel` (e.g. `TransformerDecoder`).
+    ///
+    /// - Parameters:
+    ///   - query: Analytical question or directive to execute.
+    ///   - model: A local LLMModel instance executing natively on Apple Silicon.
+    ///   - options: Inference options (temperature, topP, maxTokens).
+    /// - Returns: Tuple with final answer and complete reasoning step trace.
+    public func run(
+        query: String,
+        model: any LLMModel,
+        options: LLMOptions = LLMOptions(temperature: 0.2, maxTokens: 256)
+    ) async throws -> (finalAnswer: String, trace: [AgentStep]) {
+        return try await run(query: query) { prompt in
+            let stream = try await model.generate(prompt: prompt, options: options)
+            var generated = ""
+            for await token in stream {
+                generated += token
+            }
+            return generated
+        }
+    }
+
 }

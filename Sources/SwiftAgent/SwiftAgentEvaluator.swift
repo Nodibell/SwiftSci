@@ -108,12 +108,27 @@ public actor SwiftAgentEvaluator {
             if body.hasPrefix(":") {
                 body = body.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
             }
+            if body.hasPrefix("(") && body.hasSuffix(")") {
+                body = String(body.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
             return body
         }
 
         // 1. filter command
         if lower.hasPrefix("filter") {
-            let body = cleanBody("filter")
+            var body = cleanBody("filter")
+            if body.contains("column:") && body.contains("condition:") {
+                let parts = body.components(separatedBy: "condition:")
+                let colPart = parts[0].replacingOccurrences(of: "column:", with: "")
+                    .replacingOccurrences(of: "\"", with: "")
+                    .replacingOccurrences(of: "'", with: "")
+                    .replacingOccurrences(of: ",", with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let condPart = parts[1].replacingOccurrences(of: "\"", with: "")
+                    .replacingOccurrences(of: "'", with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                body = "\(colPart) \(condPart)"
+            }
             
             // Special cases: isNull, isNotNull
             if body.lowercased().hasSuffix("isnull") {
@@ -161,7 +176,7 @@ public actor SwiftAgentEvaluator {
         // 2. sample command
         if lower.hasPrefix("sample") {
             let body = cleanBody("sample")
-            let cleaned = body.replacingOccurrences(of: "n=", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleaned = body.replacingOccurrences(of: "n=", with: "").replacingOccurrences(of: "n:", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             let n = Int(cleaned) ?? 5
             guard n > 0 else { throw AgentError.unparseable(command) }
             return .sample(n: n)
@@ -169,7 +184,11 @@ public actor SwiftAgentEvaluator {
 
         // 3. select command
         if lower.hasPrefix("select") {
-            let body = cleanBody("select")
+            var body = cleanBody("select")
+            if body.contains("columns:") {
+                body = body.replacingOccurrences(of: "columns:", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            body = body.replacingOccurrences(of: "[", with: "").replacingOccurrences(of: "]", with: "").replacingOccurrences(of: "\"", with: "")
             let cols = body.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
             guard !cols.isEmpty else { throw AgentError.unparseable(command) }
             return .select(columns: cols)
@@ -178,7 +197,7 @@ public actor SwiftAgentEvaluator {
         // 4. head command
         if lower.hasPrefix("head") {
             let body = cleanBody("head")
-            let cleaned = body.replacingOccurrences(of: "n=", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleaned = body.replacingOccurrences(of: "n=", with: "").replacingOccurrences(of: "n:", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             let n = Int(cleaned) ?? 5
             guard n >= 0 else { throw AgentError.unparseable(command) }
             return .head(n: n)
@@ -187,7 +206,7 @@ public actor SwiftAgentEvaluator {
         // 5. tail command
         if lower.hasPrefix("tail") {
             let body = cleanBody("tail")
-            let cleaned = body.replacingOccurrences(of: "n=", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleaned = body.replacingOccurrences(of: "n=", with: "").replacingOccurrences(of: "n:", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             let n = Int(cleaned) ?? 5
             guard n >= 0 else { throw AgentError.unparseable(command) }
             return .tail(n: n)

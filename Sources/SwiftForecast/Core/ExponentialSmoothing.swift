@@ -117,10 +117,20 @@ public actor ExponentialSmoothing {
         let mse = vDSP.sumOfSquares(residuals) / Double(n)
         let mae = residuals.reduce(0.0) { $0 + abs($1) } / Double(n)
         
+        let seBase = sqrt(max(mse, 1e-6))
+        let z = 1.96 // 95% confidence interval
+        var lower = [Double](repeating: 0.0, count: horizon)
+        var upper = [Double](repeating: 0.0, count: horizon)
+        for h in 0..<horizon {
+            let se = seBase * sqrt(1.0 + 0.08 * Double(h))
+            lower[h] = preds[h] - z * se
+            upper[h] = preds[h] + z * se
+        }
+
         return ForecastResult(
             predictions: preds,
-            lowerBound: nil,
-            upperBound: nil,
+            lowerBound: lower,
+            upperBound: upper,
             fittedValues: fitted,
             residuals: residuals,
             aic: nil,

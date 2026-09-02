@@ -193,7 +193,7 @@ public final class TransformerBlock: Module, UnaryLayer {
 /// MLX compiles and caches the forward graph per sequence-length bucket
 /// (16 / 32 / 64 / 128 / 256 / 512 / 1024 / 2048) to amortize Metal
 /// graph-build cost — analogous to `torch.compile`.
-public final class TransformerDecoder: Module, @unchecked Sendable {
+public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
 
     // MARK: Sub-modules
 

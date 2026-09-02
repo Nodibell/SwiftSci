@@ -910,3 +910,143 @@ extension DataFrame {
         }
     }
 }
+
+// MARK: - SQLQueryResult to DataFrame
+
+extension SQLQueryResult {
+    /// Converts this query result into a `DataFrame`.
+    public func toDataFrame() throws -> DataFrame {
+        guard !columns.isEmpty else { return DataFrame.empty }
+        let numCols = columns.count
+        let numRows = rows.count
+
+        var dfCols: [any AnyColumn] = []
+        dfCols.reserveCapacity(numCols)
+
+        for (colIdx, colName) in columns.enumerated() {
+            var isDouble = false
+            var isInt = false
+            var isString = false
+
+            for row in rows {
+                guard colIdx < row.count else { continue }
+                switch row[colIdx] {
+                case .double: isDouble = true
+                case .int: isInt = true
+                case .string: isString = true
+                case .null: break
+                }
+                if isString || isDouble { break }
+            }
+
+            if isString {
+                var vals: [String] = []
+                vals.reserveCapacity(numRows)
+                for row in rows {
+                    if colIdx < row.count {
+                        switch row[colIdx] {
+                        case .string(let s): vals.append(s)
+                        case .int(let i): vals.append("\(i)")
+                        case .double(let d): vals.append("\(d)")
+                        case .null: vals.append("")
+                        }
+                    } else {
+                        vals.append("")
+                    }
+                }
+                dfCols.append(TypedColumn(name: colName, values: vals))
+            } else if isDouble {
+                var vals: [Double] = []
+                vals.reserveCapacity(numRows)
+                for row in rows {
+                    if colIdx < row.count {
+                        switch row[colIdx] {
+                        case .double(let d): vals.append(d)
+                        case .int(let i): vals.append(Double(i))
+                        case .string(let s): vals.append(Double(s) ?? 0.0)
+                        case .null: vals.append(Double.nan)
+                        }
+                    } else {
+                        vals.append(Double.nan)
+                    }
+                }
+                dfCols.append(TypedColumn(name: colName, values: vals))
+            } else if isInt {
+                var vals: [Int64] = []
+                vals.reserveCapacity(numRows)
+                for row in rows {
+                    if colIdx < row.count {
+                        switch row[colIdx] {
+                        case .int(let i): vals.append(Int64(i))
+                        case .double(let d): vals.append(Int64(d))
+                        case .string(let s): vals.append(Int64(s) ?? 0)
+                        case .null: vals.append(0)
+                        }
+                    } else {
+                        vals.append(0)
+                    }
+                }
+                dfCols.append(TypedColumn(name: colName, values: vals))
+            } else {
+                var vals: [String] = []
+                vals.reserveCapacity(numRows)
+                for row in rows {
+                    if colIdx < row.count {
+                        vals.append(row[colIdx].description)
+                    } else {
+                        vals.append("")
+                    }
+                }
+                dfCols.append(TypedColumn(name: colName, values: vals))
+            }
+        }
+
+        return try DataFrame(columns: dfCols)
+    }
+}
+
+// MARK: - DatabaseConnection DataFrame Extension
+
+extension DatabaseConnection {
+    /// Reads a database table into a `DataFrame`.
+    public func readDataFrame(table: String) async throws -> DataFrame {
+        let escaped = table.replacingOccurrences(of: "\"", with: "\"\"")
+        let queryResult = try await executeQuery("SELECT * FROM \"\(escaped)\";")
+        return try queryResult.toDataFrame()
+    }
+}
+
+// MARK: - DataFrame SQLite Initializers
+
+extension DataFrame {
+    /// Loads a `DataFrame` from a SQLite database file, auto-discovering the first user table if not specified.
+    ///
+    /// - Parameters:
+    ///   - sqliteURL: The local URL pointing to the SQLite database file (`.sqlite`, `.db`, `.sqlite3`).
+    ///   - table: The table name to load. If `nil`, auto-discovers the first user table in `sqlite_master`.
+    /// - Returns: A `DataFrame` populated with the table contents.
+    public static func readSQLite(url sqliteURL: URL, table: String? = nil) async throws -> DataFrame {
+        guard FileManager.default.fileExists(atPath: sqliteURL.path) else {
+            throw SwiftMLError.fileNotFound(sqliteURL)
+        }
+        let conn = SQLiteConnection(databasePath: sqliteURL.path)
+        let targetTable: String
+        if let explicitTable = table {
+            targetTable = explicitTable
+        } else {
+            let discoverSQL = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name ASC LIMIT 1;"
+            let res = try await conn.executeQuery(discoverSQL)
+            guard let firstRow = res.rows.first,
+                  let nameVal = firstRow.first else {
+                throw SwiftMLError.parseError(line: 0, description: "No user tables found in SQLite database at \(sqliteURL.path)")
+            }
+            targetTable = nameVal.description
+        }
+        return try await conn.readDataFrame(table: targetTable)
+    }
+
+    /// Initializes a `DataFrame` directly from a SQLite database file with automatic table discovery.
+    public init(sqlite url: URL, table: String? = nil) async throws {
+        self = try await DataFrame.readSQLite(url: url, table: table)
+    }
+}

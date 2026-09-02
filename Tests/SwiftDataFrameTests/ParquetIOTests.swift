@@ -81,4 +81,38 @@ final class ParquetIOTests: XCTestCase {
         let ids = (collected[column: "id"] as? TypedColumn<Int64>)?.values
         XCTAssertEqual(ids, [3, 4, 5])
     }
+
+    func testSnappySliceFromGoEmotions() throws {
+        let fileURL = URL(fileURLWithPath: "/Users/oleksiichumak/.gemini/antigravity-ide/brain/97383ad2-c472-4b55-8e5e-3dbffc712586/scratch/go_emotions_test.parquet")
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        let data = try Data(contentsOf: fileURL)
+        let snappySlice = data.subdata(in: 23 ..< (23 + 50922))
+        let decompressed = try SnappyDecompressor.decompress(data: snappySlice)
+        print("✅ SnappyDecompressor decompressed: \(decompressed.count) bytes!")
+        XCTAssertEqual(decompressed.count, 72042)
+    }
+
+    func testReadGoEmotionsHuggingFaceParquet() async throws {
+        let fileURL = URL(fileURLWithPath: "/Users/oleksiichumak/.gemini/antigravity-ide/brain/97383ad2-c472-4b55-8e5e-3dbffc712586/scratch/go_emotions_test.parquet")
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        let df = try await DataFrame(parquet: fileURL)
+        print("✅ GoEmotions Parquet Loaded! Rows: \(df.rowCount), Columns: \(df.columnNames)")
+        XCTAssertEqual(df.rowCount, 5427)
+        XCTAssertTrue(df.columnNames.contains("text"))
+        XCTAssertTrue(df.columnNames.contains("labels"))
+        XCTAssertTrue(df.columnNames.contains("id"))
+
+        // Inspect sample values
+        let textCol = df[column: "text"] as? TypedColumn<String>
+        XCTAssertNotNil(textCol)
+        XCTAssertEqual(textCol?.values.first, "I’m really sorry about your situation :( Although I love the names Sapphira, Cirilla, and Scarlett!")
+
+        let idCol = df[column: "id"] as? TypedColumn<String>
+        XCTAssertNotNil(idCol)
+        XCTAssertEqual(idCol?.values.first, "eecwqtt")
+
+        let labelsCol = df[column: "labels"] as? TypedColumn<String>
+        XCTAssertNotNil(labelsCol)
+        XCTAssertEqual(labelsCol?.values.first, "[25]")
+    }
 }

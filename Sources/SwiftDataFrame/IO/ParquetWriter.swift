@@ -397,8 +397,8 @@ public enum ParquetWriter: Sendable {
                 // total_compressed_size (field 7)
                 writer.writeFieldBegin(fieldId: 7, type: .i64)
                 writer.writeZigZagI64(colChunk.totalCompressedSize)
-                // data_page_offset (field 8)
-                writer.writeFieldBegin(fieldId: 8, type: .i64)
+                // data_page_offset (field 9 in Apache Parquet spec)
+                writer.writeFieldBegin(fieldId: 9, type: .i64)
                 writer.writeZigZagI64(colChunk.dataPageOffset)
                 writer.writeFieldStop()
                 writer.popStruct()
@@ -415,7 +415,7 @@ public enum ParquetWriter: Sendable {
 
         // field 6: created_by (string)
         writer.writeFieldBegin(fieldId: 6, type: .binary)
-        writer.writeString("SwiftSci v3.5.1 (Pure Swift)")
+        writer.writeString("SwiftSci v3.5.2 (Pure Swift)")
 
         writer.writeFieldStop()
         writer.popStruct()

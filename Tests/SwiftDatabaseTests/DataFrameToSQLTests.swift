@@ -58,7 +58,25 @@ final class DataFrameToSQLTests: XCTestCase {
         let mysqlConn1 = MySQLConnection(connectionURL: "mysql://root:pass@remote.mysql.com:3306/mydb?ssl=true")
         XCTAssertEqual(mysqlConn1.sslMode, .require)
 
-        let mysqlConn2 = MySQLConnection(connectionURL: "mysql://root:pass@localhost:3306/mydb", sslMode: .prefer)
-        XCTAssertEqual(mysqlConn2.sslMode, .prefer)
+        let mysqlConn2 = MySQLConnection(connectionURL: "mysql://root:pass@localhost:3306/mydb")
+        XCTAssertEqual(mysqlConn2.sslMode, .disable)
+    }
+
+    func testDataFrameSQLiteAutoDiscovery() async throws {
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test_autodiscover_\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let conn = SQLiteConnection(databasePath: tempURL.path)
+        let colA = TypedColumn(name: "item_id", values: [101, 102, 103])
+        let colB = TypedColumn(name: "item_name", values: ["Widget", "Gadget", "Doodad"])
+        let dfSource = try DataFrame(columns: [colA, colB])
+
+        try await dfSource.toSQL(table: "inventory", connection: conn, mode: .replace)
+
+        // Load using DataFrame(sqlite:) with NO table specified (auto-discovery)
+        let dfAuto = try await DataFrame(sqlite: tempURL)
+        XCTAssertEqual(dfAuto.rowCount, 3)
+        XCTAssertTrue(dfAuto.columnNames.contains("item_id"))
+        XCTAssertTrue(dfAuto.columnNames.contains("item_name"))
     }
 }

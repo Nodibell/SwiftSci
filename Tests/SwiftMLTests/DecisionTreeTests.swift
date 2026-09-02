@@ -175,4 +175,30 @@ struct GradientBoostingTests {
             _ = try await gbdt.predict(features: [[1.0]])
         }
     }
+
+    @Test("GradientBoostedTreesRegressor quantile regression (10th, 50th, and 90th percentiles)")
+    func testGBDTQuantileRegression() async throws {
+        let features: [[Double]] = (1...30).map { [Double($0)] }
+        // y = 2x + noise
+        let targets: [Double] = (1...30).map { Double($0) * 2.0 + ($0 % 2 == 0 ? 5.0 : -5.0) }
+
+        let q10 = try GradientBoostedTreesRegressor(nEstimators: 40, learningRate: 0.1, maxDepth: 2, loss: .quantile(alpha: 0.1))
+        let q50 = try GradientBoostedTreesRegressor(nEstimators: 40, learningRate: 0.1, maxDepth: 2, loss: .quantile(alpha: 0.5))
+        let q90 = try GradientBoostedTreesRegressor(nEstimators: 40, learningRate: 0.1, maxDepth: 2, loss: .quantile(alpha: 0.9))
+
+        try await q10.fit(features: features, targets: targets)
+        try await q50.fit(features: features, targets: targets)
+        try await q90.fit(features: features, targets: targets)
+
+        let testFeatures = [[10.0], [20.0]]
+        let pred10 = try await q10.predict(features: testFeatures)
+        let pred50 = try await q50.predict(features: testFeatures)
+        let pred90 = try await q90.predict(features: testFeatures)
+
+        // Monotonic ordering of quantiles: q10 <= q50 <= q90
+        #expect(pred10[0] <= pred50[0])
+        #expect(pred50[0] <= pred90[0])
+        #expect(pred10[1] <= pred50[1])
+        #expect(pred50[1] <= pred90[1])
+    }
 }

@@ -2,14 +2,35 @@ import Foundation
 import Accelerate
 import SwiftStats
 
-/// Result of an anomaly detection evaluation.
+/// A single data point evaluated during anomaly detection.
+///
+/// Contains the original series value, the expected (baseline) value, the robust Z-score,
+/// and a Boolean flag indicating whether the point was classified as an anomaly.
 public struct TimeSeriesAnomaly: Sendable, Equatable {
+
+    /// The zero-based position of this point in the input series.
     public let index: Int
+
+    /// The observed value at this position in the series.
     public let value: Double
+
+    /// The baseline (expected) value computed from seasonal decomposition or rolling median.
     public let expectedValue: Double
+
+    /// The robust Z-score (MAD-normalised) of the residual at this position.
     public let score: Double
+
+    /// `true` when the point's score exceeds the configured threshold and
+    /// is within the `maxAnomaliesRatio` cap; `false` otherwise.
     public let isAnomaly: Bool
 
+    /// Creates a ``TimeSeriesAnomaly`` with all fields.
+    /// - Parameters:
+    ///   - index: Zero-based index of the point in the input series.
+    ///   - value: Observed series value.
+    ///   - expectedValue: Baseline value derived from decomposition or rolling median.
+    ///   - score: Robust Z-score of the residual.
+    ///   - isAnomaly: Whether this point is classified as an anomaly.
     public init(index: Int, value: Double, expectedValue: Double, score: Double, isAnomaly: Bool) {
         self.index = index
         self.value = value
@@ -19,11 +40,25 @@ public struct TimeSeriesAnomaly: Sendable, Equatable {
     }
 }
 
+/// The aggregate result of a ``TimeSeriesAnomalyDetector`` run.
+///
+/// Contains the per-point evaluation results, the MAD-based Z-score threshold that was used,
+/// and a convenience array of indices classified as anomalies.
 public struct AnomalyDetectionResult: Sendable {
+
+    /// Per-point evaluation results for the entire input series.
     public let anomalies: [TimeSeriesAnomaly]
+
+    /// The robust Z-score threshold used to classify anomalies.
     public let threshold: Double
+
+    /// The zero-based indices of all points classified as anomalies, in ascending order.
     public let anomalyIndices: [Int]
 
+    /// Creates an ``AnomalyDetectionResult`` from a flat list of evaluated points.
+    /// - Parameters:
+    ///   - anomalies: Per-point ``TimeSeriesAnomaly`` evaluations.
+    ///   - threshold: The Z-score threshold that was applied.
     public init(anomalies: [TimeSeriesAnomaly], threshold: Double) {
         self.anomalies = anomalies
         self.threshold = threshold

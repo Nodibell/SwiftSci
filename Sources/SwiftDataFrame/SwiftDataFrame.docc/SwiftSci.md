@@ -9,7 +9,7 @@ High-Performance Columnar Data Tables built on Apache Arrow.
 ### Key Capabilities
 
 - **Apache Arrow & Parquet Integration**: Zero-copy memory sharing, Arrow IPC buffer conversions, and pure-Swift Apache Parquet reader/writer (`ParquetReader`/`ParquetWriter`) with Snappy decompression.
-- **Out-of-Core Data Streaming**: `ChunkedDataFrame` streaming pipeline with zero-copy POSIX `MemoryMappedReader` partitioning.
+- **Out-of-Core Data Streaming**: `ChunkedDataFrame` streaming pipeline with zero-copy POSIX `MemoryMappedReader` partitioning and streaming relational `join(_:on:how:)`.
 - **Relational Operations & SIMD Joins**: SIMD-accelerated typed hash-joins (`inner`, `left`, `right`, `outer`), grouping, and aggregations.
 - **Reshaping & Filtering**: Pivot, melt, index-based row gathering, and vDSP mask filtering.
 - **Deduplication**: `DataFrame.unique`, `AnyColumn.unique`, and `TypedColumn.unique` with first-occurrence order preservation.

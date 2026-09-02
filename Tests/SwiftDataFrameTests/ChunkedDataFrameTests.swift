@@ -117,4 +117,28 @@ final class ChunkedDataFrameTests: XCTestCase {
 
         XCTAssertThrowsError(try DataFrame.concat([df1, df2]))
     }
+
+    func testChunkedDataFrameJoin() async throws {
+        let left1 = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [1, 2]),
+            TypedColumn<String>(name: "name", values: ["Alice", "Bob"])
+        ])
+        let left2 = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [3, 4]),
+            TypedColumn<String>(name: "name", values: ["Charlie", "David"])
+        ])
+        let chunked = ChunkedDataFrame(chunks: [left1, left2])
+
+        let right = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [2, 3]),
+            TypedColumn<Double>(name: "score", values: [85.5, 92.0])
+        ])
+
+        let joined = chunked.join(right, on: "id", how: .inner)
+        let collected = try await joined.collect()
+
+        XCTAssertEqual(collected.rowCount, 2)
+        let ids = (collected[column: "id"] as? TypedColumn<Int64>)?.values
+        XCTAssertEqual(ids, [2, 3])
+    }
 }

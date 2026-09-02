@@ -27,4 +27,7 @@ ignore:
   - "Sources/SwiftVision/**"
   # Exclude test files from code coverage calculation
   - "Tests/**"
+  # Exclude CLI executable and standalone benchmarks from library patch coverage
+  - "Sources/SwiftSciCLI/**"
+  - "Benchmarks/**"
 

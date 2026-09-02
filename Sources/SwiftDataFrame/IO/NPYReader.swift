@@ -93,6 +93,13 @@ public struct NPYArray: Sendable {
                     memcpy(dst.baseAddress!, basePtr, count * 8)
                 }
                 return doubles.map { Int64($0) }
+            } else if descr.contains("f4") {
+                let count = min(total, rawBuf.count / 4)
+                var floats = [Float](repeating: 0.0, count: count)
+                _ = floats.withUnsafeMutableBytes { dst in
+                    memcpy(dst.baseAddress!, basePtr, count * 4)
+                }
+                return floats.map { Int64($0) }
             } else {
                 let count = min(total, rawBuf.count)
                 let bytes = rawBuf.bindMemory(to: UInt8.self)

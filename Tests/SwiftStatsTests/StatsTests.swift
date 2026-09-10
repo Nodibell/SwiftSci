@@ -57,6 +57,14 @@ struct DescriptiveStatsTests {
         #expect(statsWithoutCheck.count == 4)
     }
 
+    @Test("variance Float throws containsNaN when NaN is present")
+    func varianceFloatNaNCheck() throws {
+        let valuesWithNaN: [Float] = [1.0, Float.nan, 3.0]
+        #expect(throws: StatsError.containsNaN) {
+            try Stats.variance(valuesWithNaN, checkNaN: true)
+        }
+    }
+
     @Test("median odd count")
     func medianOdd() throws {
         #expect(try Stats.median([1.0, 3.0, 5.0] as [Double]) == 3.0)

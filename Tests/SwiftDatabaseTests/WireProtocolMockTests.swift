@@ -324,4 +324,99 @@ struct WireProtocolMockTests {
         let res = try await conn.executeQuery("CREATE TABLE t (x INT);")
         #expect(res.rows.isEmpty)
     }
+
+    @Test("PostgreSQL SCRAM-SHA-256 complete wire authentication flow")
+    func testPostgresSCRAMAuthSuccess() async throws {
+        let (port, stop) = Self.createMockServer { clientFd in
+            var buf = [UInt8](repeating: 0, count: 4096)
+            // 1. Read StartupMessage
+            _ = recv(clientFd, &buf, buf.count, 0)
+
+            // 2. Send AuthenticationSASL (type 10): 'R', len(23), type 10, "SCRAM-SHA-256\0\0"
+            var saslReq = Data([0x52])
+            let mech = "SCRAM-SHA-256\0\0"
+            let saslLen = Int32(8 + mech.utf8.count).bigEndian
+            withUnsafeBytes(of: saslLen) { saslReq.append(contentsOf: $0) }
+            saslReq.append(contentsOf: [0x00, 0x00, 0x00, 0x0A]) // AuthType 10
+            saslReq.append(contentsOf: mech.utf8)
+            _ = saslReq.withUnsafeBytes { send(clientFd, $0.baseAddress, saslReq.count, 0) }
+
+            // 3. Read SASLInitialResponse 'p'
+            let rLen = recv(clientFd, &buf, buf.count, 0)
+            guard rLen > 0 else { return }
+            let clientInitStr = String(decoding: buf[0..<Int(rLen)], as: UTF8.self)
+
+            // Extract client nonce from n,,n=user,r=<clientNonce>
+            var clientNonce = "mockNonce"
+            if let rRange = clientInitStr.range(of: ",r=") {
+                let afterR = clientInitStr[rRange.upperBound...]
+                let nonceCandidate = afterR.prefix(while: { $0 != "," && $0 != "\0" })
+                if !nonceCandidate.isEmpty { clientNonce = String(nonceCandidate) }
+            }
+
+            // 4. Send AuthenticationSASLContinue (type 11): 'R', len, type 11, payload "r=...,s=...,i=4096"
+            let serverNonce = clientNonce + "SERVER_NONCE_EXT"
+            let saltB64 = "W22ZaJ0SNY7soEsUEjb6tQ=="
+            let serverFirstPayload = "r=\(serverNonce),s=\(saltB64),i=4096"
+
+            var contPacket = Data([0x52])
+            let contLen = Int32(8 + serverFirstPayload.utf8.count).bigEndian
+            withUnsafeBytes(of: contLen) { contPacket.append(contentsOf: $0) }
+            contPacket.append(contentsOf: [0x00, 0x00, 0x00, 0x0B]) // AuthType 11
+            contPacket.append(contentsOf: serverFirstPayload.utf8)
+            _ = contPacket.withUnsafeBytes { send(clientFd, $0.baseAddress, contPacket.count, 0) }
+
+            // 5. Read SASLResponse 'p'
+            _ = recv(clientFd, &buf, buf.count, 0)
+
+            // 6. Send AuthenticationOk (type 0) + ReadyForQuery
+            var authOk = Data([0x52, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00])
+            authOk.append(contentsOf: [0x5A, 0x00, 0x00, 0x00, 0x05, 0x49])
+            _ = authOk.withUnsafeBytes { send(clientFd, $0.baseAddress, authOk.count, 0) }
+
+            // 7. Read Query packet
+            _ = recv(clientFd, &buf, buf.count, 0)
+
+            // 8. Send ReadyForQuery
+            let rfq = Data([0x5A, 0x00, 0x00, 0x00, 0x05, 0x49])
+            _ = rfq.withUnsafeBytes { send(clientFd, $0.baseAddress, rfq.count, 0) }
+        }
+        defer { stop() }
+
+        let conn = PostgreSQLConnection(connectionURL: "postgres://scramuser:pencil@127.0.0.1:\(port)/testdb")
+        let res = try await conn.executeQuery("SELECT 1;")
+        #expect(res.rows.isEmpty)
+    }
+
+    @Test("SQLQueryResult and DataFrame.fromSQL type marshalling for all extended types")
+    func testQueryResultToDataFrameExtendedTypes() async throws {
+        let testDate = Date(timeIntervalSince1970: 1700000000)
+        let testData = Data([0xAA, 0xBB, 0xCC])
+
+        // 1. Test SQLQueryResult.toDataFrame() with all types:
+        let qResult = SQLQueryResult(
+            columns: ["col_i64", "col_bool", "col_date", "col_data", "col_str", "col_dbl", "col_null"],
+            rows: [
+                [.int64(999), .bool(true), .date(testDate), .data(testData), .string("test"), .double(3.14), .null],
+                [.int64(1000), .bool(false), .date(testDate), .data(testData), .string("test2"), .double(6.28), .null]
+            ]
+        )
+
+        let df = try qResult.toDataFrame()
+        #expect(df.shape.rows == 2)
+        #expect(df.shape.columns == 7)
+
+        // 2. Test DataFrame.fromSQL with mock connection returning extended types
+        struct MockConnection: DatabaseConnection {
+            let result: SQLQueryResult
+            func executeQuery(_ query: String) async throws -> SQLQueryResult {
+                result
+            }
+        }
+
+        let mockConn = MockConnection(result: qResult)
+        let dfFromSQL = try await DataFrame.fromSQL("SELECT * FROM mock;", connection: mockConn)
+        #expect(dfFromSQL.shape.rows == 2)
+        #expect(dfFromSQL.shape.columns == 7)
+    }
 }

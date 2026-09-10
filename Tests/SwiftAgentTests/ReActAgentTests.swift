@@ -186,4 +186,20 @@ struct ReActAgentTests {
         #expect(trace[0].observation?.contains("timed out") == true)
         #expect(answer == "Recovered from timeout safely.")
     }
+
+    @Test("ReActAgent with non-positive timeout disables timeout task")
+    func testReActAgentZeroTimeout() async throws {
+        let echoTool = CustomAgentTool(name: "Echo", description: "Echoes") { $0 }
+        let agent = ReActAgent(tools: [echoTool], maxSteps: 2, toolTimeoutSeconds: 0.0)
+        let mockLLM: @Sendable (String) async throws -> String = { prompt in
+            if !prompt.contains("Previous History:") {
+                return "Thought: test\nAction: Echo\nAction Input: hello"
+            } else {
+                return "Final Answer: done"
+            }
+        }
+        let (answer, trace) = try await agent.run(query: "test", llm: mockLLM)
+        #expect(answer == "done")
+        #expect(trace[0].observation == "hello")
+    }
 }

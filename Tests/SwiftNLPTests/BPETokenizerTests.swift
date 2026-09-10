@@ -95,4 +95,12 @@ struct BPETokenizerTests {
 
         #expect(decoded == text)
     }
+
+    @Test("BPE Tokenizer decode handles literal non-byte-encoded characters")
+    func testBPEDecodeNonByteEncodedChars() throws {
+        let vocab: [String: Int] = ["<unk>": 0, "€": 1]
+        let tokenizer = BPETokenizer(vocab: vocab, merges: [])
+        let decoded = tokenizer.decode(tokens: [1])
+        #expect(decoded == "€")
+    }
 }

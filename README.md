@@ -1,4 +1,4 @@
-# SwiftSci 3.5.2
+# SwiftSci 3.6.0
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -28,7 +28,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.5.2")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.6.0")
 ]
 ```
 
@@ -81,7 +81,7 @@ let explanation = await lime.explain(model: { $0.reduce(0.0, +) }, instance: [1.
 
 // 5. Native Sentiment Analysis
 let vader = VADERSentimentAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 3.5.2 is incredibly fast, memory efficient, and robust!")
+let score = vader.polarityScores(text: "SwiftSci 3.6.0 is incredibly fast, memory efficient, and robust!")
 print("Sentiment compound score:", score.compound)
 ```
 
@@ -91,30 +91,30 @@ print("Sentiment compound score:", score.compound)
 
 | Module | Purpose & Capabilities | Documentation |
 | :--- | :--- | :---: |
-| **`SwiftDataFrame`** | Zero-copy columnar tables, **pure-Swift Apache Parquet engine**, Arrow Feather, NumPy `.npy`/`.npz` tensor reader, memory-mapped I/O, SIMD hash joins, and out-of-core `ChunkedDataFrame`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/) |
-| **`SwiftStats`** | Vectorized descriptive statistics, SIMD vDSP sorting, Student-t/Chi-Square/F distributions, Two-Sample t-test, Spearman correlation, ANOVA powered by Accelerate. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftstats/) |
-| **`SwiftPreprocessing`** | Feature scaling (`StandardScaler`, `MinMaxScaler`), categorical encoding (**`OneHotEncoder`**, `TargetEncoder`), imputation, `Pipeline`, `ColumnTransformer`, `HardwareRouter`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
-| **`SwiftML`** | OLS/Ridge/Lasso regression, Decision Trees, Random Forests, **GBDT Quantile Regression**, **`LinearSVC`** (Metal GPU), MLP neural nets, Core ML & ONNX exporters. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftml/) |
-| **`SwiftCluster`** | In-memory **`VectorStore`** cosine index (top-$k$), randomized SVD / PCA, DBSCAN, `IsolationForest` outlier detection, `KMeans`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/) |
-| **`SwiftForecast`** | ARIMA/SARIMA, Exponential Smoothing with 95% confidence intervals, ETS, GARCH, Kalman filtering, Prophet-style trend decomposition, Seasonal ESD anomaly detection. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/) |
-| **`SwiftOptimize`** | K-Fold / TimeSeriesSplit cross-validation, Forecast Errors Suite (RMSE, MAE, MAPE, R²), ROC-AUC / PR-AUC metrics, AutoML, `GridSearchCV`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftoptimize/) |
-| **`SwiftExplain`** | Model interpretability: parallel `KernelSHAP`, exact polynomial **`TreeSHAP`**, **`LIMEExplainer`**, Partial Dependence Plots (PDP), Permutation Importance. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftexplain/) |
-| **`SwiftNLP`** | Linguistic engine: tokenization, lemmatization, Porter stemmer, POS tagger, **`VADERSentimentAnalyzer`**, `NaiveBayesClassifier`, dense embeddings. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/) |
-| **`SwiftLLM`** | **`LLMModel` protocol**, 4-bit/8-bit quantized linear layers (`QuantizedLinear`), Paged KV-Cache allocator, constrained JSON grammar decoder, streaming generation. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftllm/) |
-| **`SwiftVision`** | Pure-Swift Non-Maximum Suppression (NMS), YOLOv8n object detection, YOLOv8-Seg instance segmentation, CLIP projector, U-Net image segmentation. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftvision/) |
-| **`SwiftDatabase`** | Zero-copy SQL ingestion/export: SQLite with **automatic table discovery**, native PostgreSQL (v3.0 wire protocol), and native MySQL connectors. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftdatabase/) |
-| **`SwiftAgent`** | **Autonomous `ReActAgent` loop** for local LLMs, step-by-step lineage audit trails, sandboxed execution DSL, and RAG context profile generators. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftagent/) |
-| **`SwiftVisualization`** | Native SwiftUI `Canvas` interactive charts (`SwiftSciChartView`), Plotly HTML export, and terminal ASCII/Braille graphs. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftvisualization/) |
+| **`SwiftDataFrame`** | Zero-copy columnar tables, **pure-Swift Apache Parquet engine**, Arrow Feather with ARC lifetime safety, NumPy `.npy`/`.npz` tensor reader, memory-mapped I/O, SIMD hash joins, out-of-core `ChunkedDataFrame`, and `ArrowNullStrategy`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/) |
+| **`SwiftStats`** | Numerically stable two-pass variance via Accelerate vDSP, SIMD sorting, Student-t/Chi-Square/F distributions, Two-Sample t-test, Spearman correlation, ANOVA. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftstats/) |
+| **`SwiftPreprocessing`** | Feature scaling (`StandardScaler`, `MinMaxScaler`), categorical encoding (**`OneHotEncoder`** with `handleUnknown: .ignore`, `TargetEncoder`), **`SparseMatrix`** (CSR/CSC) with Apple Accelerate Sparse BLAS, `Pipeline` with deep-copy value semantics, `ColumnTransformer`, `HardwareRouter`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftpreprocessing/) |
+| **`SwiftML`** | OLS/Ridge/Lasso regression, Decision Trees, Random Forests, **HistGradientBoosting** (256 bins), GBDT Quantile Regression, **EarlyStopping**, **`LinearSVC`** (Metal GPU), MLP neural nets, Core ML & ONNX exporters, reproducible Xoshiro256++ PRNG. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftml/) |
+| **`SwiftCluster`** | **`HNSWIndex`** graph index for $O(\log N)$ ANN search, in-memory **`VectorStore`** cosine index, randomized SVD / PCA with deterministic `svdFlip`, DBSCAN, `IsolationForest` outlier detection, `KMeans`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/) |
+| **`SwiftForecast`** | **`AutoARIMA`** parallel order search, ARIMA/SARIMA, Exponential Smoothing with 95% confidence intervals, ETS, GARCH, Kalman filtering with Moore-Penrose pseudo-inverse fallback, Prophet-style trend decomposition, Seasonal ESD anomaly detection. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftforecast/) |
+| **`SwiftOptimize`** | Concurrent cross-validation via `TaskGroup`, parallel **`AutoML`**, Forecast Errors Suite (RMSE, MAE, MAPE, R²), ROC-AUC / PR-AUC metrics, `GridSearchCV`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftoptimize/) |
+| **`SwiftExplain`** | Model interpretability: parallel `KernelSHAP` with zero-division guards and exact paths for $M \le 2$, exact polynomial **`TreeSHAP`**, **`LIMEExplainer`**, Partial Dependence Plots (PDP), Permutation Importance. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftexplain/) |
+| **`SwiftNLP`** | Linguistic engine: byte-level UTF-8 invertible **`BPETokenizer`**, lemmatization, Porter stemmer, POS tagger, **`VADERSentimentAnalyzer`**, `NaiveBayesClassifier`, dense embeddings. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/) |
+| **`SwiftLLM`** | **`LLMModel` protocol**, custom Metal MSL SIMD-group quantization kernels (`QuantizedGEMM.metal`), 4-bit/8-bit quantized linear layers (`QuantizedLinear`), Paged KV-Cache allocator, constrained JSON grammar decoder, streaming generation. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftllm/) |
+| **`SwiftVision`** | Zero-heap hardware-accelerated **`BoundingBoxSIMD`** NMS, YOLOv8n object detection, YOLOv8-Seg instance segmentation, CLIP projector, U-Net image segmentation. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftvision/) |
+| **`SwiftDatabase`** | Zero-copy SQL ingestion/export: SQLite with **1024-row column buffer ingestion** and auto-discovery, native PostgreSQL with **RFC 5802/7677 SCRAM-SHA-256** auth, MySQL connectors, and strongly-typed `AnySendableValue`. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftdatabase/) |
+| **`SwiftAgent`** | **`MultiAgentOrchestrator`** with `AgentMessageBus` (`AsyncStream`), **`ReActAgent`** loop with structured timeouts, step-by-step lineage audit trails (`LineageRecord`), and sandboxed execution DSL. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftagent/) |
+| **`SwiftVisualization`** | Native SwiftUI `Canvas` interactive charts (`SwiftSciChartView`), XSS-sanitized Plotly HTML export, and terminal ASCII/Braille graphs. | [📖 DocC](https://nodibell.github.io/SwiftSci/documentation/swiftvisualization/) |
 
 ---
 
-## 📊 Performance & Memory Comparison (SwiftSci 3.5.2 vs Python)
+## 📊 Performance & Memory Comparison (SwiftSci 3.6.0 vs Python)
 
 All benchmarks are evaluated on **Apple Silicon (M-series, macOS 15 arm64)** with release builds (`-c release`) comparing SwiftSci directly against Python standard baselines (**NumPy, Pandas, Scikit-Learn, Statsmodels, SHAP**) using strictly equivalent data shapes, random seeds, and hyperparameters.
 
 > 📖 **Complete Documentation:** See [PERFORMANCE.md](PERFORMANCE.md) for all 30+ benchmark scenarios and [ACCURACY.md](ACCURACY.md) for numerical accuracy verification.
 
-| Domain / Scenario | SwiftSci 3.5.2 (Swift) | Python Baseline | Speedup | Winner | RAM Footprint (Swift vs Py) | Notes |
+| Domain / Scenario | SwiftSci 3.6.0 (Swift) | Python Baseline | Speedup | Winner | RAM Footprint (Swift vs Py) | Notes |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **ARIMA(1,1,1) Fit** (50k pts) | **`2.463 ms`** | `212.621 ms` (*Statsmodels*) | ⚡ **86.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Exact MLE recursion |
 | **Holt-Winters Fit** (50k pts, s=12) | **`6.451 ms`** | `144.752 ms` (*Statsmodels*) | ⚡ **22.4×** | 🟢 **Swift** | **22 MB** vs 220 MB | Nelder-Mead optimization |
@@ -153,16 +153,20 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
 
 ---
 
-## 🚀 What's New in v3.5.2
+## 🚀 What's New in v3.6.0
 
-- **Standard Apache Parquet Engine (`SwiftDataFrame`):** 100% standard Parquet support (compatible with DuckDB, PyArrow, and Hugging Face). Decouples uncompressed Thrift `PageHeader`, unpacks `RLE_DICTIONARY` and `PLAIN_DICTIONARY` encodings with dynamic bit-widths, decodes repetition/definition levels, and aggregates nested list schemas (`labels.list.item`). Bit-exact verified on Hugging Face `go_emotions` (5,427 rows).
-- **Pure-Swift NumPy NPY & NPZ Tensor Reader (`SwiftDataFrame`):** Zero-dependency pure-Swift reader for `.npy` and `.npz` archive files (`NPYReader`, `NPZReader`) with ZIP64 extra field and Deflate decompression. Enables direct conversion into tabular DataFrames via `DataFrame(npy:)` and `DataFrame(npz:)`.
-- **SQLite Table Auto-Discovery (`SwiftDatabase`):** Added `DataFrame(sqlite: URL, table: String? = nil)`, automatically inspecting `sqlite_master` and reading tables into DataFrames without manual SQL boilerplate.
-- **Quantile Regression (Pinball Loss) in GBDT (`SwiftML`):** Added `GBDTLoss.quantile(alpha:)` to `GradientBoostedTreesRegressor`. Optimizes asymmetric check/pinball losses for arbitrary tabular quantiles, producing non-parametric confidence bands.
-- **CLI Dataset Conversion & Summary Extensions (`SwiftSciCLI`):** `swiftsci summary` and `swiftsci convert` extended to support `.parquet`, `.npy`, and `.npz` files alongside CSV and Feather.
-- **Comprehensive Benchmark & Accuracy Matrix:** Full apple-to-apple baselines against Scikit-Learn, Statsmodels, and SHAP with 95% confidence intervals and RAM RSS tracking.
+- **HNSW Approximate Nearest Neighbor Graph Index (`SwiftCluster`):** Sub-millisecond $O(\log N)$ approximate nearest neighbor search over 100k+ high-dimensional embeddings with vDSP cosine/L2 acceleration.
+- **256-Bin Histogram GBDT (`SwiftML`):** Tabular gradient boosting (`HistGradientBoostingClassifier` / `HistGradientBoostingRegressor`) with 256 discrete bins and $O(\text{numBins})$ split evaluations.
+- **Concurrent TaskGroup Cross-Validation & AutoML (`SwiftOptimize`):** Bounded concurrent fold evaluations utilizing all CPU cores with cooperative task cancellation.
+- **EarlyStopping Callbacks (`SwiftML`):** Training callbacks with `patience`, `minDelta`, and parameter restoration for MLP and GBDT.
+- **CSR / CSC Sparse Matrices (`SwiftPreprocessing`):** Compressed sparse matrix storage accelerated with Apple Accelerate Sparse BLAS.
+- **Parallel AutoARIMA Order Search (`SwiftForecast`):** Concurrent grid search for $(p,d,q) \times (P,D,Q)_s$ parameters.
+- **Metal MSL SIMD-Group Quantization Kernels (`SwiftLLM`):** Custom GPU kernels for 4-bit/8-bit dequantization and GEMM using `simdgroup_matrix`.
+- **Multi-Agent Orchestrator & Async Stream Bus (`SwiftAgent`):** `MultiAgentOrchestrator` and `AgentMessageBus` for multi-agent collaborative workflows.
+- **SQLite 1024-Row Buffer Ingestion & SCRAM-SHA-256 (`SwiftDatabase`):** High-throughput buffered SQLite reading and RFC 5802/7677 compliant SCRAM-SHA-256 PostgreSQL authentication.
+- **Enterprise Safety & Parity Hardening:** SVD Moore-Penrose pseudo-inverse in KalmanFilter, `svdFlip` PCA alignment, Welford two-pass variance, XSS-sanitization in Plotly export, Xoshiro256++ PRNG, byte-level BPE decoder, and 100% DocC API coverage with structured tags.
 
-> For previous version notes (v3.5.1, v3.5.0, etc.), see [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).
+> For previous version notes (v3.5.2, v3.5.1, etc.), see [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).
 
 ---
 

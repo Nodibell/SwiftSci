@@ -27,3 +27,5 @@ let X_pca = try await pca.fitTransform(X)
 ### Guides & Tutorials
 - <doc:DimensionalityReduction>
 - <doc:ClusteringAndOutliers>
+- <doc:VectorStoreAndRAG>
+- <doc:HNSWVectorSearch>

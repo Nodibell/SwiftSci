@@ -106,19 +106,23 @@ public actor ReActAgent {
     public private(set) var tools: [String: any AgentTool]
     /// Maximum allowed reasoning steps before termination.
     public let maxSteps: Int
+    /// Timeout threshold in seconds for each individual tool execution.
+    public let toolTimeoutSeconds: Double
 
     /// Initializes a ReAct Agent with available tools.
     ///
     /// - Parameters:
     ///   - tools: List of initial tools available to the agent.
     ///   - maxSteps: Maximum step limit to prevent infinite loops (default: 10).
-    public init(tools: [any AgentTool] = [], maxSteps: Int = 10) {
+    ///   - toolTimeoutSeconds: Maximum execution time allowed per tool call in seconds (default: 30.0).
+    public init(tools: [any AgentTool] = [], maxSteps: Int = 10, toolTimeoutSeconds: Double = 30.0) {
         var toolMap: [String: any AgentTool] = [:]
         for tool in tools {
             toolMap[tool.name] = tool
         }
         self.tools = toolMap
         self.maxSteps = maxSteps
+        self.toolTimeoutSeconds = toolTimeoutSeconds
     }
 
     /// Registers a new tool with the agent.
@@ -213,12 +217,40 @@ public actor ReActAgent {
             }
 
             let input = parsed.actionInput ?? ""
-            let obs = try await actTool.execute(input: input)
+            let obs: String
+            do {
+                obs = try await executeWithTimeout(tool: actTool, input: input, timeoutSeconds: toolTimeoutSeconds)
+            } catch {
+                obs = "Error: \(error.localizedDescription)"
+            }
             let step = AgentStep(thought: parsed.thought, action: actTool.name, actionInput: input, observation: obs)
             trace.append(step)
         }
 
         return (finalAnswer: trace.last?.observation ?? "Max steps reached without conclusive answer.", trace: trace)
+    }
+
+    /// Executes an agent tool with strict structured concurrency timeout protection.
+    private func executeWithTimeout(tool: any AgentTool, input: String, timeoutSeconds: Double) async throws -> String {
+        guard timeoutSeconds > 0 else {
+            return try await tool.execute(input: input)
+        }
+
+        return try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask {
+                try await tool.execute(input: input)
+            }
+
+            group.addTask {
+                let nanos = UInt64(timeoutSeconds * 1_000_000_000)
+                try await Task.sleep(nanoseconds: nanos)
+                throw AgentError.toolTimeout(tool: tool.name, seconds: timeoutSeconds)
+            }
+
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
     }
 
     /// Resolves tool by exact or fuzzy name matching (case/punctuation-insensitive).

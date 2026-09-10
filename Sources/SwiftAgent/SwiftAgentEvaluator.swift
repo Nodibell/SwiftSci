@@ -5,6 +5,7 @@ import SwiftDataFrame
 public enum AgentError: Error, LocalizedError, Equatable {
     case unparseable(String)
     case executionFailed(String)
+    case toolTimeout(tool: String, seconds: Double)
 
     /// The error description.
     public var errorDescription: String? {
@@ -13,6 +14,8 @@ public enum AgentError: Error, LocalizedError, Equatable {
             return "Failed to parse agent command: '\(cmd)'."
         case .executionFailed(let msg):
             return "Agent execution failed: \(msg)"
+        case .toolTimeout(let tool, let seconds):
+            return "Tool '\(tool)' execution timed out after \(seconds) seconds."
         }
     }
 }

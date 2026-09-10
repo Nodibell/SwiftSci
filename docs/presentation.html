@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 3.5.0 — Complete Keynote Ecosystem Presentation</title>
+  <title>SwiftSci 3.6.0 — Complete Keynote Ecosystem Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -61,12 +61,14 @@
     }
 
     /* Top Module Quick-Jump Pill Slider Bar */
-    .module-chips-bar {
+    .module-chips-bar,
+    .top-bar {
       position: fixed;
       top: 0.5rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
+      align-items: center;
       gap: 0.4rem;
       padding: 0.35rem 0.8rem;
       background: rgba(28, 28, 30, 0.88);
@@ -80,11 +82,15 @@
       scrollbar-width: none;
     }
 
-    .module-chips-bar::-webkit-scrollbar {
+    .module-chips-bar::-webkit-scrollbar,
+    .top-bar::-webkit-scrollbar {
       display: none;
     }
 
     .chip {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-sub);
@@ -237,7 +243,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 2.8rem 2.8rem 4.2rem 2.8rem;
+      padding: 5.2rem 2.8rem 4.2rem 2.8rem;
       opacity: 0;
       visibility: hidden;
       transform: scale(0.96) translateY(20px);
@@ -712,7 +718,7 @@
   <div class="ambient-glow" id="glow"></div>
 
   <!-- TOP MODULE QUICK JUMP CHIPS -->
-  <div class="top-bar">
+  <div class="module-chips-bar top-bar">
     <div class="chip" onclick="showSlide(1)"> SwiftSci</div>
     <div class="chip" onclick="showSlide(2)">Agenda (2)</div>
     <div class="chip" onclick="showSlide(3)">DataFrame (3-8)</div>
@@ -768,7 +774,7 @@
     </div>
 
     <div class="slide" data-slide="2">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 2 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 2 OF 67</div>
       <h1 class="title-large">Ecosystem Architecture Overview</h1>
       <p class="subtitle">Click any module to jump directly to its dedicated DocC feature slides.</p>
       <div class="toc-grid">
@@ -848,7 +854,7 @@
 
 
     <div class="slide" data-slide="3">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 3 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 3 OF 67</div>
       <h1 class="title-large">DataFrame & TypedColumn&lt;T&gt;</h1>
       <p class="subtitle">Strongly typed column vectors with zero-copy SIMD underlying storage buffers.</p>
       <div class="code-grid">
@@ -898,7 +904,7 @@ print(<span class="str">"Rows:"</span>, df.rowCount, <span class="str">"Cols:"</
     </div>
 
     <div class="slide" data-slide="4">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 4 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 4 OF 67</div>
       <h1 class="title-large">Expression Filtering (filter)</h1>
       <p class="subtitle">High-performance row evaluation closures with SIMD boolean masking.</p>
       <div class="code-grid">
@@ -947,7 +953,7 @@ print(<span class="str">"Filtered Row Count:"</span>, filteredDF.rowCount)</pre>
     </div>
 
     <div class="slide" data-slide="5">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 5 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 5 OF 67</div>
       <h1 class="title-large">Column Mutations (withColumn)</h1>
       <p class="subtitle">Dynamic column projections, renaming, and removal operations.</p>
       <div class="code-grid">
@@ -997,7 +1003,7 @@ print(<span class="str">"Filtered Row Count:"</span>, filteredDF.rowCount)</pre>
     </div>
 
     <div class="slide" data-slide="6">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 6 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 6 OF 67</div>
       <h1 class="title-large">GroupBy Aggregations</h1>
       <p class="subtitle">Grouped aggregations calculating sum, mean, min, max, count & standard deviation.</p>
       <div class="code-grid">
@@ -1046,7 +1052,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="7">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 7 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 7 OF 67</div>
       <h1 class="title-large">Relational Joins & Multi-Format I/O</h1>
       <p class="subtitle">Inner, Left, Outer joins & CSV, JSON, Parquet file import/export engine.</p>
       <div class="code-grid">
@@ -1091,7 +1097,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="8">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 8 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATAFRAME — SLIDE 8 OF 67</div>
       <h1 class="title-large">Pivoting & Null Value Cleaning</h1>
       <p class="subtitle">Reshaping data matrices via pivot and null cleaning with dropNulls / fillNulls.</p>
       <div class="code-grid">
@@ -1141,7 +1147,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="9">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 9 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 9 OF 67</div>
       <h1 class="title-large">Descriptive Statistics</h1>
       <p class="subtitle">SIMD accelerated mean, median, variance, std, skewness, kurtosis & quartiles.</p>
       <div class="code-grid">
@@ -1192,7 +1198,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="10">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 10 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 10 OF 67</div>
       <h1 class="title-large">Continuous Probability Distributions</h1>
       <p class="subtitle">PDF, CDF, and quantile evaluations for Normal, StudentT, ChiSquare & Uniform.</p>
       <div class="code-grid">
@@ -1233,7 +1239,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="11">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 11 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 11 OF 67</div>
       <h1 class="title-large">Discrete Probability Distributions</h1>
       <p class="subtitle">PMF and Cumulative Distribution for Binomial & Poisson distributions.</p>
       <div class="code-grid">
@@ -1282,7 +1288,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="12">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 12 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 12 OF 67</div>
       <h1 class="title-large">Hypothesis Testing & ANOVA</h1>
       <p class="subtitle">Paired t-test, Two-sample t-test, ANOVA One-Way & Chi-Square tests.</p>
       <div class="code-grid">
@@ -1328,7 +1334,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="13">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 13 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSTATS — SLIDE 13 OF 67</div>
       <h1 class="title-large">Correlation Analysis</h1>
       <p class="subtitle">Pearson linear correlation, Spearman rank correlation & covariance matrix.</p>
       <div class="code-grid">
@@ -1370,7 +1376,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="14">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 14 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 14 OF 67</div>
       <h1 class="title-large">Feature Scalers (Standard & MinMax)</h1>
       <p class="subtitle">StandardScaler Z-score, MinMaxScaler, RobustScaler & MaxAbsScaler.</p>
       <div class="code-grid">
@@ -1417,7 +1423,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="15">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 15 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 15 OF 67</div>
       <h1 class="title-large">Categorical Encoders</h1>
       <p class="subtitle">LabelEncoder, OneHotEncoder & OrdinalEncoder for categorical strings.</p>
       <div class="code-grid">
@@ -1469,7 +1475,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="16">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 16 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 16 OF 67</div>
       <h1 class="title-large">Missing Data Imputation</h1>
       <p class="subtitle">SimpleImputer (mean, median, most_frequent) & KNNImputer for missing values.</p>
       <div class="code-grid">
@@ -1518,7 +1524,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="17">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 17 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 17 OF 67</div>
       <h1 class="title-large">Feature Generation & Binarizer</h1>
       <p class="subtitle">PolynomialFeatures degree interaction terms & Binarizer thresholding.</p>
       <div class="code-grid">
@@ -1569,7 +1575,7 @@ print(groupedDF)</pre>
 
     <!-- SLIDE: SwiftPreprocessing - Pipeline & ColumnTransformer Engine -->
     <div class="slide" data-slide="18">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 18 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 18 OF 67</div>
       <h1 class="title-large">Pipeline & ColumnTransformer Engine</h1>
       <p class="subtitle">Scikit-Learn style composable ETL transformer pipelines and heterogenous column routing.</p>
       <div class="code-grid">
@@ -1619,7 +1625,7 @@ print(groupedDF)</pre>
 
     <!-- SLIDE: SwiftPreprocessing - Automated Feature Selection -->
     <div class="slide" data-slide="19">
-      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 19 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTPREPROCESSING — SLIDE 19 OF 67</div>
       <h1 class="title-large">Automated Feature Selection</h1>
       <p class="subtitle">SelectKBest, RecursiveFeatureElimination (RFE) & VarianceThreshold feature filtering.</p>
       <div class="code-grid">
@@ -1667,7 +1673,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="20">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 20 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 20 OF 67</div>
       <h1 class="title-large">MLX Linear, Ridge & Lasso Regression</h1>
       <p class="subtitle">Apple MLX GPU accelerated Ordinary Least Squares, L1 Lasso, and L2 Ridge regression.</p>
       <div class="code-grid">
@@ -1709,7 +1715,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="21">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 21 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 21 OF 67</div>
       <h1 class="title-large">Decision Tree Regressor & Classifier</h1>
       <p class="subtitle">Binary tree recursive partitioning based on Gini impurity and MSE criteria.</p>
       <div class="code-grid">
@@ -1753,7 +1759,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="22">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 22 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 22 OF 67</div>
       <h1 class="title-large">RandomForest Ensembles</h1>
       <p class="subtitle">Parallel actor-based Random Forest regressor & classifier ensemble training.</p>
       <div class="code-grid">
@@ -1803,7 +1809,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="23">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 23 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 23 OF 67</div>
       <h1 class="title-large">Gradient Boosting & Support Vector Machines</h1>
       <p class="subtitle">Gradient boosting loss optimization, LinearSVC and SVR models.</p>
       <div class="code-grid">
@@ -1852,7 +1858,7 @@ print(groupedDF)</pre>
 
     <!-- SLIDE: SwiftML - Multi-Layer Perceptron (MLP) Neural Networks -->
     <div class="slide" data-slide="24">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 24 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 24 OF 67</div>
       <h1 class="title-large">Multi-Layer Perceptron (MLP) Neural Networks</h1>
       <p class="subtitle">Parallel actor-based MLP classifier and regressor with backpropagation & Adam optimizer.</p>
       <div class="code-grid">
@@ -1911,7 +1917,7 @@ print(groupedDF)</pre>
 
     <!-- SLIDE: SwiftML - Probability Calibration -->
     <div class="slide" data-slide="25">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 25 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 25 OF 67</div>
       <h1 class="title-large">Probability Calibration</h1>
       <p class="subtitle">PlattScaling, IsotonicRegression & CalibratedClassifier for calibrated confidence scores.</p>
       <div class="code-grid">
@@ -1960,7 +1966,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="26">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 26 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 26 OF 67</div>
       <h1 class="title-large">Model Persistence (ModelSerializer)</h1>
       <p class="subtitle">JSON and binary serialization for saving and loading trained ML models.</p>
       <div class="code-grid">
@@ -2004,7 +2010,7 @@ print(groupedDF)</pre>
 
     <!-- SLIDE: SwiftML - CoreML & ONNX Model Exporters -->
     <div class="slide" data-slide="27">
-      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 27 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTML — SLIDE 27 OF 67</div>
       <h1 class="title-large">Binary CoreML & ONNX Model Exporters</h1>
       <p class="subtitle">Zero-dependency export of trained SwiftML models to Apple CoreML .mlmodel (Model.proto v4) and ONNX formats.
       </p>
@@ -2050,7 +2056,7 @@ print(groupedDF)</pre>
     </div>
 
     <div class="slide" data-slide="28">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 28 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 28 OF 67</div>
       <h1 class="title-large">Principal Component Analysis (PCA)</h1>
       <p class="subtitle">SVD-based orthogonal variance reduction for high-dimensional feature spaces.</p>
       <div class="code-grid">
@@ -2104,7 +2110,7 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
     </div>
 
     <div class="slide" data-slide="29">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 29 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 29 OF 67</div>
       <h1 class="title-large">TruncatedSVD & t-SNE Embeddings</h1>
       <p class="subtitle">Manifold learning and singular value decomposition for non-linear visualization.</p>
       <div class="code-grid">
@@ -2152,7 +2158,7 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
     </div>
 
     <div class="slide" data-slide="30">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 30 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 30 OF 67</div>
       <h1 class="title-large">K-Means & DBSCAN Clustering</h1>
       <p class="subtitle">Centroid-based K-Means++ and density-based noise filtering DBSCAN.</p>
       <div class="code-grid">
@@ -2195,7 +2201,7 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
     </div>
 
     <div class="slide" data-slide="31">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 31 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 31 OF 67</div>
       <h1 class="title-large">Hierarchical & Gaussian Mixture Models</h1>
       <p class="subtitle">Agglomerative dendrogram clustering and Expectation-Maximization GMMs.</p>
       <div class="code-grid">
@@ -2244,7 +2250,7 @@ print(<span class="str">"Explained Variance Ratio:"</span>, pca.explainedVarianc
 
     <!-- SLIDE: SwiftCluster - Anomaly & Outlier Detection -->
     <div class="slide" data-slide="32">
-      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 32 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTCLUSTER — SLIDE 32 OF 67</div>
       <h1 class="title-large">Anomaly & Outlier Detection</h1>
       <p class="subtitle">Unsupervised anomaly scoring via IsolationForest & LocalOutlierFactor (LOF).</p>
       <div class="code-grid">
@@ -2292,7 +2298,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
     </div>
 
     <div class="slide" data-slide="33">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 33 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 33 OF 67</div>
       <h1 class="title-large">Evaluation Metrics & ROC-AUC</h1>
       <p class="subtitle">Accuracy, Precision, Recall, F1 Score, MSE, RMSE, MAE, R2 & ROC-AUC.</p>
       <div class="code-grid">
@@ -2335,7 +2341,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
     </div>
 
     <div class="slide" data-slide="34">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 34 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 34 OF 67</div>
       <h1 class="title-large">KFold & StratifiedKFold Validation</h1>
       <p class="subtitle">Balanced fold splitting ensuring class distributions across validation folds.</p>
       <div class="code-grid">
@@ -2380,7 +2386,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
     </div>
 
     <div class="slide" data-slide="35">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 35 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 35 OF 67</div>
       <h1 class="title-large">Time Series Cross-Validation</h1>
       <p class="subtitle">Rolling window temporal split preserving strict chronological sequence.</p>
       <div class="code-grid">
@@ -2431,7 +2437,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
     </div>
 
     <div class="slide" data-slide="36">
-      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 36 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTOPTIMIZE — SLIDE 36 OF 67</div>
       <h1 class="title-large">GridSearchCV & Hyperparameter Tuning</h1>
       <p class="subtitle">Exhaustive grid search and randomized parameter optimization.</p>
       <div class="code-grid">
@@ -2480,7 +2486,7 @@ print(<span class="str">"LOF Scores:"</span>, lofScores.scores)</pre>
     </div>
 
     <div class="slide" data-slide="37">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 37 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 37 OF 67</div>
       <h1 class="title-large">ARIMA(p,d,q) Time Series Model</h1>
       <p class="subtitle">Actor-based autoregressive integrated moving average forecasting model.</p>
       <div class="code-grid">
@@ -2525,7 +2531,7 @@ print(<span class="str">"5-Step Forecast:"</span>, forecastResult.forecast)</pre
 
     <!-- SLIDE: SwiftForecast - Seasonal ARIMA (SARIMA) Model -->
     <div class="slide" data-slide="38">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 38 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 38 OF 67</div>
       <h1 class="title-large">Seasonal ARIMA (SARIMA) Model</h1>
       <p class="subtitle">Multi-seasonal ARIMA (p,d,q)x(P,D,Q)_s with seasonal differencing & AR/MA estimation.</p>
       <div class="code-grid">
@@ -2570,7 +2576,7 @@ print(<span class="str">"2-Year Seasonal Forecast:"</span>, forecastResult.forec
 
     <!-- SLIDE: SwiftForecast - GARCH Volatility Model -->
     <div class="slide" data-slide="39">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 39 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 39 OF 67</div>
       <h1 class="title-large">GARCH Volatility Model</h1>
       <p class="subtitle">GARCH(1,1) conditional variance modeling for financial risk and market volatility forecasting.
       </p>
@@ -2619,7 +2625,7 @@ print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast
 
     <!-- SLIDE: SwiftForecast - Kalman Filter State-Space Engine -->
     <div class="slide" data-slide="40">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 40 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 40 OF 67</div>
       <h1 class="title-large">Kalman Filter State-Space Engine</h1>
       <p class="subtitle">Dynamic state-space estimation, covariance update, and measurement noise filtering.</p>
       <div class="code-grid">
@@ -2668,7 +2674,7 @@ print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast
 
     <!-- SLIDE: SwiftForecast - Time Series Transformers -->
     <div class="slide" data-slide="41">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 41 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 41 OF 67</div>
       <h1 class="title-large">Time Series Transformers</h1>
       <p class="subtitle">LagTransformer, RollingWindow & ExpandingWindow feature engineering.</p>
       <div class="code-grid">
@@ -2719,7 +2725,7 @@ print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast
     </div>
 
     <div class="slide" data-slide="42">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 42 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 42 OF 67</div>
       <h1 class="title-large">Exponential Smoothing & Holt-Winters</h1>
       <p class="subtitle">Triple exponential smoothing capturing level, trend, and seasonal components.</p>
       <div class="code-grid">
@@ -2767,7 +2773,7 @@ print(<span class="str">"10-Day Volatility Forecast:"</span>, volatilityForecast
     </div>
 
     <div class="slide" data-slide="43">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 43 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 43 OF 67</div>
       <h1 class="title-large">Classical Time Series Decomposition</h1>
       <p class="subtitle">Extracting Trend, Seasonal, and Residual Noise components from time series.</p>
       <div class="code-grid">
@@ -2811,7 +2817,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="44">
-      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 44 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTFORECAST — SLIDE 44 OF 67</div>
       <h1 class="title-large">Spectral Analysis (FFT) & ACF / PACF</h1>
       <p class="subtitle">Accelerate vDSP Fast Fourier Transform spectral frequency analysis & autocorrelation.</p>
       <div class="code-grid">
@@ -2855,7 +2861,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="45">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 45 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 45 OF 67</div>
       <h1 class="title-large">Word & Sentence Tokenization</h1>
       <p class="subtitle">Apple Natural Language Tokenizer, Regex Tokenizer & Sentence Tokenizer.</p>
       <div class="code-grid">
@@ -2901,7 +2907,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="46">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 46 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 46 OF 67</div>
       <h1 class="title-large">Porter Stemmer & Lemma Tagger</h1>
       <p class="subtitle">Algorithmic suffix stripping via Porter Stemmer & Apple Lemma Tagger.</p>
       <div class="code-grid">
@@ -2952,7 +2958,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="47">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 47 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 47 OF 67</div>
       <h1 class="title-large">POS Tagging & Named Entity Recognition</h1>
       <p class="subtitle">Part-of-speech tagging and Apple Named Entity Recognizer for Person/Org/Loc.</p>
       <div class="code-grid">
@@ -2997,7 +3003,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="48">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 48 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 48 OF 67</div>
       <h1 class="title-large">VADER Sentiment Analysis Engine</h1>
       <p class="subtitle">Rule-based sentiment polarity scoring returning Positive, Negative, Neutral & Compound.</p>
       <div class="code-grid">
@@ -3043,7 +3049,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="49">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 49 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 49 OF 67</div>
       <h1 class="title-large">Text Vectorization (TF-IDF & Hashing)</h1>
       <p class="subtitle">CountVectorizer, TfidfVectorizer & HashingVectorizer sparse matrix generation.</p>
       <div class="code-grid">
@@ -3091,7 +3097,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="50">
-      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 50 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTNLP — SLIDE 50 OF 67</div>
       <h1 class="title-large">Multinomial & Complement Naive Bayes</h1>
       <p class="subtitle">Probabilistic text classification for document topic modeling & spam filtering.</p>
       <div class="code-grid">
@@ -3139,7 +3145,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="51">
-      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 51 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 51 OF 67</div>
       <h1 class="title-large">KernelSHAP & TreeSHAP Attribution</h1>
       <p class="subtitle">Shapley Additive exPlanations for model interpretability and feature attribution.</p>
       <div class="code-grid">
@@ -3185,7 +3191,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="52">
-      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 52 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTEXPLAIN — SLIDE 52 OF 67</div>
       <h1 class="title-large">Permutation Importance & Partial Dependence</h1>
       <p class="subtitle">Feature shuffle score drop evaluation & partial dependence marginal effect plots.</p>
       <div class="code-grid">
@@ -3231,7 +3237,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="53">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 53 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 53 OF 67</div>
       <h1 class="title-large">LLM Context Window Budgeting</h1>
       <p class="subtitle">Prompt token counting, sliding buffer & token truncation.</p>
       <div class="code-grid">
@@ -3275,7 +3281,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
     </div>
 
     <div class="slide" data-slide="54">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 54 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 54 OF 67</div>
       <h1 class="title-large">BPE Tokenizer & Prompt Templates</h1>
       <p class="subtitle">Byte-Pair Encoding tokenizer & PromptTemplate variable substitution.</p>
       <div class="code-grid">
@@ -3319,7 +3325,7 @@ print(<span class="str">"Residuals:"</span>, decomp.residuals)</pre>
 
     <!-- SLIDE: SwiftLLM - GGUF & SafeTensors Model File Parsers -->
     <div class="slide" data-slide="55">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 55 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 55 OF 67</div>
       <h1 class="title-large">GGUF & SafeTensors Model File Parsers</h1>
       <p class="subtitle">Binary header parsing and memory-mapped tensor loading for quantized LLM weights.</p>
       <div class="code-grid">
@@ -3370,7 +3376,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
 
     <!-- SLIDE: SwiftLLM - Sampler & Autoregressive Decoding -->
     <div class="slide" data-slide="56">
-      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 56 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTLLM — SLIDE 56 OF 67</div>
       <h1 class="title-large">Sampler & Autoregressive Decoding</h1>
       <p class="subtitle">Temperature scaling, Top-K, Top-P Nucleus Sampling & Repetition Penalty generation.</p>
       <div class="code-grid">
@@ -3420,7 +3426,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
     </div>
 
     <div class="slide" data-slide="57">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 57 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 57 OF 67</div>
       <h1 class="title-large">Plotly Correlation Heatmap Exporter</h1>
       <p class="subtitle">Export standalone HTML 2D correlation matrix heatmaps.</p>
       <div class="code-grid">
@@ -3470,7 +3476,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
     </div>
 
     <div class="slide" data-slide="58">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 58 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISUALIZATION — SLIDE 58 OF 67</div>
       <h1 class="title-large">Plotly Interactive Chart Exporter</h1>
       <p class="subtitle">Scatter, Line, Bar, BoxPlot, Histogram & ROC Curve Plotly HTML rendering.</p>
       <div class="code-grid">
@@ -3516,7 +3522,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
     </div>
 
     <div class="slide" data-slide="59">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 59 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 59 OF 67</div>
       <h1 class="title-large">Image Datasets & U-Net Spatial Segmentation</h1>
       <p class="subtitle">Multi-channel image tensor datasets, U-Net probability masks & VisionMetrics.</p>
       <div class="code-grid">
@@ -3566,7 +3572,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
     </div>
 
     <div class="slide" data-slide="60">
-      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 60 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTVISION — SLIDE 60 OF 67</div>
       <h1 class="title-large">YOLOv8 Object Detector & NMS Bounding Boxes</h1>
       <p class="subtitle">Multi-scale object detection, Non-Maximum Suppression (NMS) & CNN Global Average Pooling.</p>
       <div class="code-grid">
@@ -3615,7 +3621,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
     </div>
 
     <div class="slide" data-slide="61">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 61 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 61 OF 67</div>
       <h1 class="title-large">Embedded SQLite Engine</h1>
       <p class="subtitle">In-memory SQLite execution returning type-safe SQLQueryResult.</p>
       <div class="code-grid">
@@ -3659,7 +3665,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
     </div>
 
     <div class="slide" data-slide="62">
-      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 62 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTDATABASE — SLIDE 62 OF 67</div>
       <h1 class="title-large">DataFrame SQLite Bridge</h1>
       <p class="subtitle">Bi-directional export and import between DataFrames and SQLite relational tables.</p>
       <div class="code-grid">
@@ -3704,7 +3710,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
     </div>
 
     <div class="slide" data-slide="63">
-      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 63 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 63 OF 67</div>
       <h1 class="title-large">Autonomous Query Evaluator Agent</h1>
       <p class="subtitle">Natural language query evaluation agent executing table transformations.</p>
       <div class="code-grid">
@@ -3750,7 +3756,7 @@ print(<span class="str">"Tensor Count:"</span>, ggufMetaData.tensors.count)
     </div>
 
     <div class="slide" data-slide="64">
-      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 64 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTAGENT — SLIDE 64 OF 67</div>
       <h1 class="title-large">RAG Context Summary Generator</h1>
       <p class="subtitle">Retrieval Augmented Generation context profile summary generator.</p>
       <div class="code-grid">

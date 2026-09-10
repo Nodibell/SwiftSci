@@ -10,6 +10,12 @@ public actor HardwareRouter {
     private init() {}
 
     /// Resolves `.auto` into a concrete device using plan-0.8 heuristics.
+    /// - Parameters:
+    ///   - for: <#description#>
+    ///   - sampleCount: <#description#>
+    ///   - featureCount: <#description#>
+    ///   - requestedDevice: <#description#>
+    /// - Returns: <#description#>
     public func resolveDevice(
         for algorithm: String,
         sampleCount: Int,

@@ -83,6 +83,10 @@ public struct WordNet: Sendable {
     }
     
     /// Returns all synsets matching the given lemma (word).
+    /// - Parameters:
+    ///   - for: <#description#>
+    ///   - pos: <#description#>
+    /// - Returns: <#description#>
     public func synsets(for lemma: String, pos: POS? = nil) -> [Synset] {
         let key = lemma.lowercased()
         guard let ids = lemmaIndex[key] else { return [] }
@@ -94,16 +98,26 @@ public struct WordNet: Sendable {
     }
     
     /// Returns direct hypernyms (parent concepts) for a synset.
+    /// - Parameters:
+    ///   - of: <#description#>
+    /// - Returns: <#description#>
     public func hypernyms(of synset: Synset) -> [Synset] {
         synset.hypernymIDs.compactMap { synsetMap[$0] }
     }
     
     /// Returns direct hyponyms (child concepts) for a synset.
+    /// - Parameters:
+    ///   - of: <#description#>
+    /// - Returns: <#description#>
     public func hyponyms(of synset: Synset) -> [Synset] {
         synset.hyponymIDs.compactMap { synsetMap[$0] }
     }
     
     /// Computes shortest path distance between two synsets in the hypernym hierarchy.
+    /// - Parameters:
+    ///   - s1: <#description#>
+    ///   - s2: <#description#>
+    /// - Returns: <#description#>
     public func pathDistance(_ s1: Synset, _ s2: Synset) -> Int? {
         if s1 == s2 { return 0 }
         
@@ -148,12 +162,20 @@ public struct WordNet: Sendable {
     }
     
     /// Computes Path Similarity (1 / (path_distance + 1)) between two synsets in [0, 1].
+    /// - Parameters:
+    ///   - s1: <#description#>
+    ///   - s2: <#description#>
+    /// - Returns: <#description#>
     public func pathSimilarity(_ s1: Synset, _ s2: Synset) -> Double {
         guard let dist = pathDistance(s1, s2) else { return 0.0 }
         return 1.0 / Double(dist + 1)
     }
     
     /// Computes Wu-Palmer Similarity (2 * depth(LCS) / (depth(s1) + depth(s2))) between two synsets.
+    /// - Parameters:
+    ///   - s1: <#description#>
+    ///   - s2: <#description#>
+    /// - Returns: <#description#>
     public func wupSimilarity(_ s1: Synset, _ s2: Synset) -> Double {
         let ancestors1 = ancestorDepths(s1)
         let ancestors2 = ancestorDepths(s2)

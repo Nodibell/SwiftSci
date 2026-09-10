@@ -105,6 +105,10 @@ public actor RandomForestClassifier: ClassifierEstimator {
     }
 
     /// Fit classifier without progress callback.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, onProgress: nil)
     }
@@ -118,6 +122,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
     ///
     /// ## Concurrency
     /// Uses `withThrowingTaskGroup` to construct decision trees in parallel across all available CPU cores.
+    /// - Returns: <#description#>
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -366,6 +371,10 @@ public actor RandomForestRegressor: RegressorEstimator {
     }
 
     /// Fits the regressor model.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, onProgress: nil)
     }
@@ -379,6 +388,7 @@ public actor RandomForestRegressor: RegressorEstimator {
     ///
     /// ## Concurrency
     /// Uses `withThrowingTaskGroup` to construct decision trees in parallel across all available CPU cores.
+    /// - Returns: <#description#>
     public func fit(
         features: [[Double]],
         targets: [Double],

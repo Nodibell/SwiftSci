@@ -19,6 +19,13 @@ extension DataFrame {
     }
 
     /// Fits a KMeans clusterer on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - k: <#description#>
+    ///   - maxIterations: <#description#>
+    ///   - tolerance: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitKMeans(
         columns names: [String],
         k: Int,
@@ -32,6 +39,11 @@ extension DataFrame {
     }
     
     /// Fits a PCA reducer on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - nComponents: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitPCA(
         columns names: [String],
         nComponents: Int
@@ -43,6 +55,12 @@ extension DataFrame {
     }
     
     /// Fits a DBSCAN clusterer on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - eps: <#description#>
+    ///   - minSamples: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitDBSCAN(
         columns names: [String],
         eps: Double = 0.5,
@@ -55,12 +73,22 @@ extension DataFrame {
     }
     
     /// Computes the Silhouette Score for cluster assignments on specified DataFrame columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - labels: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func computeSilhouetteScore(columns names: [String], labels: [Int]) throws -> Double {
         let features = try extractFeatures(columns: names)
         return try SilhouetteScore.compute(features: features, labels: labels)
     }
     
     /// Computes Calinski-Harabasz and Davies-Bouldin index metrics for cluster assignments.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - labels: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func computeClusteringMetrics(columns names: [String], labels: [Int]) throws -> (calinskiHarabasz: Double, daviesBouldin: Double) {
         let features = try extractFeatures(columns: names)
         let ch = ClusteringMetrics.calinskiHarabaszIndex(features: features, labels: labels)

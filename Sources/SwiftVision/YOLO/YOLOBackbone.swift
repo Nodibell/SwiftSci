@@ -219,6 +219,9 @@ public class YOLOBackbone: Module {
     }
 
     /// Loads weights for all CSPDarknet backbone stages from the given loader.
+    /// - Parameters:
+    ///   - from: <#description#>
+    ///   - prefix: <#description#>
     public func loadWeights(from loader: YOLOWeightLoader, prefix: String = "model") {
         var params: [String: MLXArray] = [:]
         for i in 0...9 {

@@ -20,6 +20,8 @@ extension Int32: SupportedType {
     public static var columnDType: ColumnDType { .int32 }
     /// Parse.
     /// - Returns: A `Int32?` result.
+    /// - Parameters:
+    ///   - from: <#description#>
     public static func parse(from string: String) -> Int32? { Int32(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -30,6 +32,8 @@ extension Int: SupportedType {
     public static var columnDType: ColumnDType { .int64 }
     /// Parse.
     /// - Returns: A `Int?` result.
+    /// - Parameters:
+    ///   - from: <#description#>
     public static func parse(from string: String) -> Int? { Int(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -40,6 +44,8 @@ extension Int64: SupportedType {
     public static var columnDType: ColumnDType { .int64 }
     /// Parse.
     /// - Returns: A `Int64?` result.
+    /// - Parameters:
+    ///   - from: <#description#>
     public static func parse(from string: String) -> Int64? { Int64(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -50,6 +56,8 @@ extension Float: SupportedType {
     public static var columnDType: ColumnDType { .float32 }
     /// Parse.
     /// - Returns: A `Float?` result.
+    /// - Parameters:
+    ///   - from: <#description#>
     public static func parse(from string: String) -> Float? { Float(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -60,6 +68,8 @@ extension Double: SupportedType {
     public static var columnDType: ColumnDType { .float64 }
     /// Parse.
     /// - Returns: A `Double?` result.
+    /// - Parameters:
+    ///   - from: <#description#>
     public static func parse(from string: String) -> Double? { Double(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { self }
@@ -70,6 +80,8 @@ extension Bool: SupportedType {
     public static var columnDType: ColumnDType { .boolean }
     /// Parse.
     /// - Returns: A `Bool?` result.
+    /// - Parameters:
+    ///   - from: <#description#>
     public static func parse(from string: String) -> Bool? {
         switch string.trimmingCharacters(in: .whitespaces).lowercased() {
         case "true", "yes", "1": return true
@@ -86,6 +98,8 @@ extension String: SupportedType {
     public static var columnDType: ColumnDType { .utf8 }
     /// Parse.
     /// - Returns: A `String?` result.
+    /// - Parameters:
+    ///   - from: <#description#>
     public static func parse(from string: String) -> String? { string }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -96,6 +110,8 @@ extension Date: SupportedType {
     public static var columnDType: ColumnDType { .date32 }
     /// Parse.
     /// - Returns: A `Date?` result.
+    /// - Parameters:
+    ///   - from: <#description#>
     public static func parse(from string: String) -> Date? {
         let s = string.trimmingCharacters(in: .whitespaces)
         // ISO 8601 date only: YYYY-MM-DD

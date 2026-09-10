@@ -45,6 +45,8 @@ public protocol AnyColumn: Sendable {
 extension AnyColumn {
     /// Filtered indices.
     /// - Returns: A `[Int]?` result.
+    /// - Parameters:
+    ///   - matching: <#description#>
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? { nil }
 }
 

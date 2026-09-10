@@ -21,6 +21,7 @@ public struct NPYArray: Sendable {
     }
 
     /// Converts the binary payload into an array of `Double` values.
+    /// - Returns: <#description#>
     public func toDoubles() -> [Double] {
         let total = elementCount
         guard total > 0, !data.isEmpty else { return [] }
@@ -65,6 +66,7 @@ public struct NPYArray: Sendable {
     }
 
     /// Converts the binary payload into an array of `Int64` values.
+    /// - Returns: <#description#>
     public func toInt64s() -> [Int64] {
         let total = elementCount
         guard total > 0, !data.isEmpty else { return [] }
@@ -113,6 +115,10 @@ public struct NPYArray: Sendable {
     /// - 1D array `(N,)`: yields a single column `"value"` of length `N`.
     /// - 2D array `(N, M)`: yields `M` columns (`"col_0" ... "col_M-1"`) with `N` rows each.
     /// - 3D+ array `(N, D1, D2, ...)`: flattens inner dimensions to `(N, D1*D2)` columns (`"pixel_0" ...`).
+    /// - Parameters:
+    ///   - columnPrefix: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func toDataFrame(columnPrefix: String = "col") throws -> DataFrame {
         guard !shape.isEmpty else { return DataFrame.empty }
 
@@ -148,6 +154,10 @@ public struct NPYArray: Sendable {
 public enum NPYReader: Sendable {
 
     /// Reads a `.npy` file from a local URL.
+    /// - Parameters:
+    ///   - url: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func read(url: URL) throws -> NPYArray {
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw SwiftMLError.fileNotFound(url)
@@ -157,6 +167,10 @@ public enum NPYReader: Sendable {
     }
 
     /// Reads an NPY tensor array from raw data bytes.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func read(data: Data) throws -> NPYArray {
         guard data.count >= 10 else {
             throw SwiftMLError.parseError(line: 0, description: "NPY file too small (< 10 bytes)")

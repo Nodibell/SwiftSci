@@ -43,6 +43,9 @@ public struct POSTagger: Sendable {
     public init() {}
 
     /// Tags part-of-speech for each word in the input text.
+    /// - Parameters:
+    ///   - text: <#description#>
+    /// - Returns: <#description#>
     public func tag(text: String) -> [TaggedToken] {
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return []

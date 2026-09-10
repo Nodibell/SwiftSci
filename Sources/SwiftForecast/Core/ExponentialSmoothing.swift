@@ -35,6 +35,9 @@ public actor ExponentialSmoothing {
     }
     
     /// Fits the exponential smoothing model to the series.
+    /// - Parameters:
+    ///   - series: <#description#>
+    /// - Throws: <#error description#>
     public func fit(series: [Double]) async throws {
         guard !series.isEmpty else {
             throw ForecastError.emptyTimeSeries
@@ -68,6 +71,10 @@ public actor ExponentialSmoothing {
     }
     
     /// Forecast horizon steps ahead.
+    /// - Parameters:
+    ///   - horizon: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func forecast(horizon: Int) throws -> ForecastResult {
         guard isFitted else {
             throw ForecastError.notFitted

@@ -22,6 +22,7 @@ public struct SparseVector: Sendable, Codable, Equatable {
     }
 
     /// Converts the sparse vector back to a dense `[Double]` array.
+    /// - Returns: <#description#>
     public func toDense() -> [Double] {
         var dense = [Double](repeating: 0.0, count: dimension)
         for (idx, val) in zip(indices, values) {
@@ -85,6 +86,7 @@ public actor TFIDFVectorizer {
     
     /// Fits the vectorizer on a corpus of documents, building the vocabulary and computing IDFs.
     /// - Parameter documents: List of string documents.
+    /// - Throws: <#error description#>
     public func fit(_ documents: [String]) throws {
         guard !documents.isEmpty else {
             throw NLPError.emptyInput
@@ -146,6 +148,7 @@ public actor TFIDFVectorizer {
     /// Transforms the documents into a dense TF-IDF matrix.
     /// - Parameter documents: List of string documents.
     /// - Returns: A 2D array of shape [documents, vocabSize].
+    /// - Throws: <#error description#>
     public func transform(_ documents: [String]) throws -> [[Double]] {
         guard !vocabulary.isEmpty, !idfs.isEmpty else {
             throw NLPError.fittingRequired
@@ -182,6 +185,7 @@ public actor TFIDFVectorizer {
     /// Transforms documents into memory-efficient `SparseVector` representations.
     /// - Parameter documents: List of string documents.
     /// - Returns: An array of `SparseVector` objects.
+    /// - Throws: <#error description#>
     public func transformSparse(_ documents: [String]) throws -> [SparseVector] {
         guard !vocabulary.isEmpty, !idfs.isEmpty else {
             throw NLPError.fittingRequired
@@ -228,33 +232,53 @@ public actor TFIDFVectorizer {
     /// Fits the model and transforms the documents into a dense matrix.
     /// - Parameter documents: List of string documents.
     /// - Returns: A 2D array of shape [documents, vocabSize].
+    /// - Throws: <#error description#>
     public func fitTransform(_ documents: [String]) throws -> [[Double]] {
         try fit(documents)
         return try transform(documents)
     }
 
     /// Fits the model and transforms documents into sparse vectors.
+    /// - Parameters:
+    ///   - documents: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitTransformSparse(_ documents: [String]) throws -> [SparseVector] {
         try fit(documents)
         return try transformSparse(documents)
     }
 
     /// Fits the vectorizer on a corpus of documents (labeled argument overload).
+    /// - Parameters:
+    ///   - documents: <#description#>
+    /// - Throws: <#error description#>
     public func fit(documents: [String]) throws {
         try fit(documents)
     }
 
     /// Transforms documents into a TF-IDF matrix (labeled argument overload).
+    /// - Parameters:
+    ///   - documents: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(documents: [String]) throws -> [[Double]] {
         try transform(documents)
     }
 
     /// Transforms documents into sparse vectors (labeled argument overload).
+    /// - Parameters:
+    ///   - documents: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transformSparse(documents: [String]) throws -> [SparseVector] {
         try transformSparse(documents)
     }
 
     /// Fits the model and transforms documents (labeled argument overload).
+    /// - Parameters:
+    ///   - documents: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitTransform(documents: [String]) throws -> [[Double]] {
         try fitTransform(documents)
     }

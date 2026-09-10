@@ -15,6 +15,10 @@ public protocol PreprocessingTransformer: Sendable {
 
 extension PreprocessingTransformer {
     /// Default implementation of fitTransform.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
         try fit(data)
         return try transform(data)

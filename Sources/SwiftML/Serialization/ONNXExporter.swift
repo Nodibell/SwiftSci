@@ -25,6 +25,14 @@ public enum ONNXExporter {
     }
 
     /// Serializes linear regression model into ONNX graph JSON bundle.
+    /// - Parameters:
+    ///   - name: <#description#>
+    ///   - inputs: <#description#>
+    ///   - output: <#description#>
+    ///   - weights: <#description#>
+    ///   - bias: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func exportLinearONNX(
         name: String = "SwiftSciLinearONNX",
         inputs: [String],
@@ -48,6 +56,13 @@ public enum ONNXExporter {
     }
 
     /// Serializes linear regression model into binary ONNX Protobuf payload (.onnx format).
+    /// - Parameters:
+    ///   - name: <#description#>
+    ///   - inputs: <#description#>
+    ///   - output: <#description#>
+    ///   - weights: <#description#>
+    ///   - bias: <#description#>
+    /// - Returns: <#description#>
     public static func exportBinaryONNX(
         name: String = "SwiftSciLinearONNX",
         inputs: [String],

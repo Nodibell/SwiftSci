@@ -17,6 +17,9 @@ public struct ComplementNaiveBayes: Sendable, Codable {
     }
 
     /// Fits Complement Naive Bayes on count matrix X and class label array y.
+    /// - Parameters:
+    ///   - X: <#description#>
+    ///   - y: <#description#>
     public mutating func fit(X: [[Double]], y: [String]) {
         guard !X.isEmpty, X.count == y.count else { return }
 
@@ -76,6 +79,9 @@ public struct ComplementNaiveBayes: Sendable, Codable {
     }
 
     /// Predicts the class label (minimizing complement weight).
+    /// - Parameters:
+    ///   - x: <#description#>
+    /// - Returns: <#description#>
     public func predict(x: [Double]) -> String? {
         guard !classes.isEmpty else { return nil }
 

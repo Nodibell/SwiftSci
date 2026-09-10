@@ -75,6 +75,9 @@ public class YOLONeck: Module {
     }
 
     /// Loads weights for the PANet feature pyramid from the given loader.
+    /// - Parameters:
+    ///   - from: <#description#>
+    ///   - prefix: <#description#>
     public func loadWeights(from loader: YOLOWeightLoader, prefix: String = "model") {
         var params: [String: MLXArray] = [:]
 

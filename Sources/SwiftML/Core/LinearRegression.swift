@@ -44,11 +44,21 @@ public actor LinearRegression: RegressorEstimator {
     }
     
     /// Fits the regressor model on the provided features and targets (RegressorEstimator protocol).
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, learningRate: 0.01, epochs: 1000)
     }
     
     /// Fits the linear regression model to the features X and target values y (Sendable interface).
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - learningRate: <#description#>
+    ///   - epochs: <#description#>
+    /// - Throws: <#error description#>
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -157,6 +167,12 @@ public actor LinearRegression: RegressorEstimator {
     }
 
     /// Explicit Gradient Descent CPU backend.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - learningRate: <#description#>
+    ///   - epochs: <#description#>
+    /// - Throws: <#error description#>
     public func fitCPUGradientDescent(features: [[Double]], targets: [Double], learningRate lr: Double = 0.01, epochs: Int = 1000) throws {
         let numSamples = features.count
         let numFeatures = features[0].count
@@ -267,6 +283,10 @@ public actor LinearRegression: RegressorEstimator {
     }
     
     /// Predicts target values for the given features matrix (Sendable interface).
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]]) throws -> [Double] {
         guard !features.isEmpty else {
             return []
@@ -293,6 +313,10 @@ public actor LinearRegression: RegressorEstimator {
     }
     
     /// Predicts targets for the given feature matrix X (MLX interface).
+    /// - Parameters:
+    ///   - X: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(X: MLXArray) throws -> MLXArray {
         guard let weights = self.weights, let bias = self.bias else {
             throw SwiftMLError.modelNotFitted
@@ -313,12 +337,14 @@ public actor LinearRegression: RegressorEstimator {
     }
     
     /// Returns the learned weights as a standard Sendable Double array.
+    /// - Returns: <#description#>
     public func getWeights() -> [Double]? {
         if let cpuWeights { return cpuWeights }
         return weights?.asArray(Float.self).map { Double($0) }
     }
     
     /// Returns the learned bias as a standard Sendable Double array.
+    /// - Returns: <#description#>
     public func getBias() -> Double? {
         if let cpuBias { return cpuBias }
         if let biasValue = bias {

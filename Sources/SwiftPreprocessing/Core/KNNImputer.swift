@@ -26,6 +26,9 @@ public struct KNNImputer: PreprocessingTransformer, Sendable {
     }
     
     /// Fits KNNImputer with feature matrix (PreprocessingTransformer protocol).
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(_ data: [[Double]]) throws {
 
         guard !data.isEmpty, !data[0].isEmpty else {
@@ -36,6 +39,10 @@ public struct KNNImputer: PreprocessingTransformer, Sendable {
     }
     
     /// Imputes NaN values in feature matrix using weighted k-nearest neighbors (PreprocessingTransformer protocol).
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard isFitted else { throw PreprocessingError.fittingRequired }
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }

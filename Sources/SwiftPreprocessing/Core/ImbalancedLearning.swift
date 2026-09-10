@@ -33,6 +33,11 @@ public final class SMOTE: Sendable {
     }
     
     /// Resamples minority class instances by generating synthetic samples along line segments connecting k-nearest neighbors.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitResample(features: [[Double]], targets: [Double]) throws -> ResampledDataset {
         guard !features.isEmpty, features.count == targets.count else {
             throw PreprocessingError.emptyInput

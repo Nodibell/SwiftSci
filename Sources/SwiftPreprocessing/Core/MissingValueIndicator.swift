@@ -23,6 +23,9 @@ public struct MissingValueIndicator: PreprocessingTransformer, Sendable {
     }
     
     /// Fits the indicator by identifying which columns contain missing values (if features is .missingOnly).
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(_ data: [[Double]]) throws {
 
         guard !data.isEmpty, !data[0].isEmpty else {
@@ -55,6 +58,10 @@ public struct MissingValueIndicator: PreprocessingTransformer, Sendable {
     }
     
     /// Transforms the dataset into a binary indicator matrix.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard let indices = self.indicatorIndices, let expectedCols = self.fitFeatureCount else {
             throw PreprocessingError.fitNotCalled

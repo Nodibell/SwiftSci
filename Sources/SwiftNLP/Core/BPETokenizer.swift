@@ -32,6 +32,9 @@ public struct BPETokenizer: Tokenizer, Sendable {
     }
     
     /// Tokenizes the given text into subword tokens.
+    /// - Parameters:
+    ///   - text: <#description#>
+    /// - Returns: <#description#>
     public func tokenize(text: String) -> [String] {
         let words = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
         var result = [String]()
@@ -45,6 +48,9 @@ public struct BPETokenizer: Tokenizer, Sendable {
     }
     
     /// Encodes the text into a sequence of token IDs.
+    /// - Parameters:
+    ///   - text: <#description#>
+    /// - Returns: <#description#>
     public func encode(text: String) -> [Int] {
         let tokens = tokenize(text: text)
         return tokens.map { vocab[$0] ?? unkTokenId }

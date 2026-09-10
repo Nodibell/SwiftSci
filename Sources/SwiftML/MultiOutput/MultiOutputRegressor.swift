@@ -15,6 +15,7 @@ public actor MultiOutputRegressor {
     /// - Parameters:
     ///   - features: Feature matrix `[N x M]`.
     ///   - targets: Multi-target matrix `[N x K]`.
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [[Double]]) async throws {
         guard !features.isEmpty, !targets.isEmpty, features.count == targets.count else {
             throw SwiftMLError.invalidInput("Features and multi-targets count mismatch or empty.")
@@ -61,6 +62,7 @@ public actor MultiOutputRegressor {
     /// Predicts multi-target values for the given feature matrix.
     /// - Parameter features: Feature matrix `[N x M]`.
     /// - Returns: Predicted target matrix `[N x K]`.
+    /// - Throws: <#error description#>
     public func predict(features: [[Double]]) async throws -> [[Double]] {
         guard !estimators.isEmpty else {
             throw SwiftMLError.modelNotFitted

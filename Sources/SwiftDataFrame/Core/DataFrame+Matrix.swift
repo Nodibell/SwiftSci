@@ -3,6 +3,10 @@ import Foundation
 extension DataFrame {
     /// Extracts named columns as a row-major [[Double]] matrix.
     /// Throws `DataFrameError.castFailed` for any column that isn't Double, Int64, or Bool.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func toFeatureMatrix(_ columns: [String]) throws -> [[Double]] {
         for colName in columns {
             if !columnNames.contains(colName) {
@@ -38,12 +42,20 @@ extension DataFrame {
     }
 
     /// Extracts a single named column as a [Double] target vector.
+    /// - Parameters:
+    ///   - column: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func toTargetVector(_ column: String) throws -> [Double] {
         let matrix = try toFeatureMatrix([column])
         return matrix.map { $0[0] }
     }
 
     /// Extracts named columns as a contiguous 1D row-major flat [Double] buffer.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func toFlatFeatureMatrix(_ columns: [String]) throws -> (flat: [Double], rows: Int, cols: Int) {
         for colName in columns {
             if !columnNames.contains(colName) {

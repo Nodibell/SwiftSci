@@ -6,6 +6,11 @@ import SwiftDataFrame
 extension Stats {
 
     /// Arithmetic mean using vDSP.mean.
+    /// - Parameters:
+    ///   - values: <#description#>
+    ///   - checkNaN: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func mean(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         let result = vDSP.mean(values)
@@ -14,6 +19,10 @@ extension Stats {
     }
 
     /// Float overload.
+    /// - Parameters:
+    ///   - values: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func mean(_ values: [Float]) throws -> Float {
         guard !values.isEmpty else { throw StatsError.emptyInput }
         return vDSP.mean(values)
@@ -91,16 +100,33 @@ extension Stats {
     }
 
     /// Standard deviation for Double values.
+    /// - Parameters:
+    ///   - values: <#description#>
+    ///   - ddof: <#description#>
+    ///   - checkNaN: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func standardDeviation(_ values: [Double], ddof: Int = 1, checkNaN: Bool = true) throws -> Double {
         try variance(values, ddof: ddof, checkNaN: checkNaN).squareRoot()
     }
 
     /// Standard deviation for Float values.
+    /// - Parameters:
+    ///   - values: <#description#>
+    ///   - ddof: <#description#>
+    ///   - checkNaN: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func standardDeviation(_ values: [Float], ddof: Int = 1, checkNaN: Bool = true) throws -> Float {
         try variance(values, ddof: ddof, checkNaN: checkNaN).squareRoot()
     }
 
     /// Median via vDSP.sort.
+    /// - Parameters:
+    ///   - values: <#description#>
+    ///   - checkNaN: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func median(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         if checkNaN { try requireNoNaN(values) }
@@ -115,6 +141,10 @@ extension Stats {
     }
 
     /// Float overload for median using vDSP.sort.
+    /// - Parameters:
+    ///   - values: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func median(_ values: [Float]) throws -> Float {
         guard !values.isEmpty else { throw StatsError.emptyInput }
         var copy = values
@@ -128,6 +158,10 @@ extension Stats {
     }
 
     /// Mode(s) — values with the highest frequency.
+    /// - Parameters:
+    ///   - values: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func mode(_ values: [Double]) throws -> [Double] {
         try requireNonEmpty(values)
         var freq: [Double: Int] = [:]
@@ -137,6 +171,12 @@ extension Stats {
     }
 
     /// Percentile using linear interpolation (matches NumPy's default method).
+    /// - Parameters:
+    ///   - values: <#description#>
+    ///   - q: <#description#>
+    ///   - checkNaN: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func percentile(_ values: [Double], q: Double, checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         if checkNaN { try requireNoNaN(values) }
@@ -151,11 +191,22 @@ extension Stats {
     }
 
     /// Multiple percentiles at once.
+    /// - Parameters:
+    ///   - values: <#description#>
+    ///   - probs: <#description#>
+    ///   - checkNaN: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func quantiles(_ values: [Double], probs: [Double], checkNaN: Bool = true) throws -> [Double] {
         try probs.map { try percentile(values, q: $0, checkNaN: checkNaN) }
     }
 
     /// Standardised third central moment (Fisher's definition).
+    /// - Parameters:
+    ///   - values: <#description#>
+    ///   - checkNaN: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func skewness(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values, minimum: 3)
         if checkNaN { try requireNoNaN(values) }
@@ -170,6 +221,11 @@ extension Stats {
     }
 
     /// Excess kurtosis (Fisher's definition, normal distribution = 0).
+    /// - Parameters:
+    ///   - values: <#description#>
+    ///   - checkNaN: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func kurtosis(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values, minimum: 4)
         if checkNaN { try requireNoNaN(values) }
@@ -183,24 +239,40 @@ extension Stats {
     }
 
     /// Minimum value using vDSP.
+    /// - Parameters:
+    ///   - values: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func min(_ values: [Double]) throws -> Double {
         try requireNonEmpty(values)
         return vDSP.minimum(values)
     }
 
     /// Maximum value using vDSP.
+    /// - Parameters:
+    ///   - values: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func max(_ values: [Double]) throws -> Double {
         try requireNonEmpty(values)
         return vDSP.maximum(values)
     }
 
     /// Sum using vDSP.
+    /// - Parameters:
+    ///   - values: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func sum(_ values: [Double]) throws -> Double {
         try requireNonEmpty(values)
         return vDSP.sum(values)
     }
 
     /// Range (max - min).
+    /// - Parameters:
+    ///   - values: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func range(_ values: [Double]) throws -> Double {
         try max(values) - min(values)
     }

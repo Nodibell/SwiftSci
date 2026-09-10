@@ -32,6 +32,10 @@ public enum StopWords {
     ]
 
     /// Filters out stop words from a token array for a given language.
+    /// - Parameters:
+    ///   - tokens: <#description#>
+    ///   - language: <#description#>
+    /// - Returns: <#description#>
     public static func filter(tokens: [String], language: Language = .english) -> [String] {
         let stopSet: Set<String>
         switch language {

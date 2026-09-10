@@ -71,6 +71,9 @@ public struct MultinomialNaiveBayes: Sendable, Codable {
     }
 
     /// Predicts the class label for a given feature vector.
+    /// - Parameters:
+    ///   - x: <#description#>
+    /// - Returns: <#description#>
     public func predict(x: [Double]) -> String? {
         guard !classes.isEmpty else { return nil }
 
@@ -97,6 +100,9 @@ public struct MultinomialNaiveBayes: Sendable, Codable {
     }
 
     /// Batch predicts class labels for a feature matrix.
+    /// - Parameters:
+    ///   - X: <#description#>
+    /// - Returns: <#description#>
     public func predict(X: [[Double]]) -> [String] {
         let fallback = classes.first ?? ""
         return X.map { predict(x: $0) ?? fallback }

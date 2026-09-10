@@ -4,6 +4,12 @@ import SwiftPreprocessing
 /// Synthetic dataset generation utilities for testing and benchmarking machine learning estimators.
 public enum DatasetUtilities {
     /// Generates a synthetic classification dataset with separable gaussian clusters.
+    /// - Parameters:
+    ///   - nSamples: <#description#>
+    ///   - nFeatures: <#description#>
+    ///   - nClasses: <#description#>
+    ///   - seed: <#description#>
+    /// - Returns: <#description#>
     public static func makeClassification(
         nSamples: Int = 100,
         nFeatures: Int = 2,
@@ -29,6 +35,12 @@ public enum DatasetUtilities {
     }
     
     /// Generates a synthetic linear regression dataset $y = X \cdot w + b + \epsilon$.
+    /// - Parameters:
+    ///   - nSamples: <#description#>
+    ///   - nFeatures: <#description#>
+    ///   - noise: <#description#>
+    ///   - seed: <#description#>
+    /// - Returns: <#description#>
     public static func makeRegression(
         nSamples: Int = 100,
         nFeatures: Int = 2,
@@ -58,6 +70,11 @@ public enum DatasetUtilities {
     }
     
     /// Generates a synthetic non-linear 2D dataset of two interleaving half moons.
+    /// - Parameters:
+    ///   - nSamples: <#description#>
+    ///   - noise: <#description#>
+    ///   - seed: <#description#>
+    /// - Returns: <#description#>
     public static func makeMoons(
         nSamples: Int = 100,
         noise: Double = 0.1,
@@ -92,6 +109,13 @@ public enum DatasetUtilities {
     }
 
     /// Generates isotropic Gaussian blobs for clustering.
+    /// - Parameters:
+    ///   - nSamples: <#description#>
+    ///   - nFeatures: <#description#>
+    ///   - centers: <#description#>
+    ///   - clusterStd: <#description#>
+    ///   - seed: <#description#>
+    /// - Returns: <#description#>
     public static func makeClusters(
         nSamples: Int = 100,
         nFeatures: Int = 2,
@@ -116,6 +140,12 @@ public enum DatasetUtilities {
     }
 
     /// Generates a large circle containing a smaller circle in 2D.
+    /// - Parameters:
+    ///   - nSamples: <#description#>
+    ///   - factor: <#description#>
+    ///   - noise: <#description#>
+    ///   - seed: <#description#>
+    /// - Returns: <#description#>
     public static func makeCircles(
         nSamples: Int = 100,
         factor: Double = 0.5,

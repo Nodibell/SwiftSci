@@ -51,6 +51,11 @@ public struct GridSearchCV: Sendable {
     }
 
     /// Runs grid search over DecisionTreeClassifier and returns all results sorted best-first.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func search(features: [[Double]], targets: [Double]) async throws -> [Result] {
         let nSplits = self.nSplits
         let seed = self.seed
@@ -79,6 +84,11 @@ public struct GridSearchCV: Sendable {
     }
 
     /// Convenience: returns only the best parameter combination.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func bestParams(features: [[Double]], targets: [Double]) async throws -> Result? {
         let results = try await search(features: features, targets: targets)
         return results.first

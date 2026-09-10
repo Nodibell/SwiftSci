@@ -33,6 +33,10 @@ public struct CustomAgentTool: AgentTool, Sendable {
     }
 
     /// Executes the custom tool handler.
+    /// - Parameters:
+    ///   - input: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func execute(input: String) async throws -> String {
         try await handler(input)
     }
@@ -59,6 +63,10 @@ public struct DataFrameAgentTool: AgentTool, Sendable {
     }
 
     /// Evaluates the DataFrame command and returns a string summary of the resulting DataFrame.
+    /// - Parameters:
+    ///   - input: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func execute(input: String) async throws -> String {
         let result = try await evaluator.evaluate(command: input, on: dataframe)
         var out = "Result (\(result.rowCount) rows):\n"
@@ -174,6 +182,7 @@ public actor ReActAgent {
     ///   - query: The target user question or goal.
     ///   - llm: Async block producing model completions given a prompt.
     /// - Returns: Final answer and complete trajectory trace of agent steps.
+    /// - Throws: <#error description#>
     public func run(
         query: String,
         llm: @Sendable (String) async throws -> String
@@ -254,6 +263,9 @@ public actor ReActAgent {
     }
 
     /// Resolves tool by exact or fuzzy name matching (case/punctuation-insensitive).
+    /// - Parameters:
+    ///   - named: <#description#>
+    /// - Returns: <#description#>
     public func findTool(named name: String) -> (any AgentTool)? {
         if let direct = tools[name] { return direct }
         let clean = name.lowercased()
@@ -280,6 +292,7 @@ public actor ReActAgent {
     ///   - model: A local LLMModel instance executing natively on Apple Silicon.
     ///   - options: Inference options (temperature, topP, maxTokens).
     /// - Returns: Tuple with final answer and complete reasoning step trace.
+    /// - Throws: <#error description#>
     public func run(
         query: String,
         model: any LLMModel,

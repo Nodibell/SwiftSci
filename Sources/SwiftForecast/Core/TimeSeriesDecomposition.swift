@@ -19,6 +19,7 @@ public enum TimeSeriesDecomposition {
     ///   - period: The seasonality period (e.g., 12 for monthly, 4 for quarterly).
     ///   - model: Additive or Multiplicative model.
     /// - Returns: A DecompositionResult containing trend, seasonal, residual, and original arrays.
+    /// - Throws: <#error description#>
     public static func decompose(
         series: [Double],
         period: Int,
@@ -124,6 +125,11 @@ public enum TimeSeriesDecomposition {
     }
     
     /// Autocorrelation function (ACF) up to maxLag.
+    /// - Parameters:
+    ///   - series: <#description#>
+    ///   - maxLag: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func acf(series: [Double], maxLag: Int) throws -> [Double] {
         let n = series.count
         guard n > 0 else {
@@ -163,6 +169,11 @@ public enum TimeSeriesDecomposition {
     }
     
     /// Partial Autocorrelation function (PACF) up to maxLag using Yule-Walker equations.
+    /// - Parameters:
+    ///   - series: <#description#>
+    ///   - maxLag: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func pacf(series: [Double], maxLag: Int) throws -> [Double] {
         let n = series.count
         guard n > 0 else {
@@ -227,6 +238,11 @@ public enum TimeSeriesDecomposition {
     
     /// Augmented Dickey-Fuller (ADF) stationarity test (lags = maxLag, with constant).
     /// Returns: (statistic, pValue)
+    /// - Parameters:
+    ///   - series: <#description#>
+    ///   - maxLag: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func adfTest(series: [Double], maxLag: Int = 1) throws -> (statistic: Double, pValue: Double) {
         let n = series.count
         guard n > maxLag + 2 else {
@@ -376,6 +392,10 @@ public enum TimeSeriesDecomposition {
     }
 
     /// Computes moving average using Accelerate 1D FIR Convolution (vDSP_convD).
+    /// - Parameters:
+    ///   - series: <#description#>
+    ///   - period: <#description#>
+    /// - Returns: <#description#>
     public static func movingAverageFIR(_ series: [Double], period: Int) -> [Double] {
         let n = series.count
         guard n >= period, period > 0 else { return [] }
@@ -399,6 +419,11 @@ public enum TimeSeriesDecomposition {
 
     /// Spectral Fast Fourier Transform (FFT) Decomposition using Accelerate vDSP.
     /// Decomposes time series into trend, dominant seasonal components, and residual noise in the frequency domain.
+    /// - Parameters:
+    ///   - series: <#description#>
+    ///   - topKComponents: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func fftDecompose(
         series: [Double],
         topKComponents: Int = 3

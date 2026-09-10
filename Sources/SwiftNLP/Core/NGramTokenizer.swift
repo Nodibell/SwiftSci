@@ -21,6 +21,9 @@ public struct NGramTokenizer: Sendable {
     }
 
     /// Tokenizes input text into n-grams.
+    /// - Parameters:
+    ///   - text: <#description#>
+    /// - Returns: <#description#>
     public func tokenize(_ text: String) -> [String] {
         let prepared = lowercase ? text.lowercased() : text
         let unigrams = prepared.components(separatedBy: CharacterSet.alphanumerics.inverted)

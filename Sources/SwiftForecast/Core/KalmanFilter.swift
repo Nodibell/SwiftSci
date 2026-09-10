@@ -39,30 +39,46 @@ public actor KalmanFilter {
     }
 
     /// Sets the state transition matrix F (stateSize x stateSize).
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    /// - Throws: <#error description#>
     public func setTransitionMatrix(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: stateSize, expectedCols: stateSize)
         self.F = flatten(matrix)
     }
 
     /// Sets the observation matrix H (observationSize x stateSize).
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    /// - Throws: <#error description#>
     public func setObservationMatrix(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: observationSize, expectedCols: stateSize)
         self.H = flatten(matrix)
     }
 
     /// Sets the process noise covariance matrix Q (stateSize x stateSize).
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    /// - Throws: <#error description#>
     public func setProcessNoise(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: stateSize, expectedCols: stateSize)
         self.Q = flatten(matrix)
     }
 
     /// Sets the measurement noise covariance matrix R (observationSize x observationSize).
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    /// - Throws: <#error description#>
     public func setMeasurementNoise(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: observationSize, expectedCols: observationSize)
         self.R = flatten(matrix)
     }
 
     /// Sets the initial state mean vector and covariance matrix.
+    /// - Parameters:
+    ///   - mean: <#description#>
+    ///   - covariance: <#description#>
+    /// - Throws: <#error description#>
     public func setInitialState(mean: [Double], covariance: [[Double]]) throws {
         guard mean.count == stateSize else {
             throw ForecastError.matrixDimensionMismatch(
@@ -156,6 +172,10 @@ public actor KalmanFilter {
     }
 
     /// RTS (Rauch-Tung-Striebel) smoother.
+    /// - Parameters:
+    ///   - observations: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func smooth(observations: [[Double]]) throws -> [KalmanState] {
         try checkInitialization()
 
@@ -240,6 +260,8 @@ public actor KalmanFilter {
     }
 
     /// Predict one step ahead.
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict() throws -> KalmanState {
         try checkInitialization()
         let n = stateSize
@@ -449,6 +471,11 @@ public actor KalmanFilter {
 
 extension KalmanFilter {
     /// Pre-configured 1D constant-velocity model.
+    /// - Parameters:
+    ///   - processNoise: <#description#>
+    ///   - measurementNoise: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func oneDimensional(
         processNoise: Double,
         measurementNoise: Double

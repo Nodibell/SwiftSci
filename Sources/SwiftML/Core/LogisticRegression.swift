@@ -43,11 +43,21 @@ public actor LogisticRegression: ClassifierEstimator {
     }
     
     /// Fits the classifier model on the provided features and targets (ClassifierEstimator protocol).
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, learningRate: 0.1, epochs: 1000)
     }
     
     /// Fits the logistic regression model to binary classification data (Sendable interface).
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - learningRate: <#description#>
+    ///   - epochs: <#description#>
+    /// - Throws: <#error description#>
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -219,12 +229,20 @@ public actor LogisticRegression: ClassifierEstimator {
     }
 
     /// Predicts class probabilities [[prob_class_0, prob_class_1]] for the given features matrix (ClassifierEstimator protocol).
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         let p1 = try binaryPositiveClassProbability(features: features)
         return p1.map { [1.0 - $0, $0] }
     }
     
     /// Predicts target probabilities of class 1 for the given features X.
+    /// - Parameters:
+    ///   - X: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predictProbability(X: MLXArray) throws -> MLXArray {
         guard let weights = self.weights, let bias = self.bias else {
             throw SwiftMLError.modelNotFitted
@@ -246,11 +264,20 @@ public actor LogisticRegression: ClassifierEstimator {
     }
     
     /// Predicts class labels (ClassifierEstimator protocol).
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]]) async throws -> [Int] {
         try predict(features: features, threshold: 0.5)
     }
     
     /// Predicts class labels (0 or 1) for the given features matrix (Sendable interface).
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - threshold: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]], threshold: Float = 0.5) throws -> [Int] {
         guard !features.isEmpty else {
             return []
@@ -261,18 +288,25 @@ public actor LogisticRegression: ClassifierEstimator {
     }
     
     /// Predicts class labels (0 or 1) for the given features X.
+    /// - Parameters:
+    ///   - X: <#description#>
+    ///   - threshold: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(X: MLXArray, threshold: Float = 0.5) throws -> MLXArray {
         let probs = try predictProbability(X: X)
         return greater(probs, threshold).asType(.int32)
     }
     
     /// Returns the learned weights as a standard Sendable Double array.
+    /// - Returns: <#description#>
     public func getWeights() -> [Double]? {
         if let cpuWeights { return cpuWeights }
         return weights?.asArray(Float.self).map { Double($0) }
     }
     
     /// Returns the learned bias as a standard Sendable Double array.
+    /// - Returns: <#description#>
     public func getBias() -> Double? {
         if let cpuBias { return cpuBias }
         if let biasValue = bias {

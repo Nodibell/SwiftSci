@@ -6,6 +6,9 @@ public struct TextExplainer: Sendable {
     public init() {}
 
     /// Explains token importance by measuring sentiment score shift when each token is omitted.
+    /// - Parameters:
+    ///   - in: <#description#>
+    /// - Returns: <#description#>
     public func explainSentimentTokens(in text: String) -> [(token: String, impact: Double)] {
         let analyzer = VADERSentimentAnalyzer()
         let baseScore = analyzer.polarityScores(text: text).compound

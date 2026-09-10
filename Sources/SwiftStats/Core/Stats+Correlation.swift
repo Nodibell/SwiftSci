@@ -7,6 +7,11 @@ extension Stats {
 
     /// Pearson correlation coefficient using vDSP primitives.
     /// r = Σ((x-μx)(y-μy)) / (n * σx * σy)
+    /// - Parameters:
+    ///   - x: <#description#>
+    ///   - y: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func pearsonCorrelation(_ x: [Double], _ y: [Double]) throws -> Double {
         try requireNonEmpty(x)
         try requireSameSize(x, y)
@@ -34,6 +39,11 @@ extension Stats {
     }
 
     /// Spearman rank correlation: Pearson applied to ranks.
+    /// - Parameters:
+    ///   - x: <#description#>
+    ///   - y: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func spearmanCorrelation(_ x: [Double], _ y: [Double]) throws -> Double {
         try requireNonEmpty(x)
         try requireSameSize(x, y)
@@ -43,6 +53,12 @@ extension Stats {
     }
 
     /// Sample or population covariance.
+    /// - Parameters:
+    ///   - x: <#description#>
+    ///   - y: <#description#>
+    ///   - ddof: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func covariance(_ x: [Double], _ y: [Double], ddof: Int = 1) throws -> Double {
         try requireNonEmpty(x)
         try requireSameSize(x, y)
@@ -66,6 +82,10 @@ extension Stats {
 
     /// Full correlation matrix for a list of variable vectors.
     /// Result[i][j] = pearsonCorrelation(data[i], data[j]).
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func correlationMatrix(_ data: [[Double]]) throws -> [[Double]] {
         let k = data.count
         guard k >= 2 else { throw StatsError.invalidGroupCount(minimum: 2, got: k) }

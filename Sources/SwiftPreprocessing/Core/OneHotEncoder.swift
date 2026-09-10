@@ -28,6 +28,8 @@ public final class OneHotEncoder: @unchecked Sendable {
     }
     
     /// Fits the OneHotEncoder to a 2D categorical dataset of shape [rows, cols].
+    /// - Parameters:
+    ///   - data: <#description#>
     public func fit(_ data: [[String]]) {
         guard !data.isEmpty, !data[0].isEmpty else {
             self.categories = []
@@ -49,6 +51,7 @@ public final class OneHotEncoder: @unchecked Sendable {
     /// Transforms the categorical dataset into a one-hot encoded matrix.
     /// - Parameter data: A 2D string dataset of shape [rows, cols].
     /// - Returns: A 2D array of doubles with concatenated one-hot vectors.
+    /// - Throws: <#error description#>
     public func transform(_ data: [[String]]) throws -> [[Double]] {
         guard !categories.isEmpty else {
             throw PreprocessingError.fitNotCalled
@@ -105,6 +108,10 @@ public final class OneHotEncoder: @unchecked Sendable {
     }
     
     /// Fits to categorical data, then transforms it.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitTransform(_ data: [[String]]) throws -> [[Double]] {
         fit(data)
         return try transform(data)

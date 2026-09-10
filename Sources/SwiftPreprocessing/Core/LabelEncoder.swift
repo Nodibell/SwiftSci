@@ -9,12 +9,18 @@ public final class LabelEncoder: @unchecked Sendable {
     public init() {}
     
     /// Fits the LabelEncoder on the input categories.
+    /// - Parameters:
+    ///   - categories: <#description#>
     public func fit(_ categories: [String]) {
         let uniqueSorted = Array(Set(categories)).sorted()
         self.classes = uniqueSorted
     }
     
     /// Transforms category strings into integer labels.
+    /// - Parameters:
+    ///   - categories: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ categories: [String]) throws -> [Int] {
         guard !classes.isEmpty else {
             throw PreprocessingError.fitNotCalled
@@ -37,6 +43,10 @@ public final class LabelEncoder: @unchecked Sendable {
     }
     
     /// Reverses the transform mapping back to the original string labels.
+    /// - Parameters:
+    ///   - labels: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func inverseTransform(_ labels: [Int]) throws -> [String] {
         guard !classes.isEmpty else {
             throw PreprocessingError.fitNotCalled
@@ -56,6 +66,10 @@ public final class LabelEncoder: @unchecked Sendable {
     }
     
     /// Fits to categories, then transforms it.
+    /// - Parameters:
+    ///   - categories: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitTransform(_ categories: [String]) throws -> [Int] {
         fit(categories)
         return try transform(categories)

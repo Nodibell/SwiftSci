@@ -8,6 +8,9 @@ extension BoundingBox {
     }
 
     /// Computes Intersection-over-Union (IoU) with another bounding box.
+    /// - Parameters:
+    ///   - with: <#description#>
+    /// - Returns: <#description#>
     @inlinable
     public func intersectionOverUnion(with other: BoundingBox) -> Double {
         let interXMin = max(self.xMin, other.xMin)

@@ -4,6 +4,10 @@ import Foundation
 public enum VectorizedByteParsers {
 
     /// Parses a `Double` directly from ASCII bytes in an un-copied buffer.
+    /// - Parameters:
+    ///   - buffer: <#description#>
+    ///   - offset: <#description#>
+    /// - Returns: <#description#>
     @inlinable
     public static func parseDouble(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Double? {
         var start = offset.startOffset
@@ -69,6 +73,10 @@ public enum VectorizedByteParsers {
     }
 
     /// Parses an `Int` directly from ASCII bytes in an un-copied buffer.
+    /// - Parameters:
+    ///   - buffer: <#description#>
+    ///   - offset: <#description#>
+    /// - Returns: <#description#>
     @inlinable
     public static func parseInt(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Int? {
         var start = offset.startOffset
@@ -115,6 +123,10 @@ public enum VectorizedByteParsers {
     }
 
     /// Constructs a `String` from raw buffer coordinates, unescaping double quote sequences (`""`).
+    /// - Parameters:
+    ///   - buffer: <#description#>
+    ///   - offset: <#description#>
+    /// - Returns: <#description#>
     public static func parseString(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> String {
         var start = offset.startOffset
         var length = offset.length

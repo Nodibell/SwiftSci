@@ -74,6 +74,9 @@ public struct PorterStemmer: Sendable {
     }
 
     /// Stems a word to its canonical morphological root.
+    /// - Parameters:
+    ///   - word: <#description#>
+    /// - Returns: <#description#>
     public func stem(_ word: String) -> String {
         let lower = word.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard lower.count > 2 else { return lower }
@@ -203,6 +206,9 @@ public struct PorterStemmer: Sendable {
     }
 
     /// Stems an array of word tokens.
+    /// - Parameters:
+    ///   - tokens: <#description#>
+    /// - Returns: <#description#>
     public func stem(tokens: [String]) -> [String] {
         return tokens.map { stem($0) }
     }

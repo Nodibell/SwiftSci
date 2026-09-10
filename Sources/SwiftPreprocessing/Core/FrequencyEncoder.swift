@@ -9,6 +9,9 @@ public struct FrequencyEncoder: PreprocessingTransformer, Sendable {
     public init() {}
     
     /// Fits FrequencyEncoder on categorical string values.
+    /// - Parameters:
+    ///   - categories: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(categories: [String]) throws {
         guard !categories.isEmpty else { throw PreprocessingError.emptyInput }
         let total = Double(categories.count)
@@ -29,6 +32,8 @@ public struct FrequencyEncoder: PreprocessingTransformer, Sendable {
     
     /// Fit.
     /// - Throws: An error if the operation fails.
+    /// - Parameters:
+    ///   - data: <#description#>
     public mutating func fit(_ data: [[Double]]) throws {
         let categories = data.map { String($0.first ?? 0.0) }
         try fit(categories: categories)
@@ -36,6 +41,10 @@ public struct FrequencyEncoder: PreprocessingTransformer, Sendable {
 
     
     /// Transforms categories into normalized frequency values.
+    /// - Parameters:
+    ///   - categories: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(categories: [String]) throws -> [Double] {
         guard isFitted else { throw PreprocessingError.fittingRequired }
         return categories.map { frequencies[$0] ?? 0.0 }
@@ -44,6 +53,8 @@ public struct FrequencyEncoder: PreprocessingTransformer, Sendable {
     /// Transform.
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[[Double]]` result.
+    /// - Parameters:
+    ///   - data: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         let categories = data.map { String($0.first ?? 0.0) }
         let encoded = try transform(categories: categories)

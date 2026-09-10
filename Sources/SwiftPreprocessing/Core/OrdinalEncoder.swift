@@ -15,6 +15,8 @@ public final class OrdinalEncoder: @unchecked Sendable {
     }
     
     /// Fits the OrdinalEncoder by identifying unique sorted categories for each column.
+    /// - Parameters:
+    ///   - data: <#description#>
     public func fit(_ data: [[String]]) {
         guard !data.isEmpty, !data[0].isEmpty else {
             self.categories = []
@@ -34,6 +36,10 @@ public final class OrdinalEncoder: @unchecked Sendable {
     }
     
     /// Transforms the categorical dataset into ordinal values.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[String]]) throws -> [[Double]] {
         guard !categories.isEmpty else {
             throw PreprocessingError.fitNotCalled
@@ -75,6 +81,10 @@ public final class OrdinalEncoder: @unchecked Sendable {
     }
     
     /// Fits to categorical data, then transforms it.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitTransform(_ data: [[String]]) throws -> [[Double]] {
         fit(data)
         return try transform(data)

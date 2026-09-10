@@ -17,6 +17,10 @@ public struct TargetEncoder: PreprocessingTransformer, Sendable {
     }
     
     /// Fits the TargetEncoder on categorical series and target values.
+    /// - Parameters:
+    ///   - categories: <#description#>
+    ///   - target: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(categories: [String], target: [Double]) throws {
         guard !categories.isEmpty else { throw PreprocessingError.emptyInput }
         guard categories.count == target.count else {
@@ -46,6 +50,9 @@ public struct TargetEncoder: PreprocessingTransformer, Sendable {
     }
     
     /// Fits on 2D string matrix (first column used) and 1D target (PreprocessingTransformer protocol).
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(_ data: [[Double]]) throws {
         let categories = data.map { String($0.first ?? 0.0) }
         let defaultTarget = data.map { $0.last ?? 0.0 }
@@ -54,12 +61,20 @@ public struct TargetEncoder: PreprocessingTransformer, Sendable {
 
     
     /// Transforms categorical string array into target-encoded numerical array.
+    /// - Parameters:
+    ///   - categories: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(categories: [String]) throws -> [Double] {
         guard isFitted else { throw PreprocessingError.fittingRequired }
         return categories.map { targetMeans[$0] ?? globalMean }
     }
     
     /// Transforms 2D feature matrix into 2D single-column target-encoded matrix (PreprocessingTransformer protocol).
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         let categories = data.map { String($0.first ?? 0.0) }
         let encoded = try transform(categories: categories)
@@ -67,6 +82,11 @@ public struct TargetEncoder: PreprocessingTransformer, Sendable {
     }
     
     /// Fits and transforms categorical string array in one step.
+    /// - Parameters:
+    ///   - categories: <#description#>
+    ///   - target: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public mutating func fitTransform(categories: [String], target: [Double]) throws -> [Double] {
         try fit(categories: categories, target: target)
         return try transform(categories: categories)

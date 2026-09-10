@@ -91,6 +91,10 @@ public protocol ClassifierEstimator: Sendable {
 
 extension ClassifierEstimator {
     /// Default implementation for classifiers that do not support probability estimation.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         throw SwiftMLError.unsupportedOperation("predictProbability is not supported by \(Self.self)")
     }

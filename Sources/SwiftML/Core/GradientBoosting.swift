@@ -63,6 +63,10 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     }
     
     /// Fits the GBDT model on the provided features and targets.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, validationFeatures: nil, validationTargets: nil, earlyStopping: nil)
     }
@@ -181,6 +185,10 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     }
     
     /// Returns predictions for the given feature matrix.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         

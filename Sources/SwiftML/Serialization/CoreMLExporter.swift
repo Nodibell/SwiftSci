@@ -446,6 +446,14 @@ public enum CoreMLExporter {
     // MARK: - Binary Multi-Layer Perceptron (NeuralNetwork)
 
     /// Encodes a fitted Multi-Layer Perceptron classifier as a binary Apple Core ML `.mlmodel` artifact.
+    /// - Parameters:
+    ///   - name: <#description#>
+    ///   - inputNames: <#description#>
+    ///   - outputName: <#description#>
+    ///   - layers: <#description#>
+    ///   - activation: <#description#>
+    ///   - classLabels: <#description#>
+    /// - Returns: <#description#>
     public static func exportBinaryMLPClassifier(
         name: String = "SwiftSciMLPClassifier",
         inputNames: [String],
@@ -480,6 +488,13 @@ public enum CoreMLExporter {
     }
 
     /// Encodes a fitted Multi-Layer Perceptron regressor as a binary Apple Core ML `.mlmodel` artifact.
+    /// - Parameters:
+    ///   - name: <#description#>
+    ///   - inputNames: <#description#>
+    ///   - outputName: <#description#>
+    ///   - layers: <#description#>
+    ///   - activation: <#description#>
+    /// - Returns: <#description#>
     public static func exportBinaryMLPRegressor(
         name: String = "SwiftSciMLPRegressor",
         inputNames: [String],
@@ -536,6 +551,14 @@ public enum CoreMLExporter {
     }
 
     /// Writes a binary `.mlmodel` file for a fitted MLP regressor.
+    /// - Parameters:
+    ///   - to: <#description#>
+    ///   - name: <#description#>
+    ///   - inputNames: <#description#>
+    ///   - outputName: <#description#>
+    ///   - layers: <#description#>
+    ///   - activation: <#description#>
+    /// - Throws: <#error description#>
     public static func writeMLPRegressor(
         to url: URL,
         name: String = "SwiftSciMLPRegressor",

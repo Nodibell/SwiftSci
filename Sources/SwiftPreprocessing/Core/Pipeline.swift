@@ -21,6 +21,9 @@ public struct Pipeline: PreprocessingTransformer, Sendable {
     }
     
     /// Fits all the steps in the pipeline sequentially.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(_ data: [[Double]]) throws {
         var current = data
         for i in 0..<steps.count {
@@ -30,6 +33,10 @@ public struct Pipeline: PreprocessingTransformer, Sendable {
     }
     
     /// Transforms the data through all steps in the pipeline sequentially.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         var current = data
         for step in steps {

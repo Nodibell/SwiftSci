@@ -30,6 +30,9 @@ public struct PowerTransformer: PreprocessingTransformer, Sendable {
     }
     
     /// Fits the PowerTransformer by finding the optimal lambda parameter for each column.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(_ data: [[Double]]) throws {
 
         guard !data.isEmpty, !data[0].isEmpty else {
@@ -79,6 +82,10 @@ public struct PowerTransformer: PreprocessingTransformer, Sendable {
     }
     
     /// Transforms the dataset using the fitted power transform.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard let lambdas = self.lambdas else {
             throw PreprocessingError.fitNotCalled

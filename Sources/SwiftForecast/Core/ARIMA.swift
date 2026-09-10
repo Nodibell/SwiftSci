@@ -38,6 +38,10 @@ public actor ARIMAModel {
     }
     
     /// Fits the ARIMA model on the series using Hannan-Rissanen conditional OLS.
+    /// - Parameters:
+    ///   - series: <#description#>
+    ///   - exog: <#description#>
+    /// - Throws: <#error description#>
     public func fit(series: [Double], exog: [[Double]]? = nil) throws {
         let n = series.count
         guard n > 0 else { throw ForecastError.emptyTimeSeries }
@@ -215,6 +219,11 @@ public actor ARIMAModel {
     }
     
     /// Forecasts horizon steps ahead.
+    /// - Parameters:
+    ///   - horizon: <#description#>
+    ///   - exog: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func forecast(horizon: Int, exog: [[Double]]? = nil) throws -> ARIMAResult {
         guard isFitted else {
             throw ForecastError.notFitted

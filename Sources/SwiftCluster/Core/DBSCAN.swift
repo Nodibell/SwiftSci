@@ -27,6 +27,9 @@ public actor DBSCAN {
     }
     
     /// Fits the DBSCAN model on the input dataset.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]]) async throws {
         guard !features.isEmpty else {
             throw ClusterError.emptyInput
@@ -98,6 +101,10 @@ public actor DBSCAN {
     }
     
     /// Fits DBSCAN and returns the labels.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitTransform(features: [[Double]]) async throws -> [Int] {
         try await fit(features: features)
         return labels ?? []

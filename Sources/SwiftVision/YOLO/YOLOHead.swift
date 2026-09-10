@@ -178,6 +178,9 @@ public class YOLOHead: Module {
     }
 
     /// Loads weights for the decoupled detection head from the given loader.
+    /// - Parameters:
+    ///   - from: <#description#>
+    ///   - prefix: <#description#>
     public func loadWeights(from loader: YOLOWeightLoader, prefix: String = "model.22") {
         var params: [String: MLXArray] = [:]
 

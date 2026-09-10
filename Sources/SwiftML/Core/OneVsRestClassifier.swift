@@ -28,6 +28,7 @@ public actor OneVsRestClassifier: Sendable {
     ///   - epochs: Number of training epochs. Defaults to 1000.
     ///   - onProgress: Optional progress callback (completedClasses, totalClasses).
     /// - Throws: `SwiftMLError` if inputs are empty or dimensions mismatch.
+    /// - Returns: <#description#>
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -63,6 +64,10 @@ public actor OneVsRestClassifier: Sendable {
     }
 
     /// Predicts class index for feature vectors.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]]) async throws -> [Int] {
         guard !estimators.isEmpty else {
             throw SwiftMLError.modelNotFitted

@@ -69,6 +69,9 @@ public actor KMeans {
     }
 
     /// Fits K-Means on the input dataset (Sendable interface).
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]]) async throws {
         guard !features.isEmpty else {
             throw ClusterError.emptyInput
@@ -110,6 +113,9 @@ public actor KMeans {
     }
 
     /// Fits K-Means on an MLX tensor (forces GPU path after setting MLX device).
+    /// - Parameters:
+    ///   - X: <#description#>
+    /// - Throws: <#error description#>
     public func fit(X: MLXArray) async throws {
         guard X.size > 0 else { throw ClusterError.emptyInput }
         let shape = X.shape

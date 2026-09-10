@@ -100,6 +100,11 @@ public struct RandomizedSearchCV: Sendable {
     }
 
     /// Runs randomized search over randomly sampled parameter combinations.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func search(features: [[Double]], targets: [Double]) async throws -> [Result] {
         let allPairs: [(Int, SplitCriterion)] = maxDepthValues.flatMap { d in criterionValues.map { c in (d, c) } }
         guard !allPairs.isEmpty else { return [] }
@@ -140,6 +145,13 @@ public struct RandomizedSearchCV: Sendable {
     }
 
     /// Runs randomized search over generic parameter candidates and custom estimator factory.
+    /// - Parameters:
+    ///   - candidates: <#description#>
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - estimatorBuilder: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func searchGeneric<P: Sendable, E: ClassifierEstimator>(
         candidates: [P],
         features: [[Double]],
@@ -180,6 +192,11 @@ public struct RandomizedSearchCV: Sendable {
     }
 
     /// Convenience: returns only the best parameter combination.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func bestParams(features: [[Double]], targets: [Double]) async throws -> Result? {
         let results = try await search(features: features, targets: targets)
         return results.first

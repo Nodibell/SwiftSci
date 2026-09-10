@@ -25,6 +25,10 @@ public struct AppleNLEmbedding: Sendable {
     }
 
     /// Fetches the vector representation for a given word.
+    /// - Parameters:
+    ///   - for: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func vector(for word: String) throws -> [Double]? {
         #if canImport(NaturalLanguage)
         let nlLang = NLLanguage(rawValue: language.rawValue)
@@ -38,6 +42,11 @@ public struct AppleNLEmbedding: Sendable {
     }
 
     /// Calculates distance (1.0 - cosine similarity) between two words.
+    /// - Parameters:
+    ///   - between: <#description#>
+    ///   - and: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func distance(between word1: String, and word2: String) throws -> Double? {
         #if canImport(NaturalLanguage)
         let nlLang = NLLanguage(rawValue: language.rawValue)
@@ -52,6 +61,11 @@ public struct AppleNLEmbedding: Sendable {
     }
 
     /// Finds top-K nearest neighbor words for a given query word.
+    /// - Parameters:
+    ///   - for: <#description#>
+    ///   - maxCount: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func nearestNeighbors(for word: String, maxCount: Int = 10) throws -> [(word: String, distance: Double)]? {
         #if canImport(NaturalLanguage)
         let nlLang = NLLanguage(rawValue: language.rawValue)

@@ -27,3 +27,4 @@ let df = try await db.query("SELECT * FROM sales WHERE amount > 100")
 - <doc:DatabaseConnectors>
 - <doc:HighThroughputIngestion>
 - <doc:TypeSystem>
+- <doc:SecurityAndPerformance>

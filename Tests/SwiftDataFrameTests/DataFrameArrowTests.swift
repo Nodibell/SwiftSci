@@ -173,4 +173,46 @@ struct DataFrameArrowTests {
         #expect(col!.values[10] == nil)
         #expect(col!.values[11] == 11.0)
     }
+
+    @Test("ArrowNullStrategy converts nulls to NaN or Zero")
+    func testArrowNullStrategy() throws {
+        let builder = try ArrowArrayBuilders.loadBuilder(Double.self)
+        builder.appendAny(10.0)
+        builder.appendAny(nil)
+        builder.appendAny(30.0)
+        let holder = try builder.toHolder()
+
+        let intBuilder = try ArrowArrayBuilders.loadBuilder(Int32.self)
+        intBuilder.appendAny(Int32(1))
+        intBuilder.appendAny(nil)
+        intBuilder.appendAny(Int32(3))
+        let intHolder = try intBuilder.toHolder()
+
+        let rbBuilder = RecordBatch.Builder()
+        rbBuilder.addColumn("d", arrowArray: holder)
+        rbBuilder.addColumn("i", arrowArray: intHolder)
+        let rb = try rbBuilder.finish().get()
+        let table = try ArrowTable.from(recordBatches: [rb]).get()
+
+        // 1. Default / .preserve
+        let dfPreserve = try DataFrame(arrowTable: table, nullStrategy: .preserve)
+        let dPreserve = dfPreserve[column: "d", as: Double.self]?.values
+        let iPreserve = dfPreserve[column: "i", as: Int32.self]?.values
+        #expect(dPreserve?[1] == nil)
+        #expect(iPreserve?[1] == nil)
+
+        // 2. .nan strategy
+        let dfNaN = try DataFrame(arrowTable: table, nullStrategy: .nan)
+        let dNaN = dfNaN[column: "d", as: Double.self]?.values
+        #expect(dNaN?[0] == 10.0)
+        #expect(dNaN?[1]?.isNaN == true)
+        #expect(dNaN?[2] == 30.0)
+
+        // 3. .zero strategy
+        let dfZero = try DataFrame(arrowTable: table, nullStrategy: .zero)
+        let dZero = dfZero[column: "d", as: Double.self]?.values
+        let iZero = dfZero[column: "i", as: Int32.self]?.values
+        #expect(dZero == [10.0, 0.0, 30.0])
+        #expect(iZero == [1, 0, 3])
+    }
 }

@@ -68,8 +68,10 @@
       left: 50%;
       transform: translateX(-50%);
       display: flex;
+      flex-flow: row nowrap;
       align-items: center;
       gap: 0.4rem;
+      height: 2.2rem;
       padding: 0.35rem 0.8rem;
       background: rgba(28, 28, 30, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -79,6 +81,8 @@
       z-index: 90;
       max-width: 96vw;
       overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
       scrollbar-width: none;
     }
 
@@ -91,6 +95,8 @@
       display: inline-flex;
       align-items: center;
       flex-shrink: 0;
+      width: auto;
+      height: 1.5rem;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-sub);
@@ -123,8 +129,10 @@
       left: 50%;
       transform: translateX(-50%);
       display: flex;
+      flex-flow: row nowrap;
       align-items: center;
       gap: 0.7rem;
+      height: 2.1rem;
       padding: 0.22rem 0.8rem;
       background: rgba(18, 18, 22, 0.94);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -134,6 +142,8 @@
       z-index: 89;
       max-width: 94vw;
       overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
       scrollbar-width: none;
       transition: all 0.25s ease;
     }

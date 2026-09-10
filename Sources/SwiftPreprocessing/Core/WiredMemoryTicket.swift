@@ -1,10 +1,18 @@
-#if os(macOS)
 import Foundation
 import os
+#if canImport(MLX)
 import MLX
+#endif
 
-/// A ticket representing a reservation of memory and concurrency slot.
-/// When finished or deinitialized, it flushes the GPU memory cache and releases the slot.
+/// A ticket representing a reservation of memory and a concurrency slot.
+///
+/// ## Concurrency & Resource Cleanup
+/// `WiredMemoryTicket` controls concurrency limits for high-memory operations on Apple Silicon.
+/// Always prefer structured execution via ``WiredMemoryManager/withTicket(_:)`` or explicitly call
+/// ``finish()`` when operations conclude to synchronize MLX GPU caches.
+///
+/// ## Thread Safety
+/// Thread-safe and conforms to `Sendable`. State transitions are protected by an internal lock.
 public final class WiredMemoryTicket: Sendable {
     private let manager: WiredMemoryManager
     private let releasedState = OSAllocatedUnfairLock(initialState: false)
@@ -13,7 +21,7 @@ public final class WiredMemoryTicket: Sendable {
         self.manager = manager
     }
     
-    /// Concludes the operation, flushes MLX memory cache, and releases the slot.
+    /// Concludes the operation, flushes MLX memory cache safely, and releases the concurrency slot.
     public func finish() async {
         let alreadyReleased = releasedState.withLock { state in
             if !state {
@@ -24,7 +32,9 @@ public final class WiredMemoryTicket: Sendable {
         }
         
         if !alreadyReleased {
+            #if canImport(MLX)
             MLX.Memory.clearCache()
+            #endif
             await manager.releaseTicket()
         }
     }
@@ -33,19 +43,21 @@ public final class WiredMemoryTicket: Sendable {
         let manager = self.manager
         let stateLock = self.releasedState
         
-        Task {
-            let alreadyReleased = stateLock.withLock { state in
-                if !state {
-                    state = true
-                    return false
-                }
+        let needsRelease = stateLock.withLock { state in
+            if !state {
+                state = true
                 return true
             }
-            if !alreadyReleased {
-                MLX.Memory.clearCache()
+            return false
+        }
+        
+        if needsRelease {
+            // Only release concurrency slot in uncoordinated deinit;
+            // avoid clearing global GPU cache out-of-band to prevent active buffer corruption.
+            Task {
                 await manager.releaseTicket()
             }
         }
     }
 }
-#endif // os(macOS)
+

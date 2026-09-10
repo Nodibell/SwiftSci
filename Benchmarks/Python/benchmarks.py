@@ -24,10 +24,15 @@ import sys
 import time
 from datetime import datetime, timezone
 
+import sqlite3
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestClassifier
-from sklearn.linear_model import SGDRegressor
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestClassifier, IsolationForest
+from sklearn.linear_model import SGDRegressor, LogisticRegression, Ridge
+from sklearn.svm import LinearSVC
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import OneHotEncoder
@@ -247,6 +252,25 @@ def bench_ml():
         "VectorStore Cosine Search (5k × 128d, top 10)", "NumPy",
         vector_search_fn,
         warmup=2, iterations=10
+    ))
+
+    # LinearSVC (1k × 4, 100 epochs)
+    n_svc, d_svc = 1_000, 4
+    X_svc = np.random.uniform(-5.0, 5.0, size=(n_svc, d_svc))
+    y_svc = ((X_svc[:, 0] > 0) & (X_svc[:, 1] > 0)).astype(int)
+    results.append(run_benchmark(
+        "LinearSVC fit (1k×4, 100 epochs)", "Scikit-Learn",
+        lambda: LinearSVC(C=1.0, max_iter=100, random_state=42).fit(X_svc, y_svc),
+        warmup=1, iterations=5
+    ))
+
+    # IsolationForest (1k × 10, 100 trees)
+    n_iso, d_iso = 1_000, 10
+    X_iso = np.random.uniform(-10.0, 10.0, size=(n_iso, d_iso))
+    results.append(run_benchmark(
+        "IsolationForest fit (1k×10, 100 trees)", "Scikit-Learn",
+        lambda: IsolationForest(n_estimators=100, random_state=42).fit(X_iso),
+        warmup=1, iterations=5
     ))
     print()
     return results

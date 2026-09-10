@@ -58,6 +58,21 @@ public actor WiredMemoryManager {
         return result
     }
     
+    /// Scoped helper that executes an operation with direct access to an acquired memory ticket,
+    /// ensuring the ticket is always cleaned up and cache is cleared upon completion.
+    public func withTicket<T: Sendable>(_ operation: (WiredMemoryTicket) async throws -> T) async throws -> T {
+        let ticket = try await acquireTicket()
+        let result: T
+        do {
+            result = try await operation(ticket)
+        } catch {
+            await ticket.finish()
+            throw error
+        }
+        await ticket.finish()
+        return result
+    }
+    
     /// Handles task cancellation by removing the continuation from the suspension queue and throwing CancellationError.
     public func cancelAcquire(id: Int) {
         if let idx = suspensionQueue.firstIndex(where: { $0.id == id }) {

@@ -1,7 +1,15 @@
 import Foundation
 
 /// Pipeline chains multiple PreprocessingTransformers sequentially.
-public final class Pipeline: PreprocessingTransformer, @unchecked Sendable {
+///
+/// ## Concurrency Safety & Data Leakage Prevention
+/// `Pipeline` provides value semantics. Passing or copying a pipeline across concurrent tasks
+/// (e.g. cross-validation folds in a `TaskGroup`) guarantees state isolation, preventing data races
+/// and validation data leakage.
+///
+/// ## Thread Safety
+/// Conforms to `Sendable` and `PreprocessingTransformer`. All step transformations operate on value-isolated state.
+public struct Pipeline: PreprocessingTransformer, Sendable {
     /// The steps.
     public var steps: [any PreprocessingTransformer]
     
@@ -13,7 +21,7 @@ public final class Pipeline: PreprocessingTransformer, @unchecked Sendable {
     }
     
     /// Fits all the steps in the pipeline sequentially.
-    public func fit(_ data: [[Double]]) throws {
+    public mutating func fit(_ data: [[Double]]) throws {
         var current = data
         for i in 0..<steps.count {
             try steps[i].fit(current)
@@ -30,3 +38,4 @@ public final class Pipeline: PreprocessingTransformer, @unchecked Sendable {
         return current
     }
 }
+

@@ -31,7 +31,7 @@ struct PipelineTests {
     @Test("Pipeline fit followed by separate transform on new data")
     func testPipelineFitThenSeparateTransform() throws {
         let scaler = MinMaxScaler()
-        let pipeline = Pipeline(steps: [scaler])
+        var pipeline = Pipeline(steps: [scaler])
         
         let trainData = [[10.0], [20.0]]
         let testData = [[15.0]]
@@ -41,5 +41,37 @@ struct PipelineTests {
         
         // Min = 10, Max = 20 -> (15 - 10)/(20 - 10) = 0.5
         #expect(abs(transformedTest[0][0] - 0.5) < 1e-6)
+    }
+
+    @Test("Concurrent Pipeline copies maintain state isolation without data leakage")
+    func testConcurrentPipelineFoldsNoDataLeakage() async throws {
+        let basePipeline = Pipeline(steps: [StandardScaler()])
+        
+        let fold1Data = [[0.0], [0.0], [0.0]] // Mean = 0, Std = 0 (scaled will stay 0)
+        let fold2Data = [[100.0], [200.0]]     // Mean = 150
+        
+        try await withThrowingTaskGroup(of: (Int, Double).self) { group in
+            group.addTask {
+                var p1 = basePipeline
+                try p1.fit(fold1Data)
+                let res = try p1.transform([[0.0]])
+                return (1, res[0][0])
+            }
+            group.addTask {
+                var p2 = basePipeline
+                try p2.fit(fold2Data)
+                let res = try p2.transform([[100.0]])
+                return (2, res[0][0])
+            }
+            
+            for try await (id, val) in group {
+                if id == 1 {
+                    #expect(abs(val - 0.0) < 1e-5)
+                } else if id == 2 {
+                    // Mean = 150, std = 50 -> (100 - 150)/50 = -1.0
+                    #expect(abs(val - (-1.0)) < 1e-5)
+                }
+            }
+        }
     }
 }

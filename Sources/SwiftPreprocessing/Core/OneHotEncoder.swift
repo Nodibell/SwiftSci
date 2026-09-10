@@ -1,12 +1,31 @@
 import Foundation
 
+/// Strategy for handling unseen categorical levels encountered during transformation.
+public enum HandleUnknownStrategy: Sendable {
+    /// Throws ``PreprocessingError/unknownCategory(_:)`` when encountering an unobserved category level.
+    case error
+
+    /// Encodes unobserved categories as an all-zero vector for that feature column, preventing pipeline failure.
+    case ignore
+}
+
 /// Encodes categorical features into one-hot binary matrices.
+///
+/// ## Handling Unknown Categories
+/// When `handleUnknown` is configured as `.ignore`, categories not encountered during `fit`
+/// are encoded as all-zero feature vectors, preventing inference pipeline failures.
 public final class OneHotEncoder: @unchecked Sendable {
+    /// Strategy applied when encountering unobserved categories during transformation.
+    public let handleUnknown: HandleUnknownStrategy
+
     /// Categorical levels for each feature column.
     public private(set) var categories: [[String]] = []
     
-    /// Creates a new instance.
-    public init() {}
+    /// Creates a new `OneHotEncoder` instance.
+    /// - Parameter handleUnknown: Strategy to apply for unobserved categories during `transform`. Defaults to `.error`.
+    public init(handleUnknown: HandleUnknownStrategy = .error) {
+        self.handleUnknown = handleUnknown
+    }
     
     /// Fits the OneHotEncoder to a 2D categorical dataset of shape [rows, cols].
     public func fit(_ data: [[String]]) {
@@ -63,13 +82,20 @@ public final class OneHotEncoder: @unchecked Sendable {
                 let categoryList = categories[col]
                 let lookup = lookups[col]
                 
-                guard let idx = lookup[category] else {
-                    throw PreprocessingError.unknownCategory(category)
-                }
-                
-                // Append one-hot vector for the current column
-                for i in 0..<categoryList.count {
-                    oneHotRow.append(i == idx ? 1.0 : 0.0)
+                if let idx = lookup[category] {
+                    // Append one-hot vector for the current column
+                    for i in 0..<categoryList.count {
+                        oneHotRow.append(i == idx ? 1.0 : 0.0)
+                    }
+                } else {
+                    switch handleUnknown {
+                    case .error:
+                        throw PreprocessingError.unknownCategory(category)
+                    case .ignore:
+                        for _ in 0..<categoryList.count {
+                            oneHotRow.append(0.0)
+                        }
+                    }
                 }
             }
             transformed.append(oneHotRow)

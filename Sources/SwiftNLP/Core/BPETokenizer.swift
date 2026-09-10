@@ -50,16 +50,54 @@ public struct BPETokenizer: Tokenizer, Sendable {
         return tokens.map { vocab[$0] ?? unkTokenId }
     }
     
-    /// Decodes a sequence of token IDs back into a reconstructed string.
+    /// Decodes a sequence of token IDs back into a reconstructed string with strict byte-level UTF-8 inversion.
+    ///
+    /// ## Grapheme & Multibyte Safety
+    /// Reverses the GPT-2 byte encoder mapping back to raw bytes prior to UTF-8 decoding,
+    /// ensuring intact reconstruction of Cyrillic, CJK characters, and compound emojis.
+    ///
+    /// - Parameter tokens: Sequence of integer token identifiers.
+    /// - Returns: Reconstructed UTF-8 string with whitespace normalization.
     public func decode(tokens: [Int]) -> String {
         let subwords = tokens.compactMap { decoder[$0] }
         let joined = subwords.joined()
-        return joined.replacingOccurrences(of: "</w>", with: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        var rawBytes = [UInt8]()
+        rawBytes.reserveCapacity(joined.utf8.count)
+        
+        var i = joined.startIndex
+        while i < joined.endIndex {
+            // Check for </w> token
+            if joined[i...].hasPrefix("</w>") {
+                rawBytes.append(UInt8(ascii: " "))
+                i = joined.index(i, offsetBy: 4)
+            } else {
+                let char = joined[i]
+                if let byte = Self.byteDecoder[char] {
+                    rawBytes.append(byte)
+                } else {
+                    for b in String(char).utf8 {
+                        rawBytes.append(b)
+                    }
+                }
+                i = joined.index(after: i)
+            }
+        }
+        
+        let decoded = String(decoding: rawBytes, as: UTF8.self)
+        return decoded.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     // MARK: - Helper BPE Algorithm
     
     private static let byteEncoder: [UInt8: Character] = Self.makeByteEncoder()
+    private static let byteDecoder: [Character: UInt8] = {
+        var rev = [Character: UInt8]()
+        for (b, c) in byteEncoder {
+            rev[c] = b
+        }
+        return rev
+    }()
     
     private static func makeByteEncoder() -> [UInt8: Character] {
         let bytes = Array(UInt8(ascii: "!")...UInt8(ascii: "~"))

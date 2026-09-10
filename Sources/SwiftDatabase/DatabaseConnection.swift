@@ -76,19 +76,42 @@ public struct SQLQueryResult: Sendable {
     }
 }
 
-/// Type-safe wrapper for SQL query values.
-public enum AnySendableValue: Sendable, CustomStringConvertible {
+/// A strongly-typed, thread-safe value representation supporting primary database column datatypes.
+///
+/// ## Supported Types
+/// Includes direct native representations for 64-bit integers, booleans, timestamps, and binary BLOBs,
+/// avoiding intermediate string parsing allocations during SQL ingestion.
+///
+/// ## Thread Safety
+/// Conforms to `Sendable`, `Equatable`, and `CustomStringConvertible`.
+public enum AnySendableValue: Sendable, CustomStringConvertible, Equatable {
+    /// 64-bit IEEE 754 floating point number.
     case double(Double)
+    /// Native host-width integer value.
     case int(Int)
+    /// Explicit 64-bit signed integer value, suitable for large 64-bit keys and counters.
+    case int64(Int64)
+    /// UTF-8 encoded text string.
     case string(String)
+    /// Boolean flag value.
+    case bool(Bool)
+    /// High-precision timestamp or date.
+    case date(Date)
+    /// Binary blob or arbitrary raw byte payload.
+    case data(Data)
+    /// SQL NULL or missing value representation.
     case null
 
-    /// The description.
+    /// The human-readable string representation of the value.
     public var description: String {
         switch self {
         case .double(let v): return "\(v)"
         case .int(let v): return "\(v)"
+        case .int64(let v): return "\(v)"
         case .string(let v): return v
+        case .bool(let v): return "\(v)"
+        case .date(let v): return ISO8601DateFormatter().string(from: v)
+        case .data(let v): return "\(v.count) bytes"
         case .null: return "NULL"
         }
     }
@@ -167,7 +190,11 @@ public actor SQLiteConnection: DatabaseConnection {
                     switch colType {
                     case SQLITE_INTEGER:
                         let val = sqlite3_column_int64(stmt, i)
-                        row.append(.int(Int(val)))
+                        if val >= Int64(Int.min) && val <= Int64(Int.max) {
+                            row.append(.int(Int(val)))
+                        } else {
+                            row.append(.int64(val))
+                        }
                     case SQLITE_FLOAT:
                         let val = sqlite3_column_double(stmt, i)
                         row.append(.double(val))
@@ -176,6 +203,14 @@ public actor SQLiteConnection: DatabaseConnection {
                             row.append(.string(String(cString: textPtr)))
                         } else {
                             row.append(.string(""))
+                        }
+                    case SQLITE_BLOB:
+                        if let blobPtr = sqlite3_column_blob(stmt, i) {
+                            let byteCount = sqlite3_column_bytes(stmt, i)
+                            let data = Data(bytes: blobPtr, count: Int(byteCount))
+                            row.append(.data(data))
+                        } else {
+                            row.append(.data(Data()))
                         }
                     case SQLITE_NULL:
                         row.append(.null)
@@ -774,6 +809,10 @@ extension DataFrame {
                         case .string(let s): colValues.append(s)
                         case .double(let d): colValues.append("\(d)")
                         case .int(let i): colValues.append("\(i)")
+                        case .int64(let i): colValues.append("\(i)")
+                        case .bool(let b): colValues.append("\(b)")
+                        case .date(let d): colValues.append(ISO8601DateFormatter().string(from: d))
+                        case .data(let d): colValues.append(d.base64EncodedString())
                         case .null: colValues.append(nil)
                         }
                     } else {
@@ -789,6 +828,10 @@ extension DataFrame {
                         switch row[colIdx] {
                         case .double(let d): colValues.append(d)
                         case .int(let i): colValues.append(Double(i))
+                        case .int64(let i): colValues.append(Double(i))
+                        case .bool(let b): colValues.append(b ? 1.0 : 0.0)
+                        case .date(let d): colValues.append(d.timeIntervalSince1970)
+                        case .data: colValues.append(nil)
                         case .string(let s): colValues.append(Double(s))
                         case .null: colValues.append(nil)
                         }
@@ -932,8 +975,9 @@ extension SQLQueryResult {
                 guard colIdx < row.count else { continue }
                 switch row[colIdx] {
                 case .double: isDouble = true
-                case .int: isInt = true
-                case .string: isString = true
+                case .int, .int64: isInt = true
+                case .string, .data, .date: isString = true
+                case .bool: isInt = true
                 case .null: break
                 }
                 if isString || isDouble { break }
@@ -947,7 +991,11 @@ extension SQLQueryResult {
                         switch row[colIdx] {
                         case .string(let s): vals.append(s)
                         case .int(let i): vals.append("\(i)")
+                        case .int64(let i): vals.append("\(i)")
                         case .double(let d): vals.append("\(d)")
+                        case .bool(let b): vals.append("\(b)")
+                        case .date(let d): vals.append(ISO8601DateFormatter().string(from: d))
+                        case .data(let d): vals.append(d.base64EncodedString())
                         case .null: vals.append("")
                         }
                     } else {
@@ -963,6 +1011,10 @@ extension SQLQueryResult {
                         switch row[colIdx] {
                         case .double(let d): vals.append(d)
                         case .int(let i): vals.append(Double(i))
+                        case .int64(let i): vals.append(Double(i))
+                        case .bool(let b): vals.append(b ? 1.0 : 0.0)
+                        case .date(let d): vals.append(d.timeIntervalSince1970)
+                        case .data: vals.append(Double.nan)
                         case .string(let s): vals.append(Double(s) ?? 0.0)
                         case .null: vals.append(Double.nan)
                         }
@@ -978,7 +1030,11 @@ extension SQLQueryResult {
                     if colIdx < row.count {
                         switch row[colIdx] {
                         case .int(let i): vals.append(Int64(i))
+                        case .int64(let i): vals.append(i)
                         case .double(let d): vals.append(Int64(d))
+                        case .bool(let b): vals.append(b ? 1 : 0)
+                        case .date(let d): vals.append(Int64(d.timeIntervalSince1970))
+                        case .data: vals.append(0)
                         case .string(let s): vals.append(Int64(s) ?? 0)
                         case .null: vals.append(0)
                         }

@@ -180,12 +180,12 @@ public final class MetalQuantizedEngine: @unchecked Sendable {
         }
     }
 
-    /// Dispatches a quantized matrix-vector multiplication kernel onto the GPU.
+    /// Dispatches a quantized matrix-vector multiplication kernel onto the GPU using raw scale bytes.
     ///
     /// - Parameters:
     ///   - inVector: Input float vector of size `inFeatures`.
     ///   - rawWeights: Raw quantized weight byte buffer.
-    ///   - rawScales: FP16 scale factors per block.
+    ///   - rawScalesData: Raw FP16 scale factors byte buffer (2 bytes per block).
     ///   - inFeatures: Input dimension size (must be divisible by 32).
     ///   - outFeatures: Output dimension size.
     ///   - kernelName: Kernel function name (`gemv_q4_0` or `gemv_q8_0`).
@@ -194,7 +194,7 @@ public final class MetalQuantizedEngine: @unchecked Sendable {
     public func executeGEMV(
         inVector: [Float],
         rawWeights: Data,
-        rawScales: [Float16],
+        rawScalesData: Data,
         inFeatures: Int,
         outFeatures: Int,
         kernelName: String
@@ -221,7 +221,10 @@ public final class MetalQuantizedEngine: @unchecked Sendable {
             throw MetalQuantizedError.bufferCreationFailed
         }
 
-        let scalesBuffer = dev.makeBuffer(bytes: rawScales, length: rawScales.count * MemoryLayout<Float16>.stride, options: .storageModeShared)
+        let scalesBuffer: (any MTLBuffer)? = rawScalesData.withUnsafeBytes { rawPtr in
+            guard let base = rawPtr.baseAddress else { return nil }
+            return dev.makeBuffer(bytes: base, length: rawScalesData.count, options: .storageModeShared)
+        }
         guard let sBuf = scalesBuffer else {
             throw MetalQuantizedError.bufferCreationFailed
         }
@@ -239,20 +242,57 @@ public final class MetalQuantizedEngine: @unchecked Sendable {
         encoder.setBuffer(wBuf, offset: 0, index: 1)
         encoder.setBuffer(sBuf, offset: 0, index: 2)
         encoder.setBuffer(outBuffer, offset: 0, index: 3)
-        encoder.setBytes(&inF, length: MemoryLayout<UInt32>.size, index: 4)
-        encoder.setBytes(&outF, length: MemoryLayout<UInt32>.size, index: 5)
+        encoder.setBytes(&inF, length: MemoryLayout<UInt32>.stride, index: 4)
+        encoder.setBytes(&outF, length: MemoryLayout<UInt32>.stride, index: 5)
 
-        let threadGroupSize = MTLSize(width: min(pipeline.maxTotalThreadsPerThreadgroup, 64), height: 1, depth: 1)
-        let gridSize = MTLSize(width: outFeatures, height: 1, depth: 1)
-        encoder.dispatchThreads(gridSize, threadsPerThreadgroup: threadGroupSize)
+        let threadsPerGroup = MTLSize(width: min(pipeline.maxTotalThreadsPerThreadgroup, 32), height: 1, depth: 1)
+        let numGroups = MTLSize(width: (outFeatures + threadsPerGroup.width - 1) / threadsPerGroup.width, height: 1, depth: 1)
+
+        encoder.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
         encoder.endEncoding()
 
         cmdBuf.commit()
         cmdBuf.waitUntilCompleted()
 
+        if let error = cmdBuf.error {
+            throw MetalQuantizedError.executionFailed(error.localizedDescription)
+        }
+
         let outPtr = outBuffer.contents().bindMemory(to: Float.self, capacity: outFeatures)
         return Array(UnsafeBufferPointer(start: outPtr, count: outFeatures))
     }
+
+#if arch(arm64)
+    /// Dispatches a quantized matrix-vector multiplication kernel onto the GPU.
+    ///
+    /// - Parameters:
+    ///   - inVector: Input float vector of size `inFeatures`.
+    ///   - rawWeights: Raw quantized weight byte buffer.
+    ///   - rawScales: FP16 scale factors per block.
+    ///   - inFeatures: Input dimension size (must be divisible by 32).
+    ///   - outFeatures: Output dimension size.
+    ///   - kernelName: Kernel function name (`gemv_q4_0` or `gemv_q8_0`).
+    /// - Returns: Computed output float activations of size `outFeatures`.
+    /// - Throws: `MetalQuantizedError` if buffers fail or execution errors.
+    public func executeGEMV(
+        inVector: [Float],
+        rawWeights: Data,
+        rawScales: [Float16],
+        inFeatures: Int,
+        outFeatures: Int,
+        kernelName: String
+    ) throws -> [Float] {
+        let scalesData = rawScales.withUnsafeBytes { Data($0) }
+        return try executeGEMV(
+            inVector: inVector,
+            rawWeights: rawWeights,
+            rawScalesData: scalesData,
+            inFeatures: inFeatures,
+            outFeatures: outFeatures,
+            kernelName: kernelName
+        )
+    }
+#endif
 }
 
 /// A linear neural network layer performing matrix multiplication with 4-bit (Q4_0, Q4_K) or 8-bit quantized weights.
@@ -350,7 +390,7 @@ public final class QuantizedLinear: Module, @unchecked Sendable {
     /// - Parameters:
     ///   - inVector: Input float activations of dimension `inFeatures`.
     ///   - rawWeights: Raw packed weight byte buffer (16 bytes per 32 elements for Q4_0; 32 bytes for Q8_0).
-    ///   - rawScales: FP16 scale factors per block (1 per 32 elements).
+    ///   - rawScalesData: FP16 scale factors byte buffer (2 bytes per block of 32 elements).
     /// - Returns: Computed output float activations of dimension `outFeatures`.
     /// - Throws: `MetalQuantizedError` if GPU buffers cannot be allocated or kernel fails.
     ///
@@ -362,7 +402,7 @@ public final class QuantizedLinear: Module, @unchecked Sendable {
     public func forwardMetal(
         inVector: [Float],
         rawWeights: Data,
-        rawScales: [Float16]
+        rawScalesData: Data
     ) throws -> [Float] {
         let kernelName: String
         switch scheme {
@@ -377,7 +417,7 @@ public final class QuantizedLinear: Module, @unchecked Sendable {
         var result = try MetalQuantizedEngine.shared.executeGEMV(
             inVector: inVector,
             rawWeights: rawWeights,
-            rawScales: rawScales,
+            rawScalesData: rawScalesData,
             inFeatures: inFeatures,
             outFeatures: outFeatures,
             kernelName: kernelName
@@ -392,6 +432,35 @@ public final class QuantizedLinear: Module, @unchecked Sendable {
 
         return result
     }
+
+#if arch(arm64)
+    /// Performs direct GPU matrix-vector multiplication with quantized weights using native Metal shaders without intermediate CPU allocations.
+    ///
+    /// - Parameters:
+    ///   - inVector: Input float activations of dimension `inFeatures`.
+    ///   - rawWeights: Raw packed weight byte buffer (16 bytes per 32 elements for Q4_0; 32 bytes for Q8_0).
+    ///   - rawScales: FP16 scale factors per block (1 per 32 elements).
+    /// - Returns: Computed output float activations of dimension `outFeatures`.
+    /// - Throws: `MetalQuantizedError` if GPU buffers cannot be allocated or kernel fails.
+    ///
+    /// ## Metal Acceleration
+    /// Executes `gemv_q4_0` or `gemv_q8_0` MSL kernels directly on unified memory.
+    ///
+    /// ## Complexity
+    /// \(O(\text{outFeatures} \cdot \text{inFeatures} / 32)\) on parallel Apple Silicon GPU threads.
+    public func forwardMetal(
+        inVector: [Float],
+        rawWeights: Data,
+        rawScales: [Float16]
+    ) throws -> [Float] {
+        let scalesData = rawScales.withUnsafeBytes { Data($0) }
+        return try forwardMetal(
+            inVector: inVector,
+            rawWeights: rawWeights,
+            rawScalesData: scalesData
+        )
+    }
+#endif
 
     /// Performs the forward pass linear transformation on input activations via MLX unified GPU runtime.
     ///

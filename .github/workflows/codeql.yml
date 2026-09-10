@@ -11,7 +11,7 @@ on:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: macos-latest
+    runs-on: macos-14
 
     permissions:
       security-events: write
@@ -29,6 +29,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "latest"
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
@@ -37,6 +42,8 @@ jobs:
 
       - name: Build Swift Package
         if: matrix.language == 'swift'
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "14.0"
         run: swift build
 
       - name: Perform CodeQL Analysis

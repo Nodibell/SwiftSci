@@ -80,7 +80,11 @@ struct QuantizedWeightsTests {
         }
 
         // Q4_0 Block (18 bytes: 2 bytes scale + 16 bytes nibbles)
+#if arch(arm64)
         var scaleF16 = Float16(1.0).bitPattern.littleEndian
+#else
+        var scaleF16: UInt16 = 0x3C00.littleEndian // FP16 1.0 representation
+#endif
         withUnsafeBytes(of: &scaleF16) { fileData.append(contentsOf: $0) }
         // 16 bytes with 0x88 (nibbles 8, 8 -> dequantized value (8-8)*1.0 = 0.0)
         fileData.append(Data(repeating: 0x88, count: 16))
@@ -94,6 +98,7 @@ struct QuantizedWeightsTests {
         #expect(parsed["q4_tensor"]?.shape == [32])
     }
 
+#if arch(arm64)
     @Test("Native Metal MSL gemv_q4_0 and gemv_q8_0 execution")
     func testMetalQuantizedGEMV() throws {
         let inFeatures = 32
@@ -157,5 +162,6 @@ struct QuantizedWeightsTests {
             )
         }
     }
+#endif
 }
 #endif

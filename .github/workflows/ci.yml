@@ -2,9 +2,9 @@ name: SwiftSci CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, "release/**"]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, "release/**"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -102,7 +102,6 @@ jobs:
             --skip SwiftMLTests \
             --skip SwiftClusterTests \
             --skip SwiftForecastTests \
-            --skip SwiftPrivacyTests \
             --skip SwiftExplainTests \
             --skip SwiftPreprocessingTests \
             --skip SwiftOptimizeTests \

@@ -150,6 +150,26 @@ struct RandomForestTests {
         let vals = [1.0, 2.0, 3.0, 4.0]
         #expect(abs(mseImpurity(vals) - 1.25) < 1e-7)
     }
+
+    @Test("RandomForestClassifier is deterministic with identical randomState")
+    func testRFDeterminism() async throws {
+        var features = [[Double]]()
+        var targets = [Double]()
+        for i in 0..<40 {
+            features.append([Double(i), Double(i % 3)])
+            targets.append(Double(i % 2))
+        }
+
+        let rf1 = try RandomForestClassifier(nEstimators: 10, maxDepth: 4, randomState: 12345)
+        try await rf1.fit(features: features, targets: targets)
+        let preds1 = try await rf1.predict(features: features)
+
+        let rf2 = try RandomForestClassifier(nEstimators: 10, maxDepth: 4, randomState: 12345)
+        try await rf2.fit(features: features, targets: targets)
+        let preds2 = try await rf2.predict(features: features)
+
+        #expect(preds1 == preds2)
+    }
 }
 
 @Suite("GradientBoosting Tests")

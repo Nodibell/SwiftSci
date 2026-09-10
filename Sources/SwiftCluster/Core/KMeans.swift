@@ -32,22 +32,27 @@ public actor KMeans {
     /// CPU-side centroid matrix (source of truth after a CPU fit).
     private var cpuCentroids: [[Double]]?
 
-    /// The seed.
+    /// The seed for random number generation.
     public let seed: Int
 
-    /// Creates a new instance.
+    /// Alias for `seed`, providing Scikit-Learn compatible naming.
+    public var randomState: Int { seed }
+
+    /// Creates a new K-Means clustering model.
     /// - Parameters:
-    ///   - nClusters: The n clusters.
-    ///   - maxIterations: The max iterations.
-    ///   - tolerance: The tolerance.
-    ///   - seed: The seed.
-    ///   - device: The device.
-    /// - Throws: An error if the operation fails.
+    ///   - nClusters: The number of clusters to form as well as the number of centroids to generate.
+    ///   - maxIterations: Maximum number of iterations of the k-means algorithm for a single run.
+    ///   - tolerance: Relative tolerance with regards to Frobenius norm of cluster differences.
+    ///   - seed: The integer seed for pseudo-random centroid initialization.
+    ///   - randomState: Optional random state overriding `seed` for Scikit-Learn compatibility.
+    ///   - device: Hardware device execution preference (.cpu, .gpu, or .auto).
+    /// - Throws: `ClusterError.invalidParameter` if parameters are out of valid ranges.
     public init(
         nClusters: Int,
         maxIterations: Int = 300,
         tolerance: Double = 1e-4,
         seed: Int = 42,
+        randomState: Int? = nil,
         device: ExecutionDevice = .auto
     ) throws {
         guard nClusters > 0 else {
@@ -59,7 +64,7 @@ public actor KMeans {
         self.nClusters = nClusters
         self.maxIterations = maxIterations
         self.tolerance = Float(tolerance)
-        self.seed = seed
+        self.seed = randomState ?? seed
         self.requestedDevice = device
     }
 

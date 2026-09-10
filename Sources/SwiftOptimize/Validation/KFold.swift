@@ -45,10 +45,7 @@ public struct KFold: Sendable {
 
         if shuffle {
             var rng = SeededRandom(seed: seed)
-            for i in stride(from: n - 1, through: 1, by: -1) {
-                let j = rng.nextInt(upperBound: i + 1)
-                indices.swapAt(i, j)
-            }
+            indices.shuffle(using: &rng)
         }
 
         let baseSize = n / nSplits

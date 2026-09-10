@@ -37,6 +37,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
     public let minSamplesSplit: Int
     /// The criterion.
     public let criterion: SplitCriterion
+    /// Optional random state used to seed tree bootstrapping and feature selection deterministically.
+    public let randomState: Int?
 
     // DOD Architecture: the forest is stored as an array of flat node arrays
     private var trees: [[FlatTreeNode]] = []
@@ -70,22 +72,27 @@ public actor RandomForestClassifier: ClassifierEstimator {
         return aggregated
     }
 
-    /// Creates a new instance.
+    /// Creates a new random forest classifier.
     /// - Parameters:
-    ///   - nEstimators: The n estimators.
-    ///   - maxDepth: The max depth.
-    ///   - maxFeatures: The max features.
+    ///   - nEstimators: The number of trees in the forest. Must be greater than 0.
+    ///   - maxDepth: The maximum depth of each decision tree.
+    ///   - maxFeatures: The number of features to consider when looking for the best split. Defaults to `sqrt(numFeatures)`.
     ///   - maxSamples: Optional maximum number of bootstrap samples per tree (prevents OOM on large datasets).
-    ///   - minSamplesSplit: The min samples split.
-    ///   - criterion: The criterion.
-    /// - Throws: An error if the operation fails.
+    ///   - minSamplesSplit: The minimum number of samples required to split an internal node.
+    ///   - criterion: The function to measure the quality of a split (.gini or .entropy).
+    ///   - randomState: Controls the randomness of the bootstrapping of samples and tree building.
+    /// - Throws: `SwiftMLError.invalidParameter` if parameters are invalid.
+    ///
+    /// ## Thread Safety
+    /// Actor-isolated model. Safe to initialize and access across concurrent execution contexts.
     public init(
         nEstimators: Int = 100,
         maxDepth: Int = 10,
         maxFeatures: Int? = nil,
         maxSamples: Int? = nil,
         minSamplesSplit: Int = 2,
-        criterion: SplitCriterion = .gini
+        criterion: SplitCriterion = .gini,
+        randomState: Int? = nil
     ) throws {
         guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
         self.nEstimators = nEstimators
@@ -94,6 +101,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         self.maxSamples = maxSamples
         self.minSamplesSplit = minSamplesSplit
         self.criterion = criterion
+        self.randomState = randomState
     }
 
     /// Fit classifier without progress callback.
@@ -101,12 +109,15 @@ public actor RandomForestClassifier: ClassifierEstimator {
         try await fit(features: features, targets: targets, onProgress: nil)
     }
 
-    /// Fit.
+    /// Fits the random forest classifier using concurrent tree construction.
     /// - Parameters:
-    ///   - features: The features.
-    ///   - targets: The targets.
-    ///   - onProgress: Optional progress callback reporting (completedTrees, totalTrees).
-    /// - Throws: An error if the operation fails.
+    ///   - features: Matrix of shape `[n_samples, n_features]`.
+    ///   - targets: Array of class labels of shape `[n_samples]`.
+    ///   - onProgress: Optional progress callback reporting `(completedTrees, totalTrees)`.
+    /// - Throws: `SwiftMLError` if features are empty or dimension mismatch occurs.
+    ///
+    /// ## Concurrency
+    /// Uses `withThrowingTaskGroup` to construct decision trees in parallel across all available CPU cores.
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -125,11 +136,13 @@ public actor RandomForestClassifier: ClassifierEstimator {
         let minSamplesSplit = self.minSamplesSplit
         let criterion = self.criterion
         let nEstimators = self.nEstimators
+        let baseSeed = self.randomState ?? 42
 
-        let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in
+        let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: (Int, [FlatTreeNode]).self) { group in
             for i in 0..<nEstimators {
+                let treeSeed = baseSeed &+ (i &* 10007)
                 group.addTask {
-                    let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i, maxSamples: maxSamples)
+                    let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: treeSeed, maxSamples: maxSamples)
                     let presorted = createPresortedIndices(X: bX)
                     var nodes = [FlatTreeNode]()
                     _ = RandomForestClassifier.buildTreeSync(
@@ -141,21 +154,23 @@ public actor RandomForestClassifier: ClassifierEstimator {
                         minSamplesSplit: minSamplesSplit,
                         criterion: criterion,
                         maxFeatures: maxFeatures,
+                        seed: treeSeed,
                         nodes: &nodes
                     )
-                    return nodes
+                    return (i, nodes)
                 }
             }
 
-            var result = [[FlatTreeNode]]()
-            result.reserveCapacity(nEstimators)
+            var indexedTrees = [(Int, [FlatTreeNode])]()
+            indexedTrees.reserveCapacity(nEstimators)
             var doneCount = 0
-            for try await treeNodes in group {
-                result.append(treeNodes)
+            for try await (idx, treeNodes) in group {
+                indexedTrees.append((idx, treeNodes))
                 doneCount += 1
                 onProgress?(doneCount, nEstimators)
             }
-            return result
+            indexedTrees.sort(by: { $0.0 < $1.0 })
+            return indexedTrees.map { $0.1 }
         }
 
         self.trees = trainedTrees
@@ -174,7 +189,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
                 let pred = Int(RandomForestClassifier.predictSample(sample, nodes: treeNodes))
                 votes[pred, default: 0] += 1
             }
-            return votes.max(by: { $0.value < $1.value })?.key ?? 0
+            return votes.sorted(by: { if $0.value != $1.value { return $0.value > $1.value } else { return $0.key < $1.key } }).first?.key ?? 0
         }
     }
 
@@ -220,6 +235,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         minSamplesSplit: Int,
         criterion: SplitCriterion,
         maxFeatures: Int?,
+        seed: Int = 42,
         nodes: inout [FlatTreeNode]
     ) -> Int {
         let labels = indices.map { y[$0] }
@@ -230,7 +246,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
             return nodes.count - 1
         }
 
-        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: criterion, maxFeatures: maxFeatures) else {
+        let splitSeed = seed &+ (depth &* 31) &+ (indices.count &* 101)
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: criterion, maxFeatures: maxFeatures, seed: splitSeed) else {
             nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
         }
@@ -238,8 +255,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
         let currentIndex = nodes.count
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
-        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
+        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, seed: seed &* 3 &+ 1, nodes: &nodes)
+        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, seed: seed &* 3 &+ 2, nodes: &nodes)
 
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(
@@ -286,6 +303,8 @@ public actor RandomForestRegressor: RegressorEstimator {
     public let maxSamples: Int?
     /// The min samples split.
     public let minSamplesSplit: Int
+    /// Optional random state used to seed tree bootstrapping and feature selection deterministically.
+    public let randomState: Int?
 
     private var trees: [[FlatTreeNode]] = []
     
@@ -317,20 +336,25 @@ public actor RandomForestRegressor: RegressorEstimator {
         return aggregated
     }
 
-    /// Creates a new instance.
+    /// Creates a new random forest regressor.
     /// - Parameters:
-    ///   - nEstimators: The n estimators.
-    ///   - maxDepth: The max depth.
-    ///   - maxFeatures: The max features.
+    ///   - nEstimators: The number of trees in the forest. Must be greater than 0.
+    ///   - maxDepth: The maximum depth of each decision tree.
+    ///   - maxFeatures: The number of features to consider when looking for the best split. Defaults to `sqrt(numFeatures)`.
     ///   - maxSamples: Optional maximum number of bootstrap samples per tree.
-    ///   - minSamplesSplit: The min samples split.
-    /// - Throws: An error if the operation fails.
+    ///   - minSamplesSplit: The minimum number of samples required to split an internal node.
+    ///   - randomState: Controls the randomness of the bootstrapping of samples and tree building.
+    /// - Throws: `SwiftMLError.invalidParameter` if parameters are invalid.
+    ///
+    /// ## Thread Safety
+    /// Actor-isolated model. Safe to initialize and access across concurrent execution contexts.
     public init(
         nEstimators: Int = 100,
         maxDepth: Int = 10,
         maxFeatures: Int? = nil,
         maxSamples: Int? = nil,
-        minSamplesSplit: Int = 2
+        minSamplesSplit: Int = 2,
+        randomState: Int? = nil
     ) throws {
         guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
         self.nEstimators = nEstimators
@@ -338,6 +362,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         self.maxFeatures = maxFeatures
         self.maxSamples = maxSamples
         self.minSamplesSplit = minSamplesSplit
+        self.randomState = randomState
     }
 
     /// Fits the regressor model.
@@ -345,12 +370,15 @@ public actor RandomForestRegressor: RegressorEstimator {
         try await fit(features: features, targets: targets, onProgress: nil)
     }
 
-    /// Fit with progress callback.
+    /// Fits the random forest regressor using concurrent tree construction.
     /// - Parameters:
-    ///   - features: The features.
-    ///   - targets: The targets.
-    ///   - onProgress: Optional progress callback reporting (completed, total).
-    /// - Throws: An error if the operation fails.
+    ///   - features: Matrix of shape `[n_samples, n_features]`.
+    ///   - targets: Continuous target array of shape `[n_samples]`.
+    ///   - onProgress: Optional progress callback reporting `(completed, total)`.
+    /// - Throws: `SwiftMLError` if features are empty or dimension mismatch occurs.
+    ///
+    /// ## Concurrency
+    /// Uses `withThrowingTaskGroup` to construct decision trees in parallel across all available CPU cores.
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -367,11 +395,13 @@ public actor RandomForestRegressor: RegressorEstimator {
         let maxSamples = self.maxSamples ?? (features.count > 10_000 ? 10_000 : features.count)
         let minSamplesSplit = self.minSamplesSplit
         let nEstimators = self.nEstimators
+        let baseSeed = self.randomState ?? 42
 
-        let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in
+        let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: (Int, [FlatTreeNode]).self) { group in
             for i in 0..<nEstimators {
+                let treeSeed = baseSeed &+ (i &* 10007)
                 group.addTask {
-                    let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i, maxSamples: maxSamples)
+                    let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: treeSeed, maxSamples: maxSamples)
                     let presorted = createPresortedIndices(X: bX)
                     var nodes = [FlatTreeNode]()
                     _ = RandomForestRegressor.buildTreeSync(
@@ -382,20 +412,22 @@ public actor RandomForestRegressor: RegressorEstimator {
                         maxDepth: maxDepth,
                         minSamplesSplit: minSamplesSplit,
                         maxFeatures: maxFeatures,
+                        seed: treeSeed,
                         nodes: &nodes
                     )
-                    return nodes
+                    return (i, nodes)
                 }
             }
-            var result = [[FlatTreeNode]]()
-            result.reserveCapacity(nEstimators)
+            var indexedTrees = [(Int, [FlatTreeNode])]()
+            indexedTrees.reserveCapacity(nEstimators)
             var doneCount = 0
-            for try await treeNodes in group {
-                result.append(treeNodes)
+            for try await (idx, treeNodes) in group {
+                indexedTrees.append((idx, treeNodes))
                 doneCount += 1
                 onProgress?(doneCount, nEstimators)
             }
-            return result
+            indexedTrees.sort(by: { $0.0 < $1.0 })
+            return indexedTrees.map { $0.1 }
         }
 
         self.trees = trainedTrees
@@ -433,6 +465,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         maxDepth: Int,
         minSamplesSplit: Int,
         maxFeatures: Int?,
+        seed: Int = 42,
         nodes: inout [FlatTreeNode]
     ) -> Int {
         let values = indices.map { y[$0] }
@@ -443,7 +476,8 @@ public actor RandomForestRegressor: RegressorEstimator {
             return nodes.count - 1
         }
 
-        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: maxFeatures),
+        let splitSeed = seed &+ (depth &* 31) &+ (indices.count &* 101)
+        guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: maxFeatures, seed: splitSeed),
               split.gain > 0 else {
             nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0))
             return nodes.count - 1
@@ -452,8 +486,8 @@ public actor RandomForestRegressor: RegressorEstimator {
         let currentIndex = nodes.count
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let left  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
-        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
+        let left  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, seed: seed &* 3 &+ 1, nodes: &nodes)
+        let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, seed: seed &* 3 &+ 2, nodes: &nodes)
 
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(

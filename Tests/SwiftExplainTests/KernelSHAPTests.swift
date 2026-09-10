@@ -51,6 +51,55 @@ struct KernelSHAPTests {
         #expect(abs(shapValues[1] - expectedShap1) < 1e-2)
     }
 
+    @Test("KernelSHAP single feature (M = 1) exact calculation without division by zero")
+    func testKernelSHAPSingleFeatureM1() async throws {
+        let model: @Sendable ([Double]) async -> Double = { x in
+            guard !x.isEmpty else { return 0.0 }
+            return 3.0 * x[0] + 5.0
+        }
+
+        let instance = [10.0]
+        let background = [[2.0]]
+
+        let explainer = KernelSHAP()
+        let shapValues = await explainer.explain(
+            model: model,
+            instance: instance,
+            background: background,
+            numCoalitions: 50
+        )
+
+        #expect(shapValues.count == 1)
+        // fFull = 35.0, fEmpty = 11.0, difference = 24.0
+        #expect(abs(shapValues[0] - 24.0) < 1e-6)
+    }
+
+    @Test("KernelSHAP 2-feature (M = 2) analytical exact calculation satisfies efficiency identically")
+    func testKernelSHAPM2AnalyticalExact() async throws {
+        // Nonlinear interaction model: f(x) = x0^2 + x0 * x1 + 3.0 * x1
+        let model: @Sendable ([Double]) async -> Double = { x in
+            return (x[0] * x[0]) + (x[0] * x[1]) + (3.0 * x[1])
+        }
+
+        let instance = [2.0, 4.0]
+        let background = [[0.0, 0.0], [2.0, 0.0]] // bgMean = [1.0, 0.0]
+
+        let explainer = KernelSHAP()
+        let shapValues = await explainer.explain(
+            model: model,
+            instance: instance,
+            background: background,
+            numCoalitions: 100
+        )
+
+        #expect(shapValues.count == 2)
+        let fEmpty = await model([1.0, 0.0]) // 1.0 + 0 + 0 = 1.0
+        let fFull = await model(instance)    // 4.0 + 8.0 + 12.0 = 24.0
+        let totalGain = fFull - fEmpty       // 23.0
+
+        #expect(abs((shapValues[0] + shapValues[1]) - totalGain) < 1e-9)
+    }
+
     @Test("TreeSHAP delegating explainer returns SHAP values")
     func testTreeSHAPExplainer() async throws {
         let model: @Sendable ([Double]) async -> Double = { x in

@@ -39,7 +39,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/google/flatbuffers.git",
-            exact: "2.0.8"
+            exact: "25.2.10"
         ),
         .package(
             url: "https://github.com/apache/arrow-swift.git",

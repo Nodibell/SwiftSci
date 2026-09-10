@@ -205,7 +205,7 @@ let package = Package(
             dependencies: ["SwiftNLP"],
             path: "Tests/SwiftNLPTests",
             cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings,
+            swiftSettings: globalSwiftSettings
         ),
 
         // ── SwiftOptimize ────────────────────────────────────────────────

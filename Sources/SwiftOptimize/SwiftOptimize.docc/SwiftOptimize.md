@@ -27,3 +27,4 @@ let gridSearch = GridSearchCV(estimator: DecisionTreeClassifier(), paramGrid: gr
 ### Guides & Tutorials
 - <doc:CrossValidationFolds>
 - <doc:HyperparameterTuning>
+- <doc:ParallelModelSelection>

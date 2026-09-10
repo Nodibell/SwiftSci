@@ -13,13 +13,21 @@ public actor OneVsRestClassifier: Sendable {
         self.numClasses = numClasses
     }
 
-    /// Fits one binary classifier per class against all other classes.
+    /// Fits one binary classifier per class against all other classes concurrently across CPU/GPU cores using structured TaskGroups.
+    ///
+    /// ## Concurrency Management
+    /// Utilizes `withThrowingTaskGroup` with cooperative task cancellation and deterministic class ordering.
+    ///
+    /// ## Thread Safety
+    /// Thread-safe via actor isolation.
+    ///
     /// - Parameters:
     ///   - features: Feature matrix [numSamples × numFeatures]
     ///   - targets: 1D class label array [numSamples] where each value is a class index 0..<numClasses
     ///   - learningRate: Gradient descent step size. Defaults to 2.0.
     ///   - epochs: Number of training epochs. Defaults to 1000.
     ///   - onProgress: Optional progress callback (completedClasses, totalClasses).
+    /// - Throws: `SwiftMLError` if inputs are empty or dimensions mismatch.
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -30,17 +38,28 @@ public actor OneVsRestClassifier: Sendable {
         guard !features.isEmpty, features.count == targets.count else {
             throw SwiftMLError.emptyInput
         }
-        
-        var newEstimators: [LogisticRegression] = []
-        for c in 0..<numClasses {
-            onProgress?(c, numClasses)
-            let binaryTargets = targets.map { Int($0) == c ? 1.0 : 0.0 }
-            let est = LogisticRegression(device: .auto)
-            try await est.fit(features: features, targets: binaryTargets, learningRate: learningRate, epochs: epochs)
-            newEstimators.append(est)
+
+        let numClasses = self.numClasses
+        let trained: [(Int, LogisticRegression)] = try await withThrowingTaskGroup(of: (Int, LogisticRegression).self) { group in
+            for c in 0..<numClasses {
+                let binaryTargets = targets.map { Int($0) == c ? 1.0 : 0.0 }
+                group.addTask {
+                    let est = LogisticRegression(device: .auto)
+                    try await est.fit(features: features, targets: binaryTargets, learningRate: learningRate, epochs: epochs)
+                    return (c, est)
+                }
+            }
+
+            var results: [(Int, LogisticRegression)] = []
+            results.reserveCapacity(numClasses)
+            for try await res in group {
+                results.append(res)
+                onProgress?(results.count, numClasses)
+            }
+            return results.sorted { $0.0 < $1.0 }
         }
-        onProgress?(numClasses, numClasses)
-        self.estimators = newEstimators
+
+        self.estimators = trained.map { $0.1 }
     }
 
     /// Predicts class index for feature vectors.

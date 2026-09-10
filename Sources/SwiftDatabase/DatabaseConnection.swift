@@ -594,9 +594,9 @@ public actor PostgreSQLConnection: DatabaseConnection {
         // SASLInitialResponse: 'p', length, mechanism, \0, clientFirstMsg length, clientFirstMsg
         let mechanism = "SCRAM-SHA-256"
         var saslInitPacket = Data([0x70]) // 'p'
-        var mechBytes = mechanism.utf8 + [0x00]
-        var cfLen = Int32(clientFirstMsg.utf8.count).bigEndian
-        var totalLen = Int32(4 + mechBytes.count + 4 + clientFirstMsg.utf8.count).bigEndian
+        let mechBytes = mechanism.utf8 + [0x00]
+        let cfLen = Int32(clientFirstMsg.utf8.count).bigEndian
+        let totalLen = Int32(4 + mechBytes.count + 4 + clientFirstMsg.utf8.count).bigEndian
         withUnsafeBytes(of: totalLen) { saslInitPacket.append(contentsOf: $0) }
         saslInitPacket.append(contentsOf: mechBytes)
         withUnsafeBytes(of: cfLen) { saslInitPacket.append(contentsOf: $0) }
@@ -677,7 +677,7 @@ public actor PostgreSQLConnection: DatabaseConnection {
 
         // --- Step 5: SASLResponse packet ---
         var saslRespPacket = Data([0x70]) // 'p'
-        var cfMsgLen = Int32(clientFinalMsg.utf8.count + 4).bigEndian
+        let cfMsgLen = Int32(clientFinalMsg.utf8.count + 4).bigEndian
         withUnsafeBytes(of: cfMsgLen) { saslRespPacket.append(contentsOf: $0) }
         saslRespPacket.append(contentsOf: clientFinalMsg.utf8)
         _ = saslRespPacket.withUnsafeBytes { send(sockfd, $0.baseAddress, saslRespPacket.count, 0) }

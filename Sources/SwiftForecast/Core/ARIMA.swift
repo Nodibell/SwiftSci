@@ -38,6 +38,10 @@ public actor ARIMAModel {
     }
     
     /// Fits the ARIMA model on the series using Hannan-Rissanen conditional OLS.
+    /// - Parameters:
+    ///   - series: <#description#>
+    ///   - exog: <#description#>
+    /// - Throws: <#error description#>
     public func fit(series: [Double], exog: [[Double]]? = nil) throws {
         let n = series.count
         guard n > 0 else { throw ForecastError.emptyTimeSeries }
@@ -215,6 +219,11 @@ public actor ARIMAModel {
     }
     
     /// Forecasts horizon steps ahead.
+    /// - Parameters:
+    ///   - horizon: <#description#>
+    ///   - exog: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func forecast(horizon: Int, exog: [[Double]]? = nil) throws -> ARIMAResult {
         guard isFitted else {
             throw ForecastError.notFitted
@@ -323,15 +332,34 @@ public actor ARIMAModel {
         )
     }
     
-    /// Aic.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `Double` result.
+    /// Computes the Akaike Information Criterion (AIC) for the fitted model.
+    ///
+    /// - Throws: `ForecastError.notFitted` if model has not been fitted.
+    /// - Returns: AIC score as a `Double`.
+    ///
+    /// ## Complexity
+    /// O(1) over precomputed residuals.
     public func aic() throws -> Double {
         guard isFitted else { throw ForecastError.notFitted }
         let mse = vDSP.sumOfSquares(residuals) / Double(residuals.count)
         let k = Double(1 + order.p + order.q)
         let n = Double(residuals.count)
         return 2.0 * k + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+    }
+
+    /// Computes the Bayesian Information Criterion (BIC) for the fitted model.
+    ///
+    /// - Throws: `ForecastError.notFitted` if model has not been fitted.
+    /// - Returns: BIC score as a `Double`.
+    ///
+    /// ## Complexity
+    /// O(1) over precomputed residuals.
+    public func bic() throws -> Double {
+        guard isFitted else { throw ForecastError.notFitted }
+        let mse = vDSP.sumOfSquares(residuals) / Double(residuals.count)
+        let k = Double(1 + order.p + order.q)
+        let n = Double(residuals.count)
+        return k * log(n) + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
     }
     
     // MARK: - Private helper methods

@@ -19,6 +19,8 @@ public actor WiredMemoryManager {
     /// Acquires a ticket to run a memory-intensive GPU/CPU calculation.
     /// If the concurrency limit is reached, this method suspends asynchronously until a ticket is released.
     /// Supports Swift task cancellation.
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func acquireTicket() async throws -> WiredMemoryTicket {
         try Task.checkCancellation()
         
@@ -45,6 +47,10 @@ public actor WiredMemoryManager {
     
     /// Scoped helper that executes an operation within an acquired memory ticket,
     /// ensuring the ticket is always cleaned up and cache is cleared.
+    /// - Parameters:
+    ///   - operation: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func withTicket<T: Sendable>(_ operation: () async throws -> T) async throws -> T {
         let ticket = try await acquireTicket()
         let result: T
@@ -58,7 +64,28 @@ public actor WiredMemoryManager {
         return result
     }
     
+    /// Scoped helper that executes an operation with direct access to an acquired memory ticket,
+    /// ensuring the ticket is always cleaned up and cache is cleared upon completion.
+    /// - Parameters:
+    ///   - operation: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
+    public func withTicket<T: Sendable>(_ operation: (WiredMemoryTicket) async throws -> T) async throws -> T {
+        let ticket = try await acquireTicket()
+        let result: T
+        do {
+            result = try await operation(ticket)
+        } catch {
+            await ticket.finish()
+            throw error
+        }
+        await ticket.finish()
+        return result
+    }
+    
     /// Handles task cancellation by removing the continuation from the suspension queue and throwing CancellationError.
+    /// - Parameters:
+    ///   - id: <#description#>
     public func cancelAcquire(id: Int) {
         if let idx = suspensionQueue.firstIndex(where: { $0.id == id }) {
             let item = suspensionQueue.remove(at: idx)
@@ -77,6 +104,7 @@ public actor WiredMemoryManager {
     }
     
     /// Gets the current number of active concurrent tasks.
+    /// - Returns: <#description#>
     public func activeTasks() -> Int {
         return activeTasksCount
     }

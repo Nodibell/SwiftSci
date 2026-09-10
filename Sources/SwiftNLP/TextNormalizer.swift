@@ -17,6 +17,9 @@ public struct TextNormalizer: Sendable {
     }
 
     /// Normalizes input text according to configured options and Unicode normalization.
+    /// - Parameters:
+    ///   - text: <#description#>
+    /// - Returns: <#description#>
     public func normalize(_ text: String) -> String {
         var result = text.precomposedStringWithCanonicalMapping
         if lowercase {

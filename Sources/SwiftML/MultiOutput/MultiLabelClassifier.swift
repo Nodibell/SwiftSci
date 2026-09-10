@@ -15,6 +15,7 @@ public actor MultiLabelClassifier {
     /// - Parameters:
     ///   - features: Feature matrix `[N x M]`.
     ///   - targets: Multi-label binary matrix `[N x K]` containing 0s and 1s.
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [[Int]]) async throws {
         guard !features.isEmpty, !targets.isEmpty, features.count == targets.count else {
             throw SwiftMLError.invalidInput("Features and multi-labels count mismatch or empty.")
@@ -59,6 +60,7 @@ public actor MultiLabelClassifier {
     /// Predicts multi-label binary values for the given feature matrix.
     /// - Parameter features: Feature matrix `[N x M]`.
     /// - Returns: Predicted binary label matrix `[N x K]`.
+    /// - Throws: <#error description#>
     public func predict(features: [[Double]]) async throws -> [[Int]] {
         guard !estimators.isEmpty else {
             throw SwiftMLError.modelNotFitted

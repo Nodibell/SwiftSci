@@ -17,11 +17,18 @@ public struct LLMContextWindow: Sendable {
     }
 
     /// Estimates total token count for input prompt.
+    /// - Parameters:
+    ///   - in: <#description#>
+    /// - Returns: <#description#>
     public func countTokens(in text: String) -> Int {
         return tokenizer.tokenize(text: text).count
     }
 
     /// Truncates text to fit within the maximum allowed token count.
+    /// - Parameters:
+    ///   - text: <#description#>
+    ///   - maxTokens: <#description#>
+    /// - Returns: <#description#>
     public func truncate(text: String, maxTokens limit: Int? = nil) -> String {
         let maxAllowed = limit ?? self.maxTokens
         let tokens = tokenizer.tokenize(text: text)

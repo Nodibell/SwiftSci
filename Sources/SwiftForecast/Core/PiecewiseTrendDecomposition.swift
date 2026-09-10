@@ -40,6 +40,9 @@ public actor PiecewiseTrendDecomposition {
     }
 
     /// Fits piecewise linear/logistic trend on the given time series.
+    /// - Parameters:
+    ///   - series: <#description#>
+    /// - Throws: <#error description#>
     public func fit(series: [Double]) async throws {
         guard series.count >= 4 else {
             throw ForecastError.insufficientLength(minimum: 4, got: series.count)
@@ -88,6 +91,10 @@ public actor PiecewiseTrendDecomposition {
     }
 
     /// Generates predicted trend components for `steps` future points.
+    /// - Parameters:
+    ///   - steps: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(steps: Int) async throws -> [Double] {
         guard isFitted else {
             throw ForecastError.emptyTimeSeries

@@ -14,6 +14,7 @@ public enum SilhouetteScore {
     ///   - features: 2D array of feature values `[numSamples][numFeatures]`.
     ///   - labels: Array of integer cluster assignments for each sample.
     /// - Returns: Mean Silhouette Coefficient across all samples, in range `[-1.0, 1.0]`.
+    /// - Throws: <#error description#>
     public static func compute(features: [[Double]], labels: [Int]) throws -> Double {
         let n = features.count
         guard n > 1 else { return 0.0 }

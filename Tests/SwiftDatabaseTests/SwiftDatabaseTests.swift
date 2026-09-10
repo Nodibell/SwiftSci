@@ -145,4 +145,51 @@ struct SwiftDatabaseTests {
         let df = try await DataFrame.fromSQL("SELECT a, b FROM empty", connection: EmptyMockConnection())
         #expect(df.rowCount == 0)
     }
+
+    @Test("Test expanded AnySendableValue types: int64, bool, date, data")
+    func testExpandedAnySendableValueTypes() {
+        let i64: AnySendableValue = .int64(9_000_000_000_000_000_000)
+        let bTrue: AnySendableValue = .bool(true)
+        let bFalse: AnySendableValue = .bool(false)
+        let now = Date(timeIntervalSince1970: 1700000000)
+        let d: AnySendableValue = .date(now)
+        let rawData = Data([0xDE, 0xAD, 0xBE, 0xEF])
+        let blob: AnySendableValue = .data(rawData)
+
+        #expect(i64.description == "9000000000000000000")
+        #expect(bTrue.description == "true")
+        #expect(bFalse.description == "false")
+        #expect(d.description.contains("2023"))
+        #expect(blob.description == "4 bytes")
+
+        #expect(i64 == .int64(9_000_000_000_000_000_000))
+        #expect(bTrue == .bool(true))
+        #expect(blob == .data(rawData))
+        #expect(i64 != .int(0))
+    }
+
+    @Test("Test SQLite BLOB, large INT64, and DataFrame integration")
+    func testSQLiteBlobAndInt64Ingestion() async throws {
+        let conn = SQLiteConnection(databasePath: ":memory:")
+        _ = try await conn.executeQuery("CREATE TABLE binary_data (id INTEGER PRIMARY KEY, payload BLOB, flag INTEGER);")
+        
+        let sampleBytes = Data([1, 2, 3, 4, 5])
+        let hex = sampleBytes.map { String(format: "%02X", $0) }.joined()
+        _ = try await conn.executeQuery("INSERT INTO binary_data (id, payload, flag) VALUES (1, X'\(hex)', 1);")
+
+        let res = try await conn.executeQuery("SELECT id, payload, flag FROM binary_data;")
+        #expect(res.rows.count == 1)
+        #expect(res.rows[0].count == 3)
+        
+        let payloadVal = res.rows[0][1]
+        if case .data(let d) = payloadVal {
+            #expect(d == sampleBytes)
+        } else {
+            Issue.record("Expected .data payload, got \(payloadVal)")
+        }
+
+        let df = try await DataFrame.fromSQL("SELECT id, payload, flag FROM binary_data", connection: conn)
+        #expect(df.rowCount == 1)
+        #expect(df.columnNames.contains("payload"))
+    }
 }

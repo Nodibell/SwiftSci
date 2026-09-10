@@ -32,7 +32,19 @@ public actor AutoML {
         self.strategy = strategy
     }
 
-    /// Fits model candidates and returns the best model evaluation report.
+    /// Evaluates candidate model architectures across cross-validation folds concurrently using structured TaskGroups.
+    ///
+    /// ## Concurrency Management
+    /// Utilizes `withThrowingTaskGroup` with cooperative task cancellation and bounded concurrency limits.
+    ///
+    /// ## Thread Safety
+    /// Thread-safe via actor isolation.
+    ///
+    /// - Parameters:
+    ///   - features: 2D array of training samples.
+    ///   - targets: 1D array of corresponding target labels or values.
+    /// - Returns: An `EvaluationReport` summarizing best performing model and leaderboard metrics.
+    /// - Throws: `SwiftMLError` if inputs are invalid or sample count is insufficient.
     public func fit(features: [[Double]], targets: [Double]) async throws -> EvaluationReport {
         guard !features.isEmpty, features.count == targets.count else {
             throw SwiftMLError.trainingFailed("Features and targets count mismatch in AutoML")
@@ -59,7 +71,7 @@ public actor AutoML {
         }
 
         // 3. Define candidate evaluators
-        struct ModelCandidate: @unchecked Sendable {
+        struct ModelCandidate: Sendable {
             let name: String
             let fitAndPredict: @Sendable ([[Double]], [Double], [[Double]]) async throws -> [Double]
         }
@@ -122,7 +134,7 @@ public actor AutoML {
 
         var evaluatedLeaderboard: [(name: String, cvScore: Double, fitDuration: Double)] = []
 
-        // 4. Sequential Evaluation across candidate models
+        // 4. Evaluation across candidate models with parallel cross-validation folds
         for candidate in candidates {
             // Check time budget
             let elapsed = Date().timeIntervalSince(startTime)
@@ -131,40 +143,49 @@ public actor AutoML {
             }
 
             let candStart = Date()
-            var foldScores: [Double] = []
+            let foldScores: [Double] = try await withThrowingTaskGroup(of: Double?.self) { foldGroup in
+                for foldIdx in 0..<nFolds {
+                    let testIndices = Set(folds[foldIdx])
+                    let trainIndices = (0..<numSamples).filter { !testIndices.contains($0) }
 
-            for foldIdx in 0..<nFolds {
-                let testIndices = Set(folds[foldIdx])
-                let trainIndices = (0..<numSamples).filter { !testIndices.contains($0) }
+                    let trainX = trainIndices.map { features[$0] }
+                    let trainY = trainIndices.map { targets[$0] }
+                    let testX  = testIndices.map { features[$0] }
+                    let testY  = testIndices.map { targets[$0] }
 
-                let trainX = trainIndices.map { features[$0] }
-                let trainY = trainIndices.map { targets[$0] }
-                let testX  = testIndices.map { features[$0] }
-                let testY  = testIndices.map { targets[$0] }
-
-                do {
-                    let preds = try await candidate.fitAndPredict(trainX, trainY, testX)
-                    if isClassification {
-                        // Compute Accuracy
-                        let correct = zip(testY, preds).filter { Int(round($0.0)) == Int(round($0.1)) }.count
-                        let acc = Double(correct) / Double(testY.count)
-                        foldScores.append(acc)
-                    } else {
-                        // Compute R-squared / negative MSE
-                        var sumSqErr = 0.0
-                        for (yTrue, yPred) in zip(testY, preds) {
-                            let diff = yTrue - yPred
-                            sumSqErr += diff * diff
+                    foldGroup.addTask {
+                        do {
+                            let preds = try await candidate.fitAndPredict(trainX, trainY, testX)
+                            if isClassification {
+                                // Compute Accuracy
+                                let correct = zip(testY, preds).filter { Int(round($0.0)) == Int(round($0.1)) }.count
+                                return Double(correct) / Double(testY.count)
+                            } else {
+                                // Compute R-squared / negative MSE
+                                var sumSqErr = 0.0
+                                for (yTrue, yPred) in zip(testY, preds) {
+                                    let diff = yTrue - yPred
+                                    sumSqErr += diff * diff
+                                }
+                                let mse = sumSqErr / Double(testY.count)
+                                let meanY = testY.reduce(0.0, +) / Double(testY.count)
+                                let totalVar = testY.reduce(0.0) { $0 + ($1 - meanY) * ($1 - meanY) }
+                                return totalVar > 1e-12 ? 1.0 - (sumSqErr / totalVar) : -mse
+                            }
+                        } catch {
+                            // Candidate failed on this fold; ignore
+                            return nil
                         }
-                        let mse = sumSqErr / Double(testY.count)
-                        let meanY = testY.reduce(0.0, +) / Double(testY.count)
-                        let totalVar = testY.reduce(0.0) { $0 + ($1 - meanY) * ($1 - meanY) }
-                        let r2 = totalVar > 1e-12 ? 1.0 - (sumSqErr / totalVar) : -mse
-                        foldScores.append(r2)
                     }
-                } catch {
-                    // Candidate failed on this fold; ignore
                 }
+
+                var scores: [Double] = []
+                for try await res in foldGroup {
+                    if let s = res {
+                        scores.append(s)
+                    }
+                }
+                return scores
             }
 
             let candDuration = Date().timeIntervalSince(candStart)

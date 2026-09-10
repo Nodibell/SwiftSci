@@ -21,6 +21,14 @@ public struct SeedableRandomNumberGenerator: RandomNumberGenerator {
 }
 
 /// Splits features and targets into training and testing subsets.
+/// - Parameters:
+///   - features: <#description#>
+///   - targets: <#description#>
+///   - testSize: <#description#>
+///   - shuffle: <#description#>
+///   - seed: <#description#>
+/// - Throws: <#error description#>
+/// - Returns: <#description#>
 public func trainTestSplit(
     _ features: [[Double]],
     _ targets: [Double],
@@ -89,6 +97,12 @@ public func trainTestSplit(
 
 extension DataFrame {
     /// Splits the DataFrame rows into training and testing DataFrames.
+    /// - Parameters:
+    ///   - testSize: <#description#>
+    ///   - shuffle: <#description#>
+    ///   - seed: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func trainTestSplit(
         testSize: Double = 0.25,
         shuffle: Bool = true,

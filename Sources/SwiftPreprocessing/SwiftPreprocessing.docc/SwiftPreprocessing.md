@@ -27,3 +27,4 @@ let X_scaled = try scaler.fitTransform(X)
 ### Guides & Tutorials
 - <doc:FeatureScaling>
 - <doc:EncodersAndImputers>
+- <doc:SparseDataStructures>

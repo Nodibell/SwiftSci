@@ -23,6 +23,10 @@ public enum ClusteringMetrics {
     
     /// Computes the Calinski-Harabasz Index (Variance Ratio Criterion).
     /// Higher values indicate clusters that are dense and well separated.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - labels: <#description#>
+    /// - Returns: <#description#>
     public static func calinskiHarabaszIndex(features: [[Double]], labels: [Int]) -> Double {
         let n = features.count
         guard n > 2 else { return 0.0 }
@@ -77,6 +81,10 @@ public enum ClusteringMetrics {
     
     /// Computes the Davies-Bouldin Index.
     /// Lower values indicate better clustering (higher intra-cluster similarity, lower inter-cluster similarity).
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - labels: <#description#>
+    /// - Returns: <#description#>
     public static func daviesBouldinIndex(features: [[Double]], labels: [Int]) -> Double {
         let n = features.count
         guard n > 2 else { return 0.0 }
@@ -140,6 +148,9 @@ public enum ClusteringMetrics {
     }
     
     /// Computes the contamination ratio (percentage of samples flagged as anomalies).
+    /// - Parameters:
+    ///   - anomalies: <#description#>
+    /// - Returns: <#description#>
     public static func contaminationRatio(anomalies: [Bool]) -> Double {
         guard !anomalies.isEmpty else { return 0.0 }
         let count = anomalies.filter { $0 }.count
@@ -147,6 +158,10 @@ public enum ClusteringMetrics {
     }
     
     /// Computes Adjusted Rand Index (ARI) comparing predicted cluster labels to ground truth.
+    /// - Parameters:
+    ///   - labelsTrue: <#description#>
+    ///   - labelsPred: <#description#>
+    /// - Returns: <#description#>
     public static func adjustedRandIndex(labelsTrue: [Int], labelsPred: [Int]) -> Double {
         let n = labelsTrue.count
         guard n > 1 && n == labelsPred.count else { return 0.0 }

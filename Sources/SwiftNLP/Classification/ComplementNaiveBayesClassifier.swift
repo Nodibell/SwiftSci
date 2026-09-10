@@ -19,6 +19,10 @@ public actor ComplementNaiveBayesClassifier: ClassifierEstimator {
     }
 
     /// Fits Complement Naive Bayes on count matrix X and class target array y.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty, !features[0].isEmpty, features.count == targets.count else {
             throw SwiftMLError.invalidInput("Features and targets must not be empty and must have matching lengths.")
@@ -78,12 +82,20 @@ public actor ComplementNaiveBayesClassifier: ClassifierEstimator {
     }
 
     /// Predicts target class integer indices for a feature matrix.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]]) async throws -> [Int] {
         let probs = try await predictProbability(features: features)
         return probs.map { $0.argmax() }
     }
 
     /// Predicts normalized probability scores for each class.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard isFitted, !classes.isEmpty else {
             throw SwiftMLError.modelNotFitted

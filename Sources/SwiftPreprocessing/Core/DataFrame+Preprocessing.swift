@@ -46,6 +46,10 @@ extension DataFrame {
     }
 
     /// Fits a StandardScaler on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitStandardScaler(columns names: [String]) throws -> StandardScaler {
         let features = try extractFeatures(columns: names)
         var scaler = StandardScaler()
@@ -54,6 +58,11 @@ extension DataFrame {
     }
     
     /// Scales the specified columns using a fitted StandardScaler, returning a new DataFrame.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - scaler: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func standardScale(columns names: [String], scaler: StandardScaler) throws -> DataFrame {
         let features = try extractFeatures(columns: names)
         let scaled = try scaler.transform(features)
@@ -68,6 +77,10 @@ extension DataFrame {
     }
     
     /// Fits and scales the specified columns using StandardScaler, returning the scaled DataFrame and scaler.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func standardScale(columns names: [String]) throws -> (scaled: DataFrame, scaler: StandardScaler) {
         let scaler = try fitStandardScaler(columns: names)
         let scaledDf = try standardScale(columns: names, scaler: scaler)
@@ -75,6 +88,10 @@ extension DataFrame {
     }
 
     /// Fits a MinMaxScaler on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitMinMaxScaler(columns names: [String]) throws -> MinMaxScaler {
         let features = try extractFeatures(columns: names)
         var scaler = MinMaxScaler()
@@ -83,6 +100,11 @@ extension DataFrame {
     }
     
     /// Scales the specified columns using a fitted MinMaxScaler, returning a new DataFrame.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - scaler: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func minMaxScale(columns names: [String], scaler: MinMaxScaler) throws -> DataFrame {
         let features = try extractFeatures(columns: names)
         let scaled = try scaler.transform(features)
@@ -97,6 +119,10 @@ extension DataFrame {
     }
     
     /// Fits and scales the specified columns using MinMaxScaler, returning the scaled DataFrame and scaler.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func minMaxScale(columns names: [String]) throws -> (scaled: DataFrame, scaler: MinMaxScaler) {
         let scaler = try fitMinMaxScaler(columns: names)
         let scaledDf = try minMaxScale(columns: names, scaler: scaler)
@@ -104,6 +130,10 @@ extension DataFrame {
     }
 
     /// Fits a LabelEncoder and encodes a category column into integers. Supports String, Int64, and Double columns.
+    /// - Parameters:
+    ///   - column: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func labelEncode(column name: String) throws -> (encoded: DataFrame, encoder: LabelEncoder) {
         let rawValues: [String]
 
@@ -134,6 +164,11 @@ extension DataFrame {
     // MARK: - Imputer
     
     /// Fits an Imputer on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - strategy: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitImputer(columns names: [String], strategy: Imputer.Strategy = .mean) throws -> Imputer {
         let features = try extractFeatures(columns: names, allowNaN: true)
         var imputer = Imputer(strategy: strategy)
@@ -142,6 +177,11 @@ extension DataFrame {
     }
     
     /// Imputes the specified columns using a fitted Imputer, returning a new DataFrame.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - imputer: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func impute(columns names: [String], imputer: Imputer) throws -> DataFrame {
         let features = try extractFeatures(columns: names, allowNaN: true)
         let imputed = try imputer.transform(features)
@@ -156,6 +196,11 @@ extension DataFrame {
     }
     
     /// Fits and imputes the specified columns, returning the imputed DataFrame and the imputer.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - strategy: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func impute(columns names: [String], strategy: Imputer.Strategy = .mean) throws -> (imputed: DataFrame, imputer: Imputer) {
         let imputer = try fitImputer(columns: names, strategy: strategy)
         let imputedDf = try impute(columns: names, imputer: imputer)
@@ -165,6 +210,11 @@ extension DataFrame {
     // MARK: - Normalizer
     
     /// Normalizes the specified columns, returning the normalized DataFrame and normalizer.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - norm: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func normalize(columns names: [String], norm: Normalizer.NormType = .l2) throws -> (normalized: DataFrame, normalizer: Normalizer) {
         let features = try extractFeatures(columns: names)
         var normalizer = Normalizer(norm: norm)
@@ -183,6 +233,13 @@ extension DataFrame {
     // MARK: - RobustScaler
     
     /// Fits a RobustScaler on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - withCentering: <#description#>
+    ///   - withScaling: <#description#>
+    ///   - quantileRange: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitRobustScaler(columns names: [String], withCentering: Bool = true, withScaling: Bool = true, quantileRange: (Double, Double) = (25.0, 75.0)) throws -> RobustScaler {
         let features = try extractFeatures(columns: names)
         var scaler = RobustScaler(withCentering: withCentering, withScaling: withScaling, quantileRange: quantileRange)
@@ -191,6 +248,11 @@ extension DataFrame {
     }
     
     /// Scales the specified columns using a fitted RobustScaler, returning a new DataFrame.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - scaler: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func robustScale(columns names: [String], scaler: RobustScaler) throws -> DataFrame {
         let features = try extractFeatures(columns: names)
         let scaled = try scaler.transform(features)
@@ -205,6 +267,13 @@ extension DataFrame {
     }
     
     /// Fits and scales the specified columns using RobustScaler, returning the scaled DataFrame and scaler.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - withCentering: <#description#>
+    ///   - withScaling: <#description#>
+    ///   - quantileRange: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func robustScale(columns names: [String], withCentering: Bool = true, withScaling: Bool = true, quantileRange: (Double, Double) = (25.0, 75.0)) throws -> (scaled: DataFrame, scaler: RobustScaler) {
         let scaler = try fitRobustScaler(columns: names, withCentering: withCentering, withScaling: withScaling, quantileRange: quantileRange)
         let scaledDf = try robustScale(columns: names, scaler: scaler)
@@ -214,6 +283,12 @@ extension DataFrame {
     // MARK: - PowerTransformer
     
     /// Fits a PowerTransformer on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - method: <#description#>
+    ///   - standardize: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitPowerTransformer(columns names: [String], method: PowerTransformer.Method = .yeoJohnson, standardize: Bool = true) throws -> PowerTransformer {
         let features = try extractFeatures(columns: names)
         var transformer = PowerTransformer(method: method, standardize: standardize)
@@ -222,6 +297,11 @@ extension DataFrame {
     }
     
     /// Transforms the specified columns using a fitted PowerTransformer, returning a new DataFrame.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - transformer: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func powerTransform(columns names: [String], transformer: PowerTransformer) throws -> DataFrame {
         let features = try extractFeatures(columns: names)
         let transformed = try transformer.transform(features)
@@ -236,6 +316,12 @@ extension DataFrame {
     }
     
     /// Fits and transforms the specified columns using PowerTransformer, returning the transformed DataFrame and transformer.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - method: <#description#>
+    ///   - standardize: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func powerTransform(columns names: [String], method: PowerTransformer.Method = .yeoJohnson, standardize: Bool = true) throws -> (transformed: DataFrame, transformer: PowerTransformer) {
         let transformer = try fitPowerTransformer(columns: names, method: method, standardize: standardize)
         let transformedDf = try powerTransform(columns: names, transformer: transformer)
@@ -245,6 +331,13 @@ extension DataFrame {
     // MARK: - KBinsDiscretizer
     
     /// Fits a KBinsDiscretizer on the specified columns.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - nBins: <#description#>
+    ///   - strategy: <#description#>
+    ///   - encode: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitKBinsDiscretizer(columns names: [String], nBins: Int = 5, strategy: KBinsDiscretizer.Strategy = .uniform, encode: KBinsDiscretizer.Encode = .ordinal) throws -> KBinsDiscretizer {
         let features = try extractFeatures(columns: names)
         var discretizer = KBinsDiscretizer(nBins: nBins, strategy: strategy, encode: encode)
@@ -253,6 +346,11 @@ extension DataFrame {
     }
     
     /// Discretizes the specified columns using a fitted KBinsDiscretizer, returning a new DataFrame.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - discretizer: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func kBinsDiscretize(columns names: [String], discretizer: KBinsDiscretizer) throws -> DataFrame {
         let features = try extractFeatures(columns: names)
         let binned = try discretizer.transform(features)
@@ -284,6 +382,13 @@ extension DataFrame {
     }
     
     /// Fits and discretizes the specified columns, returning the discretized DataFrame and discretizer.
+    /// - Parameters:
+    ///   - columns: <#description#>
+    ///   - nBins: <#description#>
+    ///   - strategy: <#description#>
+    ///   - encode: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func kBinsDiscretize(columns names: [String], nBins: Int = 5, strategy: KBinsDiscretizer.Strategy = .uniform, encode: KBinsDiscretizer.Encode = .ordinal) throws -> (discretized: DataFrame, discretizer: KBinsDiscretizer) {
         let discretizer = try fitKBinsDiscretizer(columns: names, nBins: nBins, strategy: strategy, encode: encode)
         let discretizedDf = try kBinsDiscretize(columns: names, discretizer: discretizer)
@@ -293,6 +398,11 @@ extension DataFrame {
     // MARK: - Time Series Rolling & EWMA Features
 
     /// Adds a rolling mean column for the specified numeric column.
+    /// - Parameters:
+    ///   - column: <#description#>
+    ///   - window: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func withRollingMean(column name: String, window: Int) throws -> DataFrame {
         guard let col = self[column: name, as: Double.self] else {
             throw SwiftMLError.columnNotFound(name)
@@ -313,6 +423,11 @@ extension DataFrame {
     }
 
     /// Adds a rolling standard deviation column for the specified numeric column.
+    /// - Parameters:
+    ///   - column: <#description#>
+    ///   - window: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func withRollingStd(column name: String, window: Int) throws -> DataFrame {
         guard let col = self[column: name, as: Double.self] else {
             throw SwiftMLError.columnNotFound(name)
@@ -339,6 +454,11 @@ extension DataFrame {
     }
 
     /// Adds an Exponentially Weighted Moving Average (EWMA) column for the specified numeric column.
+    /// - Parameters:
+    ///   - column: <#description#>
+    ///   - alpha: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func withEWMA(column name: String, alpha: Double) throws -> DataFrame {
         guard alpha > 0 && alpha <= 1.0 else {
             throw SwiftMLError.invalidParameter("alpha must be in (0, 1], got \(alpha)")

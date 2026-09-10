@@ -7,6 +7,8 @@ public final class InteractionFeatures: PreprocessingTransformer, Sendable {
     
     /// Fit.
     /// - Throws: An error if the operation fails.
+    /// - Parameters:
+    ///   - data: <#description#>
     public func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
     }
@@ -14,6 +16,8 @@ public final class InteractionFeatures: PreprocessingTransformer, Sendable {
     /// Transform.
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[[Double]]` result.
+    /// - Parameters:
+    ///   - data: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let numFeatures = data[0].count
@@ -36,6 +40,9 @@ public final class DateFeatures: Sendable {
     public init() {}
     
     /// Transforms array of Date objects into numerical feature matrix [year, month, day, dayOfWeek, isWeekend].
+    /// - Parameters:
+    ///   - dates: <#description#>
+    /// - Returns: <#description#>
     public func transform(dates: [Date]) -> [[Double]] {
         let calendar = Calendar.current
         return dates.map { date in

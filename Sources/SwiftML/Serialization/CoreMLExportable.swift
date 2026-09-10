@@ -73,6 +73,11 @@ public protocol CoreMLExportable {
 
 extension CoreMLExportable {
     /// Default implementation: encodes via ``exportCoreML(featureNames:outputName:)`` and writes to disk.
+    /// - Parameters:
+    ///   - to: <#description#>
+    ///   - featureNames: <#description#>
+    ///   - outputName: <#description#>
+    /// - Throws: <#error description#>
     public func writeCoreML(to url: URL, featureNames: [String], outputName: String) async throws {
         let data = try await exportCoreML(featureNames: featureNames, outputName: outputName)
         do {
@@ -83,6 +88,13 @@ extension CoreMLExportable {
     }
 
     /// Default implementation: encodes via ``exportCoreML(featureNames:outputName:)`` and packages into `.mlpackage`.
+    /// - Parameters:
+    ///   - to: <#description#>
+    ///   - featureNames: <#description#>
+    ///   - outputName: <#description#>
+    ///   - author: <#description#>
+    ///   - description: <#description#>
+    /// - Throws: <#error description#>
     public func writeMLPackage(
         to url: URL,
         featureNames: [String],
@@ -104,6 +116,7 @@ extension DecisionTreeClassifier: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output predicted class label name (stored as `Int64`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the tree has not been fitted.
+    /// - Returns: <#description#>
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         let nodes = getTreeNodes()
         guard !nodes.isEmpty else { throw SwiftMLError.modelNotFitted }
@@ -124,6 +137,7 @@ extension DecisionTreeRegressor: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output prediction column name (stored as `Double`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the tree has not been fitted.
+    /// - Returns: <#description#>
     public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
         let nodes = getTreeNodes()
         guard !nodes.isEmpty else { throw SwiftMLError.modelNotFitted }
@@ -146,6 +160,7 @@ extension RandomForestClassifier: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output predicted class label name (stored as `Int64`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the forest has not been fitted.
+    /// - Returns: <#description#>
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         let treesNodes = getForestTrees()
         guard !treesNodes.isEmpty else { throw SwiftMLError.modelNotFitted }
@@ -174,6 +189,7 @@ extension RandomForestRegressor: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output prediction column name (stored as `Double`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the forest has not been fitted.
+    /// - Returns: <#description#>
     public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
         let treesNodes = getForestTrees()
         guard !treesNodes.isEmpty else { throw SwiftMLError.modelNotFitted }
@@ -206,6 +222,7 @@ extension LinearRegression: CoreMLExportable {
     ///   - featureNames: Input feature column names matching the training data column order.
     ///   - outputName: Output predicted value column name (stored as `Double`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if weights have not been fitted yet.
+    /// - Returns: <#description#>
     public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else { throw SwiftMLError.modelNotFitted }
@@ -232,6 +249,7 @@ extension LogisticRegression: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output predicted class label name (stored as `Int64`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the model has not been fitted.
+    /// - Returns: <#description#>
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else { throw SwiftMLError.modelNotFitted }
@@ -249,6 +267,11 @@ extension LogisticRegression: CoreMLExportable {
 
 extension MLPClassifier: CoreMLExportable {
     /// Exports the fitted Multi-Layer Perceptron classifier as a binary `.mlmodel` (`NeuralNetwork`).
+    /// - Parameters:
+    ///   - featureNames: <#description#>
+    ///   - outputName: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         guard let layers = trainedLayers, !layers.isEmpty else {
             throw SwiftMLError.modelNotFitted
@@ -269,6 +292,11 @@ extension MLPClassifier: CoreMLExportable {
 
 extension MLPRegressor: CoreMLExportable {
     /// Exports the fitted Multi-Layer Perceptron regressor as a binary `.mlmodel` (`NeuralNetwork`).
+    /// - Parameters:
+    ///   - featureNames: <#description#>
+    ///   - outputName: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func exportCoreML(featureNames: [String], outputName: String = "target") async throws -> Data {
         guard let layers = trainedLayers, !layers.isEmpty else {
             throw SwiftMLError.modelNotFitted

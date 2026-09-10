@@ -118,4 +118,20 @@ struct KalmanFilterTests {
             ])
         }
     }
+
+    @Test("Kalman Filter handles singular innovation covariance via Moore-Penrose pseudo-inverse without crashing")
+    func testKFSingularCovariancePseudoInverse() async throws {
+        let kf = try KalmanFilter(stateSize: 2, observationSize: 2)
+        try await kf.setTransitionMatrix([[1, 0], [0, 1]])
+        try await kf.setObservationMatrix([[1, 1], [1, 1]]) // Rank-1 observation matrix -> singular S
+        try await kf.setProcessNoise([[0.0, 0.0], [0.0, 0.0]])
+        try await kf.setMeasurementNoise([[0.0, 0.0], [0.0, 0.0]])
+        try await kf.setInitialState(mean: [1.0, 2.0], covariance: [[1.0, 0.0], [0.0, 1.0]])
+        
+        let states = try await kf.filter(observations: [[3.0, 3.0]])
+        #expect(states.count == 1)
+        #expect(states[0].mean.count == 2)
+        #expect(states[0].covariance.count == 2)
+        #expect(!states[0].mean[0].isNaN && !states[0].mean[1].isNaN)
+    }
 }

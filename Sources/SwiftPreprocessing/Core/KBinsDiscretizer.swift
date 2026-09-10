@@ -36,6 +36,9 @@ public struct KBinsDiscretizer: PreprocessingTransformer, Sendable {
     }
     
     /// Fits the discretizer by calculating the bin edges for each column.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(_ data: [[Double]]) throws {
 
         guard !data.isEmpty, !data[0].isEmpty else {
@@ -90,6 +93,10 @@ public struct KBinsDiscretizer: PreprocessingTransformer, Sendable {
     }
     
     /// Transforms the dataset into binned/discretized features.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard let allEdges = self.binEdges else {
             throw PreprocessingError.fitNotCalled

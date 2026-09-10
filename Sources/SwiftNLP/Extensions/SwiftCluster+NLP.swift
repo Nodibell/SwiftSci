@@ -6,6 +6,7 @@ extension DataFrame {
     /// - Parameters:
     ///   - name: Input text column name.
     /// - Returns: 2D array of TF-IDF feature vectors [numDocuments, numFeatures].
+    /// - Throws: <#error description#>
     public func vectorizeTextColumn(column name: String) async throws -> (matrix: [[Double]], vocabulary: [String: Int]) {
         guard let col = self[column: name, as: String.self] else {
             throw SwiftMLError.columnNotFound(name)

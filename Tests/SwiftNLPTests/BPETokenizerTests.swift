@@ -59,4 +59,48 @@ struct BPETokenizerTests {
         let decodedWords = tokenizer.decode(tokens: encodedWords)
         #expect(decodedWords == "hello world")
     }
+
+    @Test("BPE Tokenizer preserves Cyrillic and multibyte UTF-8 characters")
+    func testBPECyrillicAndMultibyte() throws {
+        let text = "привіт світ"
+        let initialTokenizer = BPETokenizer(vocab: ["<unk>": 0], merges: [])
+        let subwordTokens = initialTokenizer.tokenize(text: text)
+
+        var vocab = ["<unk>": 0]
+        for (i, tok) in subwordTokens.enumerated() {
+            vocab[tok] = i + 1
+        }
+
+        let tokenizer = BPETokenizer(vocab: vocab, merges: [])
+        let encoded = tokenizer.encode(text: text)
+        let decoded = tokenizer.decode(tokens: encoded)
+
+        #expect(decoded == text)
+    }
+
+    @Test("BPE Tokenizer preserves compound Emojis")
+    func testBPEEmojis() throws {
+        let text = "🚀 🇺🇦"
+        let initialTokenizer = BPETokenizer(vocab: ["<unk>": 0], merges: [])
+        let subwordTokens = initialTokenizer.tokenize(text: text)
+
+        var vocab = ["<unk>": 0]
+        for (i, tok) in subwordTokens.enumerated() {
+            vocab[tok] = i + 1
+        }
+
+        let tokenizer = BPETokenizer(vocab: vocab, merges: [])
+        let encoded = tokenizer.encode(text: text)
+        let decoded = tokenizer.decode(tokens: encoded)
+
+        #expect(decoded == text)
+    }
+
+    @Test("BPE Tokenizer decode handles literal non-byte-encoded characters")
+    func testBPEDecodeNonByteEncodedChars() throws {
+        let vocab: [String: Int] = ["<unk>": 0, "€": 1]
+        let tokenizer = BPETokenizer(vocab: vocab, merges: [])
+        let decoded = tokenizer.decode(tokens: [1])
+        #expect(decoded == "€")
+    }
 }

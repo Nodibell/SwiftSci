@@ -20,6 +20,9 @@ public struct Normalizer: PreprocessingTransformer, Sendable {
     }
     
     /// Normalizer is stateless, so fit is a no-op that just checks input validity.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(_ data: [[Double]]) throws {
 
         guard !data.isEmpty, !data[0].isEmpty else {
@@ -28,6 +31,10 @@ public struct Normalizer: PreprocessingTransformer, Sendable {
     }
     
     /// Normalizes each row of the dataset.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else {
             return []

@@ -86,31 +86,39 @@ public struct GroupedDataFrame: Sendable {
     // MARK: – Public API
 
     /// Returns the count of rows per group.
+    /// - Returns: <#description#>
     public func count() -> DataFrame {
         aggregate(using: .count)
     }
 
     /// Returns the mean of each numeric column per group.
+    /// - Returns: <#description#>
     public func mean() -> DataFrame {
         aggregate(using: .mean)
     }
 
     /// Returns the sum of each numeric column per group.
+    /// - Returns: <#description#>
     public func sum() -> DataFrame {
         aggregate(using: .sum)
     }
 
     /// Returns the min of each numeric column per group.
+    /// - Returns: <#description#>
     public func min() -> DataFrame {
         aggregate(using: .min)
     }
 
     /// Returns the max of each numeric column per group.
+    /// - Returns: <#description#>
     public func max() -> DataFrame {
         aggregate(using: .max)
     }
 
     /// Apply multiple aggregations per column.
+    /// - Parameters:
+    ///   - aggregations: <#description#>
+    /// - Returns: <#description#>
     public func agg(_ aggregations: [String: Aggregation]) -> DataFrame {
         let groups = buildGroups()
         var resultColumns: [any AnyColumn] = []
@@ -137,6 +145,9 @@ public struct GroupedDataFrame: Sendable {
     }
 
     /// Applies aggregations per group and expands the aggregated values back to match the original DataFrame row count.
+    /// - Parameters:
+    ///   - aggregations: <#description#>
+    /// - Returns: <#description#>
     public func transform(_ aggregations: [String: Aggregation]) -> DataFrame {
         let groups = buildGroups()
         var df = dataFrame

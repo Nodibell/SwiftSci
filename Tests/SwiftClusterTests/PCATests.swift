@@ -123,4 +123,60 @@ struct PCATests {
         #expect(components != nil)
         #expect(components!.count == 1)
     }
+
+    @Test("PCA svd_flip produces deterministic component signs matching Scikit-Learn")
+    func testPCASvdFlipSignDeterministicParity() async throws {
+        let X: [[Double]] = [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 10.0],
+            [10.0, 11.0, 12.0]
+        ]
+
+        let pca = try PCA(nComponents: 2, svdSolver: .full, device: .cpu)
+        try await pca.fit(X)
+        let comp = try #require(await pca.components)
+
+        // Row 0: largest absolute value is at index 2 (0.5919) -> positive
+        #expect(comp[0][2] > 0.0)
+        #expect(abs(comp[0][0] - 0.5699) < 1e-3)
+        #expect(abs(comp[0][1] - 0.5699) < 1e-3)
+        #expect(abs(comp[0][2] - 0.5919) < 1e-3)
+
+        // Row 1: largest absolute value is at index 2 (0.8060) -> positive
+        #expect(comp[1][2] > 0.0)
+        #expect(abs(comp[1][0] - (-0.4185)) < 1e-3)
+        #expect(abs(comp[1][1] - (-0.4185)) < 1e-3)
+        #expect(abs(comp[1][2] - 0.8060) < 1e-3)
+    }
+
+    @Test("svdFlip standalone sign inversion correctness")
+    func testSvdFlipStandalone() {
+        var vt: [[Double]] = [
+            [-0.5, 0.2, 0.1],
+            [0.1, -0.8, 0.2]
+        ]
+        var u: [[Double]]? = [
+            [1.0, 2.0],
+            [3.0, 4.0]
+        ]
+
+        PCA.svdFlip(u: &u, vt: &vt, uBasedDecision: false)
+
+        // Row 0 max abs is 0.5 at idx 0, was negative -> flipped
+        #expect(vt[0][0] == 0.5)
+        #expect(vt[0][1] == -0.2)
+        #expect(vt[0][2] == -0.1)
+
+        // Row 1 max abs is 0.8 at idx 1, was negative -> flipped
+        #expect(vt[1][0] == -0.1)
+        #expect(vt[1][1] == 0.8)
+        #expect(vt[1][2] == -0.2)
+
+        // Corresponding columns of U must also be flipped
+        #expect(u?[0][0] == -1.0)
+        #expect(u?[0][1] == -2.0)
+        #expect(u?[1][0] == -3.0)
+        #expect(u?[1][1] == -4.0)
+    }
 }

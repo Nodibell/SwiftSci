@@ -29,6 +29,7 @@ let forecast = try arima.predict(steps: 6)
 
 ### Guides & Tutorials
 - <doc:ArimaAndSarima>
+- <doc:AutoARIMAParallel>
 - <doc:SmoothingAndDecomposition>
 - <doc:KoopmanOperator>
 

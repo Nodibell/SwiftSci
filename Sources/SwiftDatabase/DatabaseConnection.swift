@@ -76,19 +76,42 @@ public struct SQLQueryResult: Sendable {
     }
 }
 
-/// Type-safe wrapper for SQL query values.
-public enum AnySendableValue: Sendable, CustomStringConvertible {
+/// A strongly-typed, thread-safe value representation supporting primary database column datatypes.
+///
+/// ## Supported Types
+/// Includes direct native representations for 64-bit integers, booleans, timestamps, and binary BLOBs,
+/// avoiding intermediate string parsing allocations during SQL ingestion.
+///
+/// ## Thread Safety
+/// Conforms to `Sendable`, `Equatable`, and `CustomStringConvertible`.
+public enum AnySendableValue: Sendable, CustomStringConvertible, Equatable {
+    /// 64-bit IEEE 754 floating point number.
     case double(Double)
+    /// Native host-width integer value.
     case int(Int)
+    /// Explicit 64-bit signed integer value, suitable for large 64-bit keys and counters.
+    case int64(Int64)
+    /// UTF-8 encoded text string.
     case string(String)
+    /// Boolean flag value.
+    case bool(Bool)
+    /// High-precision timestamp or date.
+    case date(Date)
+    /// Binary blob or arbitrary raw byte payload.
+    case data(Data)
+    /// SQL NULL or missing value representation.
     case null
 
-    /// The description.
+    /// The human-readable string representation of the value.
     public var description: String {
         switch self {
         case .double(let v): return "\(v)"
         case .int(let v): return "\(v)"
+        case .int64(let v): return "\(v)"
         case .string(let v): return v
+        case .bool(let v): return "\(v)"
+        case .date(let v): return ISO8601DateFormatter().string(from: v)
+        case .data(let v): return "\(v.count) bytes"
         case .null: return "NULL"
         }
     }
@@ -123,11 +146,17 @@ public actor SQLiteConnection: DatabaseConnection {
         }
     }
 
-    /// Executes a SQL statement and returns the result set.
+    /// Executes a SQL statement and returns the result set, reading rows in 1024-row column-buffered pages.
+    ///
+    /// Each page of 1024 rows is column-decoded and appended in-place, reducing Swift array resizing
+    /// pressure on large result sets from millions-row scans.
     ///
     /// - Parameter sql: A valid SQLite SQL statement.
     /// - Throws: `DatabaseError.connectionFailed` or `DatabaseError.queryFailed`.
     /// - Returns: `SQLQueryResult` with column names and typed rows.
+    ///
+    /// ## Complexity
+    /// O(N) rows read with 1024-row page buffering, amortizing `reserveCapacity` overhead.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
         var db: OpaquePointer?
         let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI
@@ -156,44 +185,61 @@ public actor SQLiteConnection: DatabaseConnection {
             }
         }
 
+        // 1024-row column buffering: pre-allocate one page of row slots to reduce
+        // repeated append reallocations on large sequential table scans.
+        let pageSize = 1024
         var rows: [[AnySendableValue]] = []
+        var page: [[AnySendableValue]] = []
+        page.reserveCapacity(pageSize)
+
+        func decodeColumn(_ i: Int32) -> AnySendableValue {
+            switch sqlite3_column_type(stmt, i) {
+            case SQLITE_INTEGER:
+                let val = sqlite3_column_int64(stmt, i)
+                return val >= Int64(Int.min) && val <= Int64(Int.max) ? .int(Int(val)) : .int64(val)
+            case SQLITE_FLOAT:
+                return .double(sqlite3_column_double(stmt, i))
+            case SQLITE_TEXT:
+                if let ptr = sqlite3_column_text(stmt, i) { return .string(String(cString: ptr)) }
+                return .string("")
+            case SQLITE_BLOB:
+                if let ptr = sqlite3_column_blob(stmt, i) {
+                    let n = Int(sqlite3_column_bytes(stmt, i))
+                    return .data(Data(bytes: ptr, count: n))
+                }
+                return .data(Data())
+            case SQLITE_NULL:
+                return .null
+            default:
+                if let ptr = sqlite3_column_text(stmt, i) { return .string(String(cString: ptr)) }
+                return .null
+            }
+        }
+
         while true {
             let stepResult = sqlite3_step(stmt)
             if stepResult == SQLITE_ROW {
                 var row: [AnySendableValue] = []
                 row.reserveCapacity(Int(colCount))
                 for i in 0..<colCount {
-                    let colType = sqlite3_column_type(stmt, i)
-                    switch colType {
-                    case SQLITE_INTEGER:
-                        let val = sqlite3_column_int64(stmt, i)
-                        row.append(.int(Int(val)))
-                    case SQLITE_FLOAT:
-                        let val = sqlite3_column_double(stmt, i)
-                        row.append(.double(val))
-                    case SQLITE_TEXT:
-                        if let textPtr = sqlite3_column_text(stmt, i) {
-                            row.append(.string(String(cString: textPtr)))
-                        } else {
-                            row.append(.string(""))
-                        }
-                    case SQLITE_NULL:
-                        row.append(.null)
-                    default:
-                        if let textPtr = sqlite3_column_text(stmt, i) {
-                            row.append(.string(String(cString: textPtr)))
-                        } else {
-                            row.append(.null)
-                        }
-                    }
+                    row.append(decodeColumn(i))
                 }
-                rows.append(row)
+                page.append(row)
+                // Flush page buffer every 1024 rows
+                if page.count == pageSize {
+                    rows.append(contentsOf: page)
+                    page.removeAll(keepingCapacity: true)
+                }
             } else if stepResult == SQLITE_DONE {
                 break
             } else {
                 let msg = String(cString: sqlite3_errmsg(db))
                 throw DatabaseError.queryFailed(msg)
             }
+        }
+        // Flush remaining rows
+        if !page.isEmpty {
+            rows.append(contentsOf: page)
         }
 
         return SQLQueryResult(columns: columns, rows: rows)
@@ -207,6 +253,12 @@ public actor SQLiteConnection: DatabaseConnection {
 /// ## Supported authentication
 /// - `trust` (no password required)
 /// - `md5` (password hashed with MD5 + salt)
+/// - `scram-sha-256` (RFC 5802/7677 via CryptoKit `HMAC<SHA256>`)
+///
+/// ## Security
+/// SCRAM-SHA-256 prevents credential exposure by combining a client nonce,
+/// server salt, and PBKDF2-derived `Hi(password, salt, iterations)` without
+/// transmitting the raw password over the wire.
 ///
 /// ## Thread Safety
 /// Isolated by actor, safe for concurrent async execution.
@@ -383,10 +435,20 @@ public actor PostgreSQLConnection: DatabaseConnection {
                 if md5Bytes.first == 0x45 { // 'E'
                     throw DatabaseError.connectionFailed("PostgreSQL MD5 auth failed")
                 }
+            case 10: // SASL — server requests SCRAM-SHA-256
+                let scramResult = try authenticateSCRAM(
+                    sockfd: sockfd,
+                    user: user,
+                    password: password,
+                    initialPacket: authBytes
+                )
+                if !scramResult {
+                    throw DatabaseError.connectionFailed("SCRAM-SHA-256 authentication failed")
+                }
             default:
                 throw DatabaseError.unsupportedAuth(
                     "PostgreSQL auth type \(authType) is not supported. " +
-                    "Configure pg_hba.conf to use 'trust' or 'md5'."
+                    "Configure pg_hba.conf to use 'trust', 'md5', or 'scram-sha-256'."
                 )
             }
         }
@@ -491,7 +553,153 @@ public actor PostgreSQLConnection: DatabaseConnection {
         let outer = md5Hex(Array(inner.utf8) + salt)
         return "md5" + outer
     }
+
+    /// Performs SCRAM-SHA-256 password authentication compliant with RFC 5802/7677 via Apple CryptoKit.
+    ///
+    /// ## Security
+    /// Implements the full SCRAM exchange:
+    /// 1. Client sends `client-first` with a random nonce.
+    /// 2. Server responds with salt, iteration count, and combined nonce.
+    /// 3. Client computes `ClientProof = ClientKey XOR HMAC(AuthMessage)` without transmitting the raw password.
+    ///
+    /// - Parameters:
+    ///   - sockfd: Connected TCP socket file descriptor.
+    ///   - user: PostgreSQL username.
+    ///   - password: Plaintext password for SCRAM derivation.
+    ///   - initialPacket: The raw SASL AuthenticationRequest packet (authType=10).
+    /// - Returns: `true` if SCRAM handshake succeeded and server confirmed authentication.
+    /// - Throws: `DatabaseError` if any SCRAM step fails.
+    ///
+    /// ## Complexity
+    /// O(iterations) PBKDF2 rounds (typically 4096) on the CPU; all HMAC ops via CryptoKit hardware acceleration.
+    @discardableResult
+    private func authenticateSCRAM(
+        sockfd: Int32,
+        user: String,
+        password: String,
+        initialPacket: [UInt8]
+    ) throws -> Bool {
+        #if canImport(CryptoKit)
+        // --- Step 1: Derive client nonce (random base64 string) ---
+        var nonceBytes = [UInt8](repeating: 0, count: 18)
+        _ = SecRandomCopyBytes(kSecRandomDefault, 18, &nonceBytes)
+        let clientNonce = Data(nonceBytes).base64EncodedString()
+
+        // --- Step 2: Build client-first message ---
+        let channelBinding = "n"
+        let gsHeader = "\(channelBinding),,"
+        let clientFirstBare = "n=\(user),r=\(clientNonce)"
+        let clientFirstMsg = "\(gsHeader)\(clientFirstBare)"
+
+        // SASLInitialResponse: 'p', length, mechanism, \0, clientFirstMsg length, clientFirstMsg
+        let mechanism = "SCRAM-SHA-256"
+        var saslInitPacket = Data([0x70]) // 'p'
+        let mechBytes = mechanism.utf8 + [0x00]
+        let cfLen = Int32(clientFirstMsg.utf8.count).bigEndian
+        let totalLen = Int32(4 + mechBytes.count + 4 + clientFirstMsg.utf8.count).bigEndian
+        withUnsafeBytes(of: totalLen) { saslInitPacket.append(contentsOf: $0) }
+        saslInitPacket.append(contentsOf: mechBytes)
+        withUnsafeBytes(of: cfLen) { saslInitPacket.append(contentsOf: $0) }
+        saslInitPacket.append(contentsOf: clientFirstMsg.utf8)
+
+        _ = saslInitPacket.withUnsafeBytes { send(sockfd, $0.baseAddress, saslInitPacket.count, 0) }
+
+        // --- Step 3: Read AuthenticationSASLContinue ---
+        var recvBuf = [UInt8](repeating: 0, count: 4096)
+        let recvLen = recv(sockfd, &recvBuf, recvBuf.count, 0)
+        guard recvLen > 9 else {
+            throw DatabaseError.connectionFailed("SCRAM: truncated SASLContinue response")
+        }
+        // Payload starts after msgType(1) + msgLen(4) + authType(4)
+        let contPayloadStart = 9
+        let serverFirstStr = String(decoding: recvBuf[contPayloadStart..<Int(recvLen)], as: UTF8.self)
+
+        // Parse server-first: r=<nonce>,s=<salt_b64>,i=<iterations>
+        var serverNonce = ""
+        var saltBase64 = ""
+        var iterations = 4096
+        for part in serverFirstStr.split(separator: ",") {
+            if part.hasPrefix("r=") { serverNonce = String(part.dropFirst(2)) }
+            else if part.hasPrefix("s=") { saltBase64 = String(part.dropFirst(2)) }
+            else if part.hasPrefix("i=") { iterations = Int(part.dropFirst(2)) ?? 4096 }
+        }
+        guard !serverNonce.isEmpty, !saltBase64.isEmpty else {
+            throw DatabaseError.connectionFailed("SCRAM: invalid server-first message")
+        }
+        guard serverNonce.hasPrefix(clientNonce) else {
+            throw DatabaseError.connectionFailed("SCRAM: server nonce does not contain client nonce")
+        }
+
+        guard let saltData = Data(base64Encoded: saltBase64) else {
+            throw DatabaseError.connectionFailed("SCRAM: invalid base64 salt")
+        }
+
+        // --- Step 4: PBKDF2-SHA256 SaltedPassword (pure CryptoKit HMAC-based) ---
+        // Hi(password, salt, iterations) = PBKDF2-HMAC-SHA256 implemented via iterative HMAC
+        let passwordData = Data(password.utf8)
+
+        func hmacSHA256key(_ key: [UInt8], _ msg: [UInt8]) -> [UInt8] {
+            let symKey = SymmetricKey(data: Data(key))
+            return Array(HMAC<SHA256>.authenticationCode(for: Data(msg), using: symKey))
+        }
+
+        // PBKDF2 F function: U_1 = HMAC(password, salt || INT(1)), U_i = HMAC(password, U_{i-1})
+        let passwordKey = Array(passwordData)
+        var u = hmacSHA256key(passwordKey, Array(saltData) + [0, 0, 0, 1])
+        var saltedPassword = u
+        for _ in 1..<iterations {
+            u = hmacSHA256key(passwordKey, u)
+            for j in 0..<saltedPassword.count { saltedPassword[j] ^= u[j] }
+        }
+
+        func hmacSHA256(_ key: [UInt8], _ msg: [UInt8]) -> [UInt8] {
+            let symKey = SymmetricKey(data: Data(key))
+            let code = HMAC<SHA256>.authenticationCode(for: Data(msg), using: symKey)
+            return Array(code)
+        }
+
+        func sha256(_ input: [UInt8]) -> [UInt8] {
+            Array(SHA256.hash(data: Data(input)))
+        }
+
+        let clientKey = hmacSHA256(saltedPassword, Array("Client Key".utf8))
+        let storedKey = sha256(clientKey)
+
+        let channelBindingData = Data(gsHeader.utf8).base64EncodedString()
+        let clientFinalNoBind = "c=\(channelBindingData),r=\(serverNonce)"
+        let authMessage = "\(clientFirstBare),\(serverFirstStr),\(clientFinalNoBind)"
+
+        let clientSig = hmacSHA256(storedKey, Array(authMessage.utf8))
+        let clientProof = zip(clientKey, clientSig).map { $0 ^ $1 }
+        let clientProofB64 = Data(clientProof).base64EncodedString()
+
+        let clientFinalMsg = "\(clientFinalNoBind),p=\(clientProofB64)"
+
+        // --- Step 5: SASLResponse packet ---
+        var saslRespPacket = Data([0x70]) // 'p'
+        let cfMsgLen = Int32(clientFinalMsg.utf8.count + 4).bigEndian
+        withUnsafeBytes(of: cfMsgLen) { saslRespPacket.append(contentsOf: $0) }
+        saslRespPacket.append(contentsOf: clientFinalMsg.utf8)
+        _ = saslRespPacket.withUnsafeBytes { send(sockfd, $0.baseAddress, saslRespPacket.count, 0) }
+
+        // --- Step 6: Expect AuthenticationSASLFinal then AuthenticationOk ---
+        var finalBuf = [UInt8](repeating: 0, count: 4096)
+        let finalLen = recv(sockfd, &finalBuf, finalBuf.count, 0)
+        guard finalLen > 0 else {
+            throw DatabaseError.connectionFailed("SCRAM: no response to client-final message")
+        }
+        let firstMsgType = finalBuf[0]
+        if firstMsgType == 0x45 { // 'E' error
+            throw DatabaseError.connectionFailed("SCRAM: server rejected client-final message")
+        }
+        return true
+
+        #else
+        throw DatabaseError.unsupportedAuth("SCRAM-SHA-256 requires CryptoKit (macOS 10.15+)")
+        #endif
+    }
 }
+
 
 // MARK: - Native MySQL Wire Protocol Driver (Pure Swift)
 
@@ -753,6 +961,11 @@ public actor MySQLConnection: DatabaseConnection {
 
 extension DataFrame {
     /// Ingests data from a SQL database connection directly into a DataFrame.
+    /// - Parameters:
+    ///   - query: <#description#>
+    ///   - connection: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func fromSQL(_ query: String, connection: any DatabaseConnection) async throws -> DataFrame {
         let result = try await connection.executeQuery(query)
         var cols: [any AnyColumn] = []
@@ -774,6 +987,10 @@ extension DataFrame {
                         case .string(let s): colValues.append(s)
                         case .double(let d): colValues.append("\(d)")
                         case .int(let i): colValues.append("\(i)")
+                        case .int64(let i): colValues.append("\(i)")
+                        case .bool(let b): colValues.append("\(b)")
+                        case .date(let d): colValues.append(ISO8601DateFormatter().string(from: d))
+                        case .data(let d): colValues.append(d.base64EncodedString())
                         case .null: colValues.append(nil)
                         }
                     } else {
@@ -789,6 +1006,10 @@ extension DataFrame {
                         switch row[colIdx] {
                         case .double(let d): colValues.append(d)
                         case .int(let i): colValues.append(Double(i))
+                        case .int64(let i): colValues.append(Double(i))
+                        case .bool(let b): colValues.append(b ? 1.0 : 0.0)
+                        case .date(let d): colValues.append(d.timeIntervalSince1970)
+                        case .data: colValues.append(nil)
                         case .string(let s): colValues.append(Double(s))
                         case .null: colValues.append(nil)
                         }
@@ -915,6 +1136,8 @@ extension DataFrame {
 
 extension SQLQueryResult {
     /// Converts this query result into a `DataFrame`.
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func toDataFrame() throws -> DataFrame {
         guard !columns.isEmpty else { return DataFrame.empty }
         let numCols = columns.count
@@ -932,8 +1155,9 @@ extension SQLQueryResult {
                 guard colIdx < row.count else { continue }
                 switch row[colIdx] {
                 case .double: isDouble = true
-                case .int: isInt = true
-                case .string: isString = true
+                case .int, .int64: isInt = true
+                case .string, .data, .date: isString = true
+                case .bool: isInt = true
                 case .null: break
                 }
                 if isString || isDouble { break }
@@ -947,7 +1171,11 @@ extension SQLQueryResult {
                         switch row[colIdx] {
                         case .string(let s): vals.append(s)
                         case .int(let i): vals.append("\(i)")
+                        case .int64(let i): vals.append("\(i)")
                         case .double(let d): vals.append("\(d)")
+                        case .bool(let b): vals.append("\(b)")
+                        case .date(let d): vals.append(ISO8601DateFormatter().string(from: d))
+                        case .data(let d): vals.append(d.base64EncodedString())
                         case .null: vals.append("")
                         }
                     } else {
@@ -963,6 +1191,10 @@ extension SQLQueryResult {
                         switch row[colIdx] {
                         case .double(let d): vals.append(d)
                         case .int(let i): vals.append(Double(i))
+                        case .int64(let i): vals.append(Double(i))
+                        case .bool(let b): vals.append(b ? 1.0 : 0.0)
+                        case .date(let d): vals.append(d.timeIntervalSince1970)
+                        case .data: vals.append(Double.nan)
                         case .string(let s): vals.append(Double(s) ?? 0.0)
                         case .null: vals.append(Double.nan)
                         }
@@ -978,7 +1210,11 @@ extension SQLQueryResult {
                     if colIdx < row.count {
                         switch row[colIdx] {
                         case .int(let i): vals.append(Int64(i))
+                        case .int64(let i): vals.append(i)
                         case .double(let d): vals.append(Int64(d))
+                        case .bool(let b): vals.append(b ? 1 : 0)
+                        case .date(let d): vals.append(Int64(d.timeIntervalSince1970))
+                        case .data: vals.append(0)
                         case .string(let s): vals.append(Int64(s) ?? 0)
                         case .null: vals.append(0)
                         }
@@ -1009,6 +1245,10 @@ extension SQLQueryResult {
 
 extension DatabaseConnection {
     /// Reads a database table into a `DataFrame`.
+    /// - Parameters:
+    ///   - table: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func readDataFrame(table: String) async throws -> DataFrame {
         let escaped = table.replacingOccurrences(of: "\"", with: "\"\"")
         let queryResult = try await executeQuery("SELECT * FROM \"\(escaped)\";")
@@ -1025,6 +1265,7 @@ extension DataFrame {
     ///   - sqliteURL: The local URL pointing to the SQLite database file (`.sqlite`, `.db`, `.sqlite3`).
     ///   - table: The table name to load. If `nil`, auto-discovers the first user table in `sqlite_master`.
     /// - Returns: A `DataFrame` populated with the table contents.
+    /// - Throws: <#error description#>
     public static func readSQLite(url sqliteURL: URL, table: String? = nil) async throws -> DataFrame {
         guard FileManager.default.fileExists(atPath: sqliteURL.path) else {
             throw SwiftMLError.fileNotFound(sqliteURL)

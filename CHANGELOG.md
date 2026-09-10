@@ -4,6 +4,43 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-09-10
+
+### Added
+- **Hierarchical Navigable Small World Graph Index (`HNSWIndex`, `SwiftCluster`)**: Sub-millisecond $O(\log N)$ approximate nearest neighbor (ANN) vector search index scaling to 100k+ high-dimensional embeddings with vDSP cosine and L2 distance kernels, configurable $M$, $efConstruction$, and $efSearch$.
+- **Histogram-Binned Gradient Boosted Decision Trees (`HistGradientBoostingClassifier`, `HistGradientBoostingRegressor`, `SwiftML`)**: Fast tabular tree ensembles with 256 discrete integer bins (`UInt8`), one-pass gradient/Hessian accumulation, and $O(\text{numBins})$ split evaluations.
+- **Concurrent Hyperparameter & Fold Optimization (`AutoML`, `OneVsRestClassifier`, `SwiftOptimize`, `SwiftML`)**: Concurrent cross-validation fold evaluation and multi-class classification utilizing Swift Concurrency `withThrowingTaskGroup` with cooperative cancellation and bounded concurrency limits.
+- **Early Stopping Callbacks (`EarlyStopping`, `SwiftML`)**: Automated iteration halting for `MLPClassifier`, `MLPRegressor`, and `GradientBoostedTrees` with configurable `patience`, `minDelta`, metric tracking, and optimal weight restoration (`restoreBestWeights`).
+- **Compressed Sparse Matrix Storage (`SparseMatrix`, `SwiftPreprocessing`)**: Memory-efficient CSR and CSC sparse matrix representations backed by Apple Accelerate Sparse BLAS routines (`sparse_matrix_vector_multiply`) reducing RAM footprint by up to 50× for one-hot and TF-IDF features.
+- **Parallel Order Search in AutoARIMA (`AutoARIMA`, `SwiftForecast`)**: Multi-threaded $(p, d, q) \times (P, D, Q)_s$ hyperparameter grid search over concurrent `TaskGroup` workers evaluated by AIC/BIC.
+- **Native Metal MSL SIMD-Group Quantization Kernels (`QuantizedGEMM.metal`, `QuantizedLinear`, `SwiftLLM`)**: Hardware-accelerated 4-bit (Q4_0, Q4_K) and 8-bit dequantization and GEMM on Apple Silicon GPUs using Metal Shading Language `simdgroup_matrix`.
+- **Multi-Agent Collaboration & Parallel Tool Calling (`MultiAgentOrchestrator`, `AgentMessageBus`, `SwiftAgent`)**: Asynchronous message bus architecture on Swift `AsyncStream` coordinating specialized autonomous agents (Analyst, Planner, Critic) with parallel tool dispatch.
+- **1024-Row SQLite Ingestion & SCRAM-SHA-256 Authentication (`DatabaseConnection`, `SwiftDatabase`)**: Column-buffered SQLite reading in 1024-row chunks and RFC 5802/7677 compliant SCRAM-SHA-256 PostgreSQL password authentication via Apple CryptoKit.
+- **Strongly-Typed Database Values (`AnySendableValue`, `SwiftDatabase`)**: Added native `int64`, `bool`, `date`, and `data` (BLOB) representations to avoid string marshalling allocations.
+- **Zero-Heap Hardware Bounding Boxes (`BoundingBoxSIMD`, `SwiftVision`)**: Replaced heap-allocated strings with integer `classId` and flat `SIMD4<Float>` vectors, dramatically speeding up Non-Maximum Suppression (NMS).
+- **High-Performance PRNG & Deterministic State (`SeededRandom`, `SwiftPreprocessing`, `SwiftML`, `SwiftCluster`)**: Integrated Xoshiro256++ PRNG ($2^{256} - 1$ period) and propagated `randomState` across `RandomForestClassifier`, `RandomForestRegressor`, `KMeans`, and `PCA`.
+- **Lineage Audit Trail (`LineageRecord`, `SwiftAgentEvaluator`, `SwiftAgent`)**: Complete record of data transformations (`stepIndex`, `operation`, `inputRows`, `outputRows`, `timestamp`).
+- **Unified Missing Value Strategy (`ArrowNullStrategy`, `SwiftDataFrame`)**: Explicit `.preserve`, `.nan`, and `.zero` missing value strategies for Arrow-to-matrix exports.
+
+### Changed & Fixed
+- **Memory & Concurrency Safety (P0)**:
+  - Added ARC buffer owner retention (`owner: AnyObject?`) in `ArrowDataBuffer` to eliminate potential use-after-free across asynchronous tasks.
+  - Replaced uncoordinated cache clear in `WiredMemoryTicket` with scoped `withMemoryTicket` ensuring `MLX.eval()` completes prior to buffer release.
+  - Enforced deep-copy value semantics in `Pipeline` via `copyTransformer()` protocol requirement to prevent cross-fold state contamination in concurrent cross-validation.
+- **Mathematical Robustness & Numerical Stability (P1)**:
+  - Added Moore-Penrose pseudo-inverse fallback via LAPACK SVD `dgesdd_` in `KalmanFilter` to safeguard singular innovation covariances.
+  - Implemented `svdFlip` sign alignment in `PCA` and `RandomizedSVD` for 100% axis orientation parity with Scikit-Learn.
+  - Replaced naive variance computation with two-pass centered deviation accumulation (`vDSP_vsubD` and `vDSP_measqvD`), and enabled `checkNaN: true` by default in `Stats.describe`.
+- **Security & Robustness (P2)**:
+  - Added boundary guards against zero-division in `KernelSHAP` alongside an exact analytical path for low-dimensional spaces ($M \le 2$).
+  - Added `HandleUnknownStrategy` (`.error`, `.ignore`) in `OneHotEncoder` to safeguard production inference pipelines from unseen categories.
+  - Implemented byte-level UTF-8 inversion in `BPETokenizer.decode` to protect Cyrillic, CJK, and emoji graphemes.
+  - Added HTML entity escaping and strict `JSONEncoder` serialization in `SwiftVisualization` to prevent Cross-Site Scripting (XSS).
+  - Added structured cancellation timeouts (`toolTimeoutSeconds`) in `ReActAgent`.
+  - Pinned `flatbuffers` to `25.2.10` in `Package.swift` to resolve downstream compile failures with `arrow-swift`.
+
+---
+
 ## [3.5.2] - 2026-09-02
 
 ### Added

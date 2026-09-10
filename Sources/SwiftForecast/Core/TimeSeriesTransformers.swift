@@ -14,6 +14,9 @@ public final class LagTransformer: Sendable {
     }
     
     /// Generates feature matrix of lagged values and aligned target values.
+    /// - Parameters:
+    ///   - series: <#description#>
+    /// - Returns: <#description#>
     public func transform(series: [Double]) -> (features: [[Double]], targets: [Double]) {
         guard !series.isEmpty, !lags.isEmpty else {
             return (features: [], targets: [])
@@ -49,6 +52,10 @@ public final class RollingWindow: Sendable {
     }
     
     /// Computes rolling mean and rolling standard deviation series.
+    /// - Parameters:
+    ///   - series: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(series: [Double]) throws -> (rollingMean: [Double], rollingStd: [Double]) {
 
         guard series.count >= windowSize else {
@@ -93,6 +100,9 @@ public final class ExpandingWindow: Sendable {
     }
 
     /// Computes expanding mean and expanding standard deviation series.
+    /// - Parameters:
+    ///   - series: <#description#>
+    /// - Returns: <#description#>
     public func transform(series: [Double]) -> (expandingMean: [Double], expandingStd: [Double]) {
         guard !series.isEmpty else {
             return (expandingMean: [], expandingStd: [])

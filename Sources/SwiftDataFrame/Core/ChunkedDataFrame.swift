@@ -49,12 +49,15 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
         }
 
         /// Fetches the next DataFrame chunk in the sequence.
+        /// - Throws: <#error description#>
+        /// - Returns: <#description#>
         public mutating func next() async throws -> DataFrame? {
             try await iterator.next()
         }
     }
 
     /// Creates an asynchronous iterator over the DataFrame chunks.
+    /// - Returns: <#description#>
     public func makeAsyncIterator() -> AsyncIterator {
         AsyncIterator(iterator: streamProducer().makeAsyncIterator())
     }
@@ -140,6 +143,7 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     ///
     /// - Parameter transform: An asynchronous closure transforming each `DataFrame` chunk.
     /// - Returns: A new `ChunkedDataFrame` emitting transformed chunks.
+    /// - Throws: <#error description#>
     public func mapChunk(
         _ transform: @escaping @Sendable (DataFrame) async throws -> DataFrame
     ) -> ChunkedDataFrame {
@@ -180,6 +184,7 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     /// Computes the total number of rows across all chunks without retaining all chunks in memory.
     ///
     /// - Returns: Total row count.
+    /// - Throws: <#error description#>
     public func rowCount() async throws -> Int {
         var total = 0
         for try await chunk in self {
@@ -191,6 +196,8 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     /// Iterates over every chunk in the stream.
     ///
     /// - Parameter body: An asynchronous closure executed for each chunk.
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func forEachChunk(
         _ body: @escaping @Sendable (DataFrame) async throws -> Void
     ) async throws {
@@ -231,6 +238,7 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
 
 extension DataFrame {
     /// Converts an eager `DataFrame` into a `ChunkedDataFrame` with a single chunk.
+    /// - Returns: <#description#>
     public func chunked() -> ChunkedDataFrame {
         ChunkedDataFrame(dataFrame: self)
     }

@@ -37,6 +37,9 @@ public struct BoundingBox: Sendable, Codable, Equatable {
     }
 
     /// Computes Intersection over Union (IoU) with another bounding box.
+    /// - Parameters:
+    ///   - other: The candidate bounding box to compare against.
+    /// - Returns: The intersection-over-union metric in range [0.0, 1.0].
     public func iou(with other: BoundingBox) -> Double {
         let interXMin = max(self.xMin, other.xMin)
         let interYMin = max(self.yMin, other.yMin)
@@ -56,9 +59,90 @@ public struct BoundingBox: Sendable, Codable, Equatable {
     }
 }
 
+/// Memory-efficient bounding box representation using hardware SIMD registers.
+///
+/// ## Zero-Heap Overhead
+/// Replaces heap-allocated String class labels with integer `classId` and flat `SIMD4<Float>` coordinates,
+/// eliminating ARC retain/release overhead across thousands of candidate detections during NMS.
+///
+/// ## Thread Safety
+/// Conforms to `Sendable` as an immutable value type.
+public struct BoundingBoxSIMD: Sendable, Equatable {
+    /// Coordinates packed as (xMin, yMin, xMax, yMax).
+    public var coords: SIMD4<Float>
+    /// Confidence score in [0, 1].
+    public var confidence: Float
+    /// Integer class identifier.
+    public var classId: Int32
+
+    /// Minimum X coordinate.
+    @inlinable public var xMin: Float { coords[0] }
+    /// Minimum Y coordinate.
+    @inlinable public var yMin: Float { coords[1] }
+    /// Maximum X coordinate.
+    @inlinable public var xMax: Float { coords[2] }
+    /// Maximum Y coordinate.
+    @inlinable public var yMax: Float { coords[3] }
+
+    /// Area of the bounding box.
+    @inlinable
+    public var area: Float {
+        max(0.0, coords[2] - coords[0]) * max(0.0, coords[3] - coords[1])
+    }
+
+    /// Creates a new bounding box using packed SIMD coordinates.
+    /// - Parameters:
+    ///   - coords: Packed vector of (xMin, yMin, xMax, yMax).
+    ///   - confidence: Detection confidence score.
+    ///   - classId: Class ID.
+    public init(coords: SIMD4<Float>, confidence: Float, classId: Int32) {
+        self.coords = coords
+        self.confidence = confidence
+        self.classId = classId
+    }
+
+    /// Creates a new bounding box using individual scalar coordinates.
+    /// - Parameters:
+    ///   - xMin: Minimum X coordinate.
+    ///   - yMin: Minimum Y coordinate.
+    ///   - xMax: Maximum X coordinate.
+    ///   - yMax: Maximum Y coordinate.
+    ///   - confidence: Detection confidence score.
+    ///   - classId: Class ID.
+    public init(xMin: Float, yMin: Float, xMax: Float, yMax: Float, confidence: Float, classId: Int32) {
+        self.coords = SIMD4<Float>(xMin, yMin, xMax, yMax)
+        self.confidence = confidence
+        self.classId = classId
+    }
+
+    /// Computes Intersection-over-Union (IoU) with another SIMD bounding box.
+    /// - Parameter other: The target bounding box to compare against.
+    /// - Returns: The IoU ratio in [0, 1].
+    @inlinable
+    public func intersectionOverUnion(with other: BoundingBoxSIMD) -> Float {
+        let interXMin = max(self.coords[0], other.coords[0])
+        let interYMin = max(self.coords[1], other.coords[1])
+        let interXMax = min(self.coords[2], other.coords[2])
+        let interYMax = min(self.coords[3], other.coords[3])
+
+        let interWidth = max(0.0, interXMax - interXMin)
+        let interHeight = max(0.0, interYMax - interYMin)
+        let interArea = interWidth * interHeight
+
+        if interArea <= 0.0 { return 0.0 }
+
+        let unionArea = self.area + other.area - interArea
+        return unionArea > 0.0 ? interArea / unionArea : 0.0
+    }
+}
+
 /// Evaluation metrics for computer vision tasks.
 public enum VisionMetrics {
     /// Calculates the Dice Coefficient between binary masks.
+    /// - Parameters:
+    ///   - predicted: <#description#>
+    ///   - groundTruth: <#description#>
+    /// - Returns: <#description#>
     public static func diceCoefficient(predicted: [[Double]], groundTruth: [[Double]]) -> Double {
         guard !predicted.isEmpty, predicted.count == groundTruth.count else { return 0.0 }
         var intersection = 0.0
@@ -81,6 +165,10 @@ public enum VisionMetrics {
     }
 
     /// Calculates Intersection over Union (IoU) score.
+    /// - Parameters:
+    ///   - predicted: <#description#>
+    ///   - groundTruth: <#description#>
+    /// - Returns: <#description#>
     public static func iouScore(predicted: [[Double]], groundTruth: [[Double]]) -> Double {
         guard !predicted.isEmpty, predicted.count == groundTruth.count else { return 0.0 }
         var intersection = 0.0
@@ -135,6 +223,9 @@ public struct CNNFeatureExtractor: Sendable {
     public init() {}
 
     /// Extracts global average pooling features from flattened image array.
+    /// - Parameters:
+    ///   - image: <#description#>
+    /// - Returns: <#description#>
     public func extractFeatures(image: ImageDataset) -> [Double] {
         let pixelCount = image.width * image.height
         guard pixelCount > 0 else { return [] }

@@ -127,24 +127,40 @@ public struct TreeSHAP: Sendable {
     // MARK: - Integration with SwiftML Tree Models
 
     /// Computes TreeSHAP for a `DecisionTreeClassifier`.
+    /// - Parameters:
+    ///   - decisionTree: <#description#>
+    ///   - instance: <#description#>
+    /// - Returns: <#description#>
     public func explain(decisionTree: DecisionTreeClassifier, instance: [Double]) async -> [Double] {
         let nodes = await decisionTree.flatNodes
         return explain(tree: nodes, instance: instance, numFeatures: instance.count)
     }
 
     /// Computes TreeSHAP for a `DecisionTreeRegressor`.
+    /// - Parameters:
+    ///   - decisionTree: <#description#>
+    ///   - instance: <#description#>
+    /// - Returns: <#description#>
     public func explain(decisionTree: DecisionTreeRegressor, instance: [Double]) async -> [Double] {
         let nodes = await decisionTree.flatNodes
         return explain(tree: nodes, instance: instance, numFeatures: instance.count)
     }
 
     /// Computes TreeSHAP for a `RandomForestClassifier`.
+    /// - Parameters:
+    ///   - randomForest: <#description#>
+    ///   - instance: <#description#>
+    /// - Returns: <#description#>
     public func explain(randomForest: RandomForestClassifier, instance: [Double]) async -> [Double] {
         let flatTrees = await randomForest.flatTrees
         return explain(trees: flatTrees, instance: instance, numFeatures: instance.count)
     }
 
     /// Computes TreeSHAP for a `RandomForestRegressor`.
+    /// - Parameters:
+    ///   - randomForest: <#description#>
+    ///   - instance: <#description#>
+    /// - Returns: <#description#>
     public func explain(randomForest: RandomForestRegressor, instance: [Double]) async -> [Double] {
         let flatTrees = await randomForest.flatTrees
         return explain(trees: flatTrees, instance: instance, numFeatures: instance.count)
@@ -153,6 +169,9 @@ public struct TreeSHAP: Sendable {
     // MARK: - Blackbox Model Fallback (KernelSHAP Delegation)
 
     /// Explains predictions of any model by calculating Shapley values for each instance against background data via KernelSHAP.
+    /// - Parameters:
+    ///   - model: <#description#>
+    /// - Returns: <#description#>
     public func explain(
         model: @escaping @Sendable ([Double]) async -> Double,
         features: [[Double]],
@@ -185,6 +204,12 @@ public struct PermutationImportance: Sendable {
     public init() {}
 
     /// Computes feature importance by measuring decrease in model performance (MSE) when each feature column is shuffled.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - predict: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func computeImportance(
         features: [[Double]],
         targets: [Double],
@@ -220,6 +245,13 @@ public struct PartialDependencePlot: Sendable {
     public init() {}
 
     /// Calculates PDP grid values for a specified feature index by replacing feature column values with grid points.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - featureIndex: <#description#>
+    ///   - gridPoints: <#description#>
+    ///   - predict: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func calculatePDP(
         features: [[Double]],
         featureIndex: Int,

@@ -12,6 +12,15 @@ public actor LinearSVCOneVsRest: Sendable {
     }
 
     /// Fits one binary LinearSVC per class against all other classes.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - C: <#description#>
+    ///   - learningRate: <#description#>
+    ///   - epochs: <#description#>
+    ///   - onProgress: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -37,6 +46,10 @@ public actor LinearSVCOneVsRest: Sendable {
     }
 
     /// Predicts class index for feature vectors using highest decision score (argmax w^T x + b).
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]]) async throws -> [Int] {
         guard !estimators.isEmpty else {
             throw SwiftMLError.modelNotFitted

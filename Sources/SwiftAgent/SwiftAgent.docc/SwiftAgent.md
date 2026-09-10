@@ -26,3 +26,4 @@ let summary = RAGSummaryGenerator.generateSummary(for: df)
 
 ### Guides & Tutorials
 - <doc:AgenticReplAndRAG>
+- <doc:MultiAgentCollaboration>

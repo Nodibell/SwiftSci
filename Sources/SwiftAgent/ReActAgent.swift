@@ -33,6 +33,10 @@ public struct CustomAgentTool: AgentTool, Sendable {
     }
 
     /// Executes the custom tool handler.
+    /// - Parameters:
+    ///   - input: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func execute(input: String) async throws -> String {
         try await handler(input)
     }
@@ -59,6 +63,10 @@ public struct DataFrameAgentTool: AgentTool, Sendable {
     }
 
     /// Evaluates the DataFrame command and returns a string summary of the resulting DataFrame.
+    /// - Parameters:
+    ///   - input: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func execute(input: String) async throws -> String {
         let result = try await evaluator.evaluate(command: input, on: dataframe)
         var out = "Result (\(result.rowCount) rows):\n"
@@ -106,19 +114,23 @@ public actor ReActAgent {
     public private(set) var tools: [String: any AgentTool]
     /// Maximum allowed reasoning steps before termination.
     public let maxSteps: Int
+    /// Timeout threshold in seconds for each individual tool execution.
+    public let toolTimeoutSeconds: Double
 
     /// Initializes a ReAct Agent with available tools.
     ///
     /// - Parameters:
     ///   - tools: List of initial tools available to the agent.
     ///   - maxSteps: Maximum step limit to prevent infinite loops (default: 10).
-    public init(tools: [any AgentTool] = [], maxSteps: Int = 10) {
+    ///   - toolTimeoutSeconds: Maximum execution time allowed per tool call in seconds (default: 30.0).
+    public init(tools: [any AgentTool] = [], maxSteps: Int = 10, toolTimeoutSeconds: Double = 30.0) {
         var toolMap: [String: any AgentTool] = [:]
         for tool in tools {
             toolMap[tool.name] = tool
         }
         self.tools = toolMap
         self.maxSteps = maxSteps
+        self.toolTimeoutSeconds = toolTimeoutSeconds
     }
 
     /// Registers a new tool with the agent.
@@ -170,6 +182,7 @@ public actor ReActAgent {
     ///   - query: The target user question or goal.
     ///   - llm: Async block producing model completions given a prompt.
     /// - Returns: Final answer and complete trajectory trace of agent steps.
+    /// - Throws: <#error description#>
     public func run(
         query: String,
         llm: @Sendable (String) async throws -> String
@@ -213,7 +226,12 @@ public actor ReActAgent {
             }
 
             let input = parsed.actionInput ?? ""
-            let obs = try await actTool.execute(input: input)
+            let obs: String
+            do {
+                obs = try await executeWithTimeout(tool: actTool, input: input, timeoutSeconds: toolTimeoutSeconds)
+            } catch {
+                obs = "Error: \(error.localizedDescription)"
+            }
             let step = AgentStep(thought: parsed.thought, action: actTool.name, actionInput: input, observation: obs)
             trace.append(step)
         }
@@ -221,7 +239,33 @@ public actor ReActAgent {
         return (finalAnswer: trace.last?.observation ?? "Max steps reached without conclusive answer.", trace: trace)
     }
 
+    /// Executes an agent tool with strict structured concurrency timeout protection.
+    private func executeWithTimeout(tool: any AgentTool, input: String, timeoutSeconds: Double) async throws -> String {
+        guard timeoutSeconds > 0 else {
+            return try await tool.execute(input: input)
+        }
+
+        return try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask {
+                try await tool.execute(input: input)
+            }
+
+            group.addTask {
+                let nanos = UInt64(timeoutSeconds * 1_000_000_000)
+                try await Task.sleep(nanoseconds: nanos)
+                throw AgentError.toolTimeout(tool: tool.name, seconds: timeoutSeconds)
+            }
+
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
+    }
+
     /// Resolves tool by exact or fuzzy name matching (case/punctuation-insensitive).
+    /// - Parameters:
+    ///   - name: The exact or fuzzy name of the tool to locate.
+    /// - Returns: The matching `AgentTool` instance, or `nil` if not found.
     public func findTool(named name: String) -> (any AgentTool)? {
         if let direct = tools[name] { return direct }
         let clean = name.lowercased()
@@ -248,6 +292,7 @@ public actor ReActAgent {
     ///   - model: A local LLMModel instance executing natively on Apple Silicon.
     ///   - options: Inference options (temperature, topP, maxTokens).
     /// - Returns: Tuple with final answer and complete reasoning step trace.
+    /// - Throws: <#error description#>
     public func run(
         query: String,
         model: any LLMModel,

@@ -173,4 +173,119 @@ struct DataFrameArrowTests {
         #expect(col!.values[10] == nil)
         #expect(col!.values[11] == 11.0)
     }
+
+    @Test("ArrowNullStrategy converts nulls to NaN or Zero")
+    func testArrowNullStrategy() throws {
+        let builder = try ArrowArrayBuilders.loadBuilder(Double.self)
+        builder.appendAny(10.0)
+        builder.appendAny(nil)
+        builder.appendAny(30.0)
+        let holder = try builder.toHolder()
+
+        let intBuilder = try ArrowArrayBuilders.loadBuilder(Int32.self)
+        intBuilder.appendAny(Int32(1))
+        intBuilder.appendAny(nil)
+        intBuilder.appendAny(Int32(3))
+        let intHolder = try intBuilder.toHolder()
+
+        let rbBuilder = RecordBatch.Builder()
+        rbBuilder.addColumn("d", arrowArray: holder)
+        rbBuilder.addColumn("i", arrowArray: intHolder)
+        let rb = try rbBuilder.finish().get()
+        let table = try ArrowTable.from(recordBatches: [rb]).get()
+
+        // 1. Default / .preserve
+        let dfPreserve = try DataFrame(arrowTable: table, nullStrategy: .preserve)
+        let dPreserve = dfPreserve[column: "d", as: Double.self]?.values
+        let iPreserve = dfPreserve[column: "i", as: Int32.self]?.values
+        #expect(dPreserve?[1] == nil)
+        #expect(iPreserve?[1] == nil)
+
+        // 2. .nan strategy
+        let dfNaN = try DataFrame(arrowTable: table, nullStrategy: .nan)
+        let dNaN = dfNaN[column: "d", as: Double.self]?.values
+        #expect(dNaN?[0] == 10.0)
+        #expect(dNaN?[1]?.isNaN == true)
+        #expect(dNaN?[2] == 30.0)
+
+        // 3. .zero strategy
+        let dfZero = try DataFrame(arrowTable: table, nullStrategy: .zero)
+        let dZero = dfZero[column: "d", as: Double.self]?.values
+        let iZero = dfZero[column: "i", as: Int32.self]?.values
+        #expect(dZero == [10.0, 0.0, 30.0])
+        #expect(iZero == [1, 0, 3])
+    }
+
+    @Test("ArrowTableBridge nullStrategy for Int64, Float, and Bool columns")
+    func testArrowNullStrategyExtendedTypes() throws {
+        let i64Builder = try ArrowArrayBuilders.loadBuilder(Int64.self)
+        i64Builder.appendAny(Int64(100))
+        i64Builder.appendAny(nil)
+        let i64Holder = try i64Builder.toHolder()
+
+        let fBuilder = try ArrowArrayBuilders.loadBuilder(Float.self)
+        fBuilder.appendAny(Float(1.5))
+        fBuilder.appendAny(nil)
+        let fHolder = try fBuilder.toHolder()
+
+        let bBuilder = try ArrowArrayBuilders.loadBuilder(Bool.self)
+        bBuilder.appendAny(true)
+        bBuilder.appendAny(nil)
+        let bHolder = try bBuilder.toHolder()
+
+        let rbBuilder = RecordBatch.Builder()
+        rbBuilder.addColumn("i64", arrowArray: i64Holder)
+        rbBuilder.addColumn("f", arrowArray: fHolder)
+        rbBuilder.addColumn("b", arrowArray: bHolder)
+        let rb = try rbBuilder.finish().get()
+        let table = try ArrowTable.from(recordBatches: [rb]).get()
+
+        // .nan strategy
+        let dfNaN = try DataFrame(arrowTable: table, nullStrategy: .nan)
+        let fNaN = dfNaN[column: "f", as: Float.self]?.values
+        #expect(fNaN?[0] == 1.5)
+        #expect(fNaN?[1]?.isNaN == true)
+
+        // .zero strategy
+        let dfZero = try DataFrame(arrowTable: table, nullStrategy: .zero)
+        let i64Zero = dfZero[column: "i64", as: Int64.self]?.values
+        let fZero = dfZero[column: "f", as: Float.self]?.values
+        let bZero = dfZero[column: "b", as: Bool.self]?.values
+        #expect(i64Zero == [100, 0])
+        #expect(fZero == [1.5, 0.0])
+        #expect(bZero == [true, false])
+    }
+
+    @Test("ArrowDataBuffer owner retention and slicing zero-copy invariant")
+    func testArrowDataBufferOwnerAndSlice() throws {
+        final class MockOwner: @unchecked Sendable {}
+        let owner = MockOwner()
+        let memory = [10.0, 20.0, 30.0, 40.0]
+
+        memory.withUnsafeBytes { rawBuffer in
+            guard let baseAddr = rawBuffer.baseAddress else { return }
+            let buffer = ArrowDataBuffer<Double>(
+                rawPointer: baseAddr,
+                byteCount: rawBuffer.count,
+                elementCount: memory.count,
+                owner: owner
+            )
+            #expect(buffer.elementCount == 4)
+            #expect(buffer.byteCount == 4 * MemoryLayout<Double>.stride)
+
+            buffer.withUnsafeBytes { sliceBuf in
+                let ptr = sliceBuf.bindMemory(to: Double.self)
+                #expect(ptr[0] == 10.0)
+                #expect(ptr[3] == 40.0)
+            }
+
+            let sliced = buffer.slice(from: 1, count: 2)
+            #expect(sliced.elementCount == 2)
+            sliced.withUnsafeBytes { sliceBuf in
+                let ptr = sliceBuf.bindMemory(to: Double.self)
+                #expect(ptr[0] == 20.0)
+                #expect(ptr[1] == 30.0)
+            }
+        }
+    }
 }

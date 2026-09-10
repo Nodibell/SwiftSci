@@ -19,6 +19,10 @@ public struct DataFrameRow: @unchecked Sendable {
     }
 
     /// Returns the value for `column` as the given type, or nil if null / wrong type.
+    /// - Parameters:
+    ///   - column: <#description#>
+    ///   - as: <#description#>
+    /// - Returns: <#description#>
     public func value<T: SupportedType>(column: String, as type: T.Type = T.self) -> T? {
         columnMap[column]?.value(at: index) as? T
     }
@@ -35,15 +39,27 @@ public struct DataFrameRow: @unchecked Sendable {
     }
 
     /// Convenience typed accessor for Double columns.
+    /// - Parameters:
+    ///   - name: <#description#>
+    /// - Returns: <#description#>
     public func double(_ name: String) -> Double? { self[name, as: Double.self] }
 
     /// Convenience typed accessor for String columns.
+    /// - Parameters:
+    ///   - name: <#description#>
+    /// - Returns: <#description#>
     public func string(_ name: String) -> String? { self[name, as: String.self] }
 
     /// Convenience typed accessor for Int64 columns.
+    /// - Parameters:
+    ///   - name: <#description#>
+    /// - Returns: <#description#>
     public func int(_ name: String) -> Int64?     { self[name, as: Int64.self] }
 
     /// Whether the value for `column` is null.
+    /// - Parameters:
+    ///   - column: <#description#>
+    /// - Returns: <#description#>
     public func isNull(column: String) -> Bool {
         guard let col = columnMap[column] else { return true }
         return col.value(at: index) == nil
@@ -64,6 +80,7 @@ public struct DataFrameRowSequence: Sequence, @unchecked Sendable {
     }
 
     /// Creates an iterator for row iteration.
+    /// - Returns: <#description#>
     public func makeIterator() -> Iterator {
         Iterator(count: count, row: DataFrameRow(columnNames: columnNames, index: 0, columnMap: columnMap))
     }
@@ -80,6 +97,7 @@ public struct DataFrameRowSequence: Sequence, @unchecked Sendable {
         }
 
         /// Advances to the next row.
+        /// - Returns: <#description#>
         public mutating func next() -> DataFrameRow? {
             guard currentIndex < count else { return nil }
             row.index = currentIndex

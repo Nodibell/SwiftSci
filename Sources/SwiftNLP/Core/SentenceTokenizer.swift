@@ -9,6 +9,9 @@ public struct SentenceTokenizer: Tokenizer, Sendable {
     public init() {}
 
     /// Splits text into sentence strings.
+    /// - Parameters:
+    ///   - text: <#description#>
+    /// - Returns: <#description#>
     public func tokenize(text: String) -> [String] {
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return []

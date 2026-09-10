@@ -1,4 +1,5 @@
 import Foundation
+import SwiftPreprocessing
 
 // MARK: - Split Criteria
 
@@ -115,7 +116,10 @@ func createPresortedIndices(X: [[Double]]) -> [[Int]] {
     var presorted = [[Int]]()
     presorted.reserveCapacity(numFeatures)
     for f in 0..<numFeatures {
-        let sortedF = (0..<numSamples).sorted { X[$0][f] < X[$1][f] }
+        let sortedF = (0..<numSamples).sorted {
+            if X[$0][f] != X[$1][f] { return X[$0][f] < X[$1][f] }
+            return $0 < $1
+        }
         presorted.append(sortedF)
     }
     return presorted
@@ -127,14 +131,22 @@ func bestSplit(
     indices: [Int],
     presortedIndices: [[Int]]? = nil,
     criterion: SplitCriterion,
-    maxFeatures: Int?
+    maxFeatures: Int?,
+    seed: Int? = nil
 ) -> SplitResult? {
     guard indices.count > 1 else { return nil }
 
     let numFeatures = X[0].count
     let featureRange: [Int]
     if let maxF = maxFeatures, maxF < numFeatures {
-        featureRange = Array((0..<numFeatures).shuffled().prefix(maxF))
+        var allFeatures = Array(0..<numFeatures)
+        if let s = seed {
+            var rng = SeededRandom(seed: s)
+            allFeatures.shuffle(using: &rng)
+        } else {
+            allFeatures.shuffle()
+        }
+        featureRange = Array(allFeatures.prefix(maxF))
     } else {
         featureRange = Array(0..<numFeatures)
     }
@@ -161,7 +173,10 @@ func bestSplit(
             if let presorted = presortedIndices, let mask = inNodeMask {
                 sortedIndices = presorted[fi].filter { mask[$0] }
             } else {
-                sortedIndices = indices.sorted { X[$0][fi] < X[$1][fi] }
+                sortedIndices = indices.sorted {
+                    if X[$0][fi] != X[$1][fi] { return X[$0][fi] < X[$1][fi] }
+                    return $0 < $1
+                }
             }
 
             var leftSum = 0.0
@@ -213,7 +228,10 @@ func bestSplit(
             if let presorted = presortedIndices, let mask = inNodeMask {
                 sortedIndices = presorted[fi].filter { mask[$0] }
             } else {
-                sortedIndices = indices.sorted { X[$0][fi] < X[$1][fi] }
+                sortedIndices = indices.sorted {
+                    if X[$0][fi] != X[$1][fi] { return X[$0][fi] < X[$1][fi] }
+                    return $0 < $1
+                }
             }
 
             var leftCounts = [Double: Int]()
@@ -601,7 +619,10 @@ extension Array where Element == Double {
     func mostFrequent() -> Double {
         var counts = [Double: Int]()
         for v in self { counts[v, default: 0] += 1 }
-        return counts.max(by: { $0.value < $1.value })?.key ?? 0
+        return counts.sorted(by: {
+            if $0.value != $1.value { return $0.value > $1.value }
+            return $0.key < $1.key
+        }).first?.key ?? 0
     }
 
     func mean() -> Double {

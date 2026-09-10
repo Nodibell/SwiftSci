@@ -102,6 +102,7 @@ public actor PCA {
     
     /// Fits the PCA model on the given dataset X.
     /// - Parameter X: A 2D array of shape [samples, features].
+    /// - Throws: <#error description#>
     public func fit(_ X: [[Double]]) async throws {
         guard !X.isEmpty, !X[0].isEmpty else {
             throw ClusterError.emptyInput
@@ -262,6 +263,9 @@ public actor PCA {
             comp.append(row)
         }
 
+        var nullU: [[Double]]? = nil
+        RandomizedSVD.svdFlip(u: &nullU, vt: &comp, uBasedDecision: false)
+
         self.mean = colMeans
         self.components = comp
         self.explainedVariance = expVar
@@ -340,6 +344,9 @@ public actor PCA {
             comp.append(row)
         }
         
+        var nullU: [[Double]]? = nil
+        RandomizedSVD.svdFlip(u: &nullU, vt: &comp, uBasedDecision: false)
+
         // 5. Calculate explained variance: singular_values^2 / (N - 1)
         let df = Double(max(1, numSamples - 1))
         var expVar = [Double]()
@@ -389,6 +396,9 @@ public actor PCA {
             comp.append(row)
         }
         
+        var nullU: [[Double]]? = nil
+        RandomizedSVD.svdFlip(u: &nullU, vt: &comp, uBasedDecision: false)
+
         let df = Double(max(1, numSamples - 1))
         var expVar = [Double]()
         expVar.reserveCapacity(nComponents)
@@ -402,6 +412,7 @@ public actor PCA {
     /// Projects the given dataset X onto the principal components.
     /// - Parameter X: A 2D array of shape [samples, features].
     /// - Returns: Projected dataset of shape [samples, nComponents].
+    /// - Throws: <#error description#>
     public func transform(_ X: [[Double]]) throws -> [[Double]] {
         guard let mean = self.mean, let components = self.components else {
             throw ClusterError.fittingRequired
@@ -436,9 +447,30 @@ public actor PCA {
     /// Fits the model on X and returns the projected data.
     /// - Parameter X: A 2D array of shape [samples, features].
     /// - Returns: Projected dataset of shape [samples, nComponents].
+    /// - Throws: <#error description#>
     public func fitTransform(_ X: [[Double]]) async throws -> [[Double]] {
         try await fit(X)
         return try transform(X)
+    }
+}
+
+extension PCA {
+    /// Adjusts the signs of components such that the largest absolute value in each component is positive,
+    /// matching Scikit-Learn's `sklearn.utils.extmath.svd_flip` convention (`u_based_decision=False`).
+    ///
+    /// This ensures deterministic component orientations across different LAPACK SVD solvers and GPU backends.
+    ///
+    /// - Parameters:
+    ///   - u: Inout optional left singular vectors matrix of shape `[M, K]`.
+    ///   - vt: Inout right singular vectors transposed matrix of shape `[K, N]` (the components).
+    ///   - uBasedDecision: If `true`, the largest absolute value in each column of `u` determines the sign.
+    ///     If `false` (default for PCA), the largest absolute value in each row of `vt` determines the sign.
+    public static func svdFlip(
+        u: inout [[Double]]?,
+        vt: inout [[Double]],
+        uBasedDecision: Bool = false
+    ) {
+        RandomizedSVD.svdFlip(u: &u, vt: &vt, uBasedDecision: uBasedDecision)
     }
 }
 #endif // os(macOS)

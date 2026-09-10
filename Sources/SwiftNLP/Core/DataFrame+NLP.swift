@@ -10,6 +10,10 @@ extension DataFrame {
     }
 
     /// Fits a TFIDFVectorizer on the specified text column.
+    /// - Parameters:
+    ///   - column: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func fitTFIDF(column name: String) async throws -> TFIDFVectorizer {
         let documents = try extractDocuments(column: name)
         let vectorizer = TFIDFVectorizer()
@@ -18,6 +22,12 @@ extension DataFrame {
     }
 
     /// Tokenizes a text column using the specified `Tokenizer`.
+    /// - Parameters:
+    ///   - name: <#description#>
+    ///   - targetColumn: <#description#>
+    ///   - tokenizer: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func tokenizeColumn(_ name: String, targetColumn: String = "tokens", tokenizer: any Tokenizer = AppleWordTokenizer()) throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let tokenizedDocs = docs.map { tokenizer.tokenize(text: $0).joined(separator: " ") }
@@ -25,6 +35,11 @@ extension DataFrame {
     }
 
     /// Stems word tokens in a text column using `PorterStemmer`.
+    /// - Parameters:
+    ///   - name: <#description#>
+    ///   - targetColumn: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func stemColumn(_ name: String, targetColumn: String = "stemmed") throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let stemmer = PorterStemmer()
@@ -36,6 +51,11 @@ extension DataFrame {
     }
 
     /// Evaluates sentiment on a text column using VADER sentiment analyzer.
+    /// - Parameters:
+    ///   - column: <#description#>
+    ///   - targetColumn: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func analyzeSentiment(column name: String, targetColumn: String = "sentiment_compound") throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let analyzer = VADERSentimentAnalyzer()
@@ -44,6 +64,11 @@ extension DataFrame {
     }
 
     /// Detects language code on a text column using AppleLanguageDetector.
+    /// - Parameters:
+    ///   - column: <#description#>
+    ///   - targetColumn: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func detectLanguage(column name: String, targetColumn: String = "language") throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let detector = AppleLanguageDetector()
@@ -52,6 +77,11 @@ extension DataFrame {
     }
 
     /// Extracts named entities from a text column using AppleNamedEntityRecognizer.
+    /// - Parameters:
+    ///   - fromColumn: <#description#>
+    ///   - targetColumn: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func extractEntities(fromColumn name: String, targetColumn: String = "entities") throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let recognizer = AppleNamedEntityRecognizer()

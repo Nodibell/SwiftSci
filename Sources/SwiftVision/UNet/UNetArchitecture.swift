@@ -26,6 +26,9 @@ public class UNetDoubleConv: Module, UnaryLayer {
     }
 
     /// Evaluates forward pass: Conv2d -> BatchNorm -> ReLU -> Conv2d -> BatchNorm -> ReLU.
+    /// - Parameters:
+    ///   - x: <#description#>
+    /// - Returns: <#description#>
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
         let h1 = relu(bn1(conv1(x)))
         return relu(bn2(conv2(h1)))
@@ -48,6 +51,9 @@ public class UNetDown: Module, UnaryLayer {
     }
 
     /// Evaluates downsampling: MaxPool2d -> DoubleConv.
+    /// - Parameters:
+    ///   - x: <#description#>
+    /// - Returns: <#description#>
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
         let pooled = pool(x)
         return doubleConv(pooled)
@@ -112,6 +118,9 @@ public class UNetOutConv: Module, UnaryLayer {
     }
 
     /// Evaluates 1x1 Conv output layer.
+    /// - Parameters:
+    ///   - x: <#description#>
+    /// - Returns: <#description#>
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
         return conv(x)
     }

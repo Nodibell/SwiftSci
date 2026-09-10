@@ -39,30 +39,46 @@ public actor KalmanFilter {
     }
 
     /// Sets the state transition matrix F (stateSize x stateSize).
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    /// - Throws: <#error description#>
     public func setTransitionMatrix(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: stateSize, expectedCols: stateSize)
         self.F = flatten(matrix)
     }
 
     /// Sets the observation matrix H (observationSize x stateSize).
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    /// - Throws: <#error description#>
     public func setObservationMatrix(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: observationSize, expectedCols: stateSize)
         self.H = flatten(matrix)
     }
 
     /// Sets the process noise covariance matrix Q (stateSize x stateSize).
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    /// - Throws: <#error description#>
     public func setProcessNoise(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: stateSize, expectedCols: stateSize)
         self.Q = flatten(matrix)
     }
 
     /// Sets the measurement noise covariance matrix R (observationSize x observationSize).
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    /// - Throws: <#error description#>
     public func setMeasurementNoise(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: observationSize, expectedCols: observationSize)
         self.R = flatten(matrix)
     }
 
     /// Sets the initial state mean vector and covariance matrix.
+    /// - Parameters:
+    ///   - mean: <#description#>
+    ///   - covariance: <#description#>
+    /// - Throws: <#error description#>
     public func setInitialState(mean: [Double], covariance: [[Double]]) throws {
         guard mean.count == stateSize else {
             throw ForecastError.matrixDimensionMismatch(
@@ -76,7 +92,17 @@ public actor KalmanFilter {
         self.isInitialized = true
     }
 
-    /// Run Kalman Filter forward over observations.
+    /// Runs Kalman Filter forward over a sequence of observation vectors.
+    ///
+    /// ## Numerical Robustness
+    /// If innovation covariance matrix $S_k = H P_{k|k-1} H^T + R$ becomes singular or ill-conditioned
+    /// (for instance, in noise-free sensor regimes or redundant measurements), the inversion automatically falls back to
+    /// computing the Moore-Penrose pseudo-inverse via Singular Value Decomposition (SVD), preventing unexpected singular
+    /// matrix crashes.
+    ///
+    /// - Parameter observations: An array of $m$-dimensional observation vectors.
+    /// - Returns: An array of filtered ``KalmanState`` estimates for each time step.
+    /// - Throws: ``ForecastError/matrixDimensionMismatch(expectedRows:expectedCols:gotRows:gotCols:)`` if observation dimension does not match `observationSize`.
     public func filter(observations: [[Double]]) throws -> [KalmanState] {
         try checkInitialization()
 
@@ -146,6 +172,10 @@ public actor KalmanFilter {
     }
 
     /// RTS (Rauch-Tung-Striebel) smoother.
+    /// - Parameters:
+    ///   - observations: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func smooth(observations: [[Double]]) throws -> [KalmanState] {
         try checkInitialization()
 
@@ -230,6 +260,8 @@ public actor KalmanFilter {
     }
 
     /// Predict one step ahead.
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict() throws -> KalmanState {
         try checkInitialization()
         let n = stateSize
@@ -362,22 +394,88 @@ public actor KalmanFilter {
         var ldb = dimN
         var info = LAPACKInteger(0)
         dgesv_wrapper(&dimN, &dimN2, &AColMajor, &lda, &ipiv, &identity, &ldb, &info)
-        guard info == 0 else {
-            throw ForecastError.singularMatrix
+        if info == 0 {
+            var result = [Double](repeating: 0.0, count: n * n)
+            for r in 0..<n {
+                for c in 0..<n {
+                    result[r * n + c] = identity[c * n + r]
+                }
+            }
+            return result
+        }
+
+        // Fallback: Moore-Penrose pseudo-inverse via SVD (for singular or ill-conditioned covariance matrices)
+        return try pseudoInverseFlat(A, n: n)
+    }
+
+    /// Computes the Moore-Penrose pseudo-inverse of an n x n matrix using SVD.
+    ///
+    /// ## Numerical Stability
+    /// When innovation covariance matrices S = H*P*H^T + R are singular or ill-conditioned (e.g. noise-free sensors),
+    /// this function ensures bounded Kalman gain computation without throwing unrecoverable singular matrix errors.
+    internal func pseudoInverseFlat(_ A: [Double], n: Int, rcond: Double = 1e-15) throws -> [Double] {
+        var AColMajor = [Double](repeating: 0.0, count: n * n)
+        for r in 0..<n {
+            for c in 0..<n {
+                AColMajor[c * n + r] = A[r * n + c]
+            }
+        }
+
+        var jobu = Int8(UnicodeScalar("A").value)
+        var jobvt = Int8(UnicodeScalar("A").value)
+        var m = LAPACKInteger(n)
+        var nDim = LAPACKInteger(n)
+        var lda = m
+        var ldu = m
+        var ldvt = nDim
+        var s = [Double](repeating: 0.0, count: n)
+        var u = [Double](repeating: 0.0, count: n * n)
+        var vt = [Double](repeating: 0.0, count: n * n)
+        var workQuery = 0.0
+        var lwork: LAPACKInteger = -1
+        var info: LAPACKInteger = 0
+
+        dgesvd_wrapper(&jobu, &jobvt, &m, &nDim, &AColMajor, &lda, &s, &u, &ldu, &vt, &ldvt, &workQuery, &lwork, &info)
+        guard info == 0 else { throw ForecastError.singularMatrix }
+
+        lwork = max(1, LAPACKInteger(workQuery))
+        var work = [Double](repeating: 0.0, count: Int(lwork))
+        dgesvd_wrapper(&jobu, &jobvt, &m, &nDim, &AColMajor, &lda, &s, &u, &ldu, &vt, &ldvt, &work, &lwork, &info)
+        guard info == 0 else { throw ForecastError.singularMatrix }
+
+        let maxS = s[0]
+        let threshold = max(maxS * rcond, 1e-15)
+        var sInv = [Double](repeating: 0.0, count: n)
+        for k in 0..<n {
+            if s[k] > threshold {
+                sInv[k] = 1.0 / s[k]
+            }
         }
 
         var result = [Double](repeating: 0.0, count: n * n)
         for r in 0..<n {
             for c in 0..<n {
-                result[r * n + c] = identity[c * n + r]
+                var sum = 0.0
+                for k in 0..<n {
+                    if sInv[k] != 0.0 {
+                        sum += vt[r * n + k] * sInv[k] * u[k * n + c]
+                    }
+                }
+                result[r * n + c] = sum
             }
         }
         return result
     }
 }
 
+
 extension KalmanFilter {
     /// Pre-configured 1D constant-velocity model.
+    /// - Parameters:
+    ///   - processNoise: <#description#>
+    ///   - measurementNoise: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func oneDimensional(
         processNoise: Double,
         measurementNoise: Double

@@ -19,6 +19,8 @@ public final class CountVectorizer: @unchecked Sendable {
     }
     
     /// Fits vocabulary from document corpus.
+    /// - Parameters:
+    ///   - documents: <#description#>
     public func fit(documents: [String]) {
         var counts: [String: Int] = [:]
         for doc in documents {
@@ -41,6 +43,9 @@ public final class CountVectorizer: @unchecked Sendable {
     }
     
     /// Transforms document corpus to term count feature matrix.
+    /// - Parameters:
+    ///   - documents: <#description#>
+    /// - Returns: <#description#>
     public func transform(documents: [String]) -> [[Double]] {
         let vocabSize = vocabulary.count
         guard vocabSize > 0 else { return documents.map { _ in [] } }
@@ -58,6 +63,9 @@ public final class CountVectorizer: @unchecked Sendable {
     }
     
     /// Fits vocabulary and transforms documents in a single pass.
+    /// - Parameters:
+    ///   - documents: <#description#>
+    /// - Returns: <#description#>
     public func fitTransform(documents: [String]) -> [[Double]] {
         fit(documents: documents)
         return transform(documents: documents)

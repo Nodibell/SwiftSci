@@ -23,6 +23,9 @@ public struct Imputer: PreprocessingTransformer, Sendable {
     }
     
     /// Fits the imputer by calculating the chosen statistic for each column.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
     public mutating func fit(_ data: [[Double]]) throws {
 
         guard !data.isEmpty, !data[0].isEmpty else {
@@ -94,6 +97,10 @@ public struct Imputer: PreprocessingTransformer, Sendable {
     }
     
     /// Replaces `Double.nan` values with the fitted statistics.
+    /// - Parameters:
+    ///   - data: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard let stats = self.statistics else {
             throw PreprocessingError.fitNotCalled

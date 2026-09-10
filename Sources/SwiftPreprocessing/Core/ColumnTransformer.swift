@@ -37,6 +37,8 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
 
     /// Fit.
     /// - Throws: An error if the operation fails.
+    /// - Parameters:
+    ///   - data: <#description#>
     public func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty else { throw PreprocessingError.invalidInput("Data cannot be empty") }
         let numCols = data[0].count
@@ -56,6 +58,8 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
     /// Transform.
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[[Double]]` result.
+    /// - Parameters:
+    ///   - data: <#description#>
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard isFitted else { throw PreprocessingError.notFitted }
         guard !data.isEmpty else { throw PreprocessingError.invalidInput("Data cannot be empty") }

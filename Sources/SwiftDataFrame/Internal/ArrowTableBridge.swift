@@ -5,7 +5,7 @@ import Arrow
 internal enum ArrowTableBridge {
 
     /// Converts an Apache Arrow `ArrowTable` into a `DataFrame`.
-    static func toDataFrame(_ arrowTable: ArrowTable) throws -> DataFrame {
+    static func toDataFrame(_ arrowTable: ArrowTable, nullStrategy: ArrowNullStrategy = .preserve) throws -> DataFrame {
         var columns: [any AnyColumn] = []
         
         for arrowCol in arrowTable.columns {
@@ -19,7 +19,12 @@ internal enum ArrowTableBridge {
                 var vals = [Int32?]()
                 vals.reserveCapacity(count)
                 for i in 0..<UInt(count) {
-                    vals.append(chunked[i])
+                    let v = chunked[i]
+                    if v == nil && nullStrategy == .zero {
+                        vals.append(0)
+                    } else {
+                        vals.append(v)
+                    }
                 }
                 columns.append(TypedColumn<Int32>(name: name, values: vals))
                 
@@ -28,7 +33,12 @@ internal enum ArrowTableBridge {
                 var vals = [Int64?]()
                 vals.reserveCapacity(count)
                 for i in 0..<UInt(count) {
-                    vals.append(chunked[i])
+                    let v = chunked[i]
+                    if v == nil && nullStrategy == .zero {
+                        vals.append(0)
+                    } else {
+                        vals.append(v)
+                    }
                 }
                 columns.append(TypedColumn<Int64>(name: name, values: vals))
                 
@@ -37,7 +47,16 @@ internal enum ArrowTableBridge {
                 var vals = [Float?]()
                 vals.reserveCapacity(count)
                 for i in 0..<UInt(count) {
-                    vals.append(chunked[i])
+                    let v = chunked[i]
+                    if v == nil {
+                        switch nullStrategy {
+                        case .preserve: vals.append(nil)
+                        case .nan:      vals.append(Float.nan)
+                        case .zero:     vals.append(0.0)
+                        }
+                    } else {
+                        vals.append(v)
+                    }
                 }
                 columns.append(TypedColumn<Float>(name: name, values: vals))
                 
@@ -46,7 +65,16 @@ internal enum ArrowTableBridge {
                 var vals = [Double?]()
                 vals.reserveCapacity(count)
                 for i in 0..<UInt(count) {
-                    vals.append(chunked[i])
+                    let v = chunked[i]
+                    if v == nil {
+                        switch nullStrategy {
+                        case .preserve: vals.append(nil)
+                        case .nan:      vals.append(Double.nan)
+                        case .zero:     vals.append(0.0)
+                        }
+                    } else {
+                        vals.append(v)
+                    }
                 }
                 columns.append(TypedColumn<Double>(name: name, values: vals))
                 
@@ -55,7 +83,12 @@ internal enum ArrowTableBridge {
                 var vals = [Bool?]()
                 vals.reserveCapacity(count)
                 for i in 0..<UInt(count) {
-                    vals.append(chunked[i])
+                    let v = chunked[i]
+                    if v == nil && nullStrategy == .zero {
+                        vals.append(false)
+                    } else {
+                        vals.append(v)
+                    }
                 }
                 columns.append(TypedColumn<Bool>(name: name, values: vals))
                 

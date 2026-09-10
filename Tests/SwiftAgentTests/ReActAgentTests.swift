@@ -156,4 +156,50 @@ struct ReActAgentTests {
         #expect(trace.count == 1)
         #expect(trace[0].thought == "Thinking locally on device.")
     }
+
+    @Test("ReActAgent tool execution times out when exceeding toolTimeoutSeconds")
+    func testReActAgentToolExecutionTimeout() async throws {
+        let slowTool = CustomAgentTool(name: "HangingTool", description: "Hangs indefinitely") { _ in
+            try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            return "Should not finish"
+        }
+
+        let agent = ReActAgent(tools: [slowTool], maxSteps: 2, toolTimeoutSeconds: 0.1) // 100ms timeout
+
+        let mockLLM: @Sendable (String) async throws -> String = { prompt in
+            if !prompt.contains("Previous History:") {
+                return """
+                Thought: Testing hanging tool.
+                Action: HangingTool
+                Action Input: hang
+                """
+            } else {
+                return """
+                Thought: Tool timed out.
+                Final Answer: Recovered from timeout safely.
+                """
+            }
+        }
+
+        let (answer, trace) = try await agent.run(query: "Test timeout", llm: mockLLM)
+        #expect(trace.count == 2)
+        #expect(trace[0].observation?.contains("timed out") == true)
+        #expect(answer == "Recovered from timeout safely.")
+    }
+
+    @Test("ReActAgent with non-positive timeout disables timeout task")
+    func testReActAgentZeroTimeout() async throws {
+        let echoTool = CustomAgentTool(name: "Echo", description: "Echoes") { $0 }
+        let agent = ReActAgent(tools: [echoTool], maxSteps: 2, toolTimeoutSeconds: 0.0)
+        let mockLLM: @Sendable (String) async throws -> String = { prompt in
+            if !prompt.contains("Previous History:") {
+                return "Thought: test\nAction: Echo\nAction Input: hello"
+            } else {
+                return "Final Answer: done"
+            }
+        }
+        let (answer, trace) = try await agent.run(query: "test", llm: mockLLM)
+        #expect(answer == "done")
+        #expect(trace[0].observation == "hello")
+    }
 }

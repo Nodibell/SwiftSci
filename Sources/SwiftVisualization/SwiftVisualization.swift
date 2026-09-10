@@ -6,6 +6,11 @@ import Foundation
 public enum ChartExporter {
     
     /// Generates HTML file with an interactive Correlation Heatmap.
+    /// - Parameters:
+    ///   - df: <#description#>
+    ///   - title: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func plotCorrelationHeatmap(df: DataFrame, title: String = "Correlation Heatmap") throws -> String {
         let numericCols = df.columns.compactMap { $0 as? TypedColumn<Double> }
         let names = numericCols.map { $0.name }
@@ -24,14 +29,16 @@ public enum ChartExporter {
         }
         
         let zJSON = "[" + matrix.map { "[" + $0.map { String(format: "%.3f", $0) }.joined(separator: ",") + "]" }.joined(separator: ",") + "]"
-        let xJSON = "[" + names.map { "\"\($0)\"" }.joined(separator: ",") + "]"
+        let xJSON = jsonStrings(names)
         let yJSON = xJSON
+        let safeTitle = escapeHTML(title)
+        let titleJSON = jsonString(title)
         
         return """
         <!DOCTYPE html>
         <html>
         <head>
-          <title>\(title)</title>
+          <title>\(safeTitle)</title>
           <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         </head>
         <body>
@@ -44,7 +51,7 @@ public enum ChartExporter {
               type: 'heatmap',
               colorscale: 'Viridis'
             }];
-            var layout = { title: '\(title)' };
+            var layout = { title: \(titleJSON) };
             Plotly.newPlot('chart', data, layout);
           </script>
         </body>
@@ -53,6 +60,15 @@ public enum ChartExporter {
     }
     
     /// Generates HTML file with an interactive ROC Curve.
+    ///
+    /// ## Security & Sanitization
+    /// All titles and user strings are properly escaped via HTML entities and `JSONEncoder` serialization,
+    /// preventing Cross-Site Scripting (XSS) and JavaScript syntax breakages.
+    /// - Parameters:
+    ///   - yTrue: <#description#>
+    ///   - yScores: <#description#>
+    ///   - title: <#description#>
+    /// - Returns: <#description#>
     public static func plotROCCurve(yTrue: [Int], yScores: [Double], title: String = "ROC Curve") -> String {
         var fpr: [Double] = [0.0, 1.0]
         var tpr: [Double] = [0.0, 1.0]
@@ -94,6 +110,8 @@ public enum ChartExporter {
         }
 
         let displayTitle = String(format: "%@ (AUC = %.4f)", title, auc)
+        let safeDisplayTitle = escapeHTML(displayTitle)
+        let displayTitleJSON = jsonString(displayTitle)
         let xJSON = "[" + fpr.map { String($0) }.joined(separator: ",") + "]"
         let yJSON = "[" + tpr.map { String($0) }.joined(separator: ",") + "]"
         
@@ -101,7 +119,7 @@ public enum ChartExporter {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>\(displayTitle)</title>
+          <title>\(safeDisplayTitle)</title>
           <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         </head>
         <body>
@@ -120,7 +138,7 @@ public enum ChartExporter {
               name: 'Random Chance',
               line: {dash: 'dash', color: '#7f7f7f'}
             }];
-            var layout = { title: '\(displayTitle)', xaxis: {title: 'False Positive Rate'}, yaxis: {title: 'True Positive Rate'} };
+            var layout = { title: \(displayTitleJSON), xaxis: {title: 'False Positive Rate'}, yaxis: {title: 'True Positive Rate'} };
             Plotly.newPlot('chart', data, layout);
           </script>
         </body>
@@ -129,15 +147,25 @@ public enum ChartExporter {
     }
     
     /// Generates HTML file with Feature Importances horizontal bar chart.
+    ///
+    /// ## Security & Sanitization
+    /// Feature names and chart titles are safely encoded via `JSONEncoder` and HTML entity escaping.
+    /// - Parameters:
+    ///   - featureNames: <#description#>
+    ///   - importances: <#description#>
+    ///   - title: <#description#>
+    /// - Returns: <#description#>
     public static func plotFeatureImportances(featureNames: [String], importances: [Double], title: String = "Feature Importances") -> String {
         let xJSON = "[" + importances.map { String(format: "%.4f", $0) }.joined(separator: ",") + "]"
-        let yJSON = "[" + featureNames.map { "\"\($0)\"" }.joined(separator: ",") + "]"
+        let yJSON = jsonStrings(featureNames)
+        let safeTitle = escapeHTML(title)
+        let titleJSON = jsonString(title)
         
         return """
         <!DOCTYPE html>
         <html>
         <head>
-          <title>\(title)</title>
+          <title>\(safeTitle)</title>
           <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         </head>
         <body>
@@ -150,7 +178,7 @@ public enum ChartExporter {
               orientation: 'h',
               marker: {color: '#2ca02c'}
             }];
-            var layout = { title: '\(title)', xaxis: {title: 'Importance Score'} };
+            var layout = { title: \(titleJSON), xaxis: {title: 'Importance Score'} };
             Plotly.newPlot('chart', data, layout);
           </script>
         </body>
@@ -159,15 +187,25 @@ public enum ChartExporter {
     }
     
     /// Generates HTML file with Confusion Matrix heatmap.
+    ///
+    /// ## Security & Sanitization
+    /// Labels and chart titles are safely encoded via `JSONEncoder` and HTML entity escaping.
+    /// - Parameters:
+    ///   - matrix: <#description#>
+    ///   - labels: <#description#>
+    ///   - title: <#description#>
+    /// - Returns: <#description#>
     public static func plotConfusionMatrix(matrix: [[Int]], labels: [String], title: String = "Confusion Matrix") -> String {
         let zJSON = "[" + matrix.map { "[" + $0.map { String($0) }.joined(separator: ",") + "]" }.joined(separator: ",") + "]"
-        let labelsJSON = "[" + labels.map { "\"\($0)\"" }.joined(separator: ",") + "]"
+        let labelsJSON = jsonStrings(labels)
+        let safeTitle = escapeHTML(title)
+        let titleJSON = jsonString(title)
         
         return """
         <!DOCTYPE html>
         <html>
         <head>
-          <title>\(title)</title>
+          <title>\(safeTitle)</title>
           <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         </head>
         <body>
@@ -180,11 +218,38 @@ public enum ChartExporter {
               type: 'heatmap',
               colorscale: 'Blues'
             }];
-            var layout = { title: '\(title)', xaxis: {title: 'Predicted'}, yaxis: {title: 'Actual'} };
+            var layout = { title: \(titleJSON), xaxis: {title: 'Predicted'}, yaxis: {title: 'Actual'} };
             Plotly.newPlot('chart', data, layout);
           </script>
         </body>
         </html>
         """
+    }
+
+    // MARK: - Sanitization Helpers
+
+    private static func escapeHTML(_ string: String) -> String {
+        string
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
+    }
+
+    private static func jsonString(_ string: String) -> String {
+        guard let data = try? JSONEncoder().encode(string),
+              let str = String(data: data, encoding: .utf8) else {
+            return "\"\(string)\""
+        }
+        return str
+    }
+
+    private static func jsonStrings(_ strings: [String]) -> String {
+        guard let data = try? JSONEncoder().encode(strings),
+              let str = String(data: data, encoding: .utf8) else {
+            return "[]"
+        }
+        return str
     }
 }

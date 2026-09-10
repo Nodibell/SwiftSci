@@ -60,7 +60,8 @@ let package = Package(
         .target(
             name: "SwiftDataFrame",
             dependencies: [
-                .product(name: "Arrow", package: "arrow-swift")
+                .product(name: "Arrow", package: "arrow-swift"),
+                .product(name: "FlatBuffers", package: "flatbuffers"),
             ],
             path: "Sources/SwiftDataFrame",
             resources: [

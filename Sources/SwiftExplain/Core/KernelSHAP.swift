@@ -6,13 +6,20 @@ public actor KernelSHAP {
     /// Creates a new instance.
     public init() {}
     
-    /// Computes SHAP values explaining the model prediction for the given instance.
+    /// Computes model-agnostic Shapley additive explanations for an instance using KernelSHAP.
+    ///
+    /// ## Mathematical Guarantees & Low-Dimensional Analytical Path
+    /// For low-dimensional spaces ($M \le 2$), computes exact analytical Shapley values without subset sampling:
+    /// - For $M = 1$: $\phi_0 = f(x) - f_{\text{empty}}$.
+    /// - For $M = 2$: computes exact 2-player coalition values satisfying the efficiency axiom $\phi_0 + \phi_1 = f(x) - f_{\text{empty}}$ identically.
+    /// - For $M > 2$: denominators $k(M - k)$ in the Shapley kernel weight are strictly guarded against zero-division for boundary coalitions.
+    ///
     /// - Parameters:
-    ///   - model: A model prediction closure mapping feature vectors `[Double]` to a scalar prediction.
-    ///   - instance: The target instance feature vector to explain.
-    ///   - background: A background dataset of representative feature vectors.
-    ///   - numCoalitions: Number of coalition masks to sample.
-    /// - Returns: An array of SHAP values (one for each feature) indicating feature contributions.
+    ///   - model: An asynchronous model function mapping an array of features to a scalar output.
+    ///   - instance: The target feature vector to explain of length $M$.
+    ///   - background: Background reference dataset for baseline imputation.
+    ///   - numCoalitions: Number of coalition subsets to sample when $M > 2$ (default: 200).
+    /// - Returns: An array of $M$ Shapley values representing the attribution of each feature.
     public func explain(
         model: @escaping @Sendable ([Double]) async -> Double,
         instance: [Double],
@@ -32,6 +39,20 @@ public actor KernelSHAP {
         
         let fEmpty = await model(bgMean)
         let fFull = await model(instance)
+
+        // Exact analytical path for M = 1
+        if M == 1 {
+            return [fFull - fEmpty]
+        }
+
+        // Exact analytical path for M = 2 (eliminates sampling variance and zero-division)
+        if M == 2 {
+            let f0 = await model([instance[0], bgMean[1]])
+            let f1 = await model([bgMean[0], instance[1]])
+            let phi0 = 0.5 * ((f0 - fEmpty) + (fFull - f1))
+            let phi1 = 0.5 * ((f1 - fEmpty) + (fFull - f0))
+            return [phi0, phi1]
+        }
         
         // 2. Generate coalition masks and their Shapley weights
         var masks = [[Double]]()
@@ -56,7 +77,8 @@ public actor KernelSHAP {
         // Generate intermediate coalitions
         let coalitionSizes = M > 2 ? Array(1..<(M - 1)) : []
         let sizeWeights = coalitionSizes.map { k -> Double in
-            return 1.0 / (Double(k) * Double(M - k))
+            let denom = Double(k) * Double(M - k)
+            return denom > 0 ? 1.0 / denom : 1.0
         }
         let totalSizeWeight = sizeWeights.reduce(0.0, +)
         
@@ -77,9 +99,10 @@ public actor KernelSHAP {
                         mask[idx] = 1.0
                     }
                     
-                    // Compute Shapley kernel weight
+                    // Compute Shapley kernel weight (guarded against zero-division)
                     let nCr = choose(M, k)
-                    let weight = nCr > 0 ? (Double(M) - 1.0) / (nCr * Double(k) * Double(M - k)) : 1.0
+                    let denom = nCr * Double(k) * Double(M - k)
+                    let weight = denom > 1e-12 ? (Double(M) - 1.0) / denom : 1.0
                     
                     // Map coalition mask to feature space
                     var xMapped = [Double](repeating: 0.0, count: M)

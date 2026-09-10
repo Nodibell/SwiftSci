@@ -17,6 +17,10 @@ public actor TextPipeline {
     }
 
     /// Fits the text pipeline on raw document strings and target labels.
+    /// - Parameters:
+    ///   - documents: <#description#>
+    ///   - labels: <#description#>
+    /// - Throws: <#error description#>
     public func fit(documents: [String], labels: [String]) async throws {
         try await vectorizer.fit(documents)
         let X = try await vectorizer.transform(documents)
@@ -24,6 +28,10 @@ public actor TextPipeline {
     }
 
     /// Predicts the class label for a single document string.
+    /// - Parameters:
+    ///   - document: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(document: String) async throws -> String? {
         let x = try await vectorizer.transform([document])
         guard let first = x.first else { return nil }
@@ -31,6 +39,10 @@ public actor TextPipeline {
     }
 
     /// Predicts class labels for an array of document strings.
+    /// - Parameters:
+    ///   - documents: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(documents: [String]) async throws -> [String] {
         let X = try await vectorizer.transform(documents)
         return classifier.predict(X: X)

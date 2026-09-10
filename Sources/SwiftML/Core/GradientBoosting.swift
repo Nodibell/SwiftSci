@@ -63,7 +63,33 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     }
     
     /// Fits the GBDT model on the provided features and targets.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [Double]) async throws {
+        try await fit(features: features, targets: targets, validationFeatures: nil, validationTargets: nil, earlyStopping: nil)
+    }
+
+    /// Fits the GBDT model with optional validation monitoring and early stopping.
+    ///
+    /// - Parameters:
+    ///   - features: 2D feature matrix of shape `[N, P]`.
+    ///   - targets: 1D target continuous values.
+    ///   - validationFeatures: Optional validation features matrix.
+    ///   - validationTargets: Optional validation targets array.
+    ///   - earlyStopping: Optional `EarlyStopping` callback.
+    /// - Throws: `SwiftMLError` if inputs are invalid.
+    ///
+    /// ## Thread Safety
+    /// Thread-safe via actor isolation.
+    public func fit(
+        features: [[Double]],
+        targets: [Double],
+        validationFeatures: [[Double]]? = nil,
+        validationTargets: [Double]? = nil,
+        earlyStopping: EarlyStopping? = nil
+    ) async throws {
         guard !features.isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
             throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
@@ -87,8 +113,11 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         trainedTrees.reserveCapacity(nEstimators)
         
         let presorted = createPresortedIndices(X: features)
+        var es = earlyStopping
+        var bestTrees: [[FlatTreeNode]]? = nil
+        var valPredictions: [Double] = (validationFeatures != nil) ? [Double](repeating: initialPrediction, count: validationFeatures!.count) : []
         
-        for _ in 0..<nEstimators {
+        for treeIdx in 0..<nEstimators {
             let rawResiduals = zip(targets, currentPredictions).map { $0 - $1 }
             let pseudoResiduals: [Double]
 
@@ -129,12 +158,37 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
                 let treePred = GradientBoostedTreesRegressor.predictSample(features[i], nodes: nodes)
                 currentPredictions[i] += lr * treePred
             }
+
+            if var tracker = es, let valX = validationFeatures, let valY = validationTargets, !valX.isEmpty {
+                var valMSE = 0.0
+                for vi in 0..<valX.count {
+                    valPredictions[vi] += lr * GradientBoostedTreesRegressor.predictSample(valX[vi], nodes: nodes)
+                    let diff = valPredictions[vi] - valY[vi]
+                    valMSE += diff * diff
+                }
+                valMSE /= Double(valX.count)
+                let (shouldStop, isBest) = tracker.step(currentScore: valMSE, epoch: treeIdx)
+                if isBest {
+                    bestTrees = trainedTrees
+                }
+                es = tracker
+                if shouldStop {
+                    if tracker.restoreBestWeights, let best = bestTrees {
+                        trainedTrees = best
+                    }
+                    break
+                }
+            }
         }
         
         self.trees = trainedTrees
     }
     
     /// Returns predictions for the given feature matrix.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         

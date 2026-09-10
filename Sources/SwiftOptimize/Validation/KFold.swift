@@ -39,16 +39,17 @@ public struct KFold: Sendable {
     }
 
     /// Returns K Fold objects for the given dataset.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Returns: <#description#>
     public func split(features: [[Double]], targets: [Double]) -> [Fold] {
         let n = features.count
         var indices = Array(0..<n)
 
         if shuffle {
             var rng = SeededRandom(seed: seed)
-            for i in stride(from: n - 1, through: 1, by: -1) {
-                let j = rng.nextInt(upperBound: i + 1)
-                indices.swapAt(i, j)
-            }
+            indices.shuffle(using: &rng)
         }
 
         let baseSize = n / nSplits
@@ -108,6 +109,14 @@ public struct CrossValidationResult: Sendable {
 public enum CrossValidator {
 
     /// Cross-validates a Decision Tree Classifier.
+    /// - Parameters:
+    ///   - classifier: <#description#>
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - nSplits: <#description#>
+    ///   - seed: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func crossValidate(
         classifier: (maxDepth: Int, criterion: SplitCriterion),
         features: [[Double]],
@@ -139,6 +148,14 @@ public enum CrossValidator {
     }
 
     /// Cross-validates a Decision Tree Regressor using R² score.
+    /// - Parameters:
+    ///   - maxDepth: <#description#>
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - nSplits: <#description#>
+    ///   - seed: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func crossValidateRegressor(
         maxDepth: Int,
         features: [[Double]],
@@ -166,6 +183,10 @@ public enum CrossValidator {
     }
 
     /// Generic cross-validation for any ClassifierEstimator.
+    /// - Parameters:
+    ///   - estimatorFactory: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func crossValidate<E: ClassifierEstimator>(
         _ estimatorFactory: @escaping @Sendable () -> E,
         features: [[Double]],
@@ -194,6 +215,10 @@ public enum CrossValidator {
     }
 
     /// Generic cross-validation for any RegressorEstimator.
+    /// - Parameters:
+    ///   - estimatorFactory: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public static func crossValidateRegressor<E: RegressorEstimator>(
         _ estimatorFactory: @escaping @Sendable () -> E,
         features: [[Double]],

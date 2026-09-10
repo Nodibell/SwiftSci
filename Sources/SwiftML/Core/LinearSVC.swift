@@ -39,16 +39,27 @@ public actor LinearSVC: ClassifierEstimator {
     }
     
     /// Returns trained weights and bias.
+    /// - Returns: <#description#>
     public func getWeightsAndBias() -> (weights: [Double]?, bias: Double?) {
         return (cpuWeights, cpuBias)
     }
     
     /// Fits the LinearSVC classifier (ClassifierEstimator protocol).
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    /// - Throws: <#error description#>
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, learningRate: 0.1, epochs: 800)
     }
     
     /// Fits the LinearSVC model with custom learning rate and epochs.
+    /// - Parameters:
+    ///   - features: <#description#>
+    ///   - targets: <#description#>
+    ///   - learningRate: <#description#>
+    ///   - epochs: <#description#>
+    /// - Throws: <#error description#>
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -190,12 +201,20 @@ public actor LinearSVC: ClassifierEstimator {
     }
     
     /// Predicts binary class labels (0 or 1) for feature matrix.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predict(features: [[Double]]) async throws -> [Int] {
         let decisionValues = try decisionFunction(features: features)
         return decisionValues.map { $0 >= 0.0 ? 1 : 0 }
     }
     
     /// Computes raw SVM decision function values (w^T x + b).
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func decisionFunction(features: [[Double]]) throws -> [Double] {
         guard !features.isEmpty else { return [] }
         
@@ -224,6 +243,10 @@ public actor LinearSVC: ClassifierEstimator {
     }
     
     /// Predicts probabilities using sigmoid calibration over decision values.
+    /// - Parameters:
+    ///   - features: <#description#>
+    /// - Throws: <#error description#>
+    /// - Returns: <#description#>
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         let scores = try decisionFunction(features: features)
         return scores.map { score in

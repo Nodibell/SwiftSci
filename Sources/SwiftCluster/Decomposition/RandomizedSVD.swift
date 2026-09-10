@@ -75,6 +75,7 @@ public enum RandomizedSVD {
     ///   - q: Number of power iterations for improved accuracy on slow-decay spectra (default 2).
     ///   - seed: Seed for deterministic random sketch (default 42).
     /// - Returns: `RandomizedSVD.Result` with U [M×k], S [k], Vt [k×N].
+    /// - Throws: <#error description#>
     public static func compute(
         X: [[Double]],
         nComponents k: Int,
@@ -218,7 +219,86 @@ public enum RandomizedSVD {
             vtRows.append(row)
         }
 
-        return Result(U: uRows, S: sTop, Vt: vtRows)
+        var uOpt: [[Double]]? = uRows
+        svdFlip(u: &uOpt, vt: &vtRows, uBasedDecision: false)
+
+        return Result(U: uOpt ?? uRows, S: sTop, Vt: vtRows)
+    }
+
+    // MARK: – Sign Flipping (Deterministic SVD)
+
+    /// Adjusts the columns of `u` and the rows of `vt` such that the largest absolute value
+    /// in each row of `vt` (or column of `u`) is positive, matching `sklearn.utils.extmath.svd_flip`.
+    ///
+    /// This sign correction ensures deterministic outputs from SVD and PCA across different
+    /// LAPACK/BLAS implementations and hardware backends.
+    ///
+    /// - Parameters:
+    ///   - u: Inout optional left singular vectors matrix of shape `[M, K]`.
+    ///   - vt: Inout right singular vectors transposed matrix of shape `[K, N]`.
+    ///   - uBasedDecision: If `true`, the largest absolute value in each column of `u` determines the sign.
+    ///     If `false` (default for PCA / Scikit-Learn convention), the largest absolute value in each row of `vt` determines the sign.
+    public static func svdFlip(
+        u: inout [[Double]]?,
+        vt: inout [[Double]],
+        uBasedDecision: Bool = false
+    ) {
+        if uBasedDecision {
+            guard let uMatrix = u, !uMatrix.isEmpty else { return }
+            let M = uMatrix.count
+            let K = uMatrix[0].count
+            for k in 0..<K {
+                var maxVal = 0.0
+                var maxSign = 1.0
+                for r in 0..<M {
+                    let val = uMatrix[r][k]
+                    let absVal = abs(val)
+                    if absVal > maxVal {
+                        maxVal = absVal
+                        maxSign = val < 0.0 ? -1.0 : 1.0
+                    }
+                }
+                if maxSign < 0.0 {
+                    for r in 0..<M {
+                        u![r][k] = -u![r][k]
+                    }
+                    if k < vt.count {
+                        for c in 0..<vt[k].count {
+                            vt[k][c] = -vt[k][c]
+                        }
+                    }
+                }
+            }
+        } else {
+            let K = vt.count
+            for k in 0..<K {
+                guard !vt[k].isEmpty else { continue }
+                var maxVal = 0.0
+                var maxSign = 1.0
+                for c in 0..<vt[k].count {
+                    let val = vt[k][c]
+                    let absVal = abs(val)
+                    if absVal > maxVal {
+                        maxVal = absVal
+                        maxSign = val < 0.0 ? -1.0 : 1.0
+                    }
+                }
+                if maxSign < 0.0 {
+                    for c in 0..<vt[k].count {
+                        vt[k][c] = -vt[k][c]
+                    }
+                    if var uMatrix = u, !uMatrix.isEmpty {
+                        let M = uMatrix.count
+                        for r in 0..<M {
+                            if k < uMatrix[r].count {
+                                uMatrix[r][k] = -uMatrix[r][k]
+                            }
+                        }
+                        u = uMatrix
+                    }
+                }
+            }
+        }
     }
 
     // MARK: – Private Helpers

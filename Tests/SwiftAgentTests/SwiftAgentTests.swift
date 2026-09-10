@@ -120,4 +120,32 @@ struct SwiftAgentTests {
             _ = try await eval.evaluate(command: "groupby x bogus y", on: df)
         }
     }
+
+    @Test("Test Agent Evaluator tracks lineage audit records")
+    func testAgentEvaluatorLineageAudit() async throws {
+        let ageCol = TypedColumn(name: "age", values: [20.0, 35.0, 50.0, 60.0])
+        let df = try DataFrame(columns: [ageCol])
+        let eval = SwiftAgentEvaluator()
+
+        let filtered = try await eval.evaluate(command: "filter age > 30", on: df)
+        #expect(filtered.rowCount == 3)
+
+        let sampled = try await eval.evaluate(command: "sample 2", on: filtered)
+        #expect(sampled.rowCount == 2)
+
+        let lineage = await eval.lineage
+        #expect(lineage.count == 2)
+        #expect(lineage[0].stepIndex == 1)
+        #expect(lineage[0].inputRows == 4)
+        #expect(lineage[0].outputRows == 3)
+        #expect(lineage[0].operation.contains("filter"))
+        #expect(lineage[1].stepIndex == 2)
+        #expect(lineage[1].inputRows == 3)
+        #expect(lineage[1].outputRows == 2)
+        #expect(lineage[1].operation.contains("sample"))
+
+        await eval.clearLineage()
+        let cleared = await eval.lineage
+        #expect(cleared.isEmpty)
+    }
 }

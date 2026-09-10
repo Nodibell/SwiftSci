@@ -145,3 +145,23 @@ func dgeev_wrapper(
     dgeev_(jobvl, jobvr, &n, a, &lda, wr, wi, vl, &ldvl, vr, &ldvr, work, &lwork, &info)
 }
 
+@inline(__always)
+func dgesvd_wrapper(
+    _ jobu: UnsafeMutablePointer<Int8>,
+    _ jobvt: UnsafeMutablePointer<Int8>,
+    _ m: inout LAPACKInteger,
+    _ n: inout LAPACKInteger,
+    _ a: UnsafeMutablePointer<Double>,
+    _ lda: inout LAPACKInteger,
+    _ s: UnsafeMutablePointer<Double>,
+    _ u: UnsafeMutablePointer<Double>,
+    _ ldu: inout LAPACKInteger,
+    _ vt: UnsafeMutablePointer<Double>,
+    _ ldvt: inout LAPACKInteger,
+    _ work: UnsafeMutablePointer<Double>,
+    _ lwork: inout LAPACKInteger,
+    _ info: inout LAPACKInteger
+) {
+    dgesvd_(jobu, jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info)
+}
+

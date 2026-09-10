@@ -33,6 +33,30 @@ struct DescriptiveStatsTests {
         #expect(!result.isNaN)
     }
 
+    @Test("variance large offset numerical stability without catastrophic cancellation")
+    func varianceLargeOffsetStability() throws {
+        // With naive E[X^2] - (E[X])^2, (1e9)^2 destroys low bits resulting in 0.0.
+        // Two-pass centered deviation preserves precision.
+        let values = [1e9 + 1.0, 1e9 + 2.0, 1e9 + 3.0]
+        let sampleVar = try Stats.variance(values, ddof: 1)
+        #expect(abs(sampleVar - 1.0) < 1e-6)
+
+        let popVar = try Stats.variance(values, ddof: 0)
+        #expect(abs(popVar - (2.0 / 3.0)) < 1e-6)
+    }
+
+    @Test("describe checkNaN default throws on NaN values")
+    func describeNaNCheck() throws {
+        let valuesWithNaN = [1.0, 2.0, Double.nan, 4.0]
+        #expect(throws: StatsError.containsNaN) {
+            try Stats.describe(valuesWithNaN)
+        }
+
+        // When checkNaN is explicitly false, it executes
+        let statsWithoutCheck = try Stats.describe(valuesWithNaN, checkNaN: false)
+        #expect(statsWithoutCheck.count == 4)
+    }
+
     @Test("median odd count")
     func medianOdd() throws {
         #expect(try Stats.median([1.0, 3.0, 5.0] as [Double]) == 3.0)

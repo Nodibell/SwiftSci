@@ -130,12 +130,34 @@ public actor MLPClassifier: ClassifierEstimator {
         self.requestedDevice = requestedDevice
     }
 
-    /// Fit.
+    /// Fits the multi-layer perceptron classifier on training data.
     /// - Parameters:
-    ///   - features: The features.
-    ///   - targets: The targets.
-    /// - Throws: An error if the operation fails.
+    ///   - features: The features matrix.
+    ///   - targets: The target labels.
+    /// - Throws: An error if inputs are invalid.
     public func fit(features: [[Double]], targets: [Double]) async throws {
+        try await fit(features: features, targets: targets, validationFeatures: nil, validationTargets: nil, earlyStopping: nil)
+    }
+
+    /// Fits the multi-layer perceptron classifier with optional validation monitoring and early stopping.
+    ///
+    /// - Parameters:
+    ///   - features: 2D feature matrix of shape `[N, P]`.
+    ///   - targets: 1D class labels of length `N`.
+    ///   - validationFeatures: Optional validation features matrix.
+    ///   - validationTargets: Optional validation targets array.
+    ///   - earlyStopping: Optional `EarlyStopping` callback.
+    /// - Throws: `SwiftMLError` if inputs are invalid.
+    ///
+    /// ## Thread Safety
+    /// Thread-safe via actor isolation.
+    public func fit(
+        features: [[Double]],
+        targets: [Double],
+        validationFeatures: [[Double]]? = nil,
+        validationTargets: [Double]? = nil,
+        earlyStopping: EarlyStopping? = nil
+    ) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
             throw SwiftMLError.emptyInput
         }
@@ -173,7 +195,10 @@ public actor MLPClassifier: ClassifierEstimator {
             adamStates.append(LayerAdamState(inDim: inDim, outDim: outDim))
         }
 
-        for _ in 0..<maxIter {
+        var es = earlyStopping
+        var bestLayers: [LayerWeights]? = nil
+
+        for epoch in 0..<maxIter {
             for i in 0..<numSamples {
                 let x = features[i]
                 let yVal = targets[i]
@@ -283,6 +308,60 @@ public actor MLPClassifier: ClassifierEstimator {
                     }
 
                     delta = nextDelta
+                }
+            }
+
+            // Early stopping validation check
+            if var tracker = es, let valX = validationFeatures, let valY = validationTargets, !valX.isEmpty {
+                var totalLoss = 0.0
+                for vi in 0..<valX.count {
+                    let vx = valX[vi]
+                    let vy = valY[vi]
+                    var out = vx
+                    for l in 0..<layers.count {
+                        var nextOut = layers[l].b
+                        cblas_dgemm(
+                            CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                            1, Int32(layers[l].outDim), Int32(layers[l].inDim),
+                            1.0,
+                            out, Int32(layers[l].inDim),
+                            layers[l].W, Int32(layers[l].outDim),
+                            1.0,
+                            &nextOut, Int32(layers[l].outDim)
+                        )
+                        if l == layers.count - 1 {
+                            if numClasses == 2 {
+                                nextOut[0] = sigmoid(nextOut[0])
+                            }
+                        } else {
+                            for j in 0..<layers[l].outDim {
+                                nextOut[j] = applyActivation(nextOut[j], activation: activation)
+                            }
+                        }
+                        out = nextOut
+                    }
+
+                    if numClasses <= 2 {
+                        let targetVal = vy == (uniqueClasses.last ?? 1.0) ? 1.0 : 0.0
+                        let p = max(1e-12, min(1.0 - 1e-12, out[0]))
+                        totalLoss -= (targetVal * log(p) + (1.0 - targetVal) * log(1.0 - p))
+                    } else {
+                        let targetIdx = uniqueClasses.firstIndex(of: vy) ?? 0
+                        let p = max(1e-12, min(1.0 - 1e-12, out[targetIdx]))
+                        totalLoss -= log(p)
+                    }
+                }
+                totalLoss /= Double(valX.count)
+                let (shouldStop, isBest) = tracker.step(currentScore: totalLoss, epoch: epoch)
+                if isBest {
+                    bestLayers = layers
+                }
+                es = tracker
+                if shouldStop {
+                    if tracker.restoreBestWeights, let best = bestLayers {
+                        layers = best
+                    }
+                    break
                 }
             }
         }
@@ -430,12 +509,34 @@ public actor MLPRegressor: RegressorEstimator {
         self.requestedDevice = requestedDevice
     }
 
-    /// Fit.
+    /// Fits the multi-layer perceptron regressor on training data.
     /// - Parameters:
-    ///   - features: The features.
-    ///   - targets: The targets.
-    /// - Throws: An error if the operation fails.
+    ///   - features: The features matrix.
+    ///   - targets: The continuous target values.
+    /// - Throws: An error if inputs are invalid.
     public func fit(features: [[Double]], targets: [Double]) async throws {
+        try await fit(features: features, targets: targets, validationFeatures: nil, validationTargets: nil, earlyStopping: nil)
+    }
+
+    /// Fits the multi-layer perceptron regressor with optional validation monitoring and early stopping.
+    ///
+    /// - Parameters:
+    ///   - features: 2D feature matrix of shape `[N, P]`.
+    ///   - targets: 1D continuous targets of length `N`.
+    ///   - validationFeatures: Optional validation features matrix.
+    ///   - validationTargets: Optional validation targets array.
+    ///   - earlyStopping: Optional `EarlyStopping` callback.
+    /// - Throws: `SwiftMLError` if inputs are invalid.
+    ///
+    /// ## Thread Safety
+    /// Thread-safe via actor isolation.
+    public func fit(
+        features: [[Double]],
+        targets: [Double],
+        validationFeatures: [[Double]]? = nil,
+        validationTargets: [Double]? = nil,
+        earlyStopping: EarlyStopping? = nil
+    ) async throws {
         guard !features.isEmpty, !targets.isEmpty else {
             throw SwiftMLError.emptyInput
         }
@@ -469,7 +570,10 @@ public actor MLPRegressor: RegressorEstimator {
             adamStates.append(LayerAdamState(inDim: inDim, outDim: outDim))
         }
 
-        for _ in 0..<maxIter {
+        var es = earlyStopping
+        var bestLayers: [LayerWeights]? = nil
+
+        for epoch in 0..<maxIter {
             for i in 0..<numSamples {
                 let x = features[i]
                 let yVal = targets[i]
@@ -532,21 +636,20 @@ public actor MLPRegressor: RegressorEstimator {
                         let oneMinusBeta2 = 1.0 - beta2
                         let lr = learningRate
                         let eps = epsilon
-                        let wCount = layers[l].W.count
-
-                        for p in 0..<wCount {
-                            let g = gradW[p]
-                            adamStates[l].mW[p] = beta1 * adamStates[l].mW[p] + oneMinusBeta1 * g
-                            adamStates[l].vW[p] = beta2 * adamStates[l].vW[p] + oneMinusBeta2 * g * g
-                            let mHat = adamStates[l].mW[p] / b1_corr
-                            let vHat = adamStates[l].vW[p] / b2_corr
-                            layers[l].W[p] -= lr * mHat / (sqrt(vHat) + eps)
-                        }
 
                         for j in 0..<outD {
-                            let g = gradB[j]
-                            adamStates[l].mB[j] = beta1 * adamStates[l].mB[j] + oneMinusBeta1 * g
-                            adamStates[l].vB[j] = beta2 * adamStates[l].vB[j] + oneMinusBeta2 * g * g
+                            for k in 0..<inD {
+                                let idx = k * outD + j
+                                let g = gradW[idx]
+                                adamStates[l].mW[idx] = beta1 * adamStates[l].mW[idx] + oneMinusBeta1 * g
+                                adamStates[l].vW[idx] = beta2 * adamStates[l].vW[idx] + oneMinusBeta2 * g * g
+                                let mHat = adamStates[l].mW[idx] / b1_corr
+                                let vHat = adamStates[l].vW[idx] / b2_corr
+                                layers[l].W[idx] -= lr * mHat / (sqrt(vHat) + eps)
+                            }
+                            let gB = gradB[j]
+                            adamStates[l].mB[j] = beta1 * adamStates[l].mB[j] + oneMinusBeta1 * gB
+                            adamStates[l].vB[j] = beta2 * adamStates[l].vB[j] + oneMinusBeta2 * gB * gB
                             let mHat = adamStates[l].mB[j] / b1_corr
                             let vHat = adamStates[l].vB[j] / b2_corr
                             layers[l].b[j] -= lr * mHat / (sqrt(vHat) + eps)
@@ -565,6 +668,48 @@ public actor MLPRegressor: RegressorEstimator {
                     }
 
                     delta = nextDelta
+                }
+            }
+
+            // Early stopping validation check
+            if var tracker = es, let valX = validationFeatures, let valY = validationTargets, !valX.isEmpty {
+                var mse = 0.0
+                for vi in 0..<valX.count {
+                    let vx = valX[vi]
+                    var out = vx
+                    for l in 0..<layers.count {
+                        let isLast = l == layers.count - 1
+                        var nextOut = layers[l].b
+                        cblas_dgemm(
+                            CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                            1, Int32(layers[l].outDim), Int32(layers[l].inDim),
+                            1.0,
+                            out, Int32(layers[l].inDim),
+                            layers[l].W, Int32(layers[l].outDim),
+                            1.0,
+                            &nextOut, Int32(layers[l].outDim)
+                        )
+                        if !isLast {
+                            for j in 0..<layers[l].outDim {
+                                nextOut[j] = applyActivation(nextOut[j], activation: activation)
+                            }
+                        }
+                        out = nextOut
+                    }
+                    let diff = out[0] - valY[vi]
+                    mse += diff * diff
+                }
+                mse /= Double(valX.count)
+                let (shouldStop, isBest) = tracker.step(currentScore: mse, epoch: epoch)
+                if isBest {
+                    bestLayers = layers
+                }
+                es = tracker
+                if shouldStop {
+                    if tracker.restoreBestWeights, let best = bestLayers {
+                        layers = best
+                    }
+                    break
                 }
             }
         }

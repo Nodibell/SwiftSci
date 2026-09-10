@@ -32,4 +32,27 @@ struct SwiftVisualizationTests {
         let html = ChartExporter.plotROCCurve(yTrue: yTrue, yScores: yScores)
         #expect(html.contains("AUC = 1.0000"))
     }
+
+    @Test("ChartExporter sanitizes HTML and escapes quotes to prevent XSS and syntax breakage")
+    func testXSSSanitization() throws {
+        let maliciousTitle = "</title><script>alert('xss')</script>"
+        let maliciousCol = TypedColumn<Double>(name: "bad\"<col>", values: [1.0, 2.0])
+        let df = try DataFrame(columns: [maliciousCol])
+
+        let heatmap = try ChartExporter.plotCorrelationHeatmap(df: df, title: maliciousTitle)
+        // Title tag must not contain unescaped closing tag or script injection
+        #expect(heatmap.contains("&lt;/title&gt;&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"))
+        #expect(!heatmap.contains("<title></title><script>"))
+
+        // Feature importances with quotes and script injection
+        let featNames = ["col\"with'quotes", "<script>bad()</script>"]
+        let featHTML = ChartExporter.plotFeatureImportances(featureNames: featNames, importances: [0.5, 0.5], title: maliciousTitle)
+        #expect(!featHTML.contains("<title></title><script>"))
+        #expect(featHTML.contains("col\\\"with'quotes"))
+
+        // Confusion matrix with payload
+        let cmHTML = ChartExporter.plotConfusionMatrix(matrix: [[1, 0], [0, 1]], labels: featNames, title: maliciousTitle)
+        #expect(!cmHTML.contains("<title></title><script>"))
+        #expect(cmHTML.contains("col\\\"with'quotes"))
+    }
 }

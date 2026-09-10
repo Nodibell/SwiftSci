@@ -93,5 +93,69 @@ struct QuantizedWeightsTests {
         #expect(parsed["q4_tensor"] != nil)
         #expect(parsed["q4_tensor"]?.shape == [32])
     }
+
+    @Test("Native Metal MSL gemv_q4_0 and gemv_q8_0 execution")
+    func testMetalQuantizedGEMV() throws {
+        let inFeatures = 32
+        let outFeatures = 2
+
+        // Row 0: nibbles = 9 (value (9-8)*0.5 = 0.5), scale = 0.5
+        // Row 1: nibbles = 10 (value (10-8)*1.0 = 2.0), scale = 1.0
+        var weightsData = Data()
+        weightsData.append(Data(repeating: 0x99, count: 16)) // row 0: 16 bytes = 32 nibbles
+        weightsData.append(Data(repeating: 0xAA, count: 16)) // row 1: 16 bytes = 32 nibbles
+
+        let scales: [Float16] = [Float16(0.5), Float16(1.0)]
+        let input = [Float](repeating: 1.0, count: inFeatures)
+
+        let dummyWeights = MLXArray([Float](repeating: 0.0, count: 64), [outFeatures, inFeatures])
+        let dummyScales = MLXArray([Float](repeating: 1.0, count: 64), [outFeatures, inFeatures])
+
+        let layer = QuantizedLinear(
+            inFeatures: inFeatures,
+            outFeatures: outFeatures,
+            scheme: .q4_0,
+            weight: dummyWeights,
+            scales: dummyScales
+        )
+
+        let outputs = try layer.forwardMetal(
+            inVector: input,
+            rawWeights: weightsData,
+            rawScales: scales
+        )
+
+        #expect(outputs.count == 2)
+        // Row 0: 32 elements of (9-8)*0.5 = 0.5 -> sum = 32 * 0.5 = 16.0
+        #expect(abs(outputs[0] - 16.0) < 1e-3)
+        // Row 1: 32 elements of (10-8)*1.0 = 2.0 -> sum = 32 * 2.0 = 64.0
+        #expect(abs(outputs[1] - 64.0) < 1e-3)
+    }
+
+    @Test("MetalQuantizedEngine pipeline caching and dimension validation")
+    func testMetalEngineValidation() throws {
+        let engine = MetalQuantizedEngine.shared
+        guard engine.device != nil else { return }
+
+        let pipeline = try engine.getPipeline(name: "gemv_q4_0")
+        #expect(pipeline.maxTotalThreadsPerThreadgroup > 0)
+
+        // Test dimension mismatch throws
+        let layer = QuantizedLinear(
+            inFeatures: 32,
+            outFeatures: 2,
+            scheme: .q4_0,
+            weight: MLXArray([Float](repeating: 0.0, count: 64), [2, 32]),
+            scales: MLXArray([Float](repeating: 1.0, count: 64), [2, 32])
+        )
+
+        #expect(throws: MetalQuantizedError.self) {
+            _ = try layer.forwardMetal(
+                inVector: [1.0, 2.0], // mismatch: 2 instead of 32
+                rawWeights: Data(repeating: 0, count: 32),
+                rawScales: [Float16(1.0), Float16(1.0)]
+            )
+        }
+    }
 }
 #endif

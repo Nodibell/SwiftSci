@@ -31,3 +31,4 @@ let logits = try await model.forward(tokens: inputTokens)
 ### Guides & Tutorials
 - <doc:TransformerDecoderArchitecture>
 - <doc:WeightParsingAndSampling>
+- <doc:MetalShadersQuantization>

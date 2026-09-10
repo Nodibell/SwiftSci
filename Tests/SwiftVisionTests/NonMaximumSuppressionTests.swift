@@ -65,7 +65,7 @@ struct NonMaximumSuppressionTests {
 
     @Test("empty input returns empty output")
     func emptyInput() {
-        let result = NonMaximumSuppression.filter(boxes: [])
+        let result = NonMaximumSuppression.filter(boxes: [] as [BoundingBox])
         #expect(result.isEmpty)
     }
 
@@ -127,5 +127,30 @@ struct NonMaximumSuppressionTests {
         // Real IoU = 2/6 ≈ 0.333 < 0.45 → both should survive
         let result = NonMaximumSuppression.filter(boxes: [a, b], iouThreshold: 0.45)
         #expect(result.count == 2)
+    }
+}
+
+@Suite("BoundingBoxSIMD Tests")
+struct BoundingBoxSIMDTests {
+    @Test("BoundingBoxSIMD area and IoU calculations")
+    func testSIMDIoU() {
+        let b1 = BoundingBoxSIMD(xMin: 0, yMin: 0, xMax: 2, yMax: 2, confidence: 0.9, classId: 1)
+        #expect(b1.area == 4.0)
+
+        let b2 = BoundingBoxSIMD(xMin: 1, yMin: 0, xMax: 3, yMax: 2, confidence: 0.7, classId: 1)
+        let iou = b1.intersectionOverUnion(with: b2)
+        #expect(abs(iou - (2.0 / 6.0)) < 1e-6)
+    }
+
+    @Test("NonMaximumSuppression with BoundingBoxSIMD suppresses overlapping same-class boxes")
+    func testSIMDNMSSuppression() {
+        let high = BoundingBoxSIMD(xMin: 0, yMin: 0, xMax: 1, yMax: 1, confidence: 0.95, classId: 0)
+        let low = BoundingBoxSIMD(xMin: 0, yMin: 0, xMax: 1, yMax: 1, confidence: 0.60, classId: 0)
+        let diffClass = BoundingBoxSIMD(xMin: 0, yMin: 0, xMax: 1, yMax: 1, confidence: 0.80, classId: 1)
+
+        let filtered = NonMaximumSuppression.filter(boxes: [high, low, diffClass], iouThreshold: 0.45)
+        #expect(filtered.count == 2)
+        #expect(filtered[0].confidence == 0.95)
+        #expect(filtered[1].confidence == 0.80)
     }
 }

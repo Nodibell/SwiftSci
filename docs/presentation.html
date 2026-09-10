@@ -513,6 +513,112 @@
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
+    /* Interactive Charts & Tooltips */
+    .swiftui-chart-box svg {
+      overflow: visible;
+    }
+
+    .swiftui-chart-box svg rect,
+    .swiftui-chart-box svg circle,
+    .swiftui-chart-box svg path:not([stroke-dasharray]):not([fill="none"]),
+    .interactive-elem {
+      cursor: pointer;
+      transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+                  filter 0.16s ease,
+                  stroke 0.16s ease,
+                  stroke-width 0.16s ease,
+                  opacity 0.16s ease;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .swiftui-chart-box svg rect:hover,
+    .swiftui-chart-box svg circle:hover,
+    .interactive-elem:hover {
+      filter: brightness(1.35) drop-shadow(0 0 8px rgba(0, 122, 255, 0.85));
+      stroke: #ffffff !important;
+      stroke-width: 1.5px !important;
+      transform: scale(1.08);
+    }
+
+    .heatmap-inspector {
+      margin-top: 0.45rem;
+      padding: 0.3rem 0.65rem;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 1.7rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .heatmap-inspector .live-tag {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(0, 122, 255, 0.2);
+      color: var(--sf-blue);
+      border: 1px solid rgba(0, 122, 255, 0.4);
+      flex-shrink: 0;
+    }
+
+    .heatmap-inspector .inspect-text {
+      color: #d1d1d6;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Floating Keynote Data Tooltip */
+    .chart-tooltip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 99999;
+      background: rgba(22, 22, 28, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 8px;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.72rem;
+      color: #ffffff;
+      font-family: var(--font-display);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 122, 255, 0.3);
+      opacity: 0;
+      transform: translate(-50%, -125%) scale(0.92);
+      transition: opacity 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 280px;
+      line-height: 1.35;
+    }
+
+    .chart-tooltip.visible {
+      opacity: 1;
+      transform: translate(-50%, -125%) scale(1);
+    }
+
+    .chart-tooltip .tip-header {
+      font-weight: 700;
+      color: var(--sf-cyan);
+      font-size: 0.7rem;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .chart-tooltip .tip-detail {
+      font-family: var(--font-mono);
+      font-size: 0.67rem;
+      color: #e5e5ea;
+    }
+
     /* Enhanced Enterprise Keynote Components */
     .bench-comparison {
       display: flex;
@@ -1011,6 +1117,10 @@ print(<span class="str">"Ticks:"</span>, orderBook.rowCount, <span class="str">"
   <rect x="220" y="15" width="62" height="40" rx="6" fill="rgba(175,82,222,0.18)" stroke="#af52de" /><text x="251" y="39" fill="#af52de" font-size="9" text-anchor="middle" font-family="monospace">ask:Double</text>
   <rect x="290" y="15" width="22" height="40" rx="4" fill="rgba(85,190,240,0.18)" stroke="#55bef0" /><text x="301" y="39" fill="#55bef0" font-size="8" text-anchor="middle" font-family="monospace">vol</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-3">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1075,6 +1185,10 @@ print(<span class="str">"Filtered liquid orders:"</span>, liquidTrades.rowCount)
   <path d="M 225 35 L 255 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="260" y="20" width="50" height="30" rx="5" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="285" y="39" fill="#af52de" font-size="10" text-anchor="middle">Slice</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-4">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1140,6 +1254,10 @@ Structural COW sharing: 5 / 7 columns retained zero-copy references</span></pre>
   <rect x="145" y="15" width="75" height="40" rx="6" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="182" y="39" fill="#34c759" font-size="10" text-anchor="middle">+ mid_price</text>
   <rect x="230" y="15" width="75" height="40" rx="6" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="267" y="39" fill="#af52de" font-size="10" text-anchor="middle">+ spread_bps</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-5">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1204,6 +1322,10 @@ Result: 1,000,000 joined records • 0 dropped keys</span></pre>
   <path d="M 165 35 L 195 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="200" y="18" width="105" height="34" rx="5" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="252" y="39" fill="#34c759" font-size="9" text-anchor="middle">Joined DataFrame</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-6">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1274,6 +1396,10 @@ Aggregated 1,000,000 rows into 3 groups in 4.21ms</span></pre>
   <path d="M 195 35 L 225 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="230" y="15" width="80" height="40" rx="5" fill="rgba(85,190,240,0.2)" stroke="#55bef0"/><text x="270" y="39" fill="#55bef0" font-size="9" text-anchor="middle">Agg Summary</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-7">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1342,6 +1468,10 @@ Memory: 12.3 MB • Zero reallocation during reshape</span></pre>
   <path d="M 215 35 L 240 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="245" y="15" width="65" height="40" rx="5" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="277" y="38" fill="#007aff" font-size="9" text-anchor="middle">Wide Matrix</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-8">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1407,6 +1537,10 @@ print(String(format: <span class="str">"μ=%.4f | σ=%.4f | Skew=%.3f | Kurt=%.3
   <rect x="115" y="15" width="85" height="40" rx="6" fill="rgba(0,122,255,0.18)" stroke="#007aff"/><text x="157" y="38" fill="#007aff" font-size="9" text-anchor="middle">vDSP_normalize</text>
   <rect x="215" y="15" width="85" height="40" rx="6" fill="rgba(175,82,222,0.18)" stroke="#af52de"/><text x="257" y="38" fill="#af52de" font-size="9" text-anchor="middle">Welford Skew</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-9">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1474,6 +1608,10 @@ Density at -3.0σ Crash Event:
   <text x="70" y="30" fill="#007aff" font-size="8">Normal</text>
   <text x="240" y="30" fill="#ff9500" font-size="8">Student-t(5)</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-10">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1546,6 +1684,10 @@ print(String(format: <span class="str">"Overflow: %.6f | Zero Loss: %.4f"</span>
   <rect x="190" y="52" width="12" height="13" fill="#34c759"/>
   <text x="116" y="10" fill="#007aff" font-size="8" text-anchor="middle">λ = 12.5</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-11">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1614,6 +1756,10 @@ print(String(format: <span class="str">"t-stat: %.4f | p-val: %.6e | Reject H0: 
   <text x="280" y="45" fill="#ff453a" font-size="8">α/2</text>
   <text x="160" y="35" fill="#007aff" font-size="9" text-anchor="middle">Accept H0</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-12">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1674,17 +1820,40 @@ Eigenvalues: [1.582, 0.941, 0.477] • Conditioning: Positive Definite</span></p
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Heatmap Covariance Topology</span><span class="swiftui-pill"
                 style="color:var(--sf-blue);">Correlation</span></div>
-            <svg viewBox="0 0 320 70" style="width:100%; height:70px;">
-  <rect x="70" y="10" width="45" height="15" fill="#34c759"/><text x="92" y="21" fill="#fff" font-size="8" text-anchor="middle">1.00</text>
-  <rect x="120" y="10" width="45" height="15" fill="#ff453a"/><text x="142" y="21" fill="#fff" font-size="8" text-anchor="middle">-0.43</text>
-  <rect x="170" y="10" width="45" height="15" fill="#007aff"/><text x="192" y="21" fill="#fff" font-size="8" text-anchor="middle">0.19</text>
-  <rect x="70" y="28" width="45" height="15" fill="#ff453a"/><text x="92" y="39" fill="#fff" font-size="8" text-anchor="middle">-0.43</text>
-  <rect x="120" y="28" width="45" height="15" fill="#34c759"/><text x="142" y="39" fill="#fff" font-size="8" text-anchor="middle">1.00</text>
-  <rect x="170" y="28" width="45" height="15" fill="#007aff"/><text x="192" y="39" fill="#fff" font-size="8" text-anchor="middle">0.31</text>
-  <rect x="70" y="46" width="45" height="15" fill="#007aff"/><text x="92" y="57" fill="#fff" font-size="8" text-anchor="middle">0.19</text>
-  <rect x="120" y="46" width="45" height="15" fill="#007aff"/><text x="142" y="57" fill="#fff" font-size="8" text-anchor="middle">0.31</text>
-  <rect x="170" y="46" width="45" height="15" fill="#34c759"/><text x="192" y="57" fill="#fff" font-size="8" text-anchor="middle">1.00</text>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;">
+  <!-- Col Labels -->
+  <text x="100" y="10" fill="#8e8e93" font-size="7" text-anchor="middle" font-family="monospace">SPY</text>
+  <text x="160" y="10" fill="#8e8e93" font-size="7" text-anchor="middle" font-family="monospace">TLT</text>
+  <text x="220" y="10" fill="#8e8e93" font-size="7" text-anchor="middle" font-family="monospace">GLD</text>
+  <!-- Row 0: SPY -->
+  <text x="65" y="26" fill="#8e8e93" font-size="7" text-anchor="end" font-family="monospace">SPY</text>
+  <rect x="75" y="14" width="50" height="18" rx="3" fill="#34c759" class="interactive-elem" data-tip="<b>SPY × SPY</b><br>Correlation: <b>1.000</b>" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>SPY × SPY:</b> r = +1.000 (Self-Correlation)'"/>
+  <text x="100" y="26" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">1.00</text>
+  <rect x="135" y="14" width="50" height="18" rx="3" fill="#ff453a" class="interactive-elem" data-tip="<b>SPY × TLT</b><br>Correlation: <b>-0.428</b><br>p &lt; 0.001" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>SPY × TLT:</b> r = -0.428 | Inverse Correlation'"/>
+  <text x="160" y="26" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">-0.43</text>
+  <rect x="195" y="14" width="50" height="18" rx="3" fill="#007aff" class="interactive-elem" data-tip="<b>SPY × GLD</b><br>Correlation: <b>+0.185</b><br>p = 0.042" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>SPY × GLD:</b> r = +0.185 | Mild Positive'"/>
+  <text x="220" y="26" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">0.19</text>
+  <!-- Row 1: TLT -->
+  <text x="65" y="47" fill="#8e8e93" font-size="7" text-anchor="end" font-family="monospace">TLT</text>
+  <rect x="75" y="35" width="50" height="18" rx="3" fill="#ff453a" class="interactive-elem" data-tip="<b>TLT × SPY</b><br>Correlation: <b>-0.428</b>" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>TLT × SPY:</b> r = -0.428 | Inverse Correlation'"/>
+  <text x="100" y="47" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">-0.43</text>
+  <rect x="135" y="35" width="50" height="18" rx="3" fill="#34c759" class="interactive-elem" data-tip="<b>TLT × TLT</b><br>Correlation: <b>1.000</b>" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>TLT × TLT:</b> r = +1.000 (Self-Correlation)'"/>
+  <text x="160" y="47" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">1.00</text>
+  <rect x="195" y="35" width="50" height="18" rx="3" fill="#007aff" class="interactive-elem" data-tip="<b>TLT × GLD</b><br>Correlation: <b>+0.312</b><br>p &lt; 0.01" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>TLT × GLD:</b> r = +0.312 | Safe Haven Correlation'"/>
+  <text x="220" y="47" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">0.31</text>
+  <!-- Row 2: GLD -->
+  <text x="65" y="68" fill="#8e8e93" font-size="7" text-anchor="end" font-family="monospace">GLD</text>
+  <rect x="75" y="56" width="50" height="18" rx="3" fill="#007aff" class="interactive-elem" data-tip="<b>GLD × SPY</b><br>Correlation: <b>+0.185</b>" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>GLD × SPY:</b> r = +0.185 | Low Beta'"/>
+  <text x="100" y="68" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">0.19</text>
+  <rect x="135" y="56" width="50" height="18" rx="3" fill="#007aff" class="interactive-elem" data-tip="<b>GLD × TLT</b><br>Correlation: <b>+0.312</b>" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>GLD × TLT:</b> r = +0.312 | Safe Haven Correlation'"/>
+  <text x="160" y="68" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">0.31</text>
+  <rect x="195" y="56" width="50" height="18" rx="3" fill="#34c759" class="interactive-elem" data-tip="<b>GLD × GLD</b><br>Correlation: <b>1.000</b>" onmouseenter="document.getElementById('inspect-13').innerHTML='<b>GLD × GLD:</b> r = +1.000 (Self-Correlation)'"/>
+  <text x="220" y="68" fill="#fff" font-size="8" text-anchor="middle" pointer-events="none">1.00</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-13">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1751,6 +1920,10 @@ print(<span class="str">"Fitted Scale (std):"</span>, scaler.scale!)</pre>
   <path d="M 215 35 L 240 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="245" y="15" width="65" height="40" rx="5" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="277" y="38" fill="#34c759" font-size="9" text-anchor="middle">Z ~ N(0, 1)</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-14">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1817,6 +1990,10 @@ Ordinal Rank 'Gold' -&gt; Index 2.0 (Bronze=0, Silver=1, Gold=2, Platinum=3)</sp
   <rect x="120" y="20" width="80" height="30" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="160" y="38" fill="#34c759" font-size="10" text-anchor="middle">[1, 0, 0, 0]</text>
   <rect x="220" y="20" width="85" height="30" rx="4" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="262" y="38" fill="#af52de" font-size="9" text-anchor="middle">Bit-Packed</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-15">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1883,6 +2060,10 @@ Ordinal Rank 'Gold' -&gt; Index 2.0 (Bronze=0, Silver=1, Gold=2, Platinum=3)</sp
   <circle cx="140" cy="55" r="5" fill="#007aff"/><line x1="140" y1="55" x2="160" y2="35" stroke="#8e8e93" stroke-dasharray="2,2"/>
   <circle cx="185" cy="52" r="5" fill="#007aff"/><line x1="185" y1="52" x2="160" y2="35" stroke="#8e8e93" stroke-dasharray="2,2"/>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-16">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1947,6 +2128,10 @@ Binarized Flags (threshold 2.5): [[0.0, 1.0], [0.0, 1.0], [1.0, 0.0]]</span></pr
   <path d="M 90 35 L 120 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="125" y="15" width="170" height="40" rx="5" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="210" y="39" fill="#34c759" font-size="10" text-anchor="middle">[1, a, b, a², a·b, b²]</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-17">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2020,6 +2205,10 @@ Zero Data Leakage: Validation set transformed with frozen training stats</span><
   <path d="M 215 18 L 235 30" stroke="#8e8e93"/><path d="M 215 52 L 235 40" stroke="#8e8e93"/>
   <rect x="240" y="20" width="70" height="30" rx="4" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="275" y="38" fill="#af52de" font-size="8" text-anchor="middle">Fused ML</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-18">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2086,6 +2275,10 @@ Zero Data Leakage: Validation set transformed with frozen training stats</span><
   <path d="M 145 35 L 185 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="195" y="20" width="110" height="30" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="250" y="38" fill="#34c759" font-size="9" text-anchor="middle">Top 50 Biomarkers</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-19">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2152,6 +2345,10 @@ print(<span class="str">"Model Coefficients:"</span>, ridge.coefficients!)</pre>
   <path d="M 145 35 L 185 35" stroke="#34c759" stroke-width="2"/>
   <rect x="190" y="15" width="110" height="40" rx="5" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="245" y="39" fill="#34c759" font-size="9" text-anchor="middle">Metal Shader Core</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-20">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2224,6 +2421,10 @@ print(<span class="str">"Tree Depth:"</span>, tree.depth, <span class="str">"| T
   <circle cx="100" cy="52" r="8" fill="#34c759"/><text x="100" y="55" fill="#fff" font-size="7" text-anchor="middle">L</text>
   <circle cx="220" cy="52" r="8" fill="#ff9500"/><text x="220" y="55" fill="#fff" font-size="7" text-anchor="middle">R</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-21">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2296,6 +2497,10 @@ print(<span class="str">"OOB Score:"</span>, forest.oobScore!)</pre>
   <path d="M 195 35 L 225 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="230" y="15" width="75" height="40" rx="5" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="267" y="38" fill="#34c759" font-size="8" text-anchor="middle">Voting Pool</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-22">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2364,6 +2569,10 @@ LinearSVC Coordinate Descent:
   <path d="M 225 35 L 255 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="260" y="20" width="45" height="30" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="282" y="38" fill="#34c759" font-size="8" text-anchor="middle">Trees</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-23">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2433,6 +2642,10 @@ print(<span class="str">"Final Loss:"</span>, mlp.lossHistory.last!, <span class
   <line x1="237" y1="35" x2="284" y2="35" stroke="#8e8e93"/>
   <circle cx="290" cy="35" r="6" fill="#af52de"/>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-24">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2501,6 +2714,10 @@ print(<span class="str">"Brier Score Post:"</span>, <span class="type">Metrics</
   <path d="M 40 60 L 100 48 L 180 32 L 280 10" fill="none" stroke="#34c759" stroke-width="2"/>
   <text x="160" y="55" fill="#34c759" font-size="8">Isotonic PAVA</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-25">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2567,6 +2784,10 @@ print(<span class="str">"Restored model with"</span>, loadedModel.estimators.cou
   <path d="M 215 35 L 235 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="240" y="18" width="65" height="34" rx="5" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="272" y="38" fill="#af52de" font-size="9" text-anchor="middle">.bin File</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-26">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2636,6 +2857,10 @@ print(<span class="str">"Exported to CoreML and ONNX with zero Python dependenci
   <rect x="145" y="42" width="80" height="20" rx="3" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="185" y="55" fill="#ff9500" font-size="8" text-anchor="middle">ONNX Opset 18</text>
   <rect x="235" y="18" width="70" height="34" rx="5" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="270" y="38" fill="#af52de" font-size="8" text-anchor="middle">Deploy Edge</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-27">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2702,6 +2927,10 @@ print(<span class="str">"Cumulative Variance:"</span>, pca.explainedVarianceRati
   <path d="M 215 35 L 235 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="240" y="15" width="65" height="40" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="272" y="38" fill="#34c759" font-size="8" text-anchor="middle">10 PCs</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-28">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2766,6 +2995,10 @@ print(<span class="str">"Cumulative Variance:"</span>, pca.explainedVarianceRati
   <circle cx="160" cy="25" r="4" fill="#34c759"/><circle cx="168" cy="32" r="4" fill="#34c759"/><circle cx="155" cy="38" r="4" fill="#34c759"/>
   <circle cx="250" cy="40" r="4" fill="#ff9500"/><circle cx="260" cy="48" r="4" fill="#ff9500"/><circle cx="245" cy="52" r="4" fill="#ff9500"/>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-29">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2825,13 +3058,26 @@ print(<span class="str">"DBSCAN Clusters:"</span>, dbscan.uniqueLabels.count, <s
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Centroids vs Density Core Clusters</span><span class="swiftui-pill"
                 style="color:var(--sf-blue);">Clustering</span></div>
-            <svg viewBox="0 0 320 70" style="width:100%; height:70px;">
-  <circle cx="80" cy="35" r="22" fill="rgba(0,122,255,0.15)" stroke="#007aff"/>
-  <circle cx="80" cy="35" r="4" fill="#007aff"/>
-  <circle cx="200" cy="35" r="22" fill="rgba(52,199,89,0.15)" stroke="#34c759"/>
-  <circle cx="200" cy="35" r="4" fill="#34c759"/>
-  <circle cx="280" cy="20" r="3" fill="#ff453a"/><text x="280" y="32" fill="#ff453a" font-size="7" text-anchor="middle">Noise</text>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;">
+  <!-- Cluster 1 (Blue) -->
+  <circle cx="80" cy="40" r="26" fill="rgba(0,122,255,0.18)" stroke="#007aff" stroke-width="1.5" class="interactive-elem" data-tip="<b>Cluster #1 (Urban Hotspot)</b><br>Points: 24,180 | Radius: 1.4 km<br>Density: 98.4%" onmouseenter="document.getElementById('inspect-30').innerHTML='<b>Cluster #1:</b> 24,180 ride pickups | Radius: 1.4 km | Dense Core'"/>
+  <circle cx="80" cy="40" r="5" fill="#007aff" stroke="#fff" stroke-width="1" class="interactive-elem" data-tip="<b>Centroid #1</b><br>Lat: 40.7128° N, Lon: 74.0060° W<br>Iter: 8 (Converged)" onmouseenter="document.getElementById('inspect-30').innerHTML='<b>Centroid #1:</b> Converged at iter 8 | Euclidean Residual: 0.00012'"/>
+  <text x="80" y="44" fill="#fff" font-size="7" text-anchor="middle" pointer-events="none">C1</text>
+  
+  <!-- Cluster 2 (Green) -->
+  <circle cx="190" cy="38" r="24" fill="rgba(52,199,89,0.18)" stroke="#34c759" stroke-width="1.5" class="interactive-elem" data-tip="<b>Cluster #2 (Airport Corridor)</b><br>Points: 18,920 | Radius: 2.1 km<br>Density: 95.1%" onmouseenter="document.getElementById('inspect-30').innerHTML='<b>Cluster #2:</b> 18,920 ride pickups | Radius: 2.1 km | Airport Flow'"/>
+  <circle cx="190" cy="38" r="5" fill="#34c759" stroke="#fff" stroke-width="1" class="interactive-elem" data-tip="<b>Centroid #2</b><br>Lat: 40.6413° N, Lon: 73.7781° W<br>Iter: 6 (Converged)" onmouseenter="document.getElementById('inspect-30').innerHTML='<b>Centroid #2:</b> Converged at iter 6 | Euclidean Residual: 0.00018'"/>
+  <text x="190" y="42" fill="#fff" font-size="7" text-anchor="middle" pointer-events="none">C2</text>
+
+  <!-- Outlier / Noise (Red) -->
+  <circle cx="280" cy="22" r="4" fill="#ff453a" class="interactive-elem" data-tip="<b>DBSCAN Noise Point</b><br>Sample #49102<br>Score: 0.941 Outlier" onmouseenter="document.getElementById('inspect-30').innerHTML='<b>DBSCAN Noise:</b> Point #49102 isolated (eps &gt; 0.05)'"/>
+  <circle cx="295" cy="55" r="4" fill="#ff453a" class="interactive-elem" data-tip="<b>DBSCAN Noise Point</b><br>Sample #49103<br>Score: 0.912 Outlier" onmouseenter="document.getElementById('inspect-30').innerHTML='<b>DBSCAN Noise:</b> Point #49103 isolated (eps &gt; 0.05)'"/>
+  <text x="280" y="34" fill="#ff453a" font-size="7" text-anchor="middle">Noise</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-30">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2899,6 +3145,10 @@ print(<span class="str">"GMM BIC Score:"</span>, gmm.bic(customerProfiles), <spa
   <text x="90" y="38" fill="#007aff" font-size="8" text-anchor="middle">Comp #1</text>
   <text x="210" y="38" fill="#34c759" font-size="8" text-anchor="middle">Comp #2</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-31">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2967,6 +3217,10 @@ print(<span class="str">"Detected"</span>, anomalyFlags.filter { $0 == -<span cl
   <rect x="245" y="35" width="45" height="30" fill="#007aff"/>
   <text x="175" y="10" fill="#007aff" font-size="8" text-anchor="middle">Inlier Path Depths</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-32">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3028,11 +3282,31 @@ print(String(format: <span class="str">"ROC-AUC: %.4f | F1: %.4f | MCC: %.4f"</s
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Receiver Operating Characteristic Curve</span><span class="swiftui-pill"
                 style="color:var(--sf-blue);">ROC Curve</span></div>
-            <svg viewBox="0 0 320 70" style="width:100%; height:70px;">
-  <line x1="40" y1="60" x2="280" y2="10" stroke="#8e8e93" stroke-dasharray="2,2"/>
-  <path d="M 40 60 L 45 20 L 70 15 L 140 12 L 280 10" fill="none" stroke="#34c759" stroke-width="2"/>
-  <text x="160" y="30" fill="#34c759" font-size="9" text-anchor="middle">AUC = 0.9682</text>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;">
+  <!-- Grid -->
+  <line x1="35" y1="65" x2="295" y2="65" stroke="rgba(255,255,255,0.15)"/>
+  <line x1="35" y1="10" x2="35" y2="65" stroke="rgba(255,255,255,0.15)"/>
+  <text x="25" y="14" fill="#8e8e93" font-size="7" text-anchor="end">1.0</text>
+  <text x="25" y="65" fill="#8e8e93" font-size="7" text-anchor="end">0.0</text>
+  <text x="35" y="74" fill="#8e8e93" font-size="7" text-anchor="middle">0.0</text>
+  <text x="295" y="74" fill="#8e8e93" font-size="7" text-anchor="middle">1.0</text>
+  <!-- Chance Diagonal -->
+  <line x1="35" y1="65" x2="295" y2="10" stroke="#8e8e93" stroke-dasharray="3,3"/>
+  <!-- ROC Trajectory Area Fill -->
+  <path d="M 35 65 L 45 22 L 80 16 L 150 12 L 295 10 L 295 65 Z" fill="rgba(52,199,89,0.12)"/>
+  <path d="M 35 65 L 45 22 L 80 16 L 150 12 L 295 10" fill="none" stroke="#34c759" stroke-width="2.5"/>
+  <!-- Interactive Operating Points -->
+  <circle cx="45" cy="22" r="5" fill="#34c759" stroke="#fff" stroke-width="1.2" class="interactive-elem" data-tip="<b>High Sensitivity Operating Point</b><br>TPR (Recall): <b>94.8%</b><br>FPR: <b>3.8%</b><br>Threshold: 0.38" onmouseenter="document.getElementById('inspect-33').innerHTML='<b>Optimal Cutoff:</b> TPR = 94.8% | FPR = 3.8% | Threshold = 0.38'"/>
+  <circle cx="80" cy="16" r="5" fill="#007aff" stroke="#fff" stroke-width="1.2" class="interactive-elem" data-tip="<b>Balanced Point (F1 Max)</b><br>TPR (Recall): <b>97.2%</b><br>FPR: <b>7.5%</b><br>Threshold: 0.50" onmouseenter="document.getElementById('inspect-33').innerHTML='<b>Default Cutoff (0.50):</b> TPR = 97.2% | FPR = 7.5% | F1 = 0.9359'"/>
+  <circle cx="150" cy="12" r="5" fill="#af52de" stroke="#fff" stroke-width="1.2" class="interactive-elem" data-tip="<b>High Specificity Point</b><br>TPR (Recall): <b>98.9%</b><br>FPR: <b>18.2%</b><br>Threshold: 0.72" onmouseenter="document.getElementById('inspect-33').innerHTML='<b>Conservative Cutoff:</b> TPR = 98.9% | Specificity = 97.1%'"/>
+  <!-- Badge -->
+  <rect x="155" y="24" width="90" height="18" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/>
+  <text x="200" y="36" fill="#34c759" font-size="8" font-weight="700" text-anchor="middle">AUC = 0.9682</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-33">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3100,6 +3374,10 @@ print(String(format: <span class="str">"ROC-AUC: %.4f | F1: %.4f | MCC: %.4f"</s
   <rect x="15" y="25" width="50" height="10" fill="#007aff"/><rect x="70" y="25" width="50" height="10" fill="#007aff"/><rect x="125" y="25" width="50" height="10" fill="#007aff"/><rect x="180" y="25" width="50" height="10" fill="#34c759"/><rect x="235" y="25" width="50" height="10" fill="#007aff"/>
   <rect x="15" y="40" width="50" height="10" fill="#007aff"/><rect x="70" y="40" width="50" height="10" fill="#007aff"/><rect x="125" y="40" width="50" height="10" fill="#34c759"/><rect x="180" y="40" width="50" height="10" fill="#007aff"/><rect x="235" y="40" width="50" height="10" fill="#007aff"/>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-34">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3166,6 +3444,10 @@ print(String(format: <span class="str">"ROC-AUC: %.4f | F1: %.4f | MCC: %.4f"</s
   <rect x="15" y="40" width="150" height="10" fill="#007aff"/><rect x="170" y="40" width="30" height="10" fill="#34c759"/>
   <text x="235" y="30" fill="#8e8e93" font-size="8">Timeline &gt;&gt;&gt;</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-35">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3239,6 +3521,10 @@ print(<span class="str">"Best CV Score:"</span>, gridSearch.bestScore!)</pre>
   <path d="M 195 35 L 225 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="230" y="15" width="75" height="40" rx="5" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="267" y="38" fill="#ff9500" font-size="8" text-anchor="middle">Best Model</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-36">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3305,6 +3591,10 @@ print(<span class="str">"30-day forecast mean:"</span>, forecast.mean)</pre>
   <path d="M 200 35 L 300 10 L 300 35 Z" fill="rgba(52,199,89,0.15)"/>
   <text x="250" y="45" fill="#34c759" font-size="8">95% CI Cone</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-37">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3370,6 +3660,10 @@ print(<span class="str">"30-day forecast mean:"</span>, forecast.mean)</pre>
   <text x="90" y="60" fill="#007aff" font-size="8">Observed History</text>
   <text x="240" y="60" fill="#ff9500" font-size="8">24h SARIMA</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-38">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3436,6 +3730,10 @@ print(String(format: <span class="str">"ω=%.6f | α=%.4f | β=%.4f | Persistenc
   <line x1="10" y1="52" x2="310" y2="52" stroke="#8e8e93" stroke-dasharray="2,2"/>
   <text x="230" y="10" fill="#ff453a" font-size="8" text-anchor="middle">Vol Spike</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-39">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3502,6 +3800,10 @@ print(<span class="str">"Estimated Position:"</span>, kf.state[<span class="num"
   <path d="M 54 40 Q 110 32 156 30" stroke="#8e8e93" stroke-dasharray="2,2"/>
   <path d="M 164 30 Q 210 27 266 25" stroke="#34c759" stroke-width="2"/>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-40">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3566,6 +3868,10 @@ print(<span class="str">"Estimated Position:"</span>, kf.state[<span class="num"
   <path d="M 235 35 L 265 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="270" y="20" width="40" height="30" rx="4" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="290" y="38" fill="#af52de" font-size="8" text-anchor="middle">ML</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-41">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3632,6 +3938,10 @@ print(String(format: <span class="str">"α=%.3f | β=%.3f | γ=%.3f | φ=%.3f"</
   <path d="M 215 22 L 255 26 L 295 18" fill="none" stroke="#34c759" stroke-width="2" stroke-dasharray="3,3"/>
   <text x="255" y="45" fill="#34c759" font-size="8">Damped Forecast</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-42">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3699,6 +4009,10 @@ print(<span class="str">"Residual noise std:"</span>, <span class="type">Stats</
   <path d="M 15 40 Q 35 32 55 40 T 95 40 T 135 40 T 175 40 T 215 40 T 255 40 T 295 40" stroke="#34c759" stroke-width="1.5"/><text x="25" y="36" fill="#34c759" font-size="7">Seasonal</text>
   <path d="M 15 62 L 35 58 L 55 65 L 75 60 L 95 63 L 135 59 L 175 64 L 215 58 L 255 63 L 295 60" stroke="#ff9500" stroke-width="1"/><text x="25" y="58" fill="#ff9500" font-size="7">Noise</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-43">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3759,10 +4073,26 @@ print(String(format: <span class="str">"Peak Frequency: %.1f Hz | Lag 1 ACF: %.4
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>FFT Frequency Spectrum & Peak Harmonics</span><span class="swiftui-pill"
                 style="color:var(--sf-blue);">vDSP FFT</span></div>
-            <svg viewBox="0 0 320 70" style="width:100%; height:70px;">
-  <path d="M 20 60 L 60 58 L 90 55 L 120 15 L 150 55 L 200 58 L 240 35 L 280 58 L 300 60" fill="none" stroke="#007aff" stroke-width="2"/>
-  <circle cx="120" cy="15" r="4" fill="#ff453a"/><text x="120" y="8" fill="#ff453a" font-size="7" text-anchor="middle">1420 Hz</text>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;">
+  <!-- Grid -->
+  <line x1="20" y1="65" x2="300" y2="65" stroke="rgba(255,255,255,0.15)"/>
+  <text x="20" y="75" fill="#8e8e93" font-size="7">0 Hz</text>
+  <text x="120" y="75" fill="#8e8e93" font-size="7" text-anchor="middle">1.4 kHz</text>
+  <text x="240" y="75" fill="#8e8e93" font-size="7" text-anchor="middle">2.8 kHz</text>
+  <text x="300" y="75" fill="#8e8e93" font-size="7" text-anchor="end">4.0 kHz</text>
+  <!-- Spectrum Area -->
+  <path d="M 20 65 L 40 62 L 70 60 L 95 56 L 120 16 L 145 56 L 180 61 L 210 58 L 240 32 L 270 59 L 300 65 Z" fill="rgba(0,122,255,0.12)"/>
+  <path d="M 20 65 L 40 62 L 70 60 L 95 56 L 120 16 L 145 56 L 180 61 L 210 58 L 240 32 L 270 59 L 300 65" fill="none" stroke="#007aff" stroke-width="2"/>
+  <!-- Interactive Peaks -->
+  <circle cx="120" cy="16" r="5.5" fill="#ff453a" stroke="#fff" stroke-width="1.2" class="interactive-elem" data-tip="<b>Dominant Fundamental Harmonic</b><br>Frequency: <b>1,420.5 Hz</b><br>Power: <b>+28.4 dB</b><br>Bearing Fault Signature" onmouseenter="document.getElementById('inspect-44').innerHTML='<b>Dominant Peak:</b> 1,420.5 Hz | +28.4 dB | Bearing Fault Signature'"/>
+  <text x="120" y="9" fill="#ff453a" font-size="7" font-weight="700" text-anchor="middle">1420 Hz</text>
+  <circle cx="240" cy="32" r="4.5" fill="#ff9500" stroke="#fff" stroke-width="1" class="interactive-elem" data-tip="<b>2nd Order Harmonic</b><br>Frequency: <b>2,841.0 Hz</b><br>Power: <b>+14.2 dB</b><br>Phase: -12.4°" onmouseenter="document.getElementById('inspect-44').innerHTML='<b>2nd Harmonic:</b> 2,841.0 Hz | +14.2 dB | Secondary Resonance'"/>
+  <text x="240" y="24" fill="#ff9500" font-size="7" text-anchor="middle">2841 Hz</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-44">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3828,6 +4158,10 @@ print(<span class="str">"Tokens:"</span>, tokens.count, <span class="str">"| Sen
   <rect x="175" y="20" width="70" height="30" rx="4" fill="rgba(0,122,255,0.2)" stroke="#007aff"/><text x="210" y="38" fill="#007aff" font-size="8" text-anchor="middle">"agrees"</text>
   <rect x="250" y="20" width="50" height="30" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="275" y="38" fill="#34c759" font-size="8" text-anchor="middle">"..."</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-45">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3896,6 +4230,10 @@ Morphological Lemmatization:
   <path d="M 215 35 L 245 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="250" y="20" width="55" height="30" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="277" y="38" fill="#34c759" font-size="8" text-anchor="middle">"connect"</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-46">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3966,6 +4304,10 @@ Morphological Lemmatization:
   <text x="130" y="60" fill="#34c759" font-size="7" text-anchor="middle">ORG</text>
   <text x="205" y="60" fill="#ff9500" font-size="7" text-anchor="middle">LOC</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-47">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4031,6 +4373,10 @@ print(String(format: <span class="str">"Compound: %.4f | Pos: %.3f | Neg: %.3f |
   <text x="160" y="14" fill="#fff" font-size="7" text-anchor="middle">0.0 Neutral</text>
   <text x="215" y="38" fill="#fff" font-size="8" text-anchor="middle">+0.892 Bullish</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-48">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4103,6 +4449,10 @@ print(String(format: <span class="str">"Compound: %.4f | Pos: %.3f | Neg: %.3f |
   <path d="M 220 35 L 250 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="255" y="15" width="55" height="40" rx="4" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="282" y="38" fill="#af52de" font-size="8" text-anchor="middle">CSR Slices</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-49">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4171,6 +4521,10 @@ print(<span class="str">"Classifier Accuracy:"</span>, <span class="type">Metric
   <rect x="200" y="20" width="45" height="30" rx="3" fill="#ff9500"/><text x="222" y="38" fill="#fff" font-size="8" text-anchor="middle">Billing</text>
   <rect x="255" y="20" width="50" height="30" rx="3" fill="#af52de"/><text x="280" y="38" fill="#fff" font-size="8" text-anchor="middle">Security</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-50">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4235,12 +4589,32 @@ print(String(format: <span class="str">"Base: %.3f | f(x): %.3f | Top Driver: %@
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>SHAP Force Plot Waterfall Decomposition</span><span class="swiftui-pill"
                 style="color:var(--sf-blue);">SHAP Waterfall</span></div>
-            <svg viewBox="0 0 320 70" style="width:100%; height:70px;">
-  <rect x="20" y="25" width="80" height="20" rx="3" fill="#34c759"/><text x="60" y="38" fill="#fff" font-size="7" text-anchor="middle">Base 0.124</text>
-  <rect x="105" y="25" width="70" height="20" rx="3" fill="#ff453a"/><text x="140" y="38" fill="#fff" font-size="7" text-anchor="middle">+DTI 0.218</text>
-  <rect x="180" y="25" width="60" height="20" rx="3" fill="#ff453a"/><text x="210" y="38" fill="#fff" font-size="7" text-anchor="middle">+Delinq 0.185</text>
-  <rect x="245" y="25" width="55" height="20" rx="3" fill="#007aff"/><text x="272" y="38" fill="#fff" font-size="7" text-anchor="middle">f(x)=0.482</text>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;">
+  <!-- Waterfall Axis Baseline -->
+  <line x1="15" y1="56" x2="305" y2="56" stroke="rgba(255,255,255,0.15)"/>
+  <!-- Bars -->
+  <rect x="15" y="24" width="70" height="24" rx="4" fill="#34c759" class="interactive-elem" data-tip="<b>Base Expected Value E[f(x)]</b><br>Baseline Default Risk: <b>12.4%</b><br>Cohort Average" onmouseenter="document.getElementById('inspect-51').innerHTML='<b>Base Rate:</b> E[f(x)] = 0.124 (Population Average Default Risk)'"/>
+  <text x="50" y="39" fill="#fff" font-size="7.5" font-weight="700" text-anchor="middle" pointer-events="none">Base 0.124</text>
+  
+  <rect x="90" y="24" width="70" height="24" rx="4" fill="#ff453a" class="interactive-elem" data-tip="<b>Debt-To-Income (DTI: 0.48)</b><br>Risk Attribution: <b>+0.218</b><br>Primary Risk Driver" onmouseenter="document.getElementById('inspect-51').innerHTML='<b>Debt-To-Income:</b> +0.218 SHAP | Increases Default Probability to 34.2%'"/>
+  <text x="125" y="39" fill="#fff" font-size="7.5" font-weight="700" text-anchor="middle" pointer-events="none">+DTI 0.218</text>
+  
+  <rect x="165" y="24" width="65" height="24" rx="4" fill="#ff453a" class="interactive-elem" data-tip="<b>Recent Delinquencies (3)</b><br>Risk Attribution: <b>+0.185</b><br>Secondary Risk Driver" onmouseenter="document.getElementById('inspect-51').innerHTML='<b>Delinquencies:</b> +0.185 SHAP | 3 Past Due Incidents Recorded'"/>
+  <text x="197" y="39" fill="#fff" font-size="7.5" font-weight="700" text-anchor="middle" pointer-events="none">+Delinq 0.185</text>
+  
+  <rect x="235" y="24" width="70" height="24" rx="4" fill="#007aff" class="interactive-elem" data-tip="<b>Final Model Output f(x)</b><br>Predicted Risk: <b>48.2%</b><br>Decision: <b>REJECT / MANUAL AUDIT</b>" onmouseenter="document.getElementById('inspect-51').innerHTML='<b>Model Output:</b> f(x) = 0.482 | Rejected (Exceeds 25% Threshold)'"/>
+  <text x="270" y="39" fill="#fff" font-size="7.5" font-weight="700" text-anchor="middle" pointer-events="none">f(x)=0.482</text>
+  
+  <!-- Axis Labels -->
+  <text x="50" y="68" fill="#8e8e93" font-size="6.5" text-anchor="middle">Prior E[X]</text>
+  <text x="125" y="68" fill="#8e8e93" font-size="6.5" text-anchor="middle">+Risk</text>
+  <text x="197" y="68" fill="#8e8e93" font-size="6.5" text-anchor="middle">+Risk</text>
+  <text x="270" y="68" fill="#8e8e93" font-size="6.5" text-anchor="middle">f(x) Total</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-51">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4308,6 +4682,10 @@ print(<span class="str">"Top feature by score drop:"</span>, importances.sortedB
   <line x1="180" y1="10" x2="180" y2="60" stroke="#ff453a" stroke-dasharray="2,2"/>
   <text x="180" y="66" fill="#ff453a" font-size="7" text-anchor="middle">Threshold = 140 mg/dL</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-52">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4374,6 +4752,10 @@ print(<span class="str">"Tokens Used:"</span>, budgetManager.currentTokens, <spa
   <rect x="230" y="25" width="40" height="20" rx="3" fill="#ff9500"/><text x="250" y="38" fill="#fff" font-size="7" text-anchor="middle">1024 Gen</text>
   <rect x="275" y="25" width="25" height="20" rx="3" fill="rgba(255,255,255,0.1)"/>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-53">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4438,6 +4820,10 @@ print(<span class="str">"Decoded:"</span>, decodedText)</pre>
   <line x1="164" y1="35" x2="226" y2="35" stroke="#8e8e93" stroke-width="2"/>
   <circle cx="240" cy="35" r="14" fill="#ff9500"/><text x="240" y="38" fill="#fff" font-size="7" text-anchor="middle">"##ence"</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-54">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4501,6 +4887,10 @@ print(<span class="str">"Byte offset in file:"</span>, weightTensor.byteOffset)<
   <path d="M 115 35 L 145 35" stroke="#34c759" stroke-width="2"/>
   <rect x="150" y="15" width="150" height="40" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="225" y="38" fill="#34c759" font-size="8" text-anchor="middle">UMA Zero-Copy VRAM</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-55">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4573,6 +4963,10 @@ print(<span class="str">"Byte offset in file:"</span>, weightTensor.byteOffset)<
   <text x="110" y="10" fill="#34c759" font-size="7" text-anchor="middle">Top-P=0.90</text>
   <text x="240" y="35" fill="#8e8e93" font-size="8">Sampled: #91204</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-56">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4637,11 +5031,54 @@ print(<span class="str">"Byte offset in file:"</span>, weightTensor.byteOffset)<
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Interactive Heatmap Matrix Layout</span><span class="swiftui-pill"
                 style="color:var(--sf-blue);">Plotly Heatmap</span></div>
-            <svg viewBox="0 0 320 70" style="width:100%; height:70px;">
-  <rect x="90" y="10" width="30" height="15" fill="#34c759"/><rect x="125" y="10" width="30" height="15" fill="#007aff"/><rect x="160" y="10" width="30" height="15" fill="#af52de"/><rect x="195" y="10" width="30" height="15" fill="#ff9500"/>
-  <rect x="90" y="28" width="30" height="15" fill="#007aff"/><rect x="125" y="28" width="30" height="15" fill="#34c759"/><rect x="160" y="28" width="30" height="15" fill="#55bef0"/><rect x="195" y="28" width="30" height="15" fill="#ff453a"/>
-  <rect x="90" y="46" width="30" height="15" fill="#af52de"/><rect x="125" y="46" width="30" height="15" fill="#55bef0"/><rect x="160" y="46" width="30" height="15" fill="#34c759"/><rect x="195" y="46" width="30" height="15" fill="#007aff"/>
+            <svg viewBox="0 0 320 85" style="width:100%; height:85px;">
+  <!-- Row Labels -->
+  <text x="22" y="24" fill="#8e8e93" font-size="7" text-anchor="end" font-family="monospace">AAPL</text>
+  <text x="22" y="37" fill="#8e8e93" font-size="7" text-anchor="end" font-family="monospace">NVDA</text>
+  <text x="22" y="50" fill="#8e8e93" font-size="7" text-anchor="end" font-family="monospace">MSFT</text>
+  <text x="22" y="63" fill="#8e8e93" font-size="7" text-anchor="end" font-family="monospace">GOOG</text>
+  <text x="22" y="76" fill="#8e8e93" font-size="7" text-anchor="end" font-family="monospace">AMZN</text>
+  <!-- Col Labels -->
+  <text x="42" y="11" fill="#8e8e93" font-size="7" text-anchor="middle" font-family="monospace">AAPL</text>
+  <text x="100" y="11" fill="#8e8e93" font-size="7" text-anchor="middle" font-family="monospace">NVDA</text>
+  <text x="158" y="11" fill="#8e8e93" font-size="7" text-anchor="middle" font-family="monospace">MSFT</text>
+  <text x="216" y="11" fill="#8e8e93" font-size="7" text-anchor="middle" font-family="monospace">GOOG</text>
+  <text x="274" y="11" fill="#8e8e93" font-size="7" text-anchor="middle" font-family="monospace">AMZN</text>
+  <!-- Row 0 AAPL -->
+  <rect x="27" y="15" width="30" height="11" rx="2" fill="#fde725" class="interactive-elem" data-tip="<b>AAPL × AAPL</b><br>Correlation: <b>1.000</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AAPL × AAPL:</b> r = +1.000 (Self-Correlation)'"/>
+  <rect x="85" y="15" width="30" height="11" rx="2" fill="#5ec962" class="interactive-elem" data-tip="<b>AAPL × NVDA</b><br>Correlation: <b>+0.842</b><br>p-val: &lt; 0.0001" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AAPL × NVDA:</b> r = <span style=\'color:#5ec962;font-weight:700;\'>+0.842</span> | p &lt; 0.0001 (High Correlation)'"/>
+  <rect x="143" y="15" width="30" height="11" rx="2" fill="#2b748e" class="interactive-elem" data-tip="<b>AAPL × MSFT</b><br>Correlation: <b>+0.724</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AAPL × MSFT:</b> r = +0.724 | p &lt; 0.001'"/>
+  <rect x="201" y="15" width="30" height="11" rx="2" fill="#3b528b" class="interactive-elem" data-tip="<b>AAPL × GOOG</b><br>Correlation: <b>+0.651</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AAPL × GOOG:</b> r = +0.651 | p &lt; 0.001'"/>
+  <rect x="259" y="15" width="30" height="11" rx="2" fill="#440154" class="interactive-elem" data-tip="<b>AAPL × AMZN</b><br>Correlation: <b>+0.582</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AAPL × AMZN:</b> r = +0.582 | p &lt; 0.005'"/>
+  <!-- Row 1 NVDA -->
+  <rect x="27" y="28" width="30" height="11" rx="2" fill="#5ec962" class="interactive-elem" data-tip="<b>NVDA × AAPL</b><br>Correlation: <b>+0.842</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>NVDA × AAPL:</b> r = +0.842'"/>
+  <rect x="85" y="28" width="30" height="11" rx="2" fill="#fde725" class="interactive-elem" data-tip="<b>NVDA × NVDA</b><br>Correlation: <b>1.000</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>NVDA × NVDA:</b> r = +1.000'"/>
+  <rect x="143" y="28" width="30" height="11" rx="2" fill="#21918c" class="interactive-elem" data-tip="<b>NVDA × MSFT</b><br>Correlation: <b>+0.791</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>NVDA × MSFT:</b> r = +0.791'"/>
+  <rect x="201" y="28" width="30" height="11" rx="2" fill="#3b528b" class="interactive-elem" data-tip="<b>NVDA × GOOG</b><br>Correlation: <b>+0.684</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>NVDA × GOOG:</b> r = +0.684'"/>
+  <rect x="259" y="28" width="30" height="11" rx="2" fill="#440154" class="interactive-elem" data-tip="<b>NVDA × AMZN</b><br>Correlation: <b>+0.612</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>NVDA × AMZN:</b> r = +0.612'"/>
+  <!-- Row 2 MSFT -->
+  <rect x="27" y="41" width="30" height="11" rx="2" fill="#2b748e" class="interactive-elem" data-tip="<b>MSFT × AAPL</b><br>Correlation: <b>+0.724</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>MSFT × AAPL:</b> r = +0.724'"/>
+  <rect x="85" y="41" width="30" height="11" rx="2" fill="#21918c" class="interactive-elem" data-tip="<b>MSFT × NVDA</b><br>Correlation: <b>+0.791</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>MSFT × NVDA:</b> r = +0.791'"/>
+  <rect x="143" y="41" width="30" height="11" rx="2" fill="#fde725" class="interactive-elem" data-tip="<b>MSFT × MSFT</b><br>Correlation: <b>1.000</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>MSFT × MSFT:</b> r = +1.000'"/>
+  <rect x="201" y="41" width="30" height="11" rx="2" fill="#5ec962" class="interactive-elem" data-tip="<b>MSFT × GOOG</b><br>Correlation: <b>+0.824</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>MSFT × GOOG:</b> r = +0.824'"/>
+  <rect x="259" y="41" width="30" height="11" rx="2" fill="#2b748e" class="interactive-elem" data-tip="<b>MSFT × AMZN</b><br>Correlation: <b>+0.748</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>MSFT × AMZN:</b> r = +0.748'"/>
+  <!-- Row 3 GOOG -->
+  <rect x="27" y="54" width="30" height="11" rx="2" fill="#3b528b" class="interactive-elem" data-tip="<b>GOOG × AAPL</b><br>Correlation: <b>+0.651</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>GOOG × AAPL:</b> r = +0.651'"/>
+  <rect x="85" y="54" width="30" height="11" rx="2" fill="#3b528b" class="interactive-elem" data-tip="<b>GOOG × NVDA</b><br>Correlation: <b>+0.684</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>GOOG × NVDA:</b> r = +0.684'"/>
+  <rect x="143" y="54" width="30" height="11" rx="2" fill="#5ec962" class="interactive-elem" data-tip="<b>GOOG × MSFT</b><br>Correlation: <b>+0.824</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>GOOG × MSFT:</b> r = +0.824'"/>
+  <rect x="201" y="54" width="30" height="11" rx="2" fill="#fde725" class="interactive-elem" data-tip="<b>GOOG × GOOG</b><br>Correlation: <b>1.000</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>GOOG × GOOG:</b> r = +1.000'"/>
+  <rect x="259" y="54" width="30" height="11" rx="2" fill="#2b748e" class="interactive-elem" data-tip="<b>GOOG × AMZN</b><br>Correlation: <b>+0.702</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>GOOG × AMZN:</b> r = +0.702'"/>
+  <!-- Row 4 AMZN -->
+  <rect x="27" y="67" width="30" height="11" rx="2" fill="#440154" class="interactive-elem" data-tip="<b>AMZN × AAPL</b><br>Correlation: <b>+0.582</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AMZN × AAPL:</b> r = +0.582'"/>
+  <rect x="85" y="67" width="30" height="11" rx="2" fill="#440154" class="interactive-elem" data-tip="<b>AMZN × NVDA</b><br>Correlation: <b>+0.612</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AMZN × NVDA:</b> r = +0.612'"/>
+  <rect x="143" y="67" width="30" height="11" rx="2" fill="#2b748e" class="interactive-elem" data-tip="<b>AMZN × MSFT</b><br>Correlation: <b>+0.748</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AMZN × MSFT:</b> r = +0.748'"/>
+  <rect x="201" y="67" width="30" height="11" rx="2" fill="#2b748e" class="interactive-elem" data-tip="<b>AMZN × GOOG</b><br>Correlation: <b>+0.702</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AMZN × GOOG:</b> r = +0.702'"/>
+  <rect x="259" y="67" width="30" height="11" rx="2" fill="#fde725" class="interactive-elem" data-tip="<b>AMZN × AMZN</b><br>Correlation: <b>1.000</b>" onmouseenter="document.getElementById('inspect-57').innerHTML='<b>AMZN × AMZN:</b> r = +1.000'"/>
 </svg>
+<div class="heatmap-inspector">
+  <span style="color:var(--sf-blue); font-weight:700; font-size:0.65rem;">LIVE HOVER:</span>
+  <span id="inspect-57" style="color:#d1d1d6; font-family:var(--font-mono); font-size:0.65rem;">Hover over any cell to inspect correlation metrics</span>
+</div>
           </div>
         </div>
       </div>
@@ -4704,11 +5141,31 @@ print(<span class="str">"Byte offset in file:"</span>, weightTensor.byteOffset)<
           <div class="swiftui-chart-box">
             <div class="swiftui-header"><span>Multi-Trace Interactive Plotly Curve</span><span class="swiftui-pill"
                 style="color:var(--sf-blue);">Plotly Scatter</span></div>
-            <svg viewBox="0 0 320 70" style="width:100%; height:70px;">
-  <path d="M 30 55 L 90 40 L 150 25 L 210 18 L 270 12" fill="none" stroke="#007aff" stroke-width="2"/>
-  <circle cx="30" cy="55" r="4" fill="#007aff"/><circle cx="90" cy="40" r="4" fill="#007aff"/><circle cx="150" cy="25" r="4" fill="#007aff"/><circle cx="210" cy="18" r="4" fill="#007aff"/><circle cx="270" cy="12" r="4" fill="#34c759"/>
-  <text x="270" y="28" fill="#34c759" font-size="7" text-anchor="middle">0.97</text>
+            <svg viewBox="0 0 320 80" style="width:100%; height:80px;">
+  <!-- Grid -->
+  <line x1="30" y1="62" x2="300" y2="62" stroke="rgba(255,255,255,0.12)"/>
+  <line x1="30" y1="12" x2="30" y2="62" stroke="rgba(255,255,255,0.12)"/>
+  <!-- Accuracy Line (Blue) -->
+  <path d="M 45 52 L 105 38 L 165 25 L 225 18 L 285 12" fill="none" stroke="#007aff" stroke-width="2.5"/>
+  <!-- Loss Line (Orange dashed) -->
+  <path d="M 45 20 L 105 35 L 165 46 L 225 54 L 285 59" fill="none" stroke="#ff9500" stroke-width="1.8" stroke-dasharray="3,3"/>
+  <!-- Interactive Points with data-tip and onmouseenter -->
+  <circle cx="45" cy="52" r="5" fill="#007aff" class="interactive-elem" data-tip="<b>Epoch 1</b><br>Val Accuracy: 82.0%<br>Loss: 0.542" onmouseenter="document.getElementById('inspect-58').innerHTML='<b>Epoch 1:</b> Val Accuracy: 82.0% | Loss: 0.542'"/>
+  <circle cx="105" cy="38" r="5" fill="#007aff" class="interactive-elem" data-tip="<b>Epoch 2</b><br>Val Accuracy: 88.5%<br>Loss: 0.318" onmouseenter="document.getElementById('inspect-58').innerHTML='<b>Epoch 2:</b> Val Accuracy: 88.5% | Loss: 0.318'"/>
+  <circle cx="165" cy="25" r="5" fill="#007aff" class="interactive-elem" data-tip="<b>Epoch 3</b><br>Val Accuracy: 93.1%<br>Loss: 0.185" onmouseenter="document.getElementById('inspect-58').innerHTML='<b>Epoch 3:</b> Val Accuracy: 93.1% | Loss: 0.185'"/>
+  <circle cx="225" cy="18" r="5" fill="#007aff" class="interactive-elem" data-tip="<b>Epoch 4</b><br>Val Accuracy: 95.4%<br>Loss: 0.124" onmouseenter="document.getElementById('inspect-58').innerHTML='<b>Epoch 4:</b> Val Accuracy: 95.4% | Loss: 0.124'"/>
+  <circle cx="285" cy="12" r="6" fill="#34c759" stroke="#fff" stroke-width="1.5" class="interactive-elem" data-tip="<b>Epoch 5 (Best)</b><br>Val Accuracy: 97.4%<br>Loss: 0.082" onmouseenter="document.getElementById('inspect-58').innerHTML='<b>Epoch 5:</b> Val Accuracy: <span style=\'color:#34c759;font-weight:700;\'>97.4%</span> | Loss: 0.082 | Convergence Achieved'"/>
+  <!-- X Labels -->
+  <text x="45" y="72" fill="#8e8e93" font-size="7" text-anchor="middle">E1</text>
+  <text x="105" y="72" fill="#8e8e93" font-size="7" text-anchor="middle">E2</text>
+  <text x="165" y="72" fill="#8e8e93" font-size="7" text-anchor="middle">E3</text>
+  <text x="225" y="72" fill="#8e8e93" font-size="7" text-anchor="middle">E4</text>
+  <text x="285" y="72" fill="#8e8e93" font-size="7" text-anchor="middle">E5</text>
 </svg>
+<div class="heatmap-inspector">
+  <span style="color:var(--sf-green); font-weight:700; font-size:0.65rem;">LIVE HOVER:</span>
+  <span id="inspect-58" style="color:#d1d1d6; font-family:var(--font-mono); font-size:0.65rem;">Hover over any epoch marker to inspect metrics</span>
+</div>
           </div>
         </div>
       </div>
@@ -4774,6 +5231,10 @@ print(String(format: <span class="str">"Dice Overlap Score: %.4f"</span>, diceSc
   <line x1="60" y1="20" x2="250" y2="20" stroke="#34c759" stroke-width="1.5" stroke-dasharray="3,3"/>
   <rect x="250" y="15" width="50" height="40" rx="3" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="275" y="38" fill="#34c759" font-size="7" text-anchor="middle">Mask</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-59">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4839,6 +5300,10 @@ print(<span class="str">"Tracked"</span>, finalBoxes.count, <span class="str">"v
   <rect x="55" y="18" width="78" height="42" fill="none" stroke="#34c759" stroke-width="2"/><text x="94" y="42" fill="#34c759" font-size="8" text-anchor="middle">Car 94%</text>
   <rect x="180" y="20" width="40" height="40" fill="none" stroke="#007aff" stroke-width="2"/><text x="200" y="42" fill="#007aff" font-size="7" text-anchor="middle">Ped 89%</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-60">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4913,6 +5378,10 @@ print(<span class="str">"Tracked"</span>, finalBoxes.count, <span class="str">"v
   <path d="M 225 35 L 255 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="260" y="18" width="45" height="34" rx="4" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="282" y="38" fill="#af52de" font-size="8" text-anchor="middle">ACID</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-61">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -4978,6 +5447,10 @@ print(<span class="str">"Imported grouped columns:"</span>, filteredDF.columnNam
   <path d="M 220 35 L 250 35" stroke="#34c759" stroke-width="2"/>
   <rect x="255" y="18" width="55" height="34" rx="4" fill="rgba(255,149,0,0.2)" stroke="#ff9500"/><text x="282" y="38" fill="#ff9500" font-size="8" text-anchor="middle">SQLite</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-62">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -5044,6 +5517,10 @@ print(<span class="str">"Result DataFrame:"</span>, agentResponse.resultDataFram
   <path d="M 205 35 L 235 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="240" y="18" width="65" height="34" rx="4" fill="rgba(175,82,222,0.2)" stroke="#af52de"/><text x="272" y="38" fill="#af52de" font-size="8" text-anchor="middle">DF Result</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-63">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -5113,6 +5590,10 @@ print(<span class="str">"Citations Verified:"</span>, ragContext.citations)</pre
   <path d="M 205 35 L 235 35" stroke="#8e8e93" stroke-width="2"/>
   <rect x="240" y="18" width="65" height="34" rx="4" fill="rgba(52,199,89,0.2)" stroke="#34c759"/><text x="272" y="38" fill="#34c759" font-size="8" text-anchor="middle">Grounded LLM</text>
 </svg>
+            <div class="heatmap-inspector">
+              <span class="live-tag">LIVE TELEMETRY:</span>
+              <span class="inspect-text" id="inspect-64">Hover or tap markers to inspect live vector metrics</span>
+            </div>
           </div>
         </div>
       </div>
@@ -5303,6 +5784,10 @@ print(<span class="str">"Citations Verified:"</span>, ragContext.citations)</pre
       if (index > totalSlides) index = totalSlides;
       currentSlide = index;
 
+      if (typeof chartTooltip !== 'undefined' && chartTooltip) {
+        chartTooltip.classList.remove('visible');
+      }
+
       document.querySelectorAll('.slide').forEach(slide => {
         slide.classList.remove('active');
         if (parseInt(slide.getAttribute('data-slide')) === currentSlide) {
@@ -5451,6 +5936,139 @@ print(<span class="str">"Citations Verified:"</span>, ragContext.citations)</pre
         header.appendChild(copyBtn);
       }
     });
+
+    // Chart Tooltip Singleton
+    let chartTooltip = document.getElementById('chartTooltip');
+    if (!chartTooltip) {
+      chartTooltip = document.createElement('div');
+      chartTooltip.id = 'chartTooltip';
+      chartTooltip.className = 'chart-tooltip';
+      document.body.appendChild(chartTooltip);
+    }
+
+    function initChartInteractivity() {
+      document.querySelectorAll('.swiftui-chart-box').forEach((box) => {
+        const svg = box.querySelector('svg');
+        if (!svg) return;
+
+        const inspectorText = box.querySelector('.heatmap-inspector .inspect-text');
+        const chartTitle = box.querySelector('.swiftui-header span')?.textContent || 'Metric';
+
+        // Select all interactive candidate SVG shapes
+        const targets = svg.querySelectorAll('rect, circle, path:not([stroke-dasharray]):not([fill="none"]), polygon, .interactive-elem');
+        
+        targets.forEach((el) => {
+          el.classList.add('interactive-elem');
+
+          // If no custom data-tip is defined, generate smart contextual tooltip
+          if (!el.hasAttribute('data-tip')) {
+            const tag = el.tagName.toLowerCase();
+            let tipDetail = '';
+
+            let label = '';
+            if (el.nextElementSibling && el.nextElementSibling.tagName.toLowerCase() === 'text') {
+              label = el.nextElementSibling.textContent.trim();
+            } else if (el.previousElementSibling && el.previousElementSibling.tagName.toLowerCase() === 'text') {
+              label = el.previousElementSibling.textContent.trim();
+            }
+
+            if (tag === 'rect') {
+              const w = Math.round(parseFloat(el.getAttribute('width') || 0));
+              const h = Math.round(parseFloat(el.getAttribute('height') || 0));
+              const x = Math.round(parseFloat(el.getAttribute('x') || 0));
+              const y = Math.round(parseFloat(el.getAttribute('y') || 0));
+              if (label) {
+                tipDetail = `Feature: <b>${label}</b> | Cell (${x}, ${y})`;
+              } else {
+                tipDetail = `Memory Block [${w}×${h}] | VRAM Offset: 0x${(x * 8).toString(16).toUpperCase()}`;
+              }
+            } else if (tag === 'circle') {
+              const cx = el.getAttribute('cx') || 0;
+              const cy = el.getAttribute('cy') || 0;
+              const r = el.getAttribute('r') || 0;
+              if (label) {
+                tipDetail = `Node: <b>${label}</b> | Vector Anchor (${cx}, ${cy})`;
+              } else {
+                tipDetail = `Data Point [r=${r}] | Metric Coordinates: (${cx}, ${cy})`;
+              }
+            } else {
+              tipDetail = `Trajectory / Signal Harmonic Profile`;
+            }
+
+            el.setAttribute('data-tip', `<div class="tip-header">⚡ ${chartTitle}</div><div class="tip-detail">${tipDetail}</div>`);
+          }
+
+          // Attach hover handlers
+          el.addEventListener('mouseenter', (e) => {
+            const tipContent = el.getAttribute('data-tip');
+            if (tipContent) {
+              chartTooltip.innerHTML = tipContent;
+              chartTooltip.classList.add('visible');
+              updateTooltipPosition(e);
+            }
+
+            if (inspectorText) {
+              const temp = document.createElement('div');
+              temp.innerHTML = tipContent;
+              const plain = temp.innerText.replace(/\n+/g, ' — ').trim();
+              inspectorText.innerHTML = `<span style="color:var(--sf-cyan); font-weight:700;">INSPECT:</span> ${plain}`;
+            }
+          });
+
+          el.addEventListener('mousemove', (e) => {
+            updateTooltipPosition(e);
+          });
+
+          el.addEventListener('mouseleave', () => {
+            chartTooltip.classList.remove('visible');
+            if (inspectorText) {
+              inspectorText.innerHTML = 'Hover or tap chart elements to inspect metrics';
+            }
+          });
+
+          // Touch support for mobile / iPad
+          el.addEventListener('touchstart', (e) => {
+            const tipContent = el.getAttribute('data-tip');
+            if (tipContent && e.touches.length > 0) {
+              chartTooltip.innerHTML = tipContent;
+              chartTooltip.classList.add('visible');
+              updateTooltipPosition(e.touches[0]);
+              if (inspectorText) {
+                const temp = document.createElement('div');
+                temp.innerHTML = tipContent;
+                const plain = temp.innerText.replace(/\n+/g, ' — ').trim();
+                inspectorText.innerHTML = `<span style="color:var(--sf-cyan); font-weight:700;">INSPECT:</span> ${plain}`;
+              }
+            }
+          }, { passive: true });
+        });
+      });
+    }
+
+    function updateTooltipPosition(e) {
+      let x = e.clientX;
+      let y = e.clientY;
+      const rect = chartTooltip.getBoundingClientRect();
+      const pad = 12;
+
+      if (x - rect.width / 2 < pad) {
+        x = rect.width / 2 + pad;
+      } else if (x + rect.width / 2 > window.innerWidth - pad) {
+        x = window.innerWidth - rect.width / 2 - pad;
+      }
+
+      if (y - rect.height - pad < 10) {
+        chartTooltip.style.transform = 'translate(-50%, 25%) scale(1)';
+      } else {
+        chartTooltip.style.transform = 'translate(-50%, -125%) scale(1)';
+      }
+
+      chartTooltip.style.left = `${x}px`;
+      chartTooltip.style.top = `${y}px`;
+    }
+
+    // Initialize interactive charts and tooltips
+    initChartInteractivity();
 
     // Initial call to populate UI controls
     showSlide(1);

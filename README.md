@@ -108,10 +108,10 @@ Values represent **Mean ± 95% Confidence Interval** with RAM RSS tracking.
 | **VectorStore Cosine Search** (5k × 128d, top 10) | **`0.167 ± 0.004 ms`** | 0.210 ± 0.008 ms (*NumPy*) | ⚡ **1.26×** | 🟢 **Swift** |
 | **RandomForest Fit** (1k×4, 50 trees) | **`3.744 ± 0.064 ms`** | 25.300 ± 0.450 ms (*Scikit-Learn*) | ⚡ **6.76×** | 🟢 **Swift** |
 | **GBDT Regressor Fit** (1k×4, 50 estimators) | **`8.023 ± 0.077 ms`** | 32.366 ± 0.520 ms (*Scikit-Learn*) | ⚡ **4.03×** | 🟢 **Swift** |
-| **LinearSVC Fit** (1k×4, Metal GPU) | **`0.429 ± 0.003 ms`** | n/a | n/a | 🟢 **Swift GPU** |
-| **TreeSHAP Explanation** (100 samples) | **`0.312 ± 0.017 ms`** | n/a | n/a | 🟢 **Swift** |
+| **LinearSVC Fit** (1k×4, Metal GPU) | **`0.429 ± 0.003 ms`** | 0.399 ± 0.024 ms (*Scikit-Learn*) | 0.93× | 🔴 **Python** |
+| **TreeSHAP Explanation** (100 samples) | **`0.312 ± 0.017 ms`** | 0.071 ± 0.002 ms (*SHAP*) | 0.23× | 🔴 **Python** |
 | **KernelSHAP Explain** (5 feats, 100 coalitions) | **`0.187 ± 0.010 ms`** | 0.449 ± 0.028 ms (*SHAP*) | ⚡ **2.40×** | 🟢 **Swift** |
-| **LIME Explain** (5 feats, 300 samples) | **`0.062 ± 0.000 ms`** | n/a | n/a | 🟢 **Swift** |
+| **LIME Explain** (5 feats, 300 samples) | **`0.062 ± 0.000 ms`** | 0.258 ± 0.005 ms (*Scikit-Learn*) | ⚡ **4.16×** | 🟢 **Swift** |
 
 ### 📈 3. Forecasting & Time Series
 

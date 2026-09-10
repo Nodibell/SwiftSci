@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SwiftSci Python Benchmark Suite — v3.5.0
+SwiftSci Python Benchmark Suite — v3.5.2
 Mirrors the Swift benchmarks in Benchmarks/Swift/ for direct comparison.
 
 Usage:
@@ -36,7 +36,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, roc_auc_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, roc_auc_score, accuracy_score, f1_score
 from sklearn.naive_bayes import MultinomialNB
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.arima.model import ARIMA
@@ -354,12 +354,75 @@ def bench_extensions():
     def shap_fn():
         _ = explainer.shap_values(instance, nsamples=100, l1_reg=False)
 
+    # 6. LIME Explain (5 feats, 300 samples)
+    lime_inst = np.random.uniform(-2.0, 2.0, size=5)
+    def lime_fn():
+        noise = np.random.normal(0, 1.0, size=(300, 5))
+        perturbed = lime_inst + noise
+        perturbed[0] = lime_inst
+        dist_sq = np.sum(noise ** 2, axis=1)
+        weights = np.exp(-dist_sq / (2.0 * 0.75 * 0.75))
+        targets = np.sum(perturbed, axis=1)
+        surrogate = Ridge(alpha=0.01)
+        surrogate.fit(perturbed - lime_inst, targets, sample_weight=weights)
+
+    # 7. TreeSHAP Explanation (100 samples)
+    X_tree = np.random.uniform(0.0, 10.0, size=(100, 5))
+    y_tree = np.sum(X_tree, axis=1)
+    tree_m = DecisionTreeRegressor(max_depth=4, random_state=42).fit(X_tree, y_tree)
+    tree_exp = shap.TreeExplainer(tree_m)
+    X_test_100 = np.random.uniform(0.0, 10.0, size=(100, 5))
+    def treeshap_fn():
+        _ = tree_exp.shap_values(X_test_100)
+
+    # 8. SQLite Direct DataFrame Ingestion
+    def sqlite_fn():
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE test (id INT, val REAL);")
+        conn.execute("INSERT INTO test VALUES (1, 10.5), (2, 20.0);")
+        _ = pd.read_sql_query("SELECT * FROM test", conn)
+        conn.close()
+
+    # 9. CNN Feature Extraction & Vision Metrics
+    img_data = np.full((3, 32, 32), 0.8, dtype=np.float32)
+    def vision_fn():
+        feats = np.mean(img_data, axis=(1, 2))
+        p = (feats > 0.5).astype(float)
+        t = (feats > 0.5).astype(float)
+        _ = 2.0 * np.sum(p * t) / (np.sum(p) + np.sum(t))
+
+    # 10. RAG Context Summary Generation
+    df_empty = pd.DataFrame()
+    def rag_fn():
+        cols = ", ".join(df_empty.columns)
+        _ = f"## BenchDF Profile\n- Rows: {len(df_empty)}, Columns: {len(df_empty.columns)}\n- Columns: {cols}\n"
+
+    # 11. OneVsRestClassifier (5 classes, 100 samples)
+    X_ovr = np.random.uniform(0.0, 1.0, size=(100, 5))
+    y_ovr = np.arange(100) % 5
+    def ovr_fn():
+        clf = OneVsRestClassifier(LogisticRegression(max_iter=100, random_state=42))
+        clf.fit(X_ovr, y_ovr)
+
+    # 12. TF-IDF Vectorizer (50 documents)
+    docs_tfidf = ["уряд ухвалив новий законопроект про бюджет на наступний рік"] * 50
+    def tfidf_fn():
+        vec = TfidfVectorizer()
+        _ = vec.fit_transform(docs_tfidf)
+
     results = []
     results.append(run_benchmark("Forecast Errors Suite (RMSE, MAE, MAPE, R² 100k)", "Scikit-Learn", errors_fn, warmup=2, iterations=10))
     results.append(run_benchmark("Classification ROC-AUC (50k predictions)", "Scikit-Learn", rocAuc_fn, warmup=2, iterations=5))
     results.append(run_benchmark("OneHotEncoder fitTransform (50k rows)", "Scikit-Learn", ohe_fn, warmup=2, iterations=5))
     results.append(run_benchmark("NaiveBayesClassifier fit (1k×100, 3 classes)", "Scikit-Learn", nb_fn, warmup=2, iterations=10))
     results.append(run_benchmark("KernelSHAP Explain (5 feats, 100 coalitions)", "SHAP", shap_fn, warmup=2, iterations=5))
+    results.append(run_benchmark("LIME Explain (5 feats, 300 samples)", "Scikit-Learn", lime_fn, warmup=2, iterations=5))
+    results.append(run_benchmark("TreeSHAP Explanation (100 samples)", "SHAP", treeshap_fn, warmup=2, iterations=10))
+    results.append(run_benchmark("SQLite Direct DataFrame Ingestion", "Pandas", sqlite_fn, warmup=2, iterations=10))
+    results.append(run_benchmark("CNN Feature Extraction & Vision Metrics", "NumPy", vision_fn, warmup=2, iterations=10))
+    results.append(run_benchmark("RAG Context Summary Generation", "Pandas", rag_fn, warmup=2, iterations=10))
+    results.append(run_benchmark("OneVsRestClassifier (5 classes, 100 samples)", "Scikit-Learn", ovr_fn, warmup=2, iterations=10))
+    results.append(run_benchmark("TF-IDF Vectorizer (50 documents)", "Scikit-Learn", tfidf_fn, warmup=2, iterations=10))
     print()
     return results
 
@@ -435,7 +498,7 @@ def bench_accuracy():
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="SwiftSci Python Benchmark Suite v3.5.0")
+    parser = argparse.ArgumentParser(description="SwiftSci Python Benchmark Suite v3.5.2")
     parser.add_argument("--json", metavar="PATH", help="Export results to JSON file")
     parser.add_argument("--suite", help="Filter by suite name (stats, dataframe, ml, forecast, extensions, accuracy)")
     parser.add_argument("--filter", help="Filter by benchmark name substring")
@@ -449,7 +512,7 @@ def main():
     BenchmarkConfig.default_warmup = args.warmup
 
     print("╔══════════════════════════════════════════════════════════╗")
-    print("║        SwiftSci Python Benchmark Suite — v3.5.0          ║")
+    print("║        SwiftSci Python Benchmark Suite — v3.5.2          ║")
     print("╚══════════════════════════════════════════════════════════╝")
     print(f"Platform   : {platform.machine()} ({platform.system()})")
     print(f"Python     : {sys.version.split()[0]}")

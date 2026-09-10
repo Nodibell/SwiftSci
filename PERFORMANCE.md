@@ -44,15 +44,15 @@ The values below represent **Mean ± 95% Confidence Interval** and **Median** fr
 | **Spearman Rank Correlation** (100k pairs) | **`11.602 ± 0.115 ms`** | `12.450 ± 0.180 ms` (*SciPy*) | ⚡ **1.07×** | 🟢 **Swift** | **22 MB** vs 115 MB | Fast ranking |
 | **VectorStore Cosine Search** (5k × 128d, top 10) | **`0.167 ± 0.004 ms`** | `0.210 ± 0.008 ms` (*NumPy*) | ⚡ **1.26×** | 🟢 **Swift** | **44 MB** vs 95 MB | In-memory Top-K |
 | **KernelSHAP Explain** (5 feats, 100 coalitions) | **`0.187 ± 0.010 ms`** | `0.449 ± 0.028 ms` (*SHAP*) | ⚡ **2.40×** | 🟢 **Swift** | **10 MB** vs 469 MB | Black-box XAI |
-| **LIME Explain** (5 feats, 300 samples) | **`0.062 ± 0.000 ms`** | n/a | n/a | 🟢 **Swift** | **10 MB** | Local surrogate |
-| **TreeSHAP Explanation** (100 samples) | **`0.312 ± 0.017 ms`** | n/a | n/a | 🟢 **Swift** | **11 MB** | $O(T \cdot L \cdot D^2)$ Lundberg |
+| **LIME Explain** (5 feats, 300 samples) | **`0.062 ± 0.000 ms`** | `0.258 ± 0.005 ms` (*Scikit-Learn*) | ⚡ **4.16×** | 🟢 **Swift** | **10 MB** vs 691 MB | Local Ridge surrogate (200× vs LIME pkg) |
+| **TreeSHAP Explanation** (100 samples) | **`0.312 ± 0.017 ms`** | `0.071 ± 0.002 ms` (*SHAP*) | 0.23× | 🔴 **Python** | **11 MB** vs 691 MB | Lundberg TreeExplainer C++ (62× less RAM) |
 | **RandomForest fit** (1k×4, 50 trees) | **`3.744 ± 0.064 ms`** | `25.300 ± 0.450 ms` (*Scikit-Learn*) | ⚡ **6.76×** | 🟢 **Swift** | **32 MB** vs 180 MB | Flat DOD Trees |
 | **GBDT Regressor fit** (1k×4, 50 est.) | **`8.023 ± 0.077 ms`** | `32.366 ± 0.520 ms` (*Scikit-Learn*) | ⚡ **4.03×** | 🟢 **Swift** | **32 MB** vs 190 MB | Flat DOD Ensembles |
-| **LinearSVC fit** (1k×4, 100 epochs, Metal GPU) | **`0.429 ± 0.003 ms`** | n/a | n/a | 🟢 **Swift GPU** | **37 MB** | Metal GPU kernel |
+| **LinearSVC fit** (1k×4, 100 epochs, Metal GPU) | **`0.429 ± 0.003 ms`** | `0.399 ± 0.024 ms` (*Scikit-Learn*) | 0.93× | 🔴 **Python** | **37 MB** vs 668 MB | LibLinear vs Metal GPU (18× less RAM) |
 | **LinearRegression fit** (10k×10, 100 epochs) | **`25.632 ± 0.235 ms`** | `24.921 ± 0.320 ms` (*Scikit-Learn*) | 0.97× | 🔴 **Python** | **28 MB** vs 90 MB | Near parity |
 | **KMeans fit** (10k×4, 3 clusters) | **`18.872 ± 0.121 ms`** | `11.993 ± 0.150 ms` (*Scikit-Learn*) | 0.64× | 🔴 **Python** | **34 MB** vs 120 MB | Informational gap |
 | **PCA SVD fit** (1k×100 → 10 comps) | **`0.953 ± 0.013 ms`** | `0.732 ± 0.010 ms` (*Scikit-Learn*) | 0.77× | 🔴 **Python** | **36 MB** vs 95 MB | LAPACK SVD |
-| **IsolationForest fit** (1k×10, 100 trees) | **`13.543 ± 0.143 ms`** | n/a | n/a | 🟢 **Swift** | **37 MB** | Outlier detection |
+| **IsolationForest fit** (1k×10, 100 trees) | **`13.543 ± 0.143 ms`** | `38.093 ± 0.257 ms` (*Scikit-Learn*) | ⚡ **2.81×** | 🟢 **Swift** | **37 MB** vs 668 MB | Outlier detection, 18× less RAM |
 | **ARIMA(1,1,1) fit** (50k pts) | **`2.463 ± 0.035 ms`** | `212.621 ± 3.410 ms` (*Statsmodels*) | ⚡ **86.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Exact MLE |
 | **ARIMA(1,1,1) forecast** (horizon=24) | **`2.566 ± 0.040 ms`** | `213.709 ± 3.500 ms` (*Statsmodels*) | ⚡ **83.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Fast recursion |
 | **Holt-Winters fit** (50k pts, period=12) | **`6.451 ± 0.082 ms`** | `144.752 ± 2.150 ms` (*Statsmodels*) | ⚡ **22.4×** | 🟢 **Swift** | **22 MB** vs 220 MB | Nelder-Mead |
@@ -68,11 +68,11 @@ The values below represent **Mean ± 95% Confidence Interval** and **Median** fr
 | **StdDev Reduction** (vDSP 1M elements) | **`0.275 ± 0.003 ms`** | `0.533 ± 0.006 ms` (*NumPy*) | ⚡ **1.94×** | 🟢 **Swift** | **18 MB** vs 95 MB | vDSP reduction |
 | **Variance Reduction** (vDSP 1M elements) | **`0.282 ± 0.003 ms`** | `0.517 ± 0.006 ms` (*NumPy*) | ⚡ **1.84×** | 🟢 **Swift** | **18 MB** vs 95 MB | vDSP reduction |
 | **Pearson Correlation** (500k pairs) | **`0.812 ± 0.010 ms`** | `1.193 ± 0.015 ms` (*NumPy*) | ⚡ **1.47×** | 🟢 **Swift** | **22 MB** vs 110 MB | Vectorized Pearson |
-| **SQLite Direct DataFrame Ingestion** | **`0.667 ± 0.052 ms`** | n/a | n/a | 🟢 **Swift** | **11 MB** | Direct C-API |
-| **CNN Feature Extraction & Vision Metrics** | **`0.003 ± 0.000 ms`** | n/a | n/a | 🟢 **Swift** | **9 MB** | Sub-millisecond |
-| **RAG Context Summary Generation** | **`0.000 ± 0.000 ms`** | n/a | n/a | 🟢 **Swift** | **11 MB** | ReAct memory |
-| **OneVsRestClassifier** (5 classes, 100 samples) | **`3.354 ± 0.054 ms`** | n/a | n/a | 🟢 **Swift** | **22 MB** | Multi-class solver |
-| **TF-IDF Vectorizer** (50 documents) | **`0.667 ± 0.008 ms`** | n/a | n/a | 🟢 **Swift** | **22 MB** | Sparse TF-IDF |
+| **SQLite Direct DataFrame Ingestion** | **`0.667 ± 0.052 ms`** | `0.105 ± 0.006 ms` (*Pandas*) | 0.16× | 🔴 **Python** | **11 MB** vs 691 MB | Direct SQLite C-API (63× less RAM) |
+| **CNN Feature Extraction & Vision Metrics** | **`0.003 ± 0.000 ms`** | `0.008 ± 0.000 ms` (*NumPy*) | ⚡ **2.67×** | 🟢 **Swift** | **9 MB** vs 691 MB | Global pooling & Dice (77× less RAM) |
+| **RAG Context Summary Generation** | **`0.000 ± 0.000 ms`** | `0.001 ± 0.000 ms` (*Pandas*) | ~1.0× | 🟢 **Parity** | **11 MB** vs 691 MB | ReAct schema profile |
+| **OneVsRestClassifier** (5 classes, 100 samples) | **`3.354 ± 0.054 ms`** | `3.413 ± 0.055 ms` (*Scikit-Learn*) | ⚡ **1.02×** | 🟢 **Swift** | **22 MB** vs 691 MB | 5-class Logistic OvR (31× less RAM) |
+| **TF-IDF Vectorizer** (50 documents) | **`0.667 ± 0.008 ms`** | `0.359 ± 0.009 ms` (*Scikit-Learn*) | 0.54× | 🔴 **Python** | **22 MB** vs 691 MB | Sparse text vectorization |
 
 ---
 

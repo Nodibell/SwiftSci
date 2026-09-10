@@ -9,7 +9,7 @@ In real-time computer vision models such as YOLO, post-processing can generate t
 `SwiftVision` introduces ``BoundingBoxSIMD``:
 1. **Zero-Heap Value Representation**: Encapsulates bounding coordinates in hardware `SIMD4<Float>` registers and replaces strings with integer `classId: Int32`.
 2. **Accelerated Vector IoU**: Computes intersection, union, and clamping entirely within SIMD registers without memory allocations.
-3. **High-Throughput NMS**: Provides ``NonMaximumSuppression/filter(boxes:iouThreshold:scoreThreshold:)-870t9`` operating directly on SIMD bounding boxes.
+3. **High-Throughput NMS**: Provides ``NonMaximumSuppression/filter(boxes:iouThreshold:scoreThreshold:)->[BoundingBoxSIMD]`` operating directly on SIMD bounding boxes.
 
 ## Usage Example
 

@@ -264,8 +264,8 @@ public actor ReActAgent {
 
     /// Resolves tool by exact or fuzzy name matching (case/punctuation-insensitive).
     /// - Parameters:
-    ///   - named: <#description#>
-    /// - Returns: <#description#>
+    ///   - name: The exact or fuzzy name of the tool to locate.
+    /// - Returns: The matching `AgentTool` instance, or `nil` if not found.
     public func findTool(named name: String) -> (any AgentTool)? {
         if let direct = tools[name] { return direct }
         let clean = name.lowercased()

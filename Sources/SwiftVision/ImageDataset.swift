@@ -38,8 +38,8 @@ public struct BoundingBox: Sendable, Codable, Equatable {
 
     /// Computes Intersection over Union (IoU) with another bounding box.
     /// - Parameters:
-    ///   - with: <#description#>
-    /// - Returns: <#description#>
+    ///   - other: The candidate bounding box to compare against.
+    /// - Returns: The intersection-over-union metric in range [0.0, 1.0].
     public func iou(with other: BoundingBox) -> Double {
         let interXMin = max(self.xMin, other.xMin)
         let interYMin = max(self.yMin, other.yMin)

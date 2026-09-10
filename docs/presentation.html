@@ -711,10 +711,10 @@
   <div class="blackout-overlay" id="blackoutScreen"><span>Screen Paused (Press B or Space to resume)</span></div>
   <div class="ambient-glow" id="glow"></div>
 
-  <!-- Top Module Quick-Jump Pill Slider Bar -->
-  <div class="module-chips-bar">
-    <div class="chip active" onclick="showSlide(1)">Title</div>
-    <div class="chip" onclick="showSlide(2)">📑 Agenda</div>
+  <!-- TOP MODULE QUICK JUMP CHIPS -->
+  <div class="top-bar">
+    <div class="chip" onclick="showSlide(1)"> SwiftSci</div>
+    <div class="chip" onclick="showSlide(2)">Agenda (2)</div>
     <div class="chip" onclick="showSlide(3)">DataFrame (3-8)</div>
     <div class="chip" onclick="showSlide(9)">Stats (9-13)</div>
     <div class="chip" onclick="showSlide(14)">Preprocessing (14-19)</div>
@@ -730,7 +730,8 @@
     <div class="chip" onclick="showSlide(61)">Database (61-62)</div>
     <div class="chip" onclick="showSlide(63)">Agent (63-64)</div>
     <div class="chip" onclick="showSlide(65)" style="color:var(--sf-green);">⚡ Benchmarks (65)</div>
-    <div class="chip" onclick="showSlide(66)" style="color:var(--sf-purple);">🚀 v3.5.0 (66)</div>
+    <div class="chip" onclick="showSlide(66)">v3.5.0 (66)</div>
+    <div class="chip" onclick="showSlide(67)" style="color:var(--sf-purple);">🚀 v3.6.0 (67)</div>
   </div>
 
   <!-- Sub-Module Intra-Slide Sub-Slider Bar -->
@@ -747,12 +748,12 @@
   <div class="deck">
 
     <div class="slide active" data-slide="1">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 66</div>
-      <h1 class="title-large">SwiftSci 3.5.0 Ecosystem</h1>
-      <p class="subtitle">66 dedicated slides covering all 14 native Swift 6 modules, 3.5.0 multi-round statistical benchmarks, OneHotEncoder 5× speedup & Apple Silicon UMA acceleration.</p>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI — SLIDE 1 OF 67</div>
+      <h1 class="title-large">SwiftSci 3.6.0 Ecosystem</h1>
+      <p class="subtitle">67 dedicated slides covering all 14 native Swift 6 modules, v3.6.0 HNSW vector search, 256-bin HistGBDT, concurrent AutoML, Metal MSL quantization, and Apple Silicon UMA acceleration.</p>
       <div class="grid-3">
         <div class="stat-box">
-          <div class="stat-val">66</div>
+          <div class="stat-val">67</div>
           <div class="stat-lbl">Ecosystem Slides</div>
         </div>
         <div class="stat-box">
@@ -3797,7 +3798,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     </div>
 
     <div class="slide" data-slide="65">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.5.0 — SLIDE 65 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.6.0 — SLIDE 65 OF 67</div>
       <h1 class="title-large">Multi-Round Scientific Benchmarks</h1>
       <p class="subtitle">Multi-round execution (3 rounds × 7 iters, 95% CI & RSS RAM profiling) vs Python (Scikit-Learn, Statsmodels, SciPy, NumPy, SHAP) on Apple Silicon.</p>
       
@@ -3872,7 +3873,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
     </div>
 
     <div class="slide" data-slide="66">
-      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.5.0 — SLIDE 66 OF 66</div>
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.5.0 — SLIDE 66 OF 67</div>
       <h1 class="title-large">SwiftSci 3.5.0 — Release Evolution</h1>
       <p class="subtitle">3.5.0 delivers scientific multi-round statistical benchmarks (95% CI & RSS RAM), 5.03× OneHotEncoder speedup over Scikit-Learn (13× RAM saving), sub-ms Forecast Error Metrics Suite, ROC-AUC, Welch's T-Test (3.93× vs SciPy), and VectorStore Cosine Index.</p>
       <div class="grid-2">
@@ -3905,14 +3906,44 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       </div>
     </div>
 
+    <div class="slide" data-slide="67">
+      <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.6.0 — SLIDE 67 OF 67</div>
+      <h1 class="title-large">SwiftSci 3.6.0 — Next-Gen Scaling & Hardening</h1>
+      <p class="subtitle">v3.6.0 delivers logarithmic HNSW vector search, 256-bin histogram GBDT, concurrent TaskGroup AutoML, EarlyStopping callbacks, Sparse BLAS CSR/CSC matrices, Metal MSL SIMD-group quantization kernels, multi-agent message bus, and enterprise memory/numerical safety.</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🚀 Core Performance & Scaling Features</span><span class="swiftui-pill" style="color:var(--sf-green);">3.6.0</span></div>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">🌐</span><span><b>HNSWIndex Graph ANN</b>: Sub-ms O(log N) approximate nearest neighbor search over 100k+ embeddings</span></div>
+            <div class="highlight-item"><span class="highlight-icon">⚡</span><span><b>256-Bin HistGBDT</b>: LightGBM-style O(K) split evaluations with UInt8 gradient histograms</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🔄</span><span><b>Concurrent AutoML & TaskGroups</b>: Full multi-core CPU scaling for cross-validation and OneVsRest</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛑</span><span><b>EarlyStopping Callbacks</b>: Automated iteration halting with best parameter restoration</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🧩</span><span><b>SparseMatrix CSR / CSC</b>: 10×–50× memory reduction offloaded to Apple Accelerate Sparse BLAS</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📈</span><span><b>Parallel AutoARIMA</b>: Multi-threaded (p,d,q) grid search across concurrent TaskGroups</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🛡️ Enterprise Safety & Multi-Agent Architecture</span><span class="swiftui-pill" style="color:var(--sf-blue);">3.6.0</span></div>
+          <div class="feature-highlights">
+            <div class="highlight-item"><span class="highlight-icon">🤖</span><span><b>MultiAgentOrchestrator</b>: AsyncStream message bus coordinating collaborative agent consensus</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🦙</span><span><b>Metal MSL Quantization Kernels</b>: GPU SIMD-group matrix multiply (simdgroup_matrix) for Q4/Q8 GEMM</span></div>
+            <div class="highlight-item"><span class="highlight-icon">💾</span><span><b>SQLite 1024-Row Buffer & SCRAM</b>: Chunked streaming + RFC 5802/7677 SCRAM-SHA-256 PostgreSQL auth</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🔒</span><span><b>P0 Memory & Concurrency Safety</b>: ArrowDataBuffer ARC retention, withMemoryTicket GPU lifecycle</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📐</span><span><b>Numerical Parity & XSS Security</b>: SVD Moore-Penrose pseudo-inverse, svdFlip PCA, Xoshiro256++ PRNG</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📚</span><span><b>100% DocC API Coverage</b>: 1,749 public symbols verified with structured DocC parameter tags</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- BOTTOM NAV BAR -->
   <div class="bottom-nav">
     <button class="nav-btn" id="prevBtn">← Prev</button>
     <div style="display:flex; align-items:center; gap:0.8rem; flex:1; justify-content:center;">
-      <span class="footer-pos" id="slideNum">1 / 66</span>
-      <input type="range" id="slideSlider" min="1" max="66" value="1" style="width: min(350px, 40vw);">
+      <span class="footer-pos" id="slideNum">1 / 67</span>
+      <input type="range" id="slideSlider" min="1" max="67" value="1" style="width: min(350px, 40vw);">
     </div>
     <button class="nav-icon-btn" id="blackoutBtn" title="Blackout / Pause Stage (B)">⏸</button>
     <button class="nav-icon-btn" id="fullscreenBtn" title="Toggle Fullscreen (F)">⛶</button>
@@ -3921,7 +3952,7 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
 
   <script>
     let currentSlide = 1;
-    const totalSlides = 66;
+    const totalSlides = 67;
 
     // Slide ranges for Top Module Chips
     const moduleRanges = [
@@ -3942,7 +3973,8 @@ print(<span class="str">"RAG Context Summary:\n"</span>, summaryProfile)</pre>
       { name: "Database", start: 61, end: 62 },
       { name: "Agent", start: 63, end: 64 },
       { name: "Benchmarks", start: 65, end: 65 },
-      { name: "v3.5.0", start: 66, end: 66 }
+      { name: "v3.5.0", start: 66, end: 66 },
+      { name: "v3.6.0", start: 67, end: 67 }
     ];
 
     function showSlide(index) {

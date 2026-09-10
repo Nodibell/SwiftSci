@@ -384,9 +384,38 @@
     .card-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       padding-bottom: 0.4rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      gap: 0.65rem;
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-red {
+      background: #ff5f56;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .dot-yellow {
+      background: #ffbd2e;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .dot-green {
+      background: #27c93f;
+      border: 1px solid rgba(0, 0, 0, 0.15);
     }
 
     .card-title {
@@ -398,29 +427,6 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-    }
-
-    .terminal-dots {
-      display: flex;
-      gap: 6px;
-    }
-
-    .dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-    }
-
-    .dot-red {
-      background: #ff5f56;
-    }
-
-    .dot-yellow {
-      background: #ffbd2e;
-    }
-
-    .dot-green {
-      background: #27c93f;
     }
 
     pre {
@@ -697,12 +703,15 @@
       font-size: 0.68rem;
       font-family: var(--font-display);
       font-weight: 600;
-      padding: 0.2rem 0.5rem;
+      padding: 0.2rem 0.55rem;
       border-radius: 6px;
       cursor: pointer;
       transition: all 0.2s ease;
       margin-left: auto;
-      margin-right: 0.6rem;
+      margin-right: 0;
+    }
+    .card-header > .swiftui-pill {
+      margin-left: auto;
     }
     .copy-btn:hover {
       background: rgba(255, 255, 255, 0.18);
@@ -946,9 +955,10 @@
       <p class="subtitle">Strongly typed column vectors with zero-copy SIMD underlying storage buffers.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDataFrame</span>
 
@@ -1012,9 +1022,10 @@ print(<span class="str">"Ticks:"</span>, orderBook.rowCount, <span class="str">"
       <p class="subtitle">High-performance row evaluation closures with branchless SIMD boolean masking.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDataFrame</span>
 
@@ -1075,9 +1086,10 @@ print(<span class="str">"Filtered liquid orders:"</span>, liquidTrades.rowCount)
       <p class="subtitle">Dynamic column projections, renaming, and vectorized derived feature calculations.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDataFrame</span>
 
@@ -1139,9 +1151,10 @@ Structural COW sharing: 5 / 7 columns retained zero-copy references</span></pre>
       <p class="subtitle">High-throughput Radix & Hash joins across multi-million row DataFrames.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDataFrame</span>
 
@@ -1202,9 +1215,10 @@ Result: 1,000,000 joined records • 0 dropped keys</span></pre>
       <p class="subtitle">Multi-key aggregation and parallel split-apply-combine statistical computations.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDataFrame</span>
 
@@ -1271,9 +1285,10 @@ Aggregated 1,000,000 rows into 3 groups in 4.21ms</span></pre>
       <p class="subtitle">Reshaping data matrices via pivot and high-performance missing value imputation.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDataFrame</span>
 
@@ -1338,9 +1353,10 @@ Memory: 12.3 MB • Zero reallocation during reshape</span></pre>
       <p class="subtitle">SIMD accelerated mean, variance, standard deviation, skewness, and kurtosis.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftStats</span>
 
@@ -1402,9 +1418,10 @@ print(String(format: <span class="str">"μ=%.4f | σ=%.4f | Skew=%.3f | Kurt=%.3
       <p class="subtitle">High-precision PDF, CDF, and quantile evaluations for Normal, Student's t, Chi-Squared, and F.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftStats</span>
 
@@ -1468,9 +1485,10 @@ Density at -3.0σ Crash Event:
       <p class="subtitle">Exact PMF and Cumulative Distribution for Binomial, Poisson, and Geometric processes.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftStats</span>
 
@@ -1539,9 +1557,10 @@ print(String(format: <span class="str">"Overflow: %.6f | Zero Loss: %.4f"</span>
       <p class="subtitle">Welch's t-test, Two-sample t-test, Mann-Whitney U, and One-Way ANOVA.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftStats</span>
 
@@ -1606,9 +1625,10 @@ print(String(format: <span class="str">"t-stat: %.4f | p-val: %.6e | Reject H0: 
       <p class="subtitle">Pearson linear correlation, Spearman rank correlation, and Kendall's Tau.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftStats</span>
 
@@ -1676,9 +1696,10 @@ Eigenvalues: [1.582, 0.941, 0.477] • Conditioning: Positive Definite</span></p
       <p class="subtitle">StandardScaler Z-score, MinMaxScaler, RobustScaler, and MaxAbsScaler.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
 
@@ -1741,9 +1762,10 @@ print(<span class="str">"Fitted Scale (std):"</span>, scaler.scale!)</pre>
       <p class="subtitle">LabelEncoder, OneHotEncoder & OrdinalEncoder for high-cardinality features.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
 
@@ -1806,9 +1828,10 @@ Ordinal Rank 'Gold' -&gt; Index 2.0 (Bronze=0, Silver=1, Gold=2, Platinum=3)</sp
       <p class="subtitle">SimpleImputer (mean, median, most_frequent) and KNNImputer spatial filling.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
 
@@ -1871,9 +1894,10 @@ Ordinal Rank 'Gold' -&gt; Index 2.0 (Bronze=0, Silver=1, Gold=2, Platinum=3)</sp
       <p class="subtitle">PolynomialFeatures degree interaction terms, Binarizer, and Spline transformers.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
 
@@ -1934,9 +1958,10 @@ Binarized Flags (threshold 2.5): [[0.0, 1.0], [0.0, 1.0], [1.0, 0.0]]</span></pr
       <p class="subtitle">Scikit-Learn style composable ETL transformer pipelines with zero data leakage.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
 
@@ -2006,9 +2031,10 @@ Zero Data Leakage: Validation set transformed with frozen training stats</span><
       <p class="subtitle">SelectKBest, RecursiveFeatureElimination (RFE), and VarianceThreshold.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftPreprocessing</span>
 
@@ -2071,9 +2097,10 @@ Zero Data Leakage: Validation set transformed with frozen training stats</span><
       <p class="subtitle">Apple MLX GPU accelerated Ordinary Least Squares, Ridge L2, and Lasso L1 models.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
 
@@ -2136,9 +2163,10 @@ print(<span class="str">"Model Coefficients:"</span>, ridge.coefficients!)</pre>
       <p class="subtitle">Binary tree recursive partitioning based on Gini impurity and MSE split criteria.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
 
@@ -2207,9 +2235,10 @@ print(<span class="str">"Tree Depth:"</span>, tree.depth, <span class="str">"| T
       <p class="subtitle">Parallel actor-based Random Forest regressor and classifier with out-of-bag scoring.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
 
@@ -2278,9 +2307,10 @@ print(<span class="str">"OOB Score:"</span>, forest.oobScore!)</pre>
       <p class="subtitle">256-bin histogram GBDT loss optimization and LinearSVC coordinate descent.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
 
@@ -2345,9 +2375,10 @@ LinearSVC Coordinate Descent:
       <p class="subtitle">Parallel actor-based MLP classifier and regressor with Adam optimizer and backpropagation.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
 
@@ -2413,9 +2444,10 @@ print(<span class="str">"Final Loss:"</span>, mlp.lossHistory.last!, <span class
       <p class="subtitle">PlattScaling, IsotonicRegression & CalibratedClassifierCV for reliable confidence scoring.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
 
@@ -2480,9 +2512,10 @@ print(<span class="str">"Brier Score Post:"</span>, <span class="type">Metrics</
       <p class="subtitle">High-throughput JSON and binary serialization with schema versioning and checksums.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
 
@@ -2545,9 +2578,10 @@ print(<span class="str">"Restored model with"</span>, loadedModel.estimators.cou
       <p class="subtitle">Zero-dependency export of trained SwiftML models to Apple Neural Engine (ANE) and ONNX.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftML</span>
 
@@ -2613,9 +2647,10 @@ print(<span class="str">"Exported to CoreML and ONNX with zero Python dependenci
       <p class="subtitle">SVD-based orthogonal variance reduction for high-dimensional feature spaces.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftCluster</span>
 
@@ -2678,9 +2713,10 @@ print(<span class="str">"Cumulative Variance:"</span>, pca.explainedVarianceRati
       <p class="subtitle">Manifold learning and singular value decomposition for high-dimensional 2D/3D visualization.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftCluster</span>
 
@@ -2741,9 +2777,10 @@ print(<span class="str">"Cumulative Variance:"</span>, pca.explainedVarianceRati
       <p class="subtitle">Centroid-based K-Means++ and density-based spatial clustering with noise identification.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftCluster</span>
 
@@ -2806,9 +2843,10 @@ print(<span class="str">"DBSCAN Clusters:"</span>, dbscan.uniqueLabels.count, <s
       <p class="subtitle">Agglomerative dendrogram clustering and Expectation-Maximization soft probability modeling.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftCluster</span>
 
@@ -2872,9 +2910,10 @@ print(<span class="str">"GMM BIC Score:"</span>, gmm.bic(customerProfiles), <spa
       <p class="subtitle">Unsupervised anomaly scoring via IsolationForest, LocalOutlierFactor, and EllipticEnvelope.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftCluster</span>
 
@@ -2939,9 +2978,10 @@ print(<span class="str">"Detected"</span>, anomalyFlags.filter { $0 == -<span cl
       <p class="subtitle">Accuracy, Precision, Recall, F1 Score, ROC-AUC, PR-AUC, and Matthews Correlation.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftOptimize</span>
 
@@ -3004,9 +3044,10 @@ print(String(format: <span class="str">"ROC-AUC: %.4f | F1: %.4f | MCC: %.4f"</s
       <p class="subtitle">Balanced fold splitting preserving exact class distributions with zero data copying.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftOptimize</span>
 
@@ -3070,9 +3111,10 @@ print(String(format: <span class="str">"ROC-AUC: %.4f | F1: %.4f | MCC: %.4f"</s
       <p class="subtitle">Rolling window temporal split preserving strict chronological causality without lookahead bias.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftOptimize</span>
 
@@ -3135,9 +3177,10 @@ print(String(format: <span class="str">"ROC-AUC: %.4f | F1: %.4f | MCC: %.4f"</s
       <p class="subtitle">Exhaustive grid search and randomized parameter optimization with concurrent TaskGroups.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftOptimize</span>
 
@@ -3207,9 +3250,10 @@ print(<span class="str">"Best CV Score:"</span>, gridSearch.bestScore!)</pre>
       <p class="subtitle">Actor-based autoregressive integrated moving average model with Kalman state-space estimation.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
@@ -3272,9 +3316,10 @@ print(<span class="str">"30-day forecast mean:"</span>, forecast.mean)</pre>
       <p class="subtitle">Multi-seasonal ARIMA (p,d,q)×(P,D,Q)_s with seasonal period tracking and differencing.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
@@ -3336,9 +3381,10 @@ print(<span class="str">"30-day forecast mean:"</span>, forecast.mean)</pre>
       <p class="subtitle">GARCH(1,1) conditional variance modeling for financial asset returns and risk management.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
@@ -3401,9 +3447,10 @@ print(String(format: <span class="str">"ω=%.6f | α=%.4f | β=%.4f | Persistenc
       <p class="subtitle">Dynamic state-space estimation, covariance update, and linear quadratic tracking.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
@@ -3466,9 +3513,10 @@ print(<span class="str">"Estimated Position:"</span>, kf.state[<span class="num"
       <p class="subtitle">LagTransformer, RollingWindow & ExpandingWindow feature extraction for ML models.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
@@ -3529,9 +3577,10 @@ print(<span class="str">"Estimated Position:"</span>, kf.state[<span class="num"
       <p class="subtitle">Triple exponential smoothing capturing level, trend, and seasonal additive/multiplicative dynamics.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
@@ -3594,9 +3643,10 @@ print(String(format: <span class="str">"α=%.3f | β=%.3f | γ=%.3f | φ=%.3f"</
       <p class="subtitle">Extracting Trend, Seasonal, and Residual Noise components via convolution filters.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
@@ -3660,9 +3710,10 @@ print(<span class="str">"Residual noise std:"</span>, <span class="type">Stats</
       <p class="subtitle">Accelerate vDSP Fast Fourier Transform spectral frequency and autocorrelation identification.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftForecast</span>
 
@@ -3723,9 +3774,10 @@ print(String(format: <span class="str">"Peak Frequency: %.1f Hz | Lag 1 ACF: %.4
       <p class="subtitle">Apple Natural Language Tokenizer, Regex Tokenizer, and BPE subword text segmentation.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
@@ -3787,9 +3839,10 @@ print(<span class="str">"Tokens:"</span>, tokens.count, <span class="str">"| Sen
       <p class="subtitle">Algorithmic suffix stripping via Porter Stemmer and morphological lemmatization.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
@@ -3854,9 +3907,10 @@ Morphological Lemmatization:
       <p class="subtitle">Part-of-speech tagging and Apple Named Entity Recognition for enterprise text intelligence.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
@@ -3923,9 +3977,10 @@ Morphological Lemmatization:
       <p class="subtitle">Rule-based sentiment polarity scoring returning Positive, Negative, Neutral, and Compound scores.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
@@ -3987,9 +4042,10 @@ print(String(format: <span class="str">"Compound: %.4f | Pos: %.3f | Neg: %.3f |
       <p class="subtitle">CountVectorizer, TfidfVectorizer & HashingVectorizer with sublinear scaling and sparse matrices.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
@@ -4058,9 +4114,10 @@ print(String(format: <span class="str">"Compound: %.4f | Pos: %.3f | Neg: %.3f |
       <p class="subtitle">Probabilistic text classification for document topic routing and high-speed spam filtering.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftNLP</span>
 
@@ -4125,9 +4182,10 @@ print(<span class="str">"Classifier Accuracy:"</span>, <span class="type">Metric
       <p class="subtitle">Shapley Additive exPlanations for model interpretability, feature importance, and auditability.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftExplain</span>
 
@@ -4194,9 +4252,10 @@ print(String(format: <span class="str">"Base: %.3f | f(x): %.3f | Top Driver: %@
       <p class="subtitle">Feature shuffle score drop evaluation & partial dependence (PDP) non-linear response curves.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftExplain</span>
 
@@ -4260,9 +4319,10 @@ print(<span class="str">"Top feature by score drop:"</span>, importances.sortedB
       <p class="subtitle">Prompt token counting, sliding buffer management, and priority-based token truncation.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftLLM</span>
 
@@ -4325,9 +4385,10 @@ print(<span class="str">"Tokens Used:"</span>, budgetManager.currentTokens, <spa
       <p class="subtitle">Byte-Pair Encoding tokenizer and PromptTemplate variable substitution engines.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftLLM</span>
 
@@ -4388,9 +4449,10 @@ print(<span class="str">"Decoded:"</span>, decodedText)</pre>
       <p class="subtitle">POSIX mmap binary header parsing and zero-copy tensor loading for 7B+ LLM weights.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftLLM</span>
 
@@ -4450,9 +4512,10 @@ print(<span class="str">"Byte offset in file:"</span>, weightTensor.byteOffset)<
       <p class="subtitle">Temperature scaling, Top-K, Top-P Nucleus sampling, repetition penalty, and streaming tokens.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftLLM</span>
 
@@ -4521,9 +4584,10 @@ print(<span class="str">"Byte offset in file:"</span>, weightTensor.byteOffset)<
       <p class="subtitle">Export standalone HTML 2D correlation matrix heatmaps with interactive hover tooltips.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftVisualization</span>
 
@@ -4589,9 +4653,10 @@ print(<span class="str">"Byte offset in file:"</span>, weightTensor.byteOffset)<
       <p class="subtitle">Scatter, Line, Bar, BoxPlot, Histogram & ROC Curve generation with WebGL acceleration.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftVisualization</span>
 
@@ -4655,9 +4720,10 @@ print(<span class="str">"Byte offset in file:"</span>, weightTensor.byteOffset)<
       <p class="subtitle">Multi-channel image tensor datasets, U-Net probability masks, and pixel loss functions.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftVision</span>
 
@@ -4719,9 +4785,10 @@ print(String(format: <span class="str">"Dice Overlap Score: %.4f"</span>, diceSc
       <p class="subtitle">Multi-scale object detection, Non-Maximum Suppression (NMS), and bounding box filtering.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftVision</span>
 
@@ -4783,9 +4850,10 @@ print(<span class="str">"Tracked"</span>, finalBoxes.count, <span class="str">"v
       <p class="subtitle">In-memory SQLite execution returning type-safe SQL rows and column results.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDatabase</span>
 
@@ -4856,9 +4924,10 @@ print(<span class="str">"Tracked"</span>, finalBoxes.count, <span class="str">"v
       <p class="subtitle">Bi-directional export and import between DataFrame and SQLite with zero-copy column mapping.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftDatabase</span>
 <span class="kw">import</span> <span class="type">SwiftDataFrame</span>
@@ -4920,9 +4989,10 @@ print(<span class="str">"Imported grouped columns:"</span>, filteredDF.columnNam
       <p class="subtitle">Natural language query evaluation agent executing multi-step DataFrame analytics safely.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftAgent</span>
 <span class="kw">import</span> <span class="type">SwiftDataFrame</span>
@@ -4985,9 +5055,10 @@ print(<span class="str">"Result DataFrame:"</span>, agentResponse.resultDataFram
       <p class="subtitle">Retrieval Augmented Generation context profile summarization with citation verification.</p>
       <div class="code-grid">
         <div class="card">
-          <div class="card-header"><span class="card-title">Swift 6 Code Engine</span>
+          <div class="card-header">
             <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span
                 class="dot dot-green"></span></div>
+            <span class="card-title">Swift 6 Code Engine</span>
           </div>
           <pre><span class="kw">import</span> <span class="type">SwiftAgent</span>
 <span class="kw">import</span> <span class="type">SwiftLLM</span>
@@ -5377,9 +5448,7 @@ print(<span class="str">"Citations Verified:"</span>, ragContext.citations)</pre
             }, 2000);
           } catch (err) {}
         });
-        const dots = header.querySelector('.terminal-dots');
-        if (dots) header.insertBefore(copyBtn, dots);
-        else header.appendChild(copyBtn);
+        header.appendChild(copyBtn);
       }
     });
 

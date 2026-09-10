@@ -5427,11 +5427,11 @@ print(<span class="str">"Citations Verified:"</span>, ragContext.citations)</pre
       }
     }, { passive: true });
 
-    // Inject Copy Code Buttons onto all pre/code blocks
+    // Inject Copy Code Buttons onto code cards only
     document.querySelectorAll('.card').forEach(card => {
       const pre = card.querySelector('pre');
       const header = card.querySelector('.card-header');
-      if (pre && header && !header.querySelector('.copy-btn')) {
+      if (pre && header && header.querySelector('.terminal-dots') && !header.querySelector('.copy-btn')) {
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copy-btn';
         copyBtn.textContent = 'Copy';

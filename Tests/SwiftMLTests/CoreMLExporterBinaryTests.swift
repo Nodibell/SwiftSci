@@ -429,5 +429,60 @@ final class CoreMLExporterBinaryTests: XCTestCase {
         #endif
     }
     #endif
+
+    func testExportBinaryGradientBoostedTreesRegressor() throws {
+        let leaf0 = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 5.0, isLeaf: true, impurityGain: 0.0)
+        let leaf1 = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 3.0, isLeaf: true, impurityGain: 0.0)
+
+        let data = CoreMLExporter.exportBinaryGradientBoostedTreesRegressor(
+            trees: [[leaf0], [leaf1]],
+            initialPrediction: 10.0,
+            learningRate: 0.5,
+            featureNames: ["feat"],
+            outputName: "prediction"
+        )
+        XCTAssertFalse(data.isEmpty)
+        XCTAssertEqual(data[0], 0x08)
+        XCTAssertEqual(data[1], 0x04)
+
+        #if canImport(CoreML) && os(macOS)
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("GBDTReg_\(UUID().uuidString).mlmodel")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+        try data.write(to: tempURL)
+
+        if #available(macOS 14.0, *) {
+            let compiledURL = try MLModel.compileModel(at: tempURL)
+            defer { try? FileManager.default.removeItem(at: compiledURL) }
+            let model = try MLModel(contentsOf: compiledURL)
+            XCTAssertNotNil(model.modelDescription.inputDescriptionsByName["feat"])
+            XCTAssertNotNil(model.modelDescription.outputDescriptionsByName["prediction"])
+
+            let inputProvider = try MLDictionaryFeatureProvider(dictionary: ["feat": 5.0])
+            let prediction = try model.prediction(from: inputProvider)
+            let predictedVal = prediction.featureValue(for: "prediction")?.doubleValue ?? 0.0
+            // initialPrediction (10.0) + lr * leaf0 (0.5 * 5.0 = 2.5) + lr * leaf1 (0.5 * 3.0 = 1.5) = 14.0
+            XCTAssertEqual(predictedVal, 14.0, accuracy: 1e-3)
+        }
+        #endif
+    }
+
+    func testGradientBoostedTreesRegressorCoreMLExportable() async throws {
+        let gbdt = try GradientBoostedTreesRegressor(nEstimators: 5, learningRate: 0.1, maxDepth: 2)
+        do {
+            _ = try await gbdt.exportCoreML(featureNames: ["x1", "x2"])
+            XCTFail("Should throw modelNotFitted before fit")
+        } catch let error as SwiftMLError {
+            XCTAssertEqual(error, .modelNotFitted)
+        }
+
+        let X = [[1.0, 2.0], [2.0, 3.0], [3.0, 4.0], [4.0, 5.0]]
+        let y: [Double] = [3.0, 5.0, 7.0, 9.0]
+        try await gbdt.fit(features: X, targets: y)
+
+        let data = try await gbdt.exportCoreML(featureNames: ["x1", "x2"], outputName: "y_hat")
+        XCTAssertFalse(data.isEmpty)
+        XCTAssertEqual(data[0], 0x08)
+        XCTAssertEqual(data[1], 0x04)
+    }
 }
 

@@ -384,6 +384,67 @@ public enum CoreMLExporter {
         }
     }
 
+    // MARK: - Binary Gradient Boosted Trees Regressor
+
+    /// Encodes a fitted gradient boosted trees regressor as a binary Apple Core ML `.mlmodel` artifact.
+    ///
+    /// The model uses `TreeEnsembleRegressor` with specification version 4, mapping the initial base
+    /// prediction and additive shrinkage-weighted regression trees.
+    ///
+    /// - Parameters:
+    ///   - trees: Array of flat tree node arrays.
+    ///   - initialPrediction: Initial prediction offset.
+    ///   - learningRate: Shrinkage learning rate multiplier.
+    ///   - featureNames: Input feature identifiers.
+    ///   - outputName: Output prediction column name (Double).
+    /// - Returns: Binary `.mlmodel` `Data`.
+    public static func exportBinaryGradientBoostedTreesRegressor(
+        trees: [[FlatTreeNode]],
+        initialPrediction: Double,
+        learningRate: Double,
+        featureNames: [String],
+        outputName: String = "prediction"
+    ) -> Data {
+        buildGBDTTreeEnsembleRegressorModel(
+            name: "SwiftSciGradientBoostedTreesRegressor",
+            inputNames: featureNames,
+            outputName: outputName,
+            treesNodes: trees,
+            initialPrediction: initialPrediction,
+            learningRate: learningRate
+        )
+    }
+
+    /// Writes a fitted gradient boosted trees regressor as a binary `.mlmodel` file to disk.
+    ///
+    /// - Parameters:
+    ///   - url: Destination file URL.
+    ///   - trees: Array of flat tree node arrays.
+    ///   - initialPrediction: Initial prediction offset.
+    ///   - learningRate: Shrinkage learning rate multiplier.
+    ///   - featureNames: Input feature identifiers.
+    ///   - outputName: Output prediction column name.
+    /// - Throws: `SwiftMLError.exportFailed` on I/O failure.
+    public static func writeGradientBoostedTreesRegressor(
+        to url: URL,
+        trees: [[FlatTreeNode]],
+        initialPrediction: Double,
+        learningRate: Double,
+        featureNames: [String],
+        outputName: String = "prediction"
+    ) throws {
+        let data = exportBinaryGradientBoostedTreesRegressor(
+            trees: trees,
+            initialPrediction: initialPrediction,
+            learningRate: learningRate,
+            featureNames: featureNames,
+            outputName: outputName
+        )
+        do { try data.write(to: url) } catch {
+            throw SwiftMLError.exportFailed("Failed to write GBDT regressor .mlmodel to \(url.path): \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Binary Scaler (StandardScaler)
 
     /// Encodes a feature standard scaler as a binary Apple Core ML `.mlmodel` artifact.

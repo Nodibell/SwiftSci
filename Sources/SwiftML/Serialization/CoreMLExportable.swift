@@ -209,6 +209,31 @@ extension RandomForestRegressor: CoreMLExportable {
     }
 }
 
+// MARK: - GradientBoostedTreesRegressor Conformance
+
+extension GradientBoostedTreesRegressor: CoreMLExportable {
+    /// Exports the fitted gradient boosted trees regressor as a binary `.mlmodel` (`TreeEnsembleRegressor`).
+    ///
+    /// - Parameters:
+    ///   - featureNames: Input feature column names matching training order.
+    ///   - outputName: Output prediction column name (stored as `Double`).
+    /// - Throws: ``SwiftMLError/modelNotFitted`` if the ensemble has not been fitted.
+    /// - Returns: Binary `.mlmodel` artifact data.
+    public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
+        let treesNodes = getEnsembleTrees()
+        guard !treesNodes.isEmpty else { throw SwiftMLError.modelNotFitted }
+        let initPred = getInitialPrediction()
+        let lr = learningRate
+        return CoreMLExporter.exportBinaryGradientBoostedTreesRegressor(
+            trees: treesNodes,
+            initialPrediction: initPred,
+            learningRate: lr,
+            featureNames: featureNames,
+            outputName: outputName
+        )
+    }
+}
+
 // MARK: - macOS-only conformances (LinearRegression, LogisticRegression use MLX)
 
 #if os(macOS)
@@ -222,7 +247,7 @@ extension LinearRegression: CoreMLExportable {
     ///   - featureNames: Input feature column names matching the training data column order.
     ///   - outputName: Output predicted value column name (stored as `Double`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if weights have not been fitted yet.
-    /// - Returns: <#description#>
+    /// - Returns: Binary `.mlmodel` artifact data.
     public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else { throw SwiftMLError.modelNotFitted }
@@ -249,7 +274,7 @@ extension LogisticRegression: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output predicted class label name (stored as `Int64`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the model has not been fitted.
-    /// - Returns: <#description#>
+    /// - Returns: Binary `.mlmodel` artifact data.
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else { throw SwiftMLError.modelNotFitted }
@@ -268,10 +293,10 @@ extension LogisticRegression: CoreMLExportable {
 extension MLPClassifier: CoreMLExportable {
     /// Exports the fitted Multi-Layer Perceptron classifier as a binary `.mlmodel` (`NeuralNetwork`).
     /// - Parameters:
-    ///   - featureNames: <#description#>
-    ///   - outputName: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - featureNames: Names of the input features.
+    ///   - outputName: Name of the predicted label output.
+    /// - Throws: `SwiftMLError.modelNotFitted` if the network has not been trained.
+    /// - Returns: Binary `.mlmodel` artifact data.
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         guard let layers = trainedLayers, !layers.isEmpty else {
             throw SwiftMLError.modelNotFitted
@@ -293,10 +318,10 @@ extension MLPClassifier: CoreMLExportable {
 extension MLPRegressor: CoreMLExportable {
     /// Exports the fitted Multi-Layer Perceptron regressor as a binary `.mlmodel` (`NeuralNetwork`).
     /// - Parameters:
-    ///   - featureNames: <#description#>
-    ///   - outputName: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - featureNames: Names of the input features.
+    ///   - outputName: Name of the predicted continuous target output.
+    /// - Throws: `SwiftMLError.modelNotFitted` if the network has not been trained.
+    /// - Returns: Binary `.mlmodel` artifact data.
     public func exportCoreML(featureNames: [String], outputName: String = "target") async throws -> Data {
         guard let layers = trainedLayers, !layers.isEmpty else {
             throw SwiftMLError.modelNotFitted

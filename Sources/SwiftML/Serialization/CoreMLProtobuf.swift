@@ -438,6 +438,68 @@ internal func buildTreeEnsembleRegressorModel(
     return model.data
 }
 
+/// Builds a binary Core ML `TreeEnsembleRegressor` model for a Gradient Boosted Trees ensemble.
+///
+/// Unlike Random Forests which average unweighted trees with a zero base, GBDT uses an initial base prediction
+/// and scales each additive tree's leaf predictions by the learning rate shrinkage factor.
+///
+/// - Parameters:
+///   - name: Model identifier name.
+///   - inputNames: Input feature identifiers.
+///   - outputName: Output prediction feature identifier.
+///   - treesNodes: Per-tree node arrays.
+///   - initialPrediction: Base initial prediction value.
+///   - learningRate: Shrinkage multiplier applied to each tree's leaf nodes.
+/// - Returns: Binary `.mlmodel` `Data`.
+internal func buildGBDTTreeEnsembleRegressorModel(
+    name: String,
+    inputNames: [String],
+    outputName: String,
+    treesNodes: [[FlatTreeNode]],
+    initialPrediction: Double,
+    learningRate: Double
+) -> Data {
+    var model = ProtobufWriter()
+    model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
+    model.writeBytesField(
+        fieldNumber: ModelField.description,
+        bytes: buildModelDescription(inputNames: inputNames, outputName: outputName)
+    )
+
+    var reg = ProtobufWriter()
+    var params = ProtobufWriter()
+    params.writeVarintField(fieldNumber: TreeEnsembleParametersField.numPredictionDimensions, value: 1)
+    params.writePackedDoublesField(fieldNumber: TreeEnsembleParametersField.basePredictionValue, values: [initialPrediction])
+
+    for (treeIdx, nodes) in treesNodes.enumerated() {
+        for (i, node) in nodes.enumerated() {
+            var n = ProtobufWriter()
+            n.writeVarintField(fieldNumber: TreeNodeField.treeId, value: UInt64(treeIdx))
+            n.writeVarintField(fieldNumber: TreeNodeField.nodeId, value: UInt64(i))
+            if node.isLeaf {
+                n.writeVarintField(fieldNumber: TreeNodeField.nodeBehavior, value: TreeNodeBehavior.leafNode.rawValue)
+                var leaf = ProtobufWriter()
+                leaf.writeVarintField(fieldNumber: EvaluationInfoField.evaluationIndex, value: 0)
+                leaf.writeDoubleField(fieldNumber: EvaluationInfoField.evaluationValue, value: node.value * learningRate)
+                n.writeBytesField(fieldNumber: TreeNodeField.evaluationInfo, bytes: leaf.data)
+            } else {
+                n.writeVarintField(fieldNumber: TreeNodeField.nodeBehavior, value: TreeNodeBehavior.branchOnValueLessThanEqual.rawValue)
+                n.writeVarintField(fieldNumber: TreeNodeField.branchFeatureIndex, value: UInt64(node.featureIndex))
+                n.writeDoubleField(fieldNumber: TreeNodeField.branchFeatureValue, value: node.threshold)
+                n.writeVarintField(fieldNumber: TreeNodeField.trueChildNodeId, value: UInt64(node.leftChild))
+                n.writeVarintField(fieldNumber: TreeNodeField.falseChildNodeId, value: UInt64(node.rightChild))
+            }
+            params.writeBytesField(fieldNumber: TreeEnsembleParametersField.nodes, bytes: n.data)
+        }
+    }
+
+    reg.writeBytesField(fieldNumber: TreeEnsembleRegressorField.treeEnsemble, bytes: params.data)
+    reg.writeVarintField(fieldNumber: TreeEnsembleRegressorField.postTransform, value: 0)
+
+    model.writeBytesField(fieldNumber: ModelField.treeEnsembleRegressor, bytes: reg.data)
+    return model.data
+}
+
 // MARK: - Scaler builder
 
 /// Builds a binary `.mlmodel` payload encoding a feature standard scaler as a `Scaler`.

@@ -32,6 +32,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     // Forest stored as an array of flat tree node arrays (Data-Oriented Design)
     private var trees: [[FlatTreeNode]] = []
     private var initialPrediction: Double = 0.0
+    private var numFeatures: Int = 0
     
     /// Creates a new instance.
     /// - Parameters:
@@ -61,12 +62,30 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         self.minSamplesSplit = minSamplesSplit
         self.loss = loss
     }
+
+    /// Returns the fitted decision trees in the ensemble.
+    /// - Returns: An array of flat tree node arrays.
+    public func getEnsembleTrees() -> [[FlatTreeNode]] {
+        return trees
+    }
+    
+    /// Returns the base prediction offset before boosting updates.
+    /// - Returns: The initial base prediction value.
+    public func getInitialPrediction() -> Double {
+        return initialPrediction
+    }
+    
+    /// Returns the number of features the model was fitted with.
+    /// - Returns: An integer representing feature dimensionality.
+    public func getNumFeatures() -> Int {
+        return numFeatures
+    }
     
     /// Fits the GBDT model on the provided features and targets.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D feature matrix of shape `[N, P]`.
+    ///   - targets: 1D continuous target values.
+    /// - Throws: `SwiftMLError` if inputs are invalid or dimension mismatch occurs.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, validationFeatures: nil, validationTargets: nil, earlyStopping: nil)
     }
@@ -94,6 +113,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         guard features.count == targets.count else {
             throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
+        self.numFeatures = features[0].count
         
         let n = features.count
         switch loss {

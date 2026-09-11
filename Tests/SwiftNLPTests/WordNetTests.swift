@@ -170,4 +170,43 @@ struct WordNetTests {
         let loadedWN = try WordNet.load(fromDirectory: tempDir)
         #expect(!loadedWN.synsets(for: "flora").isEmpty)
     }
+
+    @Test("WordNet.load(fromDirectory:) throws fileNoSuchFile when no data files exist")
+    func testLoadFromEmptyDirectoryThrows() throws {
+        let emptyDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: emptyDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: emptyDir) }
+
+        #expect(throws: CocoaError.self) {
+            _ = try WordNet.load(fromDirectory: emptyDir)
+        }
+    }
+
+    @Test("Princeton WordNet parser skips malformed non-comment lines")
+    func testPrincetonMalformedLineSkipped() throws {
+        let malformedContent = """
+        invalid_short_token
+        00002137 03 n 01 flora 0 001 @ 00001740 n 0000 | valid entry
+        """
+        let parsed = try WordNet.parsePrincetonData(malformedContent, defaultPOS: .noun)
+        #expect(parsed.count == 1)
+        #expect(parsed[0].name == "flora")
+    }
+
+    @Test("Princeton WordNet file load from dict subdirectory")
+    func testFileLoadingFromDictSubdir() throws {
+        let baseDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let dictDir = baseDir.appendingPathComponent("dict")
+        try FileManager.default.createDirectory(at: dictDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: baseDir) }
+
+        let dataNounURL = dictDir.appendingPathComponent("data.noun")
+        let nounContent = """
+        00002137 03 n 01 fauna 0 001 @ 00001740 n 0000 | animals of a region
+        """
+        try nounContent.write(to: dataNounURL, atomically: true, encoding: .utf8)
+
+        let loadedWN = try WordNet.load(fromDirectory: baseDir)
+        #expect(!loadedWN.synsets(for: "fauna").isEmpty)
+    }
 }

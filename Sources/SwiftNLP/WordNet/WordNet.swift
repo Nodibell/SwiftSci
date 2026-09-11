@@ -84,7 +84,7 @@ public struct WordNet: Sendable {
     
     /// Returns all synsets matching the given lemma (word).
     /// - Parameters:
-    ///   - for: <#description#>
+    ///   - lemma: <#description#>
     ///   - pos: <#description#>
     /// - Returns: <#description#>
     public func synsets(for lemma: String, pos: POS? = nil) -> [Synset] {
@@ -99,7 +99,7 @@ public struct WordNet: Sendable {
     
     /// Returns direct hypernyms (parent concepts) for a synset.
     /// - Parameters:
-    ///   - of: <#description#>
+    ///   - synset: <#description#>
     /// - Returns: <#description#>
     public func hypernyms(of synset: Synset) -> [Synset] {
         synset.hypernymIDs.compactMap { synsetMap[$0] }
@@ -107,7 +107,7 @@ public struct WordNet: Sendable {
     
     /// Returns direct hyponyms (child concepts) for a synset.
     /// - Parameters:
-    ///   - of: <#description#>
+    ///   - synset: <#description#>
     /// - Returns: <#description#>
     public func hyponyms(of synset: Synset) -> [Synset] {
         synset.hyponymIDs.compactMap { synsetMap[$0] }
@@ -222,6 +222,7 @@ public struct WordNet: Sendable {
     ///   - url: File URL to the Princeton WordNet data file.
     ///   - pos: Syntactic category of the file (defaults to `.noun`).
     /// - Returns: An array of parsed `Synset` instances.
+    /// - Throws: `CocoaError` if the file cannot be read, or parsing errors.
     public static func load(fromDataFile url: URL, pos: POS = .noun) throws -> [Synset] {
         let content = try String(contentsOf: url, encoding: .utf8)
         return try parsePrincetonData(content, defaultPOS: pos)
@@ -232,6 +233,7 @@ public struct WordNet: Sendable {
     ///
     /// - Parameter directoryURL: Directory URL containing WordNet data files.
     /// - Returns: An initialized `WordNet` instance.
+    /// - Throws: `CocoaError` if no Princeton data files are found, or parsing errors.
     public static func load(fromDirectory directoryURL: URL) throws -> WordNet {
         let fileManager = FileManager.default
         var allSynsets: [Synset] = []
@@ -274,6 +276,7 @@ public struct WordNet: Sendable {
     ///   - content: Raw text of a `data.{pos}` file.
     ///   - defaultPOS: Fallback Part of Speech category.
     /// - Returns: Array of parsed `Synset` instances.
+    /// - Throws: `Error` if the string content cannot be parsed.
     public static func parsePrincetonData(_ content: String, defaultPOS: POS = .noun) throws -> [Synset] {
         var synsets: [Synset] = []
         synsets.reserveCapacity(2048)

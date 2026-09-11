@@ -65,7 +65,7 @@ public struct DataFrame: Sendable {
 
     /// Reads a CSV file as a stream of DataFrame chunks.
     /// - Parameters:
-    ///   - contentsOf: <#description#>
+    ///   - url: <#description#>
     ///   - chunkSize: <#description#>
     ///   - options: <#description#>
     /// - Returns: <#description#>
@@ -91,7 +91,7 @@ public struct DataFrame: Sendable {
 
     /// Reads a Feather / Arrow IPC binary file into a DataFrame.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - url: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public static func readFeather(from url: URL) async throws -> DataFrame {
@@ -106,7 +106,7 @@ public struct DataFrame: Sendable {
 
     /// Reads an Apache Parquet binary file into a DataFrame.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - url: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public static func readParquet(from url: URL) async throws -> DataFrame {
@@ -199,7 +199,7 @@ public struct DataFrame: Sendable {
 
     /// Returns the row at `index` as a dictionary.
     /// - Parameters:
-    ///   - at: <#description#>
+    ///   - index: <#description#>
     /// - Returns: <#description#>
     public func rowDictionary(at index: Int) -> [String: Any?] {
         guard index >= 0 && index < shape.rows else { return [:] }
@@ -338,7 +338,7 @@ public struct DataFrame: Sendable {
 
     /// Filters rows using a predicate closure over raw row index (zero allocation).
     /// - Parameters:
-    ///   - by: <#description#>
+    ///   - predicate: <#description#>
     /// - Returns: <#description#>
     public func filterRows(by predicate: (Int) -> Bool) -> DataFrame {
         let rows = shape.rows
@@ -375,7 +375,7 @@ public struct DataFrame: Sendable {
 
     /// Returns a zero-allocation lightweight row view at the specified index.
     /// - Parameters:
-    ///   - at: <#description#>
+    ///   - index: <#description#>
     /// - Returns: <#description#>
     public func row(at index: Int) -> DataFrameRow {
         DataFrameRow(columnNames: columnNames, index: index, columnMap: _columns)
@@ -388,8 +388,8 @@ public struct DataFrame: Sendable {
 
     /// Filters rows by a condition on a single column.
     /// - Parameters:
-    ///   - column: <#description#>
-    ///   - where: <#description#>
+    ///   - name: <#description#>
+    ///   - condition: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func filter(column name: String, where condition: FilterCondition) throws -> DataFrame {
@@ -437,8 +437,8 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame with a lagged column added.
     /// - Parameters:
-    ///   - column: <#description#>
-    ///   - by: <#description#>
+    ///   - name: <#description#>
+    ///   - offset: <#description#>
     ///   - newName: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -451,7 +451,7 @@ public struct DataFrame: Sendable {
     /// Returns a new DataFrame with a column renamed.
     /// - Parameters:
     ///   - old: <#description#>
-    ///   - to: <#description#>
+    ///   - new: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func renameColumn(_ old: String, to new: String) throws -> DataFrame {
@@ -469,8 +469,8 @@ public struct DataFrame: Sendable {
     /// Adds a new column computed using a row-level closure.
     /// - Parameters:
     ///   - name: <#description#>
-    ///   - as: <#description#>
-    ///   - using: <#description#>
+    ///   - type: <#description#>
+    ///   - closure: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func addColumn<T: SupportedType>(_ name: String, as type: T.Type = T.self, using closure: (DataFrameRow) -> T?) throws -> DataFrame {
@@ -492,7 +492,7 @@ public struct DataFrame: Sendable {
     /// Casts a column to a new type.
     /// - Parameters:
     ///   - name: <#description#>
-    ///   - to: <#description#>
+    ///   - type: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func castColumn<T: SupportedType>(_ name: String, to type: T.Type = T.self) throws -> DataFrame {
@@ -549,7 +549,7 @@ public struct DataFrame: Sendable {
 
     /// Writes the DataFrame to a CSV file.
     /// - Parameters:
-    ///   - to: <#description#>
+    ///   - url: <#description#>
     /// - Throws: <#error description#>
     public func writeCSV(to url: URL) async throws {
         try await CSVWriter.write(self, to: url)
@@ -557,7 +557,7 @@ public struct DataFrame: Sendable {
 
     /// Writes the DataFrame to a Feather / Arrow IPC binary file.
     /// - Parameters:
-    ///   - to: <#description#>
+    ///   - url: <#description#>
     /// - Throws: <#error description#>
     public func writeFeather(to url: URL) async throws {
         try await FeatherWriter.write(self, to: url)
@@ -572,7 +572,7 @@ public struct DataFrame: Sendable {
 
     /// Writes the DataFrame to an Apache Parquet binary file.
     /// - Parameters:
-    ///   - to: <#description#>
+    ///   - url: <#description#>
     /// - Throws: <#error description#>
     public func writeParquet(to url: URL) async throws {
         try await ParquetWriter.write(dataFrame: self, to: url)
@@ -668,7 +668,7 @@ public struct DataFrame: Sendable {
     /// Transforms values of a typed column functional-style, returning a new DataFrame.
     /// - Parameters:
     ///   - name: <#description#>
-    ///   - as: <#description#>
+    ///   - type: <#description#>
     ///   - transform: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>

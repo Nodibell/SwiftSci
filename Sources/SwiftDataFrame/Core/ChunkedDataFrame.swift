@@ -197,7 +197,6 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     ///
     /// - Parameter body: An asynchronous closure executed for each chunk.
     /// - Throws: <#error description#>
-    /// - Returns: <#description#>
     public func forEachChunk(
         _ body: @escaping @Sendable (DataFrame) async throws -> Void
     ) async throws {

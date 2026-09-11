@@ -4,8 +4,8 @@ import re
 import sys
 
 def audit_doc_structure(sources_dir):
-    func_pattern = re.compile(
-        r'^\s*(?:public|open)\s+(?:static\s+|class\s+|final\s+|mutating\s+)*func\s+([A-Za-z0-9_]+)\s*(?:<[^>]+>)?\s*\((.*?)\)\s*(async\s+)?(throws\s+)?(?:->\s*(.+))?{'
+    func_start_pattern = re.compile(
+        r'^\s*(?:public|open)\s+(?:static\s+|class\s+|final\s+|mutating\s+|nonisolated\s+)*func\s+([A-Za-z0-9_]+)\s*(?:<[^>]+>)?\s*\('
     )
 
     total_funcs = 0
@@ -31,14 +31,27 @@ def audit_doc_structure(sources_dir):
                         j += 1
                         full_line += " " + lines[j].strip()
                     
-                    match = func_pattern.search(full_line)
+                    match = func_start_pattern.search(full_line)
                     if match:
                         func_name = match.group(1)
-                        params_str = match.group(2).strip()
-                        is_throws = match.group(4) is not None
-                        return_type = match.group(5)
-                        if return_type:
-                            return_type = return_type.strip()
+                        # Find matching closing parenthesis using depth counter
+                        paren_start = match.end() - 1
+                        depth = 0
+                        paren_end = -1
+                        for idx_char in range(paren_start, len(full_line)):
+                            if full_line[idx_char] == '(': depth += 1
+                            elif full_line[idx_char] == ')':
+                                depth -= 1
+                                if depth == 0:
+                                    paren_end = idx_char
+                                    break
+                        
+                        if paren_end != -1:
+                            params_str = full_line[paren_start + 1:paren_end].strip()
+                            after = full_line[paren_end + 1:]
+                            is_throws = 'throws' in after
+                            m_ret = re.search(r'->\s*([^{]+)\{', after)
+                            return_type = m_ret.group(1).strip() if m_ret else None
                         
                         total_funcs += 1
 

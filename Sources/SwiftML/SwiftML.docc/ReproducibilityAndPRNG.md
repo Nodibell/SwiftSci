@@ -6,7 +6,7 @@ Ensure bit-exact experimental reproducibility and statistical robustness across 
 
 In machine learning workflows, deterministic reproducibility is vital for auditing, hyperparameter tuning, and regression testing. SwiftSci provides:
 1. **Xoshiro256++ Generator**: A modern, high-throughput pseudo-random number generator conforming to standard `RandomNumberGenerator` with period $2^{256} - 1$ passing BigCrush.
-2. **`randomState` Parameter Propagation**: Standardized `randomState: Int?` parameters across ensemble estimators (``RandomForestClassifier``, ``RandomForestRegressor``) and clustering models (``KMeans``).
+2. **`randomState` Parameter Propagation**: Standardized `randomState: Int?` parameters across ensemble estimators (``RandomForestClassifier``, ``RandomForestRegressor``) and clustering models (`KMeans`).
 3. **Deterministic Parallel Construction**: Fixed-order tree compilation preserving deterministic tie-breaking even under multi-threaded Swift Concurrency execution (`TaskGroup`).
 
 ## 1. Using `randomState` in Random Forests

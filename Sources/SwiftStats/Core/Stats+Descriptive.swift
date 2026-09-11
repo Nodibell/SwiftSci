@@ -42,8 +42,8 @@ extension Stats {
     ///   - values: Input numeric sample array.
     ///   - ddof: Delta degrees of freedom (1 = sample variance, 0 = population variance). Defaults to 1.
     ///   - checkNaN: If `true`, throws an error if any input value is NaN or Infinity. Defaults to `true`.
-    /// - Throws: ``StatsError/emptyInput`` if array is empty, ``StatsError/invalidDDOF(_:)`` if `ddof < 0`,
-    ///   ``StatsError/insufficientData(minimum:got:)`` if `values.count <= ddof`, or ``StatsError/containsNaN`` if `checkNaN` is true and NaNs are present.
+    /// - Throws: `StatsError.emptyInput` if array is empty, `StatsError.invalidDDOF(_:)` if `ddof < 0`,
+    ///   `StatsError.insufficientData(minimum:got:)` if `values.count <= ddof`, or `StatsError.containsNaN` if `checkNaN` is true and NaNs are present.
     /// - Returns: Sample or population variance.
     public static func variance(_ values: [Double], ddof: Int = 1, checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
@@ -74,7 +74,7 @@ extension Stats {
     ///   - values: Input float sample array.
     ///   - ddof: Delta degrees of freedom (1 = sample variance, 0 = population variance). Defaults to 1.
     ///   - checkNaN: If `true`, throws an error if any input value is NaN or Infinity. Defaults to `true`.
-    /// - Throws: ``StatsError/emptyInput``, ``StatsError/invalidDDOF(_:)``, ``StatsError/insufficientData(minimum:got:)``, or ``StatsError/containsNaN``.
+    /// - Throws: `StatsError.emptyInput`, `StatsError.invalidDDOF(_:)`, `StatsError.insufficientData(minimum:got:)`, or `StatsError.containsNaN`.
     /// - Returns: Sample or population variance.
     public static func variance(_ values: [Float], ddof: Int = 1, checkNaN: Bool = true) throws -> Float {
         guard !values.isEmpty else { throw StatsError.emptyInput }
@@ -284,7 +284,7 @@ extension Stats {
     ///   - nullCount: Number of missing/null values excluded before passing into this function. Defaults to 0.
     ///   - checkNaN: If `true`, verifies that input array does not contain NaN values before computing metrics. Defaults to `true`.
     /// - Returns: A ``DescriptiveStats`` record containing count, mean, std, variance, min, quartiles, median, max, skewness, and kurtosis.
-    /// - Throws: ``StatsError/emptyInput`` or ``StatsError/containsNaN`` if `checkNaN` is `true` and any elements are NaN.
+    /// - Throws: `StatsError.emptyInput` or `StatsError.containsNaN` if `checkNaN` is `true` and any elements are NaN.
     public static func describe(_ values: [Double], nullCount: Int = 0, checkNaN: Bool = true) throws -> DescriptiveStats {
         try requireNonEmpty(values)
         if checkNaN { try requireNoNaN(values) }

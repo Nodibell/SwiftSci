@@ -11,7 +11,7 @@ extension DataFrame {
 
     /// Fits a TFIDFVectorizer on the specified text column.
     /// - Parameters:
-    ///   - column: <#description#>
+    ///   - name: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func fitTFIDF(column name: String) async throws -> TFIDFVectorizer {
@@ -52,7 +52,7 @@ extension DataFrame {
 
     /// Evaluates sentiment on a text column using VADER sentiment analyzer.
     /// - Parameters:
-    ///   - column: <#description#>
+    ///   - name: <#description#>
     ///   - targetColumn: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -65,7 +65,7 @@ extension DataFrame {
 
     /// Detects language code on a text column using AppleLanguageDetector.
     /// - Parameters:
-    ///   - column: <#description#>
+    ///   - name: <#description#>
     ///   - targetColumn: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -78,7 +78,7 @@ extension DataFrame {
 
     /// Extracts named entities from a text column using AppleNamedEntityRecognizer.
     /// - Parameters:
-    ///   - fromColumn: <#description#>
+    ///   - name: <#description#>
     ///   - targetColumn: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>

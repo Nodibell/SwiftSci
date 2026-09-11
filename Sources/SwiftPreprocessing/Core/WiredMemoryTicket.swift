@@ -8,7 +8,7 @@ import MLX
 ///
 /// ## Concurrency & Resource Cleanup
 /// `WiredMemoryTicket` controls concurrency limits for high-memory operations on Apple Silicon.
-/// Always prefer structured execution via ``WiredMemoryManager/withTicket(_:)`` or explicitly call
+/// Always prefer structured execution via `WiredMemoryManager.withTicket(_:)` or explicitly call
 /// ``finish()`` when operations conclude to synchronize MLX GPU caches.
 ///
 /// ## Thread Safety

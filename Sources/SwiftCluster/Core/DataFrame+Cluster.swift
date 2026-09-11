@@ -20,7 +20,7 @@ extension DataFrame {
 
     /// Fits a KMeans clusterer on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - k: <#description#>
     ///   - maxIterations: <#description#>
     ///   - tolerance: <#description#>
@@ -40,7 +40,7 @@ extension DataFrame {
     
     /// Fits a PCA reducer on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - nComponents: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -56,7 +56,7 @@ extension DataFrame {
     
     /// Fits a DBSCAN clusterer on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - eps: <#description#>
     ///   - minSamples: <#description#>
     /// - Throws: <#error description#>
@@ -74,7 +74,7 @@ extension DataFrame {
     
     /// Computes the Silhouette Score for cluster assignments on specified DataFrame columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - labels: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -85,7 +85,7 @@ extension DataFrame {
     
     /// Computes Calinski-Harabasz and Davies-Bouldin index metrics for cluster assignments.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - labels: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>

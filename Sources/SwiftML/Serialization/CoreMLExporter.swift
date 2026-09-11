@@ -528,6 +528,15 @@ public enum CoreMLExporter {
     }
 
     /// Writes a binary `.mlmodel` file for a fitted MLP classifier.
+    /// - Parameters:
+    ///   - url: Destination URL for the `.mlmodel` file.
+    ///   - name: Model name.
+    ///   - inputNames: Input feature names.
+    ///   - outputName: Output target name.
+    ///   - layers: Layer weights.
+    ///   - activation: Hidden activation function (default: `"relu"`).
+    ///   - classLabels: Optional class labels for multi-class classification.
+    /// - Throws: `SwiftMLError.exportFailed` if writing fails.
     public static func writeMLPClassifier(
         to url: URL,
         name: String = "SwiftSciMLPClassifier",
@@ -552,13 +561,13 @@ public enum CoreMLExporter {
 
     /// Writes a binary `.mlmodel` file for a fitted MLP regressor.
     /// - Parameters:
-    ///   - to: <#description#>
-    ///   - name: <#description#>
-    ///   - inputNames: <#description#>
-    ///   - outputName: <#description#>
-    ///   - layers: <#description#>
-    ///   - activation: <#description#>
-    /// - Throws: <#error description#>
+    ///   - url: Destination URL for the `.mlmodel` file.
+    ///   - name: Model name.
+    ///   - inputNames: Input feature names.
+    ///   - outputName: Output target name.
+    ///   - layers: Layer weights.
+    ///   - activation: Hidden activation function (default: `"relu"`).
+    /// - Throws: `SwiftMLError.exportFailed` if writing fails.
     public static func writeMLPRegressor(
         to url: URL,
         name: String = "SwiftSciMLPRegressor",

@@ -47,7 +47,7 @@ extension DataFrame {
 
     /// Fits a StandardScaler on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func fitStandardScaler(columns names: [String]) throws -> StandardScaler {
@@ -59,7 +59,7 @@ extension DataFrame {
     
     /// Scales the specified columns using a fitted StandardScaler, returning a new DataFrame.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - scaler: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -78,7 +78,7 @@ extension DataFrame {
     
     /// Fits and scales the specified columns using StandardScaler, returning the scaled DataFrame and scaler.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func standardScale(columns names: [String]) throws -> (scaled: DataFrame, scaler: StandardScaler) {
@@ -89,7 +89,7 @@ extension DataFrame {
 
     /// Fits a MinMaxScaler on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func fitMinMaxScaler(columns names: [String]) throws -> MinMaxScaler {
@@ -101,7 +101,7 @@ extension DataFrame {
     
     /// Scales the specified columns using a fitted MinMaxScaler, returning a new DataFrame.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - scaler: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -120,7 +120,7 @@ extension DataFrame {
     
     /// Fits and scales the specified columns using MinMaxScaler, returning the scaled DataFrame and scaler.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func minMaxScale(columns names: [String]) throws -> (scaled: DataFrame, scaler: MinMaxScaler) {
@@ -131,7 +131,7 @@ extension DataFrame {
 
     /// Fits a LabelEncoder and encodes a category column into integers. Supports String, Int64, and Double columns.
     /// - Parameters:
-    ///   - column: <#description#>
+    ///   - name: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func labelEncode(column name: String) throws -> (encoded: DataFrame, encoder: LabelEncoder) {
@@ -165,7 +165,7 @@ extension DataFrame {
     
     /// Fits an Imputer on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - strategy: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -178,7 +178,7 @@ extension DataFrame {
     
     /// Imputes the specified columns using a fitted Imputer, returning a new DataFrame.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - imputer: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -197,7 +197,7 @@ extension DataFrame {
     
     /// Fits and imputes the specified columns, returning the imputed DataFrame and the imputer.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - strategy: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -211,7 +211,7 @@ extension DataFrame {
     
     /// Normalizes the specified columns, returning the normalized DataFrame and normalizer.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - norm: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -234,7 +234,7 @@ extension DataFrame {
     
     /// Fits a RobustScaler on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - withCentering: <#description#>
     ///   - withScaling: <#description#>
     ///   - quantileRange: <#description#>
@@ -249,7 +249,7 @@ extension DataFrame {
     
     /// Scales the specified columns using a fitted RobustScaler, returning a new DataFrame.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - scaler: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -268,7 +268,7 @@ extension DataFrame {
     
     /// Fits and scales the specified columns using RobustScaler, returning the scaled DataFrame and scaler.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - withCentering: <#description#>
     ///   - withScaling: <#description#>
     ///   - quantileRange: <#description#>
@@ -284,7 +284,7 @@ extension DataFrame {
     
     /// Fits a PowerTransformer on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - method: <#description#>
     ///   - standardize: <#description#>
     /// - Throws: <#error description#>
@@ -298,7 +298,7 @@ extension DataFrame {
     
     /// Transforms the specified columns using a fitted PowerTransformer, returning a new DataFrame.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - transformer: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -317,7 +317,7 @@ extension DataFrame {
     
     /// Fits and transforms the specified columns using PowerTransformer, returning the transformed DataFrame and transformer.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - method: <#description#>
     ///   - standardize: <#description#>
     /// - Throws: <#error description#>
@@ -332,7 +332,7 @@ extension DataFrame {
     
     /// Fits a KBinsDiscretizer on the specified columns.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - nBins: <#description#>
     ///   - strategy: <#description#>
     ///   - encode: <#description#>
@@ -347,7 +347,7 @@ extension DataFrame {
     
     /// Discretizes the specified columns using a fitted KBinsDiscretizer, returning a new DataFrame.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - discretizer: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -383,7 +383,7 @@ extension DataFrame {
     
     /// Fits and discretizes the specified columns, returning the discretized DataFrame and discretizer.
     /// - Parameters:
-    ///   - columns: <#description#>
+    ///   - names: <#description#>
     ///   - nBins: <#description#>
     ///   - strategy: <#description#>
     ///   - encode: <#description#>
@@ -399,7 +399,7 @@ extension DataFrame {
 
     /// Adds a rolling mean column for the specified numeric column.
     /// - Parameters:
-    ///   - column: <#description#>
+    ///   - name: <#description#>
     ///   - window: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -424,7 +424,7 @@ extension DataFrame {
 
     /// Adds a rolling standard deviation column for the specified numeric column.
     /// - Parameters:
-    ///   - column: <#description#>
+    ///   - name: <#description#>
     ///   - window: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
@@ -455,7 +455,7 @@ extension DataFrame {
 
     /// Adds an Exponentially Weighted Moving Average (EWMA) column for the specified numeric column.
     /// - Parameters:
-    ///   - column: <#description#>
+    ///   - name: <#description#>
     ///   - alpha: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>

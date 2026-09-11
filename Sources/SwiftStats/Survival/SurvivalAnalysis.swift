@@ -78,7 +78,7 @@ public struct KaplanMeier: Sendable {
 
     /// Evaluates estimated survival probability S(t) at given query time t.
     /// - Parameters:
-    ///   - at: <#description#>
+    ///   - time: <#description#>
     /// - Returns: <#description#>
     public func predictSurvivalProbability(at time: Double) -> Double {
         guard let firstPoint = timeline.first, time >= firstPoint.time else { return 1.0 }

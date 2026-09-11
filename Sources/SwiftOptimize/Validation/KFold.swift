@@ -184,9 +184,13 @@ public enum CrossValidator {
 
     /// Generic cross-validation for any ClassifierEstimator.
     /// - Parameters:
-    ///   - estimatorFactory: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - estimatorFactory: Closure creating a fresh estimator instance for each fold.
+    ///   - features: Feature matrix (N samples × D features).
+    ///   - targets: Target label array.
+    ///   - nSplits: Number of cross-validation folds.
+    ///   - seed: Random seed for fold shuffling.
+    /// - Throws: Any error thrown during model fitting or evaluation.
+    /// - Returns: Cross-validation result containing accuracy scores per fold.
     public static func crossValidate<E: ClassifierEstimator>(
         _ estimatorFactory: @escaping @Sendable () -> E,
         features: [[Double]],
@@ -216,9 +220,13 @@ public enum CrossValidator {
 
     /// Generic cross-validation for any RegressorEstimator.
     /// - Parameters:
-    ///   - estimatorFactory: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - estimatorFactory: Closure creating a fresh estimator instance for each fold.
+    ///   - features: Feature matrix (N samples × D features).
+    ///   - targets: Continuous target value array.
+    ///   - nSplits: Number of cross-validation folds.
+    ///   - seed: Random seed for fold shuffling.
+    /// - Throws: Any error thrown during model fitting or evaluation.
+    /// - Returns: Cross-validation result containing metrics per fold.
     public static func crossValidateRegressor<E: RegressorEstimator>(
         _ estimatorFactory: @escaping @Sendable () -> E,
         features: [[Double]],

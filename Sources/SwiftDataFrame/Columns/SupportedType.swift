@@ -21,7 +21,7 @@ extension Int32: SupportedType {
     /// Parse.
     /// - Returns: A `Int32?` result.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - string: <#description#>
     public static func parse(from string: String) -> Int32? { Int32(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -33,7 +33,7 @@ extension Int: SupportedType {
     /// Parse.
     /// - Returns: A `Int?` result.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - string: <#description#>
     public static func parse(from string: String) -> Int? { Int(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -45,7 +45,7 @@ extension Int64: SupportedType {
     /// Parse.
     /// - Returns: A `Int64?` result.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - string: <#description#>
     public static func parse(from string: String) -> Int64? { Int64(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -57,7 +57,7 @@ extension Float: SupportedType {
     /// Parse.
     /// - Returns: A `Float?` result.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - string: <#description#>
     public static func parse(from string: String) -> Float? { Float(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -69,7 +69,7 @@ extension Double: SupportedType {
     /// Parse.
     /// - Returns: A `Double?` result.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - string: <#description#>
     public static func parse(from string: String) -> Double? { Double(string.trimmingCharacters(in: .whitespaces)) }
     /// The double value.
     public var doubleValue: Double? { self }
@@ -81,7 +81,7 @@ extension Bool: SupportedType {
     /// Parse.
     /// - Returns: A `Bool?` result.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - string: <#description#>
     public static func parse(from string: String) -> Bool? {
         switch string.trimmingCharacters(in: .whitespaces).lowercased() {
         case "true", "yes", "1": return true
@@ -99,7 +99,7 @@ extension String: SupportedType {
     /// Parse.
     /// - Returns: A `String?` result.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - string: <#description#>
     public static func parse(from string: String) -> String? { string }
     /// The double value.
     public var doubleValue: Double? { Double(self) }
@@ -111,7 +111,7 @@ extension Date: SupportedType {
     /// Parse.
     /// - Returns: A `Date?` result.
     /// - Parameters:
-    ///   - from: <#description#>
+    ///   - string: <#description#>
     public static func parse(from string: String) -> Date? {
         let s = string.trimmingCharacters(in: .whitespaces)
         // ISO 8601 date only: YYYY-MM-DD

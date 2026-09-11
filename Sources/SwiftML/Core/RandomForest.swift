@@ -122,7 +122,6 @@ public actor RandomForestClassifier: ClassifierEstimator {
     ///
     /// ## Concurrency
     /// Uses `withThrowingTaskGroup` to construct decision trees in parallel across all available CPU cores.
-    /// - Returns: <#description#>
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -388,7 +387,6 @@ public actor RandomForestRegressor: RegressorEstimator {
     ///
     /// ## Concurrency
     /// Uses `withThrowingTaskGroup` to construct decision trees in parallel across all available CPU cores.
-    /// - Returns: <#description#>
     public func fit(
         features: [[Double]],
         targets: [Double],

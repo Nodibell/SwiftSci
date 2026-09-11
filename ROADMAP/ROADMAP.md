@@ -515,6 +515,25 @@ Critical enhancements enabling zero-dependency reading of industry-standard scie
 
 ---
 
+### Version 3.6.1: WordNet Lexicon Expansion, Princeton Ingestion & Database Health Protocols *(🟢 Completed)*
+
+*Detailed implementation plan:* [`ROADMAP/implementation_plan_36_1.md`](../implementation_plan_36_1.md)  
+*Primary Focus:* Expanding semantic NLP coverage with a comprehensive core WordNet taxonomy and standard file loader, and introducing connectivity health checks / endpoint symmetry for relational database drivers.
+
+1. **Comprehensive Offline WordNet Taxonomy (`SwiftNLP`)**:
+   - Expanded default synsets baseline to ~120 core synsets spanning all major POS categories, physical entities, living organisms, human roles, artifacts, computing, abstract concepts, actions, and qualitative attributes.
+2. **Princeton WordNet File Loader & Tokenizer (`SwiftNLP`)**:
+   - Implemented pure-Swift loader (`WordNet.load(fromDataFile:pos:)`, `WordNet.load(fromDirectory:)`) capable of ingesting official Princeton WordNet distribution files (`data.noun`, `data.verb`, `data.adj`, `data.adv`).
+3. **Database Connectivity Health Protocol (`SwiftDatabase`)**:
+   - Added `ping() async -> Bool` to `DatabaseConnection` protocol with zero-allocation test queries for SQLite, PostgreSQL, and MySQL.
+4. **Driver Symmetrical Initialization (`SwiftDatabase`)**:
+   - Introduced convenience initializers with explicit endpoint parameters (`host:port:user:password:database:sslMode:`) for `MySQLConnection` and `PostgreSQLConnection`.
+5. **DocC Documentation Parity**:
+   - Fully aligned DocC catalogs with pure-Swift wire-protocol driver capabilities.
+
+
+---
+
 ## 🏛 Integration Guidelines for Client Applications
 
 Thanks to its modular design, SwiftSci seamlessly integrates into applications following clean architecture:

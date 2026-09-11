@@ -81,11 +81,7 @@ def parse_params(lines: list[str], func_line_idx: int) -> list[str]:
         # Pattern: [label] name: Type  OR  name: Type
         m2 = re.match(r'^(_|[A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:', p)
         if m2:
-            label = m2.group(1)
-            if label == '_':
-                names.append(m2.group(2))
-            else:
-                names.append(label)
+            names.append(m2.group(2))
         else:
             m3 = re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\s*:', p)
             if m3:

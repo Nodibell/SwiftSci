@@ -21,7 +21,7 @@ public struct DataFrameRow: @unchecked Sendable {
     /// Returns the value for `column` as the given type, or nil if null / wrong type.
     /// - Parameters:
     ///   - column: <#description#>
-    ///   - as: <#description#>
+    ///   - type: <#description#>
     /// - Returns: <#description#>
     public func value<T: SupportedType>(column: String, as type: T.Type = T.self) -> T? {
         columnMap[column]?.value(at: index) as? T

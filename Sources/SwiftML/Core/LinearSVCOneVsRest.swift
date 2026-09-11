@@ -20,7 +20,6 @@ public actor LinearSVCOneVsRest: Sendable {
     ///   - epochs: <#description#>
     ///   - onProgress: <#description#>
     /// - Throws: <#error description#>
-    /// - Returns: <#description#>
     public func fit(
         features: [[Double]],
         targets: [Double],

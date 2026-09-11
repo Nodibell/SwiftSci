@@ -1,4 +1,4 @@
-# SwiftSci 3.6.0
+# SwiftSci 3.6.1
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -28,7 +28,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.6.0")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.6.1")
 ]
 ```
 
@@ -150,6 +150,16 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   │ [NLP Cls]  NaiveBayes (3-class) : Accuracy=35.00%, Macro-F1=0.342                  │
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🚀 What's New in v3.6.1
+
+- **Expanded WordNet Taxonomy (`SwiftNLP`):** Enriched default vocabulary from 6 synsets to a curated taxonomy of ~120 core synsets spanning organisms, human professions, artifacts, computing, sciences, mathematics, verbs, and qualitative adjectives with full hypernym/hyponym graph connectivity.
+- **Princeton WordNet Data Ingestion Engine (`SwiftNLP`):** Native loader and parser (`WordNet.load(fromDataFile:pos:)`, `WordNet.load(fromDirectory:)`, `WordNet.parsePrincetonData`) capable of reading official Princeton WordNet database distribution files (`dict/data.noun`, `dict/data.verb`).
+- **Database Driver Health Check & Connectivity Verification (`SwiftDatabase`):** Added async `ping() -> Bool` across all database drivers (`SQLiteConnection`, `PostgreSQLConnection`, `MySQLConnection`).
+- **Symmetric Endpoint Initializers (`SwiftDatabase`):** Added convenience `init(host:port:user:password:database:sslMode:)` to `MySQLConnection` and `PostgreSQLConnection`.
+- **Pure-Swift Wire Protocol Documentation Alignment:** Clarified full native implementations of PostgreSQL v3.0 (with SCRAM-SHA-256 and TLS) and MySQL Client/Server Protocol 4.1+ (with TLS) in DocC catalogs.
 
 ---
 

@@ -170,8 +170,11 @@ public struct TreeSHAP: Sendable {
 
     /// Explains predictions of any model by calculating Shapley values for each instance against background data via KernelSHAP.
     /// - Parameters:
-    ///   - model: <#description#>
-    /// - Returns: <#description#>
+    ///   - model: Black-box model prediction function.
+    ///   - features: Feature matrix to explain (N instances × D features).
+    ///   - background: Optional reference baseline samples.
+    ///   - numCoalitions: Number of coalition subsets to sample per instance.
+    /// - Returns: Matrix of SHAP attribution values matching input dimensions.
     public func explain(
         model: @escaping @Sendable ([Double]) async -> Double,
         features: [[Double]],
@@ -226,14 +229,23 @@ public struct PermutationImportance: Sendable {
 
         var result: [String: Double] = [:]
         for c in 0..<numCols {
-            var shuffled = features
-            let perm = (0..<numRows).shuffled()
-            for i in 0..<numRows {
-                shuffled[i][c] = features[perm[i]][c]
+            var shuffledMSETotal = 0.0
+            let repeats = 3
+            for _ in 0..<repeats {
+                var shuffled = features
+                var perm = (0..<numRows).shuffled()
+                if numRows > 1 && perm == Array(0..<numRows) {
+                    perm.swapAt(0, 1)
+                }
+                for i in 0..<numRows {
+                    shuffled[i][c] = features[perm[i]][c]
+                }
+                let shuffledPreds = try await predict(shuffled)
+                let mse = zip(shuffledPreds, targets).reduce(0.0) { $0 + pow($1.0 - $1.1, 2) } / Double(numRows)
+                shuffledMSETotal += mse
             }
-            let shuffledPreds = try await predict(shuffled)
-            let shuffledMSE = zip(shuffledPreds, targets).reduce(0.0) { $0 + pow($1.0 - $1.1, 2) } / Double(numRows)
-            result["feature_\(c)"] = max(0.0, shuffledMSE - baselineMSE)
+            let avgShuffledMSE = shuffledMSETotal / Double(repeats)
+            result["feature_\(c)"] = max(0.0, avgShuffledMSE - baselineMSE)
         }
         return result
     }

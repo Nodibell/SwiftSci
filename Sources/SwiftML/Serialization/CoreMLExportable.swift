@@ -74,7 +74,7 @@ public protocol CoreMLExportable {
 extension CoreMLExportable {
     /// Default implementation: encodes via ``exportCoreML(featureNames:outputName:)`` and writes to disk.
     /// - Parameters:
-    ///   - to: <#description#>
+    ///   - url: <#description#>
     ///   - featureNames: <#description#>
     ///   - outputName: <#description#>
     /// - Throws: <#error description#>
@@ -89,7 +89,7 @@ extension CoreMLExportable {
 
     /// Default implementation: encodes via ``exportCoreML(featureNames:outputName:)`` and packages into `.mlpackage`.
     /// - Parameters:
-    ///   - to: <#description#>
+    ///   - url: <#description#>
     ///   - featureNames: <#description#>
     ///   - outputName: <#description#>
     ///   - author: <#description#>

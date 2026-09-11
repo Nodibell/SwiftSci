@@ -82,7 +82,7 @@ extension Stats {
     /// Scalar multiplication.
     /// - Parameters:
     ///   - values: <#description#>
-    ///   - by: <#description#>
+    ///   - scalar: <#description#>
     /// - Returns: <#description#>
     public static func scale(_ values: [Double], by scalar: Double) -> [Double] {
         vDSP.multiply(scalar, values)

@@ -56,7 +56,7 @@ public actor LinearRegression: RegressorEstimator {
     /// - Parameters:
     ///   - features: <#description#>
     ///   - targets: <#description#>
-    ///   - learningRate: <#description#>
+    ///   - lr: <#description#>
     ///   - epochs: <#description#>
     /// - Throws: <#error description#>
     public func fit(
@@ -170,7 +170,7 @@ public actor LinearRegression: RegressorEstimator {
     /// - Parameters:
     ///   - features: <#description#>
     ///   - targets: <#description#>
-    ///   - learningRate: <#description#>
+    ///   - lr: <#description#>
     ///   - epochs: <#description#>
     /// - Throws: <#error description#>
     public func fitCPUGradientDescent(features: [[Double]], targets: [Double], learningRate lr: Double = 0.01, epochs: Int = 1000) throws {

@@ -102,7 +102,7 @@ public actor KalmanFilter {
     ///
     /// - Parameter observations: An array of $m$-dimensional observation vectors.
     /// - Returns: An array of filtered ``KalmanState`` estimates for each time step.
-    /// - Throws: ``ForecastError/matrixDimensionMismatch(expectedRows:expectedCols:gotRows:gotCols:)`` if observation dimension does not match `observationSize`.
+    /// - Throws: `ForecastError.matrixDimensionMismatch` if observation dimension does not match `observationSize`.
     public func filter(observations: [[Double]]) throws -> [KalmanState] {
         try checkInitialization()
 

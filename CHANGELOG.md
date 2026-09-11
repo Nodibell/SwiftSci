@@ -4,7 +4,24 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.1] - 2026-09-11
+
+### Added
+- **WordNet Lexicon Expansion & Princeton Data Loader (`WordNet`, `Synset`, `SwiftNLP`)**:
+  - Expanded `WordNet.defaultSynsets` from a minimal 6-concept set to a comprehensive curated taxonomy (~120 core synsets) spanning physical entities, organisms, mammals, birds, reptiles, fish, flora, artifacts, computing, sciences, mathematics, verbs (cognition and action), and qualitative adjectives.
+  - Implemented `WordNet.load(fromDataFile:pos:)`, `WordNet.load(fromDirectory:)`, and `WordNet.parsePrincetonData(_:defaultPOS:)` supporting direct ingestion of official Princeton WordNet database files (`dict/data.noun`, `dict/data.verb`, `data.adj`, `data.adv`).
+- **Database Driver Interface Symmetry & Connectivity Health Checks (`SwiftDatabase`)**:
+  - Added async `ping()` method to `DatabaseConnection` protocol with default query-based verification across SQLite, PostgreSQL, and MySQL drivers.
+  - Added symmetric convenience initializers `init(host:port:user:password:database:sslMode:)` to `MySQLConnection` and `PostgreSQLConnection`.
+
+### Fixed
+- **SwiftDatabase Documentation Alignment**:
+  - Corrected outdated status text in `SwiftDatabase.docc/SwiftDatabase.md`, reflecting that PostgreSQL and MySQL drivers are fully implemented pure-Swift wire protocol drivers (PostgreSQL v3.0 wire protocol with SCRAM-SHA-256 and MySQL Client/Server Protocol 4.1+ with TLS).
+
+---
+
 ## [3.6.0] - 2026-09-10
+
 
 ### Added
 - **Hierarchical Navigable Small World Graph Index (`HNSWIndex`, `SwiftCluster`)**: Sub-millisecond $O(\log N)$ approximate nearest neighbor (ANN) vector search index scaling to 100k+ high-dimensional embeddings with vDSP cosine and L2 distance kernels, configurable $M$, $efConstruction$, and $efSearch$.

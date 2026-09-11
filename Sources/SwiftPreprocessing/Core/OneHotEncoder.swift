@@ -2,7 +2,7 @@ import Foundation
 
 /// Strategy for handling unseen categorical levels encountered during transformation.
 public enum HandleUnknownStrategy: Sendable {
-    /// Throws ``PreprocessingError/unknownCategory(_:)`` when encountering an unobserved category level.
+    /// Throws `PreprocessingError.unknownCategory(_:)` when encountering an unobserved category level.
     case error
 
     /// Encodes unobserved categories as an all-zero vector for that feature column, preventing pipeline failure.

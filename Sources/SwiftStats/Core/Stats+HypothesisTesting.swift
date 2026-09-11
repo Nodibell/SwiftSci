@@ -11,7 +11,7 @@ extension Stats {
     /// Tests whether the sample mean equals `mu`.
     /// - Parameters:
     ///   - sample: <#description#>
-    ///   - populationMean: <#description#>
+    ///   - mu: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public static func tTest(sample: [Double], populationMean mu: Double) throws -> TTestResult {

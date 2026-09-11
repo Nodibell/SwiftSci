@@ -26,7 +26,7 @@ public struct AppleNLEmbedding: Sendable {
 
     /// Fetches the vector representation for a given word.
     /// - Parameters:
-    ///   - for: <#description#>
+    ///   - word: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func vector(for word: String) throws -> [Double]? {
@@ -43,8 +43,8 @@ public struct AppleNLEmbedding: Sendable {
 
     /// Calculates distance (1.0 - cosine similarity) between two words.
     /// - Parameters:
-    ///   - between: <#description#>
-    ///   - and: <#description#>
+    ///   - word1: <#description#>
+    ///   - word2: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>
     public func distance(between word1: String, and word2: String) throws -> Double? {
@@ -62,7 +62,7 @@ public struct AppleNLEmbedding: Sendable {
 
     /// Finds top-K nearest neighbor words for a given query word.
     /// - Parameters:
-    ///   - for: <#description#>
+    ///   - word: <#description#>
     ///   - maxCount: <#description#>
     /// - Throws: <#error description#>
     /// - Returns: <#description#>

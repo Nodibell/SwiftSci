@@ -28,7 +28,6 @@ public actor OneVsRestClassifier: Sendable {
     ///   - epochs: Number of training epochs. Defaults to 1000.
     ///   - onProgress: Optional progress callback (completedClasses, totalClasses).
     /// - Throws: `SwiftMLError` if inputs are empty or dimensions mismatch.
-    /// - Returns: <#description#>
     public func fit(
         features: [[Double]],
         targets: [Double],

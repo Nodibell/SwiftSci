@@ -57,7 +57,7 @@ public actor LinearSVC: ClassifierEstimator {
     /// - Parameters:
     ///   - features: <#description#>
     ///   - targets: <#description#>
-    ///   - learningRate: <#description#>
+    ///   - lr: <#description#>
     ///   - epochs: <#description#>
     /// - Throws: <#error description#>
     public func fit(

@@ -56,4 +56,4 @@ let predictions = try await ovr.predict(features: X_test)
 ### Optimization & Search
 - ``AutoML``
 - ``AutoMLStrategy``
-- ``EvaluationReport``
+- ``CrossValidationResult``

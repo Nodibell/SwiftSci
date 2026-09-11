@@ -192,4 +192,38 @@ struct SwiftDatabaseTests {
         #expect(df.rowCount == 1)
         #expect(df.columnNames.contains("payload"))
     }
+
+    @Test("Test DatabaseConnection.ping() and host/port initializers")
+    func testPingAndConvenienceInitializers() async {
+        // SQLite in-memory responds to ping()
+        let sqlite = SQLiteConnection(databasePath: ":memory:")
+        let sqliteAlive = await sqlite.ping()
+        #expect(sqliteAlive == true)
+
+        // MySQLConnection host/port initializer
+        let mysql = MySQLConnection(host: "127.0.0.1", port: 59998, user: "admin", password: "secret", database: "prod", sslMode: .require)
+        #expect(mysql.host == "127.0.0.1")
+        #expect(mysql.port == 59998)
+        #expect(mysql.user == "admin")
+        #expect(mysql.password == "secret")
+        #expect(mysql.database == "prod")
+        #expect(mysql.sslMode == .require)
+        
+        // Ping on closed loopback port fails immediately without throwing
+        let mysqlAlive = await mysql.ping()
+        #expect(mysqlAlive == false)
+
+        // PostgreSQLConnection host/port initializer
+        let pg = PostgreSQLConnection(host: "127.0.0.1", port: 59999, user: "pguser", password: "pw", database: "analytics", sslMode: .prefer)
+        #expect(pg.host == "127.0.0.1")
+        #expect(pg.port == 59999)
+        #expect(pg.user == "pguser")
+        #expect(pg.password == "pw")
+        #expect(pg.database == "analytics")
+        #expect(pg.sslMode == .prefer)
+        
+        let pgAlive = await pg.ping()
+        #expect(pgAlive == false)
+    }
 }
+

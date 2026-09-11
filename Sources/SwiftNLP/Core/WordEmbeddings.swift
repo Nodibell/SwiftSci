@@ -59,7 +59,7 @@ public struct WordEmbeddings: Sendable {
     
     /// Returns the embedding vector for the given word.
     /// - Parameters:
-    ///   - for: <#description#>
+    ///   - word: <#description#>
     /// - Returns: <#description#>
     public func vector(for word: String) -> [Double]? {
         if let vec = embeddings[word] {
@@ -119,7 +119,7 @@ public struct WordEmbeddings: Sendable {
     
     /// Finds the top K most similar words to the given word.
     /// - Parameters:
-    ///   - to: <#description#>
+    ///   - word: <#description#>
     ///   - topK: <#description#>
     /// - Returns: <#description#>
     public func mostSimilar(to word: String, topK: Int = 10) -> [(word: String, similarity: Double)]? {

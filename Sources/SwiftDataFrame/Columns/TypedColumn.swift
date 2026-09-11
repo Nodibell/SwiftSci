@@ -244,7 +244,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// Lagged.
     /// - Returns: A `any AnyColumn` result.
     /// - Parameters:
-    ///   - by: <#description#>
+    ///   - offset: <#description#>
     public func lagged(by offset: Int) -> any AnyColumn {
         var newValues = [T?](repeating: nil, count: count)
         if offset > 0 {
@@ -274,7 +274,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     /// Returns a new column where null values are replaced by `value`.
     /// - Parameters:
-    ///   - with: <#description#>
+    ///   - value: <#description#>
     /// - Returns: <#description#>
     public func fillNull(with value: T) -> TypedColumn<T> {
         TypedColumn<T>(name: name, values: values.map { $0 ?? value })
@@ -397,7 +397,7 @@ extension TypedColumn where T == Double {
 
     /// vDSP-accelerated indexed gather for Double columns.
     /// - Parameters:
-    ///   - at: <#description#>
+    ///   - indices: <#description#>
     /// - Returns: <#description#>
     public func vGather(at indices: [Int]) -> TypedColumn<Double> {
         let n = indices.count

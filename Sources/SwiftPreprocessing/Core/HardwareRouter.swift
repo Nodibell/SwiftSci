@@ -11,7 +11,7 @@ public actor HardwareRouter {
 
     /// Resolves `.auto` into a concrete device using plan-0.8 heuristics.
     /// - Parameters:
-    ///   - for: <#description#>
+    ///   - algorithm: <#description#>
     ///   - sampleCount: <#description#>
     ///   - featureCount: <#description#>
     ///   - requestedDevice: <#description#>

@@ -1,9 +1,11 @@
-# SwiftSci 3.6.0 Complete Performance Benchmarks
+# SwiftSci 3.6.1 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.6.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.6.1** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
 
 > [!NOTE]
-> **What's New in 3.6.0 & 3.5.2 Enhancements:**
+> **What's New in 3.6.1 & 3.6.0 Enhancements:**
+> - **WordNet Lexicon Expansion (`SwiftNLP`):** Comprehensive curated offline taxonomy (~120 synsets) and Princeton WordNet database file loader.
+> - **Database Driver Health Check & Endpoint Symmetry (`SwiftDatabase`):** Async `ping()` protocol and convenience initializers for MySQL and PostgreSQL.
 > - **HNSW Graph ANN Vector Index (`SwiftCluster`):** $O(\log N)$ sub-millisecond approximate nearest neighbor search for 100k+ embeddings with vDSP cosine and L2 acceleration.
 > - **256-Bin Histogram GBDT (`SwiftML`):** Tabular tree ensembles with discrete 256-bin quantization and $O(\text{numBins})$ split evaluations.
 > - **Concurrent AutoML & Fold Optimization (`SwiftOptimize`):** Bounded `withThrowingTaskGroup` cross-validation scaling across all CPU cores.
@@ -17,7 +19,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ---
 
-## ⏱️ Performance & Architecture Evolution Timeline (v3.0 → v3.6.0)
+## ⏱️ Performance & Architecture Evolution Timeline (v3.0 → v3.6.1)
 
 The table below tracks key architectural breakthroughs, engine upgrades, and performance milestones across SwiftSci releases:
 
@@ -29,7 +31,8 @@ The table below tracks key architectural breakthroughs, engine upgrades, and per
 | **v3.5.0** | **Multi-Round Scientific Benchmarks & ML Speedups**<br>$R \times I = 21$ statistical harness (95% CI, 20% trimmed mean, Mach RSS RAM profiling), SIMD categorical encoding, sub-ms error metrics. | **OneHotEncoder**: **5.10 ms** (⚡ **5.03× vs Scikit-Learn**, 13× less RAM: 36 MB vs 465 MB).<br>**Forecast Errors Suite**: **0.84 ms**.<br>**ROC-AUC**: **2.61 ms** (⚡ **1.82× vs Sklearn**).<br>**Two-Sample T-Test**: **0.285 ms** (⚡ **3.93× vs SciPy**). | 🟢 Released |
 | **v3.5.1** | **Pure-Swift NMS & Temporal Anomaly Detection**<br>Autonomous `NonMaximumSuppression.filter` replacing OpenCV/torchvision, Seasonal Hybrid ESD + MAD anomaly detection, analytical 95% forecast intervals. | **Pure-Swift NMS**: Sub-millisecond execution.<br>**ARIMA(1,1,1) fit**: **2.46 ms** (⚡ **86.3× vs Statsmodels**).<br>**Holt-Winters fit**: **6.45 ms** (⚡ **22.4× vs Statsmodels**).<br>Zero-spike partitioned relational hash joins. | 🟢 Released |
 | **v3.5.2** | **Parquet Engine, NumPy Ingestion & GBDT Quantile Loss**<br>Pure-Swift Apache Parquet engine with PyArrow/DuckDB/HuggingFace compatibility (RLE dictionary, def/rep levels, list<item>), native `.npy`/`.npz` tensor reader, SQLite auto-discovery, `GBDTLoss.quantile`. | **Zero-dependency Parquet**: Verified on HuggingFace 5.4k-row datasets.<br>**NumPy reader**: Zero-copy little-endian tensor ingestion with ZIP64 Deflate.<br>**GBDT Quantile**: Non-parametric 80%/95% confidence bands. | 🟢 Released |
-| **v3.6.0** | **HNSW Index, 256-Bin HistGBDT, Concurrent AutoML & Metal Quantization Kernels**<br>Hierarchical Navigable Small World (HNSW) vector search, 256-bin histogram GBDT, TaskGroup concurrent cross-validation, CSR/CSC sparse matrices with Accelerate Sparse BLAS, parallel AutoARIMA, Metal MSL SIMD-group quantization kernels, multi-agent message bus, SQLite 1024 buffering, SCRAM-SHA-256. | **HNSW ANN search**: $O(\log N)$ logarithmic scaling.<br>**HistGBDT**: $O(\text{numBins})$ split evaluation.<br>**SparseMatrix**: 50× RAM reduction via Sparse BLAS.<br>**100% DocC API Coverage**: 1749 public symbols verified. | 🟢 Current |
+| **v3.6.0** | **HNSW Index, 256-Bin HistGBDT, Concurrent AutoML & Metal Quantization Kernels**<br>Hierarchical Navigable Small World (HNSW) vector search, 256-bin histogram GBDT, TaskGroup concurrent cross-validation, CSR/CSC sparse matrices with Accelerate Sparse BLAS, parallel AutoARIMA, Metal MSL SIMD-group quantization kernels, multi-agent message bus, SQLite 1024 buffering, SCRAM-SHA-256. | **HNSW ANN search**: $O(\log N)$ logarithmic scaling.<br>**HistGBDT**: $O(\text{numBins})$ split evaluation.<br>**SparseMatrix**: 50× RAM reduction via Sparse BLAS.<br>**100% DocC API Coverage**: 1749 public symbols verified. | 🟢 Released |
+| **v3.6.1** | **WordNet Lexicon Expansion, Princeton Data Ingestion & Database Health Protocols**<br>Curated 120-synset core WordNet offline taxonomy across nouns, verbs, adjectives; Princeton WordNet data loader engine; async `ping()` and symmetric endpoint initializers for relational databases. | **WordNet**: 120-concept rich offline taxonomy + Princeton format ingestion.<br>**Database `ping()`**: sub-millisecond connectivity verification. | 🟢 Current |
 
 ---
 
@@ -37,7 +40,7 @@ The table below tracks key architectural breakthroughs, engine upgrades, and per
 
 The values below represent **Mean ± 95% Confidence Interval** and **Median** from release benchmark runs. Speedups are computed as $\text{Time}_{\text{Python}} / \text{Time}_{\text{Swift}}$; values above `1.0×` indicate that Swift is faster.
 
-| Benchmark Scenario | SwiftSci 3.6.0 (Swift) | Python Baseline (Sklearn/NumPy/Pandas) | Speedup | Winner | RAM (Swift vs Py) | Notes |
+| Benchmark Scenario | SwiftSci 3.6.1 (Swift) | Python Baseline (Sklearn/NumPy/Pandas) | Speedup | Winner | RAM (Swift vs Py) | Notes |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **OneHotEncoder fitTransform** (50k rows) | **`5.104 ± 0.094 ms`** | `25.677 ± 0.226 ms` (*Scikit-Learn*) | ⚡ **5.03×** | 🟢 **Swift** | **36 MB** vs 465 MB | 🚀 13× less RAM |
 | **Classification ROC-AUC** (50k predictions) | **`2.609 ± 0.038 ms`** | `4.759 ± 0.046 ms` (*Scikit-Learn*) | ⚡ **1.82×** | 🟢 **Swift** | **27 MB** vs 463 MB | Rank-based AUC |

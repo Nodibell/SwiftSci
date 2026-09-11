@@ -212,6 +212,7 @@ let package = Package(
         .target(
             name: "SwiftOptimize",
             dependencies: [
+                "SwiftDataFrame",
                 "SwiftML",
             ],
             path: "Sources/SwiftOptimize",

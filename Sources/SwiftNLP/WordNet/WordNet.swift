@@ -173,45 +173,80 @@ public struct WordNet: Sendable {
     
     /// Computes Wu-Palmer Similarity (2 * depth(LCS) / (depth(s1) + depth(s2))) between two synsets.
     /// - Parameters:
-    ///   - s1: <#description#>
-    ///   - s2: <#description#>
-    /// - Returns: <#description#>
+    ///   - s1: The source synset.
+    ///   - s2: The target synset.
+    /// - Returns: The Wu-Palmer conceptual similarity score between 0.0 and 1.0.
     public func wupSimilarity(_ s1: Synset, _ s2: Synset) -> Double {
-        let ancestors1 = ancestorDepths(s1)
-        let ancestors2 = ancestorDepths(s2)
+        if s1.id == s2.id { return 1.0 }
+        
+        let ancestors1 = allAncestors(of: s1)
+        let ancestors2 = allAncestors(of: s2)
+        let common = ancestors1.intersection(ancestors2)
+        guard !common.isEmpty else { return 0.0 }
         
         var maxLCSDepth = 0
-        for (id, d1) in ancestors1 {
-            if let d2 = ancestors2[id] {
-                let lcsDepth = min(d1, d2)
-                maxLCSDepth = max(maxLCSDepth, lcsDepth)
+        for ancestorID in common {
+            if let syn = synsetMap[ancestorID] {
+                let d = depth(of: syn)
+                if d > maxLCSDepth {
+                    maxLCSDepth = d
+                }
             }
         }
         
-        let depth1 = (ancestors1[s1.id] ?? 1)
-        let depth2 = (ancestors2[s2.id] ?? 1)
-        
-        let denom = Double(depth1 + depth2)
+        let d1 = depth(of: s1)
+        let d2 = depth(of: s2)
+        let denom = Double(d1 + d2)
         guard denom > 0 else { return 0.0 }
         return (2.0 * Double(maxLCSDepth)) / denom
     }
     
-    private func ancestorDepths(_ synset: Synset) -> [String: Int] {
-        var result: [String: Int] = [synset.id: 1]
-        var queue: [(id: String, depth: Int)] = [(synset.id, 1)]
+    /// Computes the maximum depth of a synset from the taxonomy root(s).
+    /// A root synset (having no hypernyms) has depth 1.
+    /// - Parameters:
+    ///   - synset: The synset whose taxonomic depth is measured.
+    /// - Returns: An integer representing depth from the root concept (root = 1).
+    public func depth(of synset: Synset) -> Int {
+        var visited = Set<String>()
+        return synsetDepth(synset.id, visited: &visited)
+    }
+    
+    private func synsetDepth(_ id: String, visited: inout Set<String>) -> Int {
+        guard let synset = synsetMap[id] else { return 1 }
+        let validHypernyms = synset.hypernymIDs.filter { synsetMap[$0] != nil }
+        if validHypernyms.isEmpty {
+            return 1
+        }
+        visited.insert(id)
+        var maxParentDepth = 0
+        for parentID in validHypernyms {
+            if !visited.contains(parentID) {
+                let d = synsetDepth(parentID, visited: &visited)
+                maxParentDepth = max(maxParentDepth, d)
+            }
+        }
+        visited.remove(id)
+        return maxParentDepth + 1
+    }
+    
+    private func allAncestors(of synset: Synset) -> Set<String> {
+        var ancestors: Set<String> = [synset.id]
+        var queue = [synset.id]
+        var visited: Set<String> = [synset.id]
         
         while !queue.isEmpty {
-            let (currID, d) = queue.removeFirst()
+            let currID = queue.removeFirst()
             if let syn = synsetMap[currID] {
                 for parentID in syn.hypernymIDs {
-                    if result[parentID] == nil {
-                        result[parentID] = d + 1
-                        queue.append((parentID, d + 1))
+                    if !visited.contains(parentID) {
+                        visited.insert(parentID)
+                        ancestors.insert(parentID)
+                        queue.append(parentID)
                     }
                 }
             }
         }
-        return result
+        return ancestors
     }
     
     // MARK: - Princeton WordNet Data Loader

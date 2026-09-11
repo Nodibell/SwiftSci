@@ -209,4 +209,31 @@ struct WordNetTests {
         let loadedWN = try WordNet.load(fromDirectory: baseDir)
         #expect(!loadedWN.synsets(for: "fauna").isEmpty)
     }
+
+    @Test("Cookbook Recipe 8.4 compiles and executes properly")
+    func testCookbookRecipe84() throws {
+        let wordnet = WordNet()
+        let dogSynsets = wordnet.synsets(for: "dog", pos: .noun)
+        let catSynsets = wordnet.synsets(for: "cat", pos: .noun)
+        let compSynsets = wordnet.synsets(for: "computer", pos: .noun)
+
+        guard let dog = dogSynsets.first,
+              let cat = catSynsets.first,
+              let computer = compSynsets.first else {
+            Issue.record("Required synsets not found")
+            return
+        }
+
+        let hypernyms = wordnet.hypernyms(of: dog)
+        #expect(!hypernyms.isEmpty)
+
+        let distDogCat = wordnet.pathDistance(dog, cat)
+        let simDogCat = wordnet.pathSimilarity(dog, cat)
+        let wupDogCat = wordnet.wupSimilarity(dog, cat)
+        let wupDogComp = wordnet.wupSimilarity(dog, computer)
+
+        #expect(distDogCat == 2)
+        #expect(simDogCat > 0.0)
+        #expect(wupDogCat > wupDogComp)
+    }
 }

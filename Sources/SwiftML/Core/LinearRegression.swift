@@ -45,20 +45,20 @@ public actor LinearRegression: RegressorEstimator {
     
     /// Fits the regressor model on the provided features and targets (RegressorEstimator protocol).
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, learningRate: 0.01, epochs: 1000)
     }
     
     /// Fits the linear regression model to the features X and target values y (Sendable interface).
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    ///   - lr: <#description#>
-    ///   - epochs: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - lr: Learning rate step size scaling factor for optimization updates.
+    ///   - epochs: Total number of optimization training epochs.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -168,11 +168,11 @@ public actor LinearRegression: RegressorEstimator {
 
     /// Explicit Gradient Descent CPU backend.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    ///   - lr: <#description#>
-    ///   - epochs: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - lr: Learning rate step size scaling factor for optimization updates.
+    ///   - epochs: Total number of optimization training epochs.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fitCPUGradientDescent(features: [[Double]], targets: [Double], learningRate lr: Double = 0.01, epochs: Int = 1000) throws {
         let numSamples = features.count
         let numFeatures = features[0].count
@@ -284,9 +284,9 @@ public actor LinearRegression: RegressorEstimator {
     
     /// Predicts target values for the given features matrix (Sendable interface).
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Array of predicted continuous targets for input observations.
     public func predict(features: [[Double]]) throws -> [Double] {
         guard !features.isEmpty else {
             return []
@@ -314,9 +314,9 @@ public actor LinearRegression: RegressorEstimator {
     
     /// Predicts targets for the given feature matrix X (MLX interface).
     /// - Parameters:
-    ///   - X: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - X: 2D MLXArray or matrix representing input feature observations.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Hardware-accelerated `MLXArray` tensor output.
     public func predict(X: MLXArray) throws -> MLXArray {
         guard let weights = self.weights, let bias = self.bias else {
             throw SwiftMLError.modelNotFitted
@@ -337,14 +337,14 @@ public actor LinearRegression: RegressorEstimator {
     }
     
     /// Returns the learned weights as a standard Sendable Double array.
-    /// - Returns: <#description#>
+    /// - Returns: Array of learned model parameters, or `nil` if the estimator is not yet fitted.
     public func getWeights() -> [Double]? {
         if let cpuWeights { return cpuWeights }
         return weights?.asArray(Float.self).map { Double($0) }
     }
     
     /// Returns the learned bias as a standard Sendable Double array.
-    /// - Returns: <#description#>
+    /// - Returns: Computed scalar value, or `nil` if the model or parameter is uninitialized.
     public func getBias() -> Double? {
         if let cpuBias { return cpuBias }
         if let biasValue = bias {

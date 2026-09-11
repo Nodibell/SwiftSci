@@ -106,9 +106,9 @@ public actor RandomForestClassifier: ClassifierEstimator {
 
     /// Fit classifier without progress callback.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, onProgress: nil)
     }
@@ -371,9 +371,9 @@ public actor RandomForestRegressor: RegressorEstimator {
 
     /// Fits the regressor model.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, onProgress: nil)
     }

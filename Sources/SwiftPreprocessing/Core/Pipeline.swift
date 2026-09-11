@@ -22,8 +22,8 @@ public struct Pipeline: PreprocessingTransformer, Sendable {
     
     /// Fits all the steps in the pipeline sequentially.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     public mutating func fit(_ data: [[Double]]) throws {
         var current = data
         for i in 0..<steps.count {
@@ -34,9 +34,9 @@ public struct Pipeline: PreprocessingTransformer, Sendable {
     
     /// Transforms the data through all steps in the pipeline sequentially.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         var current = data
         for step in steps {

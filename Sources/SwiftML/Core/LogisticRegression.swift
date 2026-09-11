@@ -44,20 +44,20 @@ public actor LogisticRegression: ClassifierEstimator {
     
     /// Fits the classifier model on the provided features and targets (ClassifierEstimator protocol).
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, learningRate: 0.1, epochs: 1000)
     }
     
     /// Fits the logistic regression model to binary classification data (Sendable interface).
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    ///   - lr: <#description#>
-    ///   - epochs: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - lr: Learning rate step size scaling factor for optimization updates.
+    ///   - epochs: Total number of optimization training epochs.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -230,9 +230,9 @@ public actor LogisticRegression: ClassifierEstimator {
 
     /// Predicts class probabilities [[prob_class_0, prob_class_1]] for the given features matrix (ClassifierEstimator protocol).
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: 2D array of predicted class probabilities across samples of shape `[N, K]`.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         let p1 = try binaryPositiveClassProbability(features: features)
         return p1.map { [1.0 - $0, $0] }
@@ -240,9 +240,9 @@ public actor LogisticRegression: ClassifierEstimator {
     
     /// Predicts target probabilities of class 1 for the given features X.
     /// - Parameters:
-    ///   - X: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - X: 2D MLXArray or matrix representing input feature observations.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Hardware-accelerated `MLXArray` tensor output.
     public func predictProbability(X: MLXArray) throws -> MLXArray {
         guard let weights = self.weights, let bias = self.bias else {
             throw SwiftMLError.modelNotFitted
@@ -265,19 +265,19 @@ public actor LogisticRegression: ClassifierEstimator {
     
     /// Predicts class labels (ClassifierEstimator protocol).
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Array of predicted discrete class labels for input observations.
     public func predict(features: [[Double]]) async throws -> [Int] {
         try predict(features: features, threshold: 0.5)
     }
     
     /// Predicts class labels (0 or 1) for the given features matrix (Sendable interface).
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - threshold: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - threshold: Decision classification threshold for binary assignment.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Array of predicted discrete class labels for input observations.
     public func predict(features: [[Double]], threshold: Float = 0.5) throws -> [Int] {
         guard !features.isEmpty else {
             return []
@@ -289,24 +289,24 @@ public actor LogisticRegression: ClassifierEstimator {
     
     /// Predicts class labels (0 or 1) for the given features X.
     /// - Parameters:
-    ///   - X: <#description#>
-    ///   - threshold: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - X: 2D MLXArray or matrix representing input feature observations.
+    ///   - threshold: Decision classification threshold for binary assignment.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Hardware-accelerated `MLXArray` tensor output.
     public func predict(X: MLXArray, threshold: Float = 0.5) throws -> MLXArray {
         let probs = try predictProbability(X: X)
         return greater(probs, threshold).asType(.int32)
     }
     
     /// Returns the learned weights as a standard Sendable Double array.
-    /// - Returns: <#description#>
+    /// - Returns: Array of learned model parameters, or `nil` if the estimator is not yet fitted.
     public func getWeights() -> [Double]? {
         if let cpuWeights { return cpuWeights }
         return weights?.asArray(Float.self).map { Double($0) }
     }
     
     /// Returns the learned bias as a standard Sendable Double array.
-    /// - Returns: <#description#>
+    /// - Returns: Computed scalar value, or `nil` if the model or parameter is uninitialized.
     public func getBias() -> Double? {
         if let cpuBias { return cpuBias }
         if let biasValue = bias {

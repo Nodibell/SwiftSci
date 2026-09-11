@@ -74,10 +74,10 @@ public protocol CoreMLExportable {
 extension CoreMLExportable {
     /// Default implementation: encodes via ``exportCoreML(featureNames:outputName:)`` and writes to disk.
     /// - Parameters:
-    ///   - url: <#description#>
-    ///   - featureNames: <#description#>
-    ///   - outputName: <#description#>
-    /// - Throws: <#error description#>
+    ///   - url: File or network URL endpoint.
+    ///   - featureNames: Ordered list of feature column names.
+    ///   - outputName: Name assigned to the output layer or feature.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func writeCoreML(to url: URL, featureNames: [String], outputName: String) async throws {
         let data = try await exportCoreML(featureNames: featureNames, outputName: outputName)
         do {
@@ -89,12 +89,12 @@ extension CoreMLExportable {
 
     /// Default implementation: encodes via ``exportCoreML(featureNames:outputName:)`` and packages into `.mlpackage`.
     /// - Parameters:
-    ///   - url: <#description#>
-    ///   - featureNames: <#description#>
-    ///   - outputName: <#description#>
-    ///   - author: <#description#>
-    ///   - description: <#description#>
-    /// - Throws: <#error description#>
+    ///   - url: File or network URL endpoint.
+    ///   - featureNames: Ordered list of feature column names.
+    ///   - outputName: Name assigned to the output layer or feature.
+    ///   - author: Author or organization metadata string for model export.
+    ///   - description: Human-readable description metadata for the exported model.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func writeMLPackage(
         to url: URL,
         featureNames: [String],
@@ -116,7 +116,7 @@ extension DecisionTreeClassifier: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output predicted class label name (stored as `Int64`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the tree has not been fitted.
-    /// - Returns: <#description#>
+    /// - Returns: Raw serialized binary data representation.
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         let nodes = getTreeNodes()
         guard !nodes.isEmpty else { throw SwiftMLError.modelNotFitted }
@@ -137,7 +137,7 @@ extension DecisionTreeRegressor: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output prediction column name (stored as `Double`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the tree has not been fitted.
-    /// - Returns: <#description#>
+    /// - Returns: Raw serialized binary data representation.
     public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
         let nodes = getTreeNodes()
         guard !nodes.isEmpty else { throw SwiftMLError.modelNotFitted }
@@ -160,7 +160,7 @@ extension RandomForestClassifier: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output predicted class label name (stored as `Int64`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the forest has not been fitted.
-    /// - Returns: <#description#>
+    /// - Returns: Raw serialized binary data representation.
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         let treesNodes = getForestTrees()
         guard !treesNodes.isEmpty else { throw SwiftMLError.modelNotFitted }
@@ -189,7 +189,7 @@ extension RandomForestRegressor: CoreMLExportable {
     ///   - featureNames: Input feature column names matching training order.
     ///   - outputName: Output prediction column name (stored as `Double`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the forest has not been fitted.
-    /// - Returns: <#description#>
+    /// - Returns: Raw serialized binary data representation.
     public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
         let treesNodes = getForestTrees()
         guard !treesNodes.isEmpty else { throw SwiftMLError.modelNotFitted }

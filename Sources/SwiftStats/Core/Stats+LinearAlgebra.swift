@@ -7,10 +7,10 @@ extension Stats {
 
     /// Dot product of two vectors using vDSP.dot.
     /// - Parameters:
-    ///   - a: <#description#>
-    ///   - b: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - a: First vector or numeric operand.
+    ///   - b: Second vector or numeric operand.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func dotProduct(_ a: [Double], _ b: [Double]) throws -> Double {
         try requireNonEmpty(a)
         try requireSameSize(a, b)
@@ -19,10 +19,10 @@ extension Stats {
 
     /// Vector norm: L1, L2 (Euclidean), or L∞.
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - order: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - order: Mathematical norm order (.l1, .l2, or .infinity) or ARIMA order tuple.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Calculated mathematical vector or matrix norm.
     public static func norm(_ values: [Double], order: NormOrder = .l2) throws -> Double {
         try requireNonEmpty(values)
         switch order {
@@ -37,10 +37,10 @@ extension Stats {
 
     /// Cosine similarity: dot(a,b) / (‖a‖ · ‖b‖).
     /// - Parameters:
-    ///   - a: <#description#>
-    ///   - b: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - a: First vector or numeric operand.
+    ///   - b: Second vector or numeric operand.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Normalized similarity metric between -1.0 and 1.0.
     public static func cosineSimilarity(_ a: [Double], _ b: [Double]) throws -> Double {
         try requireNonEmpty(a)
         try requireSameSize(a, b)
@@ -55,10 +55,10 @@ extension Stats {
 
     /// Element-wise add.
     /// - Parameters:
-    ///   - a: <#description#>
-    ///   - b: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - a: First vector or numeric operand.
+    ///   - b: Second vector or numeric operand.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Array of computed numeric values.
     public static func add(_ a: [Double], _ b: [Double]) throws -> [Double] {
         try requireSameSize(a, b)
         var result = [Double](repeating: 0, count: a.count)
@@ -68,10 +68,10 @@ extension Stats {
 
     /// Element-wise subtract.
     /// - Parameters:
-    ///   - a: <#description#>
-    ///   - b: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - a: First vector or numeric operand.
+    ///   - b: Second vector or numeric operand.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Array of computed numeric values.
     public static func subtract(_ a: [Double], _ b: [Double]) throws -> [Double] {
         try requireSameSize(a, b)
         var result = [Double](repeating: 0, count: a.count)
@@ -81,18 +81,18 @@ extension Stats {
 
     /// Scalar multiplication.
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - scalar: <#description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - scalar: Scalar multiplier or shift value.
+    /// - Returns: Array of computed numeric values.
     public static func scale(_ values: [Double], by scalar: Double) -> [Double] {
         vDSP.multiply(scalar, values)
     }
 
     /// Normalise a vector to unit L2 norm.
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Array of computed numeric values.
     public static func normalise(_ values: [Double]) throws -> [Double] {
         let n = try norm(values, order: .l2)
         guard n > 0 else { throw StatsError.divisionByZero(context: "normalise") }
@@ -101,9 +101,9 @@ extension Stats {
 
     /// Standardise values: (x - mean) / std.
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Array of computed numeric values.
     public static func standardise(_ values: [Double]) throws -> [Double] {
         try requireNonEmpty(values, minimum: 2)
         let mu = vDSP.mean(values)

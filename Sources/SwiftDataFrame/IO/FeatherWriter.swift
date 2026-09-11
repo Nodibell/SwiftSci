@@ -8,7 +8,7 @@ public enum FeatherWriter {
     /// - Parameters:
     ///   - df: The `DataFrame` to write.
     ///   - url: Target file URL.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public static func write(_ df: DataFrame, to url: URL) async throws {
         let rb = try ArrowTableBridge.toRecordBatch(df)
         let info = ArrowWriter.Info(.schema, schema: rb.schema, batches: [rb])
@@ -25,7 +25,7 @@ public enum FeatherWriter {
     /// Serializes a `DataFrame` into raw Feather binary `Data`.
     /// - Parameter df: The `DataFrame` to serialize.
     /// - Returns: Serialized Feather `Data`.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public static func write(_ df: DataFrame) throws -> Data {
         let rb = try ArrowTableBridge.toRecordBatch(df)
         let info = ArrowWriter.Info(.schema, schema: rb.schema, batches: [rb])

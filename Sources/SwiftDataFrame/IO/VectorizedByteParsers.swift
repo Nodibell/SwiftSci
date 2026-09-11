@@ -5,9 +5,9 @@ public enum VectorizedByteParsers {
 
     /// Parses a `Double` directly from ASCII bytes in an un-copied buffer.
     /// - Parameters:
-    ///   - buffer: <#description#>
-    ///   - offset: <#description#>
-    /// - Returns: <#description#>
+    ///   - buffer: Underlying byte buffer or contiguous memory storage.
+    ///   - offset: Byte or element offset within the buffer.
+    /// - Returns: Computed scalar value, or `nil` if the model or parameter is uninitialized.
     @inlinable
     public static func parseDouble(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Double? {
         var start = offset.startOffset
@@ -74,9 +74,9 @@ public enum VectorizedByteParsers {
 
     /// Parses an `Int` directly from ASCII bytes in an un-copied buffer.
     /// - Parameters:
-    ///   - buffer: <#description#>
-    ///   - offset: <#description#>
-    /// - Returns: <#description#>
+    ///   - buffer: Underlying byte buffer or contiguous memory storage.
+    ///   - offset: Byte or element offset within the buffer.
+    /// - Returns: Calculated integer value, or `nil` if undefined.
     @inlinable
     public static func parseInt(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Int? {
         var start = offset.startOffset
@@ -124,9 +124,9 @@ public enum VectorizedByteParsers {
 
     /// Constructs a `String` from raw buffer coordinates, unescaping double quote sequences (`""`).
     /// - Parameters:
-    ///   - buffer: <#description#>
-    ///   - offset: <#description#>
-    /// - Returns: <#description#>
+    ///   - buffer: Underlying byte buffer or contiguous memory storage.
+    ///   - offset: Byte or element offset within the buffer.
+    /// - Returns: Generated or formatted text string.
     public static func parseString(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> String {
         var start = offset.startOffset
         var length = offset.length

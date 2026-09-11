@@ -70,8 +70,8 @@ public actor KMeans {
 
     /// Fits K-Means on the input dataset (Sendable interface).
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
     public func fit(features: [[Double]]) async throws {
         guard !features.isEmpty else {
             throw ClusterError.emptyInput
@@ -114,8 +114,8 @@ public actor KMeans {
 
     /// Fits K-Means on an MLX tensor (forces GPU path after setting MLX device).
     /// - Parameters:
-    ///   - X: <#description#>
-    /// - Throws: <#error description#>
+    ///   - X: 2D MLXArray or matrix representing input feature observations.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
     public func fit(X: MLXArray) async throws {
         guard X.size > 0 else { throw ClusterError.emptyInput }
         let shape = X.shape

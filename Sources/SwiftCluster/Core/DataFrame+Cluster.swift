@@ -20,12 +20,12 @@ extension DataFrame {
 
     /// Fits a KMeans clusterer on the specified columns.
     /// - Parameters:
-    ///   - names: <#description#>
-    ///   - k: <#description#>
-    ///   - maxIterations: <#description#>
-    ///   - tolerance: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - names: Array of column identifiers or feature names.
+    ///   - k: Number of nearest neighbors, clusters, or top components.
+    ///   - maxIterations: Maximum number of optimization solver iterations.
+    ///   - tolerance: Convergence stopping tolerance threshold.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: Fitted KMeans clustering model.
     public func fitKMeans(
         columns names: [String],
         k: Int,
@@ -40,10 +40,10 @@ extension DataFrame {
     
     /// Fits a PCA reducer on the specified columns.
     /// - Parameters:
-    ///   - names: <#description#>
-    ///   - nComponents: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - names: Array of column identifiers or feature names.
+    ///   - nComponents: Number of latent components or dimensions to retain.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: Fitted `PCA` dimensionality reduction model.
     public func fitPCA(
         columns names: [String],
         nComponents: Int
@@ -56,11 +56,11 @@ extension DataFrame {
     
     /// Fits a DBSCAN clusterer on the specified columns.
     /// - Parameters:
-    ///   - names: <#description#>
-    ///   - eps: <#description#>
-    ///   - minSamples: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - names: Array of column identifiers or feature names.
+    ///   - eps: Maximum neighborhood radius distance epsilon.
+    ///   - minSamples: Minimum number of samples required to form a core cluster or split.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: Fitted DBSCAN clustering model.
     public func fitDBSCAN(
         columns names: [String],
         eps: Double = 0.5,
@@ -74,10 +74,10 @@ extension DataFrame {
     
     /// Computes the Silhouette Score for cluster assignments on specified DataFrame columns.
     /// - Parameters:
-    ///   - names: <#description#>
-    ///   - labels: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - names: Array of column identifiers or feature names.
+    ///   - labels: Array of discrete class labels.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: Computed numerical scalar value.
     public func computeSilhouetteScore(columns names: [String], labels: [Int]) throws -> Double {
         let features = try extractFeatures(columns: names)
         return try SilhouetteScore.compute(features: features, labels: labels)
@@ -85,10 +85,10 @@ extension DataFrame {
     
     /// Computes Calinski-Harabasz and Davies-Bouldin index metrics for cluster assignments.
     /// - Parameters:
-    ///   - names: <#description#>
-    ///   - labels: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - names: Array of column identifiers or feature names.
+    ///   - labels: Array of discrete class labels.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: The computed (calinskiHarabasz: Double, daviesBouldin: Double) result instance.
     public func computeClusteringMetrics(columns names: [String], labels: [Int]) throws -> (calinskiHarabasz: Double, daviesBouldin: Double) {
         let features = try extractFeatures(columns: names)
         let ch = ClusteringMetrics.calinskiHarabaszIndex(features: features, labels: labels)

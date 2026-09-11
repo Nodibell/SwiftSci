@@ -102,7 +102,7 @@ public actor PCA {
     
     /// Fits the PCA model on the given dataset X.
     /// - Parameter X: A 2D array of shape [samples, features].
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
     public func fit(_ X: [[Double]]) async throws {
         guard !X.isEmpty, !X[0].isEmpty else {
             throw ClusterError.emptyInput
@@ -412,7 +412,7 @@ public actor PCA {
     /// Projects the given dataset X onto the principal components.
     /// - Parameter X: A 2D array of shape [samples, features].
     /// - Returns: Projected dataset of shape [samples, nComponents].
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
     public func transform(_ X: [[Double]]) throws -> [[Double]] {
         guard let mean = self.mean, let components = self.components else {
             throw ClusterError.fittingRequired
@@ -447,7 +447,7 @@ public actor PCA {
     /// Fits the model on X and returns the projected data.
     /// - Parameter X: A 2D array of shape [samples, features].
     /// - Returns: Projected dataset of shape [samples, nComponents].
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
     public func fitTransform(_ X: [[Double]]) async throws -> [[Double]] {
         try await fit(X)
         return try transform(X)

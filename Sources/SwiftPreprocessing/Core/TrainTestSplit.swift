@@ -22,13 +22,13 @@ public struct SeedableRandomNumberGenerator: RandomNumberGenerator {
 
 /// Splits features and targets into training and testing subsets.
 /// - Parameters:
-///   - features: <#description#>
-///   - targets: <#description#>
-///   - testSize: <#description#>
-///   - shuffle: <#description#>
-///   - seed: <#description#>
-/// - Throws: <#error description#>
-/// - Returns: <#description#>
+///   - features: 2D array of input feature vectors of shape `[N, P]`.
+///   - targets: 1D array of ground-truth target values of length `N`.
+///   - testSize: Proportion or absolute count of dataset allocated to test split.
+///   - shuffle: Whether to shuffle observations prior to splitting or processing.
+///   - seed: Random number generator seed for deterministic reproducibility.
+/// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+/// - Returns: The computed ( trainFeatures: [[Double]], testFeatures: [[Double]], trainTargets: [Double], testTargets: [Double] ) result instance.
 public func trainTestSplit(
     _ features: [[Double]],
     _ targets: [Double],
@@ -98,11 +98,11 @@ public func trainTestSplit(
 extension DataFrame {
     /// Splits the DataFrame rows into training and testing DataFrames.
     /// - Parameters:
-    ///   - testSize: <#description#>
-    ///   - shuffle: <#description#>
-    ///   - seed: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - testSize: Proportion or absolute count of dataset allocated to test split.
+    ///   - shuffle: Whether to shuffle observations prior to splitting or processing.
+    ///   - seed: Random number generator seed for deterministic reproducibility.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func trainTestSplit(
         testSize: Double = 0.25,
         shuffle: Bool = true,

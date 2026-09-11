@@ -206,9 +206,9 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     
     /// Returns predictions for the given feature matrix.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Array of predicted continuous targets for input observations.
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         

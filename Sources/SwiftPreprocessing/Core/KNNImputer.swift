@@ -27,8 +27,8 @@ public struct KNNImputer: PreprocessingTransformer, Sendable {
     
     /// Fits KNNImputer with feature matrix (PreprocessingTransformer protocol).
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     public mutating func fit(_ data: [[Double]]) throws {
 
         guard !data.isEmpty, !data[0].isEmpty else {
@@ -40,9 +40,9 @@ public struct KNNImputer: PreprocessingTransformer, Sendable {
     
     /// Imputes NaN values in feature matrix using weighted k-nearest neighbors (PreprocessingTransformer protocol).
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard isFitted else { throw PreprocessingError.fittingRequired }
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }

@@ -43,8 +43,8 @@ public final class SystemsCSVParser: Sendable {
 
     /// Parses an un-copied raw byte buffer into a grid of field offsets.
     /// - Parameters:
-    ///   - buffer: <#description#>
-    /// - Returns: <#description#>
+    ///   - buffer: Underlying byte buffer or contiguous memory storage.
+    /// - Returns: The computed [[CSVFieldOffset]] result instance.
     public func parse(buffer: UnsafeBufferPointer<UInt8>) -> [[CSVFieldOffset]] {
         var records = [[CSVFieldOffset]]()
         records.reserveCapacity(100_000)

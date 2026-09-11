@@ -84,9 +84,9 @@ public struct WordNet: Sendable {
     
     /// Returns all synsets matching the given lemma (word).
     /// - Parameters:
-    ///   - lemma: <#description#>
-    ///   - pos: <#description#>
-    /// - Returns: <#description#>
+    ///   - lemma: Base canonical form or lemma of a word.
+    ///   - pos: Part of speech syntactic category.
+    /// - Returns: Array of matching lexical synsets.
     public func synsets(for lemma: String, pos: POS? = nil) -> [Synset] {
         let key = lemma.lowercased()
         guard let ids = lemmaIndex[key] else { return [] }
@@ -99,25 +99,25 @@ public struct WordNet: Sendable {
     
     /// Returns direct hypernyms (parent concepts) for a synset.
     /// - Parameters:
-    ///   - synset: <#description#>
-    /// - Returns: <#description#>
+    ///   - synset: WordNet lexical synset instance.
+    /// - Returns: Array of matching lexical synsets.
     public func hypernyms(of synset: Synset) -> [Synset] {
         synset.hypernymIDs.compactMap { synsetMap[$0] }
     }
     
     /// Returns direct hyponyms (child concepts) for a synset.
     /// - Parameters:
-    ///   - synset: <#description#>
-    /// - Returns: <#description#>
+    ///   - synset: WordNet lexical synset instance.
+    /// - Returns: Array of matching lexical synsets.
     public func hyponyms(of synset: Synset) -> [Synset] {
         synset.hyponymIDs.compactMap { synsetMap[$0] }
     }
     
     /// Computes shortest path distance between two synsets in the hypernym hierarchy.
     /// - Parameters:
-    ///   - s1: <#description#>
-    ///   - s2: <#description#>
-    /// - Returns: <#description#>
+    ///   - s1: First synset for taxonomic comparison.
+    ///   - s2: Second synset for taxonomic comparison.
+    /// - Returns: Calculated integer value, or `nil` if undefined.
     public func pathDistance(_ s1: Synset, _ s2: Synset) -> Int? {
         if s1 == s2 { return 0 }
         
@@ -163,9 +163,9 @@ public struct WordNet: Sendable {
     
     /// Computes Path Similarity (1 / (path_distance + 1)) between two synsets in [0, 1].
     /// - Parameters:
-    ///   - s1: <#description#>
-    ///   - s2: <#description#>
-    /// - Returns: <#description#>
+    ///   - s1: First synset for taxonomic comparison.
+    ///   - s2: Second synset for taxonomic comparison.
+    /// - Returns: Normalized similarity metric between -1.0 and 1.0.
     public func pathSimilarity(_ s1: Synset, _ s2: Synset) -> Double {
         guard let dist = pathDistance(s1, s2) else { return 0.0 }
         return 1.0 / Double(dist + 1)

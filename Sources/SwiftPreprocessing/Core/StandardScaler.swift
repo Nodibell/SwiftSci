@@ -127,9 +127,9 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
 
     /// Fits to `data` then returns the standardized result.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
         try fit(data)
         return try transform(data)

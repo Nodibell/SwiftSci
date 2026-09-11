@@ -34,9 +34,9 @@ public struct CustomAgentTool: AgentTool, Sendable {
 
     /// Executes the custom tool handler.
     /// - Parameters:
-    ///   - input: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - input: Input source array or buffer.
+    /// - Throws: `AgentError` or `SwiftMLError` if tool execution, AST evaluation, or reasoning fails.
+    /// - Returns: Generated or formatted text string.
     public func execute(input: String) async throws -> String {
         try await handler(input)
     }
@@ -64,9 +64,9 @@ public struct DataFrameAgentTool: AgentTool, Sendable {
 
     /// Evaluates the DataFrame command and returns a string summary of the resulting DataFrame.
     /// - Parameters:
-    ///   - input: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - input: Input source array or buffer.
+    /// - Throws: `AgentError` or `SwiftMLError` if tool execution, AST evaluation, or reasoning fails.
+    /// - Returns: Generated or formatted text string.
     public func execute(input: String) async throws -> String {
         let result = try await evaluator.evaluate(command: input, on: dataframe)
         var out = "Result (\(result.rowCount) rows):\n"
@@ -182,7 +182,7 @@ public actor ReActAgent {
     ///   - query: The target user question or goal.
     ///   - llm: Async block producing model completions given a prompt.
     /// - Returns: Final answer and complete trajectory trace of agent steps.
-    /// - Throws: <#error description#>
+    /// - Throws: `AgentError` or `SwiftMLError` if tool execution, AST evaluation, or reasoning fails.
     public func run(
         query: String,
         llm: @Sendable (String) async throws -> String
@@ -292,7 +292,7 @@ public actor ReActAgent {
     ///   - model: A local LLMModel instance executing natively on Apple Silicon.
     ///   - options: Inference options (temperature, topP, maxTokens).
     /// - Returns: Tuple with final answer and complete reasoning step trace.
-    /// - Throws: <#error description#>
+    /// - Throws: `AgentError` or `SwiftMLError` if tool execution, AST evaluation, or reasoning fails.
     public func run(
         query: String,
         model: any LLMModel,

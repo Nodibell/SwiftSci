@@ -17,7 +17,7 @@ public struct VarianceThreshold: PreprocessingTransformer, Sendable {
     /// Fit.
     /// - Throws: An error if the operation fails.
     /// - Parameters:
-    ///   - data: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
     public mutating func fit(_ data: [[Double]]) throws {
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
@@ -41,7 +41,7 @@ public struct VarianceThreshold: PreprocessingTransformer, Sendable {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[[Double]]` result.
     /// - Parameters:
-    ///   - data: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let indices = selectedIndices.isEmpty ? Array(0..<data[0].count) : selectedIndices
@@ -71,7 +71,7 @@ public struct SelectKBest: PreprocessingTransformer, Sendable {
     /// Fit.
     /// - Throws: An error if the operation fails.
     /// - Parameters:
-    ///   - data: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
     public mutating func fit(_ data: [[Double]]) throws {
         try fit(features: data, targets: nil)
     }
@@ -133,7 +133,7 @@ public struct SelectKBest: PreprocessingTransformer, Sendable {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[[Double]]` result.
     /// - Parameters:
-    ///   - data: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let indices = selectedIndices.isEmpty ? Array(0..<min(k, data[0].count)) : selectedIndices
@@ -169,7 +169,7 @@ public struct RecursiveFeatureElimination: PreprocessingTransformer, Sendable {
     /// Fit.
     /// - Throws: An error if the operation fails.
     /// - Parameters:
-    ///   - data: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
     public mutating func fit(_ data: [[Double]]) throws {
         try fit(features: data, featureImportances: nil)
     }
@@ -224,7 +224,7 @@ public struct RecursiveFeatureElimination: PreprocessingTransformer, Sendable {
     /// - Throws: An error if the operation fails.
     /// - Returns: A `[[Double]]` result.
     /// - Parameters:
-    ///   - data: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let indices = selectedIndices.isEmpty ? Array(0..<min(nFeaturesToSelect, data[0].count)) : selectedIndices

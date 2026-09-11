@@ -75,7 +75,7 @@ public enum RandomizedSVD {
     ///   - q: Number of power iterations for improved accuracy on slow-decay spectra (default 2).
     ///   - seed: Seed for deterministic random sketch (default 42).
     /// - Returns: `RandomizedSVD.Result` with U [M×k], S [k], Vt [k×N].
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
     public static func compute(
         X: [[Double]],
         nComponents k: Int,

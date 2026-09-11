@@ -22,7 +22,7 @@ public struct SparseVector: Sendable, Codable, Equatable {
     }
 
     /// Converts the sparse vector back to a dense `[Double]` array.
-    /// - Returns: <#description#>
+    /// - Returns: Array of computed numeric values.
     public func toDense() -> [Double] {
         var dense = [Double](repeating: 0.0, count: dimension)
         for (idx, val) in zip(indices, values) {
@@ -86,7 +86,7 @@ public actor TFIDFVectorizer {
     
     /// Fits the vectorizer on a corpus of documents, building the vocabulary and computing IDFs.
     /// - Parameter documents: List of string documents.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func fit(_ documents: [String]) throws {
         guard !documents.isEmpty else {
             throw NLPError.emptyInput
@@ -148,7 +148,7 @@ public actor TFIDFVectorizer {
     /// Transforms the documents into a dense TF-IDF matrix.
     /// - Parameter documents: List of string documents.
     /// - Returns: A 2D array of shape [documents, vocabSize].
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func transform(_ documents: [String]) throws -> [[Double]] {
         guard !vocabulary.isEmpty, !idfs.isEmpty else {
             throw NLPError.fittingRequired
@@ -185,7 +185,7 @@ public actor TFIDFVectorizer {
     /// Transforms documents into memory-efficient `SparseVector` representations.
     /// - Parameter documents: List of string documents.
     /// - Returns: An array of `SparseVector` objects.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func transformSparse(_ documents: [String]) throws -> [SparseVector] {
         guard !vocabulary.isEmpty, !idfs.isEmpty else {
             throw NLPError.fittingRequired
@@ -232,7 +232,7 @@ public actor TFIDFVectorizer {
     /// Fits the model and transforms the documents into a dense matrix.
     /// - Parameter documents: List of string documents.
     /// - Returns: A 2D array of shape [documents, vocabSize].
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func fitTransform(_ documents: [String]) throws -> [[Double]] {
         try fit(documents)
         return try transform(documents)
@@ -240,9 +240,9 @@ public actor TFIDFVectorizer {
 
     /// Fits the model and transforms documents into sparse vectors.
     /// - Parameters:
-    ///   - documents: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - documents: Collection of text documents to process.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: The computed [SparseVector] result instance.
     public func fitTransformSparse(_ documents: [String]) throws -> [SparseVector] {
         try fit(documents)
         return try transformSparse(documents)
@@ -250,35 +250,35 @@ public actor TFIDFVectorizer {
 
     /// Fits the vectorizer on a corpus of documents (labeled argument overload).
     /// - Parameters:
-    ///   - documents: <#description#>
-    /// - Throws: <#error description#>
+    ///   - documents: Collection of text documents to process.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func fit(documents: [String]) throws {
         try fit(documents)
     }
 
     /// Transforms documents into a TF-IDF matrix (labeled argument overload).
     /// - Parameters:
-    ///   - documents: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - documents: Collection of text documents to process.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func transform(documents: [String]) throws -> [[Double]] {
         try transform(documents)
     }
 
     /// Transforms documents into sparse vectors (labeled argument overload).
     /// - Parameters:
-    ///   - documents: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - documents: Collection of text documents to process.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: The computed [SparseVector] result instance.
     public func transformSparse(documents: [String]) throws -> [SparseVector] {
         try transformSparse(documents)
     }
 
     /// Fits the model and transforms documents (labeled argument overload).
     /// - Parameters:
-    ///   - documents: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - documents: Collection of text documents to process.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func fitTransform(documents: [String]) throws -> [[Double]] {
         try fitTransform(documents)
     }

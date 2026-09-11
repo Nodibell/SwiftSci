@@ -27,8 +27,8 @@ public struct LazyDataFrame: Sendable {
     
     /// Lazily filters rows using a predicate. Returns a new `LazyDataFrame`.
     /// - Parameters:
-    ///   - predicate: <#description#>
-    /// - Returns: <#description#>
+    ///   - predicate: Filtering boolean closure applied to elements.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func filter(_ predicate: @escaping @Sendable (DataFrameRow) -> Bool) -> LazyDataFrame {
         var updatedNodes = plan.nodes
         updatedNodes.append(.filter(predicate: predicate))
@@ -37,16 +37,16 @@ public struct LazyDataFrame: Sendable {
     
     /// Lazily selects a subset of columns by name. Returns a new `LazyDataFrame`.
     /// - Parameters:
-    ///   - columns: <#description#>
-    /// - Returns: <#description#>
+    ///   - columns: List of column names to select or transform.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func select(_ columns: String...) -> LazyDataFrame {
         select(columns)
     }
     
     /// Lazily selects a subset of columns by array of names. Returns a new `LazyDataFrame`.
     /// - Parameters:
-    ///   - columns: <#description#>
-    /// - Returns: <#description#>
+    ///   - columns: List of column names to select or transform.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func select(_ columns: [String]) -> LazyDataFrame {
         var updatedNodes = plan.nodes
         updatedNodes.append(.select(columns: columns))
@@ -56,8 +56,8 @@ public struct LazyDataFrame: Sendable {
     // MARK: – Execution / Evaluation
     
     /// Evaluates the optimized execution plan and returns an eager `DataFrame`.
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func collect() async throws -> DataFrame {
         let optPlan = plan.optimized()
         var currentDF: DataFrame?
@@ -94,32 +94,32 @@ public struct LazyDataFrame: Sendable {
 
 extension DataFrame {
     /// Converts an eager `DataFrame` into a `LazyDataFrame`.
-    /// - Returns: <#description#>
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func lazy() -> LazyDataFrame {
         LazyDataFrame(dataFrame: self)
     }
     
     /// Creates a `LazyDataFrame` reading from a CSV file.
     /// - Parameters:
-    ///   - url: <#description#>
-    ///   - options: <#description#>
-    /// - Returns: <#description#>
+    ///   - url: File or network URL endpoint.
+    ///   - options: Configuration options controlling execution behavior.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public static func lazyCSV(url: URL, options: CSVReadOptions = .default) -> LazyDataFrame {
         LazyDataFrame(source: .csv(url: url, options: options))
     }
     
     /// Creates a `LazyDataFrame` reading from a Feather file.
     /// - Parameters:
-    ///   - url: <#description#>
-    /// - Returns: <#description#>
+    ///   - url: File or network URL endpoint.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public static func lazyFeather(url: URL) -> LazyDataFrame {
         LazyDataFrame(source: .feather(url: url))
     }
 
     /// Creates a `LazyDataFrame` reading from an Apache Parquet file.
     /// - Parameters:
-    ///   - url: <#description#>
-    /// - Returns: <#description#>
+    ///   - url: File or network URL endpoint.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public static func lazyParquet(url: URL) -> LazyDataFrame {
         LazyDataFrame(source: .parquet(url: url))
     }

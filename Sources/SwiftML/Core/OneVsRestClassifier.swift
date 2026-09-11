@@ -64,9 +64,9 @@ public actor OneVsRestClassifier: Sendable {
 
     /// Predicts class index for feature vectors.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Array of predicted discrete class labels for input observations.
     public func predict(features: [[Double]]) async throws -> [Int] {
         guard !estimators.isEmpty else {
             throw SwiftMLError.modelNotFitted

@@ -1040,10 +1040,10 @@ public actor MySQLConnection: DatabaseConnection {
 extension DataFrame {
     /// Ingests data from a SQL database connection directly into a DataFrame.
     /// - Parameters:
-    ///   - query: <#description#>
-    ///   - connection: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - query: SQL query string or search query vector.
+    ///   - connection: Active database connection instance.
+    /// - Throws: `DatabaseError` if connection fails, query execution errors, or schemas are invalid.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public static func fromSQL(_ query: String, connection: any DatabaseConnection) async throws -> DataFrame {
         let result = try await connection.executeQuery(query)
         var cols: [any AnyColumn] = []
@@ -1214,8 +1214,8 @@ extension DataFrame {
 
 extension SQLQueryResult {
     /// Converts this query result into a `DataFrame`.
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    /// - Throws: `DatabaseError` if connection fails, query execution errors, or schemas are invalid.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func toDataFrame() throws -> DataFrame {
         guard !columns.isEmpty else { return DataFrame.empty }
         let numCols = columns.count
@@ -1324,9 +1324,9 @@ extension SQLQueryResult {
 extension DatabaseConnection {
     /// Reads a database table into a `DataFrame`.
     /// - Parameters:
-    ///   - table: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - table: Target database table name.
+    /// - Throws: `DatabaseError` if connection fails, query execution errors, or schemas are invalid.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func readDataFrame(table: String) async throws -> DataFrame {
         let escaped = table.replacingOccurrences(of: "\"", with: "\"\"")
         let queryResult = try await executeQuery("SELECT * FROM \"\(escaped)\";")
@@ -1343,7 +1343,7 @@ extension DataFrame {
     ///   - sqliteURL: The local URL pointing to the SQLite database file (`.sqlite`, `.db`, `.sqlite3`).
     ///   - table: The table name to load. If `nil`, auto-discovers the first user table in `sqlite_master`.
     /// - Returns: A `DataFrame` populated with the table contents.
-    /// - Throws: <#error description#>
+    /// - Throws: `DatabaseError` if connection fails, query execution errors, or schemas are invalid.
     public static func readSQLite(url sqliteURL: URL, table: String? = nil) async throws -> DataFrame {
         guard FileManager.default.fileExists(atPath: sqliteURL.path) else {
             throw SwiftMLError.fileNotFound(sqliteURL)

@@ -27,8 +27,8 @@ extension DataFrame {
     }
     
     /// Converts the `DataFrame` into an Apache Arrow `ArrowTable`.
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: The computed ArrowTable result instance.
     public func toArrowTable() throws -> ArrowTable {
         try ArrowTableBridge.toArrowTable(self)
     }

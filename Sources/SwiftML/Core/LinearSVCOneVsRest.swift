@@ -13,13 +13,13 @@ public actor LinearSVCOneVsRest: Sendable {
 
     /// Fits one binary LinearSVC per class against all other classes.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    ///   - C: <#description#>
-    ///   - learningRate: <#description#>
-    ///   - epochs: <#description#>
-    ///   - onProgress: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - C: Regularization inverse penalty parameter (larger values enforce smaller margins).
+    ///   - learningRate: Step size scaling factor for gradient parameter updates.
+    ///   - epochs: Total number of optimization training epochs.
+    ///   - onProgress: Progress callback closure receiving normalized completion ratios.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -46,9 +46,9 @@ public actor LinearSVCOneVsRest: Sendable {
 
     /// Predicts class index for feature vectors using highest decision score (argmax w^T x + b).
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Array of predicted discrete class labels for input observations.
     public func predict(features: [[Double]]) async throws -> [Int] {
         guard !estimators.isEmpty else {
             throw SwiftMLError.modelNotFitted

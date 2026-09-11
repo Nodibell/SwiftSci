@@ -11,9 +11,9 @@ extension DataFrame {
 
     /// Fits a TFIDFVectorizer on the specified text column.
     /// - Parameters:
-    ///   - name: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: The computed TFIDFVectorizer result instance.
     public func fitTFIDF(column name: String) async throws -> TFIDFVectorizer {
         let documents = try extractDocuments(column: name)
         let vectorizer = TFIDFVectorizer()
@@ -23,11 +23,11 @@ extension DataFrame {
 
     /// Tokenizes a text column using the specified `Tokenizer`.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - targetColumn: <#description#>
-    ///   - tokenizer: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - targetColumn: Name of the target column in the dataset.
+    ///   - tokenizer: Tokenizer instance or strategy used for lexical decomposition.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func tokenizeColumn(_ name: String, targetColumn: String = "tokens", tokenizer: any Tokenizer = AppleWordTokenizer()) throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let tokenizedDocs = docs.map { tokenizer.tokenize(text: $0).joined(separator: " ") }
@@ -36,10 +36,10 @@ extension DataFrame {
 
     /// Stems word tokens in a text column using `PorterStemmer`.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - targetColumn: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - targetColumn: Name of the target column in the dataset.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func stemColumn(_ name: String, targetColumn: String = "stemmed") throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let stemmer = PorterStemmer()
@@ -52,10 +52,10 @@ extension DataFrame {
 
     /// Evaluates sentiment on a text column using VADER sentiment analyzer.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - targetColumn: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - targetColumn: Name of the target column in the dataset.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func analyzeSentiment(column name: String, targetColumn: String = "sentiment_compound") throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let analyzer = VADERSentimentAnalyzer()
@@ -65,10 +65,10 @@ extension DataFrame {
 
     /// Detects language code on a text column using AppleLanguageDetector.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - targetColumn: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - targetColumn: Name of the target column in the dataset.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func detectLanguage(column name: String, targetColumn: String = "language") throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let detector = AppleLanguageDetector()
@@ -78,10 +78,10 @@ extension DataFrame {
 
     /// Extracts named entities from a text column using AppleNamedEntityRecognizer.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - targetColumn: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - targetColumn: Name of the target column in the dataset.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func extractEntities(fromColumn name: String, targetColumn: String = "entities") throws -> DataFrame {
         let docs = try extractDocuments(column: name)
         let recognizer = AppleNamedEntityRecognizer()

@@ -10,7 +10,7 @@ public final class LabelEncoder: @unchecked Sendable {
     
     /// Fits the LabelEncoder on the input categories.
     /// - Parameters:
-    ///   - categories: <#description#>
+    ///   - categories: Discrete category levels or categorical column names.
     public func fit(_ categories: [String]) {
         let uniqueSorted = Array(Set(categories)).sorted()
         self.classes = uniqueSorted
@@ -18,9 +18,9 @@ public final class LabelEncoder: @unchecked Sendable {
     
     /// Transforms category strings into integer labels.
     /// - Parameters:
-    ///   - categories: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - categories: Discrete category levels or categorical column names.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: Array of computed integer labels or indices.
     public func transform(_ categories: [String]) throws -> [Int] {
         guard !classes.isEmpty else {
             throw PreprocessingError.fitNotCalled
@@ -44,9 +44,9 @@ public final class LabelEncoder: @unchecked Sendable {
     
     /// Reverses the transform mapping back to the original string labels.
     /// - Parameters:
-    ///   - labels: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - labels: Array of discrete class labels.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: Array of feature names, column identifiers, or tokens.
     public func inverseTransform(_ labels: [Int]) throws -> [String] {
         guard !classes.isEmpty else {
             throw PreprocessingError.fitNotCalled
@@ -67,9 +67,9 @@ public final class LabelEncoder: @unchecked Sendable {
     
     /// Fits to categories, then transforms it.
     /// - Parameters:
-    ///   - categories: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - categories: Discrete category levels or categorical column names.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: Array of computed integer labels or indices.
     public func fitTransform(_ categories: [String]) throws -> [Int] {
         fit(categories)
         return try transform(categories)

@@ -36,8 +36,8 @@ public actor ExponentialSmoothing {
     
     /// Fits the exponential smoothing model to the series.
     /// - Parameters:
-    ///   - series: <#description#>
-    /// - Throws: <#error description#>
+    ///   - series: 1D temporal time-series observations array.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func fit(series: [Double]) async throws {
         guard !series.isEmpty else {
             throw ForecastError.emptyTimeSeries
@@ -72,9 +72,9 @@ public actor ExponentialSmoothing {
     
     /// Forecast horizon steps ahead.
     /// - Parameters:
-    ///   - horizon: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - horizon: Number of future time steps to forecast ahead.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Returns: `ForecastResult` containing point predictions and confidence interval bounds.
     public func forecast(horizon: Int) throws -> ForecastResult {
         guard isFitted else {
             throw ForecastError.notFitted

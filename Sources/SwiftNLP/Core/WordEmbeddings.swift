@@ -59,8 +59,8 @@ public struct WordEmbeddings: Sendable {
     
     /// Returns the embedding vector for the given word.
     /// - Parameters:
-    ///   - word: <#description#>
-    /// - Returns: <#description#>
+    ///   - word: Target word token string.
+    /// - Returns: Array of learned model parameters, or `nil` if the estimator is not yet fitted.
     public func vector(for word: String) -> [Double]? {
         if let vec = embeddings[word] {
             return vec
@@ -71,9 +71,9 @@ public struct WordEmbeddings: Sendable {
 
     /// Computes the cosine similarity between two words.
     /// - Parameters:
-    ///   - word1: <#description#>
-    ///   - word2: <#description#>
-    /// - Returns: <#description#>
+    ///   - word1: First word token string for comparison.
+    ///   - word2: Second word token string for comparison.
+    /// - Returns: Computed scalar value, or `nil` if the model or parameter is uninitialized.
     public func cosineSimilarity(_ word1: String, _ word2: String) -> Double? {
         guard let v1 = vector(for: word1), let v2 = vector(for: word2) else {
             return nil
@@ -119,9 +119,9 @@ public struct WordEmbeddings: Sendable {
     
     /// Finds the top K most similar words to the given word.
     /// - Parameters:
-    ///   - word: <#description#>
-    ///   - topK: <#description#>
-    /// - Returns: <#description#>
+    ///   - word: Target word token string.
+    ///   - topK: Number of highest-ranking matches or components to return.
+    /// - Returns: The computed [(word: String, similarity: Double)]? result instance.
     public func mostSimilar(to word: String, topK: Int = 10) -> [(word: String, similarity: Double)]? {
         guard let _ = vector(for: word) else { return nil }
         

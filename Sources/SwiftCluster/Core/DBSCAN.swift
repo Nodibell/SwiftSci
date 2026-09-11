@@ -28,8 +28,8 @@ public actor DBSCAN {
     
     /// Fits the DBSCAN model on the input dataset.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
     public func fit(features: [[Double]]) async throws {
         guard !features.isEmpty else {
             throw ClusterError.emptyInput
@@ -102,9 +102,9 @@ public actor DBSCAN {
     
     /// Fits DBSCAN and returns the labels.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: Array of computed integer labels or indices.
     public func fitTransform(features: [[Double]]) async throws -> [Int] {
         try await fit(features: features)
         return labels ?? []

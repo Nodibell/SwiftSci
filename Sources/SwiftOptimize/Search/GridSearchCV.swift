@@ -52,10 +52,10 @@ public struct GridSearchCV: Sendable {
 
     /// Runs grid search over DecisionTreeClassifier and returns all results sorted best-first.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Returns: The computed [Result] result instance.
     public func search(features: [[Double]], targets: [Double]) async throws -> [Result] {
         let nSplits = self.nSplits
         let seed = self.seed
@@ -85,10 +85,10 @@ public struct GridSearchCV: Sendable {
 
     /// Convenience: returns only the best parameter combination.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Returns: The computed Result? result instance.
     public func bestParams(features: [[Double]], targets: [Double]) async throws -> Result? {
         let results = try await search(features: features, targets: targets)
         return results.first

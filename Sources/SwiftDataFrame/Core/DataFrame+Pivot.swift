@@ -9,7 +9,7 @@ extension DataFrame {
     ///   - valueCol: Column to use for populating new frame's values.
     ///   - aggFunc: Aggregation function to apply when duplicate index/column pairs exist.
     /// - Returns: Reshaped DataFrame.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public func pivot(
         index indexCol: String,
         columns pivotCol: String,
@@ -92,7 +92,7 @@ extension DataFrame {
     ///   - varName: Name to use for the 'variable' column.
     ///   - valueName: Name to use for the 'value' column.
     /// - Returns: Unpivoted DataFrame.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public func melt(
         idVars: [String],
         valueVars: [String] = [],

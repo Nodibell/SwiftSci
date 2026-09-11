@@ -39,27 +39,27 @@ public actor LinearSVC: ClassifierEstimator {
     }
     
     /// Returns trained weights and bias.
-    /// - Returns: <#description#>
+    /// - Returns: Named tuple containing learned feature weights and model intercept bias.
     public func getWeightsAndBias() -> (weights: [Double]?, bias: Double?) {
         return (cpuWeights, cpuBias)
     }
     
     /// Fits the LinearSVC classifier (ClassifierEstimator protocol).
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         try await fit(features: features, targets: targets, learningRate: 0.1, epochs: 800)
     }
     
     /// Fits the LinearSVC model with custom learning rate and epochs.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    ///   - lr: <#description#>
-    ///   - epochs: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - lr: Learning rate step size scaling factor for optimization updates.
+    ///   - epochs: Total number of optimization training epochs.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fit(
         features: [[Double]],
         targets: [Double],
@@ -202,9 +202,9 @@ public actor LinearSVC: ClassifierEstimator {
     
     /// Predicts binary class labels (0 or 1) for feature matrix.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Array of predicted discrete class labels for input observations.
     public func predict(features: [[Double]]) async throws -> [Int] {
         let decisionValues = try decisionFunction(features: features)
         return decisionValues.map { $0 >= 0.0 ? 1 : 0 }
@@ -212,9 +212,9 @@ public actor LinearSVC: ClassifierEstimator {
     
     /// Computes raw SVM decision function values (w^T x + b).
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Array of computed numeric values.
     public func decisionFunction(features: [[Double]]) throws -> [Double] {
         guard !features.isEmpty else { return [] }
         
@@ -244,9 +244,9 @@ public actor LinearSVC: ClassifierEstimator {
     
     /// Predicts probabilities using sigmoid calibration over decision values.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: 2D array of predicted class probabilities across samples of shape `[N, K]`.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         let scores = try decisionFunction(features: features)
         return scores.map { score in

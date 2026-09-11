@@ -140,9 +140,9 @@ public struct BoundingBoxSIMD: Sendable, Equatable {
 public enum VisionMetrics {
     /// Calculates the Dice Coefficient between binary masks.
     /// - Parameters:
-    ///   - predicted: <#description#>
-    ///   - groundTruth: <#description#>
-    /// - Returns: <#description#>
+    ///   - predicted: Array of model predictions.
+    ///   - groundTruth: Array of true ground-truth targets.
+    /// - Returns: Computed numerical scalar value.
     public static func diceCoefficient(predicted: [[Double]], groundTruth: [[Double]]) -> Double {
         guard !predicted.isEmpty, predicted.count == groundTruth.count else { return 0.0 }
         var intersection = 0.0
@@ -166,9 +166,9 @@ public enum VisionMetrics {
 
     /// Calculates Intersection over Union (IoU) score.
     /// - Parameters:
-    ///   - predicted: <#description#>
-    ///   - groundTruth: <#description#>
-    /// - Returns: <#description#>
+    ///   - predicted: Array of model predictions.
+    ///   - groundTruth: Array of true ground-truth targets.
+    /// - Returns: Computed numerical scalar value.
     public static func iouScore(predicted: [[Double]], groundTruth: [[Double]]) -> Double {
         guard !predicted.isEmpty, predicted.count == groundTruth.count else { return 0.0 }
         var intersection = 0.0
@@ -224,8 +224,8 @@ public struct CNNFeatureExtractor: Sendable {
 
     /// Extracts global average pooling features from flattened image array.
     /// - Parameters:
-    ///   - image: <#description#>
-    /// - Returns: <#description#>
+    ///   - image: Input raw image pixel data buffer.
+    /// - Returns: Array of computed numeric values.
     public func extractFeatures(image: ImageDataset) -> [Double] {
         let pixelCount = image.width * image.height
         guard pixelCount > 0 else { return [] }

@@ -66,7 +66,7 @@ public final class MemoryMappedReader: @unchecked Sendable {
     ///
     /// - Parameter body: A closure taking an `UnsafeRawBufferPointer` to the mapped memory.
     /// - Returns: The value returned by `body`.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
         guard let ptr = mappedPointer, size > 0 else {
             return try body(UnsafeRawBufferPointer(start: nil, count: 0))

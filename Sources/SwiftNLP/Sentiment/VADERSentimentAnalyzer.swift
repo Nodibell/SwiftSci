@@ -7,8 +7,8 @@ public struct VADERSentimentAnalyzer: Sendable {
 
     /// Evaluates sentiment of the input text and returns a `SentimentScore`.
     /// - Parameters:
-    ///   - text: <#description#>
-    /// - Returns: <#description#>
+    ///   - text: Input textual string to be analyzed or transformed.
+    /// - Returns: The computed SentimentScore result instance.
     public func polarityScores(text: String) -> SentimentScore {
         let tokens = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
         if tokens.isEmpty {

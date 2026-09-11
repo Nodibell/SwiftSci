@@ -21,8 +21,8 @@ public struct Normalizer: PreprocessingTransformer, Sendable {
     
     /// Normalizer is stateless, so fit is a no-op that just checks input validity.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     public mutating func fit(_ data: [[Double]]) throws {
 
         guard !data.isEmpty, !data[0].isEmpty else {
@@ -32,9 +32,9 @@ public struct Normalizer: PreprocessingTransformer, Sendable {
     
     /// Normalizes each row of the dataset.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard !data.isEmpty else {
             return []

@@ -14,7 +14,7 @@ public enum NPZReader: Sendable {
     ///
     /// - Parameter url: The file URL of the `.npz` archive.
     /// - Returns: A dictionary mapping array names (without `.npy` suffix) to `NPYArray` objects.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public static func read(url: URL) throws -> [String: NPYArray] {
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw SwiftMLError.fileNotFound(url)
@@ -25,9 +25,9 @@ public enum NPZReader: Sendable {
 
     /// Reads an NPZ archive from raw data bytes.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: The computed [String: NPYArray] result instance.
     public static func read(data: Data) throws -> [String: NPYArray] {
         var arrays: [String: NPYArray] = [:]
         let byteCount = data.count
@@ -120,10 +120,10 @@ public enum NPZReader: Sendable {
     /// If an array named `"x_train"` or `"features"` is present along with `"y_train"` or `"label"`,
     /// they are combined into features and target columns automatically.
     /// - Parameters:
-    ///   - url: <#description#>
-    ///   - preferredArray: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - url: File or network URL endpoint.
+    ///   - preferredArray: Preferred array format or memory representation.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public static func readDataFrame(url: URL, preferredArray: String? = nil) throws -> DataFrame {
         let arrays = try read(url: url)
         guard !arrays.isEmpty else { return DataFrame.empty }

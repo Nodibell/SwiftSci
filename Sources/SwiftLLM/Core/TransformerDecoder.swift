@@ -369,7 +369,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
     ///   - prompt: Text prompt to start generation.
     ///   - options: Sampling options (temperature, top-p, max tokens …).
     /// - Returns: An `AsyncStream<String>` of decoded token strings.
-    /// - Throws: <#error description#>
+    /// - Throws: `LLMError` if model weights cannot be parsed, tensor allocations fail, or decoding errors.
     public func generate(prompt: String, options: LLMOptions) async throws -> AsyncStream<String> {
         let tokenizer  = self.tokenizer
         let maxSeqLen  = self.config.maxSeqLen
@@ -402,9 +402,9 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
     /// Identical behaviour to ``generate(prompt:options:)`` but propagates
     /// errors through the stream.
     /// - Parameters:
-    ///   - prompt: <#description#>
-    ///   - options: <#description#>
-    /// - Returns: <#description#>
+    ///   - prompt: Input text prompt string for generation.
+    ///   - options: Configuration options controlling execution behavior.
+    /// - Returns: The computed AsyncThrowingStream<String, any Error> result instance.
     public func generateStream(prompt: String, options: LLMOptions) -> AsyncThrowingStream<String, any Error> {
         let tokenizer = self.tokenizer
         let maxSeqLen = self.config.maxSeqLen

@@ -7,10 +7,10 @@ extension Stats {
 
     /// Arithmetic mean using vDSP.mean.
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - checkNaN: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: The computed arithmetic mean value.
     public static func mean(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         let result = vDSP.mean(values)
@@ -20,9 +20,9 @@ extension Stats {
 
     /// Float overload.
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: The computed arithmetic mean value.
     public static func mean(_ values: [Float]) throws -> Float {
         guard !values.isEmpty else { throw StatsError.emptyInput }
         return vDSP.mean(values)
@@ -101,32 +101,32 @@ extension Stats {
 
     /// Standard deviation for Double values.
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - ddof: <#description#>
-    ///   - checkNaN: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - ddof: Delta degrees of freedom divisor adjustment (1 for sample, 0 for population).
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: The computed standard deviation.
     public static func standardDeviation(_ values: [Double], ddof: Int = 1, checkNaN: Bool = true) throws -> Double {
         try variance(values, ddof: ddof, checkNaN: checkNaN).squareRoot()
     }
 
     /// Standard deviation for Float values.
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - ddof: <#description#>
-    ///   - checkNaN: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - ddof: Delta degrees of freedom divisor adjustment (1 for sample, 0 for population).
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: The computed standard deviation.
     public static func standardDeviation(_ values: [Float], ddof: Int = 1, checkNaN: Bool = true) throws -> Float {
         try variance(values, ddof: ddof, checkNaN: checkNaN).squareRoot()
     }
 
     /// Median via vDSP.sort.
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - checkNaN: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: The calculated median value.
     public static func median(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         if checkNaN { try requireNoNaN(values) }
@@ -142,9 +142,9 @@ extension Stats {
 
     /// Float overload for median using vDSP.sort.
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: The calculated median value.
     public static func median(_ values: [Float]) throws -> Float {
         guard !values.isEmpty else { throw StatsError.emptyInput }
         var copy = values
@@ -159,9 +159,9 @@ extension Stats {
 
     /// Mode(s) — values with the highest frequency.
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Array of computed numeric values.
     public static func mode(_ values: [Double]) throws -> [Double] {
         try requireNonEmpty(values)
         var freq: [Double: Int] = [:]
@@ -172,11 +172,11 @@ extension Stats {
 
     /// Percentile using linear interpolation (matches NumPy's default method).
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - q: <#description#>
-    ///   - checkNaN: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - q: Quantile probability level between 0 and 1.
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func percentile(_ values: [Double], q: Double, checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         if checkNaN { try requireNoNaN(values) }
@@ -192,21 +192,21 @@ extension Stats {
 
     /// Multiple percentiles at once.
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - probs: <#description#>
-    ///   - checkNaN: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - probs: Array of probability estimates across categories.
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Array of computed numeric values.
     public static func quantiles(_ values: [Double], probs: [Double], checkNaN: Bool = true) throws -> [Double] {
         try probs.map { try percentile(values, q: $0, checkNaN: checkNaN) }
     }
 
     /// Standardised third central moment (Fisher's definition).
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - checkNaN: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func skewness(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values, minimum: 3)
         if checkNaN { try requireNoNaN(values) }
@@ -222,10 +222,10 @@ extension Stats {
 
     /// Excess kurtosis (Fisher's definition, normal distribution = 0).
     /// - Parameters:
-    ///   - values: <#description#>
-    ///   - checkNaN: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func kurtosis(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values, minimum: 4)
         if checkNaN { try requireNoNaN(values) }
@@ -240,9 +240,9 @@ extension Stats {
 
     /// Minimum value using vDSP.
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func min(_ values: [Double]) throws -> Double {
         try requireNonEmpty(values)
         return vDSP.minimum(values)
@@ -250,9 +250,9 @@ extension Stats {
 
     /// Maximum value using vDSP.
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func max(_ values: [Double]) throws -> Double {
         try requireNonEmpty(values)
         return vDSP.maximum(values)
@@ -260,9 +260,9 @@ extension Stats {
 
     /// Sum using vDSP.
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func sum(_ values: [Double]) throws -> Double {
         try requireNonEmpty(values)
         return vDSP.sum(values)
@@ -270,9 +270,9 @@ extension Stats {
 
     /// Range (max - min).
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func range(_ values: [Double]) throws -> Double {
         try max(values) - min(values)
     }

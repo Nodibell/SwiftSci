@@ -8,10 +8,10 @@ extension Stats {
     /// Pearson correlation coefficient using vDSP primitives.
     /// r = Σ((x-μx)(y-μy)) / (n * σx * σy)
     /// - Parameters:
-    ///   - x: <#description#>
-    ///   - y: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - x: Input numeric value or independent variable vector.
+    ///   - y: 1D array or MLXArray of target labels or values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func pearsonCorrelation(_ x: [Double], _ y: [Double]) throws -> Double {
         try requireNonEmpty(x)
         try requireSameSize(x, y)
@@ -40,10 +40,10 @@ extension Stats {
 
     /// Spearman rank correlation: Pearson applied to ranks.
     /// - Parameters:
-    ///   - x: <#description#>
-    ///   - y: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - x: Input numeric value or independent variable vector.
+    ///   - y: 1D array or MLXArray of target labels or values.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Computed numerical scalar value.
     public static func spearmanCorrelation(_ x: [Double], _ y: [Double]) throws -> Double {
         try requireNonEmpty(x)
         try requireSameSize(x, y)
@@ -54,11 +54,11 @@ extension Stats {
 
     /// Sample or population covariance.
     /// - Parameters:
-    ///   - x: <#description#>
-    ///   - y: <#description#>
-    ///   - ddof: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - x: Input numeric value or independent variable vector.
+    ///   - y: 1D array or MLXArray of target labels or values.
+    ///   - ddof: Delta degrees of freedom divisor adjustment (1 for sample, 0 for population).
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: The calculated sample or population variance.
     public static func covariance(_ x: [Double], _ y: [Double], ddof: Int = 1) throws -> Double {
         try requireNonEmpty(x)
         try requireSameSize(x, y)
@@ -83,9 +83,9 @@ extension Stats {
     /// Full correlation matrix for a list of variable vectors.
     /// Result[i][j] = pearsonCorrelation(data[i], data[j]).
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public static func correlationMatrix(_ data: [[Double]]) throws -> [[Double]] {
         let k = data.count
         guard k >= 2 else { throw StatsError.invalidGroupCount(minimum: 2, got: k) }

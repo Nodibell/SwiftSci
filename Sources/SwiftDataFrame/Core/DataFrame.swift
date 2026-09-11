@@ -65,10 +65,10 @@ public struct DataFrame: Sendable {
 
     /// Reads a CSV file as a stream of DataFrame chunks.
     /// - Parameters:
-    ///   - url: <#description#>
-    ///   - chunkSize: <#description#>
-    ///   - options: <#description#>
-    /// - Returns: <#description#>
+    ///   - url: File or network URL endpoint.
+    ///   - chunkSize: Number of rows per streaming data partition chunk.
+    ///   - options: Configuration options controlling execution behavior.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public static func readCSVStream(
         contentsOf url: URL,
         chunkSize: Int = 10000,
@@ -91,9 +91,9 @@ public struct DataFrame: Sendable {
 
     /// Reads a Feather / Arrow IPC binary file into a DataFrame.
     /// - Parameters:
-    ///   - url: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - url: File or network URL endpoint.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public static func readFeather(from url: URL) async throws -> DataFrame {
         try await FeatherReader.read(url: url)
     }
@@ -106,9 +106,9 @@ public struct DataFrame: Sendable {
 
     /// Reads an Apache Parquet binary file into a DataFrame.
     /// - Parameters:
-    ///   - url: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - url: File or network URL endpoint.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public static func readParquet(from url: URL) async throws -> DataFrame {
         try await ParquetReader.read(url: url)
     }
@@ -119,7 +119,7 @@ public struct DataFrame: Sendable {
     ///   - url: Remote URL pointing to a CSV or JSON dataset.
     ///   - options: CSV reading options.
     /// - Returns: Ingested DataFrame.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public static func readURL(_ url: URL, options: CSVReadOptions = .default) async throws -> DataFrame {
         if url.isFileURL {
             if url.pathExtension.lowercased() == "json" {
@@ -199,8 +199,8 @@ public struct DataFrame: Sendable {
 
     /// Returns the row at `index` as a dictionary.
     /// - Parameters:
-    ///   - index: <#description#>
-    /// - Returns: <#description#>
+    ///   - index: Zero-based integer index position.
+    /// - Returns: The computed [String: Any?] result instance.
     public func rowDictionary(at index: Int) -> [String: Any?] {
         guard index >= 0 && index < shape.rows else { return [:] }
         var result: [String: Any?] = [:]
@@ -212,9 +212,9 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame with only the specified columns.
     /// - Parameters:
-    ///   - names: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - names: Array of column identifiers or feature names.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func select(_ names: String...) throws -> DataFrame {
         try selectArray(names)
     }
@@ -240,9 +240,9 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame without the specified columns.
     /// - Parameters:
-    ///   - names: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - names: Array of column identifiers or feature names.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func drop(_ names: String...) throws -> DataFrame {
         try dropArray(names)
     }
@@ -268,16 +268,16 @@ public struct DataFrame: Sendable {
 
     /// Returns the first `n` rows.
     /// - Parameters:
-    ///   - n: <#description#>
-    /// - Returns: <#description#>
+    ///   - n: Sample size, count, or dimension parameter.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func head(_ n: Int = 5) -> DataFrame {
         slice(from: 0, count: n)
     }
 
     /// Returns the last `n` rows.
     /// - Parameters:
-    ///   - n: <#description#>
-    /// - Returns: <#description#>
+    ///   - n: Sample size, count, or dimension parameter.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func tail(_ n: Int = 5) -> DataFrame {
         let total = shape.rows
         let from  = Swift.max(0, total - n)
@@ -289,7 +289,7 @@ public struct DataFrame: Sendable {
     ///   - n: Number of rows to sample.
     ///   - seed: Optional random seed for reproducible sampling.
     ///   - ordered: If `true`, returns sampled rows in their original index order. If `false` (default), returns rows in randomized shuffle order.
-    /// - Returns: <#description#>
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func sample(n: Int, seed: UInt64? = nil, ordered: Bool = false) -> DataFrame {
         let total = shape.rows
         guard n > 0 && total > 0 else { return DataFrame.empty }
@@ -338,8 +338,8 @@ public struct DataFrame: Sendable {
 
     /// Filters rows using a predicate closure over raw row index (zero allocation).
     /// - Parameters:
-    ///   - predicate: <#description#>
-    /// - Returns: <#description#>
+    ///   - predicate: Filtering boolean closure applied to elements.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func filterRows(by predicate: (Int) -> Bool) -> DataFrame {
         let rows = shape.rows
         guard rows > 0 else { return DataFrame.empty }
@@ -358,8 +358,8 @@ public struct DataFrame: Sendable {
     /// The row view resolves column values lazily, so predicates that only
     /// read one or two columns avoid materializing the full row.
     /// - Parameters:
-    ///   - predicate: <#description#>
-    /// - Returns: <#description#>
+    ///   - predicate: Filtering boolean closure applied to elements.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func filter(_ predicate: (DataFrameRow) -> Bool) -> DataFrame {
         guard shape.rows > 0 else { return DataFrame.empty }
         let map = _columns
@@ -375,8 +375,8 @@ public struct DataFrame: Sendable {
 
     /// Returns a zero-allocation lightweight row view at the specified index.
     /// - Parameters:
-    ///   - index: <#description#>
-    /// - Returns: <#description#>
+    ///   - index: Zero-based integer index position.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func row(at index: Int) -> DataFrameRow {
         DataFrameRow(columnNames: columnNames, index: index, columnMap: _columns)
     }
@@ -388,10 +388,10 @@ public struct DataFrame: Sendable {
 
     /// Filters rows by a condition on a single column.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - condition: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - condition: Boolean evaluation filter condition.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func filter(column name: String, where condition: FilterCondition) throws -> DataFrame {
         guard let col = _columns[name] else {
             throw SwiftMLError.columnNotFound(name)
@@ -414,10 +414,10 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame with the column replaced or added.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - column: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - column: Target column identifier.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func withColumn(_ name: String, column: any AnyColumn) throws -> DataFrame {
         let expectedRows = _columnOrder.isEmpty ? column.count : shape.rows
         guard column.count == expectedRows else {
@@ -437,11 +437,11 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame with a lagged column added.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - offset: <#description#>
-    ///   - newName: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - offset: Byte or element offset within the buffer.
+    ///   - newName: Replacement column name identifier.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func withLaggedColumn(column name: String, by offset: Int, newName: String) throws -> DataFrame {
         guard let col = _columns[name] else { throw SwiftMLError.columnNotFound(name) }
         let laggedCol = col.lagged(by: offset).renamed(to: newName)
@@ -450,10 +450,10 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame with a column renamed.
     /// - Parameters:
-    ///   - old: <#description#>
-    ///   - new: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - old: Original identifier or substring to be replaced.
+    ///   - new: New replacement identifier or substring.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func renameColumn(_ old: String, to new: String) throws -> DataFrame {
         guard let col = _columns[old] else { throw SwiftMLError.columnNotFound(old) }
         var newMap   = _columns
@@ -468,11 +468,11 @@ public struct DataFrame: Sendable {
 
     /// Adds a new column computed using a row-level closure.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - type: <#description#>
-    ///   - closure: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - type: Data type or category specification.
+    ///   - closure: Processing closure to execute.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func addColumn<T: SupportedType>(_ name: String, as type: T.Type = T.self, using closure: (DataFrameRow) -> T?) throws -> DataFrame {
         let names = columnNames
         let map = _columns
@@ -491,10 +491,10 @@ public struct DataFrame: Sendable {
 
     /// Casts a column to a new type.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - type: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - type: Data type or category specification.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func castColumn<T: SupportedType>(_ name: String, to type: T.Type = T.self) throws -> DataFrame {
         guard let col = _columns[name] else { throw SwiftMLError.columnNotFound(name) }
 
@@ -527,10 +527,10 @@ public struct DataFrame: Sendable {
 
     /// Returns a new DataFrame sorted by the given column.
     /// - Parameters:
-    ///   - column: <#description#>
-    ///   - ascending: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - column: Target column identifier.
+    ///   - ascending: Whether sorting is performed in ascending order.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func sortBy(_ column: String, ascending: Bool = true) throws -> DataFrame {
         guard let col = _columns[column] else { throw SwiftMLError.columnNotFound(column) }
         let indices = col.sortedIndices(ascending: ascending)
@@ -539,8 +539,8 @@ public struct DataFrame: Sendable {
 
     /// Returns a `GroupedDataFrame` for aggregation.
     /// - Parameters:
-    ///   - columns: <#description#>
-    /// - Returns: <#description#>
+    ///   - columns: List of column names to select or transform.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func groupBy(_ columns: String...) -> GroupedDataFrame {
         GroupedDataFrame(dataFrame: self, groupColumns: columns)
     }
@@ -549,31 +549,31 @@ public struct DataFrame: Sendable {
 
     /// Writes the DataFrame to a CSV file.
     /// - Parameters:
-    ///   - url: <#description#>
-    /// - Throws: <#error description#>
+    ///   - url: File or network URL endpoint.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public func writeCSV(to url: URL) async throws {
         try await CSVWriter.write(self, to: url)
     }
 
     /// Writes the DataFrame to a Feather / Arrow IPC binary file.
     /// - Parameters:
-    ///   - url: <#description#>
-    /// - Throws: <#error description#>
+    ///   - url: File or network URL endpoint.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public func writeFeather(to url: URL) async throws {
         try await FeatherWriter.write(self, to: url)
     }
 
     /// Serializes the DataFrame into Feather / Arrow IPC binary Data.
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: Raw serialized binary data representation.
     public func writeFeatherData() throws -> Data {
         try FeatherWriter.write(self)
     }
 
     /// Writes the DataFrame to an Apache Parquet binary file.
     /// - Parameters:
-    ///   - url: <#description#>
-    /// - Throws: <#error description#>
+    ///   - url: File or network URL endpoint.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public func writeParquet(to url: URL) async throws {
         try await ParquetWriter.write(dataFrame: self, to: url)
     }
@@ -581,7 +581,7 @@ public struct DataFrame: Sendable {
 
     /// Prints a formatted table to stdout.
     /// - Parameters:
-    ///   - maxRows: <#description#>
+    ///   - maxRows: Maximum number of rows to format or process.
     public func debugPrint(maxRows: Int = 20) {
         let names  = columnNames
         let rows   = Swift.min(shape.rows, maxRows)
@@ -667,11 +667,11 @@ public struct DataFrame: Sendable {
 
     /// Transforms values of a typed column functional-style, returning a new DataFrame.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - type: <#description#>
-    ///   - transform: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - type: Data type or category specification.
+    ///   - transform: Transformation closure or mapping function.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func mapColumn<T: SupportedType>(
         _ name: String,
         as type: T.Type = T.self,

@@ -41,8 +41,8 @@ public actor PiecewiseTrendDecomposition {
 
     /// Fits piecewise linear/logistic trend on the given time series.
     /// - Parameters:
-    ///   - series: <#description#>
-    /// - Throws: <#error description#>
+    ///   - series: 1D temporal time-series observations array.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func fit(series: [Double]) async throws {
         guard series.count >= 4 else {
             throw ForecastError.insufficientLength(minimum: 4, got: series.count)
@@ -92,9 +92,9 @@ public actor PiecewiseTrendDecomposition {
 
     /// Generates predicted trend components for `steps` future points.
     /// - Parameters:
-    ///   - steps: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - steps: Number of discrete steps or iterations to perform.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Returns: Array of predicted continuous targets for input observations.
     public func predict(steps: Int) async throws -> [Double] {
         guard isFitted else {
             throw ForecastError.emptyTimeSeries

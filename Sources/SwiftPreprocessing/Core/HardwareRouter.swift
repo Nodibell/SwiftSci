@@ -11,11 +11,11 @@ public actor HardwareRouter {
 
     /// Resolves `.auto` into a concrete device using plan-0.8 heuristics.
     /// - Parameters:
-    ///   - algorithm: <#description#>
-    ///   - sampleCount: <#description#>
-    ///   - featureCount: <#description#>
-    ///   - requestedDevice: <#description#>
-    /// - Returns: <#description#>
+    ///   - algorithm: Optimization or decomposition algorithm choice.
+    ///   - sampleCount: Number of sample observations.
+    ///   - featureCount: Number of feature dimensions.
+    ///   - requestedDevice: Target hardware execution device (.cpu, .gpu, or .auto).
+    /// - Returns: Resolved execution hardware device target (`.cpu` or `.gpu`).
     public func resolveDevice(
         for algorithm: String,
         sampleCount: Int,

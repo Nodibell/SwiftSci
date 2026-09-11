@@ -7,10 +7,10 @@ public enum ChartExporter {
     
     /// Generates HTML file with an interactive Correlation Heatmap.
     /// - Parameters:
-    ///   - df: <#description#>
-    ///   - title: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - df: Input DataFrame instance.
+    ///   - title: Descriptive title for the generated visualization.
+    /// - Throws: `SwiftMLError` if tabular columns cannot be extracted or formatted.
+    /// - Returns: Standalone, self-contained HTML bundle containing the interactive chart.
     public static func plotCorrelationHeatmap(df: DataFrame, title: String = "Correlation Heatmap") throws -> String {
         let numericCols = df.columns.compactMap { $0 as? TypedColumn<Double> }
         let names = numericCols.map { $0.name }
@@ -65,10 +65,10 @@ public enum ChartExporter {
     /// All titles and user strings are properly escaped via HTML entities and `JSONEncoder` serialization,
     /// preventing Cross-Site Scripting (XSS) and JavaScript syntax breakages.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yScores: <#description#>
-    ///   - title: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yScores: Array of positive-class probability estimates or decision margins.
+    ///   - title: Descriptive title for the generated visualization.
+    /// - Returns: Standalone, self-contained HTML bundle containing the interactive chart.
     public static func plotROCCurve(yTrue: [Int], yScores: [Double], title: String = "ROC Curve") -> String {
         var fpr: [Double] = [0.0, 1.0]
         var tpr: [Double] = [0.0, 1.0]
@@ -151,10 +151,10 @@ public enum ChartExporter {
     /// ## Security & Sanitization
     /// Feature names and chart titles are safely encoded via `JSONEncoder` and HTML entity escaping.
     /// - Parameters:
-    ///   - featureNames: <#description#>
-    ///   - importances: <#description#>
-    ///   - title: <#description#>
-    /// - Returns: <#description#>
+    ///   - featureNames: Ordered list of feature column names.
+    ///   - importances: Array of empirical feature importance scores.
+    ///   - title: Descriptive title for the generated visualization.
+    /// - Returns: Standalone, self-contained HTML bundle containing the interactive chart.
     public static func plotFeatureImportances(featureNames: [String], importances: [Double], title: String = "Feature Importances") -> String {
         let xJSON = "[" + importances.map { String(format: "%.4f", $0) }.joined(separator: ",") + "]"
         let yJSON = jsonStrings(featureNames)
@@ -191,10 +191,10 @@ public enum ChartExporter {
     /// ## Security & Sanitization
     /// Labels and chart titles are safely encoded via `JSONEncoder` and HTML entity escaping.
     /// - Parameters:
-    ///   - matrix: <#description#>
-    ///   - labels: <#description#>
-    ///   - title: <#description#>
-    /// - Returns: <#description#>
+    ///   - matrix: 2D numerical matrix of values.
+    ///   - labels: Array of discrete class labels.
+    ///   - title: Descriptive title for the generated visualization.
+    /// - Returns: Standalone, self-contained HTML bundle containing the interactive chart.
     public static func plotConfusionMatrix(matrix: [[Int]], labels: [String], title: String = "Confusion Matrix") -> String {
         let zJSON = "[" + matrix.map { "[" + $0.map { String($0) }.joined(separator: ",") + "]" }.joined(separator: ",") + "]"
         let labelsJSON = jsonStrings(labels)

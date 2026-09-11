@@ -21,9 +21,9 @@ public actor NaiveBayesClassifier: ClassifierEstimator {
 
     /// Fits the classifier model given a feature count matrix and target array.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty, !features[0].isEmpty, features.count == targets.count else {
             throw SwiftMLError.invalidInput("Features and targets must not be empty and must have matching lengths.")
@@ -75,9 +75,9 @@ public actor NaiveBayesClassifier: ClassifierEstimator {
 
     /// Predicts target class integer indices for a given feature matrix.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: Array of predicted discrete class labels for input observations.
     public func predict(features: [[Double]]) async throws -> [Int] {
         let probs = try await predictProbability(features: features)
         return probs.map { row in
@@ -87,9 +87,9 @@ public actor NaiveBayesClassifier: ClassifierEstimator {
 
     /// Predicts class probabilities for each feature sample.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: 2D array of predicted class probabilities across samples of shape `[N, K]`.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard isFitted, !classes.isEmpty else {
             throw SwiftMLError.modelNotFitted

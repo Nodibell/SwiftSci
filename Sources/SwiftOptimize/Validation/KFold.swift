@@ -40,9 +40,9 @@ public struct KFold: Sendable {
 
     /// Returns K Fold objects for the given dataset.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Returns: The computed [Fold] result instance.
     public func split(features: [[Double]], targets: [Double]) -> [Fold] {
         let n = features.count
         var indices = Array(0..<n)
@@ -110,13 +110,13 @@ public enum CrossValidator {
 
     /// Cross-validates a Decision Tree Classifier.
     /// - Parameters:
-    ///   - classifier: <#description#>
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    ///   - nSplits: <#description#>
-    ///   - seed: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - classifier: Trained classifier estimator instance.
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - nSplits: Number of cross-validation splitting folds.
+    ///   - seed: Random number generator seed for deterministic reproducibility.
+    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Returns: The computed CrossValidationResult result instance.
     public static func crossValidate(
         classifier: (maxDepth: Int, criterion: SplitCriterion),
         features: [[Double]],
@@ -149,13 +149,13 @@ public enum CrossValidator {
 
     /// Cross-validates a Decision Tree Regressor using R² score.
     /// - Parameters:
-    ///   - maxDepth: <#description#>
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    ///   - nSplits: <#description#>
-    ///   - seed: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - maxDepth: Maximum allowable depth of the decision tree.
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - nSplits: Number of cross-validation splitting folds.
+    ///   - seed: Random number generator seed for deterministic reproducibility.
+    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Returns: The computed CrossValidationResult result instance.
     public static func crossValidateRegressor(
         maxDepth: Int,
         features: [[Double]],

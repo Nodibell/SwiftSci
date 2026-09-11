@@ -128,9 +128,9 @@ public struct TreeSHAP: Sendable {
 
     /// Computes TreeSHAP for a `DecisionTreeClassifier`.
     /// - Parameters:
-    ///   - decisionTree: <#description#>
-    ///   - instance: <#description#>
-    /// - Returns: <#description#>
+    ///   - decisionTree: Trained Decision Tree model instance.
+    ///   - instance: Sample observation vector or entity instance.
+    /// - Returns: Array of computed numeric values.
     public func explain(decisionTree: DecisionTreeClassifier, instance: [Double]) async -> [Double] {
         let nodes = await decisionTree.flatNodes
         return explain(tree: nodes, instance: instance, numFeatures: instance.count)
@@ -138,9 +138,9 @@ public struct TreeSHAP: Sendable {
 
     /// Computes TreeSHAP for a `DecisionTreeRegressor`.
     /// - Parameters:
-    ///   - decisionTree: <#description#>
-    ///   - instance: <#description#>
-    /// - Returns: <#description#>
+    ///   - decisionTree: Trained Decision Tree model instance.
+    ///   - instance: Sample observation vector or entity instance.
+    /// - Returns: Array of computed numeric values.
     public func explain(decisionTree: DecisionTreeRegressor, instance: [Double]) async -> [Double] {
         let nodes = await decisionTree.flatNodes
         return explain(tree: nodes, instance: instance, numFeatures: instance.count)
@@ -148,9 +148,9 @@ public struct TreeSHAP: Sendable {
 
     /// Computes TreeSHAP for a `RandomForestClassifier`.
     /// - Parameters:
-    ///   - randomForest: <#description#>
-    ///   - instance: <#description#>
-    /// - Returns: <#description#>
+    ///   - randomForest: Trained Random Forest ensemble instance.
+    ///   - instance: Sample observation vector or entity instance.
+    /// - Returns: Array of computed numeric values.
     public func explain(randomForest: RandomForestClassifier, instance: [Double]) async -> [Double] {
         let flatTrees = await randomForest.flatTrees
         return explain(trees: flatTrees, instance: instance, numFeatures: instance.count)
@@ -158,9 +158,9 @@ public struct TreeSHAP: Sendable {
 
     /// Computes TreeSHAP for a `RandomForestRegressor`.
     /// - Parameters:
-    ///   - randomForest: <#description#>
-    ///   - instance: <#description#>
-    /// - Returns: <#description#>
+    ///   - randomForest: Trained Random Forest ensemble instance.
+    ///   - instance: Sample observation vector or entity instance.
+    /// - Returns: Array of computed numeric values.
     public func explain(randomForest: RandomForestRegressor, instance: [Double]) async -> [Double] {
         let flatTrees = await randomForest.flatTrees
         return explain(trees: flatTrees, instance: instance, numFeatures: instance.count)
@@ -208,11 +208,11 @@ public struct PermutationImportance: Sendable {
 
     /// Computes feature importance by measuring decrease in model performance (MSE) when each feature column is shuffled.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    ///   - predict: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - predict: Inference closure mapping feature vectors to predictions.
+    /// - Throws: `SwiftMLError` if model evaluation fails or input dimensions are incompatible.
+    /// - Returns: The computed [Double] ) async throws -> [String: Double] result instance.
     public func computeImportance(
         features: [[Double]],
         targets: [Double],
@@ -258,12 +258,12 @@ public struct PartialDependencePlot: Sendable {
 
     /// Calculates PDP grid values for a specified feature index by replacing feature column values with grid points.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - featureIndex: <#description#>
-    ///   - gridPoints: <#description#>
-    ///   - predict: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - featureIndex: Zero-based column index of the target feature.
+    ///   - gridPoints: Number of evaluation points or grid resolution across feature range.
+    ///   - predict: Inference closure mapping feature vectors to predictions.
+    /// - Throws: `SwiftMLError` if model evaluation fails or input dimensions are incompatible.
+    /// - Returns: The computed [Double] ) async throws -> (grid: [Double], values: [Double]) result instance.
     public func calculatePDP(
         features: [[Double]],
         featureIndex: Int,

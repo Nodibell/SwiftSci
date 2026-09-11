@@ -61,13 +61,13 @@ public final class IsolationForest: Sendable {
     
     /// Fits the Isolation Forest model on feature matrix.
     /// - Parameters:
-    ///   - data: <#description#>
-    ///   - nEstimators: <#description#>
-    ///   - maxSamples: <#description#>
-    ///   - contamination: <#description#>
-    ///   - seed: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    ///   - nEstimators: Number of tree estimators in the ensemble.
+    ///   - maxSamples: Maximum number of sample observations per subsample.
+    ///   - contamination: Expected proportion of outlier observations in the dataset.
+    ///   - seed: Random number generator seed for deterministic reproducibility.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: The computed IsolationForest result instance.
     public static func fit(data: [[Double]], nEstimators: Int = 100, maxSamples: Int? = nil, contamination: Double = 0.1, seed: UInt64 = 42) throws -> IsolationForest {
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
@@ -98,13 +98,13 @@ public final class IsolationForest: Sendable {
 
     /// Alias for fit and predict in one step.
     /// - Parameters:
-    ///   - data: <#description#>
-    ///   - nEstimators: <#description#>
-    ///   - maxSamples: <#description#>
-    ///   - contamination: <#description#>
-    ///   - seed: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    ///   - nEstimators: Number of tree estimators in the ensemble.
+    ///   - maxSamples: Maximum number of sample observations per subsample.
+    ///   - contamination: Expected proportion of outlier observations in the dataset.
+    ///   - seed: Random number generator seed for deterministic reproducibility.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: The computed AnomalyPrediction result instance.
     public static func fitPredict(data: [[Double]], nEstimators: Int = 100, maxSamples: Int? = nil, contamination: Double = 0.1, seed: UInt64 = 42) throws -> AnomalyPrediction {
         let model = try fit(data: data, nEstimators: nEstimators, maxSamples: maxSamples, contamination: contamination, seed: seed)
         return try model.predict(data: data)
@@ -112,9 +112,9 @@ public final class IsolationForest: Sendable {
     
     /// Predicts anomaly labels (1: inlier, -1: outlier) and anomaly scores for new features.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: The computed AnomalyPrediction result instance.
     public func predict(data: [[Double]]) throws -> AnomalyPrediction {
         guard !data.isEmpty else { throw PreprocessingError.emptyInput }
         let subsampleSize = min(maxSamples ?? min(256, data.count), data.count)
@@ -125,22 +125,22 @@ public final class IsolationForest: Sendable {
 
     /// Predicts anomaly labels using features label alias.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: The computed AnomalyPrediction result instance.
     public func predict(features: [[Double]]) throws -> AnomalyPrediction {
         try predict(data: features)
     }
 
     /// Alias for fitPredict using features label.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - nEstimators: <#description#>
-    ///   - maxSamples: <#description#>
-    ///   - contamination: <#description#>
-    ///   - seed: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - nEstimators: Number of tree estimators in the ensemble.
+    ///   - maxSamples: Maximum number of sample observations per subsample.
+    ///   - contamination: Expected proportion of outlier observations in the dataset.
+    ///   - seed: Random number generator seed for deterministic reproducibility.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: The computed AnomalyPrediction result instance.
     public static func fitPredict(features: [[Double]], nEstimators: Int = 100, maxSamples: Int? = nil, contamination: Double = 0.1, seed: UInt64 = 42) throws -> AnomalyPrediction {
         try fitPredict(data: features, nEstimators: nEstimators, maxSamples: maxSamples, contamination: contamination, seed: seed)
     }
@@ -229,18 +229,18 @@ public final class LocalOutlierFactor: Sendable {
     
     /// Alias for fitPredict using features label.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: The computed AnomalyPrediction result instance.
     public func fitPredict(features: [[Double]]) throws -> AnomalyPrediction {
         try fitPredict(data: features)
     }
 
     /// Computes Local Outlier Factors for dataset using KD-Tree spatial indexing.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Returns: The computed AnomalyPrediction result instance.
     public func fitPredict(data: [[Double]]) throws -> AnomalyPrediction {
         guard data.count > k else {
             throw PreprocessingError.emptyInput

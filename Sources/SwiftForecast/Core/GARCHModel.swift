@@ -34,8 +34,8 @@ public actor GARCHModel {
     
     /// Fits the GARCH model on the series using Maximum Likelihood Estimation via Coordinate Descent.
     /// - Parameters:
-    ///   - series: <#description#>
-    /// - Throws: <#error description#>
+    ///   - series: 1D temporal time-series observations array.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func fit(series: [Double]) throws {
         let n = series.count
         guard n > 0 else { throw ForecastError.emptyTimeSeries }
@@ -145,9 +145,9 @@ public actor GARCHModel {
     
     /// Forecasts conditional volatility (standard deviation) for the specified steps.
     /// - Parameters:
-    ///   - steps: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - steps: Number of discrete steps or iterations to perform.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Returns: Array of computed numeric values.
     public func forecastVolatility(steps: Int) throws -> [Double] {
         guard isFitted else { throw ForecastError.notFitted }
         guard steps > 0 else { return [] }

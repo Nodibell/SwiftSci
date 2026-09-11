@@ -34,10 +34,10 @@ public final class SMOTE: Sendable {
     
     /// Resamples minority class instances by generating synthetic samples along line segments connecting k-nearest neighbors.
     /// - Parameters:
-    ///   - features: <#description#>
-    ///   - targets: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: The computed ResampledDataset result instance.
     public func fitResample(features: [[Double]], targets: [Double]) throws -> ResampledDataset {
         guard !features.isEmpty, features.count == targets.count else {
             throw PreprocessingError.emptyInput

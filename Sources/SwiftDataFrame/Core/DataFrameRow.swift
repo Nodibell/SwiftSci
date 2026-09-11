@@ -20,9 +20,9 @@ public struct DataFrameRow: @unchecked Sendable {
 
     /// Returns the value for `column` as the given type, or nil if null / wrong type.
     /// - Parameters:
-    ///   - column: <#description#>
-    ///   - type: <#description#>
-    /// - Returns: <#description#>
+    ///   - column: Target column identifier.
+    ///   - type: Data type or category specification.
+    /// - Returns: The computed T? result instance.
     public func value<T: SupportedType>(column: String, as type: T.Type = T.self) -> T? {
         columnMap[column]?.value(at: index) as? T
     }
@@ -40,26 +40,26 @@ public struct DataFrameRow: @unchecked Sendable {
 
     /// Convenience typed accessor for Double columns.
     /// - Parameters:
-    ///   - name: <#description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    /// - Returns: Computed scalar value, or `nil` if the model or parameter is uninitialized.
     public func double(_ name: String) -> Double? { self[name, as: Double.self] }
 
     /// Convenience typed accessor for String columns.
     /// - Parameters:
-    ///   - name: <#description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    /// - Returns: Textual string representation, or `nil` if absent.
     public func string(_ name: String) -> String? { self[name, as: String.self] }
 
     /// Convenience typed accessor for Int64 columns.
     /// - Parameters:
-    ///   - name: <#description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    /// - Returns: The computed Int64? result instance.
     public func int(_ name: String) -> Int64?     { self[name, as: Int64.self] }
 
     /// Whether the value for `column` is null.
     /// - Parameters:
-    ///   - column: <#description#>
-    /// - Returns: <#description#>
+    ///   - column: Target column identifier.
+    /// - Returns: `true` if condition is satisfied; `false` otherwise.
     public func isNull(column: String) -> Bool {
         guard let col = columnMap[column] else { return true }
         return col.value(at: index) == nil
@@ -80,7 +80,7 @@ public struct DataFrameRowSequence: Sequence, @unchecked Sendable {
     }
 
     /// Creates an iterator for row iteration.
-    /// - Returns: <#description#>
+    /// - Returns: The computed Iterator result instance.
     public func makeIterator() -> Iterator {
         Iterator(count: count, row: DataFrameRow(columnNames: columnNames, index: 0, columnMap: columnMap))
     }
@@ -97,7 +97,7 @@ public struct DataFrameRowSequence: Sequence, @unchecked Sendable {
         }
 
         /// Advances to the next row.
-        /// - Returns: <#description#>
+        /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
         public mutating func next() -> DataFrameRow? {
             guard currentIndex < count else { return nil }
             row.index = currentIndex

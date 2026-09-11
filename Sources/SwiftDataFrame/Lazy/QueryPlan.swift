@@ -31,7 +31,7 @@ public struct QueryPlan: Sendable {
     }
     
     /// Applies basic plan optimizations (merging consecutive filters, projection pushdown).
-    /// - Returns: <#description#>
+    /// - Returns: The computed QueryPlan result instance.
     public func optimized() -> QueryPlan {
         var optimizedNodes: [QueryPlanNode] = []
         var pendingFilters: [@Sendable (DataFrameRow) -> Bool] = []

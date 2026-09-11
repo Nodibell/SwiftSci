@@ -44,8 +44,8 @@ public struct POSTagger: Sendable {
 
     /// Tags part-of-speech for each word in the input text.
     /// - Parameters:
-    ///   - text: <#description#>
-    /// - Returns: <#description#>
+    ///   - text: Input textual string to be analyzed or transformed.
+    /// - Returns: The computed [TaggedToken] result instance.
     public func tag(text: String) -> [TaggedToken] {
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return []

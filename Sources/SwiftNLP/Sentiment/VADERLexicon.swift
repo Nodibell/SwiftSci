@@ -7554,8 +7554,8 @@ zealous	0.5
 
     /// Performs dictionary lookup for a word's valence score.
     /// - Parameters:
-    ///   - word: <#description#>
-    /// - Returns: <#description#>
+    ///   - word: Target word token string.
+    /// - Returns: Computed scalar value, or `nil` if the model or parameter is uninitialized.
     public static func valence(for word: String) -> Double? {
         let target = word.lowercased()
         return lexiconDict[target]

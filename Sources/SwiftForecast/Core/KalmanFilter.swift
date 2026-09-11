@@ -40,8 +40,8 @@ public actor KalmanFilter {
 
     /// Sets the state transition matrix F (stateSize x stateSize).
     /// - Parameters:
-    ///   - matrix: <#description#>
-    /// - Throws: <#error description#>
+    ///   - matrix: 2D numerical matrix of values.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func setTransitionMatrix(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: stateSize, expectedCols: stateSize)
         self.F = flatten(matrix)
@@ -49,8 +49,8 @@ public actor KalmanFilter {
 
     /// Sets the observation matrix H (observationSize x stateSize).
     /// - Parameters:
-    ///   - matrix: <#description#>
-    /// - Throws: <#error description#>
+    ///   - matrix: 2D numerical matrix of values.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func setObservationMatrix(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: observationSize, expectedCols: stateSize)
         self.H = flatten(matrix)
@@ -58,8 +58,8 @@ public actor KalmanFilter {
 
     /// Sets the process noise covariance matrix Q (stateSize x stateSize).
     /// - Parameters:
-    ///   - matrix: <#description#>
-    /// - Throws: <#error description#>
+    ///   - matrix: 2D numerical matrix of values.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func setProcessNoise(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: stateSize, expectedCols: stateSize)
         self.Q = flatten(matrix)
@@ -67,8 +67,8 @@ public actor KalmanFilter {
 
     /// Sets the measurement noise covariance matrix R (observationSize x observationSize).
     /// - Parameters:
-    ///   - matrix: <#description#>
-    /// - Throws: <#error description#>
+    ///   - matrix: 2D numerical matrix of values.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func setMeasurementNoise(_ matrix: [[Double]]) throws {
         try validateMatrixDimensions(matrix, expectedRows: observationSize, expectedCols: observationSize)
         self.R = flatten(matrix)
@@ -76,9 +76,9 @@ public actor KalmanFilter {
 
     /// Sets the initial state mean vector and covariance matrix.
     /// - Parameters:
-    ///   - mean: <#description#>
-    ///   - covariance: <#description#>
-    /// - Throws: <#error description#>
+    ///   - mean: Mean vector or scalar.
+    ///   - covariance: Covariance matrix structure.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func setInitialState(mean: [Double], covariance: [[Double]]) throws {
         guard mean.count == stateSize else {
             throw ForecastError.matrixDimensionMismatch(
@@ -173,9 +173,9 @@ public actor KalmanFilter {
 
     /// RTS (Rauch-Tung-Striebel) smoother.
     /// - Parameters:
-    ///   - observations: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - observations: Array of sequential measurement observations.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Returns: Updated state estimate or Kalman filtered series.
     public func smooth(observations: [[Double]]) throws -> [KalmanState] {
         try checkInitialization()
 
@@ -260,8 +260,8 @@ public actor KalmanFilter {
     }
 
     /// Predict one step ahead.
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Returns: Updated state estimate or Kalman filtered series.
     public func predict() throws -> KalmanState {
         try checkInitialization()
         let n = stateSize
@@ -472,10 +472,10 @@ public actor KalmanFilter {
 extension KalmanFilter {
     /// Pre-configured 1D constant-velocity model.
     /// - Parameters:
-    ///   - processNoise: <#description#>
-    ///   - measurementNoise: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - processNoise: Process noise covariance scalar or matrix.
+    ///   - measurementNoise: Measurement noise covariance scalar or matrix.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Returns: Updated state estimate or Kalman filtered series.
     public static func oneDimensional(
         processNoise: Double,
         measurementNoise: Double

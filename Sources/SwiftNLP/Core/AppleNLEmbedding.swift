@@ -26,9 +26,9 @@ public struct AppleNLEmbedding: Sendable {
 
     /// Fetches the vector representation for a given word.
     /// - Parameters:
-    ///   - word: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - word: Target word token string.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: Array of learned model parameters, or `nil` if the estimator is not yet fitted.
     public func vector(for word: String) throws -> [Double]? {
         #if canImport(NaturalLanguage)
         let nlLang = NLLanguage(rawValue: language.rawValue)
@@ -43,10 +43,10 @@ public struct AppleNLEmbedding: Sendable {
 
     /// Calculates distance (1.0 - cosine similarity) between two words.
     /// - Parameters:
-    ///   - word1: <#description#>
-    ///   - word2: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - word1: First word token string for comparison.
+    ///   - word2: Second word token string for comparison.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: Computed scalar value, or `nil` if the model or parameter is uninitialized.
     public func distance(between word1: String, and word2: String) throws -> Double? {
         #if canImport(NaturalLanguage)
         let nlLang = NLLanguage(rawValue: language.rawValue)
@@ -62,10 +62,10 @@ public struct AppleNLEmbedding: Sendable {
 
     /// Finds top-K nearest neighbor words for a given query word.
     /// - Parameters:
-    ///   - word: <#description#>
-    ///   - maxCount: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - word: Target word token string.
+    ///   - maxCount: Maximum number of items or words to retain.
+    /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
+    /// - Returns: The computed [(word: String, distance: Double)]? result instance.
     public func nearestNeighbors(for word: String, maxCount: Int = 10) throws -> [(word: String, distance: Double)]? {
         #if canImport(NaturalLanguage)
         let nlLang = NLLanguage(rawValue: language.rawValue)

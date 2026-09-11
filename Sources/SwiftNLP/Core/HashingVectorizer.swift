@@ -23,8 +23,8 @@ public final class HashingVectorizer: @unchecked Sendable {
 
     /// Transforms documents into fixed-width hashed feature vectors.
     /// - Parameters:
-    ///   - documents: <#description#>
-    /// - Returns: <#description#>
+    ///   - documents: Collection of text documents to process.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func transform(documents: [String]) -> [[Double]] {
         let tokenizer = NGramTokenizer(minN: ngramRange.min, maxN: ngramRange.max, lowercase: lowercase)
         return documents.map { doc in

@@ -228,23 +228,23 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     /// Returns a new column by applying a transform to every element.
     /// - Parameters:
-    ///   - transform: <#description#>
-    /// - Returns: <#description#>
+    ///   - transform: Transformation closure or mapping function.
+    /// - Returns: A strongly-typed column containing the computed values.
     public func map<U: SupportedType>(_ transform: (T?) -> U?) -> TypedColumn<U> {
         TypedColumn<U>(name: name, values: values.map(transform))
     }
 
     /// Applies transform only to non-null elements; nil inputs are passed through as nil.
     /// - Parameters:
-    ///   - transform: <#description#>
-    /// - Returns: <#description#>
+    ///   - transform: Transformation closure or mapping function.
+    /// - Returns: A strongly-typed column containing the computed values.
     public func compactMap<U: SupportedType>(_ transform: (T) -> U?) -> TypedColumn<U> {
         TypedColumn<U>(name: name, values: values.map { $0.flatMap(transform) })
     }
     /// Lagged.
     /// - Returns: A `any AnyColumn` result.
     /// - Parameters:
-    ///   - offset: <#description#>
+    ///   - offset: Byte or element offset within the buffer.
     public func lagged(by offset: Int) -> any AnyColumn {
         var newValues = [T?](repeating: nil, count: count)
         if offset > 0 {
@@ -267,15 +267,15 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     }
 
     /// Returns a new column with all null values removed.
-    /// - Returns: <#description#>
+    /// - Returns: A strongly-typed column containing the computed values.
     public func dropNulls() -> TypedColumn<T> {
         TypedColumn<T>(name: name, values: values.compactMap { $0 }.map { Optional($0) })
     }
 
     /// Returns a new column where null values are replaced by `value`.
     /// - Parameters:
-    ///   - value: <#description#>
-    /// - Returns: <#description#>
+    ///   - value: Scalar value to assign, check, or replace.
+    /// - Returns: A strongly-typed column containing the computed values.
     public func fillNull(with value: T) -> TypedColumn<T> {
         TypedColumn<T>(name: name, values: values.map { $0 ?? value })
     }
@@ -361,7 +361,7 @@ import Accelerate
 
 extension TypedColumn where T == Double {
     /// Computes sample mean using Accelerate vDSP.
-    /// - Returns: <#description#>
+    /// - Returns: The computed arithmetic mean value.
     public func mean() -> Double {
         let nonNulls = nonNullValues
         guard !nonNulls.isEmpty else { return 0.0 }
@@ -371,7 +371,7 @@ extension TypedColumn where T == Double {
     }
 
     /// Computes sample variance using two-pass vDSP operations with Bessel's correction.
-    /// - Returns: <#description#>
+    /// - Returns: The calculated sample or population variance.
     public func variance() -> Double {
         let nonNulls = nonNullValues
         let count = nonNulls.count
@@ -390,15 +390,15 @@ extension TypedColumn where T == Double {
     }
 
     /// Computes sample standard deviation using Accelerate vDSP.
-    /// - Returns: <#description#>
+    /// - Returns: The computed standard deviation.
     public func stdDev() -> Double {
         sqrt(variance())
     }
 
     /// vDSP-accelerated indexed gather for Double columns.
     /// - Parameters:
-    ///   - indices: <#description#>
-    /// - Returns: <#description#>
+    ///   - indices: Array of row or column integer indices.
+    /// - Returns: A strongly-typed column containing the computed values.
     public func vGather(at indices: [Int]) -> TypedColumn<Double> {
         let n = indices.count
         guard n > 0 else { return TypedColumn<Double>(name: name, values: []) }

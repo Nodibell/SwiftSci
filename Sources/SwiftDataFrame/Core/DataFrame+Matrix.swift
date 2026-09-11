@@ -4,9 +4,9 @@ extension DataFrame {
     /// Extracts named columns as a row-major [[Double]] matrix.
     /// Throws `DataFrameError.castFailed` for any column that isn't Double, Int64, or Bool.
     /// - Parameters:
-    ///   - columns: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - columns: List of column names to select or transform.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func toFeatureMatrix(_ columns: [String]) throws -> [[Double]] {
         for colName in columns {
             if !columnNames.contains(colName) {
@@ -43,9 +43,9 @@ extension DataFrame {
 
     /// Extracts a single named column as a [Double] target vector.
     /// - Parameters:
-    ///   - column: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - column: Target column identifier.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: Array of computed numeric values.
     public func toTargetVector(_ column: String) throws -> [Double] {
         let matrix = try toFeatureMatrix([column])
         return matrix.map { $0[0] }
@@ -53,9 +53,9 @@ extension DataFrame {
 
     /// Extracts named columns as a contiguous 1D row-major flat [Double] buffer.
     /// - Parameters:
-    ///   - columns: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - columns: List of column names to select or transform.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: The computed (flat: [Double], rows: Int, cols: Int) result instance.
     public func toFlatFeatureMatrix(_ columns: [String]) throws -> (flat: [Double], rows: Int, cols: Int) {
         for colName in columns {
             if !columnNames.contains(colName) {

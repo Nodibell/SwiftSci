@@ -51,8 +51,8 @@ public actor ETSModel {
 
     /// Fits the ETS model to the time series data.
     /// - Parameters:
-    ///   - series: <#description#>
-    /// - Throws: <#error description#>
+    ///   - series: 1D temporal time-series observations array.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func fit(series: [Double]) async throws {
         guard !series.isEmpty else {
             throw ForecastError.emptyTimeSeries
@@ -119,9 +119,9 @@ public actor ETSModel {
 
     /// Generates future forecasts for `steps` ahead.
     /// - Parameters:
-    ///   - steps: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - steps: Number of discrete steps or iterations to perform.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Returns: Array of computed numeric values.
     public func forecast(steps: Int) async throws -> [Double] {
         guard isFitted else {
             throw ForecastError.emptyTimeSeries
@@ -163,10 +163,10 @@ public actor ETSModel {
 
     /// Automatically selects the best ETS model among combinations based on AICc.
     /// - Parameters:
-    ///   - series: <#description#>
-    ///   - period: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - series: 1D temporal time-series observations array.
+    ///   - period: Seasonal cycle periodicity (number of observations per season).
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Returns: Fitted Exponential Smoothing state-space model.
     public static func autoFit(series: [Double], period: Int = 1) async throws -> ETSModel {
         let trends: [TrendType] = [.none, .additive, .damped]
         let seasonals: [SeasonalType] = period > 1 ? [.none, .additive, .multiplicative] : [.none]

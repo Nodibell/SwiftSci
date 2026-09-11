@@ -16,7 +16,7 @@ public final class OrdinalEncoder: @unchecked Sendable {
     
     /// Fits the OrdinalEncoder by identifying unique sorted categories for each column.
     /// - Parameters:
-    ///   - data: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
     public func fit(_ data: [[String]]) {
         guard !data.isEmpty, !data[0].isEmpty else {
             self.categories = []
@@ -37,9 +37,9 @@ public final class OrdinalEncoder: @unchecked Sendable {
     
     /// Transforms the categorical dataset into ordinal values.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func transform(_ data: [[String]]) throws -> [[Double]] {
         guard !categories.isEmpty else {
             throw PreprocessingError.fitNotCalled
@@ -82,9 +82,9 @@ public final class OrdinalEncoder: @unchecked Sendable {
     
     /// Fits to categorical data, then transforms it.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func fitTransform(_ data: [[String]]) throws -> [[Double]] {
         fit(data)
         return try transform(data)

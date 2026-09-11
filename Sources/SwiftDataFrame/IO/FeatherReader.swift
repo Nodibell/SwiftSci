@@ -7,7 +7,7 @@ public enum FeatherReader {
     /// Reads a Feather (.feather / .arrow) binary file into a `DataFrame`.
     /// - Parameter url: The file URL to read.
     /// - Returns: The loaded `DataFrame`.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public static func read(url: URL) async throws -> DataFrame {
         let arrowReader = ArrowReader()
         let result = arrowReader.fromFile(url)
@@ -31,7 +31,7 @@ public enum FeatherReader {
     /// Reads Feather binary data into a `DataFrame`.
     /// - Parameter data: Raw Data bytes of Feather file.
     /// - Returns: The loaded `DataFrame`.
-    /// - Throws: <#error description#>
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public static func read(data: Data) async throws -> DataFrame {
         let arrowReader = ArrowReader()
         let result = arrowReader.readFile(data)

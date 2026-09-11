@@ -40,9 +40,9 @@ public struct RAGContextGenerator: Sendable {
 
     /// Generates token-efficient Markdown summary of DataFrame for AI Analyst system prompt.
     /// - Parameters:
-    ///   - df: <#description#>
-    ///   - name: <#description#>
-    /// - Returns: <#description#>
+    ///   - df: Input DataFrame instance.
+    ///   - name: Name or identifier string.
+    /// - Returns: Generated or formatted text string.
     public func generateSummary(df: DataFrame, name: String = "Dataset") -> String {
         var summary = "## \(name) Profile\n"
         summary += "- Rows: \(df.rowCount), Columns: \(df.columnNames.count)\n"
@@ -178,9 +178,9 @@ public actor SwiftAgentEvaluator {
 
     /// Parses a string command into a structured `AgentCommand` enum.
     /// - Parameters:
-    ///   - command: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - command: Database SQL statement or terminal command.
+    /// - Throws: `AgentError` or `SwiftMLError` if tool execution, AST evaluation, or reasoning fails.
+    /// - Returns: The computed AgentCommand result instance.
     public func parseCommand(_ command: String) throws -> AgentCommand {
         let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw AgentError.unparseable(command) }

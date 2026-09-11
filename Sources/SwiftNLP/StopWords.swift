@@ -33,9 +33,9 @@ public enum StopWords {
 
     /// Filters out stop words from a token array for a given language.
     /// - Parameters:
-    ///   - tokens: <#description#>
-    ///   - language: <#description#>
-    /// - Returns: <#description#>
+    ///   - tokens: Array of segmented lexical token strings.
+    ///   - language: ISO language code identifier (e.g., "en").
+    /// - Returns: Array of feature names, column identifiers, or tokens.
     public static func filter(tokens: [String], language: Language = .english) -> [String] {
         let stopSet: Set<String>
         switch language {

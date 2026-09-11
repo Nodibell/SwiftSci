@@ -10,8 +10,8 @@ public struct AppleWordTokenizer: Tokenizer, Sendable {
 
     /// Tokenizes input text into word tokens using Apple's linguistic boundary detection.
     /// - Parameters:
-    ///   - text: <#description#>
-    /// - Returns: <#description#>
+    ///   - text: Input textual string to be analyzed or transformed.
+    /// - Returns: Array of feature names, column identifiers, or tokens.
     public func tokenize(text: String) -> [String] {
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return []

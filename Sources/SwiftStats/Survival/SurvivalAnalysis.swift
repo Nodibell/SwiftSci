@@ -78,8 +78,8 @@ public struct KaplanMeier: Sendable {
 
     /// Evaluates estimated survival probability S(t) at given query time t.
     /// - Parameters:
-    ///   - time: <#description#>
-    /// - Returns: <#description#>
+    ///   - time: Temporal timestamp or elapsed duration.
+    /// - Returns: Computed numerical scalar value.
     public func predictSurvivalProbability(at time: Double) -> Double {
         guard let firstPoint = timeline.first, time >= firstPoint.time else { return 1.0 }
 
@@ -160,8 +160,8 @@ public final class CoxProportionalHazards: @unchecked Sendable {
 
     /// Predicts log hazard ratio exp(beta^T * x) for a feature vector.
     /// - Parameters:
-    ///   - features: <#description#>
-    /// - Returns: <#description#>
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    /// - Returns: Computed numerical scalar value.
     public func predictPartialHazard(features: [Double]) -> Double {
         guard isFitted, coefficients.count == features.count else { return 1.0 }
         let dot = zip(coefficients, features).map(*).reduce(0, +)

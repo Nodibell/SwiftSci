@@ -10,10 +10,10 @@ extension Stats {
 
     /// Tests whether the sample mean equals `mu`.
     /// - Parameters:
-    ///   - sample: <#description#>
-    ///   - mu: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - sample: Sample observation array.
+    ///   - mu: Hypothesized population mean scalar.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: `TTestResult` structure containing t-statistic, p-value, and degrees of freedom.
     public static func tTest(sample: [Double], populationMean mu: Double) throws -> TTestResult {
         try requireNonEmpty(sample, minimum: 2)
         try requireNoNaN(sample)
@@ -101,10 +101,10 @@ extension Stats {
 
     /// Tests whether the mean difference between paired samples equals zero.
     /// - Parameters:
-    ///   - before: <#description#>
-    ///   - after: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - before: Sample observations prior to treatment or intervention.
+    ///   - after: Sample observations following treatment or intervention.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: `TTestResult` structure containing t-statistic, p-value, and degrees of freedom.
     public static func pairedTTest(before: [Double], after: [Double]) throws -> TTestResult {
         try requireSameSize(before, after)
         // zip subtraction: diffs[i] = after[i] - before[i]
@@ -116,9 +116,9 @@ extension Stats {
 
     /// Tests whether the means of 2+ groups are equal.
     /// - Parameters:
-    ///   - groups: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - groups: Array of sample observation groups for comparison.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: ANOVA test result containing F-statistic, p-value, and group variance metrics.
     public static func oneWayANOVA(groups: [[Double]]) throws -> ANOVAResult {
         guard groups.count >= 2 else {
             throw StatsError.invalidGroupCount(minimum: 2, got: groups.count)
@@ -170,10 +170,10 @@ extension Stats {
 
     /// Tests whether observed frequencies match expected frequencies.
     /// - Parameters:
-    ///   - observed: <#description#>
-    ///   - expected: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - observed: Array of observed sample frequencies.
+    ///   - expected: Array of expected theoretical frequencies.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: `ChiSquareResult` containing chi-squared test statistic, p-value, and degrees of freedom.
     public static func chiSquareGoodnessOfFit(observed: [Double],
                                                expected: [Double]) throws -> ChiSquareResult {
         try requireNonEmpty(observed)
@@ -195,9 +195,9 @@ extension Stats {
 
     /// Shapiro-Wilk normality test (Royston 1992, n ∈ [3, 5000]).
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Normality test diagnostic result evaluating distribution adherence.
     public static func shapiroWilk(_ values: [Double]) throws -> NormalityTestResult {
         try requireNonEmpty(values, minimum: 3)
         try requireNoNaN(values)
@@ -210,9 +210,9 @@ extension Stats {
 
     /// Kolmogorov-Smirnov test against standard normal (Lilliefors variant for unknown μ/σ).
     /// - Parameters:
-    ///   - values: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - values: Numeric values array to be evaluated.
+    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
+    /// - Returns: Normality test diagnostic result evaluating distribution adherence.
     public static func kolmogorovSmirnov(_ values: [Double]) throws -> NormalityTestResult {
         try requireNonEmpty(values, minimum: 3)
         try requireNoNaN(values)

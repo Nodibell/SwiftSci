@@ -26,13 +26,13 @@ public enum ONNXExporter {
 
     /// Serializes linear regression model into ONNX graph JSON bundle.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - inputs: <#description#>
-    ///   - output: <#description#>
-    ///   - weights: <#description#>
-    ///   - bias: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - inputs: Input feature array or tensor.
+    ///   - output: Output prediction vector or layer specification.
+    ///   - weights: Learned model coefficient weights vector or matrix.
+    ///   - bias: Learned model intercept or bias scalar.
+    /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
+    /// - Returns: Raw serialized binary data representation.
     public static func exportLinearONNX(
         name: String = "SwiftSciLinearONNX",
         inputs: [String],
@@ -57,12 +57,12 @@ public enum ONNXExporter {
 
     /// Serializes linear regression model into binary ONNX Protobuf payload (.onnx format).
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - inputs: <#description#>
-    ///   - output: <#description#>
-    ///   - weights: <#description#>
-    ///   - bias: <#description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - inputs: Input feature array or tensor.
+    ///   - output: Output prediction vector or layer specification.
+    ///   - weights: Learned model coefficient weights vector or matrix.
+    ///   - bias: Learned model intercept or bias scalar.
+    /// - Returns: Raw serialized binary data representation.
     public static func exportBinaryONNX(
         name: String = "SwiftSciLinearONNX",
         inputs: [String],

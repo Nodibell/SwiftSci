@@ -21,7 +21,7 @@ public struct NPYArray: Sendable {
     }
 
     /// Converts the binary payload into an array of `Double` values.
-    /// - Returns: <#description#>
+    /// - Returns: Array of computed numeric values.
     public func toDoubles() -> [Double] {
         let total = elementCount
         guard total > 0, !data.isEmpty else { return [] }
@@ -66,7 +66,7 @@ public struct NPYArray: Sendable {
     }
 
     /// Converts the binary payload into an array of `Int64` values.
-    /// - Returns: <#description#>
+    /// - Returns: The computed [Int64] result instance.
     public func toInt64s() -> [Int64] {
         let total = elementCount
         guard total > 0, !data.isEmpty else { return [] }
@@ -116,9 +116,9 @@ public struct NPYArray: Sendable {
     /// - 2D array `(N, M)`: yields `M` columns (`"col_0" ... "col_M-1"`) with `N` rows each.
     /// - 3D+ array `(N, D1, D2, ...)`: flattens inner dimensions to `(N, D1*D2)` columns (`"pixel_0" ...`).
     /// - Parameters:
-    ///   - columnPrefix: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - columnPrefix: Prefix string prepended to generated column names.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func toDataFrame(columnPrefix: String = "col") throws -> DataFrame {
         guard !shape.isEmpty else { return DataFrame.empty }
 
@@ -155,9 +155,9 @@ public enum NPYReader: Sendable {
 
     /// Reads a `.npy` file from a local URL.
     /// - Parameters:
-    ///   - url: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - url: File or network URL endpoint.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: The computed NPYArray result instance.
     public static func read(url: URL) throws -> NPYArray {
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw SwiftMLError.fileNotFound(url)
@@ -168,9 +168,9 @@ public enum NPYReader: Sendable {
 
     /// Reads an NPY tensor array from raw data bytes.
     /// - Parameters:
-    ///   - data: <#description#>
-    /// - Throws: <#error description#>
-    /// - Returns: <#description#>
+    ///   - data: Raw input data array or matrix for transformation.
+    /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
+    /// - Returns: The computed NPYArray result instance.
     public static func read(data: Data) throws -> NPYArray {
         guard data.count >= 10 else {
             throw SwiftMLError.parseError(line: 0, description: "NPY file too small (< 10 bytes)")

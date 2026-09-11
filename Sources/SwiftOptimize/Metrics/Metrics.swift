@@ -39,9 +39,9 @@ public enum Metrics {
 
     /// Accuracy score: fraction of correctly predicted labels.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: Classification accuracy score between 0.0 and 1.0.
     public static func accuracy(yTrue: [Int], yPred: [Int]) -> Double {
         guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
         let correct = zip(yTrue, yPred).filter { $0 == $1 }.count
@@ -50,10 +50,10 @@ public enum Metrics {
 
     /// Precision for a given binary class label.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    ///   - label: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    ///   - label: Specific class label integer or category.
+    /// - Returns: Calculated precision ratio between 0.0 and 1.0.
     public static func precision(yTrue: [Int], yPred: [Int], label: Int) -> Double {
         let tp = zip(yTrue, yPred).filter { $0.1 == label && $0.0 == label }.count
         let fp = zip(yTrue, yPred).filter { $0.1 == label && $0.0 != label }.count
@@ -63,10 +63,10 @@ public enum Metrics {
 
     /// Recall for a given binary class label.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    ///   - label: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    ///   - label: Specific class label integer or category.
+    /// - Returns: Calculated recall sensitivity ratio between 0.0 and 1.0.
     public static func recall(yTrue: [Int], yPred: [Int], label: Int) -> Double {
         let tp = zip(yTrue, yPred).filter { $0.0 == label && $0.1 == label }.count
         let fn = zip(yTrue, yPred).filter { $0.0 == label && $0.1 != label }.count
@@ -76,10 +76,10 @@ public enum Metrics {
 
     /// F1 score (harmonic mean of precision and recall) for a given class label.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    ///   - label: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    ///   - label: Specific class label integer or category.
+    /// - Returns: Calculated harmonic F1 score between 0.0 and 1.0.
     public static func f1Score(yTrue: [Int], yPred: [Int], label: Int) -> Double {
         let p = precision(yTrue: yTrue, yPred: yPred, label: label)
         let r = recall(yTrue: yTrue, yPred: yPred, label: label)
@@ -89,9 +89,9 @@ public enum Metrics {
 
     /// Full classification report: per-class Precision, Recall, F1 and macro averages.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: Comprehensive `ClassificationReport` containing per-class and macro metrics.
     public static func classificationReport(yTrue: [Int], yPred: [Int]) -> ClassificationReport {
         let labels = Array(Set(yTrue + yPred)).sorted()
         var perClass = [ClassificationReport.ClassMetrics]()
@@ -118,9 +118,9 @@ public enum Metrics {
 
     /// Balanced Accuracy: average recall per class.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: Classification accuracy score between 0.0 and 1.0.
     public static func balancedAccuracy(yTrue: [Int], yPred: [Int]) -> Double {
         let report = classificationReport(yTrue: yTrue, yPred: yPred)
         guard !report.perClass.isEmpty else { return 0 }
@@ -130,9 +130,9 @@ public enum Metrics {
 
     /// Matthews Correlation Coefficient (MCC) for binary classification.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: Computed numerical scalar value.
     public static func matthewsCorrelationCoefficient(yTrue: [Int], yPred: [Int]) -> Double {
         guard yTrue.count == yPred.count, !yTrue.isEmpty else { return 0 }
         var tp = 0.0, tn = 0.0, fp = 0.0, fn = 0.0
@@ -149,9 +149,9 @@ public enum Metrics {
 
     /// Cohen's Kappa score for inter-rater agreement.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: Computed numerical scalar value.
     public static func cohenKappa(yTrue: [Int], yPred: [Int]) -> Double {
         guard yTrue.count == yPred.count, !yTrue.isEmpty else { return 0 }
         let po = accuracy(yTrue: yTrue, yPred: yPred)
@@ -173,10 +173,10 @@ public enum Metrics {
 
     /// Logarithmic Loss (Binary Cross-Entropy).
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yScore: <#description#>
-    ///   - eps: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yScore: Target prediction probability scores or decision margins.
+    ///   - eps: Maximum neighborhood radius distance epsilon.
+    /// - Returns: Calculated loss or error metric.
     public static func logLoss(yTrue: [Int], yScore: [Double], eps: Double = 1e-15) -> Double {
         guard yTrue.count == yScore.count, !yTrue.isEmpty else { return 0 }
         var loss = 0.0
@@ -190,9 +190,9 @@ public enum Metrics {
 
     /// Brier Score: Mean Squared Error between true binary labels and predicted probabilities.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yScore: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yScore: Target prediction probability scores or decision margins.
+    /// - Returns: Computed numerical scalar value.
     public static func brierScore(yTrue: [Int], yScore: [Double]) -> Double {
         guard yTrue.count == yScore.count, !yTrue.isEmpty else { return 0 }
         let sumSq = zip(yTrue, yScore).map { pow(Double($0) - $1, 2) }.reduce(0, +)
@@ -201,9 +201,9 @@ public enum Metrics {
 
     /// Computes False Positive Rate (FPR), True Positive Rate (TPR), and thresholds for ROC curve.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yScore: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yScore: Target prediction probability scores or decision margins.
+    /// - Returns: The computed [(fpr: Double, tpr: Double, threshold: Double)] result instance.
     public static func rocCurve(yTrue: [Int], yScore: [Double]) -> [(fpr: Double, tpr: Double, threshold: Double)] {
         guard yTrue.count == yScore.count, !yTrue.isEmpty else { return [] }
         let paired = zip(yTrue, yScore).sorted { $0.1 > $1.1 }
@@ -227,9 +227,9 @@ public enum Metrics {
 
     /// Computes Area Under the ROC Curve (ROC-AUC) via trapezoidal integration.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yScore: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yScore: Target prediction probability scores or decision margins.
+    /// - Returns: Calculated area under the curve metric between 0.0 and 1.0.
     public static func rocAUC(yTrue: [Int], yScore: [Double]) -> Double {
         let points = rocCurve(yTrue: yTrue, yScore: yScore)
         guard points.count >= 2 else { return 0 }
@@ -244,9 +244,9 @@ public enum Metrics {
 
     /// Computes Precision, Recall, and thresholds for Precision-Recall curve.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yScore: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yScore: Target prediction probability scores or decision margins.
+    /// - Returns: The computed [(precision: Double, recall: Double, threshold: Double)] result instance.
     public static func prCurve(yTrue: [Int], yScore: [Double]) -> [(precision: Double, recall: Double, threshold: Double)] {
         guard yTrue.count == yScore.count, !yTrue.isEmpty else { return [] }
         let paired = zip(yTrue, yScore).sorted { $0.1 > $1.1 }
@@ -272,9 +272,9 @@ public enum Metrics {
 
     /// Mean Squared Error.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: The computed arithmetic mean value.
     public static func meanSquaredError(yTrue: [Double], yPred: [Double]) -> Double {
         guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
         return zip(yTrue, yPred).map { pow($0 - $1, 2) }.reduce(0, +) / Double(yTrue.count)
@@ -282,18 +282,18 @@ public enum Metrics {
 
     /// Root Mean Squared Error.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: The computed arithmetic mean value.
     public static func rootMeanSquaredError(yTrue: [Double], yPred: [Double]) -> Double {
         return sqrt(meanSquaredError(yTrue: yTrue, yPred: yPred))
     }
 
     /// Mean Absolute Error.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: The computed arithmetic mean value.
     public static func meanAbsoluteError(yTrue: [Double], yPred: [Double]) -> Double {
         guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
         return zip(yTrue, yPred).map { abs($0 - $1) }.reduce(0, +) / Double(yTrue.count)
@@ -301,11 +301,11 @@ public enum Metrics {
 
     /// F-beta score: weighted harmonic mean of precision and recall.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    ///   - label: <#description#>
-    ///   - beta: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    ///   - label: Specific class label integer or category.
+    ///   - beta: Trend smoothing factor parameter beta.
+    /// - Returns: Computed numerical scalar value.
     public static func fBetaScore(yTrue: [Int], yPred: [Int], label: Int, beta: Double = 1.0) -> Double {
         let p = precision(yTrue: yTrue, yPred: yPred, label: label)
         let r = recall(yTrue: yTrue, yPred: yPred, label: label)
@@ -316,9 +316,9 @@ public enum Metrics {
 
     /// Computes Area Under the Precision-Recall Curve (PR-AUC) via trapezoidal integration.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yScore: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yScore: Target prediction probability scores or decision margins.
+    /// - Returns: Calculated area under the curve metric between 0.0 and 1.0.
     public static func prAUC(yTrue: [Int], yScore: [Double]) -> Double {
         let points = prCurve(yTrue: yTrue, yScore: yScore)
         guard points.count >= 2 else { return 0 }
@@ -333,9 +333,9 @@ public enum Metrics {
 
     /// R² (coefficient of determination): fraction of variance explained.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: Computed numerical scalar value.
     public static func r2Score(yTrue: [Double], yPred: [Double]) -> Double {
         guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
         let mean = yTrue.reduce(0, +) / Double(yTrue.count)
@@ -346,10 +346,10 @@ public enum Metrics {
 
     /// Adjusted R² Score considering sample size and number of features.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    ///   - numFeatures: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    ///   - numFeatures: Expected number of feature attributes.
+    /// - Returns: Computed numerical scalar value.
     public static func adjustedR2Score(yTrue: [Double], yPred: [Double], numFeatures: Int) -> Double {
         let r2 = r2Score(yTrue: yTrue, yPred: yPred)
         let n = Double(yTrue.count)
@@ -360,9 +360,9 @@ public enum Metrics {
 
     /// MAPE (Mean Absolute Percentage Error).
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: Computed numerical scalar value.
     public static func mape(yTrue: [Double], yPred: [Double]) -> Double {
         guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
         var total = 0.0
@@ -378,9 +378,9 @@ public enum Metrics {
 
     /// Explained Variance Score.
     /// - Parameters:
-    ///   - yTrue: <#description#>
-    ///   - yPred: <#description#>
-    /// - Returns: <#description#>
+    ///   - yTrue: Ground-truth true target labels or continuous values.
+    ///   - yPred: Predicted target labels or estimated continuous values.
+    /// - Returns: The calculated sample or population variance.
     public static func explainedVarianceScore(yTrue: [Double], yPred: [Double]) -> Double {
         guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
         let residuals = zip(yTrue, yPred).map { $0 - $1 }

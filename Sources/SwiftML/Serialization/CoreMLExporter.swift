@@ -508,13 +508,13 @@ public enum CoreMLExporter {
 
     /// Encodes a fitted Multi-Layer Perceptron classifier as a binary Apple Core ML `.mlmodel` artifact.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - inputNames: <#description#>
-    ///   - outputName: <#description#>
-    ///   - layers: <#description#>
-    ///   - activation: <#description#>
-    ///   - classLabels: <#description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - inputNames: Names of the model input features or layers.
+    ///   - outputName: Name assigned to the output layer or feature.
+    ///   - layers: Ordered collection of neural network layer weight definitions.
+    ///   - activation: Non-linear activation function identifier (e.g., relu, tanh, sigmoid).
+    ///   - classLabels: Ordered string names corresponding to target class indices.
+    /// - Returns: Raw serialized binary data representation.
     public static func exportBinaryMLPClassifier(
         name: String = "SwiftSciMLPClassifier",
         inputNames: [String],
@@ -550,12 +550,12 @@ public enum CoreMLExporter {
 
     /// Encodes a fitted Multi-Layer Perceptron regressor as a binary Apple Core ML `.mlmodel` artifact.
     /// - Parameters:
-    ///   - name: <#description#>
-    ///   - inputNames: <#description#>
-    ///   - outputName: <#description#>
-    ///   - layers: <#description#>
-    ///   - activation: <#description#>
-    /// - Returns: <#description#>
+    ///   - name: Name or identifier string.
+    ///   - inputNames: Names of the model input features or layers.
+    ///   - outputName: Name assigned to the output layer or feature.
+    ///   - layers: Ordered collection of neural network layer weight definitions.
+    ///   - activation: Non-linear activation function identifier (e.g., relu, tanh, sigmoid).
+    /// - Returns: Raw serialized binary data representation.
     public static func exportBinaryMLPRegressor(
         name: String = "SwiftSciMLPRegressor",
         inputNames: [String],

@@ -56,8 +56,26 @@ public enum SSLMode: String, Sendable, Codable {
 
 /// Protocol for relational database drivers.
 public protocol DatabaseConnection: Sendable {
+    /// Executes a SQL query against the database.
     func executeQuery(_ sql: String) async throws -> SQLQueryResult
+    
+    /// Tests database connectivity by attempting a minimal ping query.
+    /// - Returns: `true` if connected and responsive, `false` otherwise.
+    func ping() async -> Bool
 }
+
+public extension DatabaseConnection {
+    /// Default implementation of ping using a lightweight query test.
+    func ping() async -> Bool {
+        do {
+            _ = try await executeQuery("SELECT 1;")
+            return true
+        } catch {
+            return false
+        }
+    }
+}
+
 
 /// Structure representing SQL query result tabular data.
 public struct SQLQueryResult: Sendable {
@@ -292,6 +310,36 @@ public actor PostgreSQLConnection: DatabaseConnection {
         self.database = parsed.database
         self.sslMode = sslMode ?? parsed.sslMode
     }
+
+    /// Creates a new PostgreSQL connection instance with explicit endpoint parameters.
+    /// - Parameters:
+    ///   - host: Database server hostname or IP (defaults to "127.0.0.1").
+    ///   - port: Database server port (defaults to 5432).
+    ///   - user: Username (defaults to "postgres").
+    ///   - password: Password string.
+    ///   - database: Database name (defaults to "postgres").
+    ///   - sslMode: SSL/TLS mode (defaults to `.disable`).
+    public init(
+        host: String = "127.0.0.1",
+        port: Int = 5432,
+        user: String = "postgres",
+        password: String = "",
+        database: String = "postgres",
+        sslMode: SSLMode = .disable
+    ) {
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+        self.database = database
+        self.sslMode = sslMode
+        var url = "postgres://\(user):\(password)@\(host):\(port)/\(database)"
+        if sslMode != .disable {
+            url += "?sslmode=\(sslMode.rawValue)"
+        }
+        self.connectionURL = url
+    }
+
 
     private static func parseURL(_ urlStr: String) -> (host: String, port: Int, user: String, password: String, database: String, sslMode: SSLMode) {
         guard let url = URL(string: urlStr) else {
@@ -737,6 +785,36 @@ public actor MySQLConnection: DatabaseConnection {
         self.database = parsed.database
         self.sslMode = sslMode ?? parsed.sslMode
     }
+
+    /// Creates a new MySQL connection instance with explicit endpoint parameters.
+    /// - Parameters:
+    ///   - host: Database server hostname or IP (defaults to "127.0.0.1").
+    ///   - port: Database server port (defaults to 3306).
+    ///   - user: Username (defaults to "root").
+    ///   - password: Password string.
+    ///   - database: Database name (defaults to "mysql").
+    ///   - sslMode: SSL/TLS mode (defaults to `.disable`).
+    public init(
+        host: String = "127.0.0.1",
+        port: Int = 3306,
+        user: String = "root",
+        password: String = "",
+        database: String = "mysql",
+        sslMode: SSLMode = .disable
+    ) {
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+        self.database = database
+        self.sslMode = sslMode
+        var url = "mysql://\(user):\(password)@\(host):\(port)/\(database)"
+        if sslMode != .disable {
+            url += "?sslmode=\(sslMode.rawValue)"
+        }
+        self.connectionURL = url
+    }
+
 
     private static func parseURL(_ urlStr: String) -> (host: String, port: Int, user: String, password: String, database: String, sslMode: SSLMode) {
         guard let url = URL(string: urlStr) else {

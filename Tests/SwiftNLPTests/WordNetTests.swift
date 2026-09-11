@@ -61,4 +61,113 @@ struct WordNetTests {
         let wupSim = wn.wupSimilarity(dog, computer)
         #expect(wupSim > 0.0)
     }
+
+    @Test("Expanded default vocabulary coverage across POS and domains")
+    func testExpandedVocabularyCoverage() throws {
+        let wn = WordNet()
+        
+        // Verbs
+        let moveSynsets = wn.synsets(for: "move", pos: .verb)
+        #expect(!moveSynsets.isEmpty)
+        #expect(moveSynsets[0].pos == .verb)
+        
+        let runSynsets = wn.synsets(for: "run", pos: .verb)
+        #expect(!runSynsets.isEmpty)
+        
+        // Adjectives
+        let fastSynsets = wn.synsets(for: "fast", pos: .adjective)
+        #expect(!fastSynsets.isEmpty)
+        #expect(fastSynsets[0].pos == .adjective)
+        
+        let smartSynsets = wn.synsets(for: "smart", pos: .adjective)
+        #expect(!smartSynsets.isEmpty)
+        
+        // Human & Professions
+        let scientistSynsets = wn.synsets(for: "scientist", pos: .noun)
+        #expect(!scientistSynsets.isEmpty)
+        guard let scientist = scientistSynsets.first else { return }
+        let scientistHypernyms = wn.hypernyms(of: scientist)
+        #expect(scientistHypernyms.map { $0.id }.contains("human.n.01"))
+        
+        // Technology & Science
+        let csSynsets = wn.synsets(for: "computer science", pos: .noun)
+        #expect(!csSynsets.isEmpty)
+        
+        let algoSynsets = wn.synsets(for: "algorithm", pos: .noun)
+        #expect(!algoSynsets.isEmpty)
+    }
+
+    @Test("Path similarity ranking: dog-cat closer than dog-computer")
+    func testPathSimilarityRanking() throws {
+        let wn = WordNet()
+        guard let dog = wn.synsets(for: "dog").first,
+              let cat = wn.synsets(for: "cat").first,
+              let comp = wn.synsets(for: "computer").first else {
+            Issue.record("Failed to find required synsets")
+            return
+        }
+        
+        let simDogCat = wn.pathSimilarity(dog, cat)
+        let simDogComp = wn.pathSimilarity(dog, comp)
+        #expect(simDogCat > simDogComp)
+    }
+
+    @Test("Princeton WordNet line and string parsing")
+    func testPrincetonDataParsing() throws {
+        // Sample standard Princeton WordNet data.noun lines with header comment
+        let rawContent = """
+          WordNet (R) 3.0 Copyright (c) 2006 by Princeton University.
+          All rights reserved.
+        # Format: synset_offset lex_filenum ss_type w_cnt word lex_id p_cnt [ptr_symbol synset_offset pos source/target] | gloss
+        00001740 03 n 01 entity 0 003 ~ 00001930 n 0000 ~ 00002137 n 0000 ~ 04424418 n 0000 | that which is perceived or known to have its own distinct existence
+        00001930 03 n 02 physical_entity 0 animate_thing 0 001 @ 00001740 n 0000 | an entity that has physical existence
+        """
+        
+        let parsed = try WordNet.parsePrincetonData(rawContent, defaultPOS: .noun)
+        #expect(parsed.count == 2)
+        
+        let entity = parsed[0]
+        #expect(entity.id == "00001740-n")
+        #expect(entity.name == "entity")
+        #expect(entity.pos == .noun)
+        #expect(entity.definition.contains("distinct existence"))
+        #expect(entity.hyponymIDs.contains("00001930-n"))
+        #expect(entity.hyponymIDs.contains("00002137-n"))
+        
+        let physicalEntity = parsed[1]
+        #expect(physicalEntity.id == "00001930-n")
+        #expect(physicalEntity.lemmas.contains("physical entity"))
+        #expect(physicalEntity.lemmas.contains("animate thing"))
+        #expect(physicalEntity.hypernymIDs.contains("00001740-n"))
+        
+        // Test WordNet instance created from parsed synsets
+        let customWN = WordNet(synsets: parsed)
+        let matches = customWN.synsets(for: "physical entity")
+        #expect(matches.count == 1)
+        #expect(matches[0].id == "00001930-n")
+        
+        let hypernyms = customWN.hypernyms(of: physicalEntity)
+        #expect(hypernyms.count == 1)
+        #expect(hypernyms[0].id == "00001740-n")
+    }
+
+    @Test("Princeton WordNet file load from temporary directory")
+    func testFileLoading() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        
+        let dataNounURL = tempDir.appendingPathComponent("data.noun")
+        let nounContent = """
+        00002137 03 n 01 flora 0 001 @ 00001740 n 0000 | all the plant life in a particular region or period
+        """
+        try nounContent.write(to: dataNounURL, atomically: true, encoding: .utf8)
+        
+        let synsets = try WordNet.load(fromDataFile: dataNounURL, pos: .noun)
+        #expect(synsets.count == 1)
+        #expect(synsets[0].lemmas.contains("flora"))
+        
+        let loadedWN = try WordNet.load(fromDirectory: tempDir)
+        #expect(!loadedWN.synsets(for: "flora").isEmpty)
+    }
 }

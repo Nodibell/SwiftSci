@@ -81,7 +81,7 @@ let explanation = await lime.explain(model: { $0.reduce(0.0, +) }, instance: [1.
 
 // 5. Native Sentiment Analysis
 let vader = VADERSentimentAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 3.6.0 is incredibly fast, memory efficient, and robust!")
+let score = vader.polarityScores(text: "SwiftSci 3.7.0 is incredibly fast, memory efficient, and robust!")
 print("Sentiment compound score:", score.compound)
 ```
 
@@ -108,13 +108,13 @@ print("Sentiment compound score:", score.compound)
 
 ---
 
-## 📊 Performance & Memory Comparison (SwiftSci 3.6.0 vs Python)
+## 📊 Performance & Memory Comparison (SwiftSci 3.7.0 vs Python)
 
 All benchmarks are evaluated on **Apple Silicon (M-series, macOS 15 arm64)** with release builds (`-c release`) comparing SwiftSci directly against Python standard baselines (**NumPy, Pandas, Scikit-Learn, Statsmodels, SHAP**) using strictly equivalent data shapes, random seeds, and hyperparameters.
 
 > 📖 **Complete Documentation:** See [PERFORMANCE.md](PERFORMANCE.md) for all 30+ benchmark scenarios and [ACCURACY.md](ACCURACY.md) for numerical accuracy verification.
 
-| Domain / Scenario | SwiftSci 3.6.0 (Swift) | Python Baseline | Speedup | Winner | RAM Footprint (Swift vs Py) | Notes |
+| Domain / Scenario | SwiftSci 3.7.0 (Swift) | Python Baseline | Speedup | Winner | RAM Footprint (Swift vs Py) | Notes |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **ARIMA(1,1,1) Fit** (50k pts) | **`2.463 ms`** | `212.621 ms` (*Statsmodels*) | ⚡ **86.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Exact MLE recursion |
 | **Holt-Winters Fit** (50k pts, s=12) | **`6.451 ms`** | `144.752 ms` (*Statsmodels*) | ⚡ **22.4×** | 🟢 **Swift** | **22 MB** vs 220 MB | Nelder-Mead optimization |

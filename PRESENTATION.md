@@ -169,7 +169,7 @@ let forecast = try await model.forecast(horizon: 24)
 import SwiftNLP
 
 let vader = SentimentIntensityAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 3.6.1 is exceptionally fast and robust!")
+let score = vader.polarityScores(text: "SwiftSci 3.7.0 is exceptionally fast and robust!")
 ```
 **Empirical Console Output (`stdout`):**
 ```text
@@ -241,7 +241,7 @@ let result = try await orchestrator.execute(task: "Analyze revenue anomalies and
 
 ---
 
-## 🏆 Key Performance Highlights (SwiftSci 3.6.0 vs Python)
+## 🏆 Key Performance Highlights (SwiftSci 3.7.0 vs Python)
 
 - ⚡ **ARIMA(1,1,1) Forecasting**: **86.3× faster** than Python Statsmodels (2.46 ms vs 212.62 ms).
 - ⚡ **Random Forest 50 Trees**: **6.76× faster** than Scikit-Learn (3.74 ms vs 25.30 ms).
@@ -300,9 +300,9 @@ graph TD
 
 ---
 
-## 🥊 Ecosystem Comparison (SwiftSci 3.6.0 vs Python vs Julia vs Mojo)
+## 🥊 Ecosystem Comparison (SwiftSci 3.7.0 vs Python vs Julia vs Mojo)
 
-| Feature / Dimension |  SwiftSci 3.6.0 | Python (NumPy/Pandas/PyTorch) | Julia (DataFrames/Flux) | Mojo (MAX / Modular) |
+| Feature / Dimension |  SwiftSci 3.7.0 | Python (NumPy/Pandas/PyTorch) | Julia (DataFrames/Flux) | Mojo (MAX / Modular) |
 | :--- | :---: | :---: | :---: | :---: |
 | **Unified Memory (UMA)** | 🟢 **Zero-copy CPU ⟷ GPU** | 🔴 Separate Host/Device copy | 🟡 Partial | 🟡 Hardware-specific |
 | **Strict Concurrency** | 🟢 **Swift 6 Data-race free** | 🔴 Global Interpreter Lock (GIL) | 🟡 Task parallelism | 🟡 Evolving |
@@ -312,7 +312,7 @@ graph TD
 | **Sparse BLAS (CSR/CSC)**| 🟢 **Apple Accelerate Native** | 🟡 SciPy C-extensions | 🟢 Native SparseArrays | 🔴 Primitive |
 | **Multi-Agent Bus** | 🟢 **AsyncStream Consensus** | 🟡 LangGraph / CrewAI | 🔴 Not standard | 🔴 None |
 | **iOS / macOS On-Device** | 🟢 **Native SDK (.spm / .framework)** | 🔴 Requires wrapper runtimes | 🔴 Not supported on iOS | 🔴 Server-focused |
-| **Public API DocC** | 🟢 **100% (1,749 symbols)** | 🟡 Variable | 🟡 Variable | 🟡 Evolving |
+| **Public API DocC** | 🟢 **100% (1,805 symbols)** | 🟡 Variable | 🟡 Variable | 🟡 Evolving |
 
 ---
 
@@ -320,7 +320,7 @@ graph TD
 
 ### 🎙️ 15-Minute Lightning Talk
 - **00:00 – 02:00 (Introduction)**: The state of Apple Silicon ML. Why Python's GIL and memory bloat limit edge and on-device performance.
-- **02:00 – 06:00 (14 Core Modules & 3.6.0 Innovations)**: Tour across `SwiftDataFrame` (Parquet Snappy), `SwiftCluster` (HNSW), `SwiftML` (256-bin HistGBDT), and `SwiftAgent` (MultiAgentOrchestrator).
+- **02:00 – 06:00 (14 Core Modules & 3.7.0 Innovations)**: Tour across `SwiftDataFrame` (Parquet Snappy), `SwiftCluster` (HNSW), `SwiftML` (256-bin HistGBDT), and `SwiftAgent` (MultiAgentOrchestrator).
 - **06:00 – 11:00 (Scientific Benchmarks & Accuracy)**: Showcase 95% Confidence Interval benchmarks (OneHotEncoder 5.03×, ARIMA 86.3×, HistGBDT 1.57×) and the Accuracy Scorecard.
 - **11:00 – 15:00 (Live Terminal Demo & Q&A)**: Run `swift run -c release SwiftSciBenchmarks --suite Accuracy`.
 
@@ -329,7 +329,7 @@ graph TD
 - **05:00 – 15:00**: Deep Dive into Core Engines: Zero-copy Parquet, Sparse BLAS CSR/CSC, HNSW vector search, 256-bin HistGBDT, Metal MSL quantization kernels (Slides 11–45).
 - **15:00 – 22:00**: Statistical Benchmark Lab & Methodology: Trimmed Mean, 95% CI, RAM RSS analysis (Slides 46–56).
 - **22:00 – 26:00**: Accuracy & Error Metrics Scorecard: RMSE, MAE, MAPE, R², Classification F1 (Slides 57–64).
-- **26:00 – 30:00**: Multi-Agent Orchestration, Slide 67 (v3.6.0 Next-Gen Scaling & Hardening), and Roadmap to v4.0 (Slides 65–67).
+- **26:00 – 30:00**: Multi-Agent Orchestration, Slide 67 (v3.7.0 Next-Gen Scaling & Hardening), and Roadmap to v4.0 (Slides 65–67).
 
 ---
 

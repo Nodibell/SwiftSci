@@ -206,7 +206,7 @@ def run_accuracy_benchmarks():
     # ── 6. VADER ──────────────────────────────────────────────────────────────
     if HAS_VADER:
         sia    = SentimentIntensityAnalyzer()
-        scores = sia.polarity_scores("SwiftSci 3.6.1 is incredibly fast and robust!")
+        scores = sia.polarity_scores("SwiftSci 3.7.0 is incredibly fast and robust!")
         _row(f"[NLP Snt]  VADER               : Compound={scores['compound']:.4f}, Pos={scores['pos']:.3f}")
         results["vader"] = scores
 
@@ -222,7 +222,7 @@ def run_accuracy_benchmarks():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SwiftSci Python Accuracy Benchmarks v3.6.1")
+    parser = argparse.ArgumentParser(description="SwiftSci Python Accuracy Benchmarks v3.7.0")
     parser.add_argument("--json", metavar="PATH", help="Export accuracy results to JSON")
     args = parser.parse_args()
 

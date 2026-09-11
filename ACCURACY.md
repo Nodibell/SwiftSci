@@ -12,7 +12,7 @@ Model accuracy evaluation and predictive error benchmarks comparing **SwiftSci 3
 
 ### 🤖 Machine Learning (Identical Datasets — LCG seed=42)
 
-| Model | Configuration | SwiftSci 3.6.1 | Python Baseline | Parity Status |
+| Model | Configuration | SwiftSci 3.7.0 | Python Baseline | Parity Status |
 | :--- | :--- | :---: | :---: | :---: |
 | **GBDT Regressor** | 30 trees, depth = 4, lr = 0.1 | RMSE = **0.421**<br>MAE = 0.344<br>R² = 0.9879 | RMSE = **0.421**<br>MAE = 0.344<br>R² = 0.9879 | ✅ Exact (`Δ = 0.000`) |
 | **Random Forest** | 30 trees, Gini, depth = 5 | Accuracy = **98.00% – 99.00%**<br>F₁ = 0.982 – 0.991 | Accuracy = **99.00%**<br>F₁ = 0.991 | ✅ Exact Match (`Δ < 1%`) |
@@ -22,7 +22,7 @@ Model accuracy evaluation and predictive error benchmarks comparing **SwiftSci 3
 
 ### 🔮 Time-Series Forecasting (Identical Datasets, Different Parameter Optimizers)
 
-| Model | Configuration | SwiftSci 3.6.1 | Python (Statsmodels) | Explanation |
+| Model | Configuration | SwiftSci 3.7.0 | Python (Statsmodels) | Explanation |
 | :--- | :--- | :---: | :---: | :--- |
 | **Holt-Winters** | Additive trend + seasonality, horizon = 24 | RMSE = 9.764<br>MAPE = 6.11%<br>R² = -1.333 | RMSE = 0.338<br>MAPE = 0.21%<br>R² = 0.997 | SwiftSci uses fixed α = 0.2, β = 0.1, γ = 0.1; Statsmodels applies automated MLE optimization |
 | **ARIMA(1,1,1)** | horizon = 24 | RMSE = 10.218<br>MAPE = 5.87%<br>R² = -1.555 | RMSE = 22.158<br>MAPE = 14.15%<br>R² = -11.014 | Different numerical state-space solvers; Swift Kalman filter produces tighter extrapolation |
@@ -33,7 +33,7 @@ Model accuracy evaluation and predictive error benchmarks comparing **SwiftSci 3
 
 ### 📐 Statistical Tests
 
-| Test | SwiftSci 3.6.1 | SciPy Baseline | Difference (Δ) | Status |
+| Test | SwiftSci 3.7.0 | SciPy Baseline | Difference (Δ) | Status |
 | :--- | :---: | :---: | :---: | :---: |
 | **Welch's Two-Sample T-Test** | `t = 4.7522`, `p = 2.162e-6` | `t = 4.7522`, `p = 2.162e-6` | `Δ < 1e-7` | ✅ **Exact Match** |
 
@@ -41,16 +41,16 @@ Model accuracy evaluation and predictive error benchmarks comparing **SwiftSci 3
 
 ### 💬 NLP: VADER Sentiment
 
-| Test Sentence | SwiftSci 3.6.1 | NLTK Baseline | Match Status |
+| Test Sentence | SwiftSci 3.7.0 | NLTK Baseline | Match Status |
 | :--- | :---: | :---: | :---: |
-| *"SwiftSci 3.6.1 is incredibly fast and robust!"* | Compound = 0.8519 | Compound = 0.8519 | ✅ **100% Exact** |
+| *"SwiftSci 3.7.0 is incredibly fast and robust!"* | Compound = 0.8519 | Compound = 0.8519 | ✅ **100% Exact** |
 
 ---
 
 ## ⚡ Runtime Performance (Apple Silicon arm64, Release Build)
 
 ```
-  Benchmark Scenario                            SwiftSci 3.6.1        Python (Scikit-Learn)   Speedup
+  Benchmark Scenario                            SwiftSci 3.7.0        Python (Scikit-Learn)   Speedup
   ──────────────────────────────────────────────────────────────────────────────────────────────────
   Holt-Winters fit + forecast (N=500, h=24)    0.156 ± 0.006 ms      ~12 ms                  ⚡ ~77×
   ARIMA(1,1,1) fit + forecast (N=500, h=24)    1.331 ± 0.028 ms      ~213 ms                 ⚡ ~160×

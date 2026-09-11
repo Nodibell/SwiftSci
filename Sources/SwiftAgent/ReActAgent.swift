@@ -10,6 +10,14 @@ public protocol AgentTool: Sendable {
     var description: String { get }
     /// Executes the tool logic with the given string input and returns the observation string.
     func execute(input: String) async throws -> String
+    /// The structured parameter schema for function calling.
+    var parameterSchema: AgentParameterSchema { get }
+    /// Whether execution requires user confirmation.
+    var requiresApproval: Bool { get }
+    /// Executes tool with structured key-value arguments.
+    func executeStructured(arguments: [String: String]) async throws -> AgentToolOutput
+    /// Generates function declaration dictionary matching LLM tool calling schema.
+    func toFunctionDeclaration() -> [String: String]
 }
 
 /// A custom tool wrapping a Swift async closure.
@@ -116,6 +124,8 @@ public actor ReActAgent {
     public let maxSteps: Int
     /// Timeout threshold in seconds for each individual tool execution.
     public let toolTimeoutSeconds: Double
+    /// Optional episodic or semantic memory store for contextual continuity across turns.
+    public let memory: (any AgentMemory)?
 
     /// Initializes a ReAct Agent with available tools.
     ///
@@ -123,7 +133,13 @@ public actor ReActAgent {
     ///   - tools: List of initial tools available to the agent.
     ///   - maxSteps: Maximum step limit to prevent infinite loops (default: 10).
     ///   - toolTimeoutSeconds: Maximum execution time allowed per tool call in seconds (default: 30.0).
-    public init(tools: [any AgentTool] = [], maxSteps: Int = 10, toolTimeoutSeconds: Double = 30.0) {
+    ///   - memory: Optional episodic or semantic memory store.
+    public init(
+        tools: [any AgentTool] = [],
+        maxSteps: Int = 10,
+        toolTimeoutSeconds: Double = 30.0,
+        memory: (any AgentMemory)? = nil
+    ) {
         var toolMap: [String: any AgentTool] = [:]
         for tool in tools {
             toolMap[tool.name] = tool
@@ -131,6 +147,7 @@ public actor ReActAgent {
         self.tools = toolMap
         self.maxSteps = maxSteps
         self.toolTimeoutSeconds = toolTimeoutSeconds
+        self.memory = memory
     }
 
     /// Registers a new tool with the agent.
@@ -185,58 +202,150 @@ public actor ReActAgent {
     /// - Throws: `AgentError` or `SwiftMLError` if tool execution, AST evaluation, or reasoning fails.
     public func run(
         query: String,
-        llm: @Sendable (String) async throws -> String
+        llm: @escaping @Sendable (String) async throws -> String
     ) async throws -> (finalAnswer: String, trace: [AgentStep]) {
-        var trace: [AgentStep] = []
+        let stream = self.stream(query: query, llm: llm)
+        var finalAnswer: String = ""
+        var trajectory: [AgentStep] = []
 
-        for _ in 0..<maxSteps {
-            var prompt = "You are an autonomous AI analyst answering the following question: '\(query)'.\n\n"
-            prompt += "Available Tools:\n"
-            for (_, tool) in tools {
-                prompt += "- \(tool.name): \(tool.description)\n"
+        for await event in stream {
+            switch event {
+            case .completed(let ans, let trace):
+                finalAnswer = ans
+                trajectory = trace
+            case .error(let err):
+                throw err
+            default:
+                break
             }
-            prompt += "\nFormat instructions:\nThought: [reasoning]\nAction: [tool name]\nAction Input: [input]\nOr:\nThought: [reasoning]\nFinal Answer: [result]\n\n"
-
-            if !trace.isEmpty {
-                prompt += "Previous History:\n"
-                for step in trace {
-                    prompt += "Thought: \(step.thought)\n"
-                    if let act = step.action, let inp = step.actionInput {
-                        prompt += "Action: \(act)\nAction Input: \(inp)\n"
-                    }
-                    if let obs = step.observation {
-                        prompt += "Observation: \(obs)\n"
-                    }
-                }
-            }
-
-            let response = try await llm(prompt)
-            let parsed = parseResponse(response)
-
-            if let answer = parsed.finalAnswer {
-                let step = AgentStep(thought: parsed.thought, observation: answer)
-                trace.append(step)
-                return (finalAnswer: answer, trace: trace)
-            }
-
-            guard let actName = parsed.action, let actTool = findTool(named: actName) else {
-                let fallbackStep = AgentStep(thought: parsed.thought, observation: "Error: Tool '\(parsed.action ?? "nil")' not recognized.")
-                trace.append(fallbackStep)
-                continue
-            }
-
-            let input = parsed.actionInput ?? ""
-            let obs: String
-            do {
-                obs = try await executeWithTimeout(tool: actTool, input: input, timeoutSeconds: toolTimeoutSeconds)
-            } catch {
-                obs = "Error: \(error.localizedDescription)"
-            }
-            let step = AgentStep(thought: parsed.thought, action: actTool.name, actionInput: input, observation: obs)
-            trace.append(step)
         }
 
-        return (finalAnswer: trace.last?.observation ?? "Max steps reached without conclusive answer.", trace: trace)
+        return (finalAnswer: finalAnswer, trace: trajectory)
+    }
+
+    /// Streams real-time reasoning thoughts, tool execution states, and answer deltas.
+    ///
+    /// - Parameters:
+    ///   - query: Analytical prompt or question.
+    ///   - llm: Completion block generating LLM output.
+    /// - Returns: An asynchronous stream of `AgentStreamEvent` values.
+    public func stream(
+        query: String,
+        llm: @escaping @Sendable (String) async throws -> String
+    ) -> AsyncStream<AgentStreamEvent> {
+        AsyncStream { continuation in
+            Task {
+                do {
+                    // Record user input to memory if available
+                    try? await memory?.record(content: query, role: "user", metadata: [:])
+
+                    var trace: [AgentStep] = []
+                    var invocationCounts: [String: Int] = [:]
+                    var pastContext = ""
+
+                    if let mem = memory {
+                        let retrieved = (try? await mem.retrieveContext(query: query, limit: 5)) ?? []
+                        if !retrieved.isEmpty {
+                            pastContext = "Relevant Long-Term Memory:\n"
+                            for r in retrieved {
+                                pastContext += "- [\(r.role)]: \(r.content)\n"
+                            }
+                            pastContext += "\n"
+                        }
+                    }
+
+                    for _ in 0..<maxSteps {
+                        var prompt = "You are an autonomous AI analyst answering the following question: '\(query)'.\n\n"
+                        if !pastContext.isEmpty {
+                            prompt += pastContext
+                        }
+                        prompt += "Available Tools:\n"
+                        for (_, tool) in tools {
+                            prompt += "- \(tool.name): \(tool.description)\n"
+                        }
+                        prompt += "\nFormat instructions:\nThought: [reasoning]\nAction: [tool name]\nAction Input: [input]\nOr:\nThought: [reasoning]\nFinal Answer: [result]\n\n"
+
+                        if !trace.isEmpty {
+                            prompt += "Previous History:\n"
+                            for step in trace {
+                                prompt += "Thought: \(step.thought)\n"
+                                if let act = step.action, let inp = step.actionInput {
+                                    prompt += "Action: \(act)\nAction Input: \(inp)\n"
+                                }
+                                if let obs = step.observation {
+                                    prompt += "Observation: \(obs)\n"
+                                }
+                            }
+                        }
+
+                        let response = try await llm(prompt)
+                        let parsed = parseResponse(response)
+
+                        if !parsed.thought.isEmpty {
+                            continuation.yield(.thoughtDelta(parsed.thought + "\n"))
+                        }
+
+                        if let answer = parsed.finalAnswer {
+                            continuation.yield(.answerDelta(answer))
+                            let step = AgentStep(thought: parsed.thought, observation: answer)
+                            trace.append(step)
+                            try? await memory?.record(content: answer, role: "assistant", metadata: [:])
+                            continuation.yield(.completed(finalAnswer: answer, trajectory: trace))
+                            continuation.finish()
+                            return
+                        }
+
+                        guard let actName = parsed.action, let actTool = findTool(named: actName) else {
+                            let fallbackStep = AgentStep(thought: parsed.thought, observation: "Error: Tool '\(parsed.action ?? "nil")' not recognized.")
+                            trace.append(fallbackStep)
+                            continue
+                        }
+
+                        let input = parsed.actionInput ?? ""
+                        let toolCallKey = "\(actTool.name)::\(input)"
+                        let repeatedCount = (invocationCounts[toolCallKey] ?? 0) + 1
+                        invocationCounts[toolCallKey] = repeatedCount
+
+                        let callId = UUID().uuidString
+                        continuation.yield(.toolCallScheduled(callId: callId, tool: actTool.name, arguments: ["input": input]))
+
+                        if actTool.requiresApproval {
+                            let req = ApprovalRequest(id: callId, toolName: actTool.name, arguments: ["input": input], explanation: "Tool execution requires confirmation.")
+                            continuation.yield(.approvalRequested(req))
+                        }
+
+                        continuation.yield(.toolExecutionStarted(callId: callId, tool: actTool.name))
+                        let startTime = CFAbsoluteTimeGetCurrent()
+                        var obs: String
+                        do {
+                            if repeatedCount >= 3 {
+                                obs = "Sentry Warning: Loop detected. You invoked tool '\(actTool.name)' with identical arguments \(repeatedCount) times. Please provide your Final Answer or choose a different strategy."
+                            } else {
+                                obs = try await executeWithTimeout(tool: actTool, input: input, timeoutSeconds: toolTimeoutSeconds)
+                            }
+                        } catch {
+                            obs = "Error: \(error.localizedDescription)"
+                        }
+                        let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                        let out = AgentToolOutput(text: obs, durationMs: duration)
+                        continuation.yield(.toolExecutionCompleted(callId: callId, tool: actTool.name, output: out, durationMs: duration))
+
+                        let step = AgentStep(thought: parsed.thought, action: actTool.name, actionInput: input, observation: obs)
+                        trace.append(step)
+                    }
+
+                    let fallbackAnswer = trace.last?.observation ?? "Max steps reached without conclusive answer."
+                    continuation.yield(.completed(finalAnswer: fallbackAnswer, trajectory: trace))
+                    continuation.finish()
+                } catch let err as AgentError {
+                    continuation.yield(.error(err))
+                    continuation.finish()
+                } catch {
+                    continuation.yield(.error(.executionFailed(error.localizedDescription)))
+                    continuation.finish()
+                }
+            }
+        }
     }
 
     /// Executes an agent tool with strict structured concurrency timeout protection.

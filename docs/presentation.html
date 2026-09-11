@@ -5711,17 +5711,17 @@ print(<span class="str">"Citations Verified:"</span>, ragContext.citations)</pre
     <div class="slide" data-slide="67">
       <div class="badge"><span class="badge-dot"></span> SWIFTSCI 3.7.0 — SLIDE 67 OF 67</div>
       <h1 class="title-large">SwiftSci 3.7.0 — Next-Gen Scaling & Hardening</h1>
-      <p class="subtitle">v3.7.0 delivers Princeton WordNet semantic graphs, pure-Swift MySQL/PostgreSQL wire protocol drivers, logarithmic HNSW vector search, 256-bin histogram GBDT, concurrent TaskGroup AutoML, EarlyStopping callbacks, Sparse BLAS CSR/CSC matrices, Metal MSL SIMD-group quantization kernels, multi-agent message bus, and enterprise memory/numerical safety.</p>
+      <p class="subtitle">v3.7.0 delivers GBDT CoreML model serialization, statistical data drift monitoring (Wasserstein W1 & PSI), automated tabular modality inference, corpus lexical diversity profiling (Shannon entropy, TTR), target leakage sentry guardrails, and 100% Rich DocC documentation coverage with zero placeholders.</p>
       <div class="grid-2">
         <div class="card">
           <div class="card-header"><span class="card-title">🚀 Core Performance & Scaling Features</span><span class="swiftui-pill" style="color:var(--sf-green);">3.7.0</span></div>
           <div class="feature-highlights">
-            <div class="highlight-item"><span class="highlight-icon">🌐</span><span><b>HNSWIndex Graph ANN</b>: Sub-ms O(log N) approximate nearest neighbor search over 100k+ embeddings</span></div>
-            <div class="highlight-item"><span class="highlight-icon">⚡</span><span><b>256-Bin HistGBDT</b>: LightGBM-style O(K) split evaluations with UInt8 gradient histograms</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🔄</span><span><b>Concurrent AutoML & TaskGroups</b>: Full multi-core CPU scaling for cross-validation and OneVsRest</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🛑</span><span><b>EarlyStopping Callbacks</b>: Automated iteration halting with best parameter restoration</span></div>
-            <div class="highlight-item"><span class="highlight-icon">🧩</span><span><b>SparseMatrix CSR / CSC</b>: 10×–50× memory reduction offloaded to Apple Accelerate Sparse BLAS</span></div>
-            <div class="highlight-item"><span class="highlight-icon">📈</span><span><b>Parallel AutoARIMA</b>: Multi-threaded (p,d,q) grid search across concurrent TaskGroups</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🌲</span><span><b>GBDT CoreML Export</b>: Direct CoreMLExportable compilation with shrinkage and base prediction</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📊</span><span><b>Wasserstein Distance (W1)</b>: 1D Earth Mover's Distance between continuous distributions</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📉</span><span><b>Population Stability Index (PSI)</b>: Quantile-binned drift monitoring with Laplace smoothing</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🔍</span><span><b>DataFrame Modality Inference</b>: Automated detection of numeric, mixed, text, or time-series</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📝</span><span><b>Corpus Lexical Profiling</b>: Type-Token Ratio, Hapax Legomena, and Shannon entropy</span></div>
+            <div class="highlight-item"><span class="highlight-icon">🛡️</span><span><b>Target Leakage Detector</b>: Pre-training audit for extreme Pearson, Spearman, and index leakage</span></div>
           </div>
         </div>
         <div class="card">
@@ -5732,7 +5732,7 @@ print(<span class="str">"Citations Verified:"</span>, ragContext.citations)</pre
             <div class="highlight-item"><span class="highlight-icon">💾</span><span><b>Pure-Swift Database Drivers & SCRAM</b>: Native MySQL/PostgreSQL wire protocol + RFC 5802/7677 SCRAM-SHA-256</span></div>
             <div class="highlight-item"><span class="highlight-icon">📖</span><span><b>Princeton WordNet Semantic Graphs</b>: Full 117k+ synset parsing, hypernyms, hyponyms & path similarity</span></div>
             <div class="highlight-item"><span class="highlight-icon">🔒</span><span><b>P0 Memory & Concurrency Safety</b>: ArrowDataBuffer ARC retention, withMemoryTicket GPU lifecycle</span></div>
-            <div class="highlight-item"><span class="highlight-icon">📚</span><span><b>100% DocC API Coverage</b>: 1,750+ public symbols verified with structured DocC parameter tags</span></div>
+            <div class="highlight-item"><span class="highlight-icon">📚</span><span><b>100% DocC API Coverage</b>: 1,805 public symbols verified with zero placeholders (<#...#>) in CI</span></div>
           </div>
         </div>
       </div>

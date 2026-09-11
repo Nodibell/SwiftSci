@@ -1,4 +1,4 @@
-#  SwiftSci 3.6.1 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 3.7.0 — Apple Keynote Ecosystem Presentation
 
 > **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
 > **Date**: September 2026
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-SwiftSci 3.6.1 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. Featuring **14 specialized modules** and **100% DocC API coverage** across 1,750 public symbols, SwiftSci delivers:
+SwiftSci 3.7.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. Featuring **14 specialized modules** and **100% Rich DocC API coverage** across 1,805 public symbols, SwiftSci delivers:
 - **Logarithmic HNSW Vector Search**: Graph-based Approximate Nearest Neighbors (`HNSWIndex`) with sub-millisecond $O(\log N)$ recall over 100k+ high-dimensional embeddings.
 - **256-Bin Histogram GBDT**: LightGBM-style $O(K)$ split evaluations with `UInt8` gradient histograms and `EarlyStopping` callbacks.
 - **Concurrent AutoML & TaskGroups**: Swift 6 structured concurrency for parallel hyperparameter optimization, cross-validation, and AutoARIMA order selection.

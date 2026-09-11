@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.6+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.7+)
 
 ## 📌 Vision & Architecture
 
@@ -530,6 +530,25 @@ Critical enhancements enabling zero-dependency reading of industry-standard scie
    - Introduced convenience initializers with explicit endpoint parameters (`host:port:user:password:database:sslMode:`) for `MySQLConnection` and `PostgreSQLConnection`.
 5. **DocC Documentation Parity**:
    - Fully aligned DocC catalogs with pure-Swift wire-protocol driver capabilities.
+
+---
+
+### Version 3.7.0: GBDT CoreML Export, Data Drift, Modality Inference & 100% Rich Documentation *(🟢 Completed)*
+
+*Primary Focus:* Bridging the Apple Silicon production inference gap with GBDT CoreML export, distribution drift monitoring, automated DataFrame modality inference, leakage detection, and complete elimination of documentation placeholders.
+
+1. **GBDT CoreML Model Export (`SwiftML`)**:
+   - Direct export of `GradientBoostedTreesRegressor` models to binary Core ML `.mlmodel` / `.mlpackage` formats with tree weights, shrinkage parameter (`learningRate`), base initial prediction scalar, and node split criteria.
+2. **Statistical Data Drift Monitoring (`SwiftStats`)**:
+   - 1D Wasserstein Earth Mover's Distance (`Stats.wassersteinDistance`) via cumulative empirical step functions.
+   - Population Stability Index (`Stats.populationStabilityIndex`) with quantile binning and Laplace smoothing.
+3. **Tabular Modality Inference & Lexical Profiling (`SwiftDataFrame` & `SwiftNLP`)**:
+   - Automated detection of `.tabularNumeric`, `.tabularMixed`, `.pureTextNLP`, and `.timeSeries` archetypes (`DataFrame.inferModality()`).
+   - Lexical diversity profiling (`CorpusLexicalProfiler`) computing TTR, Hapax Legomena count, and empirical Shannon entropy.
+4. **Target Leakage Diagnostics (`SwiftOptimize`)**:
+   - Pre-training feature space audit via `TargetLeakageDetector` flagging high Pearson correlations ($|r| \ge 0.98$), Spearman rank monotonicity, and index order alignment.
+5. **100% Rich DocC Documentation Coverage (Zero Placeholders)**:
+   - Replaced all 1,239 Xcode placeholders across 117 files with rigorous parameter, error, and return documentation, verified by automated CI checks.
 
 
 ---

@@ -1,9 +1,14 @@
-# SwiftSci 3.6.1 Complete Performance Benchmarks
+# SwiftSci 3.7.0 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.6.1** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.7.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**) on Apple Silicon (M-series / macOS 15 arm64).
 
 > [!NOTE]
-> **What's New in 3.6.1 & 3.6.0 Enhancements:**
+> **What's New in 3.7.0 & Recent Enhancements:**
+> - **GBDT CoreML Model Export (`SwiftML`):** Serializes trained gradient boosted trees directly to `.mlmodel`/`.mlpackage` specifications for sub-millisecond Apple Neural Engine evaluation.
+> - **Statistical Data Drift Detection (`SwiftStats`):** 1D Wasserstein distance ($W_1$) and Population Stability Index (PSI) with quantile binning.
+> - **Automated Modality Inference & Lexical Profiling (`SwiftDataFrame` & `SwiftNLP`):** Dataset archetype classification and corpus entropy/TTR profiling.
+> - **Target Leakage Detection (`SwiftOptimize`):** Multi-factor pre-training leakage audits against Pearson, Spearman rank, and index alignment.
+> - **100% Rich DocC Coverage (Zero Placeholders):** Complete elimination of all 1,239 Xcode placeholders across all 14 modules.
 > - **WordNet Lexicon Expansion (`SwiftNLP`):** Comprehensive curated offline taxonomy (~120 synsets) and Princeton WordNet database file loader.
 > - **Database Driver Health Check & Endpoint Symmetry (`SwiftDatabase`):** Async `ping()` protocol and convenience initializers for MySQL and PostgreSQL.
 > - **HNSW Graph ANN Vector Index (`SwiftCluster`):** $O(\log N)$ sub-millisecond approximate nearest neighbor search for 100k+ embeddings with vDSP cosine and L2 acceleration.
@@ -19,7 +24,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ---
 
-## ⏱️ Performance & Architecture Evolution Timeline (v3.0 → v3.6.1)
+## ⏱️ Performance & Architecture Evolution Timeline (v3.0 → v3.7.0)
 
 The table below tracks key architectural breakthroughs, engine upgrades, and performance milestones across SwiftSci releases:
 

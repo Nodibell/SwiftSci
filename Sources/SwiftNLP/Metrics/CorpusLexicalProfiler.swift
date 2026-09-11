@@ -109,7 +109,7 @@ public enum CorpusLexicalProfiler {
     /// - Returns: A `LexicalProfile` containing comprehensive lexical metrics.
     public static func profile(
         texts: [String],
-        tokenizer: Tokenizer = AppleWordTokenizer()
+        tokenizer: any Tokenizer = AppleWordTokenizer()
     ) -> LexicalProfile {
         var allTokens: [String] = []
         for text in texts {

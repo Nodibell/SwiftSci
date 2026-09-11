@@ -1,4 +1,4 @@
-# SwiftSci 3.6.1
+# SwiftSci 3.7.0
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -28,7 +28,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.6.1")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.7.0")
 ]
 ```
 
@@ -150,6 +150,14 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   │ [NLP Cls]  NaiveBayes (3-class) : Accuracy=35.00%, Macro-F1=0.342                  │
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## 🚀 What's New in v3.7.0
+
+- **GBDT CoreML Model Serialization (`SwiftML`):** Full `CoreMLExportable` conformance for `GradientBoostedTreesRegressor`, enabling direct export of trained gradient boosted tree ensembles to Apple Core ML specifications (`.mlmodel` / `.mlpackage`) with leaf shrinkage (`learningRate`), base initial prediction, and split threshold evaluation for sub-millisecond on-device inference.
+- **Statistical Data Drift Detection (`SwiftStats`):** Added 1D Wasserstein distance (`Stats.wassersteinDistance(_:_:)`) via sorted cumulative empirical distributions and Population Stability Index (`Stats.populationStabilityIndex(reference:actual:numBins:)`) with quantile binning and Laplace smoothing.
+- **Automated Modality Inference & Corpus Profiling (`SwiftDataFrame` & `SwiftNLP`):** Added `DataFrame.inferModality()` identifying dataset archetypes (`.tabularNumeric`, `.tabularMixed`, `.pureTextNLP`, `.timeSeries`) and `CorpusLexicalProfiler` computing Type-Token Ratio (TTR), Hapax Legomena, and empirical Shannon entropy.
+- **Target Leakage Detection (`SwiftOptimize`):** Added `TargetLeakageDetector` auditing feature spaces for high Pearson correlation ($|r| \ge 0.98$), monotonic Spearman rank alignment, and row-index correlation prior to model training.
+- **100% Rich DocC Documentation Quality Overhaul:** Eliminated all 1,239 `<#description#>` and `<#error description#>` placeholders across 117 files, replacing them with mathematically exact parameter, error, and return documentation, backed by zero-placeholder CI enforcement.
 
 ---
 

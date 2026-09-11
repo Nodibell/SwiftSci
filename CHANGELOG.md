@@ -4,6 +4,25 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2026-09-11
+
+### Added
+- **GBDT CoreML Model Serialization (`CoreMLExportable`, `SwiftML`)**:
+  - Implemented `CoreMLExportable` conformance for `GradientBoostedTreesRegressor`, writing binary `.mlmodel` and `.mlpackage` representations with tree weights, leaf shrinkage (`learningRate`), base initial prediction scalar, and node split conditions.
+- **Statistical Data Drift Detection (`SwiftStats`)**:
+  - Added `Stats.wassersteinDistance(_:_:)` for exact 1D earth mover's distance between continuous empirical distributions.
+  - Added `Stats.populationStabilityIndex(reference:actual:numBins:)` for dataset divergence monitoring with quantile binning and Laplace smoothing.
+- **Tabular Modality Inference & Lexical Profiling (`SwiftDataFrame`, `SwiftNLP`)**:
+  - Added `DataFrame.inferModality()` identifying `.tabularNumeric`, `.tabularMixed`, `.pureTextNLP`, or `.timeSeries` archetypes with confidence scoring.
+  - Added `CorpusLexicalProfiler` analyzing Type-Token Ratio (TTR), Hapax Legomena, and empirical Shannon entropy.
+- **Target Leakage Diagnostics (`TargetLeakageDetector`, `SwiftOptimize`)**:
+  - Added pre-training diagnostic engine evaluating extreme Pearson correlation ($|r| \ge 0.98$), monotonic Spearman rank correlation, and row-index correlation.
+- **Complete Elimination of Xcode Documentation Placeholders (100% Rich DocC Coverage)**:
+  - Eliminated all 1,239 `<#description#>` and `<#error description#>` placeholders across 117 source files.
+  - Updated `scripts/verify_doc_coverage.py` to enforce zero-placeholder policy in CI.
+
+---
+
 ## [3.6.1] - 2026-09-11
 
 ### Added

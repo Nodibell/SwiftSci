@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SwiftSci Python Accuracy Benchmarks — v3.6.1
+SwiftSci Python Accuracy Benchmarks — v3.7.0
 Direct counterpart to SwiftSci AccuracyBenchmarks.swift.
 
 Uses the SAME BenchmarkLCG generator as the Swift side:

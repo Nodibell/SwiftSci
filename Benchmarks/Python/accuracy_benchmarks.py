@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-SwiftSci Python Accuracy Benchmarks — v3.8.0
+SwiftSci Python Accuracy Benchmarks — v3.8.1
+===========================================
 Direct counterpart to SwiftSci AccuracyBenchmarks.swift.
 
 Uses the SAME BenchmarkLCG generator as the Swift side:
@@ -132,7 +133,7 @@ def run_accuracy_benchmarks():
 
     hw_model = ExponentialSmoothing(
         train_series, trend="add", seasonal="add", seasonal_periods=12
-    ).fit(smoothing_level=0.2, smoothing_trend=0.1, smoothing_seasonal=0.1, optimized=False)
+    ).fit()
     hw_pred = hw_model.forecast(24)
 
     hw_rmse = math.sqrt(mean_squared_error(actual_future, hw_pred))

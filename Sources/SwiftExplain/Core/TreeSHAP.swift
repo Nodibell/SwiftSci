@@ -11,6 +11,46 @@ public struct TreeSHAP: Sendable {
     /// Creates a new TreeSHAP explainer instance.
     public init() {}
 
+    private static let weightsLUT: [[Double]] = {
+        let maxM = 65
+        var lut = [[Double]](repeating: [], count: maxM)
+        for m in 1..<maxM {
+            var row = [Double](repeating: 0.0, count: m)
+            for s in 0..<m {
+                var w = 1.0
+                if s >= 1 {
+                    for i in 1...s { w *= Double(i) }
+                }
+                let rem = m - s - 1
+                if rem >= 1 {
+                    for i in 1...rem { w *= Double(i) }
+                }
+                for i in 1...m { w /= Double(i) }
+                row[s] = w
+            }
+            lut[m] = row
+        }
+        return lut
+    }()
+
+    @inline(__always)
+    private static func shapWeight(s: Int, m: Int) -> Double {
+        if m > 0 && m < weightsLUT.count && s >= 0 && s < m {
+            return weightsLUT[m][s]
+        }
+        guard m > 0, s >= 0, s < m else { return 1.0 }
+        var w = 1.0
+        if s >= 1 {
+            for i in 1...s { w *= Double(i) }
+        }
+        let rem = m - s - 1
+        if rem >= 1 {
+            for i in 1...rem { w *= Double(i) }
+        }
+        for i in 1...m { w /= Double(i) }
+        return w
+    }
+
     // MARK: - Exact TreeSHAP for FlatTreeNode arrays
 
     /// Computes exact Shapley values for a single decision tree and an input instance.
@@ -26,61 +66,50 @@ public struct TreeSHAP: Sendable {
 
         var phi = [Double](repeating: 0.0, count: numFeatures)
         
-        // Recursive path tracking struct
         struct PathStep {
-            let featureIndex: Int
-            let matched: Bool
+            var featureIndex: Int
+            var matched: Bool
         }
         
-        func traverse(nodeIdx: Int, path: [PathStep]) {
+        var path: [PathStep] = []
+        path.reserveCapacity(32)
+
+        var featureMatchArr = [Int8](repeating: -1, count: numFeatures)
+        var visitedFeatures: [Int] = []
+        visitedFeatures.reserveCapacity(32)
+
+        func traverse(nodeIdx: Int) {
             guard nodeIdx >= 0 && nodeIdx < tree.count else { return }
             let node = tree[nodeIdx]
             
             if node.isLeaf {
                 let leafVal = node.value
-                let d = path.count
-                guard d > 0 else { return }
+                guard !path.isEmpty else { return }
                 
-                // Group path by unique feature indices
-                var featureMatches: [Int: Bool] = [:]
+                visitedFeatures.removeAll(keepingCapacity: true)
                 for step in path {
-                    featureMatches[step.featureIndex] = step.matched
+                    let f = step.featureIndex
+                    if f >= 0 && f < numFeatures {
+                        if featureMatchArr[f] == -1 {
+                            visitedFeatures.append(f)
+                        }
+                        featureMatchArr[f] = step.matched ? 1 : 0
+                    }
                 }
                 
-                let uniqueFeatures = Array(featureMatches.keys)
-                let numUnique = uniqueFeatures.count
-                let numMatched = uniqueFeatures.filter { featureMatches[$0] == true }.count
-                
-                // Combinatorial Shapley weight: |S|! * (M - |S| - 1)! / M!
-                func shapWeight(s: Int, m: Int) -> Double {
-                    guard m > 0, s >= 0, s < m else { return 1.0 }
-                    var w = 1.0
-                    if s >= 1 {
-                        for i in 1...s {
-                            w *= Double(i)
-                        }
-                    }
-                    let rem = m - s - 1
-                    if rem >= 1 {
-                        for i in 1...rem {
-                            w *= Double(i)
-                        }
-                    }
-                    if m >= 1 {
-                        for i in 1...m {
-                            w /= Double(i)
-                        }
-                    }
-                    return w
+                let numUnique = visitedFeatures.count
+                var numMatched = 0
+                for f in visitedFeatures {
+                    if featureMatchArr[f] == 1 { numMatched += 1 }
                 }
                 
-                for feat in uniqueFeatures {
-                    guard feat >= 0 && feat < numFeatures else { continue }
-                    let isMatch = featureMatches[feat] == true
+                for feat in visitedFeatures {
+                    let isMatch = featureMatchArr[feat] == 1
                     let sWithout = isMatch ? (numMatched - 1) : numMatched
-                    let weight = shapWeight(s: sWithout, m: numUnique)
+                    let weight = Self.shapWeight(s: sWithout, m: numUnique)
                     let sign: Double = isMatch ? 1.0 : -1.0
                     phi[feat] += sign * weight * leafVal
+                    featureMatchArr[feat] = -1 // Reset for next leaf
                 }
                 return
             }
@@ -91,15 +120,17 @@ public struct TreeSHAP: Sendable {
             let instanceWentLeft = instVal <= threshold
             
             // Traverse Left
-            let leftStep = PathStep(featureIndex: featIdx, matched: instanceWentLeft)
-            traverse(nodeIdx: node.leftChild, path: path + [leftStep])
+            path.append(PathStep(featureIndex: featIdx, matched: instanceWentLeft))
+            traverse(nodeIdx: node.leftChild)
+            path.removeLast()
             
             // Traverse Right
-            let rightStep = PathStep(featureIndex: featIdx, matched: !instanceWentLeft)
-            traverse(nodeIdx: node.rightChild, path: path + [rightStep])
+            path.append(PathStep(featureIndex: featIdx, matched: !instanceWentLeft))
+            traverse(nodeIdx: node.rightChild)
+            path.removeLast()
         }
         
-        traverse(nodeIdx: 0, path: [])
+        traverse(nodeIdx: 0)
         return phi
     }
 

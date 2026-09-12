@@ -34,6 +34,8 @@ public actor HardwareRouter {
             return cells < 500_000 ? .cpu : .gpu
         case "PCA":
             return (sampleCount < 2_000 && featureCount < 500) ? .cpu : .gpu
+        case "LinearSVC":
+            return cells < 50_000 ? .cpu : .gpu
         case "LinearRegression", "LogisticRegression":
             return sampleCount < 1_000 ? .cpu : .gpu
         case "MLP", "MLPClassifier", "MLPRegressor":

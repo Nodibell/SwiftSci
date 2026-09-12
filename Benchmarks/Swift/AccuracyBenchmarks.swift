@@ -50,8 +50,7 @@ public struct AccuracyBenchmarks: BenchmarkSuite {
 
         // Fit Holt-Winters
         let hw = ExponentialSmoothing(
-            method: .holtWinters(beta: 0.1, gamma: 0.1, period: 12, seasonal: .additive),
-            alpha: 0.2
+            method: .holtWinters(beta: 0.1, gamma: 0.1, period: 12, seasonal: .additive)
         )
         _ = try? await hw.fit(series: trainSeries)
         let hwForecast = (try? await hw.forecast(horizon: horizon).predictions) ?? Array(repeating: trainSeries.last ?? 0, count: horizon)
@@ -70,8 +69,7 @@ public struct AccuracyBenchmarks: BenchmarkSuite {
             iterations: 5
         ) {
             let hwModel = ExponentialSmoothing(
-                method: .holtWinters(beta: 0.1, gamma: 0.1, period: 12, seasonal: .additive),
-                alpha: 0.2
+                method: .holtWinters(beta: 0.1, gamma: 0.1, period: 12, seasonal: .additive)
             )
             try await hwModel.fit(series: trainSeries)
             let res = try await hwModel.forecast(horizon: horizon)

@@ -1,12 +1,13 @@
 import Foundation
 import SwiftML
+import Accelerate
 
-/// Actor-based Complement Naive Bayes classifier conforming to `ClassifierEstimator`.
+/// Complement Naive Bayes classifier designed for imbalanced text datasets, conforming to `ClassifierEstimator`.
 public actor ComplementNaiveBayesClassifier: ClassifierEstimator {
     /// Additive Laplace smoothing hyperparameter.
     public let alpha: Double
 
-    /// Learned target classes (numeric representations).
+    /// Learned target classes.
     public private(set) var classes: [Double] = []
 
     private var featureWeights: [Double: [Double]] = [:]
@@ -28,40 +29,47 @@ public actor ComplementNaiveBayesClassifier: ClassifierEstimator {
             throw SwiftMLError.invalidInput("Features and targets must not be empty and must have matching lengths.")
         }
 
+        let nSamples = features.count
         let nFeatures = features[0].count
         let labelSet = Array(Set(targets)).sorted()
         self.classes = labelSet
+        let nClasses = labelSet.count
 
-        var totalFeatureSums = Array(repeating: 0.0, count: nFeatures)
-        var classFeatureSums: [Double: [Double]] = [:]
-
-        for c in labelSet {
-            classFeatureSums[c] = Array(repeating: 0.0, count: nFeatures)
+        var classIndexMap: [Double: Int] = [:]
+        for (idx, c) in labelSet.enumerated() {
+            classIndexMap[c] = idx
         }
 
-        for (rowIdx, label) in targets.enumerated() {
+        var totalFeatureSums = [Double](repeating: 0.0, count: nFeatures)
+        var flatClassSums = [Double](repeating: 0.0, count: nClasses * nFeatures)
+
+        for rowIdx in 0..<nSamples {
+            let label = targets[rowIdx]
+            guard let cIdx = classIndexMap[label] else { continue }
+            let offset = cIdx * nFeatures
+            let row = features[rowIdx]
             for colIdx in 0..<nFeatures {
-                let val = features[rowIdx][colIdx]
+                let val = row[colIdx]
                 totalFeatureSums[colIdx] += val
-                classFeatureSums[label]?[colIdx] += val
+                flatClassSums[offset + colIdx] += val
             }
         }
 
         var weights: [Double: [Double]] = [:]
 
-        for c in labelSet {
-            let classSums = classFeatureSums[c] ?? Array(repeating: 0.0, count: nFeatures)
-            var complementSums = Array(repeating: 0.0, count: nFeatures)
+        for (cIdx, c) in labelSet.enumerated() {
+            let offset = cIdx * nFeatures
+            var complementSums = [Double](repeating: 0.0, count: nFeatures)
             var totalComplementSum = 0.0
 
             for j in 0..<nFeatures {
-                let compVal = totalFeatureSums[j] - classSums[j]
+                let compVal = totalFeatureSums[j] - flatClassSums[offset + j]
                 complementSums[j] = compVal
                 totalComplementSum += compVal
             }
 
             let denominator = totalComplementSum + alpha * Double(nFeatures)
-            var weightRow = Array(repeating: 0.0, count: nFeatures)
+            var weightRow = [Double](repeating: 0.0, count: nFeatures)
             var weightSum = 0.0
 
             for j in 0..<nFeatures {
@@ -102,30 +110,35 @@ public actor ComplementNaiveBayesClassifier: ClassifierEstimator {
         }
         guard !features.isEmpty else { return [] }
 
+        let nClasses = classes.count
+        let weightsArray = classes.map { featureWeights[$0] ?? [] }
+
         var results: [[Double]] = []
         results.reserveCapacity(features.count)
 
         for x in features {
-            var negScores: [Double] = []
-            for c in classes {
-                guard let w = featureWeights[c], w.count == x.count else {
-                    negScores.append(Double.infinity)
+            var negScores = [Double](repeating: 0.0, count: nClasses)
+            for cIdx in 0..<nClasses {
+                let w = weightsArray[cIdx]
+                guard w.count == x.count else {
+                    negScores[cIdx] = Double.infinity
                     continue
                 }
-                var score = 0.0
-                for (j, val) in x.enumerated() {
-                    if val > 0 {
-                        score += val * w[j]
-                    }
-                }
-                // CNB decision rule minimizes complement weight sum, so invert for probability
-                negScores.append(-score)
+                var dotVal = 0.0
+                vDSP_dotprD(x, 1, w, 1, &dotVal, vDSP_Length(x.count))
+                negScores[cIdx] = dotVal
             }
 
-            let maxScore = negScores.max() ?? 0.0
-            let exps = negScores.map { exp($0 - maxScore) }
-            let sumExp = exps.reduce(0.0, +)
-            let probs = sumExp > 0 ? exps.map { $0 / sumExp } : Array(repeating: 1.0 / Double(classes.count), count: classes.count)
+            let minScore = negScores.min() ?? 0.0
+            var exps = [Double](repeating: 0.0, count: nClasses)
+            var sumExp = 0.0
+            for cIdx in 0..<nClasses {
+                let val = exp(-(negScores[cIdx] - minScore))
+                exps[cIdx] = val
+                sumExp += val
+            }
+
+            let probs = sumExp > 0 ? exps.map { $0 / sumExp } : Array(repeating: 1.0 / Double(nClasses), count: nClasses)
             results.append(probs)
         }
 

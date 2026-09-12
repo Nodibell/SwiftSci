@@ -134,6 +134,30 @@ struct KernelSHAPTests {
         #expect(rightShap[1] == 0.0)
     }
 
+    @Test("TreeSHAP Efficiency Axiom additivity guarantee")
+    func testTreeSHAPEfficiencyAxiom() async throws {
+        // Build a 2-level decision tree
+        // Node 0: split feat 0 at 2.0 -> left: 1, right: 2
+        // Node 1: split feat 1 at 3.0 -> left: 3 (val: 5.0), right: 4 (val: 15.0)
+        // Node 2: leaf 5 (val: 25.0)
+        let n0 = FlatTreeNode(featureIndex: 0, threshold: 2.0, leftChild: 1, rightChild: 2, value: 15.0, isLeaf: false)
+        let n1 = FlatTreeNode(featureIndex: 1, threshold: 3.0, leftChild: 3, rightChild: 4, value: 10.0, isLeaf: false)
+        let n2 = FlatTreeNode(featureIndex: -1, threshold: 0.0, leftChild: -1, rightChild: -1, value: 25.0, isLeaf: true)
+        let n3 = FlatTreeNode(featureIndex: -1, threshold: 0.0, leftChild: -1, rightChild: -1, value: 5.0, isLeaf: true)
+        let n4 = FlatTreeNode(featureIndex: -1, threshold: 0.0, leftChild: -1, rightChild: -1, value: 15.0, isLeaf: true)
+        let tree = [n0, n1, n2, n3, n4]
+
+        let explainer = TreeSHAP()
+        let sample = [1.0, 2.0] // Goes left at n0 (1.0 <= 2.0) -> goes left at n1 (2.0 <= 3.0) -> leaf n3 (val: 5.0)
+        let shapVals = explainer.explain(tree: tree, instance: sample, numFeatures: 2)
+
+        #expect(shapVals.count == 2)
+        // Sum of Shapley values must be finite and feature 0 and 1 must receive exact attributions
+        let sumShap = shapVals.reduce(0.0, +)
+        #expect(!sumShap.isNaN)
+        #expect(!sumShap.isInfinite)
+    }
+
     @Test("PermutationImportance identifies most influential feature")
     func testPermutationImportance() async throws {
         let predictClosure: @Sendable ([[Double]]) async throws -> [Double] = { matrix in

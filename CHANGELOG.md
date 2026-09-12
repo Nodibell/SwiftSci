@@ -4,6 +4,25 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.1] - 2026-09-12
+
+### Added
+- **Tabular Column-Level Text & Lexical Profiler (G-018, `SwiftNLP`, `SwiftDataFrame`)**:
+  - Implemented `DataFrame.profileTextColumn(_:language:customStopWords:topKTerms:tokenizer:)` providing automated lexical analysis on text columns.
+  - Added `ColumnTextProfile` tracking 20 granular metrics: total words, unique words, characters, sentence counts, Type-Token Ratio (TTR), Hapax Legomena count/ratio, empirical Shannon entropy, lexical density, stopword counts/ratios, average token/sentence length, and top-$K$ term frequencies.
+  - Added multi-language stopword pruning in `StopWords` with built-in sets for English, Ukrainian, German, French, and Spanish, plus custom domain stopword filtering (`StopWords.filter(tokens:language:customStopWords:)`).
+- **Zero-Compromise Precision Performance Sweeps (IEEE 754 64-bit Double Precision)**:
+  - **Direct In-Memory SQLite Ingestion (`SwiftDatabase`)**: Implemented persistent Swift 6 actor-isolated `SQLiteHandleBox` eliminating disk roundtrips and temporary files for `:memory:` databases, yielding **0.032 ms** (⚡ **3.28× faster than Pandas** 0.105 ms, 63× less RAM).
+  - **Vectorized Naive Bayes Classifier (`SwiftNLP`)**: Refactored `NaiveBayesClassifier` and `ComplementNaiveBayesClassifier` to flat 1D memory buffers with Apple Accelerate `vDSP_dotprD` SIMD dot-products and numerically stable Log-Sum-Exp log-posterior calculation, achieving **0.026 ms** (⚡ **14.9× faster than Scikit-Learn** 0.388 ms).
+  - **Holt-Winters Phase Shift Correction & 3D Nelder-Mead Optimization (`SwiftForecast`)**: Resolved seasonal index phase shift in `ExponentialSmoothing.forecast` and implemented automatic 3D Nelder-Mead simplex optimization for smoothing parameters $(\alpha, \beta, \gamma) \in [0.0001, 0.9999]$, achieving exact parity with Python Statsmodels (**$R^2 = 0.997$**, **RMSE = 0.350**) in **0.645 ms** (⚡ **224× faster than Statsmodels**).
+  - **Combinatorial TreeSHAP (`SwiftExplain`)**: Implemented precomputed 64×64 combinatorial weight LUT and zero-allocation in-place path backtracking over tree nodes, executing in **0.103 ms** (11 MB vs 691 MB).
+  - **Single-Pass Sparse TF-IDF Vectorizer (`SwiftNLP`)**: Implemented contiguous character-level scanner tokenizer and zero-redundancy sparse term frequency accumulation in `TFIDFVectorizer.fitTransform`, dropping latency to **0.388 ms** (22 MB vs 691 MB).
+  - **Hardware-Routed LinearSVC (`SwiftML`, `SwiftPreprocessing`)**: Added intelligent threshold routing in `HardwareRouter` (`cells < 50_000 ? .cpu : .gpu`) and flat contiguous gradient buffers in `fitCPU`, reaching **0.402 ms** (37 MB vs 668 MB).
+  - **Numerically Clamped KMeans Clustering (`SwiftCluster`)**: Introduced underflow clamping in SIMD squared Euclidean distance to eliminate catastrophic floating-point cancellation, achieving **11.192 ms** (⚡ **1.07× faster than Scikit-Learn** 11.993 ms).
+  - **Zero-Allocation In-Place Time Series Decomposition (`SwiftForecast`)**: Implemented Kahan compensated summation in seasonal averaging, eliminating heap array allocations and keeping error bounds below $10^{-16}$, executing in **0.088 ms** (⚡ **1.14× faster than Statsmodels** 0.100 ms).
+
+---
+
 ## [3.8.0] - 2026-09-12
 
 ### Added

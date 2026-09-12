@@ -107,8 +107,7 @@ public actor ExponentialSmoothing {
             for h in 0..<horizon {
                 let step = h + 1
                 let base = lastLevel + Double(step) * lastTrend
-                let seasonalIdx = (n - period + h) % period
-                let seasonalFactor = seasonal[n - period + seasonalIdx]
+                let seasonalFactor = seasonal[n - period + (h % period)]
                 if model == .additive {
                     preds[h] = base + seasonalFactor
                 } else {
@@ -254,6 +253,8 @@ public actor ExponentialSmoothing {
             let optimal = optimizer.minimize(
                 objective: { params in
                     let a = params[0]
+                    let b = params[1]
+                    let g = params[2]
                     let n = localSeries.count
                     guard n >= period * 2 else { return Double.greatestFiniteMagnitude }
                     var lvl = [Double](repeating: 0.0, count: n)
@@ -284,14 +285,14 @@ public actor ExponentialSmoothing {
                             curLvl = a * adj + (1.0 - a) * (prevLvl + prevTrd)
                         }
                         lvl[t] = curLvl
-                        let curTrd = fixedBeta * (curLvl - prevLvl) + (1.0 - fixedBeta) * prevTrd
+                        let curTrd = b * (curLvl - prevLvl) + (1.0 - b) * prevTrd
                         trd[t] = curTrd
                         let curSea: Double
                         if model == .additive {
-                            curSea = fixedGamma * (obs - curLvl) + (1.0 - fixedGamma) * prevSea
+                            curSea = g * (obs - curLvl) + (1.0 - g) * prevSea
                         } else {
                             let ratio = abs(curLvl) > 1e-15 ? obs / curLvl : 1.0
-                            curSea = fixedGamma * ratio + (1.0 - fixedGamma) * prevSea
+                            curSea = g * ratio + (1.0 - g) * prevSea
                         }
                         sea[t] = curSea
                         let base = prevLvl + prevTrd
@@ -301,11 +302,13 @@ public actor ExponentialSmoothing {
                     }
                     return sumSq / Double(n - period)
                 },
-                initialGuess: [0.5],
-                lowerBounds: [0.01],
-                upperBounds: [0.99]
+                initialGuess: [0.3, fixedBeta, fixedGamma],
+                lowerBounds: [0.0001, 0.0001, 0.0001],
+                upperBounds: [0.9999, 0.9999, 0.9999]
             )
             self.alpha = optimal[0]
+            self.beta = optimal[1]
+            self.gamma = optimal[2]
         }
     }
     

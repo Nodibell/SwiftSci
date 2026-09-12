@@ -1,5 +1,6 @@
 import Foundation
 import SwiftML
+import Accelerate
 
 /// Actor-based Multinomial Naive Bayes classifier conforming to `ClassifierEstimator`.
 public actor NaiveBayesClassifier: ClassifierEstimator {
@@ -34,35 +35,43 @@ public actor NaiveBayesClassifier: ClassifierEstimator {
 
         let labelSet = Array(Set(targets)).sorted()
         self.classes = labelSet
+        let nClasses = labelSet.count
 
-        var classCounts: [Double: Int] = [:]
-        var classFeatureSums: [Double: [Double]] = [:]
-
-        for c in labelSet {
-            classCounts[c] = 0
-            classFeatureSums[c] = Array(repeating: 0.0, count: nFeatures)
+        var classIndexMap: [Double: Int] = [:]
+        for (idx, c) in labelSet.enumerated() {
+            classIndexMap[c] = idx
         }
 
-        for (rowIdx, label) in targets.enumerated() {
-            classCounts[label, default: 0] += 1
+        var classCounts = [Int](repeating: 0, count: nClasses)
+        var flatFeatureSums = [Double](repeating: 0.0, count: nClasses * nFeatures)
+
+        for rowIdx in 0..<nSamples {
+            let label = targets[rowIdx]
+            guard let cIdx = classIndexMap[label] else { continue }
+            classCounts[cIdx] += 1
+            let offset = cIdx * nFeatures
+            let row = features[rowIdx]
             for colIdx in 0..<nFeatures {
-                classFeatureSums[label]?[colIdx] += features[rowIdx][colIdx]
+                flatFeatureSums[offset + colIdx] += row[colIdx]
             }
         }
 
         var logPriors: [Double: Double] = [:]
         var logProbs: [Double: [Double]] = [:]
 
-        for c in labelSet {
-            let count = Double(classCounts[c] ?? 0)
+        for (cIdx, c) in labelSet.enumerated() {
+            let count = Double(classCounts[cIdx])
             logPriors[c] = log(count / Double(nSamples))
 
-            let featureSums = classFeatureSums[c] ?? Array(repeating: 0.0, count: nFeatures)
-            let totalSum = featureSums.reduce(0.0, +) + alpha * Double(nFeatures)
-
-            var featureLogProbRow: [Double] = Array(repeating: 0.0, count: nFeatures)
+            let offset = cIdx * nFeatures
+            var totalSum = alpha * Double(nFeatures)
             for j in 0..<nFeatures {
-                let smoothedNum = featureSums[j] + alpha
+                totalSum += flatFeatureSums[offset + j]
+            }
+
+            var featureLogProbRow = [Double](repeating: 0.0, count: nFeatures)
+            for j in 0..<nFeatures {
+                let smoothedNum = flatFeatureSums[offset + j] + alpha
                 featureLogProbRow[j] = log(smoothedNum / totalSum)
             }
             logProbs[c] = featureLogProbRow
@@ -98,29 +107,36 @@ public actor NaiveBayesClassifier: ClassifierEstimator {
             return []
         }
 
+        let nClasses = classes.count
+        let classPriorsArray = classes.map { classLogPriors[$0] ?? -Double.infinity }
+        let classLogProbsArray = classes.map { featureLogProbs[$0] ?? [] }
+
         var results: [[Double]] = []
         results.reserveCapacity(features.count)
 
         for x in features {
-            var logPosteriors: [Double] = []
-            for c in classes {
-                guard let prior = classLogPriors[c], let fProbs = featureLogProbs[c], fProbs.count == x.count else {
-                    logPosteriors.append(-Double.infinity)
+            var logPosteriors = [Double](repeating: 0.0, count: nClasses)
+            for cIdx in 0..<nClasses {
+                let prior = classPriorsArray[cIdx]
+                let fProbs = classLogProbsArray[cIdx]
+                guard fProbs.count == x.count else {
+                    logPosteriors[cIdx] = -Double.infinity
                     continue
                 }
-                var lp = prior
-                for (j, val) in x.enumerated() {
-                    if val > 0 {
-                        lp += val * fProbs[j]
-                    }
-                }
-                logPosteriors.append(lp)
+                var dotVal = 0.0
+                vDSP_dotprD(x, 1, fProbs, 1, &dotVal, vDSP_Length(x.count))
+                logPosteriors[cIdx] = prior + dotVal
             }
 
             let maxLog = logPosteriors.max() ?? 0.0
-            let exps = logPosteriors.map { exp($0 - maxLog) }
-            let sumExp = exps.reduce(0.0, +)
-            let probs = sumExp > 0 ? exps.map { $0 / sumExp } : Array(repeating: 1.0 / Double(classes.count), count: classes.count)
+            var exps = [Double](repeating: 0.0, count: nClasses)
+            var sumExp = 0.0
+            for cIdx in 0..<nClasses {
+                let expVal = exp(logPosteriors[cIdx] - maxLog)
+                exps[cIdx] = expVal
+                sumExp += expVal
+            }
+            let probs = sumExp > 0 ? exps.map { $0 / sumExp } : Array(repeating: 1.0 / Double(nClasses), count: nClasses)
             results.append(probs)
         }
 

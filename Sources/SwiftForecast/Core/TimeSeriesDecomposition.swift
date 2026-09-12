@@ -72,18 +72,23 @@ public enum TimeSeriesDecomposition {
         // 3. Compute Seasonal Component (average detrended for each period position)
         var seasonalCycle = [Double](repeating: 0.0, count: period)
         for p in 0..<period {
-            var valuesAtPos: [Double] = []
-            valuesAtPos.reserveCapacity(n / period + 1)
+            var sum = 0.0
+            var c = 0.0 // Kahan summation compensation
+            var count = 0
             var idx = p
             while idx < n {
                 let v = detrended[idx]
                 if !v.isNaN {
-                    valuesAtPos.append(v)
+                    let y = v - c
+                    let t = sum + y
+                    c = (t - sum) - y
+                    sum = t
+                    count += 1
                 }
                 idx += period
             }
-            if !valuesAtPos.isEmpty {
-                seasonalCycle[p] = vDSP.mean(valuesAtPos)
+            if count > 0 {
+                seasonalCycle[p] = sum / Double(count)
             }
         }
 

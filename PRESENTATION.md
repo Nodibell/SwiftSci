@@ -1,4 +1,4 @@
-#  SwiftSci 3.7.0 — Apple Keynote Ecosystem Presentation
+#  SwiftSci 3.8.0 — Apple Keynote Ecosystem Presentation
 
 > **Target Audience**: WWDC Data Scientists, iOS/macOS Machine Learning Engineers, Performance Optimization Specialists.
 > **Date**: September 2026
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-SwiftSci 3.7.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. Featuring **14 specialized modules** and **100% Rich DocC API coverage** across 1,805 public symbols, SwiftSci delivers:
+SwiftSci 3.8.0 is a production-ready, high-performance scientific computing framework engineered specifically for Swift 6 and Apple Silicon. Featuring **14 specialized modules** and **100% Rich DocC API coverage** across 1,902 public symbols, SwiftSci delivers:
 - **Logarithmic HNSW Vector Search**: Graph-based Approximate Nearest Neighbors (`HNSWIndex`) with sub-millisecond $O(\log N)$ recall over 100k+ high-dimensional embeddings.
 - **256-Bin Histogram GBDT**: LightGBM-style $O(K)$ split evaluations with `UInt8` gradient histograms and `EarlyStopping` callbacks.
 - **Concurrent AutoML & TaskGroups**: Swift 6 structured concurrency for parallel hyperparameter optimization, cross-validation, and AutoARIMA order selection.
@@ -169,7 +169,7 @@ let forecast = try await model.forecast(horizon: 24)
 import SwiftNLP
 
 let vader = SentimentIntensityAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 3.7.0 is exceptionally fast and robust!")
+let score = vader.polarityScores(text: "SwiftSci 3.8.0 is exceptionally fast and robust!")
 ```
 **Empirical Console Output (`stdout`):**
 ```text
@@ -241,7 +241,7 @@ let result = try await orchestrator.execute(task: "Analyze revenue anomalies and
 
 ---
 
-## 🏆 Key Performance Highlights (SwiftSci 3.7.0 vs Python)
+## 🏆 Key Performance Highlights (SwiftSci 3.8.0 vs Python)
 
 - ⚡ **ARIMA(1,1,1) Forecasting**: **86.3× faster** than Python Statsmodels (2.46 ms vs 212.62 ms).
 - ⚡ **Random Forest 50 Trees**: **6.76× faster** than Scikit-Learn (3.74 ms vs 25.30 ms).
@@ -300,9 +300,9 @@ graph TD
 
 ---
 
-## 🥊 Ecosystem Comparison (SwiftSci 3.7.0 vs Python vs Julia vs Mojo)
+## 🥊 Ecosystem Comparison (SwiftSci 3.8.0 vs Python vs Julia vs Mojo)
 
-| Feature / Dimension |  SwiftSci 3.7.0 | Python (NumPy/Pandas/PyTorch) | Julia (DataFrames/Flux) | Mojo (MAX / Modular) |
+| Feature / Dimension |  SwiftSci 3.8.0 | Python (NumPy/Pandas/PyTorch) | Julia (DataFrames/Flux) | Mojo (MAX / Modular) |
 | :--- | :---: | :---: | :---: | :---: |
 | **Unified Memory (UMA)** | 🟢 **Zero-copy CPU ⟷ GPU** | 🔴 Separate Host/Device copy | 🟡 Partial | 🟡 Hardware-specific |
 | **Strict Concurrency** | 🟢 **Swift 6 Data-race free** | 🔴 Global Interpreter Lock (GIL) | 🟡 Task parallelism | 🟡 Evolving |

@@ -378,6 +378,17 @@ let package = Package(
             name: "SwiftAgent",
             dependencies: [
                 "SwiftDataFrame",
+                "SwiftStats",
+                "SwiftPreprocessing",
+                "SwiftML",
+                "SwiftCluster",
+                "SwiftOptimize",
+                "SwiftForecast",
+                "SwiftExplain",
+                "SwiftNLP",
+                "SwiftVision",
+                "SwiftDatabase",
+                "SwiftVisualization",
                 "SwiftLLM",
             ],
             path: "Sources/SwiftAgent",
@@ -385,14 +396,37 @@ let package = Package(
                 .process("SwiftAgent.docc")
             ],
             cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            linkerSettings: [
+                .linkedLibrary("sqlite3"),
+                .linkedFramework("Accelerate"),
+            ]
         ),
         .testTarget(
             name: "SwiftAgentTests",
-            dependencies: ["SwiftAgent"],
+            dependencies: [
+                "SwiftAgent",
+                "SwiftDataFrame",
+                "SwiftStats",
+                "SwiftPreprocessing",
+                "SwiftML",
+                "SwiftCluster",
+                "SwiftOptimize",
+                "SwiftForecast",
+                "SwiftExplain",
+                "SwiftNLP",
+                "SwiftVision",
+                "SwiftDatabase",
+                "SwiftVisualization",
+                "SwiftLLM",
+            ],
             path: "Tests/SwiftAgentTests",
             cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            linkerSettings: [
+                .linkedLibrary("sqlite3"),
+                .linkedFramework("Accelerate"),
+            ]
         ),
 
         // ── SwiftSciBenchmarks ───────────────────────────────────────────

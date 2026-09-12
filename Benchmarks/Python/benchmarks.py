@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SwiftSci Python Benchmark Suite — v3.7.0
+SwiftSci Python Benchmark Suite — v3.8.0
 Mirrors the Swift benchmarks in Benchmarks/Swift/ for direct comparison.
 
 Usage:
@@ -498,7 +498,7 @@ def bench_accuracy():
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="SwiftSci Python Benchmark Suite v3.7.0")
+    parser = argparse.ArgumentParser(description="SwiftSci Python Benchmark Suite v3.8.0")
     parser.add_argument("--json", metavar="PATH", help="Export results to JSON file")
     parser.add_argument("--suite", help="Filter by suite name (stats, dataframe, ml, forecast, extensions, accuracy)")
     parser.add_argument("--filter", help="Filter by benchmark name substring")
@@ -512,7 +512,7 @@ def main():
     BenchmarkConfig.default_warmup = args.warmup
 
     print("╔══════════════════════════════════════════════════════════╗")
-    print("║        SwiftSci Python Benchmark Suite — v3.7.0          ║")
+    print("║        SwiftSci Python Benchmark Suite — v3.8.0          ║")
     print("╚══════════════════════════════════════════════════════════╝")
     print(f"Platform   : {platform.machine()} ({platform.system()})")
     print(f"Python     : {sys.version.split()[0]}")

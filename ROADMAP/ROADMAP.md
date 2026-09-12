@@ -1,4 +1,4 @@
-# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.7+)
+# 🗺️ SwiftSci Architectural Roadmap (v1.0 – v3.8+)
 
 ## 📌 Vision & Architecture
 
@@ -548,8 +548,34 @@ Critical enhancements enabling zero-dependency reading of industry-standard scie
 4. **Target Leakage Diagnostics (`SwiftOptimize`)**:
    - Pre-training feature space audit via `TargetLeakageDetector` flagging high Pearson correlations ($|r| \ge 0.98$), Spearman rank monotonicity, and index order alignment.
 5. **100% Rich DocC Documentation Coverage (Zero Placeholders)**:
-   - Replaced all 1,239 Xcode placeholders across 117 files with rigorous parameter, error, and return documentation, verified by automated CI checks.
+---
 
+### Version 3.8.0: Autonomous Omni-Module Agent, Streaming, Vector Memory & Reactive SwiftUI Controller *(🟢 Completed)*
+
+*Branch:* `feature/3.8.0-swiftagent`  
+*Primary Focus:* Elevating `SwiftAgent` into an industrial-grade autonomous scientific reasoning and execution engine with direct interoperability across all SwiftSci modules, real-time streaming, semantic vector memory, loop guard sentries, human-in-the-loop approvals, and reactive `@Observable` SwiftUI dialogue integration.
+
+1. **Omni-Module Sandboxed Tool Suite (`SwiftSciToolbox`)**:
+   - `StatisticsInspectionTool`: On-demand Welch's two-sample t-tests, Pearson/Spearman bivariate correlation, and comprehensive descriptive moments via `SwiftStats`.
+   - `DataDriftInspectionTool`: Continuous production distribution monitoring via Wasserstein W1 and Population Stability Index (PSI) with automated drift severity triage.
+   - `TimeSeriesForecastingTool`: Autonomous actor-isolated ARIMA model fitting and multi-step forecast generation via `SwiftForecast`.
+   - `NLPSentimentTool`: Tokenization and sentiment intensity scoring with polarity confidence via `SwiftNLP`.
+   - `SafeDatabaseQueryTool`: Sandboxed analytical SQLite inspection with SQL mutation rejection (`DROP`, `DELETE`, `INSERT`, `UPDATE`, `ALTER`, `TRUNCATE`) via `SwiftDatabase`.
+2. **Type-Safe Structured Tool Calling (`StructuredAgentTool`)**:
+   - Machine-readable JSON Schema parameter definitions (`AgentParameterSchema`, `AgentParameterProperty`) with OpenAI/Anthropic/Apple function calling export (`toFunctionDeclaration()`).
+   - Rich execution payloads (`AgentToolOutput`) capturing wall-clock duration, structured text, and contextual metadata.
+3. **Short-Term & Long-Term Semantic Vector Memory (`AgentMemory`)**:
+   - `SlidingWindowMemory`: In-memory rolling conversational buffer with configurable FIFO capacity.
+   - `SemanticVectorMemory`: Semantic retrieval powered by `SwiftCluster.HNSWIndex` (Hierarchical Navigable Small World graphs) with customizable distance metrics (`cosine`, `euclidean`).
+4. **Real-Time Event Streaming & Loop Sentry (`ReActAgent.stream`)**:
+   - `AsyncStream<AgentStreamEvent>` yielding live thought tokens, tool scheduling/execution events, and conversational answers.
+   - Loop Sentry detecting repeating tool call oscillation ($\ge 3$ repeated identical calls) and injecting self-correction guidance.
+   - Human-in-the-loop approval requests (`ApprovalRequest`) for sensitive operations.
+5. **Reactive SwiftUI Dialogue Architecture (`AgentDialogueController`)**:
+   - `@Observable` and `@MainActor` isolated state controller designed for instant integration with SwiftUI views (such as `AgentDialogueView`).
+   - Thread-safe streaming message accumulation, thinking indicators, and asynchronous approval callbacks.
+6. **100% DocC API Compliance & Zero Placeholders**:
+   - 100.00% public symbol documentation (1,902 symbols) verified via automated scripts.
 
 ---
 

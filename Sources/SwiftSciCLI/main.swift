@@ -8,7 +8,7 @@ struct SwiftSciCLI: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "swiftsci",
         abstract: "SwiftSci Ecosystem Command-Line Utility for DataFrames, Conversions, and Models.",
-        version: "3.7.0",
+        version: "3.8.0",
         subcommands: [Summary.self, Convert.self, ExportModel.self]
     )
 }

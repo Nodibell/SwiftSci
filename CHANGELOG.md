@@ -4,6 +4,26 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] - 2026-09-12
+
+### Added
+- **SwiftAgent Omni-Module Scientific Architecture (`SwiftSciToolbox`)**:
+  - Implemented high-level `SwiftSciToolbox` bringing seamless tool dispatch across the entire scientific framework: `SwiftDataFrame` (table summaries & filtering), `SwiftStats` (vectorized statistical testing & correlation), `SwiftML` (automated model training & inference), `SwiftForecast` (ARIMA forecasting), `SwiftOptimize` (hyperparameter cross-validation), `SwiftDatabase` (safe SQL querying), `SwiftVision` (image classification & detection), `SwiftNLP` (tokenization & sentiment analysis), and `SwiftExplain` (feature attribution).
+- **Typed Structured Tool Protocol (`AgentToolV2`, `StructuredAgentTool`)**:
+  - Added modern `AgentToolV2` protocol requiring explicit parameter schemas (`JSONSchema`) and asynchronous structured dictionary handlers.
+  - Implemented `StructuredAgentTool` enabling type-safe parameters validation and dynamic registration with full backward compatibility for `AgentTool`.
+- **Real-Time Asynchronous Event Streaming (`ReActAgent.stream`)**:
+  - Added asynchronous stream pipeline (`AsyncStream<AgentStreamEvent>`) producing `.thoughtDelta`, `.toolCallScheduled`, `.toolExecutionStarted`, `.toolExecutionCompleted`, `.answerDelta`, and `.completed` events as reasoning progresses.
+  - Added loop sentry protection preventing infinite loops and repetitive tool call oscillation.
+- **Hierarchical Agent Memory System (`AgentMemory`)**:
+  - Implemented modular memory architectures including short-term `WorkingMemory`, FIFO capacity-constrained `SlidingWindowMemory`, and SIMD vDSP-accelerated `SemanticVectorMemory` backed by HNSW vector graph search.
+- **Reactive SwiftUI Dialogue Architecture (`AgentDialogueController`)**:
+  - Built Swift 6 `@Observable` and `@MainActor`-isolated controller providing 60 FPS state publication (`messages: [AgentDialogueMessage]`, `isThinking: Bool`, `activeToolName: String?`), cooperative cancellation (`cancel()`), and human-in-the-loop approval requests.
+- **Test Suite Expansion & Quality Assurance**:
+  - Reached 96.53% overall patch test coverage across all SwiftAgent modules and 100.00% DocC public symbol documentation.
+
+---
+
 ## [3.7.0] - 2026-09-11
 
 ### Added

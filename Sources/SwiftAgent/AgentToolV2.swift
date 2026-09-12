@@ -113,7 +113,10 @@ public protocol StructuredAgentTool: AgentTool {
 public extension StructuredAgentTool {
     /// Default fallback execution parsing a single text command.
     func execute(input: String) async throws -> String {
-        let out = try await executeStructured(arguments: ["input": input])
+        let primaryKey = parameterSchema.required.first ?? parameterSchema.properties.keys.first ?? "input"
+        var args: [String: String] = [primaryKey: input]
+        args["input"] = input
+        let out = try await executeStructured(arguments: args)
         return out.text
     }
 

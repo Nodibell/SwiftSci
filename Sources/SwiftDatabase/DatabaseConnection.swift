@@ -135,6 +135,20 @@ public enum AnySendableValue: Sendable, CustomStringConvertible, Equatable {
     }
 }
 
+private final class SQLiteHandleBox: @unchecked Sendable {
+    var handle: OpaquePointer?
+
+    init(handle: OpaquePointer?) {
+        self.handle = handle
+    }
+
+    deinit {
+        if let handle {
+            sqlite3_close(handle)
+        }
+    }
+}
+
 /// Embedded SQLite database driver executing real SQL statements using the SQLite3 C API.
 ///
 /// ## Thread Safety
@@ -142,26 +156,25 @@ public enum AnySendableValue: Sendable, CustomStringConvertible, Equatable {
 public actor SQLiteConnection: DatabaseConnection {
     /// The database path.
     nonisolated public let databasePath: String
-    private let actualPath: String
+    private var dbBox: SQLiteHandleBox?
 
     /// Creates a new SQLiteConnection.
     /// - Parameter databasePath: Path to the SQLite file, or `":memory:"` for an in-memory DB.
     public init(databasePath: String) {
         self.databasePath = databasePath
-        if databasePath == ":memory:" {
-            self.actualPath = NSTemporaryDirectory() + "swiftsci_\(UUID().uuidString).sqlite"
-        } else if databasePath.contains("mode=memory") {
-            let hashStr = String(abs(databasePath.hashValue))
-            self.actualPath = NSTemporaryDirectory() + "swiftsci_\(hashStr).sqlite"
-        } else {
-            self.actualPath = databasePath
-        }
     }
 
-    deinit {
-        if databasePath == ":memory:" || databasePath.contains("mode=memory") {
-            try? FileManager.default.removeItem(atPath: actualPath)
+    private func getOrOpenHandle() throws -> OpaquePointer {
+        if let box = dbBox, let h = box.handle { return h }
+        var db: OpaquePointer?
+        let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI
+        if sqlite3_open_v2(databasePath, &db, flags, nil) != SQLITE_OK {
+            let msg = db != nil ? String(cString: sqlite3_errmsg(db)) : "Unknown error"
+            if let db { sqlite3_close(db) }
+            throw DatabaseError.connectionFailed("\(databasePath): \(msg)")
         }
+        self.dbBox = SQLiteHandleBox(handle: db)
+        return db!
     }
 
     /// Executes a SQL statement and returns the result set, reading rows in 1024-row column-buffered pages.
@@ -176,14 +189,7 @@ public actor SQLiteConnection: DatabaseConnection {
     /// ## Complexity
     /// O(N) rows read with 1024-row page buffering, amortizing `reserveCapacity` overhead.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
-        var db: OpaquePointer?
-        let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI
-        if sqlite3_open_v2(actualPath, &db, flags, nil) != SQLITE_OK {
-            let msg = db != nil ? String(cString: sqlite3_errmsg(db)) : "Unknown error"
-            if let db { sqlite3_close(db) }
-            throw DatabaseError.connectionFailed("\(databasePath): \(msg)")
-        }
-        defer { sqlite3_close(db) }
+        let db = try getOrOpenHandle()
 
         var stmt: OpaquePointer?
         if sqlite3_prepare_v2(db, sql, -1, &stmt, nil) != SQLITE_OK {

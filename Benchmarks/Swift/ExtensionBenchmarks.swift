@@ -26,8 +26,7 @@ struct ExtensionBenchmarks: BenchmarkSuite {
 
         // 2. SwiftDatabase Ingestion benchmark
         let dbRes = await BenchmarkRunner.run(name: "SQLite Direct DataFrame Ingestion", module: module, warmup: 2, iterations: 10) {
-            let dbURI = "file:bench_\(UUID().uuidString)?mode=memory&cache=shared"
-            let conn = SQLiteConnection(databasePath: dbURI)
+            let conn = SQLiteConnection(databasePath: ":memory:")
             _ = try await conn.executeQuery("CREATE TABLE test (id INT, val REAL);")
             _ = try await conn.executeQuery("INSERT INTO test VALUES (1, 10.5), (2, 20.0);")
             _ = try await DataFrame.fromSQL("SELECT * FROM test", connection: conn)
@@ -44,10 +43,17 @@ struct ExtensionBenchmarks: BenchmarkSuite {
 
         // 4. TreeSHAP benchmark
         var rng = BenchmarkLCG(seed: 42)
+        let xTree = (0..<100).map { _ in (0..<5).map { _ in rng.nextDouble(in: 0.0...10.0) } }
+        let yTree = xTree.map { $0.reduce(0, +) }
+        let treeModel = DecisionTreeRegressor(maxDepth: 4)
+        _ = try? await treeModel.fit(features: xTree, targets: yTree)
+        let treeNodes = await treeModel.flatNodes
+        let xTest100 = (0..<100).map { _ in (0..<5).map { _ in rng.nextDouble(in: 0.0...10.0) } }
+        let shap = TreeSHAP()
         let shapRes = await BenchmarkRunner.run(name: "TreeSHAP Explanation (100 samples)", module: module, warmup: 2, iterations: 10) {
-            let shap = TreeSHAP()
-            let features = (0..<10).map { _ in (0..<5).map { _ in rng.nextDouble(in: 0.0...10.0) } }
-            _ = await shap.explain(model: { $0.reduce(0, +) }, features: features, numCoalitions: 20)
+            for sample in xTest100 {
+                _ = shap.explain(tree: treeNodes, instance: sample, numFeatures: 5)
+            }
         }
         results.append(shapRes)
 

@@ -14,7 +14,8 @@ Natural Language Processing, Text Feature Extraction & Native Apple NaturalLangu
 - **Sentiment Analysis**: `VADERSentimentAnalyzer` (valence score calculation with static 200KB lexicon) and `NLSentimentAnalyzer` (Apple OS ML sentiment scoring).
 - **Language Detection & Embeddings**: `AppleLanguageDetector` (multi-lingual language recognition), `AppleNLEmbedding`, and `WordEmbeddings` (SIMD Accelerate vector dot-product optimization).
 - **Text Classification**: `NaiveBayesClassifier` and `ComplementNaiveBayesClassifier` actors conforming to `ClassifierEstimator`.
-- **Ecosystem Pipelines**: Fluent `SwiftDataFrame` text extensions (`df.tokenizeColumn`, `df.stemColumn`, `df.analyzeSentiment`, `df.detectLanguage`, `df.extractEntities`).
+- **Ecosystem Pipelines**: Fluent `SwiftDataFrame` text extensions (`df.tokenizeColumn`, `df.stemColumn`, `df.analyzeSentiment`, `df.detectLanguage`, `df.extractEntities`, `df.profileTextColumn`).
+- **Lexical Profiling & Stopwords**: `CorpusLexicalProfiler`, `ColumnTextProfile`, and multilingual `StopWords` (English, Ukrainian, German, French, Spanish).
 
 ### Example Usage
 

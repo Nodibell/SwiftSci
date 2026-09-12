@@ -391,7 +391,7 @@ public actor KMeans {
             let d1 = row[1] - centroid[1]
             let d2 = row[2] - centroid[2]
             let d3 = row[3] - centroid[3]
-            return d0*d0 + d1*d1 + d2*d2 + d3*d3
+            return max(0.0, d0*d0 + d1*d1 + d2*d2 + d3*d3)
         }
         if count <= 16 {
             var sum = 0.0
@@ -399,11 +399,11 @@ public actor KMeans {
                 let diff = row[i] - centroid[i]
                 sum += diff * diff
             }
-            return sum
+            return max(0.0, sum)
         }
         var dist = 0.0
         vDSP_distancesqD(row.baseAddress!, 1, centroid, 1, &dist, vDSP_Length(count))
-        return dist
+        return max(0.0, dist)
     }
 
     private static func distanceSquared(_ a: [Double], _ b: [Double]) -> Double {
@@ -413,7 +413,7 @@ public actor KMeans {
             let d1 = a[1] - b[1]
             let d2 = a[2] - b[2]
             let d3 = a[3] - b[3]
-            return d0*d0 + d1*d1 + d2*d2 + d3*d3
+            return max(0.0, d0*d0 + d1*d1 + d2*d2 + d3*d3)
         }
         if count <= 16 {
             var sum = 0.0
@@ -421,11 +421,11 @@ public actor KMeans {
                 let diff = a[i] - b[i]
                 sum += diff * diff
             }
-            return sum
+            return max(0.0, sum)
         }
         var dist = 0.0
         vDSP_distancesqD(a, 1, b, 1, &dist, vDSP_Length(count))
-        return dist
+        return max(0.0, dist)
     }
 
     /// Samples initial centroids using the KMeans++ algorithm.

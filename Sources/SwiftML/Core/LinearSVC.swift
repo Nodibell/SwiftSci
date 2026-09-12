@@ -160,40 +160,56 @@ public actor LinearSVC: ClassifierEstimator {
     ) throws {
         let numSamples = features.count
         let numFeatures = features[0].count
-        
+
+        var flatX = [Double](repeating: 0.0, count: numSamples * numFeatures)
+        for i in 0..<numSamples {
+            let row = features[i]
+            for j in 0..<numFeatures {
+                flatX[i * numFeatures + j] = row[j]
+            }
+        }
+        let yArr: [Double] = targets.map { $0 > 0.5 ? 1.0 : -1.0 }
+
         var w = [Double](repeating: 0.0, count: numFeatures)
         var b = 0.0
         let reg = 1.0 / (C * Double(numSamples))
-        
-        for epoch in 1...epochs {
-            let currentLr = lr / (1.0 + 0.001 * Double(epoch))
-            var gradW = [Double](repeating: 0.0, count: numFeatures)
-            var gradB = 0.0
-            
-            for i in 0..<numSamples {
-                let y_i = targets[i] > 0.5 ? 1.0 : -1.0
-                var margin = b
-                for j in 0..<numFeatures {
-                    margin += w[j] * features[i][j]
-                }
-                
-                let lossVal = 1.0 - y_i * margin
-                if lossVal > 0.0 {
-                    let factor = -2.0 * lossVal * y_i / Double(numSamples)
+
+        flatX.withUnsafeBufferPointer { xBuf in
+            let xPtr = xBuf.baseAddress!
+            for epoch in 1...epochs {
+                let currentLr = lr / (1.0 + 0.001 * Double(epoch))
+                var gradW = [Double](repeating: 0.0, count: numFeatures)
+                var gradB = 0.0
+
+                for i in 0..<numSamples {
+                    let y_i = yArr[i]
+                    let rowOffset = i * numFeatures
+                    var margin = b
                     for j in 0..<numFeatures {
-                        gradW[j] += factor * features[i][j]
+                        margin += w[j] * xPtr[rowOffset + j]
                     }
-                    gradB += factor
+
+                    let lossVal = 1.0 - y_i * margin
+                    if lossVal > 0.0 {
+                        let factor = -2.0 * lossVal * y_i / Double(numSamples)
+                        for j in 0..<numFeatures {
+                            gradW[j] += factor * xPtr[rowOffset + j]
+                        }
+                        gradB += factor
+                    }
                 }
+
+                var maxGrad = abs(gradB)
+                for j in 0..<numFeatures {
+                    gradW[j] += reg * w[j]
+                    maxGrad = max(maxGrad, abs(gradW[j]))
+                    w[j] -= currentLr * gradW[j]
+                }
+                b -= currentLr * gradB
+                if maxGrad < 1e-5 { break }
             }
-            
-            for j in 0..<numFeatures {
-                gradW[j] += reg * w[j]
-                w[j] -= currentLr * gradW[j]
-            }
-            b -= currentLr * gradB
         }
-        
+
         self.cpuWeights = w
         self.cpuBias = b
         self.weights = MLXArray(w.map { Float($0) }).reshaped([numFeatures, 1])

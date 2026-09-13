@@ -36,7 +36,7 @@ struct DecisionTreeTests {
         ]
         let targets: [Double] = [0, 0, 0, 1, 1, 1]
 
-        let rf = try RandomForestClassifier(nEstimators: 10, maxDepth: 3)
+        let rf = RandomForestClassifier(nEstimators: 10, maxDepth: 3)
         try await rf.fit(features: features, targets: targets)
 
         let importances = await rf.featureImportances
@@ -113,7 +113,7 @@ struct RandomForestTests {
             targets.append(i < 25 ? 0 : 1)
         }
 
-        let rf = try RandomForestClassifier(nEstimators: 20, maxDepth: 5)
+        let rf = RandomForestClassifier(nEstimators: 20, maxDepth: 5)
         try await rf.fit(features: features, targets: targets)
         let preds = try await rf.predict(features: features)
 
@@ -127,7 +127,7 @@ struct RandomForestTests {
         let features: [[Double]] = (1...20).map { [Double($0)] }
         let targets: [Double]    = (1...20).map { Double($0) }
 
-        let rf = try RandomForestRegressor(nEstimators: 20, maxDepth: 5)
+        let rf = RandomForestRegressor(nEstimators: 20, maxDepth: 5)
         try await rf.fit(features: features, targets: targets)
         let preds = try await rf.predict(features: features)
 
@@ -136,9 +136,10 @@ struct RandomForestTests {
     }
 
     @Test("RandomForestClassifier throws on invalid nEstimators")
-    func testRFInvalidParams() {
-        #expect(throws: SwiftMLError.self) {
-            _ = try RandomForestClassifier(nEstimators: 0)
+    func testRFInvalidParams() async {
+        let rf = RandomForestClassifier(nEstimators: 0)
+        await #expect(throws: SwiftMLError.self) {
+            try await rf.fit(features: [[1.0]], targets: [0.0])
         }
     }
 
@@ -160,11 +161,11 @@ struct RandomForestTests {
             targets.append(Double(i % 2))
         }
 
-        let rf1 = try RandomForestClassifier(nEstimators: 10, maxDepth: 4, randomState: 12345)
+        let rf1 = RandomForestClassifier(nEstimators: 10, maxDepth: 4, randomState: 12345)
         try await rf1.fit(features: features, targets: targets)
         let preds1 = try await rf1.predict(features: features)
 
-        let rf2 = try RandomForestClassifier(nEstimators: 10, maxDepth: 4, randomState: 12345)
+        let rf2 = RandomForestClassifier(nEstimators: 10, maxDepth: 4, randomState: 12345)
         try await rf2.fit(features: features, targets: targets)
         let preds2 = try await rf2.predict(features: features)
 

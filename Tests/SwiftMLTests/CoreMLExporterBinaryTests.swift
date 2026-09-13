@@ -254,7 +254,7 @@ final class CoreMLExporterBinaryTests: XCTestCase {
     }
 
     func testRandomForestClassifierConformance() async throws {
-        let rf = try RandomForestClassifier(nEstimators: 5, maxDepth: 3)
+        let rf = RandomForestClassifier(nEstimators: 5, maxDepth: 3)
         let X = [[1.0, 1.0], [2.0, 2.0], [8.0, 8.0], [9.0, 9.0]]
         let y: [Double] = [0.0, 0.0, 1.0, 1.0]
         try await rf.fit(features: X, targets: y)

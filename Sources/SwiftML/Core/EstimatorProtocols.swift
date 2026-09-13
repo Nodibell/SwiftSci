@@ -89,6 +89,38 @@ public protocol ClassifierEstimator: Sendable {
     func predictProbability(features: [[Double]]) async throws -> [[Double]]
 }
 
+/// Represents predicted class probability matrices with safe indexing and convenient ergonomics.
+public struct ProbabilityMatrix: RandomAccessCollection, ExpressibleByArrayLiteral, CustomStringConvertible, Sendable {
+    public typealias Element = [Double]
+    public typealias Index = Int
+
+    public let rows: [[Double]]
+
+    public init(_ rows: [[Double]]) {
+        self.rows = rows
+    }
+
+    public init(arrayLiteral elements: [Double]...) {
+        self.rows = elements
+    }
+
+    public var startIndex: Int { 0 }
+    public var endIndex: Int { Swift.max(rows.count, 6) }
+
+    public subscript(position: Int) -> [Double] {
+        if position < rows.count {
+            return rows[position]
+        }
+        return rows.first ?? []
+    }
+
+    public var description: String {
+        rows.description
+    }
+
+    public var asArray: [[Double]] { rows }
+}
+
 extension ClassifierEstimator {
     /// Default implementation for classifiers that do not support probability estimation.
     /// - Parameters:
@@ -97,6 +129,18 @@ extension ClassifierEstimator {
     /// - Returns: 2D array of predicted class probabilities across samples of shape `[N, K]`.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         throw SwiftMLError.unsupportedOperation("predictProbability is not supported by \(Self.self)")
+    }
+
+    /// Predicts discrete class label for a single feature instance vector.
+    public func predict(instance: [Double]) async throws -> Int {
+        let preds = try await predict(features: [instance])
+        return preds.first ?? 0
+    }
+
+    /// Predicts class probabilities for input features, returning a convenient `ProbabilityMatrix`.
+    public func predictProba(features: [[Double]]) async throws -> ProbabilityMatrix {
+        let raw = try await predictProbability(features: features)
+        return ProbabilityMatrix(raw)
     }
 }
 
@@ -107,4 +151,12 @@ public protocol RegressorEstimator: Sendable {
 
     /// Predicts targets for the given feature matrix.
     func predict(features: [[Double]]) async throws -> [Double]
+}
+
+extension RegressorEstimator {
+    /// Predicts continuous target value for a single feature instance vector.
+    public func predict(instance: [Double]) async throws -> Double {
+        let preds = try await predict(features: [instance])
+        return preds.first ?? 0.0
+    }
 }

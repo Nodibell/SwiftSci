@@ -811,6 +811,32 @@ public enum CoreMLExporter {
             throw SwiftMLError.exportFailed("Failed to generate .mlpackage at \(packageURL.path): \(error.localizedDescription)")
         }
     }
+
+    /// Exports a trained `CoreMLExportable` model directly into a modern `.mlpackage` directory bundle.
+    ///
+    /// - Parameters:
+    ///   - model: A fitted estimator conforming to `CoreMLExportable`.
+    ///   - url: Destination URL with `.mlpackage` extension.
+    ///   - featureNames: Optional list of input feature identifiers.
+    ///   - outputName: Name of the output prediction.
+    ///   - author: Model author metadata string.
+    ///   - description: Model summary description string.
+    public static func export(
+        model: any CoreMLExportable,
+        to url: URL,
+        featureNames: [String] = [],
+        outputName: String = "label",
+        author: String = "SwiftSci Engineering",
+        description: String = "Exported CoreML Model"
+    ) async throws {
+        try await model.writeMLPackage(
+            to: url,
+            featureNames: featureNames,
+            outputName: outputName,
+            author: author,
+            description: description
+        )
+    }
 }
 
 // MARK: - Legacy JSON Spec (kept for backward compatibility)

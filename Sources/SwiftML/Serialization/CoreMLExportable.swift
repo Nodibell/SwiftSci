@@ -161,10 +161,11 @@ extension RandomForestClassifier: CoreMLExportable {
     ///   - outputName: Output predicted class label name (stored as `Int64`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the forest has not been fitted.
     /// - Returns: Raw serialized binary data representation.
-    public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
+    public func exportCoreML(featureNames: [String] = [], outputName: String = "label") async throws -> Data {
         let treesNodes = getForestTrees()
         guard !treesNodes.isEmpty else { throw SwiftMLError.modelNotFitted }
         let nf = getNumFeatures()
+        let names = featureNames.isEmpty ? (0..<nf).map { "feature_\($0)" } : featureNames
         let state = RandomForestModelState(
             nEstimators: treesNodes.count,
             maxDepth: 0,
@@ -174,7 +175,7 @@ extension RandomForestClassifier: CoreMLExportable {
         )
         return CoreMLExporter.exportBinaryRandomForestClassifier(
             state: state,
-            featureNames: featureNames,
+            featureNames: names,
             outputName: outputName
         )
     }
@@ -190,10 +191,11 @@ extension RandomForestRegressor: CoreMLExportable {
     ///   - outputName: Output prediction column name (stored as `Double`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the forest has not been fitted.
     /// - Returns: Raw serialized binary data representation.
-    public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
+    public func exportCoreML(featureNames: [String] = [], outputName: String = "prediction") async throws -> Data {
         let treesNodes = getForestTrees()
         guard !treesNodes.isEmpty else { throw SwiftMLError.modelNotFitted }
         let nf = getNumFeatures()
+        let names = featureNames.isEmpty ? (0..<nf).map { "feature_\($0)" } : featureNames
         let state = RandomForestModelState(
             nEstimators: treesNodes.count,
             maxDepth: 0,
@@ -203,7 +205,7 @@ extension RandomForestRegressor: CoreMLExportable {
         )
         return CoreMLExporter.exportBinaryRandomForestRegressor(
             state: state,
-            featureNames: featureNames,
+            featureNames: names,
             outputName: outputName
         )
     }
@@ -248,12 +250,13 @@ extension LinearRegression: CoreMLExportable {
     ///   - outputName: Output predicted value column name (stored as `Double`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if weights have not been fitted yet.
     /// - Returns: Binary `.mlmodel` artifact data.
-    public func exportCoreML(featureNames: [String], outputName: String = "prediction") async throws -> Data {
+    public func exportCoreML(featureNames: [String] = [], outputName: String = "prediction") async throws -> Data {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else { throw SwiftMLError.modelNotFitted }
+        let names = featureNames.isEmpty ? (0..<weights.count).map { "feature_\($0)" } : featureNames
         return CoreMLExporter.exportBinaryLinearModel(
             name: "LinearRegressionModel",
-            inputNames: featureNames,
+            inputNames: names,
             outputName: outputName,
             weights: weights,
             bias: bias
@@ -275,12 +278,13 @@ extension LogisticRegression: CoreMLExportable {
     ///   - outputName: Output predicted class label name (stored as `Int64`).
     /// - Throws: ``SwiftMLError/modelNotFitted`` if the model has not been fitted.
     /// - Returns: Binary `.mlmodel` artifact data.
-    public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
+    public func exportCoreML(featureNames: [String] = [], outputName: String = "label") async throws -> Data {
         let (weightsOpt, biasOpt) = getWeightsAndBias()
         guard let weights = weightsOpt, let bias = biasOpt else { throw SwiftMLError.modelNotFitted }
+        let names = featureNames.isEmpty ? (0..<weights.count).map { "feature_\($0)" } : featureNames
         return CoreMLExporter.exportBinaryLogisticModel(
             name: "LogisticRegressionModel",
-            inputNames: featureNames,
+            inputNames: names,
             outputName: outputName,
             weights: weights,
             bias: bias

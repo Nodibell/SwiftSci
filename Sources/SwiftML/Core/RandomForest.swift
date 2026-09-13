@@ -93,8 +93,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         minSamplesSplit: Int = 2,
         criterion: SplitCriterion = .gini,
         randomState: Int? = nil
-    ) throws {
-        guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
+    ) {
         self.nEstimators = nEstimators
         self.maxDepth = maxDepth
         self.maxFeatures = maxFeatures
@@ -127,6 +126,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         targets: [Double],
         onProgress: (@Sendable (Int, Int) -> Void)?
     ) async throws {
+        guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
         guard !features.isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
             throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
@@ -359,8 +359,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         maxSamples: Int? = nil,
         minSamplesSplit: Int = 2,
         randomState: Int? = nil
-    ) throws {
-        guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
+    ) {
         self.nEstimators = nEstimators
         self.maxDepth = maxDepth
         self.maxFeatures = maxFeatures
@@ -392,6 +391,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         targets: [Double],
         onProgress: (@Sendable (Int, Int) -> Void)?
     ) async throws {
+        guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
         guard !features.isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
             throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)

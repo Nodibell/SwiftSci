@@ -82,6 +82,29 @@ public actor NaiveBayesClassifier: ClassifierEstimator {
         self.isFitted = true
     }
 
+    /// Fits the classifier model given a feature count matrix and integer target array.
+    /// - Parameters:
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth integer target labels.
+    public func fit<T: BinaryInteger>(features: [[Double]], targets: [T]) async throws {
+        try await fit(features: features, targets: targets.map { Double($0) })
+    }
+
+    /// Predicts the single class index for an individual feature instance vector.
+    /// - Parameter instance: 1D feature array of length `P`.
+    /// - Returns: Predicted discrete class label index.
+    public func predict(instance: [Double]) async throws -> Int {
+        let preds = try await predict(features: [instance])
+        return preds.first ?? 0
+    }
+
+    /// Predicts the single class index for a sparse vector instance.
+    /// - Parameter instance: Sparse vector representation.
+    /// - Returns: Predicted discrete class label index.
+    public func predict(instance: SparseVector) async throws -> Int {
+        try await predict(instance: instance.toDense())
+    }
+
     /// Predicts target class integer indices for a given feature matrix.
     /// - Parameters:
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.

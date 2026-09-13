@@ -113,6 +113,13 @@ public struct DataFrame: Sendable {
         try await ParquetReader.read(url: url)
     }
 
+    /// Reads an Apache Parquet binary file into a DataFrame from a file system path.
+    /// - Parameter path: File system path string.
+    /// - Returns: Ingested DataFrame.
+    public static func readParquet(_ path: String) async throws -> DataFrame {
+        try await readParquet(from: URL(fileURLWithPath: path))
+    }
+
 
     /// Downloads a dataset directly from an HTTP/HTTPS URL into a DataFrame.
     /// - Parameters:
@@ -189,6 +196,11 @@ public struct DataFrame: Sendable {
 
     /// Accesses the element at the given index.
     public subscript(column name: String) -> (any AnyColumn)? {
+        _columns[name]
+    }
+
+    /// Accesses the column with the given name.
+    public subscript(_ name: String) -> (any AnyColumn)? {
         _columns[name]
     }
 
@@ -576,6 +588,12 @@ public struct DataFrame: Sendable {
     /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
     public func writeParquet(to url: URL) async throws {
         try await ParquetWriter.write(dataFrame: self, to: url)
+    }
+
+    /// Writes the DataFrame to an Apache Parquet binary file at the specified file system path.
+    /// - Parameter path: File system path string.
+    public func writeParquet(to path: String) async throws {
+        try await writeParquet(to: URL(fileURLWithPath: path))
     }
 
 

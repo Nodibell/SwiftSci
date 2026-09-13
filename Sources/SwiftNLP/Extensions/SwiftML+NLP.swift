@@ -22,8 +22,8 @@ public actor TextPipeline {
     ///   - labels: Array of discrete class labels.
     /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func fit(documents: [String], labels: [String]) async throws {
-        try await vectorizer.fit(documents)
-        let X = try await vectorizer.transform(documents)
+        try vectorizer.fit(documents)
+        let X = try vectorizer.transform(documents)
         classifier.fit(X: X, y: labels)
     }
 
@@ -33,7 +33,7 @@ public actor TextPipeline {
     /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     /// - Returns: Textual string representation, or `nil` if absent.
     public func predict(document: String) async throws -> String? {
-        let x = try await vectorizer.transform([document])
+        let x = try vectorizer.transform([document])
         guard let first = x.first else { return nil }
         return classifier.predict(x: first)
     }
@@ -44,7 +44,7 @@ public actor TextPipeline {
     /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     /// - Returns: Array of feature names, column identifiers, or tokens.
     public func predict(documents: [String]) async throws -> [String] {
-        let X = try await vectorizer.transform(documents)
+        let X = try vectorizer.transform(documents)
         return classifier.predict(X: X)
     }
 }

@@ -13,9 +13,9 @@ extension DataFrame {
         }
         let documents = col.values.map { $0 ?? "" }
         let vectorizer = TFIDFVectorizer()
-        try await vectorizer.fit(documents)
-        let matrix = try await vectorizer.transform(documents)
-        let vocab = await vectorizer.vocabulary
+        try vectorizer.fit(documents)
+        let matrix = try vectorizer.transform(documents)
+        let vocab = vectorizer.vocabulary
         return (matrix, vocab)
     }
 }

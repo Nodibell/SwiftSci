@@ -35,7 +35,8 @@ public struct SparseVector: Sendable, Codable, Equatable {
 }
 
 /// TF-IDF Vectorizer for text feature extraction.
-public actor TFIDFVectorizer {
+/// TF-IDF Vectorizer for text feature extraction.
+public final class TFIDFVectorizer: @unchecked Sendable {
     /// Default stop words list to filter out during tokenization.
     public static let defaultStopWords: Set<String> = [
         "a", "an", "the", "and", "or", "but", "if", "then", "else", "of", "to", "in", "on", 
@@ -67,11 +68,33 @@ public actor TFIDFVectorizer {
     /// - Parameters:
     ///   - maxFeatures: Optional maximum number of features to retain by term frequency.
     ///   - minDF: Minimum document frequency threshold. Defaults to 1.
-    ///   - stopWords: Optional custom set of stop words to filter. If nil, `defaultStopWords` is used.
-    public init(maxFeatures: Int? = nil, minDF: Int = 1, stopWords: Set<String>? = nil) {
+    ///   - language: Optional language identifier for built-in stop words.
+    ///   - removeStopWords: Whether to prune stop words during tokenization. Defaults to true.
+    ///   - customStopWords: Optional additional stop words to filter.
+    ///   - stopWords: Optional custom set of stop words to filter. If nil and `removeStopWords` is true, defaults based on language.
+    public init(
+        maxFeatures: Int? = nil,
+        minDF: Int = 1,
+        language: StopWords.Language? = nil,
+        removeStopWords: Bool = true,
+        customStopWords: Set<String>? = nil,
+        stopWords: Set<String>? = nil
+    ) {
         self.maxFeatures = maxFeatures.map { max(1, $0) }
         self.minDF = max(1, minDF)
-        self.stopWords = stopWords ?? Self.defaultStopWords
+        if let custom = stopWords {
+            self.stopWords = custom
+        } else if !removeStopWords {
+            self.stopWords = []
+        } else if let lang = language {
+            var stops = StopWords.set(for: lang)
+            if let custom = customStopWords {
+                stops.formUnion(custom)
+            }
+            self.stopWords = stops
+        } else {
+            self.stopWords = Self.defaultStopWords
+        }
     }
     
     /// Tokenizes a preprocessed document string into tokens.

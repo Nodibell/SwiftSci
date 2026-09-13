@@ -14,10 +14,10 @@ extension DataFrame {
     ///   - name: Name or identifier string.
     /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     /// - Returns: The computed TFIDFVectorizer result instance.
-    public func fitTFIDF(column name: String) async throws -> TFIDFVectorizer {
+    public func fitTFIDF(column name: String) throws -> TFIDFVectorizer {
         let documents = try extractDocuments(column: name)
         let vectorizer = TFIDFVectorizer()
-        try await vectorizer.fit(documents)
+        try vectorizer.fit(documents)
         return vectorizer
     }
 

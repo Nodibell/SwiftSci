@@ -64,6 +64,21 @@ public final class LabelEncoder: @unchecked Sendable {
         
         return categories
     }
+
+    /// Reverses the transform mapping back to the original string label for a single class index.
+    /// - Parameter label: Integer class label.
+    /// - Returns: Reconstructed string category name.
+    public func inverseTransform(_ label: Int) -> String {
+        guard label >= 0 && label < classes.count else { return "" }
+        return classes[label]
+    }
+
+    /// Reverses the transform mapping back to the original string label for a floating-point class index.
+    /// - Parameter label: Double class label representation.
+    /// - Returns: Reconstructed string category name.
+    public func inverseTransform(_ label: Double) -> String {
+        inverseTransform(Int(label))
+    }
     
     /// Fits to categories, then transforms it.
     /// - Parameters:

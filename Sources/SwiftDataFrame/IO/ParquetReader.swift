@@ -478,30 +478,40 @@ public enum ParquetReader: Sendable {
             dictionary = try decodePlainValues(payload: decompressed, schema: schema, count: header.numValues)
         }
 
-        // 2. Read Data Page
+        // 2. Read Data Page(s)
         let dataOffset = Int(colChunk.dataPageOffset)
         guard dataOffset < fileData.count else { return [] }
 
         // Standard Apache Parquet has uncompressed Thrift PageHeader starting with fieldId 1 (byte 0x15)
         if fileData[dataOffset] == 0x15 {
-            let pageReader = ThriftCompact.Reader(data: fileData.subdata(in: dataOffset..<fileData.count))
-            let header = try parsePageHeader(reader: pageReader)
-            let payloadOffset = dataOffset + pageReader.offset
-            let payloadEnd = payloadOffset + Int(header.compressedPageSize)
-            guard payloadEnd <= fileData.count else {
-                throw SwiftMLError.parseError(line: 0, description: "Data page payload exceeds file buffer")
-            }
-            let rawBytes = fileData.subdata(in: payloadOffset..<payloadEnd)
-            let decompressed = colChunk.codec == 1 ? try SnappyDecompressor.decompress(data: rawBytes) : rawBytes
+            var allValues: [Any?] = []
+            var currentOffset = dataOffset
+            let chunkEnd = min(fileData.count, dataOffset + Int(colChunk.totalCompressedSize))
 
-            return try decodeDataPagePayload(
-                payload: decompressed,
-                schema: schema,
-                numValues: header.numValues,
-                encoding: header.encoding,
-                dictionary: dictionary,
-                expectedRowCount: numRows
-            )
+            while currentOffset < chunkEnd && allValues.count < numRows && fileData[currentOffset] == 0x15 {
+                let pageReader = ThriftCompact.Reader(data: fileData.subdata(in: currentOffset..<fileData.count))
+                let header = try parsePageHeader(reader: pageReader)
+                let payloadOffset = currentOffset + pageReader.offset
+                let payloadEnd = payloadOffset + Int(header.compressedPageSize)
+                guard payloadEnd <= fileData.count else {
+                    throw SwiftMLError.parseError(line: 0, description: "Data page payload exceeds file buffer")
+                }
+                let rawBytes = fileData.subdata(in: payloadOffset..<payloadEnd)
+                let decompressed = colChunk.codec == 1 ? try SnappyDecompressor.decompress(data: rawBytes) : rawBytes
+
+                let pageValues = try decodeDataPagePayload(
+                    payload: decompressed,
+                    schema: schema,
+                    numValues: header.numValues,
+                    encoding: header.encoding,
+                    dictionary: dictionary,
+                    expectedRowCount: numRows - allValues.count
+                )
+                allValues.append(contentsOf: pageValues)
+                currentOffset = payloadEnd
+            }
+
+            return allValues
         } else {
             // Fallback for legacy SwiftSci files where the entire page was Snappy-compressed
             let chunkEnd = min(fileData.count, dataOffset + Int(colChunk.totalCompressedSize))

@@ -1,4 +1,4 @@
-# SwiftSci 3.8.2
+# SwiftSci 3.9.0
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -28,7 +28,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.8.2")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.9.0")
 ]
 ```
 
@@ -151,6 +151,30 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   │ [NLP Cls]  NaiveBayes (3-class) : Accuracy=35.00%, Macro-F1=0.342                  │
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## 🚀 What's New in v3.9.0
+
+- **Advanced NLP Vectorization & Text Cleaning (`SwiftNLP`)**:
+  - `TFIDFVectorizer`: Support for configurable n-gram extraction (`ngramRange: 1...2` / `1...3`), sublinear term frequency scaling ($1 + \log(\text{tf})$), and maximum document frequency pruning (`maxDF: 0.8`).
+  - `TextCleaner`: Fast scalar-based regex normalizer stripping HTML tags, emails, URLs, special punctuation, and excess whitespace.
+- **Stratification & Advanced Imbalanced Resampling (`SwiftPreprocessing`)**:
+  - `trainTestSplit`: Added `stratify` parameter preserving exact multi-class proportions across train and test partitions.
+  - `DataFrame.trainTestSplit`: Added `stratifyColumn` for stratified tabular splits.
+  - `StratifiedKFold`: K-Fold split generator with strict per-fold class frequency preservation.
+  - `BorderlineSMOTE`: Decision-boundary danger-zone synthetic oversampling.
+  - `ADASYN`: Adaptive density-weighted synthetic minority oversampling.
+  - `DataFrame.resample`: Resampling pipeline supporting SMOTE, BorderlineSMOTE, ADASYN, and RandomUndersampler with automatic categorical string target encoding/decoding.
+- **Manifold Learning & High-Dimensional Projection (`SwiftCluster`)**:
+  - `TSNE`: Exact t-Distributed Stochastic Neighbor Embedding with binary search for perplexity entropy, early exaggeration, adaptive momentum, and KL-divergence reporting.
+  - `DataFrame.tsne`: Direct dimensionality reduction on numerical DataFrame columns producing low-dimensional coordinates (`tsne_1`, `tsne_2`).
+- **Model Interpretability & Feature Importance (`SwiftML`)**:
+  - `OneVsRestClassifier` & `LinearSVCOneVsRest`: Added `topFeatures(classIndex:topN:vocabulary:)`, `topFeatures(classIndex:topN:featureNames:)`, and `topFeaturesPerClass` to inspect the most predictive tokens and feature weights per category.
+  - `FeatureImportance`: Standardized Sendable/Codable representation of feature weights and indices.
+- **Exploratory Data Analysis (EDA) Interactive Charts (`SwiftVisualization`)**:
+  - `ChartExporter.plotClassDistribution` & `DataFrame.plotClassDistribution`: Interactive Plotly bar chart with class frequencies and percentage labels.
+  - `ChartExporter.plotBoxPlot` & `DataFrame.plotBoxPlot`: Interactive box plots with quartile statistics, medians, and outlier detection.
+
+---
 
 ## 🚀 What's New in v3.8.2
 

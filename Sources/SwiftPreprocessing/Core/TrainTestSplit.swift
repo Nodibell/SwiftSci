@@ -20,11 +20,12 @@ public struct SeedableRandomNumberGenerator: RandomNumberGenerator {
     }
 }
 
-/// Splits features and targets into training and testing subsets.
+/// Splits features and targets into training and testing subsets, optionally preserving class proportions.
 /// - Parameters:
 ///   - features: 2D array of input feature vectors of shape `[N, P]`.
 ///   - targets: 1D array of ground-truth target values of length `N`.
 ///   - testSize: Proportion or absolute count of dataset allocated to test split.
+///   - stratify: Optional array of class labels for stratified sampling. If provided, class ratios are preserved in train and test splits.
 ///   - shuffle: Whether to shuffle observations prior to splitting or processing.
 ///   - seed: Random number generator seed for deterministic reproducibility.
 /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
@@ -33,6 +34,7 @@ public func trainTestSplit(
     _ features: [[Double]],
     _ targets: [Double],
     testSize: Double = 0.25,
+    stratify: [Double]? = nil,
     shuffle: Bool = true,
     seed: Int? = nil
 ) throws -> (
@@ -47,27 +49,75 @@ public func trainTestSplit(
     guard features.count == targets.count else {
         throw PreprocessingError.dimensionMismatch(expected: features.count, got: targets.count)
     }
+    if let strat = stratify {
+        guard strat.count == features.count else {
+            throw PreprocessingError.dimensionMismatch(expected: features.count, got: strat.count)
+        }
+    }
     guard testSize > 0.0 && testSize < 1.0 else {
         throw NSError(domain: "TrainTestSplit", code: 1, userInfo: [NSLocalizedDescriptionKey: "testSize must be between 0.0 and 1.0 exclusive."])
     }
     
     let totalCount = features.count
-    var indices = Array(0..<totalCount)
+    var trainIndices = [Int]()
+    var testIndices = [Int]()
     
-    if shuffle {
-        if let s = seed {
-            var rng = SeedableRandomNumberGenerator(seed: s)
-            indices.shuffle(using: &rng)
-        } else {
-            indices.shuffle()
+    var rng: SeedableRandomNumberGenerator? = seed != nil ? SeedableRandomNumberGenerator(seed: seed!) : nil
+    
+    if let strat = stratify {
+        var classIndices: [Double: [Int]] = [:]
+        for (i, c) in strat.enumerated() {
+            classIndices[c, default: []].append(i)
         }
-    }
-    
-    let testCount = Int(Double(totalCount) * testSize)
-    let trainCount = totalCount - testCount
-    
-    guard trainCount > 0, testCount > 0 else {
-        throw NSError(domain: "TrainTestSplit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Sample size too small to split with given testSize."])
+        
+        for (_, indices) in classIndices {
+            var clsIdxs = indices
+            if shuffle {
+                if rng != nil {
+                    clsIdxs.shuffle(using: &rng!)
+                } else {
+                    clsIdxs.shuffle()
+                }
+            }
+            let clsTestCount = max(1, Int(round(Double(clsIdxs.count) * testSize)))
+            let clsTrainCount = clsIdxs.count - clsTestCount
+            
+            if clsTrainCount > 0 {
+                trainIndices.append(contentsOf: clsIdxs.prefix(clsTrainCount))
+                testIndices.append(contentsOf: clsIdxs.suffix(clsTestCount))
+            } else {
+                testIndices.append(contentsOf: clsIdxs)
+            }
+        }
+        
+        if shuffle {
+            if rng != nil {
+                trainIndices.shuffle(using: &rng!)
+                testIndices.shuffle(using: &rng!)
+            } else {
+                trainIndices.shuffle()
+                testIndices.shuffle()
+            }
+        }
+    } else {
+        var indices = Array(0..<totalCount)
+        if shuffle {
+            if rng != nil {
+                indices.shuffle(using: &rng!)
+            } else {
+                indices.shuffle()
+            }
+        }
+        
+        let testCount = Int(Double(totalCount) * testSize)
+        let trainCount = totalCount - testCount
+        
+        guard trainCount > 0, testCount > 0 else {
+            throw NSError(domain: "TrainTestSplit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Sample size too small to split with given testSize."])
+        }
+        
+        trainIndices = Array(indices[0..<trainCount])
+        testIndices = Array(indices[trainCount..<totalCount])
     }
     
     var trainFeatures = [[Double]]()
@@ -75,19 +125,17 @@ public func trainTestSplit(
     var trainTargets = [Double]()
     var testTargets = [Double]()
     
-    trainFeatures.reserveCapacity(trainCount)
-    testFeatures.reserveCapacity(testCount)
-    trainTargets.reserveCapacity(trainCount)
-    testTargets.reserveCapacity(testCount)
+    trainFeatures.reserveCapacity(trainIndices.count)
+    testFeatures.reserveCapacity(testIndices.count)
+    trainTargets.reserveCapacity(trainIndices.count)
+    testTargets.reserveCapacity(testIndices.count)
     
-    for i in 0..<trainCount {
-        let idx = indices[i]
+    for idx in trainIndices {
         trainFeatures.append(features[idx])
         trainTargets.append(targets[idx])
     }
     
-    for i in trainCount..<totalCount {
-        let idx = indices[i]
+    for idx in testIndices {
         testFeatures.append(features[idx])
         testTargets.append(targets[idx])
     }
@@ -96,15 +144,17 @@ public func trainTestSplit(
 }
 
 extension DataFrame {
-    /// Splits the DataFrame rows into training and testing DataFrames.
+    /// Splits the DataFrame rows into training and testing DataFrames, optionally stratified by a column.
     /// - Parameters:
     ///   - testSize: Proportion or absolute count of dataset allocated to test split.
+    ///   - stratifyColumn: Optional column name to preserve class distribution across train and test splits.
     ///   - shuffle: Whether to shuffle observations prior to splitting or processing.
     ///   - seed: Random number generator seed for deterministic reproducibility.
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
-    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
+    /// - Returns: A tuple of `(train: DataFrame, test: DataFrame)`.
     public func trainTestSplit(
         testSize: Double = 0.25,
+        stratifyColumn: String? = nil,
         shuffle: Bool = true,
         seed: Int? = nil
     ) throws -> (train: DataFrame, test: DataFrame) {
@@ -116,25 +166,71 @@ extension DataFrame {
             throw NSError(domain: "DataFrame.trainTestSplit", code: 1, userInfo: [NSLocalizedDescriptionKey: "testSize must be between 0.0 and 1.0 exclusive."])
         }
         
-        var indices = Array(0..<nRows)
-        if shuffle {
-            if let s = seed {
-                var rng = SeedableRandomNumberGenerator(seed: s)
-                indices.shuffle(using: &rng)
-            } else {
-                indices.shuffle()
+        var trainIndices = [Int]()
+        var testIndices = [Int]()
+        var rng: SeedableRandomNumberGenerator? = seed != nil ? SeedableRandomNumberGenerator(seed: seed!) : nil
+        
+        if let stratCol = stratifyColumn {
+            guard let col = self[stratCol] else {
+                throw PreprocessingError.columnNotFound(stratCol)
             }
+            
+            let strVals = col.toStrings()
+            var classIndices: [String: [Int]] = [:]
+            for i in 0..<min(nRows, strVals.count) {
+                let key = strVals[i]
+                classIndices[key, default: []].append(i)
+            }
+            
+            for (_, indices) in classIndices {
+                var clsIdxs = indices
+                if shuffle {
+                    if rng != nil {
+                        clsIdxs.shuffle(using: &rng!)
+                    } else {
+                        clsIdxs.shuffle()
+                    }
+                }
+                let clsTestCount = max(1, Int(round(Double(clsIdxs.count) * testSize)))
+                let clsTrainCount = clsIdxs.count - clsTestCount
+                
+                if clsTrainCount > 0 {
+                    trainIndices.append(contentsOf: clsIdxs.prefix(clsTrainCount))
+                    testIndices.append(contentsOf: clsIdxs.suffix(clsTestCount))
+                } else {
+                    testIndices.append(contentsOf: clsIdxs)
+                }
+            }
+            
+            if shuffle {
+                if rng != nil {
+                    trainIndices.shuffle(using: &rng!)
+                    testIndices.shuffle(using: &rng!)
+                } else {
+                    trainIndices.shuffle()
+                    testIndices.shuffle()
+                }
+            }
+        } else {
+            var indices = Array(0..<nRows)
+            if shuffle {
+                if rng != nil {
+                    indices.shuffle(using: &rng!)
+                } else {
+                    indices.shuffle()
+                }
+            }
+            
+            let testCount = Int(Double(nRows) * testSize)
+            let trainCount = nRows - testCount
+            
+            guard trainCount > 0, testCount > 0 else {
+                throw NSError(domain: "DataFrame.trainTestSplit", code: 2, userInfo: [NSLocalizedDescriptionKey: "DataFrame size too small to split."])
+            }
+            
+            trainIndices = Array(indices[0..<trainCount])
+            testIndices = Array(indices[trainCount..<nRows])
         }
-        
-        let testCount = Int(Double(nRows) * testSize)
-        let trainCount = nRows - testCount
-        
-        guard trainCount > 0, testCount > 0 else {
-            throw NSError(domain: "DataFrame.trainTestSplit", code: 2, userInfo: [NSLocalizedDescriptionKey: "DataFrame size too small to split."])
-        }
-        
-        let trainIndices = Array(indices[0..<trainCount])
-        let testIndices = Array(indices[trainCount..<nRows])
         
         let trainDf = gathered(at: trainIndices)
         let testDf = gathered(at: testIndices)

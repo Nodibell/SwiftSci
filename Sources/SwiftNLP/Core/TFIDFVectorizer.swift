@@ -52,6 +52,15 @@ public final class TFIDFVectorizer: @unchecked Sendable {
     /// Active stop words set.
     public let stopWords: Set<String>
 
+    /// N-gram range for feature extraction (e.g. 1...1 for unigrams, 1...2 for unigrams + bigrams).
+    public let ngramRange: ClosedRange<Int>
+
+    /// Whether to apply sublinear TF scaling (1 + log(count)).
+    public let sublinearTF: Bool
+
+    /// Optional maximum document frequency threshold ratio (e.g. 0.85).
+    public let maxDF: Double?
+
     /// Optional maximum number of vocabulary features to retain (ordered by document frequency).
     public let maxFeatures: Int?
     
@@ -66,22 +75,33 @@ public final class TFIDFVectorizer: @unchecked Sendable {
     
     /// Initializes a new TFIDFVectorizer.
     /// - Parameters:
+    ///   - ngramRange: Range of n-gram sizes to extract. Defaults to 1...1 (unigrams only).
     ///   - maxFeatures: Optional maximum number of features to retain by term frequency.
     ///   - minDF: Minimum document frequency threshold. Defaults to 1.
+    ///   - maxDF: Optional maximum document frequency ratio (0.0 to 1.0). Terms exceeding this frequency are excluded.
+    ///   - sublinearTF: Whether to apply sublinear term frequency scaling: `1 + log(tf)`. Defaults to false.
     ///   - language: Optional language identifier for built-in stop words.
     ///   - removeStopWords: Whether to prune stop words during tokenization. Defaults to true.
     ///   - customStopWords: Optional additional stop words to filter.
     ///   - stopWords: Optional custom set of stop words to filter. If nil and `removeStopWords` is true, defaults based on language.
     public init(
+        ngramRange: ClosedRange<Int> = 1...1,
         maxFeatures: Int? = nil,
         minDF: Int = 1,
+        maxDF: Double? = nil,
+        sublinearTF: Bool = false,
         language: StopWords.Language? = nil,
         removeStopWords: Bool = true,
         customStopWords: Set<String>? = nil,
         stopWords: Set<String>? = nil
     ) {
+        let lower = max(1, ngramRange.lowerBound)
+        let upper = max(lower, ngramRange.upperBound)
+        self.ngramRange = lower...upper
         self.maxFeatures = maxFeatures.map { max(1, $0) }
         self.minDF = max(1, minDF)
+        self.maxDF = maxDF
+        self.sublinearTF = sublinearTF
         if let custom = stopWords {
             self.stopWords = custom
         } else if !removeStopWords {
@@ -97,11 +117,11 @@ public final class TFIDFVectorizer: @unchecked Sendable {
         }
     }
     
-    /// Tokenizes a preprocessed document string into tokens.
+    /// Tokenizes a preprocessed document string into tokens (unigrams and n-grams if configured).
     /// - Parameter doc: Input string document.
-    /// - Returns: A list of clean tokens.
+    /// - Returns: A list of clean tokens including n-grams.
     private func tokenize(_ doc: String) -> [String] {
-        var tokens: [String] = []
+        var unigrams: [String] = []
         var current = ""
         current.reserveCapacity(16)
         for char in doc.lowercased() {
@@ -109,19 +129,43 @@ public final class TFIDFVectorizer: @unchecked Sendable {
                 current.append(char)
             } else if !current.isEmpty {
                 if !self.stopWords.contains(current) {
-                    tokens.append(current)
+                    unigrams.append(current)
                 }
                 current.removeAll(keepingCapacity: true)
             }
         }
         if !current.isEmpty && !self.stopWords.contains(current) {
-            tokens.append(current)
+            unigrams.append(current)
+        }
+        
+        if ngramRange == 1...1 {
+            return unigrams
+        }
+        
+        var tokens: [String] = []
+        let minN = ngramRange.lowerBound
+        let maxN = ngramRange.upperBound
+        let count = unigrams.count
+        
+        for n in minN...maxN {
+            if n == 1 {
+                tokens.append(contentsOf: unigrams)
+            } else if n <= count {
+                for i in 0...(count - n) {
+                    tokens.append(unigrams[i..<(i + n)].joined(separator: " "))
+                }
+            }
         }
         return tokens
     }
 
     private func buildVocabulary(dfMap: [String: Int], numDocs: Int) throws {
-        var validTerms = dfMap.filter { $0.value >= minDF }.keys.map { String($0) }
+        let maxDocLimit = maxDF.map { Int(Double(numDocs) * $0) }
+        var validTerms = dfMap.filter { (term, df) in
+            if df < minDF { return false }
+            if let maxLimit = maxDocLimit, df > maxLimit { return false }
+            return true
+        }.keys.map { String($0) }
         guard !validTerms.isEmpty else {
             throw NLPError.invalidVocabulary
         }
@@ -173,7 +217,12 @@ public final class TFIDFVectorizer: @unchecked Sendable {
                 let docCount = Double(docTokens.count)
                 for (tok, count) in termCounts {
                     if let idx = vocabulary[tok] {
-                        let tf = Double(count) / docCount
+                        let tf: Double
+                        if sublinearTF {
+                            tf = 1.0 + log(Double(count))
+                        } else {
+                            tf = Double(count) / docCount
+                        }
                         vector[idx] = tf * idfs[idx]
                     }
                 }
@@ -203,7 +252,12 @@ public final class TFIDFVectorizer: @unchecked Sendable {
                 let uniqueDocTerms = termCounts.keys.sorted()
                 for tok in uniqueDocTerms {
                     if let idx = vocabulary[tok], let count = termCounts[tok] {
-                        let tf = Double(count) / docCount
+                        let tf: Double
+                        if sublinearTF {
+                            tf = 1.0 + log(Double(count))
+                        } else {
+                            tf = Double(count) / docCount
+                        }
                         let val = tf * idfs[idx]
                         if val > 0.0 {
                             activeIndices.append(idx)

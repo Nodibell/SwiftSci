@@ -60,6 +60,27 @@ public struct FeatureSchema: Sendable, Codable {
     }
 }
 
+/// Interpreted feature with its learned weight and column index.
+public struct FeatureImportance: Sendable, Codable, Equatable, Comparable {
+    /// The feature name, token, or column identifier.
+    public let feature: String
+    /// The learned model weight or feature importance score.
+    public let weight: Double
+    /// The original column index.
+    public let index: Int
+
+    /// Creates a new FeatureImportance instance.
+    public init(feature: String, weight: Double, index: Int) {
+        self.feature = feature
+        self.weight = weight
+        self.index = index
+    }
+
+    public static func < (lhs: FeatureImportance, rhs: FeatureImportance) -> Bool {
+        lhs.weight < rhs.weight
+    }
+}
+
 /// Generic predictor protocol.
 public protocol Predictor: Sendable {
     func predict(features: [[Double]]) async throws -> PredictionResult

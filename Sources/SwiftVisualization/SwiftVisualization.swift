@@ -226,6 +226,137 @@ public enum ChartExporter {
         """
     }
 
+    /// Generates HTML file with an interactive Class Distribution bar chart.
+    ///
+    /// ## Security & Sanitization
+    /// Class names, values, and titles are safely escaped and JSON-encoded.
+    /// - Parameters:
+    ///   - counts: Dictionary mapping class labels to their respective frequency counts.
+    ///   - title: Descriptive title for the generated visualization.
+    /// - Returns: Standalone HTML bundle containing the interactive chart.
+    public static func plotClassDistribution(counts: [String: Int], title: String = "Class Distribution") -> String {
+        let sorted = counts.sorted { $0.key < $1.key }
+        let labels = sorted.map { $0.key }
+        let values = sorted.map { $0.value }
+        let total = max(1, values.reduce(0, +))
+        let percentages = values.map { String(format: "%.1f%%", Double($0) / Double(total) * 100.0) }
+        
+        let xJSON = jsonStrings(labels)
+        let yJSON = "[" + values.map { String($0) }.joined(separator: ",") + "]"
+        let textJSON = jsonStrings(percentages)
+        let safeTitle = escapeHTML(title)
+        let titleJSON = jsonString(title)
+        
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>\(safeTitle)</title>
+          <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+        </head>
+        <body>
+          <div id="chart" style="width:100%;height:500px;"></div>
+          <script>
+            var data = [{
+              x: \(xJSON),
+              y: \(yJSON),
+              text: \(textJSON),
+              textposition: 'auto',
+              type: 'bar',
+              marker: {
+                color: '#4a90e2',
+                line: { color: '#205493', width: 1.5 }
+              }
+            }];
+            var layout = {
+              title: \(titleJSON),
+              xaxis: { title: 'Class' },
+              yaxis: { title: 'Sample Count' }
+            };
+            Plotly.newPlot('chart', data, layout);
+          </script>
+        </body>
+        </html>
+        """
+    }
+
+    /// Generates HTML file with an interactive Class Distribution bar chart from a DataFrame column.
+    public static func plotClassDistribution(df: DataFrame, targetColumn: String, title: String = "Class Distribution") -> String {
+        guard let col = df[targetColumn] else {
+            return "<div>Column \(escapeHTML(targetColumn)) not found.</div>"
+        }
+        let strings = col.toStrings()
+        var counts: [String: Int] = [:]
+        for s in strings {
+            counts[s, default: 0] += 1
+        }
+        return plotClassDistribution(counts: counts, title: title)
+    }
+
+    /// Generates HTML file with interactive Box Plots for numerical columns.
+    ///
+    /// - Parameters:
+    ///   - series: Dictionary mapping column/group names to arrays of numerical values.
+    ///   - title: Descriptive title for the generated visualization.
+    /// - Returns: Standalone HTML bundle containing the interactive box plot chart.
+    public static func plotBoxPlot(series: [String: [Double]], title: String = "Box Plot Distribution") -> String {
+        let sortedKeys = series.keys.sorted()
+        var tracesJSON: [String] = []
+        
+        for name in sortedKeys {
+            guard let vals = series[name], !vals.isEmpty else { continue }
+            let yJSON = "[" + vals.map { String(format: "%.4f", $0) }.joined(separator: ",") + "]"
+            let nameJSON = jsonString(name)
+            tracesJSON.append("""
+            {
+              y: \(yJSON),
+              type: 'box',
+              name: \(nameJSON),
+              boxpoints: 'outliers'
+            }
+            """)
+        }
+        
+        let allTraces = "[" + tracesJSON.joined(separator: ",\n") + "]"
+        let safeTitle = escapeHTML(title)
+        let titleJSON = jsonString(title)
+        
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>\(safeTitle)</title>
+          <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+        </head>
+        <body>
+          <div id="chart" style="width:100%;height:550px;"></div>
+          <script>
+            var data = \(allTraces);
+            var layout = {
+              title: \(titleJSON),
+              yaxis: { title: 'Value' }
+            };
+            Plotly.newPlot('chart', data, layout);
+          </script>
+        </body>
+        </html>
+        """
+    }
+
+    /// Generates HTML file with interactive Box Plots for selected numerical columns in a DataFrame.
+    public static func plotBoxPlot(df: DataFrame, columns: [String]? = nil, title: String = "Box Plot Distribution") -> String {
+        let colNames = columns ?? df.columnNames.filter { colName in
+            df[colName]?.dtype.isNumeric == true
+        }
+        var series: [String: [Double]] = [:]
+        for name in colNames {
+            if let col = df[name], let doubles = col.toDoubles(), !doubles.isEmpty {
+                series[name] = doubles
+            }
+        }
+        return plotBoxPlot(series: series, title: title)
+    }
+
     // MARK: - Sanitization Helpers
 
     private static func escapeHTML(_ string: String) -> String {
@@ -251,5 +382,19 @@ public enum ChartExporter {
             return "[]"
         }
         return str
+    }
+}
+
+// MARK: - DataFrame Visualization Extensions
+
+extension DataFrame {
+    /// Generates interactive HTML Class Distribution bar chart for the specified categorical/label column.
+    public func plotClassDistribution(targetColumn: String, title: String = "Class Distribution") -> String {
+        ChartExporter.plotClassDistribution(df: self, targetColumn: targetColumn, title: title)
+    }
+    
+    /// Generates interactive HTML Box Plot for numeric columns.
+    public func plotBoxPlot(columns: [String]? = nil, title: String = "Box Plot Distribution") -> String {
+        ChartExporter.plotBoxPlot(df: self, columns: columns, title: title)
     }
 }

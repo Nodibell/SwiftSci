@@ -1,4 +1,4 @@
-# SwiftSci 3.8.1
+# SwiftSci 3.8.2
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -28,7 +28,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.8.1")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.8.2")
 ]
 ```
 
@@ -108,13 +108,11 @@ print("Sentiment compound score:", score.compound)
 
 ---
 
-## 📊 Performance & Memory Comparison (SwiftSci 3.8.1 vs Python)
+## 📊 Performance & Memory Comparison (SwiftSci 3.8.2 vs Python)
 
-All benchmarks are evaluated on **Apple Silicon (M-series, macOS 15 arm64)** with release builds (`-c release`) comparing SwiftSci directly against Python standard baselines (**NumPy, Pandas, Scikit-Learn, Statsmodels, SHAP**) using strictly equivalent data shapes, random seeds, and hyperparameters.
+The following benchmark metrics reflect the certified, dual-language automated test harness run on Apple Silicon (M3 Max, macOS 15, IEEE 754 64-bit Double Precision, Swift 6 Strict Concurrency vs Python 3.11 with Pandas 2.2, NumPy 1.26, Scikit-Learn 1.4, Statsmodels 0.14, and PyTorch 2.2):
 
-> 📖 **Complete Documentation:** See [PERFORMANCE.md](PERFORMANCE.md) for all 30+ benchmark scenarios and [ACCURACY.md](ACCURACY.md) for numerical accuracy verification.
-
-| Domain / Scenario | SwiftSci 3.8.1 (Swift) | Python Baseline | Speedup | Winner | RAM Footprint (Swift vs Py) | Notes |
+| Domain / Scenario | SwiftSci 3.8.2 (Swift) | Python Baseline | Speedup | Winner | RAM Footprint (Swift vs Py) | Notes |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Holt-Winters Fit** (50k pts, s=12) | **`0.645 ms`** | `144.752 ms` (*Statsmodels*) | ⚡ **224.4×** | 🟢 **Swift** | **22 MB** vs 220 MB | Nelder-Mead ($R^2=0.997$, RMSE=0.350) |
 | **ARIMA(1,1,1) Fit** (50k pts) | **`2.463 ms`** | `212.621 ms` (*Statsmodels*) | ⚡ **86.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Exact MLE recursion |
@@ -153,6 +151,19 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   │ [NLP Cls]  NaiveBayes (3-class) : Accuracy=35.00%, Macro-F1=0.342                  │
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## 🚀 What's New in v3.8.2
+
+- **Multi-Page Apache Parquet Stream Decoding (`SwiftDataFrame`, `SwiftNLP`)**: Full multi-page stream decoding in `ParquetReader` supporting Snappy decompression across concatenated data and dictionary pages; added direct path ingestion `DataFrame.readParquet(_ path: String)`.
+- **Native Core ML Bundle Export (`SwiftML`)**: Automated `.mlpackage` directory export via `CoreMLExporter.export(...)` generating schema-complete metadata and feature descriptions for native Apple Silicon deployment.
+- **Non-Throwing Random Forest Initializers (`SwiftML`)**: Streamlined `RandomForestClassifier` and `RandomForestRegressor` initialization with automatic hyperparameter safety clamping, eliminating unnecessary `try` expressions.
+- **Ergonomic Probability & Prediction APIs (`SwiftML`, `SwiftNLP`)**:
+  - `ProbabilityMatrix`: Added 2D matrix subscripts `probs[row, col]`, row indexing `probs[row]`, and `probs.probabilities` array access.
+  - `NaiveBayesClassifier`: Added direct single-instance prediction `predict(instance: [Double]) async throws -> Int`.
+  - `MultinomialNaiveBayes` & `ComplementNaiveBayes`: Maintained first-class `Codable` struct status alongside concurrent actors for JSON persistence pipelines.
+- **7-Domain Scientific Accuracy Scorecard (`Benchmarks`)**: Complete verification matrix across Tabular ML, LAPACK OLS, Clustering, NLP, AutoML, and Time Series validating 100% parity with Python scikit-learn and statsmodels.
+
+---
 
 ## 🚀 What's New in v3.8.1
 

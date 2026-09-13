@@ -1,7 +1,6 @@
 import Foundation
 
 /// Pure Swift implementation of Complement Naive Bayes classifier optimized for imbalanced text corpora.
-@available(*, deprecated, renamed: "ComplementNaiveBayesClassifier", message: "Use actor ComplementNaiveBayesClassifier conforming to ClassifierEstimator instead.")
 public struct ComplementNaiveBayes: Sendable, Codable {
 
     /// Additive Laplace smoothing parameter (alpha >= 0).

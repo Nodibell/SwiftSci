@@ -87,7 +87,7 @@ public actor AutoML {
             })
 
             candidates.append(ModelCandidate(name: "RandomForestClassifier (n: 15, maxDepth: 5)") { trainX, trainY, testX in
-                let model = try RandomForestClassifier(nEstimators: 15, maxDepth: 5)
+                let model = RandomForestClassifier(nEstimators: 15, maxDepth: 5)
                 try await model.fit(features: trainX, targets: trainY)
                 let preds = try await model.predict(features: testX)
                 return preds.map { Double($0) }
@@ -120,7 +120,7 @@ public actor AutoML {
             })
 
             candidates.append(ModelCandidate(name: "RandomForestRegressor (n: 15, maxDepth: 5)") { trainX, trainY, testX in
-                let model = try RandomForestRegressor(nEstimators: 15, maxDepth: 5)
+                let model = RandomForestRegressor(nEstimators: 15, maxDepth: 5)
                 try await model.fit(features: trainX, targets: trainY)
                 return try await model.predict(features: testX)
             })

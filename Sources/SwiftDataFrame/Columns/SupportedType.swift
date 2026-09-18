@@ -113,11 +113,49 @@ extension Date: SupportedType {
     /// - Parameters:
     ///   - string: Input string content.
     public static func parse(from string: String) -> Date? {
-        let s = string.trimmingCharacters(in: .whitespaces)
-        // ISO 8601 date only: YYYY-MM-DD
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withFullDate, .withDashSeparatorInDate]
-        return formatter.date(from: s)
+        var s = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.hasPrefix("\"") && s.hasSuffix("\"") && s.count >= 2 {
+            s.removeFirst()
+            s.removeLast()
+            s = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if s.isEmpty { return nil }
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = isoFormatter.date(from: s) { return d }
+
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let d = isoFormatter.date(from: s) { return d }
+
+        isoFormatter.formatOptions = [.withFullDate, .withDashSeparatorInDate]
+        if let d = isoFormatter.date(from: s) { return d }
+
+        let formats = [
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm",
+            "yyyy/MM/dd HH:mm:ss",
+            "yyyy/MM/dd HH:mm",
+            "dd/MM/yyyy HH:mm:ss",
+            "dd/MM/yyyy HH:mm",
+            "MM/dd/yyyy HH:mm:ss",
+            "MM/dd/yyyy HH:mm",
+            "yyyy-MM-dd",
+            "yyyy/MM/dd",
+            "dd/MM/yyyy",
+            "MM/dd/yyyy",
+            "dd-MM-yyyy"
+        ]
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        for fmt in formats {
+            df.dateFormat = fmt
+            if let d = df.date(from: s) {
+                return d
+            }
+        }
+        return nil
     }
     /// The double value.
     public var doubleValue: Double? { nil }

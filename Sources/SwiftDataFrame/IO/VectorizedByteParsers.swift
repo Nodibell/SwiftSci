@@ -69,7 +69,11 @@ public enum VectorizedByteParsers {
             value += fractionAcc
         }
 
-        return digitsFound ? (value * sign) : nil
+        while idx < endIdx && (buffer[idx] == 32 || buffer[idx] == 9 || buffer[idx] == 13 || buffer[idx] == 10) {
+            idx += 1
+        }
+        guard digitsFound && idx == endIdx else { return nil }
+        return value * sign
     }
 
     /// Parses an `Int` directly from ASCII bytes in an un-copied buffer.
@@ -119,7 +123,11 @@ public enum VectorizedByteParsers {
             }
         }
 
-        return digitsFound ? (value * sign) : nil
+        while idx < endIdx && (buffer[idx] == 32 || buffer[idx] == 9 || buffer[idx] == 13 || buffer[idx] == 10) {
+            idx += 1
+        }
+        guard digitsFound && idx == endIdx else { return nil }
+        return value * sign
     }
 
     /// Constructs a `String` from raw buffer coordinates, unescaping double quote sequences (`""`).

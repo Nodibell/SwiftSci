@@ -391,7 +391,7 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` if column not found or dimensions mismatch.
     /// - Returns: A new balanced `DataFrame`.
     public func resample(
-        using resampler: ResamplingEstimator,
+        using resampler: any ResamplingEstimator,
         targetColumn: String
     ) throws -> DataFrame {
         guard let targetCol = self[targetColumn] else {
@@ -453,7 +453,7 @@ extension DataFrame {
         let resampled = try resampler.fitResample(features: featureMatrix, targets: numericTargets)
         let nResampledRows = resampled.features.count
         
-        var newColumns: [AnyColumn] = []
+        var newColumns: [any AnyColumn] = []
         for (colIdx, colName) in featureNames.enumerated() {
             var colVals = [Double?]()
             colVals.reserveCapacity(nResampledRows)

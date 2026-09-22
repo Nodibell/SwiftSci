@@ -118,10 +118,10 @@ extension AgentParameterSchema {
         for (k, v) in json {
             if let str = v as? String {
                 stringArgs[k] = str
+            } else if CFGetTypeID(v as CFTypeRef) == CFBooleanGetTypeID() {
+                stringArgs[k] = (v as? Bool == true) ? "true" : "false"
             } else if let num = v as? NSNumber {
                 stringArgs[k] = "\(num)"
-            } else if let b = v as? Bool {
-                stringArgs[k] = b ? "true" : "false"
             } else {
                 stringArgs[k] = "\(v)"
             }

@@ -63,4 +63,45 @@ struct ChatTemplateTests {
 
         #expect(!tokens.isEmpty)
     }
+
+    @Test("ChatTemplate without generation prompt for Llama 3 and ChatML")
+    func testWithoutGenerationPrompt() {
+        let llama = ChatTemplate(style: .llama3)
+        let promptLlama = llama.render(messages: [ChatMessage.user("Hi")], addGenerationPrompt: false)
+        #expect(!promptLlama.hasSuffix("<|start_header_id|>assistant<|end_header_id|>\n\n"))
+
+        let chatML = ChatTemplate(style: .chatML)
+        let promptChatML = chatML.render(messages: [ChatMessage.user("Hi")], addGenerationPrompt: false)
+        #expect(!promptChatML.hasSuffix("<|im_start|>assistant\n"))
+    }
+
+    @Test("Mistral multi-turn dialogue with user, assistant, and tool messages without system prompt")
+    func testMistralMultiTurnAndRoles() {
+        let template = ChatTemplate(style: .mistral)
+        let messages = [
+            ChatMessage.user("Turn 1"),
+            ChatMessage.assistant("Answer 1"),
+            ChatMessage.user("Turn 2"),
+            ChatMessage.tool("Observation 1")
+        ]
+
+        let prompt = template.render(messages: messages, addGenerationPrompt: false)
+        #expect(prompt.contains("[INST] Turn 1 [/INST]"))
+        #expect(prompt.contains(" Answer 1 "))
+        #expect(prompt.contains("[INST] Turn 2 [/INST]"))
+        #expect(prompt.contains("[INST] Observation 1 [/INST]"))
+    }
+
+    @Test("ChatMessage constructors and role variants")
+    func testChatMessageConstructors() {
+        let sys = ChatMessage.system("sys")
+        let usr = ChatMessage.user("usr")
+        let ast = ChatMessage.assistant("ast")
+        let tol = ChatMessage.tool("tol")
+
+        #expect(sys.role == .system && sys.content == "sys")
+        #expect(usr.role == .user && usr.content == "usr")
+        #expect(ast.role == .assistant && ast.content == "ast")
+        #expect(tol.role == .tool && tol.content == "tol")
+    }
 }

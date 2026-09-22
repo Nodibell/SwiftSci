@@ -257,4 +257,98 @@ struct ReActAgentTests {
         #expect(trace[0].observation?.contains("Malformed tool call") == true)
         #expect(trace[1].observation?.contains("Missing required parameter 'expression'") == true)
     }
+
+    @Test("ReActAgent successfully executes structured tool call with valid JSON input")
+    func testStructuredToolCallExecutionInReActAgent() async throws {
+        struct MockStructuredTool: StructuredAgentTool {
+            let name = "Multiplier"
+            let description = "Multiplies two numbers"
+            let parameterSchema = AgentParameterSchema(
+                properties: [
+                    "x": AgentParameterProperty(type: "number", description: "First number"),
+                    "y": AgentParameterProperty(type: "number", description: "Second number")
+                ],
+                required: ["x", "y"]
+            )
+
+            func executeStructured(arguments: [String: String]) async throws -> AgentToolOutput {
+                let x = Double(arguments["x"] ?? "0") ?? 0
+                let y = Double(arguments["y"] ?? "0") ?? 0
+                return AgentToolOutput(text: "\(Int(x * y))")
+            }
+        }
+
+        let agent = ReActAgent(tools: [MockStructuredTool()], maxSteps: 2)
+        let mockLLM: @Sendable (String) async throws -> String = { prompt in
+            if !prompt.contains("Previous History:") {
+                return """
+                Thought: Multiplying numbers.
+                Action: Multiplier
+                Action Input: {"x": 6, "y": 7}
+                """
+            } else {
+                return "Final Answer: The product is 42."
+            }
+        }
+
+        let (ans, trace) = try await agent.run(query: "Multiply 6 and 7", llm: mockLLM)
+        #expect(ans == "The product is 42.")
+        #expect(trace[0].observation == "42")
+    }
+
+    @Test("AgentParameterSchema and SchemaValidationError comprehensive coverage")
+    func testAgentParameterSchemaComprehensive() {
+        // Test empty schema
+        let emptySchema = AgentParameterSchema.empty
+        #expect(emptySchema.properties.isEmpty)
+        #expect(emptySchema.required.isEmpty)
+
+        // Test property with enum and itemsType
+        let prop = AgentParameterProperty(type: "array", description: "Tags", enum: ["tag1", "tag2"], itemsType: "string")
+        #expect(prop.enum == ["tag1", "tag2"])
+        #expect(prop.itemsType == "string")
+
+        // Schema with enum validation
+        let schema = AgentParameterSchema(
+            properties: [
+                "mode": AgentParameterProperty(type: "string", description: "Operating mode", enum: ["fast", "accurate"]),
+                "count": AgentParameterProperty(type: "number", description: "Count"),
+                "flag": AgentParameterProperty(type: "boolean", description: "Flag")
+            ],
+            required: ["mode"]
+        )
+
+        // Test valid JSON with NSNumber, Bool, and string
+        let validJSON = "{\"mode\": \"fast\", \"count\": 10, \"flag\": true, \"other\": [1, 2]}"
+        let res = schema.parseAndValidate(jsonString: validJSON)
+        switch res {
+        case .success(let dict):
+            #expect(dict["mode"] == "fast")
+            #expect(dict["count"] == "10")
+            #expect(dict["flag"] == "true")
+        case .failure:
+            Issue.record("Expected successful parse")
+        }
+
+        // Test invalid enum value
+        let invalidEnumJSON = "{\"mode\": \"unsupported\"}"
+        let resEnum = schema.parseAndValidate(jsonString: invalidEnumJSON)
+        switch resEnum {
+        case .failure(let err):
+            #expect(err == .invalidEnumValue(param: "mode", value: "unsupported", allowed: ["fast", "accurate"]))
+            #expect(err.errorDescription?.contains("Invalid value 'unsupported'") == true)
+        case .success:
+            Issue.record("Expected enum validation failure")
+        }
+
+        // Test all SchemaValidationError descriptions
+        let errMissing = SchemaValidationError.missingRequired("apiKey")
+        #expect(errMissing.errorDescription == "Missing required parameter 'apiKey'")
+
+        let errJSON = SchemaValidationError.invalidJSON("bad_json")
+        #expect(errJSON.errorDescription == "Malformed JSON syntax in tool arguments: 'bad_json'")
+
+        let errUTF8 = SchemaValidationError.utf8ConversionFailed
+        #expect(errUTF8.errorDescription == "Malformed input: cannot convert to UTF-8")
+    }
 }

@@ -1,31 +1,107 @@
 import Foundation
 
+/// Fine-grained configuration of the generative token sampling pipeline.
+public struct SamplingConfiguration: Sendable, Equatable {
+    /// Softmax temperature scaling factor (0.0 for greedy argmax, > 0.0 for probabilistic).
+    public var temperature: Float
+    /// Truncate sampling to the top-K highest probability logits (0 to disable).
+    public var topK: Int
+    /// Nucleus sampling cumulative probability threshold (1.0 to disable).
+    public var topP: Float
+    /// Multiplicative penalty for previously generated tokens in context (1.0 to disable).
+    public var repetitionPenalty: Float
+
+    /// Creates a sampling configuration.
+    /// - Parameters:
+    ///   - temperature: Softmax temperature (default: `0.7`, `0.0` = greedy).
+    ///   - topK: Top-K truncation pool size (default: `40`, `0` = disabled).
+    ///   - topP: Top-P cumulative probability threshold (default: `0.9`, `1.0` = disabled).
+    ///   - repetitionPenalty: Multiplicative repetition penalty (default: `1.0` = disabled).
+    public init(
+        temperature: Float = 0.7,
+        topK: Int = 40,
+        topP: Float = 0.9,
+        repetitionPenalty: Float = 1.0
+    ) {
+        self.temperature = temperature
+        self.topK = topK
+        self.topP = topP
+        self.repetitionPenalty = repetitionPenalty
+    }
+
+    /// Greedy search configuration (argmax, deterministic).
+    public static var greedy: SamplingConfiguration {
+        SamplingConfiguration(temperature: 0.0, topK: 0, topP: 1.0, repetitionPenalty: 1.0)
+    }
+}
+
 /// Options configuring generative text inference.
 public struct LLMOptions: Sendable {
-    /// The temperature.
-    public var temperature: Double
-    /// The top p.
-    public var topP: Double
-    /// The top k.
-    public var topK: Int
-    /// The max tokens.
+    /// Fine-grained sampling configuration (temperature, topK, topP, repetition penalty).
+    public var sampling: SamplingConfiguration
+    /// Maximum number of tokens to generate.
     public var maxTokens: Int
-    
-    /// Creates a new instance.
+
+    /// The temperature parameter.
+    @available(*, deprecated, message: "Use sampling.temperature instead")
+    public var temperature: Double {
+        get { Double(sampling.temperature) }
+        set { sampling.temperature = Float(newValue) }
+    }
+
+    /// The top-p nucleus threshold.
+    @available(*, deprecated, message: "Use sampling.topP instead")
+    public var topP: Double {
+        get { Double(sampling.topP) }
+        set { sampling.topP = Float(newValue) }
+    }
+
+    /// The top-k pool size.
+    @available(*, deprecated, message: "Use sampling.topK instead")
+    public var topK: Int {
+        get { sampling.topK }
+        set { sampling.topK = newValue }
+    }
+
+    /// The repetition penalty factor.
+    @available(*, deprecated, message: "Use sampling.repetitionPenalty instead")
+    public var repetitionPenalty: Float {
+        get { sampling.repetitionPenalty }
+        set { sampling.repetitionPenalty = newValue }
+    }
+
+    /// Creates an LLMOptions instance with a dedicated SamplingConfiguration.
+    /// - Parameters:
+    ///   - sampling: The sampling pipeline configuration.
+    ///   - maxTokens: Maximum number of tokens to generate.
+    public init(
+        sampling: SamplingConfiguration = SamplingConfiguration(),
+        maxTokens: Int = 100
+    ) {
+        self.sampling = sampling
+        self.maxTokens = maxTokens
+    }
+
+    /// Backwards-compatible initializer.
     /// - Parameters:
     ///   - temperature: The temperature.
     ///   - topP: The top p.
     ///   - topK: The top k.
+    ///   - repetitionPenalty: Multiplicative repetition penalty (default: `1.0`).
     ///   - maxTokens: The max tokens.
     public init(
         temperature: Double = 0.7,
         topP: Double = 0.9,
         topK: Int = 40,
+        repetitionPenalty: Float = 1.0,
         maxTokens: Int = 100
     ) {
-        self.temperature = temperature
-        self.topP = topP
-        self.topK = topK
+        self.sampling = SamplingConfiguration(
+            temperature: Float(temperature),
+            topK: topK,
+            topP: Float(topP),
+            repetitionPenalty: repetitionPenalty
+        )
         self.maxTokens = maxTokens
     }
 }

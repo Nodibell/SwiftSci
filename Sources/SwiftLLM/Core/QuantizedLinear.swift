@@ -5,7 +5,7 @@ import MLX
 import MLXNN
 
 /// The quantization scheme used for compressed model weights.
-public enum QuantizationScheme: Sendable {
+public enum QuantizationScheme: Sendable, Equatable {
     /// 4-bit symmetric quantization with block size 32 (GGUF Q4_0).
     case q4_0
     /// 4-bit asymmetric quantization with scale and min offset (GGUF Q4_1).

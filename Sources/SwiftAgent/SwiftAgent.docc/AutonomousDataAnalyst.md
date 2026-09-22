@@ -100,3 +100,42 @@ print("Filtered count: \(filtered.shape.rows) employees with salary > $100k.")
 let grouped = try evaluator.execute("groupby department")
 print("Department groupings: \(grouped.shape.rows) rows.")
 ```
+
+---
+
+## 3. Tool Parameter Schema Validation & Error Resilience
+
+### Defining Structured Tool Schemas
+
+Tools implementing `AgentTool` define their expected parameters using `AgentParameterSchema`:
+
+```swift
+import SwiftAgent
+
+let mathTool = CustomAgentTool(
+    name: "calculator",
+    description: "Evaluates mathematical expressions.",
+    schema: AgentParameterSchema(
+        properties: [
+            "expression": AgentParameterProperty(
+                type: "string",
+                description: "Arithmetic expression to evaluate (e.g. '2 + 2')"
+            )
+        ],
+        required: ["expression"]
+    )
+) { args in
+    guard let expr = args["expression"] else {
+        throw AgentError.invalidInput("Missing 'expression'")
+    }
+    return "Result of \(expr): 4"
+}
+```
+
+### Self-Correction & Reasoning Loop Resilience
+
+If the language model generates malformed JSON syntax or omits mandatory parameters, `ReActAgent` validates the payload against `AgentParameterSchema`:
+- Instead of terminating the program or throwing unhandled errors, `ReActAgent` captures `SchemaValidationError`.
+- The validation error description (e.g. `"Error: Malformed tool call: Missing required parameter 'expression'. Please correct the parameters and retry."`) is captured as the tool's `observation`.
+- This feedback is injected into the subsequent prompt step, empowering the LLM to autonomously correct its parameters and retry on the next reasoning turn.
+

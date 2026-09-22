@@ -58,6 +58,16 @@ let forecast = try await autoArima.forecast(horizon: 12)
 print("Forecasted points: \(forecast.forecast.predictions)")
 ```
 
+## Stability & Convergence Guarantees
+
+### Zero-Variance Degenerate Inputs
+If an input series is constant or exhibits zero numerical variance ($\text{var} < 10^{-12}$), standard likelihood optimization can diverge or enter infinite loops. `AutoARIMA` detects zero variance upfront, immediately fitting an exact ARIMA(0, 0, 0) constant model:
+- Avoids matrix singularities in the Hannan-Rissanen and Yule-Walker algorithms.
+- Guarantees instant return without stalling the task group.
+
+### Fixed Iteration Bound
+All internal parameter search loops are strictly bounded by a `maxIterations = 500` ceiling, ensuring that numerical optimization always converges in deterministic time across parallel worker threads.
+
 ## Topics
 
 ### Automated Time Series

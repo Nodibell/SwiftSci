@@ -83,6 +83,8 @@ let outputs = try linear.forwardMetal(
 ## Topics
 
 ### Quantization & Metal Execution
+- ``QuantizedTensor``
+- ``QuantizedLayoutMetadata``
 - ``QuantizedLinear``
 - ``QuantizationScheme``
 - ``MetalQuantizedEngine``

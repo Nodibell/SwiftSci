@@ -4,6 +4,27 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.0] - 2026-09-22
+
+### Added
+- **Verified Local LLM Runtime Pipeline (`SwiftLLM`)**:
+  - `SamplingConfiguration`: Decoupled value type for generation parameters (temperature, topK, topP, repetitionPenalty) processed strictly at the logits level before softmax.
+  - `RoPEEmbedding`: Dynamic `positionOffset` support for rotary positional embeddings during incremental token generation.
+  - `TransformerDecoder`: Two-stage inference pipeline with prompt prefill into `KVCache` followed by single-token incremental decode steps ($Q \times \text{all cached } K/V$).
+  - `QuantizedTensor` & Metal GEMV: Direct memory layout retention of GGUF Q4_0 and Q8_0 weights without artificial dequantization; output parity with Metal MSL `gemv_q4_0` and `gemv_q8_0` kernels.
+  - `MLX.compile`: Integrated single-token decode graph compilation verified for exact output parity.
+- **Chat Template Integration Layer (`SwiftNLP`)**:
+  - `ChatMessage` & `ChatTemplate`: Pre-configured template renderers (`.llama3`, `.chatML`, `.mistral`) with direct `encode` tokenization integration.
+- **Schema Validation & Resilient Loop Protection (`SwiftAgent`)**:
+  - `AgentParameterSchema`: JSON parameter validation returning structured `Result<[String: String], SchemaValidationError>`.
+  - `ReActAgent`: Loop resilience feeding malformed tool inputs back into the reasoning trajectory for autonomous self-correction without crashing.
+- **Hardened SQLite C-Pointer Memory Safety (`SwiftDatabase`)**:
+  - Migrated driver handle destruction to `sqlite3_close_v2`, added explicit `close()`, and hardened statement finalization, verified clean under AddressSanitizer.
+- **AutoARIMA Loop Guard & Zero-Variance Handling (`SwiftForecast`)**:
+  - Added zero-variance early exit and `maxIterations = 500` cap to prevent non-terminating optimization loops.
+- **SwiftSci CLI (`SwiftSciCLI`)**:
+  - Upgraded CLI version identifier to 3.10.0.
+
 ## [3.8.1] - 2026-09-12
 
 ### Added

@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 3.9.0 — Native Swift Data Science & Machine Learning Ecosystem</title>
+  <title>SwiftSci 3.10.0 — Native Swift Data Science & Machine Learning Ecosystem</title>
   <meta name="description"
-    content="Official documentation portal for SwiftSci 3.9.0 — 14 core scientific computing, statistics, dataframe, forecasting, MLX and machine learning modules for Swift 6 on macOS.">
+    content="Official documentation portal for SwiftSci 3.10.0 — 14 core scientific computing, statistics, dataframe, forecasting, local LLM runtime, MLX and machine learning modules for Swift 6 on macOS.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -273,9 +273,9 @@
 <body>
 
   <header>
-    <div class="badge">🚀 SwiftSci v3.9.0 — 100% DocC Coverage</div>
+    <div class="badge">🚀 SwiftSci v3.10.0 — 100% DocC Coverage</div>
     <h1>Apple Silicon Data Science & ML</h1>
-    <p class="subtitle">A unified, high-performance C/vDSP/MLX accelerated data analytics ecosystem for Apple Silicon. 100% DocC API Coverage — v3.9.0 Advanced NLP N-Grams, Sublinear TF, Stratified Sampling, BorderlineSMOTE & ADASYN, t-SNE Manifold Learning, Model Interpretability, and Interactive EDA Charts.</p>
+    <p class="subtitle">A unified, high-performance C/vDSP/MLX accelerated data analytics ecosystem for Apple Silicon. 100% DocC API Coverage — v3.10.0 Verified Local LLM Runtime Pipeline, Sampling Configuration, RoPE Incremental Decoding, KV-Cache, GGUF Zero-Copy Quantization, Chat Templates, and Resilient Autonomous Agents.</p>
 
     <div class="stats-bar">
       <div class="stat-item">
@@ -381,7 +381,7 @@
           <span class="card-tag">Time Series</span>
         </div>
         <h3 class="card-title">SwiftForecast <span class="arrow">→</span></h3>
-        <p class="card-desc">ARIMA, SARIMA, Holt-Winters exponential smoothing, GARCH volatility, Kalman Filter 1D, STL decomposition, and Koopman operator EDMD.</p>
+        <p class="card-desc">AutoARIMA with zero-variance protection, ARIMA, SARIMA, Holt-Winters exponential smoothing, GARCH volatility, Kalman Filter 1D, STL decomposition, and Koopman operator EDMD.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -392,7 +392,7 @@
           <span class="card-tag">Natural Language</span>
         </div>
         <h3 class="card-title">SwiftNLP <span class="arrow">→</span></h3>
-        <p class="card-desc">VADER Sentiment Analysis, Laplace NaiveBayesClassifier, TextNormalizer, Ukrainian & English stopwords, BPETokenizer, NGramTokenizer, and TFIDFVectorizer.</p>
+        <p class="card-desc">ChatMessage & ChatTemplate (Llama 3, ChatML, Mistral), VADER Sentiment, NaiveBayes, TextNormalizer, multilingual stopwords, BPETokenizer, NGramTokenizer, and TFIDFVectorizer.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -415,7 +415,7 @@
           <span class="card-tag">Deep Learning</span>
         </div>
         <h3 class="card-title">SwiftLLM <span class="arrow">→</span></h3>
-        <p class="card-desc">QuantizedLinear (4-bit/8-bit GPU), PagedKVCache block allocator, JSONGrammarDecoder token constrained decoding, RoPE, SwiGLU, and GGUF/SafeTensors parsers.</p>
+        <p class="card-desc">Verified local LLM runtime, SamplingConfiguration logits pipeline, RoPE incremental decoding, two-stage prefill/decode KVCache, QuantizedTensor zero-copy GGUF, Metal MSL GEMV, and MLX.compile.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -449,8 +449,7 @@
           <span class="card-tag">Databases</span>
         </div>
         <h3 class="card-title">SwiftDatabase <span class="arrow">→</span></h3>
-        <p class="card-desc">Direct relational database connectors (SQLite, PostgreSQL, MySQL) enabling SQL query
-          execution straight into zero-copy DataFrames.</p>
+        <p class="card-desc">Direct relational database connectors (SQLite, PostgreSQL, MySQL) with hardened C-pointer lifecycles, explicit connection closing, and zero-copy DataFrame ingestion.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -461,7 +460,7 @@
           <span class="card-tag">AI Agents</span>
         </div>
         <h3 class="card-title">SwiftAgent <span class="arrow">→</span></h3>
-        <p class="card-desc">Autonomous ReAct reasoning loop with SwiftSciToolbox (stats, drift, forecast, NLP, safe SQL), StructuredAgentTool JSON schema, SemanticVectorMemory (HNSW), real-time streaming, loop sentry, and SwiftUI AgentDialogueController.</p>
+        <p class="card-desc">Autonomous ReAct reasoning loop with resilient self-correction, AgentParameterSchema validation, SwiftSciToolbox, SemanticVectorMemory (HNSW), loop sentry, and SwiftUI AgentDialogueController.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -469,7 +468,7 @@
   </main>
 
   <footer>
-    <p>SwiftSci 3.9.0 Ecosystem — Licensed under the MIT License. Built for Apple Silicon UMA.</p>
+    <p>SwiftSci 3.10.0 Ecosystem — Licensed under the MIT License. Built for Apple Silicon UMA.</p>
     <p style="margin-top: 12px; display: flex; gap: 1rem; justify-content: center; align-items: center;">
       <a href="presentation.html" style="color: #38bdf8; font-weight: 600;"> Launch Keynote Presentation</a> |
       <a href="https://github.com/Nodibell/SwiftSci" target="_blank">View Project on GitHub</a>

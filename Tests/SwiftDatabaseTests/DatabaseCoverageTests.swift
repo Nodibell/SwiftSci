@@ -117,6 +117,10 @@ struct DatabaseCoverageTests {
         #expect(res.rows.count == 1)
         #expect(res.rows[0][0].description == "1")
         #expect(res.rows[0][1].description == "hello")
+
+        // Test explicit close and idempotency
+        await conn.close()
+        await conn.close()
     }
 
     @Test("PostgreSQL and MySQL connection URL parsing variants")

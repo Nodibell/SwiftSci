@@ -58,6 +58,84 @@ public struct AgentParameterSchema: Sendable, Codable, Equatable {
     }
 }
 
+/// Errors occurring during tool argument schema validation.
+public enum SchemaValidationError: Error, LocalizedError, Sendable, Equatable {
+    case missingRequired(String)
+    case invalidEnumValue(param: String, value: String, allowed: [String])
+    case invalidJSON(String)
+    case utf8ConversionFailed
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingRequired(let req):
+            return "Missing required parameter '\(req)'"
+        case .invalidEnumValue(let param, let value, let allowed):
+            return "Invalid value '\(value)' for parameter '\(param)'. Allowed: [\(allowed.joined(separator: ", "))]"
+        case .invalidJSON(let str):
+            return "Malformed JSON syntax in tool arguments: '\(str)'"
+        case .utf8ConversionFailed:
+            return "Malformed input: cannot convert to UTF-8"
+        }
+    }
+}
+
+extension AgentParameterSchema {
+    /// Validates raw input arguments against this schema.
+    /// - Parameter arguments: Key-value dictionary of arguments.
+    /// - Returns: Validation result indicating success or descriptive error.
+    public func validate(arguments: [String: String]) -> Result<Void, SchemaValidationError> {
+        for req in required {
+            guard let val = arguments[req], !val.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return .failure(.missingRequired(req))
+            }
+        }
+
+        for (key, val) in arguments {
+            if let prop = properties[key], let allowedEnums = prop.enum {
+                if !allowedEnums.contains(val) {
+                    return .failure(.invalidEnumValue(param: key, value: val, allowed: allowedEnums))
+                }
+            }
+        }
+
+        return .success(())
+    }
+
+    /// Safely parses and validates JSON string into structured arguments.
+    /// - Parameter jsonString: Raw JSON string from model response.
+    /// - Returns: Parsed dictionary or validation error.
+    public func parseAndValidate(jsonString: String) -> Result<[String: String], SchemaValidationError> {
+        let trimmed = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = trimmed.data(using: .utf8) else {
+            return .failure(.utf8ConversionFailed)
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return .failure(.invalidJSON(trimmed))
+        }
+
+        var stringArgs: [String: String] = [:]
+        for (k, v) in json {
+            if let str = v as? String {
+                stringArgs[k] = str
+            } else if CFGetTypeID(v as CFTypeRef) == CFBooleanGetTypeID() {
+                stringArgs[k] = (v as? Bool == true) ? "true" : "false"
+            } else if let num = v as? NSNumber {
+                stringArgs[k] = "\(num)"
+            } else {
+                stringArgs[k] = "\(v)"
+            }
+        }
+
+        switch validate(arguments: stringArgs) {
+        case .success:
+            return .success(stringArgs)
+        case .failure(let err):
+            return .failure(err)
+        }
+    }
+}
+
 /// Rich structured output produced by an autonomous agent tool invocation.
 public struct AgentToolOutput: Sendable, Equatable {
     /// Human-readable textual representation or summary of the tool execution.

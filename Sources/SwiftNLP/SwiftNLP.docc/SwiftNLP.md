@@ -45,3 +45,4 @@ let sentimentDF = try df.analyzeSentiment(column: "text")
 ### Guides & Tutorials
 - <doc:TextNormalizationAndTokenization>
 - <doc:VectorizationAndEmbeddings>
+- <doc:ChatAPI>

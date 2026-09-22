@@ -1,4 +1,4 @@
-# SwiftSci 3.9.0
+# SwiftSci 3.10.0
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -28,7 +28,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.9.0")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.10.0")
 ]
 ```
 
@@ -151,6 +151,24 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   │ [NLP Cls]  NaiveBayes (3-class) : Accuracy=35.00%, Macro-F1=0.342                  │
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## 🚀 What's New in v3.10.0
+
+- **Verified Native Local LLM Runtime Pipeline (`SwiftLLM`)**:
+  - `SamplingConfiguration`: Fully decoupled sampling configuration (temperature, topK, topP, repetitionPenalty) operating strictly at the logits level prior to softmax.
+  - `RoPEEmbedding`: Rotary Positional Embeddings with dynamic `positionOffset` support for incremental token decoding.
+  - `TransformerDecoder`: Two-stage inference pipeline with full prompt prefill and incremental single-token decoding with accumulated KV-cache.
+  - `QuantizedTensor` & Metal GEMV: Direct retention of packed Q4_0 and Q8_0 weights from GGUF into native buffers without artificial dequantization; verified parity against Apple Metal MSL GEMV kernels (`gemv_q4_0`, `gemv_q8_0`).
+  - `MLX.compile`: Integrated single-token decode graph compilation with exact parity verification against uncompiled execution.
+- **Resilient Time-Series Forecasting (`SwiftForecast`)**:
+  - `AutoARIMA`: Added zero-variance detection for constant series and enforced `maxIterations = 500` loop termination cap, preventing infinite optimization loops.
+- **Chat Template Integration Layer (`SwiftNLP`)**:
+  - `ChatMessage` & `ChatTemplate`: Native formatting for modern LLM chat formats (Llama-3 `<|begin_of_text|>...<|eot_id|>`, ChatML `<|im_start|>...<|im_end|>`, Mistral `[INST]...[/INST]`) with direct `encode` tokenization integration.
+- **Robust Autonomous Agents (`SwiftAgent`)**:
+  - `AgentParameterSchema`: JSON schema validation and structured parsing (`validate(arguments:)`, `parseAndValidate(jsonString:)`).
+  - `ReActAgent`: Resilient error handling feeding malformed tool inputs back into the reasoning trajectory for self-correction without crashing the agent loop.
+- **Hardened C-Pointer Memory Safety (`SwiftDatabase`)**:
+  - SQLite zero-copy connector upgraded to `sqlite3_close_v2`, explicit `close()` lifecycle, and hardened statement finalization, verified clean under AddressSanitizer.
 
 ## 🚀 What's New in v3.9.0
 

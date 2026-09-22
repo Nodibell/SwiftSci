@@ -55,8 +55,15 @@ High-throughput, on-device causal language model execution on Apple Silicon Unif
 
 ## 1. Core Architectural Components
 
-### RoPE (Rotary Position Embedding)
-Applies 2D rotation to query and key vectors based on absolute position index `m`, preserving relative token distance properties without learned position embeddings.
+### RoPE (Rotary Position Embedding) with Dynamic Offset
+Applies 2D rotation to Query and Key projections based on position index $m$:
+$$Q_{\text{rot}} = \text{RoPE}(Q, m), \quad K_{\text{rot}} = \text{RoPE}(K, m)$$
+During incremental autoregressive decoding, `RoPEEmbedding` dynamically incorporates `positionOffset` (corresponding to the number of prior cached tokens), ensuring correct relative attention geometry across arbitrary context lengths without learned position embeddings.
+
+### Two-Stage KV-Cache Generation (Prefill + Decode)
+Generation executes in two distinct stages:
+1. **Prefill Pass**: Evaluates the entire prompt sequence $[0 ..< N]$ in parallel, writing Key and Value projections into `KVCache`.
+2. **Incremental Decode Steps**: Processes only the single newest token $[N+1]$ at each step. The new Query vector performs dot-product attention against all cached Key and Value vectors ($Q_{N+1} \cdot K_{\text{accumulated}}^T$), eliminating redundant $O(N^2)$ prompt recomputation.
 
 ### SwiGLU Feed-Forward Network
 Replaces legacy ReLU/GELU activations with Swish-Gated Linear Units (Llama-style):
@@ -85,7 +92,7 @@ for (tensorName, info) in tensors.prefix(5) {
     print("Layer '\(tensorName)': dtype=\(info.dtype), shape=\(info.shape)")
 }
 
-// 2. Parse GGUF Quantized Binary Archive
+// 2. Parse GGUF Quantized Binary Archive (Zero-Copy)
 let ggufURL = URL(fileURLWithPath: "llama-3-8b.Q4_K_M.gguf")
 let ggufModel = try GGUFParser.parse(fileURL: ggufURL)
 print("Loaded GGUF Model with \(ggufModel.tensors.count) quantized tensors.")
@@ -93,9 +100,9 @@ print("Loaded GGUF Model with \(ggufModel.tensors.count) quantized tensors.")
 
 ---
 
-## 3. End-to-End Decoder Configuration & Inference
+## 3. End-to-End Decoder Configuration & Two-Stage Inference
 
-Construct an N-layer `TransformerDecoder` using standard presets (`LLMConfig.llama3_8B` or `LLMConfig.custom`) and generate tokens:
+Construct a `TransformerDecoder` and perform two-stage cached generation:
 
 ```swift
 import SwiftLLM
@@ -103,26 +110,27 @@ import SwiftLLM
 // 1. Initialize TransformerDecoder with Llama-3-8B configuration
 let config = LLMConfig.llama3_8B
 let decoder = TransformerDecoder(config: config)
+let cache = KVCache(config: config)
 
-// 2. Load model weights into memory
-let weightsDictionary: [String: [Double]] = [:] // Populated from SafeTensors/GGUF
-try decoder.loadWeights(weightsDictionary)
-
-// 3. Configure sampling strategy
-let sampler = TopKSampler(temperature: 0.7, topK: 40, topP: 0.9)
-
-// 4. Autoregressive token generation loop
 let promptTokens: [Int] = [128000, 791, 7453, 374] // Tokenized input
 var generatedTokens = promptTokens
 let maxNewTokens = 50
 
-print("Generating output tokens...")
+// 2. Stage 1: Prefill prompt tokens into KV-cache
+_ = try decoder.forward(tokens: promptTokens, cache: cache, isPrefill: true)
+
+// 3. Configure sampling options
+let sampling = SamplingConfiguration(temperature: 0.7, topK: 40, topP: 0.9, repetitionPenalty: 1.1)
+
+// 4. Stage 2: Incremental single-token decoding loop
+var currentToken = promptTokens.last!
 for _ in 0..<maxNewTokens {
-    let logits = try decoder.forward(tokens: generatedTokens)
-    let nextToken = sampler.sample(logits: logits)
+    let logits = try decoder.forward(tokens: [currentToken], cache: cache, isPrefill: false)
+    let nextToken = Sampler.sample(logits: logits, config: sampling, history: generatedTokens)
     
     generatedTokens.append(nextToken)
-    if nextToken == 128001 { // End of Sequence token (EOS)
+    currentToken = nextToken
+    if nextToken == 128001 || nextToken == 128009 { // EOS tokens
         break
     }
 }

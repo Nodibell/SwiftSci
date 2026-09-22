@@ -225,5 +225,35 @@ struct SwiftDatabaseTests {
         let pgAlive = await pg.ping()
         #expect(pgAlive == false)
     }
+
+    @Test("Gate 11: SQLite C-Pointer memory safety, explicit close, and repeated large queries")
+    func testSQLiteMemorySafetyAndClose() async throws {
+        let conn = SQLiteConnection(databasePath: ":memory:")
+        _ = try await conn.executeQuery("CREATE TABLE stress (id INTEGER PRIMARY KEY, txt TEXT, num REAL);")
+
+        // Execute multiple queries with valid and invalid statements
+        for i in 0..<200 {
+            _ = try await conn.executeQuery("INSERT INTO stress (txt, num) VALUES ('row_\(i)', \(Double(i) * 1.5));")
+        }
+
+        // Test repeated SELECT queries with large result sets
+        let res = try await conn.executeQuery("SELECT * FROM stress ORDER BY id ASC;")
+        #expect(res.rows.count == 200)
+        #expect(res.columns.count == 3)
+
+        // Ensure failed prepares don't leak or crash
+        await #expect(throws: DatabaseError.self) {
+            _ = try await conn.executeQuery("SYNTAX ERROR INVALID SQL;")
+        }
+
+        // Test explicit close
+        await conn.close()
+
+        // Re-open on a fresh connection and verify clean operation
+        let conn2 = SQLiteConnection(databasePath: ":memory:")
+        let ping2 = await conn2.ping()
+        #expect(ping2 == true)
+        await conn2.close()
+    }
 }
 

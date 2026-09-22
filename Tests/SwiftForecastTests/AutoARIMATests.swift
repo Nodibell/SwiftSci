@@ -60,4 +60,20 @@ struct AutoARIMATests {
             _ = try await autoArima.forecast(horizon: 5)
         }
     }
+
+    @Test("Gate 8: AutoARIMA zero-variance resilience on constant series")
+    func testAutoARIMAConstantSeriesZeroVariance() async throws {
+        let constantSeries = [Double](repeating: 42.0, count: 50)
+        let autoArima = AutoARIMA(maxP: 2, maxD: 2, maxQ: 2, maxIterations: 50)
+        _ = try await autoArima.fit(series: constantSeries)
+
+        let bestOrder = await autoArima.bestOrder
+        #expect(bestOrder == AutoARIMAOrder(p: 0, d: 0, q: 0))
+
+        let forecast = try await autoArima.forecast(horizon: 3)
+        #expect(forecast.forecast.predictions.count == 3)
+        for pred in forecast.forecast.predictions {
+            #expect(abs(pred - 42.0) < 1e-6)
+        }
+    }
 }

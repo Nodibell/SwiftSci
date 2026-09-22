@@ -30,9 +30,12 @@ Swift 6 Concurrency Layer
 
 ---
 
-## 1. Querying SQLite Databases
+## 1. Querying SQLite Databases & C-Pointer Lifecycle Safety
 
-`SQLiteConnection` executes SQL statements through native `sqlite3_prepare_v2` and directly streams result rows into columnar `TypedColumn` buffers:
+`SQLiteConnection` executes SQL statements through native `sqlite3_prepare_v2` and directly streams result rows into columnar `TypedColumn` buffers with full C-pointer lifecycle safety:
+
+- **Statement Finalization:** All prepared statements are guaranteed to be finalized via `defer { if let stmt { sqlite3_finalize(stmt) } }`, preventing statement pointer leaks during both normal termination and thrown query errors.
+- **Resource Cleanup:** In-memory or file-backed database handles are automatically closed via `sqlite3_close_v2` upon deallocation. Callers may also invoke `await sqlite.close()` to immediately release operating system locks and memory.
 
 ```swift
 import Foundation
@@ -40,7 +43,7 @@ import SwiftDatabase
 import SwiftDataFrame
 
 // 1. Initialize SQLite connection to file or in-memory
-let sqlite = try SQLiteConnection(path: "analytics.sqlite")
+let sqlite = SQLiteConnection(databasePath: "analytics.sqlite")
 
 // 2. Execute SQL query into a DataFrame
 let df = try await DataFrame.fromSQL(
@@ -50,6 +53,9 @@ let df = try await DataFrame.fromSQL(
 
 print("Ingested \(df.shape.rows) rows with \(df.shape.columns) columns:")
 df.debugPrint(maxRows: 5)
+
+// 3. Explicitly release SQLite database handle when done
+await sqlite.close()
 ```
 
 ---
@@ -62,13 +68,13 @@ Connect to remote PostgreSQL clusters over TCP/TLS without external C libraries 
 import SwiftDatabase
 import SwiftDataFrame
 
-let pgConn = try PostgreSQLConnection(
+let pgConn = PostgreSQLConnection(
     host: "localhost",
     port: 5432,
     database: "production_db",
-    username: "postgres",
+    user: "postgres",
     password: "secure_password",
-    useSSL: false
+    sslMode: .disable
 )
 
 // Ingest query results asynchronously
@@ -84,20 +90,16 @@ print("Fetched \(salesDF.shape.rows) orders from PostgreSQL.")
 
 ## 3. High-Throughput Bulk Writeback (`toSQL`)
 
-Bulk export in-memory `DataFrame` objects back into database tables with configurable append or replace modes:
+Bulk export in-memory `DataFrame` objects back into database tables with configurable append, replace, or fail-if-exists modes:
 
 ```swift
 // Write transformed DataFrame to database
 try await salesDF.toSQL(
     table: "aggregated_metrics",
     connection: sqlite,
-    mode: .replace,      // .append or .replace
-    batchSize: 500,
-    failIfExists: false
+    mode: .replace,      // .append, .replace, or .failIfExists
+    batchSize: 500
 )
 
 print("Successfully written DataFrame to 'aggregated_metrics' table.")
 ```
-
-> **Concurrency Tip:**
-> For multi-threaded web servers and asynchronous pipelines, initialize a pool of actor connections (`DatabasePool`) to parallelize read workloads across multiple connections.

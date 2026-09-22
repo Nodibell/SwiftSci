@@ -21,6 +21,14 @@ import SwiftNLP
 ///     maxSeqLen: 8192
 /// )
 /// ```
+/// Scheme defining how positional information is encoded into tokens.
+public enum PositionalEncodingScheme: Sendable, Equatable {
+    /// Rotary Positional Embedding (RoPE) applied to Q and K with configurable base frequency.
+    case rope(base: Float = 10_000.0)
+    /// Classical learned additive positional embeddings.
+    case learned
+}
+
 public struct LLMConfig: Sendable {
     /// Token vocabulary size.
     public var vocabSize: Int
@@ -36,6 +44,8 @@ public struct LLMConfig: Sendable {
     public var maxSeqLen: Int
     /// RMSNorm epsilon for numerical stability (default `1e-5`).
     public var rmsNormEps: Float
+    /// Positional encoding scheme (default `.rope(base: 10_000.0)`).
+    public var positionalEncoding: PositionalEncodingScheme
 
     /// Creates an LLM configuration.
     /// - Parameters:
@@ -46,6 +56,7 @@ public struct LLMConfig: Sendable {
     ///   - intermediateSize: SwiGLU FFN inner projection size (typically `hiddenDim * 4`).
     ///   - maxSeqLen: Maximum token sequence length (default `2048`).
     ///   - rmsNormEps: RMSNorm epsilon (default `1e-5`).
+    ///   - positionalEncoding: Positional encoding scheme (default `.rope(base: 10_000.0)`).
     public init(
         vocabSize: Int,
         numLayers: Int,
@@ -53,34 +64,36 @@ public struct LLMConfig: Sendable {
         numHeads: Int,
         intermediateSize: Int? = nil,
         maxSeqLen: Int = 2048,
-        rmsNormEps: Float = 1e-5
+        rmsNormEps: Float = 1e-5,
+        positionalEncoding: PositionalEncodingScheme = .rope(base: 10_000.0)
     ) {
-        self.vocabSize        = vocabSize
-        self.numLayers        = numLayers
-        self.hiddenDim        = hiddenDim
-        self.numHeads         = numHeads
-        self.intermediateSize = intermediateSize ?? (hiddenDim * 4)
-        self.maxSeqLen        = maxSeqLen
-        self.rmsNormEps       = rmsNormEps
+        self.vocabSize          = vocabSize
+        self.numLayers          = numLayers
+        self.hiddenDim          = hiddenDim
+        self.numHeads           = numHeads
+        self.intermediateSize   = intermediateSize ?? (hiddenDim * 4)
+        self.maxSeqLen          = maxSeqLen
+        self.rmsNormEps         = rmsNormEps
+        self.positionalEncoding = positionalEncoding
     }
 
     // MARK: - Presets
 
     /// Minimal debug configuration (fast, not useful for inference).
     public static var debug: LLMConfig {
-        LLMConfig(vocabSize: 1024, numLayers: 2, hiddenDim: 128, numHeads: 4, maxSeqLen: 256)
+        LLMConfig(vocabSize: 1024, numLayers: 2, hiddenDim: 128, numHeads: 4, maxSeqLen: 256, positionalEncoding: .rope(base: 10_000.0))
     }
 
     /// Approximate Llama 3.2-1B compatible configuration.
     public static var llama1B: LLMConfig {
         LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32,
-                  intermediateSize: 8192, maxSeqLen: 8192)
+                  intermediateSize: 8192, maxSeqLen: 8192, positionalEncoding: .rope(base: 500_000.0))
     }
 
     /// Approximate Llama 3-8B compatible configuration.
     public static var llama8B: LLMConfig {
         LLMConfig(vocabSize: 128_256, numLayers: 32, hiddenDim: 4096, numHeads: 32,
-                  intermediateSize: 14336, maxSeqLen: 8192)
+                  intermediateSize: 14336, maxSeqLen: 8192, positionalEncoding: .rope(base: 500_000.0))
     }
 }
 
@@ -135,6 +148,7 @@ public final class TransformerBlock: Module, UnaryLayer {
     @ModuleInfo public var attention: MultiHeadAttention
     @ModuleInfo public var norm2: RMSNorm
     @ModuleInfo public var ffn: SwiGLUFFN
+    @ModuleInfo public var rope: RoPEEmbedding?
 
     /// Creates a decoder block.
     /// - Parameter config: Full LLM configuration.
@@ -143,6 +157,14 @@ public final class TransformerBlock: Module, UnaryLayer {
         self.attention = MultiHeadAttention(dimensions: config.hiddenDim, numHeads: config.numHeads)
         self.norm2     = RMSNorm(dimensions: config.hiddenDim, eps: config.rmsNormEps)
         self.ffn       = SwiGLUFFN(config: config)
+
+        switch config.positionalEncoding {
+        case .rope(let base):
+            let headDim = config.hiddenDim / config.numHeads
+            self.rope = RoPEEmbedding(dimensions: headDim, base: base)
+        case .learned:
+            self.rope = nil
+        }
         super.init()
     }
 
@@ -150,14 +172,65 @@ public final class TransformerBlock: Module, UnaryLayer {
     /// - Parameter x: Input `[batch, seq, hiddenDim]`.
     /// - Returns: Output `[batch, seq, hiddenDim]`.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // Attention sub-layer (causal mask built inside for the sequence length)
-        let seqLen = x.shape[1]
-        let mask   = MultiHeadAttention.createAdditiveCausalMask(seqLen)
-        let xNorm1 = norm1(x)
-        let attn   = attention(xNorm1, keys: xNorm1, values: xNorm1, mask: mask)
-        let h      = x + attn
+        let mask = x.shape[1] > 1 ? MultiHeadAttention.createAdditiveCausalMask(x.shape[1]) : nil
+        return forward(x, mask: mask, cache: nil, offset: 0)
+    }
 
-        // FFN sub-layer
+    /// Flexible forward pass supporting RoPE position offset and KV-cache accumulation.
+    /// - Parameters:
+    ///   - x: Input `[batch, seq, hiddenDim]`.
+    ///   - mask: Optional attention additive causal mask.
+    ///   - cache: Optional KVCache instance for autoregressive accumulation.
+    ///   - offset: Token sequence position offset (0 for prefill, accumulated count for decode).
+    /// - Returns: Output tensor `[batch, seq, hiddenDim]`.
+    public func forward(
+        _ x: MLXArray,
+        mask: MLXArray? = nil,
+        cache: KVCache? = nil,
+        offset: Int = 0
+    ) -> MLXArray {
+        let xNorm1 = norm1(x)
+
+        var q = attention.queryProjection(xNorm1)
+        var k = attention.keyProjection(xNorm1)
+        var v = attention.valueProjection(xNorm1)
+
+        let numHeads = attention.numHeads
+        q = unflatten(q, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
+        k = unflatten(k, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
+        v = unflatten(v, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
+
+        if let rope = self.rope {
+            q = rope(q, offset: offset)
+            k = rope(k, offset: offset)
+        }
+
+        let finalK: MLXArray
+        let finalV: MLXArray
+        if let cache = cache {
+            let (updatedK, updatedV) = cache.update(keys: k, values: v)
+            finalK = updatedK
+            finalV = updatedV
+        } else {
+            finalK = k
+            finalV = v
+        }
+
+        let scale = sqrt(1 / Float(q.dim(-1)))
+        let maskMode: MLXFast.ScaledDotProductAttentionMaskMode =
+            if let mask {
+                .array(mask)
+            } else {
+                .none
+            }
+
+        var output = MLXFast.scaledDotProductAttention(
+            queries: q, keys: finalK, values: finalV, scale: scale, mask: maskMode)
+
+        output = output.transposed(0, 2, 1, 3).flattened(start: -2, end: -1)
+        let attn = attention.outProjection(output)
+        let h = x + attn
+
         return h + ffn(norm2(h))
     }
 }
@@ -255,28 +328,46 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
 
     // MARK: - Forward pass
 
-    /// Executes the full N-layer decoder forward pass.
+    /// Executes a forward pass supporting optional layer-wise KV caching and position offsets.
     ///
-    /// - Parameter x: Token IDs, shape `[seq_len]` or `[batch, seq_len]`.
-    /// - Returns: Logits, shape `[batch, seq_len, vocab_size]`.
-    public func callAsFunction(_ x: MLXArray) -> MLXArray {
+    /// - Parameters:
+    ///   - x: Token IDs, shape `[seq_len]` or `[batch, seq_len]`.
+    ///   - caches: Optional array of KVCache instances, one per transformer layer.
+    ///   - offset: Token sequence position offset (0 for prefill, cached length for decode).
+    /// - Returns: Logits tensor, shape `[batch, seq_len, vocab_size]`.
+    public func forward(
+        _ x: MLXArray,
+        caches: [KVCache]? = nil,
+        offset: Int = 0
+    ) -> MLXArray {
         var input = x
         if input.ndim == 1 {
             input = input.expandedDimensions(axis: 0)
         }
         let seqLen = input.shape[1]
 
-        // Embeddings
-        let positions = MLXArray(0..<seqLen)
-        var h = embedding(input) + posEmbedding(positions)
-
-        // N decoder layers
-        for layer in layers {
-            h = layer(h)
+        var h = embedding(input)
+        if case .learned = config.positionalEncoding {
+            let positions = MLXArray(offset..<(offset + seqLen))
+            h = h + posEmbedding(positions)
         }
 
-        // Final norm + LM head
+        let mask: MLXArray? = seqLen > 1 ? MultiHeadAttention.createAdditiveCausalMask(seqLen) : nil
+
+        for (idx, layer) in layers.enumerated() {
+            let cache = caches?[idx]
+            h = layer.forward(h, mask: mask, cache: cache, offset: offset)
+        }
+
         return lmHead(finalNorm(h))
+    }
+
+    /// Executes the full N-layer decoder forward pass without KV caching.
+    ///
+    /// - Parameter x: Token IDs, shape `[seq_len]` or `[batch, seq_len]`.
+    /// - Returns: Logits, shape `[batch, seq_len, vocab_size]`.
+    public func callAsFunction(_ x: MLXArray) -> MLXArray {
+        forward(x, caches: nil, offset: 0)
     }
 
     // MARK: - Compiled forward
@@ -295,6 +386,23 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
     }
 
     // MARK: - Weight loading
+
+    /// Loads weights from a dictionary of tensors into the model's sub-modules.
+    ///
+    /// Expected key format mirrors HuggingFace Llama naming:
+    /// - `model.embed_tokens.weight`
+    /// - `model.layers.{i}.self_attn.q_proj.weight`
+    /// - `model.layers.{i}.mlp.gate_proj.weight`
+    /// - `model.norm.weight`
+    /// - `lm_head.weight`
+    ///
+    /// Loads weights from a dictionary of QuantizedTensors into the model's sub-modules.
+    /// - Parameter weights: Weight dictionary of QuantizedTensors.
+    /// - Returns: List of expected parameter keys that were missing in the input.
+    @discardableResult
+    public func loadWeights(_ weights: [String: QuantizedTensor]) -> [String] {
+        loadWeights(weights.dequantized())
+    }
 
     /// Loads weights from a dictionary of tensors into the model's sub-modules.
     ///
@@ -378,18 +486,33 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             let task = Task {
                 var tokens = tokenizer.encode(text: prompt)
                 if tokens.isEmpty { tokens = [0] }
+                tokens = Array(tokens.suffix(maxSeqLen))
 
+                // Create layer caches for incremental decoding
+                let caches = self.layers.map { _ in KVCache() }
+
+                // 1. Prefill stage
+                let prefillArray = MLXArray(tokens).expandedDimensions(axis: 0)
+                let prefillLogits = self.forward(prefillArray, caches: caches, offset: 0)
+                var lastLogits = prefillLogits[0, prefillLogits.shape[1] - 1]
+                eval(lastLogits)
+
+                // 2. Incremental decode stage
                 for _ in 0..<options.maxTokens {
                     if Task.isCancelled { break }
-                    let inputTokens = Array(tokens.suffix(maxSeqLen))
-                    let logits      = self(MLXArray(inputTokens))
-                    let lastLogits  = logits[0, logits.shape[1] - 1]
-                    eval(lastLogits)
-                    let nextToken   = Sampler.sample(logits: lastLogits, options: options)
-                    let decoded     = tokenizer.decode(tokens: [nextToken])
+                    let nextToken = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
+                    let decoded = tokenizer.decode(tokens: [nextToken])
                     if decoded.isEmpty || decoded == "<unk>" { break }
                     continuation.yield(decoded)
                     tokens.append(nextToken)
+
+                    if tokens.count >= maxSeqLen { break }
+
+                    let currentOffset = caches.first?.count ?? (tokens.count - 1)
+                    let inputToken = MLXArray([nextToken]).expandedDimensions(axis: 0)
+                    let stepLogits = self.forward(inputToken, caches: caches, offset: currentOffset)
+                    lastLogits = stepLogits[0, 0]
+                    eval(lastLogits)
                 }
                 continuation.finish()
             }
@@ -413,18 +536,32 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             let task = Task {
                 var tokens = tokenizer.encode(text: prompt)
                 if tokens.isEmpty { tokens = [0] }
+                tokens = Array(tokens.suffix(maxSeqLen))
 
+                let caches = self.layers.map { _ in KVCache() }
+
+                // 1. Prefill stage
+                let prefillArray = MLXArray(tokens).expandedDimensions(axis: 0)
+                let prefillLogits = self.forward(prefillArray, caches: caches, offset: 0)
+                var lastLogits = prefillLogits[0, prefillLogits.shape[1] - 1]
+                eval(lastLogits)
+
+                // 2. Incremental decode stage
                 for _ in 0..<options.maxTokens {
                     if Task.isCancelled { break }
-                    let inputTokens = Array(tokens.suffix(maxSeqLen))
-                    let logits      = self(MLXArray(inputTokens))
-                    let lastLogits  = logits[0, logits.shape[1] - 1]
-                    eval(lastLogits)
-                    let nextToken   = Sampler.sample(logits: lastLogits, options: options)
-                    let decoded     = tokenizer.decode(tokens: [nextToken])
+                    let nextToken = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
+                    let decoded = tokenizer.decode(tokens: [nextToken])
                     if decoded.isEmpty || decoded == "<unk>" { break }
                     continuation.yield(decoded)
                     tokens.append(nextToken)
+
+                    if tokens.count >= maxSeqLen { break }
+
+                    let currentOffset = caches.first?.count ?? (tokens.count - 1)
+                    let inputToken = MLXArray([nextToken]).expandedDimensions(axis: 0)
+                    let stepLogits = self.forward(inputToken, caches: caches, offset: currentOffset)
+                    lastLogits = stepLogits[0, 0]
+                    eval(lastLogits)
                 }
                 continuation.finish()
             }

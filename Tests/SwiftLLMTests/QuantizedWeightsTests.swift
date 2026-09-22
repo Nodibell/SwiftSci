@@ -96,9 +96,62 @@ struct QuantizedWeightsTests {
         let parsed = try GGUFParser.parse(url: tempURL)
         #expect(parsed["q4_tensor"] != nil)
         #expect(parsed["q4_tensor"]?.shape == [32])
+        #expect(parsed["q4_tensor"]?.scheme == .q4_0)
+        // Gate 5: Q4 memory reduction (18 bytes vs 128 bytes Float32)
+        #expect(parsed["q4_tensor"]?.rawData.count == 18)
+        #expect(parsed["q4_tensor"]?.dequantizeToFloat().shape == [32])
     }
 
 #if arch(arm64)
+    @Test("Gate 6: QuantizedLinear MLX dequantize and Metal MSL output parity")
+    func testQuantizedLinearParity() throws {
+        let inFeatures = 32
+        let outFeatures = 2
+
+        var weightsData = Data()
+        weightsData.append(Data(repeating: 0x99, count: 16)) // row 0: nibbles 9
+        weightsData.append(Data(repeating: 0xAA, count: 16)) // row 1: nibbles 10
+
+        let scales: [Float16] = [Float16(0.5), Float16(1.0)]
+        let inputFloats = [Float](repeating: 1.0, count: inFeatures)
+
+        // Set up MLX weights matching the nibbles:
+        // Row 0 has nibbles 9 (value 9.0), Row 1 has nibbles 10 (value 10.0)
+        let row0 = [Float](repeating: 9.0, count: 32)
+        let row1 = [Float](repeating: 10.0, count: 32)
+        let weightsMLX = MLXArray(row0 + row1, [outFeatures, inFeatures])
+
+        let scalesRow0 = [Float](repeating: 0.5, count: 32)
+        let scalesRow1 = [Float](repeating: 1.0, count: 32)
+        let scalesMLX = MLXArray(scalesRow0 + scalesRow1, [outFeatures, inFeatures])
+
+        let layer = QuantizedLinear(
+            inFeatures: inFeatures,
+            outFeatures: outFeatures,
+            scheme: .q4_0,
+            weight: weightsMLX,
+            scales: scalesMLX
+        )
+
+        // Path 1: Metal MSL GEMV
+        let metalOutputs = try layer.forwardMetal(
+            inVector: inputFloats,
+            rawWeights: weightsData,
+            rawScales: scales
+        )
+
+        // Path 2: MLX dequantize + matmul
+        let mlxInput = MLXArray(inputFloats, [1, inFeatures])
+        let mlxOutput = layer(mlxInput)
+        eval(mlxOutput)
+        let mlxVals = mlxOutput.asArray(Float.self)
+
+        #expect(metalOutputs.count == mlxVals.count)
+        for i in 0..<metalOutputs.count {
+            let diff = abs(metalOutputs[i] - mlxVals[i])
+            #expect(diff < 1e-3, "Parity mismatch at index \(i): Metal=\(metalOutputs[i]), MLX=\(mlxVals[i])")
+        }
+    }
     @Test("Native Metal MSL gemv_q4_0 and gemv_q8_0 execution")
     func testMetalQuantizedGEMV() throws {
         let inFeatures = 32

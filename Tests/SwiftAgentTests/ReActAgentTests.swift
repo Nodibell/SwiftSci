@@ -202,4 +202,59 @@ struct ReActAgentTests {
         #expect(answer == "done")
         #expect(trace[0].observation == "hello")
     }
+
+    @Test("Gate 10: Agent resilience - malformed tool call does not break reasoning loop")
+    func testMalformedToolCallDoesNotBreakLoop() async throws {
+        struct CalcTool: StructuredAgentTool {
+            let name = "Calculator"
+            let description = "Performs arithmetic"
+            let parameterSchema = AgentParameterSchema(
+                properties: [
+                    "expression": AgentParameterProperty(type: "string", description: "Math expression")
+                ],
+                required: ["expression"]
+            )
+
+            func executeStructured(arguments: [String: String]) async throws -> AgentToolOutput {
+                let expr = arguments["expression"] ?? ""
+                if expr == "2 + 2" {
+                    return AgentToolOutput(text: "4")
+                }
+                return AgentToolOutput(text: "Evaluated \(expr)")
+            }
+        }
+
+        let agent = ReActAgent(tools: [CalcTool()], maxSteps: 3)
+
+        let mockLLM: @Sendable (String) async throws -> String = { prompt in
+            if !prompt.contains("Previous History:") {
+                // Step 1: Malformed JSON syntax
+                return """
+                Thought: I'll evaluate math with a malformed JSON payload.
+                Action: Calculator
+                Action Input: {"expression": "2 + 2", malformed_json
+                """
+            } else if !prompt.contains("Missing required parameter") {
+                // Step 2: Valid JSON but missing required parameter
+                return """
+                Thought: Trying another tool call with missing required parameter.
+                Action: Calculator
+                Action Input: {"wrong_field": "123"}
+                """
+            } else {
+                // Step 3: Successfully recovered and provides final answer
+                return """
+                Thought: Both previous calls failed gracefully without crashing.
+                Final Answer: The reasoning loop continued uninterrupted.
+                """
+            }
+        }
+
+        let (answer, trace) = try await agent.run(query: "Calculate something", llm: mockLLM)
+
+        #expect(answer == "The reasoning loop continued uninterrupted.")
+        #expect(trace.count == 3)
+        #expect(trace[0].observation?.contains("Malformed tool call") == true)
+        #expect(trace[1].observation?.contains("Missing required parameter 'expression'") == true)
+    }
 }

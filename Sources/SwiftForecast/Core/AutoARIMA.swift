@@ -98,6 +98,9 @@ public actor AutoARIMA {
     /// Information criterion used to score and rank models.
     public let criterion: AutoARIMACriterion
 
+    /// Maximum number of candidate models evaluated in order search (prevents infinite loops and task starvation).
+    public let maxIterations: Int
+
     /// The winning model order found during fitting (nil if not fitted).
     public private(set) var bestOrder: AutoARIMAOrder?
 
@@ -111,7 +114,7 @@ public actor AutoARIMA {
     private var fittedModel: ARIMAModel?
 
     /// Cached series from the fit call.
-    private var fittedSeries: [Double] = []
+    private var fittedSeries: [Double]?
 
     // MARK: - Initialization
 
@@ -127,6 +130,7 @@ public actor AutoARIMA {
     ///   - maxSeasonalP: Maximum seasonal autoregressive order \(P\). Default is `1`.
     ///   - maxSeasonalD: Maximum seasonal differencing order \(D\). Default is `1`.
     ///   - maxSeasonalQ: Maximum seasonal moving average order \(Q\). Default is `1`.
+    ///   - maxIterations: Maximum number of candidate models evaluated in order search. Default is `100`.
     ///   - criterion: Information criterion for scoring (`.aic` or `.bic`). Default is `.aic`.
     public init(
         maxP: Int = 3,
@@ -138,6 +142,7 @@ public actor AutoARIMA {
         maxSeasonalP: Int = 1,
         maxSeasonalD: Int = 1,
         maxSeasonalQ: Int = 1,
+        maxIterations: Int = 100,
         criterion: AutoARIMACriterion = .aic
     ) {
         self.maxP = maxP
@@ -149,6 +154,7 @@ public actor AutoARIMA {
         self.maxSeasonalP = maxSeasonalP
         self.maxSeasonalD = maxSeasonalD
         self.maxSeasonalQ = maxSeasonalQ
+        self.maxIterations = maxIterations
         self.criterion = criterion
     }
 
@@ -174,6 +180,20 @@ public actor AutoARIMA {
         guard !series.isEmpty else { throw ForecastError.emptyTimeSeries }
         self.fittedSeries = series
 
+        // Zero-variance guard: if the series is constant, fit trivial ARIMA(0, 0, 0)
+        let minVal = series.min() ?? 0.0
+        let maxVal = series.max() ?? 0.0
+        if abs(maxVal - minVal) < 1e-12 {
+            let zeroOrder = AutoARIMAOrder(p: 0, d: 0, q: 0)
+            self.bestOrder = zeroOrder
+            self.bestScore = 0.0
+            self.leaderboard = [(zeroOrder.description, 0.0)]
+            let model = try ARIMAModel(p: 0, d: 0, q: 0)
+            try await model.fit(series: series, exog: exog)
+            self.fittedModel = model
+            return try await model.forecast(horizon: 1, exog: exog)
+        }
+
         // Generate candidate orders
         var candidateOrders: [AutoARIMAOrder] = []
         let dValues: [Int] = (fixedD != nil) ? [fixedD!] : Array(0...maxD)
@@ -186,13 +206,15 @@ public actor AutoARIMA {
             }
         }
 
+        let boundedCandidates = Array(candidateOrders.prefix(maxIterations))
+
         struct CandidateResult: Sendable {
             let order: AutoARIMAOrder
             let score: Double
         }
 
         let evaluated: [CandidateResult] = try await withThrowingTaskGroup(of: CandidateResult?.self) { group in
-            for order in candidateOrders {
+            for order in boundedCandidates {
                 group.addTask {
                     do {
                         let model = try ARIMAModel(p: order.p, d: order.d, q: order.q)

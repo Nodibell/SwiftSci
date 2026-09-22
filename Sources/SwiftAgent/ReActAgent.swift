@@ -320,6 +320,14 @@ public actor ReActAgent {
                         do {
                             if repeatedCount >= 3 {
                                 obs = "Sentry Warning: Loop detected. You invoked tool '\(actTool.name)' with identical arguments \(repeatedCount) times. Please provide your Final Answer or choose a different strategy."
+                            } else if input.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{") {
+                                switch actTool.parameterSchema.parseAndValidate(jsonString: input) {
+                                case .success(let args):
+                                    let out = try await actTool.executeStructured(arguments: args)
+                                    obs = out.text
+                                case .failure(let schemaErr):
+                                    obs = "Error: Malformed tool call: \(schemaErr.localizedDescription). Please correct the parameters and retry."
+                                }
                             } else {
                                 obs = try await executeWithTimeout(tool: actTool, input: input, timeoutSeconds: toolTimeoutSeconds)
                             }

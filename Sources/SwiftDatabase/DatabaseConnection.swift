@@ -144,7 +144,7 @@ private final class SQLiteHandleBox: @unchecked Sendable {
 
     deinit {
         if let handle {
-            sqlite3_close(handle)
+            sqlite3_close_v2(handle)
         }
     }
 }
@@ -164,13 +164,22 @@ public actor SQLiteConnection: DatabaseConnection {
         self.databasePath = databasePath
     }
 
+    /// Closes the SQLite database connection immediately, releasing all associated memory and file locks.
+    public func close() {
+        if let box = dbBox, let handle = box.handle {
+            sqlite3_close_v2(handle)
+            box.handle = nil
+        }
+        dbBox = nil
+    }
+
     private func getOrOpenHandle() throws -> OpaquePointer {
         if let box = dbBox, let h = box.handle { return h }
         var db: OpaquePointer?
         let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI
         if sqlite3_open_v2(databasePath, &db, flags, nil) != SQLITE_OK {
             let msg = db != nil ? String(cString: sqlite3_errmsg(db)) : "Unknown error"
-            if let db { sqlite3_close(db) }
+            if let db { sqlite3_close_v2(db) }
             throw DatabaseError.connectionFailed("\(databasePath): \(msg)")
         }
         self.dbBox = SQLiteHandleBox(handle: db)
@@ -192,11 +201,15 @@ public actor SQLiteConnection: DatabaseConnection {
         let db = try getOrOpenHandle()
 
         var stmt: OpaquePointer?
+        defer {
+            if let stmt {
+                sqlite3_finalize(stmt)
+            }
+        }
         if sqlite3_prepare_v2(db, sql, -1, &stmt, nil) != SQLITE_OK {
             let msg = String(cString: sqlite3_errmsg(db))
             throw DatabaseError.queryFailed(msg)
         }
-        defer { sqlite3_finalize(stmt) }
 
         let colCount = sqlite3_column_count(stmt)
         var columns: [String] = []

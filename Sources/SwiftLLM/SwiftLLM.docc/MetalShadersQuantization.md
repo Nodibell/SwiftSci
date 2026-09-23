@@ -56,27 +56,49 @@ kernel void gemm_simdgroup_q4_0(
 }
 ```
 
-## Swift API Integration
+## Swift API Integration: From QuantizedTensor to Metal GEMV
 
-`QuantizedLinear` exposes both MLX tensor inference and direct Metal kernel execution:
+`SwiftLLM` unifies parsed weight storage and GPU execution through a zero-copy pipeline:
+
+$$\text{GGUF File} \xrightarrow{\text{GGUFParser}} \text{QuantizedTensor} \xrightarrow{\text{extractSeparatedBuffers}} \text{QuantizedLinear.forwardMetal} \xrightarrow{\text{MSL SIMD}} \text{Output Activation}$$
+
+### 1. Extracting Separated Buffers from QuantizedTensor
+
+`QuantizedTensor` preserves the raw binary layout (e.g. 18-byte Q4_0 blocks) with `QuantizedLayoutMetadata`, allowing separation of packed weights and scale factors:
 
 ```swift
+import Foundation
 import SwiftLLM
 
-// 1. Create a quantized linear layer (e.g. 4096 in, 4096 out)
+// 1. Load tensor from parsed GGUF dictionary
+guard let tensor = parsedWeights["blk.0.attn_q.weight"],
+      let buffers = tensor.extractSeparatedBuffers() else {
+    fatalError("Failed to extract quantized buffers")
+}
+
+let packedWeights: Data = buffers.weights
+let packedScales: Data = buffers.scales
+```
+
+### 2. Direct Metal Kernel Execution via QuantizedLinear
+
+`QuantizedLinear` encapsulates both MLX-accelerated layer evaluations and native Metal MSL shader execution (`gemv_q4_0`, `gemv_q8_0`):
+
+```swift
+// 2. Initialize layer geometry and scheme
 let linear = QuantizedLinear(
     inFeatures: 4096,
     outFeatures: 4096,
     scheme: .q4_0,
-    weight: mlxWeights,
-    scales: mlxScales
+    weight: tensor.dequantizeToFloat(), // MLXArray fallback/graph evaluation
+    scales: MLXArray(0.0)
 )
 
-// 2. Direct Metal shader execution without CPU round-trips
-let outputs = try linear.forwardMetal(
+// 3. Direct Metal GEMV execution without CPU round-trips or allocations
+let outputActivations: [Float] = try linear.forwardMetal(
     inVector: inputActivations,
-    rawWeights: packedQ4Bytes,
-    rawScales: fp16Scales
+    rawWeights: packedWeights,
+    rawScalesData: packedScales
 )
 ```
 

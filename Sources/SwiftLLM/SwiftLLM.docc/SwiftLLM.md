@@ -13,7 +13,7 @@ Local Causal Transformer Decoder & Weight Parsers.
 - **Dynamic Paged KV-Cache**: Unified memory block allocator (`PagedKVCache`) managing physical pages (`pageSize: 16`) to prevent memory fragmentation.
 - **Decoder Architecture**: Causal self-attention, Rotary Position Embeddings (RoPE), and SwiGLU activation functions.
 - **Weight Parsers**: Zero-copy `GGUFParser` and `SafeTensorsParser` weight loaders.
-- **Token Sampler**: Temperature scaling, Top-K, and greedy argmax `Sampler`.
+- **Token Sampling**: `SamplingConfiguration` provides decoupled temperature, Top-K, Top-P (nucleus), and repetition-penalty controls applied at the logits level before softmax.
 - **GPU Execution**: UMA unified memory tensor acceleration via MLX integration.
 
 ### Example Usage
@@ -21,14 +21,17 @@ Local Causal Transformer Decoder & Weight Parsers.
 ```swift
 import SwiftLLM
 
-let config = LLMConfig(vocabSize: 32000, hiddenDim: 4096)
-let model = LLMModel(config: config)
-let logits = try await model.forward(tokens: inputTokens)
+let config = LLMConfig.llama3_8B
+let decoder = TransformerDecoder(config: config)
+let cache = KVCache(config: config)
+let logits = try decoder.forward(tokens: promptTokens, cache: cache, isPrefill: true)
 ```
 
 ## Topics
 
 ### Guides & Tutorials
 - <doc:TransformerDecoderArchitecture>
+- <doc:TransformerDecoderInference>
+- <doc:SamplingAndDecodingStrategies>
 - <doc:WeightParsingAndSampling>
 - <doc:MetalShadersQuantization>

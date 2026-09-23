@@ -66,7 +66,7 @@ If an input series is constant or exhibits zero numerical variance ($\text{var} 
 - Guarantees instant return without stalling the task group.
 
 ### Fixed Iteration Bound
-All internal parameter search loops are strictly bounded by a `maxIterations = 500` ceiling, ensuring that numerical optimization always converges in deterministic time across parallel worker threads.
+All internal parameter search loops are strictly bounded by a `maxIterations = 500` ceiling, ensuring that optimization cannot exceed the configured iteration bound in deterministic time across parallel worker threads.
 
 ## Topics
 

@@ -126,7 +126,7 @@ let sampling = SamplingConfiguration(temperature: 0.7, topK: 40, topP: 0.9, repe
 var currentToken = promptTokens.last!
 for _ in 0..<maxNewTokens {
     let logits = try decoder.forward(tokens: [currentToken], cache: cache, isPrefill: false)
-    let nextToken = Sampler.sample(logits: logits, config: sampling, history: generatedTokens)
+    let nextToken = Sampler.sample(logits: logits, config: sampling, pastTokens: generatedTokens)
     
     generatedTokens.append(nextToken)
     currentToken = nextToken

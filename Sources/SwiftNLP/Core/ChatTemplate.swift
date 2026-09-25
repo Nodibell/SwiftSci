@@ -66,6 +66,13 @@ public struct ChatTemplate: Sendable, Equatable {
         self.style = style
     }
 
+    /// Preconfigured template using Llama 3 format.
+    public static let llama3 = ChatTemplate(style: .llama3)
+    /// Preconfigured template using ChatML format.
+    public static let chatML = ChatTemplate(style: .chatML)
+    /// Preconfigured template using Mistral format.
+    public static let mistral = ChatTemplate(style: .mistral)
+
     /// Renders messages into a formatted prompt string.
     /// - Parameters:
     ///   - messages: Array of conversational chat messages.

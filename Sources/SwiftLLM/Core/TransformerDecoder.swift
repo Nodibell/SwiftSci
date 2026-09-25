@@ -95,6 +95,11 @@ public struct LLMConfig: Sendable {
         LLMConfig(vocabSize: 128_256, numLayers: 32, hiddenDim: 4096, numHeads: 32,
                   intermediateSize: 14336, maxSeqLen: 8192, positionalEncoding: .rope(base: 500_000.0))
     }
+
+    /// Alias for Llama 3-8B compatible configuration.
+    public static var llama3_8B: LLMConfig { llama8B }
+    /// Alias for Llama 3.2-1B compatible configuration.
+    public static var llama3_1B: LLMConfig { llama1B }
 }
 
 // MARK: - SwiGLU Feed-Forward Network

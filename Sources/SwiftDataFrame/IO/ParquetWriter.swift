@@ -175,6 +175,14 @@ public enum ParquetWriter: Sendable {
                     withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
                 }
             }
+        } else if let c = column as? TypedColumn<Int> {
+            pageBytes.reserveCapacity(pageBytes.count + rowCount * 8)
+            for vOpt in c.values {
+                if let val = vOpt {
+                    var v = Int64(val).littleEndian
+                    withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                }
+            }
         } else if let c = column as? TypedColumn<Int32> {
             pageBytes.reserveCapacity(pageBytes.count + rowCount * 4)
             for vOpt in c.values {
@@ -241,10 +249,16 @@ public enum ParquetWriter: Sendable {
                     if let i = val as? Int32 {
                         var v = i.littleEndian
                         withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                    } else if let i = val as? Int {
+                        var v = Int32(i).littleEndian
+                        withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
                     }
                 case .int64:
                     if let i = val as? Int64 {
                         var v = i.littleEndian
+                        withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
+                    } else if let i = val as? Int {
+                        var v = Int64(i).littleEndian
                         withUnsafeBytes(of: &v) { pageBytes.append(contentsOf: $0) }
                     }
                 case .float32:

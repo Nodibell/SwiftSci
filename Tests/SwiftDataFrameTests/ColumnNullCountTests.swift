@@ -62,4 +62,33 @@ struct ColumnNullCountTests {
         #expect(result[column: "label"]?.nullCount == 1)
         #expect(frame[column: "value"]?.nullCount == 1)
     }
+    @Test("Gathered all-null columns retain their null counts")
+    func allNullGather() throws {
+        let columns: [any AnyColumn] = [
+            TypedColumn<Double>(name: "double", values: [nil, nil, nil]),
+            TypedColumn<Int64>(name: "integer", values: [nil, nil, nil]),
+            TypedColumn<String>(name: "string", values: [nil, nil, nil])
+        ]
+        for column in columns {
+            let result = column.gathered(at: [2, 0, 2, 1])
+            #expect(result.count == 4)
+            #expect(result.nullCount == 4)
+            #expect(result.dtype == column.dtype)
+            #expect(column.gathered(at: []).nullCount == 0)
+        }
+    }
+
+    @Test("Gather distinguishes NaN from missing floating-point values")
+    func gatherNaNAndNull() throws {
+        let column = TypedColumn<Double>(name: "value", values: [.nan, .infinity, nil, -.infinity, nil])
+        let result = try #require(column.gathered(at: [2, 0, 4, 3, 2]) as? TypedColumn<Double>)
+        #expect(result.nullCount == 3)
+        #expect(result.values[0] == nil)
+        #expect(result.values[1]?.isNaN == true)
+        #expect(result.values[2] == nil)
+        #expect(result.values[3] == -.infinity)
+        #expect(result.values[4] == nil)
+        #expect(column.nullCount == 2)
+    }
+
 }

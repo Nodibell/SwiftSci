@@ -29,13 +29,17 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     ///   - name: The name.
     ///   - values: The values (optional elements).
     public init(name: String, values: [T?]) {
-        self.name       = name
-        self.dtype      = T.columnDType
-        self.values     = values
         var nullCount = 0
         for case nil in values {
             nullCount += 1
         }
+        self.init(name: name, values: values, nullCount: nullCount)
+    }
+
+    private init(name: String, values: [T?], nullCount: Int) {
+        self.name = name
+        self.dtype = T.columnDType
+        self.values = values
         self._nullCount = nullCount
     }
 
@@ -44,7 +48,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     ///   - name: The name.
     ///   - values: The values (non-optional elements).
     public init(name: String, values: [T]) {
-        self.init(name: name, values: values.map { $0 as T? })
+        self.init(name: name, values: values.map { $0 as T? }, nullCount: 0)
     }
 
 
@@ -116,6 +120,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         }
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
+        var gatheredNullCount = 0
         values.withUnsafeBufferPointer { srcBuf in
             indices.withUnsafeBufferPointer { idxBuf in
                 result.withUnsafeMutableBufferPointer { dstBuf in
@@ -123,12 +128,14 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
                           let idx = idxBuf.baseAddress,
                           let dst = dstBuf.baseAddress else { return }
                     for k in 0..<n {
-                        dst[k] = src[idx[k]]
+                        let value = src[idx[k]]
+                        dst[k] = value
+                        if _nullCount > 0, case nil = value { gatheredNullCount += 1 }
                     }
                 }
             }
         }
-        return TypedColumn<T>(name: name, values: result)
+        return TypedColumn<T>(name: name, values: result, nullCount: gatheredNullCount)
     }
 
     /// Evaluates SIMD bitmask filter conditions returning matching row indices.
@@ -402,6 +409,7 @@ extension TypedColumn where T == Double {
         guard n > 0 else { return TypedColumn<Double>(name: name, values: []) }
 
         var result = [Double?](repeating: nil, count: n)
+        var gatheredNullCount = 0
         values.withUnsafeBufferPointer { srcBuf in
             indices.withUnsafeBufferPointer { idxBuf in
                 result.withUnsafeMutableBufferPointer { dstBuf in
@@ -409,12 +417,14 @@ extension TypedColumn where T == Double {
                           let idx = idxBuf.baseAddress,
                           let dst = dstBuf.baseAddress else { return }
                     for i in 0..<n {
-                        dst[i] = src[idx[i]]
+                        let value = src[idx[i]]
+                        dst[i] = value
+                        if _nullCount > 0, case nil = value { gatheredNullCount += 1 }
                     }
                 }
             }
         }
-        return TypedColumn<Double>(name: name, values: result)
+        return TypedColumn<Double>(name: name, values: result, nullCount: gatheredNullCount)
     }
 
     /// Builds a row mask for common numeric `FilterCondition`s without type erasure.
@@ -845,6 +855,15 @@ extension TypedColumn: Equatable where T: Equatable {
 
 private extension TypedColumn where T == Int64 {
     func gatheredInt64(at indices: [Int]) -> TypedColumn<Int64> {
-        TypedColumn<Int64>(name: name, values: indices.map { values[$0] })
+        if _nullCount == 0 {
+            return TypedColumn<Int64>(name: name, values: indices.map { values[$0] }, nullCount: 0)
+        }
+        var gatheredNullCount = 0
+        let result = indices.map { index in
+            let value = values[index]
+            if case nil = value { gatheredNullCount += 1 }
+            return value
+        }
+        return TypedColumn<Int64>(name: name, values: result, nullCount: gatheredNullCount)
     }
 }

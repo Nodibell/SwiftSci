@@ -32,7 +32,11 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         self.name       = name
         self.dtype      = T.columnDType
         self.values     = values
-        self._nullCount = values.reduce(0) { $0 + ($1 == nil ? 1 : 0) }
+        var nullCount = 0
+        for case nil in values {
+            nullCount += 1
+        }
+        self._nullCount = nullCount
     }
 
     /// Creates a new instance with non-optional values.
@@ -107,6 +111,9 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let doubleCol = self as? TypedColumn<Double> {
             return doubleCol.vGather(at: indices)
         }
+        if let int64Col = self as? TypedColumn<Int64> {
+            return int64Col.gatheredInt64(at: indices)
+        }
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
         values.withUnsafeBufferPointer { srcBuf in
@@ -128,14 +135,14 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter condition: Filter condition comparison operator and threshold.
     /// - Returns: Array of row indices matching the condition, or `nil` if unsupported.
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? {
-        if let doubles = values as? [Double?] {
-            return filterIndicesDouble(values: doubles, condition: condition)
+        if let column = self as? TypedColumn<Double> {
+            return filterIndicesDouble(values: column.values, condition: condition)
         }
-        if let ints = values as? [Int64?] {
-            return filterIndicesInt64(values: ints, condition: condition)
+        if let column = self as? TypedColumn<Int64> {
+            return filterIndicesInt64(values: column.values, condition: condition)
         }
-        if let strings = values as? [String?] {
-            return filterIndicesString(values: strings, condition: condition)
+        if let column = self as? TypedColumn<String> {
+            return filterIndicesString(values: column.values, condition: condition)
         }
         return nil
     }
@@ -835,3 +842,9 @@ extension TypedColumn: Equatable where T: Equatable {
     }
 }
 
+
+private extension TypedColumn where T == Int64 {
+    func gatheredInt64(at indices: [Int]) -> TypedColumn<Int64> {
+        TypedColumn<Int64>(name: name, values: indices.map { values[$0] })
+    }
+}

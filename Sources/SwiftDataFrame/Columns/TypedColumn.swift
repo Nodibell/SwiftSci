@@ -334,7 +334,7 @@ private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], ascending: Bo
 /// Nulls-last index sort over optional Comparable keys.
 private func sortIndices<C: Comparable>(_ indices: inout [Int], ascending: Bool, key: (Int) -> C?) {
     // Swift 6.4 -O can miscompile separate ascending/descending generic closures.
-    // Keep direction in one closure; see Reproductions/DescendingNullSort.swift.
+    // Keep direction in one closure to avoid that optimization defect.
     indices.sort { i, j in
         switch (key(i), key(j)) {
         case (nil, nil): return false

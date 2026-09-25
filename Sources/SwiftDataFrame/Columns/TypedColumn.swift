@@ -333,23 +333,14 @@ private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], ascending: Bo
 
 /// Nulls-last index sort over optional Comparable keys.
 private func sortIndices<C: Comparable>(_ indices: inout [Int], ascending: Bool, key: (Int) -> C?) {
-    if ascending {
-        indices.sort { i, j in
-            switch (key(i), key(j)) {
-            case (nil, nil): return false
-            case (nil, _):   return false
-            case (_, nil):   return true
-            case let (l?, r?): return l < r
-            }
-        }
-    } else {
-        indices.sort { i, j in
-            switch (key(i), key(j)) {
-            case (nil, nil): return false
-            case (nil, _):   return false
-            case (_, nil):   return true
-            case let (l?, r?): return l > r
-            }
+    // Swift 6.4 -O can miscompile separate ascending/descending generic closures.
+    // Keep direction in one closure; see Reproductions/DescendingNullSort.swift.
+    indices.sort { i, j in
+        switch (key(i), key(j)) {
+        case (nil, nil): return false
+        case (nil, _):   return false
+        case (_, nil):   return true
+        case let (l?, r?): return ascending ? l < r : l > r
         }
     }
 }

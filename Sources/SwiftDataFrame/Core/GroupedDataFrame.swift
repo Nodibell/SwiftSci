@@ -107,6 +107,51 @@ public struct GroupedDataFrame: Sendable {
         aggregate(using: .sum)
     }
 
+    /// Sums numeric columns while preserving exact integer totals.
+    /// Int32, Int64 and Int values accumulate without floating-point conversion and
+    /// return Int64 columns. A temporary total outside Int64 is allowed if the final
+    /// total fits. Floating columns use the same compensated Double sums as `sum()`.
+    /// Null values are skipped; groups with no non-null values return nil.
+    /// Group keys and their order follow `sum()`.
+    /// - Throws: `SwiftMLError.integerOverflow` if a final integer total cannot fit
+    ///   in Int64. Its group index is zero-based, in first-appearance order.
+    ///   Custom integer columns must expose Int32, Int64 or Int values; other values
+    ///   throw `SwiftMLError.typeMismatch` rather than converting through Double.
+    /// - Returns: A DataFrame with Int64 integer sums and Double floating sums.
+    public func sumChecked() throws -> DataFrame {
+        let groups = buildGroups()
+        var resultColumns = groupKeyColumns(groups)
+        for col in dataFrame.columns where !groupColumns.contains(col.name) && col.dtype.isNumeric {
+            let integerValues: [Int64?]
+            if let typed = col as? TypedColumn<Int64> {
+                integerValues = try sumIntegers(typed.values, groups: groups, name: col.name)
+            } else if let typed = col as? TypedColumn<Int32> {
+                integerValues = try sumIntegers(typed.values, groups: groups, name: col.name)
+            } else if let typed = col as? TypedColumn<Int> {
+                integerValues = try sumIntegers(typed.values, groups: groups, name: col.name)
+            } else if col.dtype == .int32 || col.dtype == .int64 {
+                let values: [Int64?] = try groups.rowGroups.indices.map { row in
+                    guard let value = col.value(at: row) else { return nil }
+                    switch value {
+                    case let value as Int64: return value
+                    case let value as Int32: return Int64(value)
+                    case let value as Int: return Int64(value)
+                    default:
+                        throw SwiftMLError.typeMismatch(column: col.name,
+                            expected: "Int32, Int64 or Int", got: String(describing: type(of: value)))
+                    }
+                }
+                integerValues = try sumIntegers(values, groups: groups, name: col.name)
+            } else {
+                resultColumns.append(TypedColumn<Double>(name: col.name,
+                    values: aggregateNumeric(col: col, groups: groups, agg: .sum)))
+                continue
+            }
+            resultColumns.append(TypedColumn<Int64>(name: col.name, values: integerValues))
+        }
+        return resultColumns.isEmpty ? DataFrame.empty : try DataFrame(columns: resultColumns)
+    }
+
     /// Returns the min of each numeric column per group.
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func min() -> DataFrame {
@@ -125,15 +170,7 @@ public struct GroupedDataFrame: Sendable {
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func agg(_ aggregations: [String: Aggregation]) -> DataFrame {
         let groups = buildGroups()
-        var resultColumns: [any AnyColumn] = []
-
-        // Group key columns
-        for keyCol in groupColumns {
-            guard let col = dataFrame[column: keyCol] else { continue }
-            let keys = groups.representatives.map { col.value(at: $0) }
-            let strKeys = keys.map { $0.map { "\($0)" } }
-            resultColumns.append(TypedColumn<String>(name: keyCol, values: strKeys))
-        }
+        var resultColumns = groupKeyColumns(groups)
 
         // Aggregated columns
         for (colName, agg) in aggregations {
@@ -307,18 +344,57 @@ public struct GroupedDataFrame: Sendable {
         return groups
     }
 
+    private func groupKeyColumns(_ groups: GroupIndex) -> [any AnyColumn] {
+        groupColumns.compactMap { name in
+            guard let column = dataFrame[column: name] else { return nil }
+            let keys = groups.representatives.map { row in
+                column.value(at: row).map { "\($0)" }
+            }
+            return TypedColumn<String>(name: name, values: keys)
+        }
+    }
+
+    // A Swift array holds at most Int.max signed 64-bit values, so their total
+    // fits in signed 128 bits. Two words keep this available on macOS 14.
+    private struct IntegerSum {
+        var low: UInt64 = 0
+        var high: Int64 = 0
+        var hasValue = false
+
+        mutating func add(_ value: Int64) {
+            let (next, carry) = low.addingReportingOverflow(UInt64(bitPattern: value))
+            low = next
+            high += (value < 0 ? -1 : 0) + (carry ? 1 : 0)
+            hasValue = true
+        }
+
+        var int64: Int64? {
+            let value = Int64(bitPattern: low)
+            return high == (value < 0 ? -1 : 0) ? value : nil
+        }
+    }
+
+    private func sumIntegers<T: FixedWidthInteger & SignedInteger>(
+        _ values: [T?], groups: GroupIndex, name: String
+    ) throws -> [Int64?] {
+        var sums = [IntegerSum](repeating: IntegerSum(), count: groups.count)
+        for row in groups.rowGroups.indices {
+            if let value = values[row] {
+                sums[groups.rowGroups[row]].add(Int64(value))
+            }
+        }
+        return try sums.indices.map { group in
+            guard sums[group].hasValue else { return nil }
+            guard let value = sums[group].int64 else {
+                throw SwiftMLError.integerOverflow(column: name, group: group)
+            }
+            return value
+        }
+    }
+
     private func aggregate(using agg: Aggregation) -> DataFrame {
         let groups = buildGroups()
-        var resultColumns: [any AnyColumn] = []
-
-        // Group key columns — one representative row per group
-        for keyCol in groupColumns {
-            guard let col = dataFrame[column: keyCol] else { continue }
-            let repValues = groups.representatives.map { row in
-                col.value(at: row).map { "\($0)" }
-            }
-            resultColumns.append(TypedColumn<String>(name: keyCol, values: repValues))
-        }
+        var resultColumns = groupKeyColumns(groups)
 
         // Numeric value columns
         let valueColumns = dataFrame.columns.filter {

@@ -176,6 +176,19 @@ public struct GroupedDataFrame: Sendable {
         let rowCount = dataFrame.shape.rows
         guard rowCount > 0, !groupColumns.isEmpty else { return [] }
 
+        if groupColumns.count == 1 {
+            let column = dataFrame[column: groupColumns[0]]
+            if let typed = column as? TypedColumn<Int64> {
+                return buildIntegerGroups(typed.values)
+            }
+            if let typed = column as? TypedColumn<Int32> {
+                return buildIntegerGroups(typed.values)
+            }
+            if let typed = column as? TypedColumn<Int> {
+                return buildIntegerGroups(typed.values)
+            }
+        }
+
         // Fast path: single utf8 key column (common category / groupBy case).
         if groupColumns.count == 1,
            let typed = dataFrame[column: groupColumns[0], as: String.self] {
@@ -218,6 +231,20 @@ public struct GroupedDataFrame: Sendable {
         }
 
         return order.map { groupMap[$0]! }
+    }
+
+    private func buildIntegerGroups<T: FixedWidthInteger>(_ values: [T?]) -> [[Int]] {
+        var groupIndices: [T?: Int] = [:]
+        var groups: [[Int]] = []
+        for (row, key) in values.enumerated() {
+            if let groupIndex = groupIndices[key] {
+                groups[groupIndex].append(row)
+            } else {
+                groupIndices[key] = groups.count
+                groups.append([row])
+            }
+        }
+        return groups
     }
 
     private func aggregate(using agg: Aggregation) -> DataFrame {

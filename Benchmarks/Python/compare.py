@@ -108,10 +108,19 @@ def categorize(key: str) -> str:
     return CAT_OTHER
 
 
+def format_relative(speedup: Optional[float]) -> str:
+    if speedup is None:
+        return "n/a"
+    if speedup >= 1.0:
+        return f"SwiftSci {speedup:.2f}×"
+    else:
+        return f"Python {1.0 / speedup:.2f}×"
+
+
 def print_table_text(category_title: str, rows: List[dict]):
     header = (
         f"{'Benchmark':<50}  {'Swift(ms)':>10}  {'Python(ms)':>10}  "
-        f"{'Speedup':>9}  {'Winner':>10}  {'Gate':>6}"
+        f"{'Relative':>16}  {'Gate':>6}"
     )
     print(f"\n📂 {category_title}")
     print("═" * len(header))
@@ -122,28 +131,25 @@ def print_table_text(category_title: str, rows: List[dict]):
         gate_tag = "CI" if r["gated"] else "info"
         if r["python_ms"] is None:
             print(f"  {r['name']:<48}  {r['swift_ms']:10.3f}  {'n/a':>10}  "
-                  f"{'n/a':>9}  {'?':>10}  {gate_tag:>6}")
+                  f"{'n/a':>16}  {gate_tag:>6}")
             continue
 
-        speedup = r["speedup"]
-        winner = "🟢 Swift" if speedup >= 1.0 else "🔴 Python"
-        sp_str = f"{speedup:.2f}×"
+        rel_str = format_relative(r["speedup"])
         print(f"  {r['name']:<48}  {r['swift_ms']:10.3f}  {r['python_ms']:10.3f}  "
-              f"{sp_str:>9}  {winner:>10}  {gate_tag:>6}")
+              f"{rel_str:>16}  {gate_tag:>6}")
     print("═" * len(header))
 
 
 def print_table_markdown(category_title: str, rows: List[dict]):
     print(f"\n### {category_title}\n")
-    print("| Benchmark | Swift (ms) | Python (ms) | Speedup | Winner | Status |")
-    print("|:---|---:|---:|---:|:---:|:---:|")
+    print("| Benchmark | SwiftSci (ms) | Python (ms) | Relative Performance | Status |")
+    print("|:---|---:|---:|:---:|:---:|")
     for r in rows:
         swift_str = f"{r['swift_ms']:.3f}"
         python_str = f"{r['python_ms']:.3f}" if r['python_ms'] is not None else "n/a"
-        speedup_str = f"**{r['speedup']:.2f}×**" if r['speedup'] is not None else "n/a"
-        winner = "🟢 Swift" if (r['speedup'] or 0) >= 1.0 else "🔴 Python"
+        rel_str = format_relative(r["speedup"])
         gate_tag = "Gated" if r["gated"] else "Informational"
-        print(f"| {r['name']} | {swift_str} | {python_str} | {speedup_str} | {winner} | {gate_tag} |")
+        print(f"| {r['name']} | {swift_str} | {python_str} | **{rel_str}** | {gate_tag} |")
 
 
 def main():
@@ -244,7 +250,7 @@ def main():
     swift_wins = sum(1 for r in all_matched if r["faster"])
     python_wins = sum(1 for r in all_matched if not r["faster"])
 
-    print(f"\n📊 Summary: 🟢 Swift faster: {swift_wins} | 🔴 Python faster: {python_wins}")
+    print(f"\n📊 Summary: SwiftSci faster: {swift_wins} | Python faster: {python_wins}")
 
     if regression_failures:
         print(f"\n⚠️  REGRESSION: {len(regression_failures)} gated benchmark(s) "

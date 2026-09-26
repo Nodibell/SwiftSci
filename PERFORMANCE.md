@@ -35,51 +35,75 @@ The table below tracks key architectural breakthroughs, engine upgrades, and per
 
 ---
 
-## 📊 Complete Benchmark Matrix
+## 🔬 Benchmark Methodology v2
 
-The values below represent **Mean ± 95% Confidence Interval** and **Median** from release benchmark runs. Speedups are computed as $\text{Time}_{\text{Python}} / \text{Time}_{\text{Swift}}$; values above `1.0×` indicate that Swift is faster.
+To ensure rigorous, reproducible, and verifiable performance comparisons, SwiftSci 3.10.1 adopts **Benchmark Methodology v2**:
 
-| Benchmark Scenario | SwiftSci 3.10.0 (Swift) | Python Baseline (Sklearn/NumPy/Pandas) | Speedup | Winner | RAM (Swift vs Py) | Notes |
-| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **OneHotEncoder fitTransform** (50k rows) | **`5.104 ± 0.094 ms`** | `25.677 ± 0.226 ms` (*Scikit-Learn*) | ⚡ **5.03×** | 🟢 **Swift** | **36 MB** vs 465 MB | 🚀 13× less RAM |
-| **Classification ROC-AUC** (50k predictions) | **`2.609 ± 0.038 ms`** | `4.759 ± 0.046 ms` (*Scikit-Learn*) | ⚡ **1.82×** | 🟢 **Swift** | **27 MB** vs 463 MB | Rank-based AUC |
-| **Forecast Errors Suite** (RMSE, MAE, MAPE, R² 100k) | **`0.847 ± 0.016 ms`** | `0.575 ± 0.018 ms` (*Scikit-Learn*) | ~1.4× | 🟢 **Sub-ms** | **24 MB** vs 463 MB | Accelerate vDSP |
-| **Two-Sample T-Test** (100k samples) | **`0.285 ± 0.005 ms`** | `1.120 ± 0.035 ms` (*SciPy*) | ⚡ **3.93×** | 🟢 **Swift** | **18 MB** vs 110 MB | Welch's t-test |
-| **Spearman Rank Correlation** (100k pairs) | **`11.602 ± 0.115 ms`** | `12.450 ± 0.180 ms` (*SciPy*) | ⚡ **1.07×** | 🟢 **Swift** | **22 MB** vs 115 MB | Fast ranking |
-| **VectorStore Cosine Search** (5k × 128d, top 10) | **`0.167 ± 0.004 ms`** | `0.210 ± 0.008 ms` (*NumPy*) | ⚡ **1.26×** | 🟢 **Swift** | **44 MB** vs 95 MB | In-memory Top-K |
-| **KernelSHAP Explain** (5 feats, 100 coalitions) | **`0.187 ± 0.010 ms`** | `0.449 ± 0.028 ms` (*SHAP*) | ⚡ **2.40×** | 🟢 **Swift** | **10 MB** vs 469 MB | Black-box XAI |
-| **LIME Explain** (5 feats, 300 samples) | **`0.062 ± 0.000 ms`** | `0.258 ± 0.005 ms` (*Scikit-Learn*) | ⚡ **4.16×** | 🟢 **Swift** | **10 MB** vs 691 MB | Local Ridge surrogate (200× vs LIME pkg) |
-| **TreeSHAP Explanation** (100 samples) | **`0.103 ± 0.002 ms`** | `0.071 ± 0.002 ms` (*SHAP*) | 0.69× | 🟢 **Near Parity** | **11 MB** vs 691 MB | Precomputed LUT & zero-alloc backtracking (62× less RAM) |
-| **RandomForest fit** (1k×4, 50 trees) | **`3.744 ± 0.064 ms`** | `25.300 ± 0.450 ms` (*Scikit-Learn*) | ⚡ **6.76×** | 🟢 **Swift** | **32 MB** vs 180 MB | Flat DOD Trees |
-| **GBDT Regressor fit** (1k×4, 50 est.) | **`8.023 ± 0.077 ms`** | `32.366 ± 0.520 ms` (*Scikit-Learn*) | ⚡ **4.03×** | 🟢 **Swift** | **32 MB** vs 190 MB | Flat DOD Ensembles |
-| **LinearSVC fit** (1k×4, 100 epochs, Metal GPU) | **`0.402 ± 0.002 ms`** | `0.399 ± 0.024 ms` (*Scikit-Learn*) | 0.99× | 🟢 **Near Parity** | **37 MB** vs 668 MB | LibLinear vs Flat CPU/Metal router (18× less RAM) |
-| **LinearRegression fit** (10k×10, 100 epochs) | **`25.632 ± 0.235 ms`** | `24.921 ± 0.320 ms` (*Scikit-Learn*) | 0.97× | 🟢 **Near Parity** | **28 MB** vs 90 MB | Near parity |
-| **KMeans fit** (10k×4, 3 clusters) | **`11.192 ± 0.140 ms`** | `11.993 ± 0.150 ms` (*Scikit-Learn*) | ⚡ **1.07×** | 🟢 **Swift** | **33 MB** vs 120 MB | Underflow-clamped SIMD distance |
-| **PCA SVD fit** (1k×100 → 10 comps) | **`0.953 ± 0.013 ms`** | `0.732 ± 0.010 ms` (*Scikit-Learn*) | 0.77× | 🟢 **Near Parity** | **36 MB** vs 95 MB | LAPACK SVD |
-| **IsolationForest fit** (1k×10, 100 trees) | **`13.543 ± 0.143 ms`** | `38.093 ± 0.257 ms` (*Scikit-Learn*) | ⚡ **2.81×** | 🟢 **Swift** | **37 MB** vs 668 MB | Outlier detection, 18× less RAM |
-| **ARIMA(1,1,1) fit** (50k pts) | **`2.463 ± 0.035 ms`** | `212.621 ± 3.410 ms` (*Statsmodels*) | ⚡ **86.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Exact MLE |
-| **ARIMA(1,1,1) forecast** (horizon=24) | **`2.566 ± 0.040 ms`** | `213.709 ± 3.500 ms` (*Statsmodels*) | ⚡ **83.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Fast recursion |
-| **Holt-Winters fit** (50k pts, period=12) | **`0.645 ± 0.012 ms`** | `144.752 ± 2.150 ms` (*Statsmodels*) | ⚡ **224.4×** | 🟢 **Swift** | **22 MB** vs 220 MB | Nelder-Mead ($R^2 = 0.997$, RMSE = 0.350) |
-| **Kalman Filter 1D** (10k observations) | **`57.970 ± 0.420 ms`** | `85.788 ± 1.100 ms` (*NumPy*) | ⚡ **1.48×** | 🟢 **Swift** | **24 MB** vs 130 MB | LAPACK `dgesv` |
-| **TS Decomposition additive** (1k pts) | **`0.088 ± 0.002 ms`** | `0.100 ± 0.002 ms` (*Statsmodels*) | ⚡ **1.14×** | 🟢 **Swift** | **18 MB** vs 110 MB | Zero-alloc Kahan summation |
-| **VADER Sentiment Analysis** (1k sentences) | **`2.763 ± 0.041 ms`** | `3.450 ± 0.060 ms` (*NLTK*) | ⚡ **1.25×** | 🟢 **Swift** | **37 MB** vs 140 MB | 7,500+ rule lexicon |
-| **NaiveBayesClassifier fit** (1k×100, 3 classes) | **`0.026 ± 0.001 ms`** | `0.388 ± 0.014 ms` (*Scikit-Learn*) | ⚡ **14.9×** | 🟢 **Swift** | **44 MB** vs 110 MB | Accelerate vDSP SIMD dot-product |
-| **DataFrame SIMD Hash Join** (100k rows) | **`34.812 ± 0.410 ms`** | `28.400 ± 0.350 ms` (*Pandas*) | ~1.2× | 🟢 **Parity** | **64 MB** vs 140 MB | Typed hash index |
-| **CSV Read** (100k rows) | **`15.465 ± 0.180 ms`** | `19.413 ± 0.250 ms` (*Pandas*) | ⚡ **1.26×** | 🟢 **Swift** | **52 MB** vs 130 MB | POSIX mmap |
-| **CSV Stream Read** (chunk=10k) | **`21.715 ± 0.250 ms`** | `21.921 ± 0.310 ms` (*Pandas*) | ⚡ **1.01×** | 🟢 **Swift** | **32 MB** vs 110 MB | Chunked streaming |
-| **CSV Stream + GroupBy** (100k rows) | **`22.830 ± 0.280 ms`** | `27.603 ± 0.340 ms` (*Pandas*) | ⚡ **1.21×** | 🟢 **Swift** | **38 MB** vs 125 MB | Streaming group-by |
-| **Mean Reduction** (vDSP 1M elements) | **`0.082 ± 0.001 ms`** | `0.121 ± 0.002 ms` (*NumPy*) | ⚡ **1.48×** | 🟢 **Swift** | **18 MB** vs 95 MB | vDSP reduction |
-| **StdDev Reduction** (vDSP 1M elements) | **`0.275 ± 0.003 ms`** | `0.533 ± 0.006 ms` (*NumPy*) | ⚡ **1.94×** | 🟢 **Swift** | **18 MB** vs 95 MB | vDSP reduction |
-| **Variance Reduction** (vDSP 1M elements) | **`0.282 ± 0.003 ms`** | `0.517 ± 0.006 ms` (*NumPy*) | ⚡ **1.84×** | 🟢 **Swift** | **18 MB** vs 95 MB | vDSP reduction |
-| **Pearson Correlation** (500k pairs) | **`0.812 ± 0.010 ms`** | `1.193 ± 0.015 ms` (*NumPy*) | ⚡ **1.47×** | 🟢 **Swift** | **22 MB** vs 110 MB | Vectorized Pearson |
-| **SQLite Direct DataFrame Ingestion** | **`0.032 ± 0.002 ms`** | `0.105 ± 0.006 ms` (*Pandas*) | ⚡ **3.28×** | 🟢 **Swift** | **11 MB** vs 691 MB | In-memory C-API persistent handle (63× less RAM) |
-| **CNN Feature Extraction & Vision Metrics** | **`0.003 ± 0.000 ms`** | `0.008 ± 0.000 ms` (*NumPy*) | ⚡ **2.67×** | 🟢 **Swift** | **9 MB** vs 691 MB | Global pooling & Dice (77× less RAM) |
-| **RAG Context Summary Generation** | **`0.000 ± 0.000 ms`** | `0.001 ± 0.000 ms` (*Pandas*) | ~1.0× | 🟢 **Parity** | **11 MB** vs 691 MB | ReAct schema profile |
-| **OneVsRestClassifier** (5 classes, 100 samples) | **`0.795 ± 0.031 ms`** | `3.413 ± 0.055 ms` (*Scikit-Learn*) | ⚡ **4.29×** | 🟢 **Swift** | **22 MB** vs 691 MB | TaskGroup concurrent OvR (31× less RAM) |
-| **TF-IDF Vectorizer** (50 documents) | **`0.388 ± 0.004 ms`** | `0.359 ± 0.009 ms` (*Scikit-Learn*) | 0.93× | 🟢 **Near Parity** | **22 MB** vs 691 MB | Single-pass sparse tokenization (31× less RAM) |
-| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | **`0.125 ± 0.002 ms`** | `1.450 ± 0.030 ms` (*Full Sequence Forward*) | ⚡ **11.6×** | 🟢 **Bit-Exact** | **UMA Zero-Copy** | $O(1)$ single-token decode ($Q \times K/V$), $\Delta = 1.03 \times 10^{-7}$ |
-| **Metal MSL gemv_q4_0 Kernel** (1024d) | **`0.015 ± 0.001 ms`** | `0.045 ± 0.002 ms` (*Float32 Dequant*) | ⚡ **3.0×** | 🟢 **Bit-Exact** | **Packed Q4_0** (4.5 b/w) | Zero dequant overhead, exact parity with MLX Float32 |
-| **AutoARIMA Zero-Variance Exit** (1000 pts) | **`< 0.01 ms`** | Divergent optimization loop | ⚡ **Instant Exit** | 🟢 **Guaranteed** | **< 1 MB** | Sentry guard terminates before iteration runaway |
+1. **Strict Apple-to-Apple Shared Fixtures:**
+   - Instead of uncoordinated random data generation, both Swift and Python load identical IEEE-754 little-endian 64-bit float binary vectors (`.bin`) and CSV fixtures generated by [`Benchmarks/generate_fixtures.py`](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Benchmarks/generate_fixtures.py) with SHA-256 integrity validation.
+2. **Algorithmic & Hyperparameter Synchronization:**
+   - **PCA**: Both frameworks perform full `.fitTransform()` ($1000 \times 100 \rightarrow 10$ components), computing both the SVD projection and projection matrix.
+   - **RandomForest**: Synchronized to 50 trees, `max_depth = 4`, and `criterion = "gini"`.
+   - **GBDT Regressor**: Synchronized to 50 estimators, `max_depth = 3`, `learning_rate = 0.1` on identical continuous surfaces ($1000 \times 4$).
+   - **K-Means**: Synchronized to `max_iter = 50` on identical clustered sets ($10\text{k} \times 4$).
+3. **Architectural & Implementation Context:**
+   > [!IMPORTANT]
+   > SwiftSci and the Python reference stack use different implementation paths and optimization strategies. The measured difference therefore reflects both algorithmic implementation and library/runtime overhead, rather than Python interpreter overhead alone.
+4. **Three-Tier Reporting:**
+   - **Tier 1 — Strict Apple-to-Apple**: Identical operations and memory structures (Accelerate SIMD vs NumPy C, POSIX mmap CSV, vector reductions).
+   - **Tier 2 — Library-to-Library**: Idiomatic ecosystem models (SwiftSci vs Scikit-Learn / Statsmodels).
+   - **Tier 3 — Architecture & Hardware Specialization**: Apple Silicon Metal GPU, unified memory zero-copy decoders, and in-memory SQLite bindings.
+
+---
+
+## 📊 Benchmark Results Matrix
+
+All measurements reflect release builds (`-c release`, `-O -whole-module-optimization` on Apple Silicon arm64) vs CPython 3.11 with optimized C/Fortran/Cython extensions (NumPy 2.x, Pandas 3.x, Scikit-Learn 1.4, Statsmodels 0.14). Values indicate **median wall-clock execution time** across multiple rounds and iterations.
+
+### 1. Strict Apple-to-Apple (C/SIMD Parity & Shared Fixtures)
+
+| Benchmark Scenario | SwiftSci (ms) | Python Baseline | Relative Performance | Scope / Implementation |
+|:---|---:|---:|:---:|:---|
+| **Mean Reduction** (vDSP, 1M doubles) | `0.081 ms` | `0.119 ms` (*NumPy*) | **SwiftSci 1.46×** | Apple Accelerate `vDSP_meanvD` vs NumPy C |
+| **StdDev Reduction** (vDSP, 1M doubles) | `0.446 ms` | `0.504 ms` (*NumPy*) | **SwiftSci 1.13×** | Accelerate two-pass SIMD vs NumPy `std` |
+| **Variance Reduction** (vDSP, 1M doubles) | `0.463 ms` | `0.486 ms` (*NumPy*) | **SwiftSci 1.05×** | Accelerate two-pass SIMD vs NumPy `var` |
+| **Pearson Correlation** (500k pairs) | `0.828 ms` | `1.209 ms` (*NumPy*) | **SwiftSci 1.46×** | SIMD dot-product covariance |
+| **Two-Sample T-Test** (100k samples) | `0.263 ms` | `0.411 ms` (*SciPy*) | **SwiftSci 1.56×** | Welch's unequal variance t-test |
+| **Spearman Correlation** (100k pairs) | `11.480 ms` | `14.230 ms` (*SciPy*) | **SwiftSci 1.24×** | Parallel rank transform + Pearson |
+| **CSV Read** (100k rows) | `18.166 ms` | `19.534 ms` (*Pandas*) | **SwiftSci 1.08×** | POSIX `mmap` zero-copy chunk parsing |
+| **CSV Stream Read** (chunk=10k) | `51.611 ms` | `22.448 ms` (*Pandas*) | **Python 2.30×** | Swift iterator vs Pandas C engine |
+| **Filter Rows** (100k rows) | `23.014 ms` | `0.741 ms` (*Pandas*) | **Python 31.06×** | Swift typed filter vs Pandas C bitmask indexing |
+| **SortBy Double Column** (100k rows) | `44.838 ms` | `7.486 ms` (*NumPy*) | **Python 5.99×** | Swift sort vs NumPy quicksort in C |
+| **DataFrame SIMD Hash Join** (100k rows) | `35.200 ms` | `0.456 ms` (*Pandas*) | **Python 77.19×** | Swift typed hash table vs Pandas C hashtable |
+| **KMeans fit** (10k×4, 3 clusters, 50 iters) | `17.444 ms` | `7.309 ms` (*Scikit-Learn*) | **Python 2.39×** | Underflow-clamped SIMD distance vs Cython k-means |
+| **Classification ROC-AUC** (50k predictions) | `2.651 ms` | `7.601 ms` (*Scikit-Learn*) | **SwiftSci 2.87×** | Single-pass sorted trapezoidal integration |
+| **OneHotEncoder fitTransform** (50k rows) | `5.151 ms` | `31.513 ms` (*Scikit-Learn*) | **SwiftSci 6.12×** | SIMD categorical bitmask transform (13× less RAM) |
+
+### 2. Library-to-Library (Ecosystem Parity: SwiftSci vs Scikit-Learn / Statsmodels)
+
+| Benchmark Scenario | SwiftSci (ms) | Python Baseline | Relative Performance | Scope / Implementation |
+|:---|---:|---:|:---:|:---|
+| **RandomForest fit** (1k×4, 50 trees, d=4, gini) | `4.133 ms` | `31.228 ms` (*Scikit-Learn*) | **SwiftSci 7.56×** | Data-Oriented Design (DOD) tree buffers |
+| **GBDT Regressor fit** (1k×4, 50 est.) | `9.092 ms` | `32.815 ms` (*Scikit-Learn*) | **SwiftSci 3.61×** | Contiguous gradient-boosted ensembles |
+| **PCA SVD fitTransform** (1k×100 → 10 comps) | `1.132 ms` | `0.758 ms` (*Scikit-Learn*) | **Python 1.49×** | Accelerate LAPACK `dgesdd_` vs SciPy BLAS |
+| **IsolationForest fit** (1k×10, 100 trees) | `13.523 ms` | `38.050 ms` (*Scikit-Learn*) | **SwiftSci 2.81×** | Parallelized DOD outlier trees (18× less RAM) |
+| **Holt-Winters fit** (50k pts, period=12) | `16.112 ms` | `3431.444 ms` (*Statsmodels*) | **SwiftSci 212.97×** | Native Nelder-Mead simplex optimization |
+| **ARIMA(1,1,1) fit** (50k pts) | `2.264 ms` | `594.361 ms` (*Statsmodels*) | **SwiftSci 262.49×** | Exact Gaussian likelihood solver |
+| **KernelSHAP Explain** (5 feats, 100 coalitions) | `0.189 ms` | `0.434 ms` (*SHAP*) | **SwiftSci 2.30×** | Zero-division guarded coalitional sampling |
+| **TreeSHAP Explanation** (100 samples) | `0.101 ms` | `0.081 ms` (*SHAP*) | **Python 1.26×** | Precomputed LUT & zero-alloc backtracking |
+| **NaiveBayesClassifier fit** (1k×100, 3 classes) | `0.027 ms` | `0.410 ms` (*Scikit-Learn*) | **SwiftSci 15.35×** | Accelerate `vDSP_dotprD` SIMD dot-products |
+
+### 3. Architecture & Hardware Specialization (Metal GPU, SIMD MSL, KV-Cache)
+
+| Benchmark Scenario | SwiftSci (ms) | Python Baseline | Relative Performance | Scope / Implementation |
+|:---|---:|---:|:---:|:---|
+| **LinearSVC fit** (1k×4, 100 epochs, Metal GPU) | `0.404 ms` | `0.384 ms` (*Scikit-Learn*) | **Python 1.05×** | Apple Metal GPU kernel vs LibLinear C |
+| **VectorStore Cosine Search** (5k × 128d, top 10) | `0.175 ms` | `0.027 ms` (*NumPy*) | **Python 6.49×** | Swift heap-based top-k vs BLAS matrix-multiply |
+| **Global Average Pooling & Dice Metric** | `0.003 ms` | `0.021 ms` (*NumPy*) | **SwiftSci 7.17×** | Contiguous SIMD reduction (77× less RAM) |
+| **SQLite Direct DataFrame Ingestion** | `0.025 ms` | `0.443 ms` (*Pandas*) | **SwiftSci 17.90×** | Persistent in-memory C-API (63× less RAM) |
+| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | `0.125 ms` | `1.450 ms` (*Full Forward*) | **SwiftSci 11.60×** | $O(1)$ single-token decode ($Q \times K/V$), $\Delta \le 1.03 \times 10^{-7}$ |
+| **Metal MSL gemv_q4_0 Kernel** (1024d) | `0.015 ms` | `0.045 ms` (*Float32 Dequant*) | **SwiftSci 3.00×** | Zero-copy packed Q4_0 evaluation |
+| **AutoARIMA Zero-Variance Exit** (1000 pts) | `< 0.01 ms` | Divergent loop | **Instant Exit** | Guaranteed non-diverging guard |
 
 ---
 

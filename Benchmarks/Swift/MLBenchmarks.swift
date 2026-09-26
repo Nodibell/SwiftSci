@@ -76,7 +76,8 @@ struct MLBenchmarks: BenchmarkSuite {
         results.append(rfResult)
 
         // ── 3. GBDT Regressor ─────────────────────────────────────────────
-        let (gbX, gbY) = MLBenchmarks.makeRegression(rows: 1_000, cols: 4)
+        let gbX = rfX
+        let gbY = rfX.map { $0[0] * 2.0 + sin($0[1]) }
         let gbResult = await BenchmarkRunner.run(
             name: "GBDT Regressor fit (1k×4, 50 est.)",
             module: module,

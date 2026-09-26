@@ -30,13 +30,15 @@ def load_manifest(root, name):
             "license",
             "generator_version",
         ],
-        ["groups", "fixture", "certified"],
+        ["groups", "fixture", "certified", "data_start_line", "tolerances"],
     )
     require(
         value["schema_version"] == 1 and value["id"] == name,
         "Dataset identity/version mismatch",
     )
-    require(value["kind"] in ["table-v1", "nist-numacc4"], "Unknown dataset generator")
+    require(
+        value["kind"] in ["table-v1", "nist-univariate-v1"], "Unknown dataset generator"
+    )
     positive(value["rows"], "rows")
     positive(value["size_bytes"], "size_bytes")
     require(
@@ -53,7 +55,51 @@ def load_manifest(root, name):
             "fixture" in value and "certified" in value,
             "Missing NIST source or answers",
         )
+        positive(value["rows"], "rows", 2)
+        positive(value.get("data_start_line"), "data_start_line")
+        fields(value["certified"], ["mean", "variance", "stddev"])
+        fields(value.get("tolerances"), ["mean", "variance", "stddev"])
+        for operation, answer in value["certified"].items():
+            require(
+                type(answer) in (int, float) and math.isfinite(answer),
+                "Invalid reference answer",
+            )
+            if operation != "mean":
+                require(answer >= 0, "Negative dispersion reference")
+            tolerance = value["tolerances"][operation]
+            fields(tolerance, ["atol", "rtol"])
+            for number in tolerance.values():
+                require(
+                    type(number) in (int, float)
+                    and math.isfinite(number)
+                    and number >= 0,
+                    "Invalid reference tolerance",
+                )
     return value
+
+
+def parse_univariate(content, data_start_line, rows):
+    positive(data_start_line, "data_start_line")
+    positive(rows, "rows", 2)
+    lines = content.decode("ascii").splitlines()
+    require(data_start_line <= len(lines), "Missing NIST data section")
+    data = [
+        float(line.strip()) for line in lines[data_start_line - 1 :] if line.strip()
+    ]
+    require(len(data) == rows, "NIST row count mismatch")
+    require(all(math.isfinite(x) for x in data), "Nonfinite NIST input")
+    return data
+
+
+def resolve_workload(dataset, workload):
+    if dataset["kind"] != "nist-univariate-v1":
+        return workload
+    operation = workload["operation"]
+    require(
+        operation in dataset["certified"],
+        "NIST dataset only supports declared statistics",
+    )
+    return dict(workload, **dataset["tolerances"][operation])
 
 
 def generate_table(rows, groups):
@@ -96,14 +142,8 @@ def values(root, manifest):
     content = verified_file(
         cache_path(root, manifest), manifest["sha256"], manifest["size_bytes"]
     )
-    if manifest["kind"] == "nist-numacc4":
-        data = [
-            float(line)
-            for line in content.decode("ascii").splitlines()[60:]
-            if line.strip()
-        ]
-        require(len(data) == manifest["rows"], "NIST row count mismatch")
-        return data
+    if manifest["kind"] == "nist-univariate-v1":
+        return parse_univariate(content, manifest["data_start_line"], manifest["rows"])
     reader = csv.DictReader(io.StringIO(content.decode("ascii")))
     require(reader.fieldnames == ["id", "group", "x", "y"], "Unexpected CSV schema")
     data = [
@@ -116,7 +156,7 @@ def values(root, manifest):
 def reference(root, manifest, workload):
     rows = values(root, manifest)
     operation = workload["operation"]
-    if manifest["kind"] == "nist-numacc4":
+    if manifest["kind"] == "nist-univariate-v1":
         require(
             operation in ["mean", "stddev", "variance"],
             "NIST dataset only supports statistics",

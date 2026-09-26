@@ -1,0 +1,32 @@
+{
+  "certified": {
+    "mean": 518.95871559633,
+    "stddev": 291.699727470969,
+    "variance": 85088.73100663758
+  },
+  "data_start_line": 61,
+  "fixture": "Benchmarks/Fixtures/nist/Lottery.dat",
+  "generator_version": 1,
+  "id": "nist-lottery",
+  "kind": "nist-univariate-v1",
+  "license": "NIST US government reference data; attribution retained in source header",
+  "rows": 218,
+  "schema_version": 1,
+  "sha256": "956cb33392ee28683aa7978326fc356d1461e4a3b0e5a69d317fd481d02d6255",
+  "size_bytes": 3750,
+  "source": "https://www.itl.nist.gov/div898/strd/univ/data/Lottery.dat",
+  "tolerances": {
+    "mean": {
+      "atol": 2.2737367544323206e-13,
+      "rtol": 1e-14
+    },
+    "stddev": {
+      "atol": 2.2737367544323206e-13,
+      "rtol": 1e-12
+    },
+    "variance": {
+      "atol": 1.3264967832172674e-10,
+      "rtol": 2e-12
+    }
+  }
+}

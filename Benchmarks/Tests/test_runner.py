@@ -76,7 +76,10 @@ class RunnerTests(unittest.TestCase):
                     case_id="tiny-target",
                     engine="x",
                     status="passed",
-                    result=dict(samples=[dict(elapsed_ns=10)], peak_rss_bytes=1),
+                    result=dict(
+                        samples=[dict(elapsed_ns=10, maximum_absolute_error=0)],
+                        peak_rss_bytes=1,
+                    ),
                 )
             ],
         )
@@ -133,6 +136,16 @@ class AuditTests(unittest.TestCase):
             bad["events"][0][field] = value
             with self.assertRaises(ContractError):
                 audit(bad)
+
+    def test_summary_retains_worst_measured_absolute_error(self):
+        good = self.passing_run()
+        good["plan"]["profile"]["batches"] = 2
+        second = copy.deepcopy(good["events"][0])
+        second["batch"] = 1
+        good["events"][0]["result"]["samples"][0]["maximum_absolute_error"] = 1e-9
+        second["result"]["samples"][0]["maximum_absolute_error"] = 3e-9
+        good["events"].append(second)
+        self.assertEqual(summarize(good)[0]["maximum_absolute_error"], 3e-9)
 
     def test_unresolved_timing_has_no_speedup(self):
         good = self.passing_run()

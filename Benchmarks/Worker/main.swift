@@ -32,20 +32,12 @@ import SwiftStats
       let op = request.operation
       let frame: DataFrame?
       let x: [Double]
-      if request.dataset_kind == "nist-numacc4" {
+      if request.dataset_kind == "nist-univariate-v1" {
         frame = nil
-        guard let text = String(data: input, encoding: .ascii) else {
-          throw BenchmarkFailure("Invalid NIST encoding")
+        guard let skipRows = request.input_skip_rows else {
+          throw BenchmarkFailure("Missing NIST data offset")
         }
-        x = try text.components(separatedBy: "\n").dropFirst(60).filter {
-          !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }.map {
-          guard let value = Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) else {
-            throw BenchmarkFailure("Invalid NIST value")
-          }
-          return value
-        }
-        guard x.count == request.rows else { throw BenchmarkFailure("NIST row count mismatch") }
+        x = try decodeUnivariate(input, skipRows: skipRows, rows: request.rows)
       } else if op == "csv-read" {
         frame = nil
         x = []

@@ -39,3 +39,23 @@ struct ProtocolTests {
     }
   }
 }
+
+struct UnivariateFixtureTests {
+  @Test func variableHeadersAndScientificNotation() throws {
+    let data = Data("Header\r\n\r\n1e-3\r\n -2.5\r\n".utf8)
+    #expect(try decodeUnivariate(data, skipRows: 2, rows: 2) == [0.001, -2.5])
+    #expect(try decodeUnivariate(Data("1\n2\n".utf8), skipRows: 0, rows: 2) == [1, 2])
+  }
+  @Test func malformedValuesAndCountsFail() {
+    for text in ["1\n", "1\n2\n3\n", "NaN\n1\n", "inf\n1\n", "wrong\n1\n"] {
+      #expect(throws: (any Error).self) {
+        try decodeUnivariate(Data(text.utf8), skipRows: 0, rows: 2)
+      }
+    }
+    let valid = Data("1\n2\n".utf8)
+    #expect(throws: (any Error).self) { try decodeUnivariate(valid, skipRows: 99, rows: 2) }
+    #expect(throws: (any Error).self) { try decodeUnivariate(valid, skipRows: -1, rows: 2) }
+    #expect(throws: (any Error).self) { try decodeUnivariate(valid, skipRows: 0, rows: 1) }
+    #expect(throws: (any Error).self) { try decodeUnivariate(Data([255]), skipRows: 0, rows: 2) }
+  }
+}

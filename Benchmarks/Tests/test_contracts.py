@@ -104,7 +104,7 @@ class Contracts(unittest.TestCase):
             repository_file(ROOT, "../outside")
 
     def test_all_profiles_resolve(self):
-        for name in ["smoke", "standard", "extended", "certification"]:
+        for name in ["smoke", "standard", "extended", "certification", "nist"]:
             profile = load_profile(ROOT, name)
             for case in profile["cases"]:
                 load_manifest(ROOT, case["dataset"])

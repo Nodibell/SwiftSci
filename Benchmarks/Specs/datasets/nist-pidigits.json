@@ -1,0 +1,32 @@
+{
+  "certified": {
+    "mean": 4.5348,
+    "stddev": 2.86733906028871,
+    "variance": 8.221633286657342
+  },
+  "data_start_line": 61,
+  "fixture": "Benchmarks/Fixtures/nist/PiDigits.dat",
+  "generator_version": 1,
+  "id": "nist-pidigits",
+  "kind": "nist-univariate-v1",
+  "license": "NIST US government reference data; attribution retained in source header",
+  "rows": 5000,
+  "schema_version": 1,
+  "sha256": "e9421a2f4c0a31c505099332b4d22e507e808953c3c57bddae9226f25587d7d2",
+  "size_bytes": 46441,
+  "source": "https://www.itl.nist.gov/div898/strd/univ/data/PiDigits.dat",
+  "tolerances": {
+    "mean": {
+      "atol": 3.552713678800501e-15,
+      "rtol": 1e-14
+    },
+    "stddev": {
+      "atol": 3.552713678800501e-15,
+      "rtol": 1e-12
+    },
+    "variance": {
+      "atol": 2.037366940249336e-14,
+      "rtol": 2e-12
+    }
+  }
+}

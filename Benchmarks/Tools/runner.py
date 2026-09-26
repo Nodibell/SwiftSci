@@ -18,7 +18,7 @@ from contracts import (
     verified_file,
     write_json,
 )
-from datasets import load_manifest, cache_path, reference, binary
+from datasets import load_manifest, cache_path, reference, binary, resolve_workload
 from reporting import validate_worker, summarize
 
 THREAD_ENV = {
@@ -178,7 +178,7 @@ def plan(root, profile, engines, swift_worker, python):
     cases = []
     for case in profile["cases"]:
         dataset = load_manifest(root, case["dataset"])
-        workload = load_workload(root, case["workload"])
+        workload = resolve_workload(dataset, load_workload(root, case["workload"]))
         verified_file(
             cache_path(root, dataset), dataset["sha256"], dataset["size_bytes"]
         )
@@ -242,6 +242,8 @@ def run(root, resolved, destination, purpose="benchmark"):
                     atol=workload["atol"],
                     rtol=workload["rtol"],
                 )
+                if dataset["kind"] == "nist-univariate-v1":
+                    request["input_skip_rows"] = dataset["data_start_line"] - 1
                 request_path = destination / (token + ".request.json")
                 write_json(request_path, request)
                 response_path = destination / (token + ".response.json")

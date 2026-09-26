@@ -1,0 +1,32 @@
+{
+  "certified": {
+    "mean": 299.8524,
+    "stddev": 0.0790105478190518,
+    "variance": 0.0062426666666666715
+  },
+  "data_start_line": 61,
+  "fixture": "Benchmarks/Fixtures/nist/Michelso.dat",
+  "generator_version": 1,
+  "id": "nist-michelso",
+  "kind": "nist-univariate-v1",
+  "license": "NIST US government reference data; attribution retained in source header",
+  "rows": 100,
+  "schema_version": 1,
+  "sha256": "68cad435641539ca020adafb4c9a6b7fcc4fefe1d6ab8f2af8fb858d4f1b12ab",
+  "size_bytes": 2349,
+  "source": "https://www.itl.nist.gov/div898/strd/univ/data/Michelso.dat",
+  "tolerances": {
+    "mean": {
+      "atol": 1.1368683772161603e-13,
+      "rtol": 1e-14
+    },
+    "stddev": {
+      "atol": 1.1368683772161603e-13,
+      "rtol": 1e-12
+    },
+    "variance": {
+      "atol": 1.7964918656413975e-14,
+      "rtol": 2e-12
+    }
+  }
+}

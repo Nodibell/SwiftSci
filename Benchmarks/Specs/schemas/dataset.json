@@ -13,7 +13,7 @@
     "kind": {
       "enum": [
         "table-v1",
-        "nist-numacc4"
+        "nist-univariate-v1"
       ]
     },
     "rows": {
@@ -63,6 +63,75 @@
           "type": "number"
         }
       }
+    },
+    "data_start_line": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tolerances": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mean",
+        "stddev",
+        "variance"
+      ],
+      "properties": {
+        "mean": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "atol",
+            "rtol"
+          ],
+          "properties": {
+            "atol": {
+              "type": "number",
+              "minimum": 0
+            },
+            "rtol": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "stddev": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "atol",
+            "rtol"
+          ],
+          "properties": {
+            "atol": {
+              "type": "number",
+              "minimum": 0
+            },
+            "rtol": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "variance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "atol",
+            "rtol"
+          ],
+          "properties": {
+            "atol": {
+              "type": "number",
+              "minimum": 0
+            },
+            "rtol": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
     }
   },
   "required": [
@@ -75,5 +144,34 @@
     "source",
     "license",
     "generator_version"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "nist-univariate-v1"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "fixture",
+          "certified",
+          "data_start_line",
+          "tolerances"
+        ],
+        "properties": {
+          "rows": {
+            "minimum": 2
+          }
+        }
+      },
+      "else": {
+        "required": [
+          "groups"
+        ]
+      }
+    }
   ]
 }

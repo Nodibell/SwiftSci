@@ -157,7 +157,8 @@ def load_workload(root, name):
 
 def load_profile(root, name):
     require(
-        name in ["smoke", "standard", "extended", "certification"], "Unknown profile"
+        name in ["smoke", "standard", "extended", "certification", "nist"],
+        "Unknown profile",
     )
     value = read_json(root / "Benchmarks/Specs/profiles" / (name + ".json"))
     fields(

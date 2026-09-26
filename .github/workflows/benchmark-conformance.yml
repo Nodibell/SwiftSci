@@ -39,6 +39,7 @@ jobs:
       - name: Prepare and build
         run: |
           python3 Benchmarks/Tools/bench.py prepare --profile smoke
+          python3 Benchmarks/Tools/bench.py prepare --profile certification
           python3 Benchmarks/Tools/bench.py build
       - name: Verify both engines
         run: |
@@ -48,6 +49,13 @@ jobs:
             --python Benchmarks/.venv-standardized/bin/python \
             --output Benchmarks/Runs/ci-smoke
           python3 Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-smoke
+      - name: Check every NIST univariate reference dataset
+        run: |
+          python3 Benchmarks/Tools/bench.py certify --engines swiftsci,pandas \
+            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
+            --python Benchmarks/.venv-standardized/bin/python \
+            --output Benchmarks/Runs/ci-nist
+          python3 Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-nist
       - name: Retain run evidence and build log
         if: always()
         uses: actions/upload-artifact@v7
@@ -55,6 +63,7 @@ jobs:
           name: benchmark-conformance-${{ github.sha }}
           path: |
             Benchmarks/Runs/ci-smoke/
+            Benchmarks/Runs/ci-nist/
             ~/Library/Caches/SwiftSci/standardized-benchmarks/build.log
           retention-days: 30
           if-no-files-found: warn

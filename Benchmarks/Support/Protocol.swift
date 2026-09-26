@@ -10,6 +10,7 @@ package struct BenchmarkRequest: Decodable, Sendable {
   package let input_path: String
   package let input_sha256: String
   package let input_bytes: Int
+  package let input_skip_rows: Int?
   package let expected_path: String
   package let expected_sha256: String
   package let rows: Int
@@ -87,4 +88,23 @@ package func decodeDoubles(_ data: Data) throws -> [Double] {
         bitPattern: UInt64(littleEndian: bytes.loadUnaligned(fromByteOffset: $0, as: UInt64.self)))
     }
   }
+}
+
+package func decodeUnivariate(_ data: Data, skipRows: Int, rows: Int) throws -> [Double] {
+  guard skipRows >= 0, rows >= 2, let text = String(data: data, encoding: .ascii) else {
+    throw BenchmarkFailure("Invalid univariate input metadata or encoding")
+  }
+  let lines = text.components(separatedBy: "\n")
+  guard skipRows < lines.count else { throw BenchmarkFailure("Missing NIST data section") }
+  let values = try lines.dropFirst(skipRows).filter {
+    !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }.map { line -> Double in
+    guard let value = Double(line.trimmingCharacters(in: .whitespacesAndNewlines)), value.isFinite
+    else {
+      throw BenchmarkFailure("Invalid NIST value")
+    }
+    return value
+  }
+  guard values.count == rows else { throw BenchmarkFailure("NIST row count mismatch") }
+  return values
 }

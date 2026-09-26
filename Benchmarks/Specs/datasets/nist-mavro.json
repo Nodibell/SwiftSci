@@ -1,0 +1,32 @@
+{
+  "certified": {
+    "mean": 2.001856,
+    "stddev": 0.000429123454003053,
+    "variance": 1.8414693877551033e-07
+  },
+  "data_start_line": 61,
+  "fixture": "Benchmarks/Fixtures/nist/Mavro.dat",
+  "generator_version": 1,
+  "id": "nist-mavro",
+  "kind": "nist-univariate-v1",
+  "license": "NIST US government reference data; attribution retained in source header",
+  "rows": 50,
+  "schema_version": 1,
+  "sha256": "6b967538d6a607fdf30df054c6fbf4ca6bfb4fa6dc2ecbe613d4f93237a0b1dd",
+  "size_bytes": 2187,
+  "source": "https://www.itl.nist.gov/div898/strd/univ/data/Mavro.dat",
+  "tolerances": {
+    "mean": {
+      "atol": 8.881784197001252e-16,
+      "rtol": 1e-14
+    },
+    "stddev": {
+      "atol": 8.881784197001252e-16,
+      "rtol": 1e-12
+    },
+    "variance": {
+      "atol": 7.622763824661708e-19,
+      "rtol": 2e-12
+    }
+  }
+}

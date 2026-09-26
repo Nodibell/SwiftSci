@@ -1,5 +1,5 @@
 {
-  "batches": 1,
+  "batches": 3,
   "cases": [
     {
       "dataset": "nist-pidigits",
@@ -137,9 +137,9 @@
       "workload": "stddev-v1"
     }
   ],
-  "id": "certification",
-  "samples": 1,
+  "id": "nist",
+  "samples": 5,
   "schema_version": 1,
   "timeout_seconds": 300,
-  "warmups": 0
+  "warmups": 2
 }

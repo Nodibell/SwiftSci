@@ -1,0 +1,32 @@
+{
+  "certified": {
+    "mean": -177.435,
+    "stddev": 277.332168044316,
+    "variance": 76913.13143216074
+  },
+  "data_start_line": 61,
+  "fixture": "Benchmarks/Fixtures/nist/Lew.dat",
+  "generator_version": 1,
+  "id": "nist-lew",
+  "kind": "nist-univariate-v1",
+  "license": "NIST US government reference data; attribution retained in source header",
+  "rows": 200,
+  "schema_version": 1,
+  "sha256": "081b231f686d01fa00247b8072909206947c8321bd62e060d9aaae5f4866c44e",
+  "size_bytes": 3518,
+  "source": "https://www.itl.nist.gov/div898/strd/univ/data/Lew.dat",
+  "tolerances": {
+    "mean": {
+      "atol": 2.2737367544323206e-13,
+      "rtol": 1e-14
+    },
+    "stddev": {
+      "atol": 2.2737367544323206e-13,
+      "rtol": 1e-12
+    },
+    "variance": {
+      "atol": 1.2611606873375245e-10,
+      "rtol": 2e-12
+    }
+  }
+}

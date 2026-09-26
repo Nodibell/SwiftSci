@@ -22,8 +22,14 @@ try:
         verified_file(request["expected_path"], request["expected_sha256"]), dtype="<f8"
     )
     op = request["operation"]
-    if request["dataset_kind"] == "nist-numacc4":
-        x = np.loadtxt(request["input_path"], skiprows=60, dtype=np.float64)
+    if request["dataset_kind"] == "nist-univariate-v1":
+        x = np.loadtxt(
+            request["input_path"], skiprows=request["input_skip_rows"], dtype=np.float64
+        )
+        require(
+            len(x) == request["rows"] and np.isfinite(x).all(),
+            "Invalid NIST values or row count",
+        )
         frame = None
     else:
         frame = (

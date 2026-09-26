@@ -80,6 +80,15 @@ def summarize(run):
                 median_ns=median,
                 process_medians_ns=process_medians,
                 raw_sample_count=len(times),
+                maximum_absolute_error=max(
+                    (
+                        sample["maximum_absolute_error"]
+                        for event in events
+                        if event["status"] == "passed"
+                        for sample in event["result"]["samples"]
+                    ),
+                    default=None,
+                ),
                 timing_resolved=complete and median >= 1000,
                 peak_rss_bytes=max(
                     (

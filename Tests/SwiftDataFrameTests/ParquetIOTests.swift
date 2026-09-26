@@ -82,37 +82,29 @@ final class ParquetIOTests: XCTestCase {
         XCTAssertEqual(ids, [3, 4, 5])
     }
 
-    func testSnappySliceFromGoEmotions() throws {
-        let fileURL = URL(fileURLWithPath: "/Users/oleksiichumak/.gemini/antigravity-ide/brain/97383ad2-c472-4b55-8e5e-3dbffc712586/scratch/go_emotions_test.parquet")
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
-        let data = try Data(contentsOf: fileURL)
-        let snappySlice = data.subdata(in: 23 ..< (23 + 50922))
-        let decompressed = try SnappyDecompressor.decompress(data: snappySlice)
-        print("✅ SnappyDecompressor decompressed: \(decompressed.count) bytes!")
-        XCTAssertEqual(decompressed.count, 72042)
-    }
+    func testReadParquetWithTextAndLabels() async throws {
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent("test_text_labels_\(UUID().uuidString).parquet")
+        defer { try? FileManager.default.removeItem(at: fileURL) }
 
-    func testReadGoEmotionsHuggingFaceParquet() async throws {
-        let fileURL = URL(fileURLWithPath: "/Users/oleksiichumak/.gemini/antigravity-ide/brain/97383ad2-c472-4b55-8e5e-3dbffc712586/scratch/go_emotions_test.parquet")
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        let textCol = TypedColumn<String>(name: "text", values: [
+            "Sample text one",
+            "This is wonderful news!",
+            "Thank you so much"
+        ])
+        let idCol = TypedColumn<String>(name: "id", values: ["eecwqtt", "abc1234", "xyz9876"])
+        let labelsCol = TypedColumn<String>(name: "labels", values: ["[25]", "[1, 3]", "[0]"])
+
+        let originalDF = try DataFrame(columns: [textCol, idCol, labelsCol])
+        try await originalDF.writeParquet(to: fileURL)
+
         let df = try await DataFrame(parquet: fileURL)
-        print("✅ GoEmotions Parquet Loaded! Rows: \(df.rowCount), Columns: \(df.columnNames)")
-        XCTAssertEqual(df.rowCount, 5427)
+        XCTAssertEqual(df.rowCount, 3)
         XCTAssertTrue(df.columnNames.contains("text"))
         XCTAssertTrue(df.columnNames.contains("labels"))
         XCTAssertTrue(df.columnNames.contains("id"))
 
-        // Inspect sample values
-        let textCol = df[column: "text"] as? TypedColumn<String>
-        XCTAssertNotNil(textCol)
-        XCTAssertEqual(textCol?.values.first, "I’m really sorry about your situation :( Although I love the names Sapphira, Cirilla, and Scarlett!")
-
-        let idCol = df[column: "id"] as? TypedColumn<String>
-        XCTAssertNotNil(idCol)
-        XCTAssertEqual(idCol?.values.first, "eecwqtt")
-
-        let labelsCol = df[column: "labels"] as? TypedColumn<String>
-        XCTAssertNotNil(labelsCol)
-        XCTAssertEqual(labelsCol?.values.first, "[25]")
+        let readText = (df[column: "text"] as? TypedColumn<String>)?.values
+        XCTAssertEqual(readText?.first, "Sample text one")
     }
 }

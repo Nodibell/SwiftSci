@@ -246,50 +246,116 @@ public struct GroupedDataFrame: Sendable {
             }
         }
 
-        // Fast path: single utf8 key column (common category / groupBy case).
-        if groupColumns.count == 1,
-           let typed = dataFrame[column: groupColumns[0], as: String.self] {
-            var groupMap: [String: Int] = [:]
-            var groups = GroupIndex(rowCapacity: rowCount)
-            groupMap.reserveCapacity(16)
-            let vals = typed.values
-            for row in 0..<vals.count {
-                let key = vals[row] ?? "__null__"
-                if let group = groupMap[key] {
+        var groups = GroupIndex(rowCapacity: rowCount)
+        for column in groupColumns.compactMap({ dataFrame[column: $0] }) {
+            groups = refineGroups(groups.rowGroups, by: column)
+        }
+        if groups.rowGroups.isEmpty {
+            for _ in 0..<rowCount { groups.append(0) }
+        }
+        return groups
+    }
+
+    private struct RefinedKey<Value: Hashable>: Hashable {
+        let prefix: Int
+        let value: Value?
+    }
+
+    private func refineGroups<Value: Hashable>(
+        _ prefixes: [Int], count: Int, keyAt: (Int) -> Value?
+    ) -> GroupIndex {
+        var groups = GroupIndex(rowCapacity: count)
+        if prefixes.isEmpty {
+            var indices: [Value?: Int] = [:]
+            for row in 0..<count {
+                let key = keyAt(row)
+                if let group = indices[key] {
                     groups.append(group)
                 } else {
-                    groupMap[key] = groups.count
+                    indices[key] = groups.count
                     groups.append(groups.count)
                 }
             }
-            return groups
-        }
-
-        var groupMap: [String: Int] = [:]
-        var groups = GroupIndex(rowCapacity: rowCount)
-        let keyCols = groupColumns.compactMap { dataFrame[column: $0] }
-
-        for row in 0..<rowCount {
-            var key = ""
-            key.reserveCapacity(32)
-            for (i, col) in keyCols.enumerated() {
-                if i > 0 { key.append("||") }
-                if let v = col.value(at: row) {
-                    key.append("\(v)")
+        } else {
+            var indices: [RefinedKey<Value>: Int] = [:]
+            for row in 0..<count {
+                let key = RefinedKey(prefix: prefixes[row], value: keyAt(row))
+                if let group = indices[key] {
+                    groups.append(group)
                 } else {
-                    key.append("null")
+                    indices[key] = groups.count
+                    groups.append(groups.count)
                 }
             }
+        }
+        return groups
+    }
 
-            if let group = groupMap[key] {
-                groups.append(group)
-            } else {
-                groupMap[key] = groups.count
-                groups.append(groups.count)
+    private func refineGroups<Value: SupportedType>(
+        _ prefixes: [Int], values: [Value?]
+    ) -> GroupIndex {
+        refineGroups(prefixes, count: values.count) { values[$0] }
+    }
+
+    private func refineGroups(_ prefixes: [Int], by column: any AnyColumn) -> GroupIndex {
+        switch column {
+        case let typed as TypedColumn<Int>:
+            return refineGroups(prefixes, values: typed.values)
+        case let typed as TypedColumn<Int64>:
+            return refineGroups(prefixes, values: typed.values)
+        case let typed as TypedColumn<Int32>:
+            return refineGroups(prefixes, values: typed.values)
+        case let typed as TypedColumn<String>:
+            return refineGroups(prefixes, values: typed.values)
+        case let typed as TypedColumn<Bool>:
+            return refineGroups(prefixes, values: typed.values)
+        case let typed as TypedColumn<Date>:
+            return refineGroups(prefixes, values: typed.values)
+        case let typed as TypedColumn<Float>:
+            return refineGroups(prefixes, count: typed.count) { row in
+                typed.values[row].map { Self.groupBits($0) }
+            }
+        case let typed as TypedColumn<Double>:
+            return refineGroups(prefixes, count: typed.count) { row in
+                typed.values[row].map { Self.groupBits($0) }
+            }
+        default:
+            return refineGroups(prefixes, count: column.count) { row in
+                column.value(at: row).map { Self.erasedGroupKey($0) }
             }
         }
+    }
 
-        return groups
+    private static func groupBits(_ value: Float) -> UInt32 {
+        if value == 0 { return 0 }
+        return value.isNaN ? Float.nan.bitPattern : value.bitPattern
+    }
+
+    private static func groupBits(_ value: Double) -> UInt64 {
+        if value == 0 { return 0 }
+        return value.isNaN ? Double.nan.bitPattern : value.bitPattern
+    }
+
+    private enum ErasedGroupKey: Hashable {
+        case float32(UInt32)
+        case float64(UInt64)
+        case hashable(ObjectIdentifier, AnyHashable)
+        case described(ObjectIdentifier, String)
+    }
+
+    private static func erasedGroupKey(_ value: Any) -> ErasedGroupKey {
+        let type = ObjectIdentifier(Swift.type(of: value))
+        if type == ObjectIdentifier(Float.self), let value = value as? Float {
+            return .float32(groupBits(value))
+        }
+        if type == ObjectIdentifier(Double.self), let value = value as? Double {
+            return .float64(groupBits(value))
+        }
+        if let value = value as? AnyHashable {
+            return .hashable(type, value)
+        }
+        // AnyColumn exposes no equality operation for non-Hashable values.
+        return .described(type, String(describing: value))
     }
 
     private func buildIntegerGroups<T: FixedWidthInteger>(_ values: [T?]) -> GroupIndex {

@@ -53,13 +53,13 @@ struct DenseGroupingTests {
         #expect(group.agg(["value": .last])[column: "value_last", as: Double.self]?.values == [5, -3, -.infinity])
     }
 
-    @Test func emptyKeySelectionAndLegacyStringNullKey() throws {
+    @Test func emptyKeySelectionAndDistinctStringNullKey() throws {
         let frame = try DataFrame(columns: [
             TypedColumn<String>(name: "key", values: ["__null__", nil, "b"]),
             TypedColumn<Double>(name: "value", values: [1, 2, 3])])
         let grouped = frame.groupBy("key").sum()
-        #expect(grouped[column: "key", as: String.self]?.values == ["__null__", "b"])
-        #expect(grouped[column: "value", as: Double.self]?.values == [3, 3])
+        #expect(grouped[column: "key", as: String.self]?.values == ["__null__", nil, "b"])
+        #expect(grouped[column: "value", as: Double.self]?.values == [1, 2, 3])
         #expect(frame.groupBy().sum().rowCount == 0)
         #expect(frame.groupBy().transform(["value": .sum])[column: "value_group_sum", as: Double.self]?.values == [nil, nil, nil])
         #expect(frame.groupBy("absent").sum()[column: "value", as: Double.self]?.values == [6])

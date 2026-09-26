@@ -155,6 +155,15 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+## 🚀 What's New in v3.10.1
+
+- **Descending Sort with Missing Values (`SwiftDataFrame`)**: Preserved descending order for non-null values while keeping null elements sorted last, working around a Swift 6 compiler closure constraint with `any Comparable` (PR #38).
+- **Benchmark Methodology v2 (`Benchmarks`)**: Byte-identical deterministic IEEE-754 `.bin` fixtures with SHA-256 validation, synchronized hyperparameters across Swift and Python runners, and 3-tier categorization with `Relative Performance` metrics.
+- **GBDT Benchmark Dimension Fix (`SwiftML`)**: Fixed feature and target dimension alignment on 1k×4 fixtures, measuring real wall-clock fit (9.09 ms in Swift vs 32.82 ms in Scikit-Learn, 3.61× speedup).
+- **Streamlined Repository & Documentation**: Removed legacy presentation slides and artifacts.
+
+---
+
 ## 🚀 What's New in v3.10.0
 
 - **Verified Native Local LLM Runtime Pipeline (`SwiftLLM`)**:

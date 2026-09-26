@@ -4,6 +4,25 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.1] - 2026-09-26
+
+### Fixed
+- **Descending Sort with Missing Values (`SwiftDataFrame`)**: Preserved descending order for non-null values while keeping null elements sorted last, working around a Swift 6 compiler closure constraint with `any Comparable` (PR #38 by @crabel99).
+- **Self-Contained Regression Tests (`SwiftDataFrameTests`)**: Replaced external GoEmotions parquet file dependency with an in-memory programmatic dataset generator.
+- **GBDT Benchmark Dimension Alignment (`SwiftML`)**: Fixed feature and target dimension matching on $1\text{k}\times 4$ fixtures in `MLBenchmarks.swift`, enabling accurate wall-clock measurements (9.09 ms fit vs 32.82 ms in Scikit-Learn, 3.61× speedup).
+
+### Added
+- **Benchmark Methodology v2 (`Benchmarks`)**:
+  - Deterministic binary IEEE-754 little-endian Double fixtures (`generate_fixtures.py`) with SHA-256 integrity verification.
+  - Swift memory-mapped fixture loader (`BenchmarkDataLoader`) with safe deterministic fallback.
+  - Synchronized hyperparameters across Swift and Python runners (PCA full `fitTransform`, Random Forest `max_depth = 4`, K-Means `max_iter = 50`).
+  - 3-tier categorization in `compare.py`, `PERFORMANCE.md`, and `README.md` with nuanced `Relative Performance` reporting.
+- **SwiftSci CLI (`SwiftSciCLI`)**:
+  - Upgraded CLI version identifier to 3.10.1.
+
+### Removed
+- **Legacy Keynote Presentation Artifacts**: Removed `docs/presentation.html`, `PRESENTATION.md`, and `PresentationCodeRunner.swift` to streamline the repository and documentation.
+
 ## [3.10.0] - 2026-09-22
 
 ### Added

@@ -1,9 +1,12 @@
-# SwiftSci 3.10.0 Complete Performance Benchmarks
+# SwiftSci 3.10.1 Complete Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.10.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **MLX**) on Apple Silicon (M-series / macOS 15 arm64).
+Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.10.1** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **MLX**) on Apple Silicon (M-series / macOS 15 arm64).
 
 > [!NOTE]
-> **What's New in 3.10.0 & Local LLM Runtime Pipeline Parity:**
+> **What's New in 3.10.1 & Benchmark Methodology v2:**
+> - **Benchmark Methodology v2:** Byte-identical little-endian IEEE-754 binary vectors (`.bin`) and CSV fixtures with SHA-256 verification, synchronized ML hyperparameters, and 3-tier categorization with `Relative Performance` reporting.
+> - **Descending Null Sort Fix (`SwiftDataFrame`):** Preserved descending order for non-null values while keeping null elements sorted last, working around a Swift 6 compiler closure constraint with `any Comparable` (PR #38).
+> - **GBDT Benchmark Dimension Alignment (`SwiftML`):** Fixed feature and target dimension matching on $1\text{k}\times 4$ fixtures in `MLBenchmarks.swift`, enabling accurate wall-clock measurements (9.09 ms fit vs 32.82 ms in Scikit-Learn, 3.61× speedup).
 > - **Verified Local LLM Runtime Pipeline (`SwiftLLM`):** Two-stage generation loop in `TransformerDecoder` with full prompt prefill into `KVCache` followed by $O(1)$ single-token incremental decode steps ($Q \times \text{all cached } K/V$), strictly filtering logits via `SamplingConfiguration` (repetition penalty, temperature, top-k, top-p).
 > - **Rotary Positional Embeddings with Incremental Decoding (`RoPEEmbedding`):** Dynamic `positionOffset` support achieving bit-exact numerical parity ($\Delta \le 1.03 \times 10^{-7}$, well below the $10^{-4}$ Golden Test threshold) vs full sequence forward recomputation.
 > - **Zero-Copy GGUF Packed Quantization (`QuantizedTensor`):** Direct memory layout retention of raw Q4_0 and Q8_0 weights without artificial dequantization; verified numerical parity ($\Delta = 0.0000$) with native Metal MSL `gemv_q4_0` kernels.
@@ -14,7 +17,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 
 ---
 
-## ⏱️ Performance & Architecture Evolution Timeline (v3.0 → v3.10.0)
+## ⏱️ Performance & Architecture Evolution Timeline (v3.0 → v3.10.1)
 
 The table below tracks key architectural breakthroughs, engine upgrades, and performance milestones across SwiftSci releases:
 
@@ -31,7 +34,8 @@ The table below tracks key architectural breakthroughs, engine upgrades, and per
 | **v3.7.0** | **GBDT CoreML Exporter, Wasserstein Distance W1, Population Stability Index (PSI), Column Modality Inference & Target Leakage Sentry**<br>Direct in-memory Core ML `.mlmodel` / `.mlpackage` exporter for gradient boosted decision trees; distribution drift metrics (Wasserstein distance $W_1$ & PSI with adaptive quantile binning); heuristic statistical modality inference for tabular columns; bivariate correlation leakage detector for preprocessing sentry; 100% DocC documentation across 1,805 public symbols. | **GBDT CoreML**: Zero-dependency iOS/macOS model deployment.<br>**Wasserstein & PSI**: Sub-millisecond continuous/categorical data drift monitoring.<br>**Leakage Sentry**: Automated bivariate screening prevents data leakage.<br>**100% DocC API Coverage**: 1,805 public symbols verified. | 🟢 Released |
 | **v3.8.0** | **SwiftAgent Omni-Module Architecture, Typed Structured Tools, Agentic Memory & Real-Time Streaming**<br>SwiftSciToolbox bridging all scientific modules; type-safe AgentToolV2 with JSON schema validation; ReActAgent real-time event streaming; Working, SlidingWindow, and HNSW-backed SemanticVectorMemory; native SwiftUI AgentDialogueController; 96.53%+ test coverage; 100% DocC documentation. | **Omni-Module**: Unified tool calling across stats, ML, forecasting, SQL, vision, NLP.<br>**Agentic Memory**: Sub-millisecond HNSW episodic recall.<br>**Streaming UI**: 60 FPS SwiftUI chat integration. | 🟢 Released |
 | **v3.8.1** | **G-018 Column-Level Text Profiler & Zero-Compromise Precision Sweeps**<br>Native `profileTextColumn(_:)` with multilingual stopword filtering; in-memory SQLite handle; vDSP SIMD Naive Bayes; Holt-Winters Nelder-Mead phase correction ($R^2=0.997$); combinatorial TreeSHAP LUT; zero-allocation TS decomposition; hardware-routed LinearSVC. | **SQLite Ingestion**: **0.032 ms** (⚡ **3.28× vs Pandas**).<br>**NaiveBayes**: **0.026 ms** (⚡ **14.9× vs Sklearn**).<br>**Holt-Winters**: **$R^2 = 0.997$**, **RMSE = 0.350**.<br>**TreeSHAP**: **0.103 ms**.<br>**KMeans**: **11.19 ms** (⚡ **1.07× vs Sklearn**). | 🟢 Released |
-| **v3.10.0** | **Verified Local LLM Runtime Pipeline, KV-Cache Decoding, GGUF Zero-Copy Quantization, Resilient Agents & AutoARIMA Sentry**<br>Two-stage prefill/incremental generation loop; `SamplingConfiguration` logits pipeline; dynamic `positionOffset` in `RoPEEmbedding`; zero-copy `QuantizedTensor` Q4_0/Q8_0 with Metal MSL parity; `ChatMessage` & `ChatTemplate` (`.llama3`, `.chatML`, `.mistral`); resilient ReAct agent loops with schema validation; zero-leak SQLite C-pointer lifecycle under ASan. | **RoPE Incremental Decode**: Bit-exact parity ($\Delta = 1.03 \times 10^{-7}$).<br>**Metal MSL Q4_0 GEMV**: $\Delta = 0.0000$ vs Float32.<br>**AutoARIMA Exit**: $< 0.01$ ms zero-variance guard.<br>**100% DocC API Coverage**: Zero unresolved placeholders. | 🟢 Current |
+| **v3.10.0** | **Verified Local LLM Runtime Pipeline, KV-Cache Decoding, GGUF Zero-Copy Quantization, Resilient Agents & AutoARIMA Sentry**<br>Two-stage prefill/incremental generation loop; `SamplingConfiguration` logits pipeline; dynamic `positionOffset` in `RoPEEmbedding`; zero-copy `QuantizedTensor` Q4_0/Q8_0 with Metal MSL parity; `ChatMessage` & `ChatTemplate` (`.llama3`, `.chatML`, `.mistral`); resilient ReAct agent loops with schema validation; zero-leak SQLite C-pointer lifecycle under ASan. | **RoPE Incremental Decode**: Bit-exact parity ($\Delta = 1.03 \times 10^{-7}$).<br>**Metal MSL Q4_0 GEMV**: $\Delta = 0.0000$ vs Float32.<br>**AutoARIMA Exit**: $< 0.01$ ms zero-variance guard.<br>**100% DocC API Coverage**: Zero unresolved placeholders. | 🟢 Released |
+| **v3.10.1** | **Benchmark Methodology v2, Descending Null Sort Fix & GBDT Alignment**<br>Deterministic IEEE-754 `.bin` fixtures with SHA-256 verification; Swift `BenchmarkDataLoader` memory-mapped loader; synchronized ML hyperparameters; 3-tier categorization with `Relative Performance` metrics; descending sort with missing values fix (`SwiftDataFrame`, PR #38); self-contained programmatic parquet test; streamlined docs without legacy presentation artifacts. | **Methodology v2**: 100% byte-identical inputs across Swift and Python suites.<br>**GBDT Wall-Clock**: 9.09 ms fit vs 32.82 ms in Scikit-Learn (3.61× speedup).<br>**Null Sort**: Full descending ordering while preserving trailing nulls. | 🟢 Current |
 
 ---
 
@@ -109,7 +113,7 @@ All measurements reflect release builds (`-c release`, `-O -whole-module-optimiz
 
 ## 🎯 Model Accuracy & Forecast Quality Scorecard
 
-SwiftSci 3.10.0 includes an automated evaluation suite (`AccuracyBenchmarks`) that verifies model predictive performance against ground truth test sets across forecasting, regression, classification, clustering, preprocessing, and hypothesis testing:
+SwiftSci 3.10.1 includes an automated evaluation suite (`AccuracyBenchmarks`) that verifies model predictive performance against ground truth test sets across forecasting, regression, classification, clustering, preprocessing, and hypothesis testing:
 
 | Task / Domain | Model Evaluated | Test Dataset / Setting | Error Metrics & Accuracy Scores | Status |
 | :--- | :--- | :--- | :--- | :---: |

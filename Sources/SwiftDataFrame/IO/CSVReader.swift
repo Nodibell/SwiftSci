@@ -202,6 +202,7 @@ internal enum CSVReader {
         name: String,
         options: CSVReadOptions
     ) -> any AnyColumn {
+        let nullMatcher = CSVNullMatcher(options.nullValues)
         if let overrideType = options.columnTypeOverrides[name] {
             switch overrideType {
             case .int32, .int64:
@@ -210,13 +211,12 @@ internal enum CSVReader {
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
-                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-                        if options.nullValues.contains(str) {
+                        if nullMatcher.contains(buffer: buffer, offset: offset) {
                             values.append(nil)
                         } else if let val = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
                             values.append(Int64(val))
                         } else {
-                            values.append(Int64.parse(from: str))
+                            values.append(Int64.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset)))
                         }
                     } else {
                         values.append(nil)
@@ -229,13 +229,12 @@ internal enum CSVReader {
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
-                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-                        if options.nullValues.contains(str) {
+                        if nullMatcher.contains(buffer: buffer, offset: offset) {
                             values.append(nil)
                         } else if let val = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
                             values.append(val)
                         } else {
-                            values.append(Double.parse(from: str))
+                            values.append(Double.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset)))
                         }
                     } else {
                         values.append(nil)
@@ -360,13 +359,12 @@ internal enum CSVReader {
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-                    if options.nullValues.contains(str) {
+                    if nullMatcher.contains(buffer: buffer, offset: offset) {
                         values.append(nil)
                     } else if let val = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
                         values.append(Int64(val))
                     } else {
-                        values.append(Int64.parse(from: str))
+                        values.append(Int64.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset)))
                     }
                 } else {
                     values.append(nil)
@@ -381,13 +379,12 @@ internal enum CSVReader {
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-                    if options.nullValues.contains(str) {
+                    if nullMatcher.contains(buffer: buffer, offset: offset) {
                         values.append(nil)
                     } else if let val = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
                         values.append(val)
                     } else {
-                        values.append(Double.parse(from: str))
+                        values.append(Double.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset)))
                     }
                 } else {
                     values.append(nil)

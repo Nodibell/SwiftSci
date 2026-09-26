@@ -29,10 +29,18 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     ///   - name: The name.
     ///   - values: The values (optional elements).
     public init(name: String, values: [T?]) {
-        self.name       = name
-        self.dtype      = T.columnDType
-        self.values     = values
-        self._nullCount = values.reduce(0) { $0 + ($1 == nil ? 1 : 0) }
+        var nullCount = 0
+        for case nil in values {
+            nullCount += 1
+        }
+        self.init(name: name, values: values, nullCount: nullCount)
+    }
+
+    internal init(name: String, values: [T?], nullCount: Int) {
+        self.name = name
+        self.dtype = T.columnDType
+        self.values = values
+        self._nullCount = nullCount
     }
 
     /// Creates a new instance with non-optional values.
@@ -40,7 +48,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     ///   - name: The name.
     ///   - values: The values (non-optional elements).
     public init(name: String, values: [T]) {
-        self.init(name: name, values: values.map { $0 as T? })
+        self.init(name: name, values: values.map { $0 as T? }, nullCount: 0)
     }
 
 
@@ -67,10 +75,12 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         for flag in mask where flag { kept += 1 }
         var result: [T?] = []
         result.reserveCapacity(kept)
+        var nullCount = 0
         for (val, keep) in zip(values, mask) where keep {
             result.append(val)
+            if case nil = val { nullCount += 1 }
         }
-        return TypedColumn<T>(name: name, values: result)
+        return TypedColumn<T>(name: name, values: result, nullCount: nullCount)
     }
 
     /// Returns a new column containing only unique elements (preserving order of first appearance).
@@ -97,18 +107,31 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
                 }
             }
         }
-        return TypedColumn<T>(name: name, values: uniqueValues)
+        return TypedColumn<T>(name: name, values: uniqueValues, nullCount: seenNull ? 1 : 0)
     }
 
-    /// Gathers elements at the specified row indices (uses SIMD/vDSP vectorization for `Double` columns).
+    /// Gathers elements at the specified row indices using typed indexed loops.
     /// - Parameter indices: Array of row indices to gather.
     /// - Returns: A new `AnyColumn` containing elements at the requested indices.
     public func gathered(at indices: [Int]) -> any AnyColumn {
         if let doubleCol = self as? TypedColumn<Double> {
             return doubleCol.vGather(at: indices)
         }
+        if let int64Col = self as? TypedColumn<Int64> {
+            return int64Col.gatheredNumeric(at: indices)
+        }
+        if let column = self as? TypedColumn<Int> {
+            return column.gatheredNumeric(at: indices)
+        }
+        if let column = self as? TypedColumn<Int32> {
+            return column.gatheredNumeric(at: indices)
+        }
+        if let column = self as? TypedColumn<Float> {
+            return column.gatheredNumeric(at: indices)
+        }
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
+        var gatheredNullCount = 0
         values.withUnsafeBufferPointer { srcBuf in
             indices.withUnsafeBufferPointer { idxBuf in
                 result.withUnsafeMutableBufferPointer { dstBuf in
@@ -116,26 +139,46 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
                           let idx = idxBuf.baseAddress,
                           let dst = dstBuf.baseAddress else { return }
                     for k in 0..<n {
-                        dst[k] = src[idx[k]]
+                        let value = src[idx[k]]
+                        dst[k] = value
+                        if _nullCount > 0, case nil = value { gatheredNullCount += 1 }
                     }
                 }
             }
         }
-        return TypedColumn<T>(name: name, values: result)
+        return TypedColumn<T>(name: name, values: result, nullCount: gatheredNullCount)
     }
 
-    /// Evaluates SIMD bitmask filter conditions returning matching row indices.
+    /// Evaluates supported conditions on typed column values and returns matching row indices.
     /// - Parameter condition: Filter condition comparison operator and threshold.
     /// - Returns: Array of row indices matching the condition, or `nil` if unsupported.
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? {
-        if let doubles = values as? [Double?] {
-            return filterIndicesDouble(values: doubles, condition: condition)
+        switch condition {
+        case .isNull:
+            if _nullCount == 0 { return [] }
+            if _nullCount == count { return Array(values.indices) }
+        case .isNotNull:
+            if _nullCount == 0 { return Array(values.indices) }
+            if _nullCount == count { return [] }
+        default: break
         }
-        if let ints = values as? [Int64?] {
-            return filterIndicesInt64(values: ints, condition: condition)
+        if let column = self as? TypedColumn<Double> {
+            return filterIndicesFloating(values: column.values, nullCount: column.nullCount, condition: condition)
         }
-        if let strings = values as? [String?] {
-            return filterIndicesString(values: strings, condition: condition)
+        if let column = self as? TypedColumn<Int64> {
+            return filterIndicesInteger(values: column.values, condition: condition)
+        }
+        if let column = self as? TypedColumn<Float> {
+            return filterIndicesFloating(values: column.values, nullCount: column.nullCount, condition: condition)
+        }
+        if let column = self as? TypedColumn<Int32> {
+            return filterIndicesInteger(values: column.values, condition: condition)
+        }
+        if let column = self as? TypedColumn<Int> {
+            return filterIndicesInteger(values: column.values, condition: condition)
+        }
+        if let column = self as? TypedColumn<String> {
+            return filterIndicesString(values: column.values, condition: condition)
         }
         return nil
     }
@@ -168,30 +211,32 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter newName: Target column name.
     /// - Returns: Renamed column instance.
     public func renamed(to newName: String) -> any AnyColumn {
-        TypedColumn<T>(name: newName, values: values)
+        TypedColumn<T>(name: newName, values: values, nullCount: _nullCount)
     }
 
-    /// Computes row indices sorted by column values (uses vDSP radix sort for primitive types).
+    /// Computes a stable row permutation sorted by column values, with nulls last.
     /// - Parameter ascending: Sort order direction (`true` for ascending, `false` for descending).
     /// - Returns: Array of row indices sorted by column values.
     public func sortedIndices(ascending: Bool) -> [Int] {
-        var indices = Array(0..<values.count)
-        let vals = values
-
         // Specialize common Comparable element types without constraining SupportedType
         // (Bool is Hashable but not Comparable).
-        if let doubles = vals as? [Double?] {
-            return sortIndicesPrimitiveFast(doubles, ascending: ascending)
+        if let column = self as? TypedColumn<Double> {
+            return sortIndicesDouble(column.values, nullCount: column.nullCount, ascending: ascending)
         }
-        if let floats = vals as? [Float?] {
-            return sortIndicesPrimitiveFast(floats, ascending: ascending)
+        if let column = self as? TypedColumn<Float> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
-        if let ints = vals as? [Int64?] {
-            return sortIndicesPrimitiveFast(ints, ascending: ascending)
+        if let column = self as? TypedColumn<Int64> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
-        if let ints = vals as? [Int32?] {
-            return sortIndicesPrimitiveFast(ints, ascending: ascending)
+        if let column = self as? TypedColumn<Int32> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
+        if let column = self as? TypedColumn<Int> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
+        }
+        var indices = Array(0..<values.count)
+        let vals = values
         if let strings = vals as? [String?] {
             sortIndices(&indices, ascending: ascending) { strings[$0] }
             return indices
@@ -284,52 +329,122 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     public var nonNullValues: [T] { values.compactMap { $0 } }
 }
 
-/// High-performance raw pointer index sort for dense primitive types without null handling overhead.
-/// For `Double` columns the sort is accelerated via `vDSP_vsortD` (Accelerate framework).
-/// For all other `Comparable` types the standard library `sort` is used.
-private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], ascending: Bool) -> [Int] {
-    let n = vals.count
-    var indices = Array(0..<n)
-    let containsNil = vals.contains(where: { $0 == nil })
-    if !containsNil {
-        let rawVals = vals.compactMap { $0 }
-
-        // Fast path for Double: vDSP_vsortD sorts a value copy in O(N log N) using
-        // LLVM-vectorised comparisons, then we recover the original index permutation.
-        if let doubles = rawVals as? [Double] {
-            // 1. Sort a value copy using vDSP
-            var sortedVals = doubles
-            let order: Int32 = ascending ? 1 : -1
-            sortedVals.withUnsafeMutableBufferPointer { buf in
-                vDSP_vsortD(buf.baseAddress!, vDSP_Length(n), order)
-            }
-            // 2. Argsort: for each position in sortedVals find the corresponding original index.
-            //    We pair (originalIndex, value) and sort by value to recover the permutation
-            //    in a single O(N log N) Swift sort (values already in correct order so comparison
-            //    hits cache efficiently).
-            var tagged = doubles.enumerated().map { ($0.offset, $0.element) }
-            if ascending {
-                tagged.sort { $0.1 < $1.1 }
-            } else {
-                tagged.sort { $0.1 > $1.1 }
-            }
-            return tagged.map { $0.0 }
-        }
-
-        rawVals.withUnsafeBufferPointer { buf in
-            guard let ptr = buf.baseAddress else { return }
-            if ascending {
-                indices.sort { ptr[$0] < ptr[$1] }
-            } else {
-                indices.sort { ptr[$0] > ptr[$1] }
-            }
-        }
-        return indices
+private func sortIndicesDouble(_ values: [Double?], nullCount: Int, ascending: Bool) -> [Int] {
+    let validCount = values.count - nullCount
+    // Sparse columns do not amortize a full-row radix key buffer.
+    if validCount < 1_024 || validCount < values.count / 20 {
+        return sortIndicesPrimitiveFast(values, nullCount: nullCount, ascending: ascending)
     }
-    sortIndices(&indices, ascending: ascending) { vals[$0] }
+    var tagged: [(index: Int, value: Double)] = []
+    var missing: [Int] = []
+    tagged.reserveCapacity(validCount)
+    missing.reserveCapacity(nullCount)
+    var previous: Double?
+    var direction = 0
+    var runs = 1
+    // Keep adaptive comparison sorting when monotone runs span at least 64 values on average.
+    let runLimit = max(8, validCount / 64)
+    for (index, optional) in values.enumerated() {
+        guard let value = optional else {
+            missing.append(index)
+            continue
+        }
+        if value.isNaN {
+            var indices = Array(values.indices)
+            sortIndices(&indices, ascending: ascending) { values[$0] }
+            return indices
+        }
+        if let previous, value != previous {
+            let nextDirection = value > previous ? 1 : -1
+            if direction != 0 && direction != nextDirection { runs += 1 }
+            direction = nextDirection
+        }
+        if runs > runLimit {
+            tagged.removeAll(keepingCapacity: false)
+            missing.removeAll(keepingCapacity: false)
+            if let indices = radixIndicesDouble(values, nullCount: nullCount, ascending: ascending) {
+                return indices
+            }
+            var indices = Array(values.indices)
+            sortIndices(&indices, ascending: ascending) { values[$0] }
+            return indices
+        }
+        previous = value
+        tagged.append((index, value))
+    }
+    tagged.sort { ascending ? $0.value < $1.value : $0.value > $1.value }
+    var indices = tagged.map { $0.index }
+    indices.append(contentsOf: missing)
     return indices
 }
 
+private func radixIndicesDouble(_ values: [Double?], nullCount: Int, ascending: Bool) -> [Int]? {
+    var keys = [UInt64](repeating: 0, count: values.count)
+    var indices: [Int] = []
+    var missing: [Int] = []
+    indices.reserveCapacity(values.count)
+    missing.reserveCapacity(nullCount)
+    var differingBits: UInt64 = 0
+    var firstKey: UInt64?
+    for (index, optional) in values.enumerated() {
+        guard let value = optional else {
+            missing.append(index)
+            continue
+        }
+        guard !value.isNaN else { return nil }
+        let bits = value == 0 ? UInt64(0) : value.bitPattern
+        var key = bits >> 63 == 0 ? bits ^ (UInt64(1) << 63) : ~bits
+        if !ascending { key = ~key }
+        keys[index] = key
+        if let firstKey { differingBits |= key ^ firstKey } else { firstKey = key }
+        indices.append(index)
+    }
+    var scratch = [Int](repeating: 0, count: indices.count)
+    for shift in stride(from: 0, to: 64, by: 8) where ((differingBits >> shift) & 255) != 0 {
+        var offsets = [Int](repeating: 0, count: 256)
+        for index in indices { offsets[Int((keys[index] >> shift) & 255)] += 1 }
+        var next = 0
+        for bucket in offsets.indices {
+            let count = offsets[bucket]
+            offsets[bucket] = next
+            next += count
+        }
+        for index in indices {
+            let bucket = Int((keys[index] >> shift) & 255)
+            scratch[offsets[bucket]] = index
+            offsets[bucket] += 1
+        }
+        swap(&indices, &scratch)
+    }
+    indices.append(contentsOf: missing)
+    return indices
+}
+
+/// Sorts cached non-null keys once and appends missing rows in their original order.
+private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], nullCount: Int, ascending: Bool) -> [Int] {
+    var tagged: [(index: Int, value: T)] = []
+    var missing: [Int] = []
+    tagged.reserveCapacity(vals.count - nullCount)
+    missing.reserveCapacity(nullCount)
+    for (index, value) in vals.enumerated() {
+        if let value {
+            // NaN does not define a strict ordering. Preserve the existing comparison path.
+            if value != value {
+                var indices = Array(vals.indices)
+                sortIndices(&indices, ascending: ascending) { vals[$0] }
+                return indices
+            }
+            tagged.append((index, value))
+        } else {
+            missing.append(index)
+        }
+    }
+    // Keep direction inside one comparator for the Swift 6.4 Release workaround.
+    tagged.sort { ascending ? $0.value < $1.value : $0.value > $1.value }
+    var indices = tagged.map { $0.index }
+    indices.append(contentsOf: missing)
+    return indices
+}
 
 /// Nulls-last index sort over optional Comparable keys.
 private func sortIndices<C: Comparable>(_ indices: inout [Int], ascending: Bool, key: (Int) -> C?) {
@@ -386,7 +501,7 @@ extension TypedColumn where T == Double {
         sqrt(variance())
     }
 
-    /// vDSP-accelerated indexed gather for Double columns.
+    /// Indexed gather for Double columns, preserving missing values.
     /// - Parameters:
     ///   - indices: Array of row or column integer indices.
     /// - Returns: A strongly-typed column containing the computed values.
@@ -395,6 +510,7 @@ extension TypedColumn where T == Double {
         guard n > 0 else { return TypedColumn<Double>(name: name, values: []) }
 
         var result = [Double?](repeating: nil, count: n)
+        var gatheredNullCount = 0
         values.withUnsafeBufferPointer { srcBuf in
             indices.withUnsafeBufferPointer { idxBuf in
                 result.withUnsafeMutableBufferPointer { dstBuf in
@@ -402,12 +518,14 @@ extension TypedColumn where T == Double {
                           let idx = idxBuf.baseAddress,
                           let dst = dstBuf.baseAddress else { return }
                     for i in 0..<n {
-                        dst[i] = src[idx[i]]
+                        let value = src[idx[i]]
+                        dst[i] = value
+                        if _nullCount > 0, case nil = value { gatheredNullCount += 1 }
                     }
                 }
             }
         }
-        return TypedColumn<Double>(name: name, values: result)
+        return TypedColumn<Double>(name: name, values: result, nullCount: gatheredNullCount)
     }
 
     /// Builds a row mask for common numeric `FilterCondition`s without type erasure.
@@ -453,335 +571,119 @@ extension TypedColumn where T == Double {
     }
 }
 
-// MARK: – Filter Indices Helpers (Bitmap-Free Fast Paths & SIMD Acceleration)
+// MARK: – Typed filter indices
 
-private func filterIndicesDoubleSIMD(values: [Double], condition: FilterCondition) -> [Int]? {
-    let count = values.count
-    var res = [Int]()
-    res.reserveCapacity(count / 2)
-
-    return values.withUnsafeBufferPointer { buf -> [Int]? in
-        guard let base = buf.baseAddress else { return res }
-        var i = 0
-        let simdWidth = 4
-        let limit = count - (count % simdWidth)
-
-        switch condition {
-        case .greaterThan(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            let thrVec = SIMD4<Double>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Double>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .> thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] > thr { res.append(i) }
-                i += 1
-            }
-        case .lessThan(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            let thrVec = SIMD4<Double>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Double>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .< thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] < thr { res.append(i) }
-                i += 1
-            }
-        case .greaterThanOrEqual(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            let thrVec = SIMD4<Double>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Double>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .>= thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] >= thr { res.append(i) }
-                i += 1
-            }
-        case .lessThanOrEqual(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            let thrVec = SIMD4<Double>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Double>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .<= thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] <= thr { res.append(i) }
-                i += 1
-            }
-        case .equals(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            let thrVec = SIMD4<Double>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Double>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .== thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] == thr { res.append(i) }
-                i += 1
-            }
-        case .notEquals(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            let thrVec = SIMD4<Double>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Double>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .!= thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] != thr { res.append(i) }
-                i += 1
-            }
-        case .isNull, .isNotNull, .contains:
-            return nil
+private func filterIndicesFloating<T: BinaryFloatingPoint>(values: [T?], nullCount: Int, condition: FilterCondition) -> [Int]? {
+    switch condition {
+    case .isNull: return values.indices.filter { values[$0] == nil }
+    case .isNotNull: return selectedIndices(values) { _ in true }
+    default: break
+    }
+    guard let comparison = numericComparison(condition), let threshold = toDouble(comparison.1) else { return nil }
+    var operation = comparison.0
+    if let integer = toInt64(comparison.1), Int64(exactly: threshold) != integer {
+        // No representable Double lies between this rounded threshold and the integer.
+        let roundedBelow = Int64(exactly: threshold).map { $0 < integer } ?? false
+        switch operation {
+        case .equal: return []
+        case .notEqual: return selectedIndices(values) { _ in true }
+        case .less, .lessEqual: operation = roundedBelow ? .lessEqual : .less
+        case .greater, .greaterEqual: operation = roundedBelow ? .greater : .greaterEqual
         }
-        return res
+    }
+    // Fusing null checks with native floating comparisons can slow dense selections.
+    if nullCount == 0, let nativeThreshold = T(exactly: threshold) {
+        switch operation {
+        case .equal: return selectedIndices(values) { $0 == nativeThreshold }
+        case .notEqual: return selectedIndices(values) { $0 != nativeThreshold }
+        case .less: return selectedIndices(values) { $0 < nativeThreshold }
+        case .lessEqual: return selectedIndices(values) { $0 <= nativeThreshold }
+        case .greater: return selectedIndices(values) { $0 > nativeThreshold }
+        case .greaterEqual: return selectedIndices(values) { $0 >= nativeThreshold }
+        }
+    }
+    switch operation {
+    case .equal: return selectedIndices(values) { Double($0) == threshold }
+    case .notEqual: return selectedIndices(values) { Double($0) != threshold }
+    case .less: return selectedIndices(values) { Double($0) < threshold }
+    case .lessEqual: return selectedIndices(values) { Double($0) <= threshold }
+    case .greater: return selectedIndices(values) { Double($0) > threshold }
+    case .greaterEqual: return selectedIndices(values) { Double($0) >= threshold }
     }
 }
 
-private func filterIndicesInt64SIMD(values: [Int64], condition: FilterCondition) -> [Int]? {
-    let count = values.count
-    var res = [Int]()
-    res.reserveCapacity(count / 2)
+private enum NumericComparison {
+    case equal, notEqual, less, lessEqual, greater, greaterEqual
+}
 
-    return values.withUnsafeBufferPointer { buf -> [Int]? in
-        guard let base = buf.baseAddress else { return res }
-        var i = 0
-        let simdWidth = 4
-        let limit = count - (count % simdWidth)
-
-        switch condition {
-        case .greaterThan(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            let thrVec = SIMD4<Int64>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Int64>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .> thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] > thr { res.append(i) }
-                i += 1
-            }
-        case .lessThan(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            let thrVec = SIMD4<Int64>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Int64>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .< thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] < thr { res.append(i) }
-                i += 1
-            }
-        case .greaterThanOrEqual(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            let thrVec = SIMD4<Int64>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Int64>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .>= thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] >= thr { res.append(i) }
-                i += 1
-            }
-        case .lessThanOrEqual(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            let thrVec = SIMD4<Int64>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Int64>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .<= thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] <= thr { res.append(i) }
-                i += 1
-            }
-        case .equals(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            let thrVec = SIMD4<Int64>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Int64>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .== thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] == thr { res.append(i) }
-                i += 1
-            }
-        case .notEquals(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            let thrVec = SIMD4<Int64>(repeating: thr)
-            while i < limit {
-                let vec = SIMD4<Int64>(base[i], base[i+1], base[i+2], base[i+3])
-                let mask = vec .!= thrVec
-                if any(mask) {
-                    if mask[0] { res.append(i) }
-                    if mask[1] { res.append(i+1) }
-                    if mask[2] { res.append(i+2) }
-                    if mask[3] { res.append(i+3) }
-                }
-                i += simdWidth
-            }
-            while i < count {
-                if base[i] != thr { res.append(i) }
-                i += 1
-            }
-        case .isNull, .isNotNull, .contains:
-            return nil
-        }
-        return res
+private func numericComparison(_ condition: FilterCondition) -> (NumericComparison, any Sendable)? {
+    switch condition {
+    case .equals(let value): return (.equal, value)
+    case .notEquals(let value): return (.notEqual, value)
+    case .lessThan(let value): return (.less, value)
+    case .lessThanOrEqual(let value): return (.lessEqual, value)
+    case .greaterThan(let value): return (.greater, value)
+    case .greaterThanOrEqual(let value): return (.greaterEqual, value)
+    default: return nil
     }
 }
 
-private func filterIndicesDouble(values: [Double?], condition: FilterCondition) -> [Int]? {
-    let count = values.count
-    var res = [Int]()
-    res.reserveCapacity(count / 2)
-
-    return values.withUnsafeBufferPointer { buf -> [Int]? in
-        guard let ptr = buf.baseAddress else { return nil }
-
-        switch condition {
-        case .isNull:
-            for i in 0..<count { if ptr[i] == nil { res.append(i) } }
-        case .isNotNull:
-            for i in 0..<count { if ptr[i] != nil { res.append(i) } }
-        case .greaterThan(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x > thr { res.append(i) } }
-        case .lessThan(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x < thr { res.append(i) } }
-        case .greaterThanOrEqual(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x >= thr { res.append(i) } }
-        case .lessThanOrEqual(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x <= thr { res.append(i) } }
-        case .equals(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x == thr { res.append(i) } }
-        case .notEquals(let rhs):
-            guard let thr = toDouble(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x != thr { res.append(i) } }
-        case .contains:
-            return nil
-        }
-        return res
+private func selectedIndices<T>(_ values: [T?], where predicate: (T) -> Bool) -> [Int] {
+    var result: [Int] = []
+    result.reserveCapacity(values.count / 2)
+    for (index, value) in values.enumerated() {
+        if let value, predicate(value) { result.append(index) }
     }
+    return result
 }
 
-private func filterIndicesInt64(values: [Int64?], condition: FilterCondition) -> [Int]? {
-    let count = values.count
-    var res = [Int]()
-    res.reserveCapacity(count / 2)
+private func filterIndicesInteger<T: FixedWidthInteger & SignedInteger>(values: [T?], condition: FilterCondition) -> [Int]? {
+    switch condition {
+    case .isNull: return values.indices.filter { values[$0] == nil }
+    case .isNotNull: return selectedIndices(values) { _ in true }
+    default: break
+    }
+    guard let comparison = numericComparison(condition) else { return nil }
+    var operation = comparison.0
+    let rhs = comparison.1
 
-    return values.withUnsafeBufferPointer { buf -> [Int]? in
-        guard let ptr = buf.baseAddress else { return nil }
-
-        switch condition {
-        case .isNull:
-            for i in 0..<count { if ptr[i] == nil { res.append(i) } }
-        case .isNotNull:
-            for i in 0..<count { if ptr[i] != nil { res.append(i) } }
-        case .greaterThan(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x > thr { res.append(i) } }
-        case .lessThan(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x < thr { res.append(i) } }
-        case .greaterThanOrEqual(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x >= thr { res.append(i) } }
-        case .lessThanOrEqual(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x <= thr { res.append(i) } }
-        case .equals(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x == thr { res.append(i) } }
-        case .notEquals(let rhs):
-            guard let thr = toInt64(rhs) else { return nil }
-            for i in 0..<count { if let x = ptr[i], x != thr { res.append(i) } }
-        case .contains:
-            return nil
+    let threshold: Int64
+    if let integer = toInt64(rhs) {
+        threshold = integer
+    } else if let floating = toDouble(rhs) {
+        // Classify once. Never round a column integer through Double or trap on a cast.
+        guard let floor = Int64(exactly: floating.rounded(.down)) else {
+            let matches: Bool
+            if floating.isNaN {
+                matches = operation == .notEqual
+            } else if floating > 0 {
+                matches = operation == .less || operation == .lessEqual || operation == .notEqual
+            } else {
+                matches = operation == .greater || operation == .greaterEqual || operation == .notEqual
+            }
+            return matches ? selectedIndices(values) { _ in true } : []
         }
-        return res
+        threshold = floor
+        if floating != Double(floor) {
+            // For fractional r: x < r iff x <= floor(r), x >= r iff x > floor(r).
+            switch operation {
+            case .equal: return []
+            case .notEqual: return selectedIndices(values) { _ in true }
+            case .less, .lessEqual: operation = .lessEqual
+            case .greater, .greaterEqual: operation = .greater
+            }
+        }
+    } else {
+        return nil
+    }
+
+    switch operation {
+    case .equal: return selectedIndices(values) { Int64($0) == threshold }
+    case .notEqual: return selectedIndices(values) { Int64($0) != threshold }
+    case .less: return selectedIndices(values) { Int64($0) < threshold }
+    case .lessEqual: return selectedIndices(values) { Int64($0) <= threshold }
+    case .greater: return selectedIndices(values) { Int64($0) > threshold }
+    case .greaterEqual: return selectedIndices(values) { Int64($0) >= threshold }
     }
 }
 
@@ -835,3 +737,18 @@ extension TypedColumn: Equatable where T: Equatable {
     }
 }
 
+
+private extension TypedColumn {
+    func gatheredNumeric(at indices: [Int]) -> TypedColumn<T> {
+        if _nullCount == 0 {
+            return TypedColumn<T>(name: name, values: indices.map { values[$0] }, nullCount: 0)
+        }
+        var gatheredNullCount = 0
+        let result = indices.map { index in
+            let value = values[index]
+            if case nil = value { gatheredNullCount += 1 }
+            return value
+        }
+        return TypedColumn<T>(name: name, values: result, nullCount: gatheredNullCount)
+    }
+}

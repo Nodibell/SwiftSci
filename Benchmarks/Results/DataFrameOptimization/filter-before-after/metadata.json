@@ -1,0 +1,19 @@
+{
+  "utc": "2026-09-26T10:46:01.870754+00:00",
+  "baseline_commit": "4dc6b533dd",
+  "candidate_commit": "4c5bb953547ba5d84c7fd86bf868b1680c5f1811",
+  "binaries": {
+    "before": {
+      "path": "<evidence>/filter-matrix-evidence/baseline/SciBench",
+      "sha256": "15cf0501c0a497e951f2eae23b102894b1ac72aa77dc8b2d349e1ebc9fd53589"
+    },
+    "after": {
+      "path": "<evidence>/production-comparison/.build/out/Products/Release/SciBench",
+      "sha256": "2ba181ec79f718dd5fece4823e4a873cec5c19d9e0ff62af1e966d99a24eb74b"
+    }
+  },
+  "rounds": 3,
+  "repetitions": 5,
+  "warmups": 2,
+  "method": "Serial fresh processes, alternating binary order. Exact complete output equality checked per pair."
+}

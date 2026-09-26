@@ -1,0 +1,57 @@
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64",
+        "deviceId": "redacted",
+        "deviceName" : "My Mac",
+        "modelName" : "MacBook Pro",
+        "osBuildNumber" : "26A428",
+        "osVersion" : "27.0",
+        "platform" : "macOS"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 0,
+      "passedTests" : 978,
+      "skippedTests" : 0,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "SwiftSci-Package · Built with macOS 27.0",
+  "expectedFailures" : 0,
+  "failedTests" : 0,
+  "finishTime" : 1790419548.507,
+  "passedTests" : 891,
+  "result" : "Passed",
+  "runtimeWarnings" : [
+
+  ],
+  "skippedTests" : 0,
+  "startTime" : 1790419481.793,
+  "statistics" : [
+    {
+      "subtitle" : "102 test runs",
+      "title" : "15 tests ran with dynamic parameters"
+    }
+  ],
+  "testFailures" : [
+
+  ],
+  "title" : "Test - SwiftSci-Package",
+  "topInsights" : [
+    {
+      "category" : "Longest Test Runs",
+      "impact" : "80% of duration",
+      "text" : "1 longest test run with outlier durations exceeding 0.38s (three standard deviations)"
+    },
+    {
+      "category" : "Longest Test Runs",
+      "impact" : "83% of duration",
+      "text" : "1 longest test run with outlier durations exceeding 0.05s (three standard deviations)"
+    }
+  ],
+  "totalTestCount" : 891
+}

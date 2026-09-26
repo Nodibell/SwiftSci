@@ -21,25 +21,6 @@ public struct CSVFieldOffset: Sendable {
     }
 }
 
-internal struct CSVRecordIndex: Sendable {
-    let fields: [CSVFieldOffset]
-    let rowStarts: [Int]
-
-    var count: Int { rowStarts.count - 1 }
-    var isEmpty: Bool { count == 0 }
-
-    func row(at index: Int) -> ArraySlice<CSVFieldOffset> {
-        fields[rowStarts[index]..<rowStarts[index + 1]]
-    }
-
-    func field(row: Int, column: Int) -> CSVFieldOffset? {
-        guard row < count else { return nil }
-        let start = rowStarts[row]
-        guard column < rowStarts[row + 1] - start else { return nil }
-        return fields[start + column]
-    }
-}
-
 /// Zero-copy, RFC 4180 compliant CSV byte-level parser.
 ///
 /// Uses a Deterministic Finite Automaton (DFA) on an `UnsafeBufferPointer<UInt8>`
@@ -111,7 +92,7 @@ public final class SystemsCSVParser: Sendable {
         }
         let starts = fieldBases
         let rows = rowBases
-        let fields = [CSVFieldOffset](unsafeUninitializedCapacity: starts.last!) { output, initialized in
+        let fields = [PackedCSVField](unsafeUninitializedCapacity: starts.last!) { output, initialized in
             let destination = CSVFieldSlots(pointer: output.baseAddress!)
             DispatchQueue.concurrentPerform(iterations: records.count) { chunk in
                 records[chunk].fields.withUnsafeBufferPointer { source in
@@ -138,7 +119,7 @@ public final class SystemsCSVParser: Sendable {
     private func scanIndex(
         buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, rejectQuotes: Bool
     ) -> CSVRecordIndex? {
-        var fields = [CSVFieldOffset]()
+        var fields = [PackedCSVField]()
         fields.reserveCapacity(min(range.count / 8, 100_000))
         var rowStarts = [0]
         rowStarts.reserveCapacity(min(range.count / 16, 100_000) + 1)
@@ -170,7 +151,7 @@ public final class SystemsCSVParser: Sendable {
                     insideQuotes = true
                 } else if byte == delimiterByte {
                     let len = index - fieldStart
-                    fields.append(CSVFieldOffset(
+                    fields.append(PackedCSVField(
                         startOffset: fieldStart,
                         length: max(0, len),
                         escapedQuotesPresent: escapedQuotesFound
@@ -183,7 +164,7 @@ public final class SystemsCSVParser: Sendable {
                         endPosition -= 1
                     }
                     let len = endPosition - fieldStart
-                    fields.append(CSVFieldOffset(
+                    fields.append(PackedCSVField(
                         startOffset: fieldStart,
                         length: max(0, len),
                         escapedQuotesPresent: escapedQuotesFound
@@ -201,7 +182,7 @@ public final class SystemsCSVParser: Sendable {
         // Handle trailing line without newline
         if fieldStart < count {
             let len = count - fieldStart
-            fields.append(CSVFieldOffset(
+            fields.append(PackedCSVField(
                 startOffset: fieldStart,
                 length: max(0, len),
                 escapedQuotesPresent: escapedQuotesFound
@@ -220,5 +201,5 @@ public final class SystemsCSVParser: Sendable {
 // disjoint output range; the mapped input is immutable throughout the scan.
 private struct CSVScanBuffer: @unchecked Sendable { let pointer: UnsafeBufferPointer<UInt8> }
 private struct CSVChunkSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<CSVRecordIndex?> }
-private struct CSVFieldSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<CSVFieldOffset> }
+private struct CSVFieldSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<PackedCSVField> }
 private struct CSVRowSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<Int> }

@@ -49,7 +49,11 @@ struct BoundedCompositeGroupingTests {
 
     @Test func compactRangesAtIntegerLimitsStayExact() throws {
         let first: [Int64?] = (0..<64).map { $0 % 11 == 0 ? nil : Int64.max - Int64($0 % 3) }
-        let second: [Int64?] = (0..<64).map { $0 % 7 == 0 ? nil : Int64.min + Int64(($0 / 3) % 2) }
+        let second: [Int64?] = (0..<64).map { (index: Int) -> Int64? in
+            if index % 7 == 0 { return nil }
+            let offset = Int64((index / 3) % 2)
+            return Int64.min + offset
+        }
         try checkPairs(first, second)
         try checkPairs(first.map { $0.map(Int.init) }, second.map { $0.map(Int.init) })
         let narrowFirst: [Int32?] = (0..<64).map { Int32.max - Int32($0 % 3) }

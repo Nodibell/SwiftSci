@@ -82,7 +82,11 @@ struct AdaptiveDoubleSortingTests {
 
     @Test(arguments: [1, 2_048])
     func nanRetainsComparisonFallback(nanIndex: Int) {
-        var values: [Double?] = (0..<2_049).map { $0 % 19 == 0 ? nil : Double(($0 * 37) % 101) }
+        var values: [Double?] = (0..<2_049).map { (index: Int) -> Double? in
+            if index % 19 == 0 { return nil }
+            let remainder = (index * 37) % 101
+            return Double(remainder)
+        }
         values[nanIndex] = Double(bitPattern: 0xfff8_0000_0000_0001)
         let column = TypedColumn<Double>(name: "key", values: values)
         for ascending in [true, false] {

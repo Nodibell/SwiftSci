@@ -63,7 +63,11 @@ struct StructuredGroupingTests {
     }
 
     @Test func generatedTuplesMatchIndependentRowEquality() throws {
-        let keys: [Int64?] = (0..<257).map { $0 % 13 == 0 ? nil : Int64($0 % 17) + 9_007_199_254_740_992 }
+        let keys: [Int64?] = (0..<257).map { (index: Int) -> Int64? in
+            if index % 13 == 0 { return nil }
+            let offset = Int64(index % 17)
+            return 9_007_199_254_740_992 + offset
+        }
         let labels: [String?] = (0..<257).map { [nil, "null", "__null__", "a||b", ""][($0 * 7) % 5] }
         var representatives: [Int] = []
         var sums: [Double] = []

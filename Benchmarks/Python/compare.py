@@ -1,24 +1,80 @@
 #!/usr/bin/env python3
 """
-compare.py — Compare Swift and Python benchmark results.
+compare.py — Benchmark Methodology v2 Comparison Engine.
+
+Categorizes and compares Swift and Python benchmark results into:
+  1. Strict Apple-to-Apple (Identical Datasets, Algorithms & Parameters)
+  2. Library-to-Library (Ecosystem Parity: SwiftSci vs Scikit-Learn/Statsmodels)
+  3. Architecture & Hardware Specialization (Metal GPU, SIMD MSL, KV-Cache)
 
 Usage:
     python3 compare.py swift_results.json python_results.json
-
-Prints a full comparison table. Only benchmarks in CI_GATE are allowed to
-fail the process (exit 1) when Swift is slower than --regression-threshold.
-Known gaps (DataFrame, trees, etc.) are reported as informational until 0.8.
+    python3 compare.py swift_results.json python_results.json --markdown
+    python3 compare.py swift_results.json python_results.json --gate-all
 """
 
 import argparse
 import json
 import re
 import sys
+from typing import Dict, List, Optional, Tuple
 
 
-# Normalized name keys that participate in the CI regression gate.
-# Keep this list to pairs that are algorithmically comparable and where
-# Swift is expected to stay competitive (Forecast, ML wins, Pearson, SHAP).
+# Category definitions
+CAT_APPLE_TO_APPLE = "1. Strict Apple-to-Apple (C/SIMD Parity & Identical Fixtures)"
+CAT_LIBRARY_TO_LIBRARY = "2. Library-to-Library (Ecosystem Parity: SwiftSci vs Scikit-Learn / Statsmodels)"
+CAT_HARDWARE_SPECIALIZED = "3. Architecture & Hardware Specialization (Metal GPU, SIMD MSL, KV-Cache)"
+CAT_OTHER = "4. Other / Exploratory"
+
+# Categorization mapping by normalized key prefix or substring
+CATEGORIES = {
+    # ── Category 1: Strict Apple-to-Apple ──
+    "mean": CAT_APPLE_TO_APPLE,
+    "stddev": CAT_APPLE_TO_APPLE,
+    "variance": CAT_APPLE_TO_APPLE,
+    "pearson correlation": CAT_APPLE_TO_APPLE,
+    "two-sample t-test": CAT_APPLE_TO_APPLE,
+    "spearman correlation": CAT_APPLE_TO_APPLE,
+    "csv read": CAT_APPLE_TO_APPLE,
+    "csv stream read": CAT_APPLE_TO_APPLE,
+    "csv stream + filter": CAT_APPLE_TO_APPLE,
+    "csv stream + groupby": CAT_APPLE_TO_APPLE,
+    "filter rows": CAT_APPLE_TO_APPLE,
+    "groupby + sum/mean": CAT_APPLE_TO_APPLE,
+    "sortby double column": CAT_APPLE_TO_APPLE,
+    "dataframe simd hash join": CAT_APPLE_TO_APPLE,
+    "forecast errors suite": CAT_APPLE_TO_APPLE,
+    "classification roc-auc": CAT_APPLE_TO_APPLE,
+    "onehotencoder fittransform": CAT_APPLE_TO_APPLE,
+
+    # ── Category 2: Library-to-Library ──
+    "holt-winters fit": CAT_LIBRARY_TO_LIBRARY,
+    "arima fit": CAT_LIBRARY_TO_LIBRARY,
+    "arima forecast": CAT_LIBRARY_TO_LIBRARY,
+    "randomforest fit": CAT_LIBRARY_TO_LIBRARY,
+    "gbdt regressor fit": CAT_LIBRARY_TO_LIBRARY,
+    "kmeans fit": CAT_LIBRARY_TO_LIBRARY,
+    "pca svd fittransform": CAT_LIBRARY_TO_LIBRARY,
+    "pca svd fit": CAT_LIBRARY_TO_LIBRARY,
+    "naivebayesclassifier fit": CAT_LIBRARY_TO_LIBRARY,
+    "isolationforest fit": CAT_LIBRARY_TO_LIBRARY,
+    "kernelshap explain": CAT_LIBRARY_TO_LIBRARY,
+    "treeshap explanation": CAT_LIBRARY_TO_LIBRARY,
+    "linearregression fit": CAT_LIBRARY_TO_LIBRARY,
+
+    # ── Category 3: Architecture & Specialization ──
+    "linearsvc fit": CAT_HARDWARE_SPECIALIZED,
+    "vectorstore cosine search": CAT_HARDWARE_SPECIALIZED,
+    "global average pooling": CAT_HARDWARE_SPECIALIZED,
+    "sqlite direct dataframe ingestion": CAT_HARDWARE_SPECIALIZED,
+    "metal": CAT_HARDWARE_SPECIALIZED,
+    "kv-cache": CAT_HARDWARE_SPECIALIZED,
+    "rope": CAT_HARDWARE_SPECIALIZED,
+    "ringlwe": CAT_HARDWARE_SPECIALIZED,
+    "pnns": CAT_HARDWARE_SPECIALIZED,
+}
+
+# Gated benchmarks in CI regression testing
 CI_GATE_KEYS = frozenset({
     "pearson correlation",
     "holt-winters fit",
@@ -39,36 +95,94 @@ def load(path: str) -> dict:
 
 
 def normalize(name: str) -> str:
-    """Strip parenthetical qualifiers like '(NumPy, …)' / '(1k pts, …)'."""
-    return re.sub(r"\s*\([^)]*\)\s*", " ", name).strip().lower()
+    """Strip parenthetical qualifiers like '(NumPy, …)' / '(1k pts, …)' and synonyms."""
+    cleaned = re.sub(r"\s*\([^)]*\)\s*", " ", name).strip().lower()
+    cleaned = cleaned.replace("rank correlation", "correlation")
+    return cleaned
+
+
+def categorize(key: str) -> str:
+    for pattern, cat in CATEGORIES.items():
+        if pattern in key:
+            return cat
+    return CAT_OTHER
+
+
+def print_table_text(category_title: str, rows: List[dict]):
+    header = (
+        f"{'Benchmark':<50}  {'Swift(ms)':>10}  {'Python(ms)':>10}  "
+        f"{'Speedup':>9}  {'Winner':>10}  {'Gate':>6}"
+    )
+    print(f"\n📂 {category_title}")
+    print("═" * len(header))
+    print(header)
+    print("─" * len(header))
+
+    for r in rows:
+        gate_tag = "CI" if r["gated"] else "info"
+        if r["python_ms"] is None:
+            print(f"  {r['name']:<48}  {r['swift_ms']:10.3f}  {'n/a':>10}  "
+                  f"{'n/a':>9}  {'?':>10}  {gate_tag:>6}")
+            continue
+
+        speedup = r["speedup"]
+        winner = "🟢 Swift" if speedup >= 1.0 else "🔴 Python"
+        sp_str = f"{speedup:.2f}×"
+        print(f"  {r['name']:<48}  {r['swift_ms']:10.3f}  {r['python_ms']:10.3f}  "
+              f"{sp_str:>9}  {winner:>10}  {gate_tag:>6}")
+    print("═" * len(header))
+
+
+def print_table_markdown(category_title: str, rows: List[dict]):
+    print(f"\n### {category_title}\n")
+    print("| Benchmark | Swift (ms) | Python (ms) | Speedup | Winner | Status |")
+    print("|:---|---:|---:|---:|:---:|:---:|")
+    for r in rows:
+        swift_str = f"{r['swift_ms']:.3f}"
+        python_str = f"{r['python_ms']:.3f}" if r['python_ms'] is not None else "n/a"
+        speedup_str = f"**{r['speedup']:.2f}×**" if r['speedup'] is not None else "n/a"
+        winner = "🟢 Swift" if (r['speedup'] or 0) >= 1.0 else "🔴 Python"
+        gate_tag = "Gated" if r["gated"] else "Informational"
+        print(f"| {r['name']} | {swift_str} | {python_str} | {speedup_str} | {winner} | {gate_tag} |")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compare Swift vs Python benchmark results")
-    parser.add_argument("swift_json",  help="Path to swift_results.json")
+    parser = argparse.ArgumentParser(description="Compare Swift vs Python benchmark results (v2 Methodology)")
+    parser.add_argument("swift_json", help="Path to swift_results.json")
     parser.add_argument("python_json", help="Path to python_results.json")
     parser.add_argument(
         "--regression-threshold", type=float, default=1.2,
-        help="Speedup ratio below which a CI failure is triggered "
-             "(default: 2.0 = Swift must not be >2× slower on gated benches)",
+        help="Speedup ratio below which a CI failure is triggered",
     )
     parser.add_argument(
         "--min-ms-threshold", type=float, default=1.0,
-        help="Minimum Swift execution time (in ms) to be considered for a CI failure. "
-             "Prevents failing on micro-benchmarks that execute almost instantly."
+        help="Minimum Swift execution time to trigger a regression failure",
     )
     parser.add_argument(
         "--gate-all", action="store_true",
-        help="Apply the regression threshold to every matched pair (ignore CI_GATE)",
+        help="Apply regression threshold to every matched pair",
+    )
+    parser.add_argument(
+        "--markdown", action="store_true",
+        help="Output comparison as formatted GitHub Flavored Markdown",
     )
     args = parser.parse_args()
 
-    swift_report  = load(args.swift_json)
+    swift_report = load(args.swift_json)
     python_report = load(args.python_json)
 
     python_index = {normalize(r["name"]): r for r in python_report["results"]}
 
-    rows = []
+    categorized_rows: Dict[str, List[dict]] = {
+        CAT_APPLE_TO_APPLE: [],
+        CAT_LIBRARY_TO_LIBRARY: [],
+        CAT_HARDWARE_SPECIALIZED: [],
+        CAT_OTHER: [],
+    }
+
+    regression_failures = []
+    known_gaps = []
+
     for sr in swift_report["results"]:
         key = normalize(sr["name"])
         pr = python_index.get(key)
@@ -78,85 +192,70 @@ def main():
             if pr is not None:
                 key = normalize(pr["name"])
 
-        gated = args.gate_all or key in CI_GATE_KEYS
+        gated = args.gate_all or any(gk == key or key.startswith(gk) for gk in CI_GATE_KEYS)
+        cat = categorize(key)
 
         if pr:
             speedup = pr["medianMs"] / sr["medianMs"] if sr["medianMs"] > 0 else float("inf")
-            rows.append({
-                "name":      sr["name"],
-                "key":       key,
-                "swift_ms":  sr["medianMs"],
+            row = {
+                "name": sr["name"],
+                "key": key,
+                "category": cat,
+                "swift_ms": sr["medianMs"],
                 "python_ms": pr["medianMs"],
-                "speedup":   speedup,
-                "faster":    speedup >= 1.0,
-                "gated":     gated,
-            })
+                "speedup": speedup,
+                "faster": speedup >= 1.0,
+                "gated": gated,
+            }
+            categorized_rows[cat].append(row)
+
+            if speedup < (1.0 / args.regression_threshold):
+                if sr["medianMs"] < args.min_ms_threshold:
+                    known_gaps.append(row)
+                elif gated:
+                    regression_failures.append(row)
+                else:
+                    known_gaps.append(row)
         else:
-            rows.append({
-                "name":      sr["name"],
-                "key":       key,
-                "swift_ms":  sr["medianMs"],
+            row = {
+                "name": sr["name"],
+                "key": key,
+                "category": cat,
+                "swift_ms": sr["medianMs"],
                 "python_ms": None,
-                "speedup":   None,
-                "faster":    None,
-                "gated":     gated,
-            })
+                "speedup": None,
+                "faster": None,
+                "gated": gated,
+            }
+            categorized_rows[cat].append(row)
 
-    header = (
-        f"{'Benchmark':<52}  {'Swift(ms)':>10}  {'Python(ms)':>10}  "
-        f"{'Speedup':>9}  {'Winner':>8}  {'Gate':>6}"
-    )
-    print("\n" + "═" * len(header))
-    print(header)
-    print("─" * len(header))
-
-    regression_failures = []
-    known_gaps = []
-
-    for r in rows:
-        gate_tag = "CI" if r["gated"] else "info"
-        if r["python_ms"] is None:
-            print(f"  {r['name']:<50}  {r['swift_ms']:10.3f}  {'n/a':>10}  "
-                  f"{'n/a':>9}  {'?':>8}  {gate_tag:>6}")
+    # Render report
+    for cat_name in [CAT_APPLE_TO_APPLE, CAT_LIBRARY_TO_LIBRARY, CAT_HARDWARE_SPECIALIZED, CAT_OTHER]:
+        rows = categorized_rows[cat_name]
+        if not rows:
             continue
+        if args.markdown:
+            print_table_markdown(cat_name, rows)
+        else:
+            print_table_text(cat_name, rows)
 
-        speedup = r["speedup"]
-        winner  = "🟢 Swift" if speedup >= 1.0 else "🔴 Python"
-        sp_str  = f"{speedup:.2f}×"
-        print(f"  {r['name']:<50}  {r['swift_ms']:10.3f}  {r['python_ms']:10.3f}  "
-              f"{sp_str:>9}  {winner:>8}  {gate_tag:>6}")
+    # Global summary
+    all_matched = [r for sub in categorized_rows.values() for r in sub if r["python_ms"] is not None]
+    swift_wins = sum(1 for r in all_matched if r["faster"])
+    python_wins = sum(1 for r in all_matched if not r["faster"])
 
-        if speedup < (1.0 / args.regression_threshold):
-            if r["swift_ms"] < args.min_ms_threshold:
-                known_gaps.append(r)
-            elif r["gated"]:
-                regression_failures.append(r)
-            else:
-                known_gaps.append(r)
-
-    print("═" * len(header))
-
-    swift_wins  = sum(1 for r in rows if r.get("faster"))
-    python_wins = sum(1 for r in rows if r.get("faster") is False)
-    print(f"\n  🟢 Swift faster: {swift_wins} benchmarks")
-    print(f"  🔴 Python faster: {python_wins} benchmarks")
-
-    if known_gaps:
-        print(f"\n  ℹ️  Known gaps (informational, not gated — tracked for 0.8):")
-        for r in known_gaps:
-            print(f"    • {r['name']} — Swift {r['swift_ms']:.3f} ms vs "
-                  f"Python {r['python_ms']:.3f} ms (speedup {r['speedup']:.2f}×)")
+    print(f"\n📊 Summary: 🟢 Swift faster: {swift_wins} | 🔴 Python faster: {python_wins}")
 
     if regression_failures:
-        print(f"\n  ⚠️  REGRESSION: {len(regression_failures)} gated benchmark(s) "
+        print(f"\n⚠️  REGRESSION: {len(regression_failures)} gated benchmark(s) "
               f"where Swift is >{args.regression_threshold:.1f}× slower than Python:")
         for r in regression_failures:
             print(f"    • {r['name']} — Swift {r['swift_ms']:.3f} ms vs "
                   f"Python {r['python_ms']:.3f} ms (speedup {r['speedup']:.2f}×)")
-        print("\n  ❌ CI CHECK FAILED — performance regression detected.")
+        print("\n❌ CI CHECK FAILED — performance regression detected.")
         sys.exit(1)
 
-    print("\n  ✅ CI CHECK PASSED — no gated regressions detected.")
+    print("\n✅ CI CHECK PASSED — no regressions detected across verified suites.")
     sys.exit(0)
 
 

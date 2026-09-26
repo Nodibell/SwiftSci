@@ -12,8 +12,11 @@ struct ForecastBenchmarks: BenchmarkSuite {
 
     // MARK: – Synthetic time-series generators
 
-    /// Seasonal series: trend + sine seasonality + small noise.
+    /// Seasonal series: trend + sine seasonality + small noise, loaded from shared fixture if available.
     private static func makeSeasonal(n: Int, period: Int = 12, seed: UInt64 = 42) -> [Double] {
+        if n == 50_000 {
+            return BenchmarkDataLoader.loadDoubleVector(filename: "forecast_50k.bin", fallbackCount: n, fallbackSeed: seed)
+        }
         var rng = BenchmarkLCG(seed: seed)
         return (0..<n).map { t in
             let trend    = Double(t) * 0.3

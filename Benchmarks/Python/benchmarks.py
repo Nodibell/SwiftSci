@@ -46,6 +46,31 @@ import torch.nn as nn
 import shap
 from scipy import stats
 
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Data")
+
+
+def load_f64_fixture(filename: str, fallback_fn):
+    path = os.path.join(DATA_DIR, filename)
+    if os.path.isfile(path):
+        return np.fromfile(path, dtype="<f8")
+    return fallback_fn()
+
+
+def load_2d_fixture(filename: str, shape, fallback_fn):
+    path = os.path.join(DATA_DIR, filename)
+    if os.path.isfile(path):
+        arr = np.fromfile(path, dtype="<f8")
+        if arr.size == shape[0] * shape[1]:
+            return arr.reshape(shape)
+    return fallback_fn()
+
+
+def get_csv_fixture(filename: str, fallback_generator):
+    path = os.path.join(DATA_DIR, filename)
+    if os.path.isfile(path):
+        return path
+    return fallback_generator()
+
 
 # ── Configuration & Measurement harness ────────────────────────────────────────
 
@@ -124,9 +149,9 @@ def run_benchmark(name: str, module: str, fn, warmup=None, iterations=None, roun
 def bench_stats():
     print("▶ Running SwiftStats (NumPy / SciPy) benchmarks …")
     np.random.seed(42)
-    data = np.random.uniform(-50.0, 50.0, size=1_000_000)
-    data_b = np.random.uniform(-50.0, 50.0, size=500_000)
-    data_a = np.random.uniform(-50.0, 50.0, size=500_000)
+    data = load_f64_fixture("stats_1m.bin", lambda: np.random.uniform(-50.0, 50.0, size=1_000_000))
+    data_a = load_f64_fixture("stats_500k_a.bin", lambda: np.random.uniform(-50.0, 50.0, size=500_000))
+    data_b = load_f64_fixture("stats_500k_b.bin", lambda: np.random.uniform(-50.0, 50.0, size=500_000))
 
     results = []
     results.append(run_benchmark("Mean (NumPy, 1M elements)", "NumPy", lambda: np.mean(data)))
@@ -135,8 +160,8 @@ def bench_stats():
     results.append(run_benchmark("Pearson Correlation (NumPy, 500k)", "NumPy", lambda: np.corrcoef(data_a, data_b)))
 
     # SciPy T-Test & Spearman
-    sample1 = np.random.uniform(-50.0, 50.0, size=100_000)
-    sample2 = np.random.uniform(-50.0, 50.0, size=100_000)
+    sample1 = load_f64_fixture("stats_100k_a.bin", lambda: np.random.uniform(-50.0, 50.0, size=100_000))
+    sample2 = load_f64_fixture("stats_100k_b.bin", lambda: np.random.uniform(-50.0, 50.0, size=100_000))
     results.append(run_benchmark("Two-Sample T-Test (100k samples)", "SciPy", lambda: stats.ttest_ind(sample1, sample2, equal_var=False)))
     results.append(run_benchmark("Spearman Rank Correlation (100k pairs)", "SciPy", lambda: stats.spearmanr(sample1, sample2)))
     print()
@@ -150,17 +175,21 @@ def bench_dataframe():
     np.random.seed(42)
 
     n = 100_000
-    categories = np.random.choice(["alpha", "beta", "gamma", "delta"], size=n)
-    df_full = pd.DataFrame({
-        "id":       np.arange(n),
-        "category": categories,
-        "value_a":  np.random.uniform(0, 100, size=n),
-        "value_b":  np.random.uniform(0, 50, size=n),
-        "flag":     np.where(np.arange(n) % 2 == 0, True, False),
-    })
+    def generate_temp_csv():
+        categories = np.random.choice(["alpha", "beta", "gamma", "delta"], size=n)
+        tmp_df = pd.DataFrame({
+            "id":       np.arange(n),
+            "category": categories,
+            "value_a":  np.random.uniform(0, 100, size=n),
+            "value_b":  np.random.uniform(0, 50, size=n),
+            "flag":     np.where(np.arange(n) % 2 == 0, True, False),
+        })
+        tmp_path = "/tmp/swiftanalytics_bench_python.csv"
+        tmp_df.to_csv(tmp_path, index=False)
+        return tmp_path
 
-    csv_path = "/tmp/swiftanalytics_bench_python.csv"
-    df_full.to_csv(csv_path, index=False)
+    csv_path = get_csv_fixture("dataframe_100k.csv", generate_temp_csv)
+    df_full = pd.read_csv(csv_path)
 
     results = []
     results.append(run_benchmark("CSV Read (100k rows, 5 cols)", "Pandas", lambda: pd.read_csv(csv_path), warmup=1, iterations=5))
@@ -194,23 +223,22 @@ def bench_ml():
 
     # Linear regression
     n_lin, d_lin = 10_000, 10
-    X_lin = np.random.uniform(-1.0, 1.0, size=(n_lin, d_lin))
-    true_w = np.random.uniform(-1.0, 1.0, size=d_lin)
-    y_lin = X_lin @ true_w + np.random.uniform(-0.1, 0.1, size=n_lin)
+    X_lin = load_2d_fixture("regression_10k_10_X.bin", (n_lin, d_lin), lambda: np.random.uniform(-5.0, 5.0, size=(n_lin, d_lin)))
+    y_lin = load_f64_fixture("regression_10k_10_y.bin", lambda: X_lin @ np.arange(1.0, 11.0) + 1.0)
 
     # Random forest & GBDT
     n_rf, d_rf = 1_000, 4
-    X_rf = np.random.uniform(-2.0, 2.0, size=(n_rf, d_rf))
-    y_rf = (X_rf[:, 0] + X_rf[:, 1] > 0).astype(int)
+    X_rf = load_2d_fixture("classification_1k_4_X.bin", (n_rf, d_rf), lambda: np.random.uniform(-5.0, 5.0, size=(n_rf, d_rf)))
+    y_rf = load_f64_fixture("classification_1k_4_y.bin", lambda: ((X_rf[:, 0] > 0) & (X_rf[:, 1] > 0)).astype(float)).astype(int)
     y_gbdt = X_rf[:, 0] * 2.0 + np.sin(X_rf[:, 1])
 
     # K-Means
     n_km, d_km = 10_000, 4
-    X_km = np.random.uniform(-5.0, 5.0, size=(n_km, d_km))
+    X_km = load_2d_fixture("kmeans_10k_4.bin", (n_km, d_km), lambda: np.random.uniform(-10.0, 10.0, size=(n_km, d_km)))
 
     # PCA
     n_pca, d_pca = 1_000, 100
-    X_pca = np.random.uniform(-1.0, 1.0, size=(n_pca, d_pca))
+    X_pca = load_2d_fixture("pca_1k_100.bin", (n_pca, d_pca), lambda: np.random.uniform(-10.0, 10.0, size=(n_pca, d_pca)))
 
     results = []
     results.append(run_benchmark(
@@ -220,7 +248,7 @@ def bench_ml():
     ))
     results.append(run_benchmark(
         "RandomForest fit (1k×4, 50 trees)", "Scikit-Learn",
-        lambda: RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1).fit(X_rf, y_rf),
+        lambda: RandomForestClassifier(n_estimators=50, max_depth=4, criterion="gini", random_state=42, n_jobs=-1).fit(X_rf, y_rf),
         warmup=1, iterations=5
     ))
     results.append(run_benchmark(
@@ -230,12 +258,12 @@ def bench_ml():
     ))
     results.append(run_benchmark(
         "KMeans fit (10k×4, 3 clusters)", "Scikit-Learn",
-        lambda: KMeans(n_clusters=3, max_iter=20, n_init=1, random_state=42).fit(X_km),
+        lambda: KMeans(n_clusters=3, max_iter=50, n_init=1, random_state=42).fit(X_km),
         warmup=1, iterations=5
     ))
     results.append(run_benchmark(
-        "PCA SVD fit (1k×100 → 10 comps)", "Scikit-Learn",
-        lambda: PCA(n_components=10, random_state=42).fit(X_pca),
+        "PCA SVD fitTransform (1k×100 → 10 comps)", "Scikit-Learn",
+        lambda: PCA(n_components=10, random_state=42).fit_transform(X_pca),
         warmup=1, iterations=5
     ))
 
@@ -284,7 +312,10 @@ def bench_forecast():
 
     # 50k points seasonal series
     t = np.arange(50_000, dtype=float)
-    seasonal_50k = 20.0 + t * 0.3 + 5.0 * np.sin(t * 2.0 * np.pi / 12.0) + np.random.uniform(-0.5, 0.5, size=50_000)
+    seasonal_50k = load_f64_fixture(
+        "forecast_50k.bin",
+        lambda: 20.0 + t * 0.005 + 8.0 * np.sin(t * 2.0 * np.pi / 12.0) + np.random.uniform(-1.0, 1.0, size=50_000)
+    )
 
     # 50k points random walk
     walk_50k = np.cumsum(np.random.uniform(-1.0, 1.0, size=50_000))
@@ -419,7 +450,7 @@ def bench_extensions():
     results.append(run_benchmark("LIME Explain (5 feats, 300 samples)", "Scikit-Learn", lime_fn, warmup=2, iterations=5))
     results.append(run_benchmark("TreeSHAP Explanation (100 samples)", "SHAP", treeshap_fn, warmup=2, iterations=10))
     results.append(run_benchmark("SQLite Direct DataFrame Ingestion", "Pandas", sqlite_fn, warmup=2, iterations=10))
-    results.append(run_benchmark("CNN Feature Extraction & Vision Metrics", "NumPy", vision_fn, warmup=2, iterations=10))
+    results.append(run_benchmark("Global Average Pooling & Dice Metric", "NumPy", vision_fn, warmup=2, iterations=10))
     results.append(run_benchmark("RAG Context Summary Generation", "Pandas", rag_fn, warmup=2, iterations=10))
     results.append(run_benchmark("OneVsRestClassifier (5 classes, 100 samples)", "Scikit-Learn", ovr_fn, warmup=2, iterations=10))
     results.append(run_benchmark("TF-IDF Vectorizer (50 documents)", "Scikit-Learn", tfidf_fn, warmup=2, iterations=10))

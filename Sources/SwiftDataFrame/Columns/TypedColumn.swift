@@ -36,7 +36,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         self.init(name: name, values: values, nullCount: nullCount)
     }
 
-    private init(name: String, values: [T?], nullCount: Int) {
+    internal init(name: String, values: [T?], nullCount: Int) {
         self.name = name
         self.dtype = T.columnDType
         self.values = values

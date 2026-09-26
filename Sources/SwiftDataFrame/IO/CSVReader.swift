@@ -206,8 +206,7 @@ internal enum CSVReader {
         if let overrideType = options.columnTypeOverrides[name] {
             switch overrideType {
             case .int32, .int64:
-                var values = [Int64?]()
-                values.reserveCapacity(dataRowsToRead)
+                var values = CSVColumnBuilder<Int64>(capacity: dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -222,10 +221,9 @@ internal enum CSVReader {
                         values.append(nil)
                     }
                 }
-                return TypedColumn<Int64>(name: name, values: values)
+                return values.column(named: name)
             case .float32, .float64:
-                var values = [Double?]()
-                values.reserveCapacity(dataRowsToRead)
+                var values = CSVColumnBuilder<Double>(capacity: dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -240,10 +238,9 @@ internal enum CSVReader {
                         values.append(nil)
                     }
                 }
-                return TypedColumn<Double>(name: name, values: values)
+                return values.column(named: name)
             case .boolean:
-                var values = [Bool?]()
-                values.reserveCapacity(dataRowsToRead)
+                var values = CSVColumnBuilder<Bool>(capacity: dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -253,10 +250,9 @@ internal enum CSVReader {
                         values.append(nil)
                     }
                 }
-                return TypedColumn<Bool>(name: name, values: values)
+                return values.column(named: name)
             case .utf8:
-                var values = [String?]()
-                values.reserveCapacity(dataRowsToRead)
+                var values = CSVColumnBuilder<String>(capacity: dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -266,10 +262,9 @@ internal enum CSVReader {
                         values.append(nil)
                     }
                 }
-                return TypedColumn<String>(name: name, values: values)
+                return values.column(named: name)
             case .date32:
-                var values = [Date?]()
-                values.reserveCapacity(dataRowsToRead)
+                var values = CSVColumnBuilder<Date>(capacity: dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -279,13 +274,12 @@ internal enum CSVReader {
                         values.append(nil)
                     }
                 }
-                return TypedColumn<Date>(name: name, values: values)
+                return values.column(named: name)
             }
         }
 
         if !options.inferTypes {
-            var values = [String?]()
-            values.reserveCapacity(dataRowsToRead)
+            var values = CSVColumnBuilder<String>(capacity: dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -295,7 +289,7 @@ internal enum CSVReader {
                     values.append(nil)
                 }
             }
-            return TypedColumn<String>(name: name, values: values)
+            return values.column(named: name)
         }
 
         var isBool = true
@@ -324,8 +318,7 @@ internal enum CSVReader {
         }
 
         if nonNullCount == 0 {
-            var values = [String?]()
-            values.reserveCapacity(dataRowsToRead)
+            var values = CSVColumnBuilder<String>(capacity: dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -335,12 +328,11 @@ internal enum CSVReader {
                     values.append(nil)
                 }
             }
-            return TypedColumn<String>(name: name, values: values)
+            return values.column(named: name)
         }
 
         if isBool {
-            var values = [Bool?]()
-            values.reserveCapacity(dataRowsToRead)
+            var values = CSVColumnBuilder<Bool>(capacity: dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -350,12 +342,11 @@ internal enum CSVReader {
                     values.append(nil)
                 }
             }
-            return TypedColumn<Bool>(name: name, values: values)
+            return values.column(named: name)
         }
 
         if isInt64 {
-            var values = [Int64?]()
-            values.reserveCapacity(dataRowsToRead)
+            var values = CSVColumnBuilder<Int64>(capacity: dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -370,12 +361,11 @@ internal enum CSVReader {
                     values.append(nil)
                 }
             }
-            return TypedColumn<Int64>(name: name, values: values)
+            return values.column(named: name)
         }
 
         if isDouble {
-            var values = [Double?]()
-            values.reserveCapacity(dataRowsToRead)
+            var values = CSVColumnBuilder<Double>(capacity: dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -390,12 +380,11 @@ internal enum CSVReader {
                     values.append(nil)
                 }
             }
-            return TypedColumn<Double>(name: name, values: values)
+            return values.column(named: name)
         }
 
         if isDate {
-            var values = [Date?]()
-            values.reserveCapacity(dataRowsToRead)
+            var values = CSVColumnBuilder<Date>(capacity: dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -405,11 +394,10 @@ internal enum CSVReader {
                     values.append(nil)
                 }
             }
-            return TypedColumn<Date>(name: name, values: values)
+            return values.column(named: name)
         }
 
-        var values = [String?]()
-        values.reserveCapacity(dataRowsToRead)
+        var values = CSVColumnBuilder<String>(capacity: dataRowsToRead)
         for r in 0..<dataRowsToRead {
             let rowIdx = startRowIdx + r
             if let offset = records.field(row: rowIdx, column: colIndex) {
@@ -419,7 +407,7 @@ internal enum CSVReader {
                 values.append(nil)
             }
         }
-        return TypedColumn<String>(name: name, values: values)
+        return values.column(named: name)
     }
 
     // MARK: – Streaming CSV Reader (v1.5 mmap-backed)

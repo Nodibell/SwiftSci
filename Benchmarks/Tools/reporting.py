@@ -33,8 +33,17 @@ def validate_worker(result, request):
         fields(
             sample,
             ["elapsed_ns", "output_sha256", "maximum_absolute_error", "validated"],
+            ["timing_resolved"],
         )
-        positive(sample["elapsed_ns"], "elapsed_ns")
+        elapsed = sample["elapsed_ns"]
+        require(type(elapsed) is int and elapsed >= 0, "Invalid elapsed_ns")
+        if "timing_resolved" in sample:
+            require(
+                sample["timing_resolved"] is (elapsed >= 1000),
+                "Timing resolution flag disagrees with duration",
+            )
+        else:
+            positive(elapsed, "elapsed_ns")
         require(sample["validated"] is True, "Unvalidated sample")
         require(
             isinstance(sample["output_sha256"], str)
@@ -89,7 +98,7 @@ def summarize(run):
                     ),
                     default=None,
                 ),
-                timing_resolved=complete and median >= 1000,
+                timing_resolved=complete and all(t >= 1000 for t in times),
                 peak_rss_bytes=max(
                     (
                         e["result"]["peak_rss_bytes"]

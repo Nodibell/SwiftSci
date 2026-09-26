@@ -22,6 +22,7 @@ package struct BenchmarkRequest: Decodable, Sendable {
 
 package struct BenchmarkSample: Codable, Sendable {
   package let elapsed_ns: Int64
+  package let timing_resolved: Bool
   package let output_sha256: String
   package let maximum_absolute_error: Double
   package let validated: Bool
@@ -36,8 +37,9 @@ package struct BenchmarkSample: Codable, Sendable {
       }
       maximum = max(maximum, abs(a - e))
     }
-    guard elapsed > 0 else { throw BenchmarkFailure("Timer could not resolve operation") }
+    guard elapsed >= 0 else { throw BenchmarkFailure("Negative elapsed duration") }
     elapsed_ns = elapsed
+    timing_resolved = elapsed >= 1000
     maximum_absolute_error = maximum
     validated = true
     output_sha256 = values.withUnsafeBytes {

@@ -99,6 +99,7 @@ try:
             samples.append(
                 dict(
                     elapsed_ns=duration,
+                    timing_resolved=duration >= 1000,
                     output_sha256=hashlib.sha256(actual.tobytes()).hexdigest(),
                     maximum_absolute_error=error,
                     validated=True,

@@ -9,13 +9,24 @@ struct ProtocolTests {
       try BenchmarkSample(elapsed: 1, values: [2], expected: [1], atol: 0, rtol: 0)
     }
     #expect(throws: (any Error).self) {
-      try BenchmarkSample(elapsed: 0, values: [1], expected: [1], atol: 0, rtol: 0)
+      try BenchmarkSample(elapsed: -1, values: [1], expected: [1], atol: 0, rtol: 0)
     }
     #expect(throws: (any Error).self) {
       try BenchmarkSample(elapsed: 1, values: [.nan], expected: [1], atol: 1, rtol: 1)
     }
     #expect(throws: (any Error).self) {
       try BenchmarkSample(elapsed: 1, values: [], expected: [1], atol: 0, rtol: 0)
+    }
+  }
+  @Test func unresolvedTimingsStillValidateOutputs() throws {
+    for elapsed: Int64 in [0, 42, 999, 1000] {
+      let sample = try BenchmarkSample(
+        elapsed: elapsed, values: [1], expected: [1], atol: 0, rtol: 0)
+      #expect(sample.validated && sample.elapsed_ns == elapsed)
+      #expect(sample.timing_resolved == (elapsed >= 1000))
+    }
+    #expect(throws: (any Error).self) {
+      try BenchmarkSample(elapsed: 0, values: [2], expected: [1], atol: 0, rtol: 0)
     }
   }
   @Test func toleranceAndBinaryIdentity() throws {

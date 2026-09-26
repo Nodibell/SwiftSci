@@ -152,6 +152,41 @@ class AuditTests(unittest.TestCase):
         good["events"][0]["result"]["samples"][0]["elapsed_ns"] = 10
         self.assertIsNone(comparison(good, good)[0]["speedup"])
 
+    def test_explicit_unresolved_zero_is_accurate_but_never_a_speedup(self):
+        from reporting import audit
+
+        good = self.passing_run()
+        sample = good["events"][0]["result"]["samples"][0]
+        for elapsed in [0, 999, 1000]:
+            sample.update(elapsed_ns=elapsed, timing_resolved=elapsed >= 1000)
+            self.assertTrue(audit(good))
+            summary = summarize(good)[0]
+            self.assertEqual(summary["status"], "passed")
+            self.assertEqual(summary["median_ns"], elapsed)
+            self.assertEqual(summary["timing_resolved"], elapsed >= 1000)
+            self.assertEqual(
+                comparison(good, good)[0]["speedup"], 1 if elapsed >= 1000 else None
+            )
+        for elapsed, resolved in [
+            (0, True),
+            (1000, False),
+            (-1, False),
+            (True, False),
+            (0.0, False),
+        ]:
+            sample.update(elapsed_ns=elapsed, timing_resolved=resolved)
+            with self.assertRaises(ContractError):
+                audit(good)
+
+    def test_unresolved_sample_cannot_hide_behind_resolved_median(self):
+        good = self.passing_run()
+        good["plan"]["profile"]["samples"] = 3
+        samples = good["events"][0]["result"]["samples"]
+        samples.extend([copy.deepcopy(samples[0]), copy.deepcopy(samples[0])])
+        samples[0].update(elapsed_ns=0, timing_resolved=False)
+        self.assertEqual(summarize(good)[0]["median_ns"], 2000)
+        self.assertIsNone(comparison(good, good)[0]["speedup"])
+
     def test_environment_changes_refuse_comparison(self):
         good = self.passing_run()
         other = copy.deepcopy(good)

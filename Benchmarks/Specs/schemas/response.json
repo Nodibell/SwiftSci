@@ -31,7 +31,7 @@
         "properties": {
           "elapsed_ns": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0
           },
           "output_sha256": {
             "type": "string",
@@ -43,8 +43,50 @@
           },
           "validated": {
             "const": true
+          },
+          "timing_resolved": {
+            "type": "boolean"
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "elapsed_ns": {
+                  "const": 0
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "timing_resolved"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "elapsed_ns": {
+                  "maximum": 999
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "timing_resolved": {
+                  "const": false
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "timing_resolved": {
+                  "const": true
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "peak_rss_bytes": {

@@ -21,6 +21,25 @@ public struct CSVFieldOffset: Sendable {
     }
 }
 
+internal struct CSVRecordIndex: Sendable {
+    let fields: [CSVFieldOffset]
+    let rowStarts: [Int]
+
+    var count: Int { rowStarts.count - 1 }
+    var isEmpty: Bool { count == 0 }
+
+    func row(at index: Int) -> ArraySlice<CSVFieldOffset> {
+        fields[rowStarts[index]..<rowStarts[index + 1]]
+    }
+
+    func field(row: Int, column: Int) -> CSVFieldOffset? {
+        guard row < count else { return nil }
+        let start = rowStarts[row]
+        guard column < rowStarts[row + 1] - start else { return nil }
+        return fields[start + column]
+    }
+}
+
 /// Zero-copy, RFC 4180 compliant CSV byte-level parser.
 ///
 /// Uses a Deterministic Finite Automaton (DFA) on an `UnsafeBufferPointer<UInt8>`
@@ -46,11 +65,15 @@ public final class SystemsCSVParser: Sendable {
     ///   - buffer: Underlying byte buffer or contiguous memory storage.
     /// - Returns: The computed [[CSVFieldOffset]] result instance.
     public func parse(buffer: UnsafeBufferPointer<UInt8>) -> [[CSVFieldOffset]] {
-        var records = [[CSVFieldOffset]]()
-        records.reserveCapacity(100_000)
+        let index = parseIndex(buffer: buffer)
+        return (0..<index.count).map { Array(index.row(at: $0)) }
+    }
 
-        var currentRecord = [CSVFieldOffset]()
-        currentRecord.reserveCapacity(16)
+    internal func parseIndex(buffer: UnsafeBufferPointer<UInt8>) -> CSVRecordIndex {
+        var fields = [CSVFieldOffset]()
+        fields.reserveCapacity(min(buffer.count / 8, 100_000))
+        var rowStarts = [0]
+        rowStarts.reserveCapacity(min(buffer.count / 16, 100_000) + 1)
 
         let count = buffer.count
         var index = 0
@@ -78,7 +101,7 @@ public final class SystemsCSVParser: Sendable {
                     insideQuotes = true
                 } else if byte == delimiterByte {
                     let len = index - fieldStart
-                    currentRecord.append(CSVFieldOffset(
+                    fields.append(CSVFieldOffset(
                         startOffset: fieldStart,
                         length: max(0, len),
                         escapedQuotesPresent: escapedQuotesFound
@@ -91,15 +114,13 @@ public final class SystemsCSVParser: Sendable {
                         endPosition -= 1
                     }
                     let len = endPosition - fieldStart
-                    currentRecord.append(CSVFieldOffset(
+                    fields.append(CSVFieldOffset(
                         startOffset: fieldStart,
                         length: max(0, len),
                         escapedQuotesPresent: escapedQuotesFound
                     ))
 
-                    records.append(currentRecord)
-                    currentRecord = []
-                    currentRecord.reserveCapacity(16)
+                    rowStarts.append(fields.count)
 
                     fieldStart = index + 1
                     escapedQuotesFound = false
@@ -111,14 +132,17 @@ public final class SystemsCSVParser: Sendable {
         // Handle trailing line without newline
         if fieldStart < count {
             let len = count - fieldStart
-            currentRecord.append(CSVFieldOffset(
+            fields.append(CSVFieldOffset(
                 startOffset: fieldStart,
                 length: max(0, len),
                 escapedQuotesPresent: escapedQuotesFound
             ))
-            records.append(currentRecord)
+            rowStarts.append(fields.count)
+        } else {
+            // Keep the public parser's existing EOF behavior for an unfinished row.
+            fields.removeSubrange(rowStarts.last!..<fields.count)
         }
 
-        return records
+        return CSVRecordIndex(fields: fields, rowStarts: rowStarts)
     }
 }

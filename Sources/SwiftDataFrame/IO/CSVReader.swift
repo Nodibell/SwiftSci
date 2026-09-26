@@ -4,10 +4,6 @@ private struct UnsafeSendableBuffer: @unchecked Sendable {
     let pointer: UnsafeBufferPointer<UInt8>
 }
 
-private struct RecordsBox: @unchecked Sendable {
-    let records: [[CSVFieldOffset]]
-}
-
 private struct SendableColumnPointer: @unchecked Sendable {
     let pointer: UnsafeMutablePointer<any AnyColumn>
 }
@@ -30,77 +26,52 @@ internal enum CSVReader {
         }
 
         let mappedData = try Data(contentsOf: url, options: .alwaysMapped)
-        var records: [[CSVFieldOffset]] = []
-        let delimByte = UInt8(options.delimiter.utf8.first ?? 44)
+        return try mappedData.withUnsafeBytes { rawBuffer in
+            let buffer = rawBuffer.bindMemory(to: UInt8.self)
+            let delimiter = UInt8(options.delimiter.utf8.first ?? 44)
+            let records = SystemsCSVParser(delimiterByte: delimiter).parseIndex(buffer: buffer)
+            guard !records.isEmpty else { return DataFrame.empty }
 
-        mappedData.withUnsafeBytes { rawBuffer in
-            guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
-            let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
-            let parser = SystemsCSVParser(delimiterByte: delimByte)
-            records = parser.parse(buffer: bufferPointer)
-        }
-
-        guard !records.isEmpty else { return DataFrame.empty }
-
-        var headers: [String] = []
-        var startRowIdx = 0
-
-        mappedData.withUnsafeBytes { rawBuffer in
-            guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
-            let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+            let headers: [String]
+            let startRow: Int
             if options.hasHeader {
-                let rawHeaders = records[0].map { VectorizedByteParsers.parseString(buffer: bufferPointer, offset: $0) }
+                let rawHeaders = records.row(at: 0).map {
+                    VectorizedByteParsers.parseString(buffer: buffer, offset: $0)
+                }
                 headers = deduplicateHeaders(rawHeaders)
-                startRowIdx = 1
+                startRow = 1
             } else {
-                headers = records[0].indices.map { "col\($0)" }
-                startRowIdx = 0
+                headers = (0..<records.row(at: 0).count).map { "col\($0)" }
+                startRow = 0
             }
-        }
 
-        let dataRowCount = records.count - startRowIdx
-        guard dataRowCount > 0, !headers.isEmpty else { return DataFrame.empty }
+            let dataRowCount = records.count - startRow
+            guard dataRowCount > 0, !headers.isEmpty else { return DataFrame.empty }
+            let rowsToRead = options.maxRows.map { min(dataRowCount, $0) } ?? dataRowCount
+            var columns: [any AnyColumn] = Array(
+                repeating: TypedColumn<String>(name: "", values: []), count: headers.count
+            )
+            let sendableBuffer = UnsafeSendableBuffer(pointer: buffer)
+            let optionsBox = OptionsBox(options: options)
+            let headersBox = HeadersBox(headers: headers)
 
-        let dataRowsToRead: Int
-        if let maxRows = options.maxRows {
-            dataRowsToRead = min(dataRowCount, maxRows)
-        } else {
-            dataRowsToRead = dataRowCount
-        }
-
-        let colCount = headers.count
-        var columns: [any AnyColumn] = Array(repeating: TypedColumn<String>(name: "", values: []), count: colCount)
-
-        guard let basePtr = mappedData.withUnsafeBytes({ $0.baseAddress?.assumingMemoryBound(to: UInt8.self) }) else {
-            return DataFrame.empty
-        }
-        let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
-        let sendableBuf = UnsafeSendableBuffer(pointer: bufferPointer)
-        let recordsBox = RecordsBox(records: records)
-        let optionsBox = OptionsBox(options: options)
-        let headersBox = HeadersBox(headers: headers)
-
-        let readStartRowIdx = startRowIdx
-        columns.withUnsafeMutableBufferPointer { colBuf in
-            guard let baseColPtr = colBuf.baseAddress else { return }
-            let sendableColPtr = SendableColumnPointer(pointer: baseColPtr)
-
-            DispatchQueue.concurrentPerform(iterations: colCount) { c in
-                let colName = headersBox.headers[c]
-                let col = buildColumn(
-                    buffer: sendableBuf.pointer,
-                    records: recordsBox.records,
-                    startRowIdx: readStartRowIdx,
-                    dataRowsToRead: dataRowsToRead,
-                    colIndex: c,
-                    name: colName,
-                    options: optionsBox.options
-                )
-                sendableColPtr.pointer[c] = col
+            columns.withUnsafeMutableBufferPointer { columnBuffer in
+                guard let base = columnBuffer.baseAddress else { return }
+                let output = SendableColumnPointer(pointer: base)
+                DispatchQueue.concurrentPerform(iterations: headers.count) { column in
+                    output.pointer[column] = buildColumn(
+                        buffer: sendableBuffer.pointer,
+                        records: records,
+                        startRowIdx: startRow,
+                        dataRowsToRead: rowsToRead,
+                        colIndex: column,
+                        name: headersBox.headers[column],
+                        options: optionsBox.options
+                    )
+                }
             }
+            return try DataFrame(columns: columns)
         }
-
-        return try DataFrame(columns: columns)
     }
 
     // MARK: – Core parser
@@ -224,7 +195,7 @@ internal enum CSVReader {
 
     internal static func buildColumn(
         buffer: UnsafeBufferPointer<UInt8>,
-        records: [[CSVFieldOffset]],
+        records: CSVRecordIndex,
         startRowIdx: Int,
         dataRowsToRead: Int,
         colIndex: Int,
@@ -238,8 +209,7 @@ internal enum CSVReader {
                 values.reserveCapacity(dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
-                    if rowIdx < records.count && colIndex < records[rowIdx].count {
-                        let offset = records[rowIdx][colIndex]
+                    if let offset = records.field(row: rowIdx, column: colIndex) {
                         let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         if options.nullValues.contains(str) {
                             values.append(nil)
@@ -258,8 +228,7 @@ internal enum CSVReader {
                 values.reserveCapacity(dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
-                    if rowIdx < records.count && colIndex < records[rowIdx].count {
-                        let offset = records[rowIdx][colIndex]
+                    if let offset = records.field(row: rowIdx, column: colIndex) {
                         let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         if options.nullValues.contains(str) {
                             values.append(nil)
@@ -278,8 +247,7 @@ internal enum CSVReader {
                 values.reserveCapacity(dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
-                    if rowIdx < records.count && colIndex < records[rowIdx].count {
-                        let offset = records[rowIdx][colIndex]
+                    if let offset = records.field(row: rowIdx, column: colIndex) {
                         let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
                     } else {
@@ -292,8 +260,7 @@ internal enum CSVReader {
                 values.reserveCapacity(dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
-                    if rowIdx < records.count && colIndex < records[rowIdx].count {
-                        let offset = records[rowIdx][colIndex]
+                    if let offset = records.field(row: rowIdx, column: colIndex) {
                         let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         values.append(options.nullValues.contains(str) ? nil : str)
                     } else {
@@ -306,8 +273,7 @@ internal enum CSVReader {
                 values.reserveCapacity(dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
-                    if rowIdx < records.count && colIndex < records[rowIdx].count {
-                        let offset = records[rowIdx][colIndex]
+                    if let offset = records.field(row: rowIdx, column: colIndex) {
                         let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                         values.append(options.nullValues.contains(str) ? nil : Date.parse(from: str))
                     } else {
@@ -323,8 +289,7 @@ internal enum CSVReader {
             values.reserveCapacity(dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
-                if rowIdx < records.count && colIndex < records[rowIdx].count {
-                    let offset = records[rowIdx][colIndex]
+                if let offset = records.field(row: rowIdx, column: colIndex) {
                     let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     values.append(options.nullValues.contains(str) ? nil : str)
                 } else {
@@ -342,8 +307,7 @@ internal enum CSVReader {
         let sampleRows = min(dataRowsToRead, 1000)
         for r in 0..<sampleRows {
             let rowIdx = startRowIdx + r
-            guard rowIdx < records.count && colIndex < records[rowIdx].count else { continue }
-            let offset = records[rowIdx][colIndex]
+            guard let offset = records.field(row: rowIdx, column: colIndex) else { continue }
             if offset.length == 0 { continue }
             let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
             if options.nullValues.contains(str) { continue }
@@ -365,8 +329,7 @@ internal enum CSVReader {
             values.reserveCapacity(dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
-                if rowIdx < records.count && colIndex < records[rowIdx].count {
-                    let offset = records[rowIdx][colIndex]
+                if let offset = records.field(row: rowIdx, column: colIndex) {
                     let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     values.append(options.nullValues.contains(str) ? nil : str)
                 } else {
@@ -381,8 +344,7 @@ internal enum CSVReader {
             values.reserveCapacity(dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
-                if rowIdx < records.count && colIndex < records[rowIdx].count {
-                    let offset = records[rowIdx][colIndex]
+                if let offset = records.field(row: rowIdx, column: colIndex) {
                     let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
                 } else {
@@ -397,8 +359,7 @@ internal enum CSVReader {
             values.reserveCapacity(dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
-                if rowIdx < records.count && colIndex < records[rowIdx].count {
-                    let offset = records[rowIdx][colIndex]
+                if let offset = records.field(row: rowIdx, column: colIndex) {
                     let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     if options.nullValues.contains(str) {
                         values.append(nil)
@@ -419,8 +380,7 @@ internal enum CSVReader {
             values.reserveCapacity(dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
-                if rowIdx < records.count && colIndex < records[rowIdx].count {
-                    let offset = records[rowIdx][colIndex]
+                if let offset = records.field(row: rowIdx, column: colIndex) {
                     let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     if options.nullValues.contains(str) {
                         values.append(nil)
@@ -441,8 +401,7 @@ internal enum CSVReader {
             values.reserveCapacity(dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
-                if rowIdx < records.count && colIndex < records[rowIdx].count {
-                    let offset = records[rowIdx][colIndex]
+                if let offset = records.field(row: rowIdx, column: colIndex) {
                     let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                     values.append(options.nullValues.contains(str) ? nil : Date.parse(from: str))
                 } else {
@@ -456,8 +415,7 @@ internal enum CSVReader {
         values.reserveCapacity(dataRowsToRead)
         for r in 0..<dataRowsToRead {
             let rowIdx = startRowIdx + r
-            if rowIdx < records.count && colIndex < records[rowIdx].count {
-                let offset = records[rowIdx][colIndex]
+            if let offset = records.field(row: rowIdx, column: colIndex) {
                 let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
                 values.append(options.nullValues.contains(str) ? nil : str)
             } else {
@@ -478,81 +436,53 @@ internal enum CSVReader {
                     }
 
                     let mappedData = try Data(contentsOf: url, options: .alwaysMapped)
-                    let delimByte = UInt8(options.delimiter.utf8.first ?? 44)
+                    try mappedData.withUnsafeBytes { rawBuffer in
+                        let buffer = rawBuffer.bindMemory(to: UInt8.self)
+                        let delimiter = UInt8(options.delimiter.utf8.first ?? 44)
+                        let records = SystemsCSVParser(delimiterByte: delimiter).parseIndex(buffer: buffer)
+                        guard !records.isEmpty else { return }
 
-                    var records: [[CSVFieldOffset]] = []
-                    mappedData.withUnsafeBytes { rawBuffer in
-                        guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
-                        let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
-                        let parser = SystemsCSVParser(delimiterByte: delimByte)
-                        records = parser.parse(buffer: bufferPointer)
-                    }
-
-                    guard !records.isEmpty else {
-                        continuation.finish()
-                        return
-                    }
-
-                    var headers: [String] = []
-                    var startRowIdx = 0
-
-                    mappedData.withUnsafeBytes { rawBuffer in
-                        guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
-                        let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
+                        let headers: [String]
+                        let startRow: Int
                         if options.hasHeader {
-                            headers = records[0].map { VectorizedByteParsers.parseString(buffer: bufferPointer, offset: $0) }
-                            startRowIdx = 1
+                            headers = records.row(at: 0).map {
+                                VectorizedByteParsers.parseString(buffer: buffer, offset: $0)
+                            }
+                            startRow = 1
                         } else {
-                            headers = records[0].indices.map { "col\($0)" }
-                            startRowIdx = 0
+                            headers = (0..<records.row(at: 0).count).map { "col\($0)" }
+                            startRow = 0
                         }
-                    }
+                        guard records.count > startRow, !headers.isEmpty else { return }
 
-                    let totalDataRows = records.count - startRowIdx
-                    guard totalDataRows > 0, !headers.isEmpty else {
-                        continuation.finish()
-                        return
-                    }
-
-                    let colCount = headers.count
-                    var currentOffset = startRowIdx
-
-                    while currentOffset < records.count && !Task.isCancelled {
-                        let rowsInChunk = min(chunkSize, records.count - currentOffset)
-                        let offset = currentOffset
-
-                        var columns: [any AnyColumn] = Array(repeating: TypedColumn<String>(name: "", values: []), count: colCount)
-
-                        guard let basePtr = mappedData.withUnsafeBytes({ $0.baseAddress?.assumingMemoryBound(to: UInt8.self) }) else { break }
-                        let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
-                        let sendableBuf = UnsafeSendableBuffer(pointer: bufferPointer)
-                        let recordsBox = RecordsBox(records: records)
+                        let sendableBuffer = UnsafeSendableBuffer(pointer: buffer)
                         let optionsBox = OptionsBox(options: options)
                         let headersBox = HeadersBox(headers: headers)
-
-                        columns.withUnsafeMutableBufferPointer { colBuf in
-                            guard let baseColPtr = colBuf.baseAddress else { return }
-                            let sendableColPtr = SendableColumnPointer(pointer: baseColPtr)
-
-                            DispatchQueue.concurrentPerform(iterations: colCount) { c in
-                                let colName = headersBox.headers[c]
-                                let col = buildColumn(
-                                    buffer: sendableBuf.pointer,
-                                    records: recordsBox.records,
-                                    startRowIdx: offset,
-                                    dataRowsToRead: rowsInChunk,
-                                    colIndex: c,
-                                    name: colName,
-                                    options: optionsBox.options
-                                )
-                                sendableColPtr.pointer[c] = col
+                        var currentOffset = startRow
+                        while currentOffset < records.count && !Task.isCancelled {
+                            let rowsInChunk = min(chunkSize, records.count - currentOffset)
+                            let offset = currentOffset
+                            var columns: [any AnyColumn] = Array(
+                                repeating: TypedColumn<String>(name: "", values: []), count: headers.count
+                            )
+                            columns.withUnsafeMutableBufferPointer { columnBuffer in
+                                guard let base = columnBuffer.baseAddress else { return }
+                                let output = SendableColumnPointer(pointer: base)
+                                DispatchQueue.concurrentPerform(iterations: headers.count) { column in
+                                    output.pointer[column] = buildColumn(
+                                        buffer: sendableBuffer.pointer,
+                                        records: records,
+                                        startRowIdx: offset,
+                                        dataRowsToRead: rowsInChunk,
+                                        colIndex: column,
+                                        name: headersBox.headers[column],
+                                        options: optionsBox.options
+                                    )
+                                }
                             }
+                            continuation.yield(try DataFrame(columns: columns))
+                            currentOffset += rowsInChunk
                         }
-
-                        let chunkDF = try DataFrame(columns: columns)
-                        continuation.yield(chunkDF)
-
-                        currentOffset += rowsInChunk
                     }
 
                     continuation.finish()

@@ -75,6 +75,36 @@ public struct PreparedNumericBatch: Sendable {
                                      order: order, sourceRows: sourceRows)
     }
 
+    /// Creates a batch from dense Double columns without optional-array expansion.
+    /// NaNs are valid numerical values. Use indexed updates to mark missing entries.
+    public init(columnNames: [String], columns: [[Double]]) throws {
+        guard columnNames.count == columns.count else {
+            throw SwiftMLError.dimensionMismatch(expected: columnNames.count, got: columns.count)
+        }
+        let rows = columns.first?.count ?? 0
+        for column in columns where column.count != rows {
+            throw SwiftMLError.dimensionMismatch(expected: rows, got: column.count)
+        }
+        self.init(columnNames: columnNames, columns: columns.map(CompactNumericColumn.init), rowCount: rows)
+    }
+
+    /// Applies indexed updates to one column. Repeated row indices use the last supplied value.
+    /// Invalid input throws before changing any values. Copies and previously exported matrices
+    /// remain snapshots; copy-on-write detaches only the edited column's buffers when shared.
+    public mutating func updateColumn(at column: Int, rows: [Int], values: [Double?]) throws {
+        guard column >= 0 && column < columnCount else {
+            throw SwiftMLError.invalidParameter("Column update index is out of bounds")
+        }
+        guard rows.count == values.count else {
+            throw SwiftMLError.dimensionMismatch(expected: rows.count, got: values.count)
+        }
+        guard rows.allSatisfy({ $0 >= 0 && $0 < rowCount }) else {
+            throw SwiftMLError.invalidParameter("Column update contains an out-of-bounds row")
+        }
+        guard !rows.isEmpty else { return }
+        columns[column].update(at: rows, with: values)
+    }
+
     package func replacingNumericColumns(_ values: [[Double]]) -> PreparedNumericBatch {
         PreparedNumericBatch(columnNames: columnNames, columns: values.map(CompactNumericColumn.init), rowCount: rowCount, sourceRows: sourceRows)
     }
@@ -131,6 +161,40 @@ package struct CompactNumericColumn: Sendable {
             }
         }
         return result
+    }
+
+    package mutating func update(at rows: [Int], with replacements: [Double?]) {
+        // Move the bitmap out so a unique column does not create a second owner
+        // before entering its one scoped mutable borrow.
+        var words = validity
+        validity = nil
+        var updatedNullCount = nullCount
+        if words == nil && replacements.contains(where: { $0 == nil }) {
+            words = [UInt64](repeating: .max, count: (values.count + 63) / 64)
+        }
+        values.withUnsafeMutableBufferPointer { values in
+            if words != nil {
+                words!.withUnsafeMutableBufferPointer { bits in
+                    for (position, row) in rows.enumerated() {
+                        let mask = UInt64(1) << (row & 63)
+                        let wasValid = bits[row >> 6] & mask != 0
+                        if let value = replacements[position] {
+                            values[row] = value
+                            bits[row >> 6] |= mask
+                            if !wasValid { updatedNullCount -= 1 }
+                        } else {
+                            values[row] = .nan
+                            bits[row >> 6] &= ~mask
+                            if wasValid { updatedNullCount += 1 }
+                        }
+                    }
+                }
+            } else {
+                for (position, row) in rows.enumerated() { values[row] = replacements[position]! }
+            }
+        }
+        nullCount = updatedNullCount
+        validity = updatedNullCount == 0 ? nil : words
     }
 
     package subscript(_ index: Int) -> Double? {

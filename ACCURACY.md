@@ -45,9 +45,9 @@ To guarantee a genuine **apples-to-apples** scientific comparison, both benchmar
 | **Local LLM Decode (Gate 4)** | RoPE + KV-Cache incremental decoding vs full forward | ✅ **Numerical Parity Within Tolerance** | $\Delta \text{Logits} \le 1.03 \times 10^{-7}$ (tolerance $< 10^{-4}$) |
 | **Metal Quantized GEMV (Gate 6)**| Native Metal MSL `gemv_q4_0` vs Float32 reference | ✅ **Numerical Parity in Tested Workload** | $\Delta = 0.0000$ |
 | **Compiled Graph Decode (Gate 7)**| `MLX.compile` single-token decode graph | ✅ **Numerical Parity Within Tolerance** | $\Delta \text{Logits} < 10^{-4}$ |
-| **AutoARIMA Safety (Gate 8)** | Zero-variance early exit & bounded optimization | ✅ **Validated Safety Guard** | Instant exit ($< 0.01$ ms), 0 infinite loops |
+| **AutoARIMA Safety (Gate 8)** | Zero-variance early exit & bounded optimization | ✅ **Validated Zero-Variance Guard** | Fast exit ($< 0.01$ ms), non-diverging |
 | **Agent Resilience (Gate 10)**| ReAct parameter schema validation & loop resilience | ✅ **Validated Error Recovery** | 100% recovery across tested malformed-input cases |
-| **Database Safety (Gate 11)** | SQLite C-pointer lifecycle & AddressSanitizer audit | ✅ **Clean ASan Run in Tested Scenarios** | 0 leaks, 0 buffer errors observed |
+| **Database Safety (Gate 11)** | SQLite C-pointer lifecycle & AddressSanitizer audit | ✅ **No Leaks / Pointer Errors Observed in Tested ASan Run** | 0 leaks, 0 invalid memory accesses |
 
 ---
 
@@ -159,9 +159,9 @@ Numerical parity verification between incremental generation loops, full-context
 | **Gate 4: Learned Positional Decode** | 2-layer TransformerDecoder with absolute embeddings | Incremental token decode via cached K/V | Full sequence forward pass | **maxAbsError = 0.0000** | 🎯 **Exact Match on Tested Block** |
 | **Gate 6: Metal MSL GEMV Kernel** | `QuantizedLinear` (Q4_0 packed weights) | Native Metal MSL `gemv_q4_0` matrix-vector dot product | MLX Float32 reference dequantization | **maxAbsError = 0.0000** | 🎯 **Numerical Parity in Tested Workload** |
 | **Gate 7: MLX.compile Parity** | Single-token decode graph | Compiled computation graph | Eager MLX execution | **maxAbsError < 10⁻⁴** | 🎯 **Numerical Parity Within Tolerance** |
-| **Gate 8: AutoARIMA Zero-Variance** | Constant series ($y_t = 5.0, \forall t$) | Early guard exit in `< 0.01 ms` | Unconstrained optimization loop | **Order: (0,0,0)**, runtime $< 0.01$ ms | 🛡️ **Validated Safety Guard** |
+| **Gate 8: AutoARIMA Zero-Variance** | Constant series ($y_t = 5.0, \forall t$) | Early guard exit in `< 0.01 ms` | Unconstrained optimization loop | **Order: (0,0,0)**, runtime $< 0.01$ ms | 🛡️ **Validated Zero-Variance Guard** |
 | **Gate 10: ReAct Agent Resilience** | Malformed JSON tool inputs | Trajectory error feedback loop | Unhandled JSON exceptions | **100% recovery across tested cases**, 0 crashes | 🛡️ **Validated Error Recovery** |
-| **Gate 11: Database Memory Safety** | `SQLiteConnection` + `sqlite3_close_v2` | AddressSanitizer (ASan) runtime audit | Raw C-pointer leaks | **0 leaks, 0 buffer errors** | 🛡️ **Clean ASan Result in Tested Scenarios** |
+| **Gate 11: Database Memory Safety** | `SQLiteConnection` + `sqlite3_close_v2` | AddressSanitizer (ASan) runtime audit | Raw C-pointer leaks | **0 leaks, 0 buffer errors** | 🛡️ **No Leaks / Pointer Errors Observed in Tested ASan Run** |
 
 ---
 
@@ -189,7 +189,7 @@ Execution time on Apple Silicon arm64 (Release build, identical datasets):
 | **VADER Sentiment Analysis** (3 sentences) | **0.018 ms** | ~0.45 ms (*NLTK*) | FNV-1a token hashing lexicon lookup |
 | **SwiftLLM Single-Token Incremental Step** | **0.125 ms** | 1.450 ms (*Full Forward*) | Architectural comparison: single-token cached K/V attention ($O(N)$) vs full-sequence forward pass ($O(N^2)$) |
 | **Metal MSL gemv_q4_0 Matrix-Vector** | **0.015 ms** | 0.045 ms (*Float32 Reference*) | Zero-copy packed Q4_0 GPU evaluation |
-| **AutoARIMA Zero-Variance Exit** | **< 0.01 ms** | Non-terminating loop | Guard validation: non-diverging fast exit |
+| **AutoARIMA Zero-Variance Exit** | **< 0.01 ms** | Unconstrained search loop | Guard validation: non-diverging fast exit on constant series |
 
 ---
 

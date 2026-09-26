@@ -41,6 +41,14 @@ extension DataFrame {
         return (flat: flat, rows: rows, cols: cols)
     }
 
+    /// Prepares owned compact Double columns for numerical operations.
+    /// Accepts the same Double, Int64 and Bool columns as matrix extraction.
+    /// Int64 conversion follows Double precision; nil and valid NaN remain distinct.
+    public func prepareNumericBatch(_ columns: [String]) throws -> PreparedNumericBatch {
+        let selected = try featureColumns(columns)
+        return PreparedNumericBatch(columnNames: columns, columns: selected.map { $0.compact() }, rowCount: shape.rows)
+    }
+
     private func featureColumns(_ names: [String]) throws -> [FeatureColumn] {
         // Preserve missing-name precedence even when an earlier column has an unsupported type.
         for name in names where self[column: name] == nil {
@@ -59,6 +67,14 @@ private enum FeatureColumn {
     case double([Double?])
     case integer([Int64?])
     case boolean([Bool?])
+
+    func compact() -> CompactNumericColumn {
+        switch self {
+        case .double(let values): return CompactNumericColumn(values, transform: { $0 })
+        case .integer(let values): return CompactNumericColumn(values, transform: Double.init)
+        case .boolean(let values): return CompactNumericColumn(values, transform: { $0 ? 1 : 0 })
+        }
+    }
 
     func write(to output: inout [Double], offset: Int, stride: Int, count: Int) {
         // Keep strided writes in a direct loop so the compiler can optimize the flat layout.

@@ -52,7 +52,12 @@ import SwiftStats
       var samples = [BenchmarkSample]()
       for index in 0..<(request.warmups + request.samples) {
         let start = ContinuousClock.now
-        let output = try await execute(op, frame: frame, x: x, path: request.input_path)
+        let output: Output
+        if op == "csv-read" {
+          output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path)))
+        } else {
+          output = try execute(op, frame: frame, x: x)
+        }
         let duration = start.duration(to: .now).components
         let elapsed = duration.seconds * 1_000_000_000 + duration.attoseconds / 1_000_000_000
         let actual: [Double]
@@ -93,11 +98,10 @@ import SwiftStats
     }
     return pairs.sorted { $0.0 < $1.0 }.flatMap { [$0.0, $0.1] }
   }
-  @inline(never) static func execute(_ op: String, frame: DataFrame?, x: [Double], path: String)
-    async throws -> Output
+  @inline(never) static func execute(_ op: String, frame: DataFrame?, x: [Double])
+    throws -> Output
   {
     switch op {
-    case "csv-read": return .frame(try await DataFrame(csv: URL(fileURLWithPath: path)))
     case "mean": return .values([try Stats.mean(x)])
     case "variance": return .values([try Stats.variance(x, ddof: 1)])
     case "stddev": return .values([try Stats.standardDeviation(x, ddof: 1)])

@@ -48,7 +48,7 @@ To run the larger profile, prepare it first and change `--profile` and the outpu
 
 ## What is measured
 
-Each workload specification declares its timing boundary. CSV measures verified, warm-cache file parsing into a materialized frame. Filter, sort and group operations start with a prepared frame. Matrix/vector export includes conversion. Scaling includes fitting, transformation and exporting the result. Numerical reductions start with a prepared vector. Input preparation, reference evaluation and output validation are outside the timer.
+Each workload specification declares its timing boundary. CSV measures verified, warm-cache file parsing into a materialized frame. Filter, sort and group operations start with a prepared frame. Matrix/vector export includes conversion. Scaling includes fitting, transformation and exporting the result. Numerical reductions start with a prepared vector. Input preparation, reference evaluation and output validation are outside the timer. Synchronous operations use a synchronous dispatcher; only the asynchronous CSV API is awaited. Measurement contract v2 records this boundary and cannot be compared with v1 runs.
 
 Both workers retain the result through the end timestamp, then validate every output element. Sorting must preserve input order for ties. Group results are converted to numeric keys and ordered outside timing so that different native result representations can be compared. Exact workloads require exact numeric values; numerical workloads declare absolute and relative tolerances in `Specs/workloads`.
 

@@ -188,7 +188,7 @@ def plan(root, profile, engines, swift_worker, python):
         profile=profile,
         cases=cases,
         threads=THREAD_ENV,
-        measurement="materialized-output-alive-v1",
+        measurement="materialized-output-alive-v2",
         oracle_sha256=digest((root / "Benchmarks/Tools/datasets.py").read_bytes()),
     )
     return dict(

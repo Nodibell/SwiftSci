@@ -1,0 +1,7 @@
+{
+  "binaries": {
+    "baseline": "3dd42a040938799e1c24a679be3aa90fe7bdba6d39a68615b911df6018555476",
+    "candidate": "ded42f0bcbc9627237afa0f5d659703d4eed80c8eaf50e1d66e316023b9c2423"
+  },
+  "commit": "39c9553c205146c2382929d56f1796704f4c5d8c"
+}

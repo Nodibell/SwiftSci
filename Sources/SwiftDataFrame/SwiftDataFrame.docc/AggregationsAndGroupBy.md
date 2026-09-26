@@ -49,3 +49,6 @@ let multiGrouped = try df.groupBy(["region", "product_tier"])
 
 ### Grouping APIs
 - ``DataFrame/groupBy(_:)``
+
+### Exact integer totals
+- <doc:CheckedIntegerSums>

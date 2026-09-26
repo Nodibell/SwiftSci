@@ -1,0 +1,1 @@
+PASS: 764 cases, 87060376 input bytes checked against forced serial; automatic threshold included.

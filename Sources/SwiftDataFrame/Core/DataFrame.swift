@@ -646,8 +646,22 @@ public struct DataFrame: Sendable {
     /// - Returns: A new `DataFrame` containing the gathered rows in the given index order.
     public func gathered(at indices: [Int]) -> DataFrame {
         guard !indices.isEmpty else { return DataFrame.empty }
-        let numCols = columns.count
-        if numCols >= 4 && indices.count >= 10_000 {
+        let sourceColumns = columns
+        let numCols = sourceColumns.count
+        let rowBytes = sourceColumns.reduce(0) { bytes, column in
+            switch column.dtype {
+            case .int32: return bytes + MemoryLayout<Int32?>.stride
+            case .int64: return bytes + MemoryLayout<Int64?>.stride
+            case .float32: return bytes + MemoryLayout<Float?>.stride
+            case .float64: return bytes + MemoryLayout<Double?>.stride
+            case .boolean: return bytes + MemoryLayout<Bool?>.stride
+            case .utf8: return bytes + MemoryLayout<String?>.stride
+            case .date32: return bytes + MemoryLayout<Date?>.stride
+            }
+        }
+        // Estimate output work without multiplying potentially large dimensions.
+        let parallelRows = (512 * 1024) / max(rowBytes, 1)
+        if numCols >= 2 && indices.count >= max(parallelRows, 1) {
             // Each iteration writes to a unique index — no data race.
             var newCols: [(any AnyColumn)?] = Array(repeating: nil, count: numCols)
             newCols.withUnsafeMutableBufferPointer { buf in
@@ -655,7 +669,7 @@ public struct DataFrame: Sendable {
                 let address = Int(bitPattern: base)
                 DispatchQueue.concurrentPerform(iterations: numCols) { colIdx in
                     let ptr = UnsafeMutablePointer<(any AnyColumn)?>(bitPattern: address)!
-                    ptr[colIdx] = self.columns[colIdx].gathered(at: indices)
+                    ptr[colIdx] = sourceColumns[colIdx].gathered(at: indices)
                 }
             }
             do {
@@ -664,7 +678,7 @@ public struct DataFrame: Sendable {
                 preconditionFailure("Failed to gather rows concurrently: \(error)")
             }
         } else {
-            let newCols: [any AnyColumn] = columns.map { $0.gathered(at: indices) }
+            let newCols: [any AnyColumn] = sourceColumns.map { $0.gathered(at: indices) }
             do {
                 return try DataFrame(columns: newCols)
             } catch {

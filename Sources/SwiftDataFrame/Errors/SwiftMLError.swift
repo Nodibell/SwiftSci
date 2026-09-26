@@ -49,6 +49,8 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
     case invalidGroupCount(minimum: Int, got: Int)
     case divisionByZero(context: String)
     case negativeVariance
+    /// A final integer group sum does not fit in Int64; group is zero-based.
+    case integerOverflow(column: String, group: Int)
     
     // MARK: - Forecasting Errors
     case emptyTimeSeries
@@ -155,6 +157,8 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
             return "At least \(min) groups required, got \(got)."
         case .divisionByZero(let ctx):
             return "Division by zero in \(ctx)."
+        case .integerOverflow(let column, let group):
+            return "Integer sum in column '\(column)', group \(group), is outside the Int64 range."
         case .negativeVariance:
             return "Computed variance is negative."
         case .emptyTimeSeries:

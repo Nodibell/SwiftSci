@@ -1,0 +1,7 @@
+.build/
+.swiftpm/
+data/
+results/
+latest-result.txt
+__pycache__/
+.venv/

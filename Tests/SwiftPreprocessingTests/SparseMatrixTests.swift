@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import SwiftML
+import SwiftDataFrame
 @testable import SwiftPreprocessing
 
 @Suite("SparseMatrix Tests")

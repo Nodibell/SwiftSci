@@ -1,32 +1,15 @@
 import Foundation
 import Accelerate
 
-/// SIMD-accelerated single-column filter operations on DataFrame.
-///
-/// `filterFast(column:where:)` operates directly on the column's contiguous value buffer
-/// using existing `SIMD4<Double>` / `SIMD4<Int64>` vectorised comparison paths,
-/// bypassing the per-row `DataFrameRow` closure overhead of `df.filter { row in ... }`.
-///
-/// ## Performance
-/// On a 100k-row Double column, `filterFast` is **~55× faster** than the closure path
-/// by eliminating heap allocation of `DataFrameRow` per row and using
-/// `vDSP`-level threshold + compress operations internally.
-///
-/// ## Usage
-/// ```swift
-/// // Closure path  — O(N) with per-row heap allocation:
-/// let slow = df.filter { row in (row.double("score") ?? 0) >= 85.0 }
-///
-/// // Fast path — O(N/4) SIMD vectorised:
-/// let fast = try df.filterFast(column: "score", where: .greaterThanOrEqual(85.0))
-/// ```
+/// Single-column filters that dispatch to typed comparison loops when supported.
+/// The filter selects row indices, then gathers the result columns.
+/// Selection is linear in the input row count; gathering depends on the number
+/// of selected rows and output columns.
 public extension DataFrame {
 
-    /// Filters rows using a SIMD-accelerated single-column condition.
-    ///
-    /// Internally routes to `SIMD4<Double>` or `SIMD4<Int64>` bitmask comparison
-    /// (via `TypedColumn.filteredIndices`) and constructs the result with a single
-    /// `gathered(at:)` gather — no per-row allocation.
+    /// Filters rows using a single-column condition.
+    /// Numeric columns compare in typed loops without per-row type erasure.
+    /// Unsupported conditions retain the generic comparison fallback.
     ///
     /// - Parameters:
     ///   - name:      Name of the column to filter on.
@@ -38,7 +21,7 @@ public extension DataFrame {
             throw SwiftMLError.columnNotFound(name)
         }
 
-        // Fast path: SIMD vectorised index filter (Double / Int64 / String).
+        // Resolve the column type before evaluating rows.
         if let indices = col.filteredIndices(matching: condition) {
             return gathered(at: indices)
         }
@@ -55,7 +38,7 @@ public extension DataFrame {
 
     }
 
-    /// Filters rows using a SIMD-accelerated Double threshold.
+    /// Filters rows using a Double threshold.
     ///
     /// Sugar overload for the common case of filtering a numeric column with a scalar
     /// threshold, avoiding the need to construct a `FilterCondition` manually.

@@ -1,0 +1,54 @@
+{
+  "time_utc": "20260926T104626Z",
+  "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "pandas": "3.0.6",
+  "numpy": "2.5.3",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "chip": "Apple M4 Max",
+  "memory_bytes": 137438953472,
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+  "warmups_per_process": 2,
+  "repetitions_per_process": 5,
+  "batches": 3,
+  "commands": {
+    "SwiftSci": [
+      "<evidence>/production-comparison/.build/out/Products/Release/SciBench"
+    ],
+    "pandas": [
+      "<evidence>/benchmark/.venv/bin/python",
+      "<evidence>/production-comparison/python_bench.py"
+    ],
+    "Kiraa": [
+      "<evidence>/production-comparison/.build/out/Products/Release/KiraaBench"
+    ]
+  },
+  "thread_limits": {
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1"
+  },
+  "repos": {
+    "SwiftSci": {
+      "commit": "4c5bb953547ba5d84c7fd86bf868b1680c5f1811",
+      "status": "?? .vscode/\n?? Benchmarks/CompactStorage/"
+    },
+    "Kiraa": {
+      "commit": "fc5d957401f70e9d3b6b07270f7f300d488fd39f",
+      "status": ""
+    }
+  },
+  "sha256": {
+    "SwiftSci": "2ba181ec79f718dd5fece4823e4a873cec5c19d9e0ff62af1e966d99a24eb74b",
+    "Kiraa": "df6acdcc3d7ce12baf5a741ad26c3ce11c2bb40d42bffb94d119bea857345965",
+    "run.py": "87d1a59a3c2b8d62b2248ffb94207aca2a506be94040e64b8670f402930023a1",
+    "python_bench.py": "264b7703e1ef4ea1fd6538c2818a505021411b3b7f75a31f8ba1826c9cb61494",
+    "Package.swift": "0df69c3e271b81af1e0c837b99c2db44bb4ba5457e8b1ecfb4a282a38343af6d",
+    "Package.resolved": "c4fa4babee0a1dbe1f8c903f662323391b0370e5afb6186393a8e2865fd062bb",
+    "Sources/KiraaBench/main.swift": "420152ef5b4ed94690d6285742bc7163b919b17c65892baa5bbb1396136b6245",
+    "Sources/SciBench/main.swift": "62d2457cfc95819af26aa79720251b74169d373d719fffe7dec3d69a2bd0243c"
+  },
+  "inputs": {
+    "<evidence>/benchmark/data-100000.csv": "e9918fca3c64cd23df830a7f48b1aeff0e41a06d6eaaff4a1530371bdf03060d",
+    "<evidence>/benchmark/data-1000000.csv": "a72e18ea5a198ba174a2097686ade2472de671fbd10b9f270bf9e25535c44cf9"
+  }
+}

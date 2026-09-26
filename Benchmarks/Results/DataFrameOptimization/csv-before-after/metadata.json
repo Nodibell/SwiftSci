@@ -1,0 +1,17 @@
+{
+  "time_utc": "2026-09-26T05:11:42.251646+00:00",
+  "commit": "4dc6b533dd3c8731dd7936e196d6950564d83f88",
+  "binaries": {
+    "baseline": {
+      "path": "<evidence>/csv-optimization/baseline/SciBench",
+      "sha256": "fa0f392deddee6f855c1926db16da21e8c8a48caf2db9edf84e484f7b4b94190"
+    },
+    "candidate": {
+      "path": "<evidence>/production-comparison/.build/out/Products/Release/SciBench",
+      "sha256": "15cf0501c0a497e951f2eae23b102894b1ac72aa77dc8b2d349e1ebc9fd53589"
+    }
+  },
+  "warmups": 2,
+  "repetitions": 5,
+  "batches": 3
+}

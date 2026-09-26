@@ -202,5 +202,17 @@
     "source_sha256": "5d9e8bb43481a0a2aa789a1204842be884fa157128958dccf3e0458f3a4f803a",
     "published_sha256": "5d9e8bb43481a0a2aa789a1204842be884fa157128958dccf3e0458f3a4f803a",
     "machine_details_normalized": true
+  },
+  {
+    "artifact": "tests/upstream-sync/debug.json",
+    "source_sha256": "cf6aa212b161bc7625b481d3f0c378f18cd7d207a5771216c402d288fe23559b",
+    "published_sha256": "ffeabe72dce127c7b3975bed64a8c9ef3e8546b541da02acd42699e64f20b09e",
+    "machine_details_normalized": true
+  },
+  {
+    "artifact": "tests/upstream-sync/release.json",
+    "source_sha256": "4412281d87bc90b931a874d66b4e144531a1febbf697c110e5a4cbea91ac76fd",
+    "published_sha256": "3ac8185e728dae102ef6f14611692141aa277640baf6fd794353ae6fa8e45bb7",
+    "machine_details_normalized": true
   }
 ]

@@ -4,6 +4,10 @@ Measured implementation: `4c5bb953547ba5d84c7fd86bf868b1680c5f1811` on `codex/da
 
 The changes reduce repeated type dispatch, conversion, null scanning and intermediate allocation in CSV reads, filters, sorts and grouped reductions. Public optional-array column storage remains in place. Compact storage and its AI integration research are separate work.
 
+## Validation after upstream sync
+
+The branch merged upstream main through `f6320c1e9f`. Full Debug and Release suites each passed 891 tests with no failures or skips on merge commit `a2853b1a91`, including MLX-dependent tests. [Merge validation evidence](tests/upstream-sync/README.md). The benchmark measurements below retain their original tested-source attribution.
+
 ## Implementation scope
 
 - Dispatch built-in numeric filters outside the row loop and preserve exact mixed numeric comparisons. Gather by concrete type, carry known null counts, and schedule parallel gathering by estimated output bytes.

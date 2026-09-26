@@ -206,6 +206,9 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let column = self as? TypedColumn<Int32> {
             return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
+        if let column = self as? TypedColumn<Int> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
+        }
         if let strings = vals as? [String?] {
             sortIndices(&indices, ascending: ascending) { strings[$0] }
             return indices

@@ -432,6 +432,9 @@ public struct GroupedDataFrame: Sendable {
         if let typed = col as? TypedColumn<Int32> {
             return applyNumeric(agg, to: typed.values, groups: groups)
         }
+        if let typed = col as? TypedColumn<Int> {
+            return applyNumeric(agg, to: typed.values, groups: groups)
+        }
         let values = groups.rowGroups.indices.map { col.value(at: $0).flatMap { toDouble($0) } }
         let result = applyNumeric(agg, to: values, groups: groups)
         // The fallback historically returns nil when no values convert to Double.
@@ -527,6 +530,7 @@ public struct GroupedDataFrame: Sendable {
         case let x as Float:  return Double(x)
         case let x as Int64:  return Double(x)
         case let x as Int32:  return Double(x)
+        case let x as Int:    return Double(x)
         default: return nil
         }
     }

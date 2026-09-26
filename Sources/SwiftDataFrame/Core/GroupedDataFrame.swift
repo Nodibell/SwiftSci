@@ -252,6 +252,7 @@ public struct GroupedDataFrame: Sendable {
     }
 
     private func buildIntegerGroups<T: FixedWidthInteger>(_ values: [T?]) -> GroupIndex {
+        if let groups = buildBoundedIntegerGroups(values) { return groups }
         var groupIndices: [T?: Int] = [:]
         var groups = GroupIndex(rowCapacity: values.count)
         for key in values {
@@ -261,6 +262,43 @@ public struct GroupedDataFrame: Sendable {
                 groupIndices[key] = groups.count
                 groups.append(groups.count)
             }
+        }
+        return groups
+    }
+
+    private func buildBoundedIntegerGroups<T: FixedWidthInteger>(_ values: [T?]) -> GroupIndex? {
+        // Bound the table to 65,536 entries and at most one entry per input row.
+        let slotLimit = Swift.min(values.count, 65_536)
+        var lower = T.max
+        var upper = T.min
+        for case let value? in values {
+            if value >= lower && value <= upper { continue }
+            lower = Swift.min(lower, value)
+            upper = Swift.max(upper, value)
+            let (span, overflow) = upper.subtractingReportingOverflow(lower)
+            guard !overflow, let width = Int(exactly: span), width < slotLimit else { return nil }
+        }
+
+        var groups = GroupIndex(rowCapacity: values.count)
+        if lower > upper {
+            for _ in values { groups.append(0) }
+            return groups
+        }
+
+        let slotCount = Int(upper - lower) + 1
+        var lookup = [Int](repeating: -1, count: slotCount)
+        var nullGroup = -1
+        for value in values {
+            let group: Int
+            if let value {
+                let slot = Int(value - lower)
+                if lookup[slot] == -1 { lookup[slot] = groups.count }
+                group = lookup[slot]
+            } else {
+                if nullGroup == -1 { nullGroup = groups.count }
+                group = nullGroup
+            }
+            groups.append(group)
         }
         return groups
     }

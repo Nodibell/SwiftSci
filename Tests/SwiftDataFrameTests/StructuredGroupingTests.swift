@@ -120,6 +120,39 @@ struct StructuredGroupingTests {
         #expect(try frame([key]).groupBy("key").sum()[column: "value", as: Double.self]?.values == [3, 7, 5])
     }
 
+    @Test func erasedFloatKeysNormalizeZerosAndNaNs() throws {
+        let key = DataFrameRelease35CoverageTests.CustomGenericColumn(
+            name: "key", dtype: .float32,
+            rawValues: [Float(-0.0), Float(0.0), Float.nan,
+                Float(bitPattern: 0x7fc0_0001), nil, Float.infinity,
+                -Float.infinity, nil, Float(1), Float(1)])
+        let result = try frame([key]).groupBy("key").sum()
+        #expect(result.shape.rows == 6)
+        #expect(result[column: "value", as: Double.self]?.values == [3, 7, 13, 6, 7, 19])
+        let keys = try #require(result[column: "key", as: String.self])
+        #expect(keys.values.first == "-0.0")
+        #expect(keys.values[2] == nil)
+        #expect(keys.nullCount == 1)
+    }
+
+    @Test(arguments: [false, true])
+    func countsWithoutNumericValuesPreserveOrderAndNullGroups(includeTextColumn: Bool) throws {
+        var columns: [any AnyColumn] = [TypedColumn<String>(
+            name: "key", values: ["beta", "alpha", "beta", nil, nil, "alpha", "beta"])]
+        if includeTextColumn {
+            columns.append(TypedColumn<String>(
+                name: "note", values: ["x", nil, "y", nil, "x", "y", nil]))
+        }
+        let data = try DataFrame(columns: columns)
+        let result = data.groupBy("key").count()
+        #expect(result.columnNames == ["key", "count"])
+        #expect(result.shape.rows == 3)
+        #expect(result[column: "key", as: String.self]?.values == ["beta", "alpha", nil])
+        let counts = try #require(result[column: "count", as: Int64.self])
+        #expect(counts.values == [3, 2, 2])
+        #expect(counts.nullCount == 0)
+    }
+
     @Test func nonHashableFallbackRemainsPerComponent() throws {
         let key = DataFrameRelease35CoverageTests.CustomGenericColumn(
             name: "key", dtype: .utf8,

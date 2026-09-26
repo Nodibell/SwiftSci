@@ -103,6 +103,55 @@ struct CSVRecordIndexTests {
         #expect(chunks.flatMap { $0[column: "note", as: String.self]!.values } == notes)
     }
 
+    @Test("String overrides preserve text, quoted fields and missing values")
+    func stringOverride() async throws {
+        let url = temporaryURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let csv = "id,code,value\n1,00123,00123\n2,00456,\"a,b\"\n3,00789,\"a \"\"quote\"\"\"\n4,MISSING,MISSING\n5\n6,,\n"
+        try Data(csv.utf8).write(to: url)
+        var options = CSVReadOptions()
+        options.columnTypeOverrides = ["code": .utf8, "value": .utf8]
+        options.nullValues.insert("MISSING")
+
+        let frame = try await DataFrame(csv: url, options: options)
+        let column = try #require(frame[column: "value", as: String.self])
+        #expect(frame.shape.rows == 6)
+        #expect(column.dtype == .utf8)
+        #expect(column.values == ["00123", "a,b", "a \"quote\"", nil, nil, nil])
+        #expect(column.nullCount == 3)
+        let codes = try #require(frame[column: "code", as: String.self])
+        #expect(codes.dtype == .utf8)
+        #expect(codes.values == ["00123", "00456", "00789", nil, nil, nil])
+        #expect(codes.nullCount == 3)
+    }
+
+    @Test("Date overrides and inference preserve instants and missing values", arguments: [false, true])
+    func dateColumns(useOverride: Bool) async throws {
+        let url = temporaryURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        var csv = "id,value\n1,1970-01-01T00:00:00Z\n2,\"1970-01-02T00:00:00.250Z\"\n3,MISSING\n4\n5,\n"
+        var expected: [Date?] = [
+            Date(timeIntervalSince1970: 0), Date(timeIntervalSince1970: 86_400.25),
+            nil, nil, nil
+        ]
+        var options = CSVReadOptions()
+        options.nullValues.insert("MISSING")
+        if useOverride {
+            options.inferTypes = false
+            options.columnTypeOverrides = ["value": .date32]
+            csv += "6,not-a-date\n"
+            expected.append(nil)
+        }
+        try Data(csv.utf8).write(to: url)
+
+        let frame = try await DataFrame(csv: url, options: options)
+        let column = try #require(frame[column: "value", as: Date.self])
+        #expect(frame.shape.rows == expected.count)
+        #expect(column.dtype == .date32)
+        #expect(column.values == expected)
+        #expect(column.nullCount == (useOverride ? 4 : 3))
+    }
+
     @Test("File limits and headerless readers retain their existing row contract")
     func limitsAndHeaderless() async throws {
         let url = temporaryURL()

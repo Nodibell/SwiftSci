@@ -56,9 +56,8 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: Fitted feature scaler transformer instance.
     public func fitStandardScaler(columns names: [String]) throws -> StandardScaler {
-        let features = try extractFeatures(columns: names)
         var scaler = StandardScaler()
-        try scaler.fit(features)
+        try scaler.fit(self, columns: names)
         return scaler
     }
     
@@ -89,9 +88,8 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: Fitted feature scaler transformer instance.
     public func fitMinMaxScaler(columns names: [String]) throws -> MinMaxScaler {
-        let features = try extractFeatures(columns: names)
         var scaler = MinMaxScaler()
-        try scaler.fit(features)
+        try scaler.fit(self, columns: names)
         return scaler
     }
     

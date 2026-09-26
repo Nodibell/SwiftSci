@@ -69,20 +69,89 @@ public final class SystemsCSVParser: Sendable {
         return (0..<index.count).map { Array(index.row(at: $0)) }
     }
 
-    internal func parseIndex(buffer: UnsafeBufferPointer<UInt8>) -> CSVRecordIndex {
-        var fields = [CSVFieldOffset]()
-        fields.reserveCapacity(min(buffer.count / 8, 100_000))
-        var rowStarts = [0]
-        rowStarts.reserveCapacity(min(buffer.count / 16, 100_000) + 1)
+    internal func parseIndex(
+        buffer: UnsafeBufferPointer<UInt8>, minimumParallelBytes: Int = 4 * 1024 * 1024
+    ) -> CSVRecordIndex {
+        if buffer.count >= minimumParallelBytes,
+           let records = parseParallelIndex(buffer: buffer) {
+            return records
+        }
+        return scanIndex(buffer: buffer, range: 0..<buffer.count, rejectQuotes: false)!
+    }
 
-        let count = buffer.count
-        var index = 0
-        var fieldStart = 0
+    // The fast path accepts only unquoted records. A quote in any chunk discards
+    // all chunk results and runs the full DFA, including embedded-newline handling.
+    internal func parseParallelIndex(buffer: UnsafeBufferPointer<UInt8>) -> CSVRecordIndex? {
+        let workers = min(8, ProcessInfo.processInfo.activeProcessorCount)
+        guard workers > 1, buffer.count > workers else { return nil }
+        var boundaries = [0]
+        for worker in 1..<workers {
+            var position = buffer.count / workers * worker
+            while position < buffer.count && buffer[position - 1] != lfByte { position += 1 }
+            if position < buffer.count && position > boundaries.last! { boundaries.append(position) }
+        }
+        boundaries.append(buffer.count)
+        let ranges = zip(boundaries, boundaries.dropFirst()).map { $0..<$1 }
+        guard ranges.count > 1 else { return nil }
+        let input = CSVScanBuffer(pointer: buffer)
+        var chunks = [CSVRecordIndex?](repeating: nil, count: ranges.count)
+        chunks.withUnsafeMutableBufferPointer { output in
+            let slots = CSVChunkSlots(pointer: output.baseAddress!)
+            DispatchQueue.concurrentPerform(iterations: ranges.count) { chunk in
+                slots.pointer[chunk] = scanIndex(buffer: input.pointer, range: ranges[chunk], rejectQuotes: true)
+            }
+        }
+        guard chunks.allSatisfy({ $0 != nil }) else { return nil }
+        let records = chunks.map { $0! }
+        var fieldBases = [0]
+        var rowBases = [0]
+        for record in records {
+            fieldBases.append(fieldBases.last! + record.fields.count)
+            rowBases.append(rowBases.last! + record.count)
+        }
+        let starts = fieldBases
+        let rows = rowBases
+        let fields = [CSVFieldOffset](unsafeUninitializedCapacity: starts.last!) { output, initialized in
+            let destination = CSVFieldSlots(pointer: output.baseAddress!)
+            DispatchQueue.concurrentPerform(iterations: records.count) { chunk in
+                records[chunk].fields.withUnsafeBufferPointer { source in
+                    if !source.isEmpty {
+                        destination.pointer.advanced(by: starts[chunk]).initialize(from: source.baseAddress!, count: source.count)
+                    }
+                }
+            }
+            initialized = output.count
+        }
+        let rowStarts = [Int](unsafeUninitializedCapacity: rows.last! + 1) { output, initialized in
+            let destination = CSVRowSlots(pointer: output.baseAddress!)
+            DispatchQueue.concurrentPerform(iterations: records.count) { chunk in
+                for row in 0..<records[chunk].count {
+                    destination.pointer.advanced(by: rows[chunk] + row).initialize(to: starts[chunk] + records[chunk].rowStarts[row])
+                }
+            }
+            output.baseAddress!.advanced(by: rows.last!).initialize(to: starts.last!)
+            initialized = output.count
+        }
+        return CSVRecordIndex(fields: fields, rowStarts: rowStarts)
+    }
+
+    private func scanIndex(
+        buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, rejectQuotes: Bool
+    ) -> CSVRecordIndex? {
+        var fields = [CSVFieldOffset]()
+        fields.reserveCapacity(min(range.count / 8, 100_000))
+        var rowStarts = [0]
+        rowStarts.reserveCapacity(min(range.count / 16, 100_000) + 1)
+
+        let count = range.upperBound
+        var index = range.lowerBound
+        var fieldStart = range.lowerBound
         var insideQuotes = false
         var escapedQuotesFound = false
 
         while index < count {
             let byte = buffer[index]
+            if rejectQuotes && byte == quoteByte { return nil }
 
             if insideQuotes {
                 if byte == quoteByte {
@@ -146,3 +215,10 @@ public final class SystemsCSVParser: Sendable {
         return CSVRecordIndex(fields: fields, rowStarts: rowStarts)
     }
 }
+
+// Buffers are borrowed until concurrentPerform joins. Each worker owns a
+// disjoint output range; the mapped input is immutable throughout the scan.
+private struct CSVScanBuffer: @unchecked Sendable { let pointer: UnsafeBufferPointer<UInt8> }
+private struct CSVChunkSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<CSVRecordIndex?> }
+private struct CSVFieldSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<CSVFieldOffset> }
+private struct CSVRowSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<Int> }

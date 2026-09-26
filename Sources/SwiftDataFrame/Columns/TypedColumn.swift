@@ -209,13 +209,10 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter ascending: Sort order direction (`true` for ascending, `false` for descending).
     /// - Returns: Array of row indices sorted by column values.
     public func sortedIndices(ascending: Bool) -> [Int] {
-        var indices = Array(0..<values.count)
-        let vals = values
-
         // Specialize common Comparable element types without constraining SupportedType
         // (Bool is Hashable but not Comparable).
         if let column = self as? TypedColumn<Double> {
-            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
+            return sortIndicesDouble(column.values, nullCount: column.nullCount, ascending: ascending)
         }
         if let column = self as? TypedColumn<Float> {
             return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
@@ -229,6 +226,8 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let column = self as? TypedColumn<Int> {
             return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
+        var indices = Array(0..<values.count)
+        let vals = values
         if let strings = vals as? [String?] {
             sortIndices(&indices, ascending: ascending) { strings[$0] }
             return indices
@@ -319,6 +318,97 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     /// Returns non-null values as a plain array.
     public var nonNullValues: [T] { values.compactMap { $0 } }
+}
+
+private func sortIndicesDouble(_ values: [Double?], nullCount: Int, ascending: Bool) -> [Int] {
+    let validCount = values.count - nullCount
+    // Sparse columns do not amortize a full-row radix key buffer.
+    if validCount < 1_024 || validCount < values.count / 20 {
+        return sortIndicesPrimitiveFast(values, nullCount: nullCount, ascending: ascending)
+    }
+    var tagged: [(index: Int, value: Double)] = []
+    var missing: [Int] = []
+    tagged.reserveCapacity(validCount)
+    missing.reserveCapacity(nullCount)
+    var previous: Double?
+    var direction = 0
+    var runs = 1
+    // Keep adaptive comparison sorting when monotone runs span at least 64 values on average.
+    let runLimit = max(8, validCount / 64)
+    for (index, optional) in values.enumerated() {
+        guard let value = optional else {
+            missing.append(index)
+            continue
+        }
+        if value.isNaN {
+            var indices = Array(values.indices)
+            sortIndices(&indices, ascending: ascending) { values[$0] }
+            return indices
+        }
+        if let previous, value != previous {
+            let nextDirection = value > previous ? 1 : -1
+            if direction != 0 && direction != nextDirection { runs += 1 }
+            direction = nextDirection
+        }
+        if runs > runLimit {
+            tagged.removeAll(keepingCapacity: false)
+            missing.removeAll(keepingCapacity: false)
+            if let indices = radixIndicesDouble(values, nullCount: nullCount, ascending: ascending) {
+                return indices
+            }
+            var indices = Array(values.indices)
+            sortIndices(&indices, ascending: ascending) { values[$0] }
+            return indices
+        }
+        previous = value
+        tagged.append((index, value))
+    }
+    tagged.sort { ascending ? $0.value < $1.value : $0.value > $1.value }
+    var indices = tagged.map { $0.index }
+    indices.append(contentsOf: missing)
+    return indices
+}
+
+private func radixIndicesDouble(_ values: [Double?], nullCount: Int, ascending: Bool) -> [Int]? {
+    var keys = [UInt64](repeating: 0, count: values.count)
+    var indices: [Int] = []
+    var missing: [Int] = []
+    indices.reserveCapacity(values.count)
+    missing.reserveCapacity(nullCount)
+    var differingBits: UInt64 = 0
+    var firstKey: UInt64?
+    for (index, optional) in values.enumerated() {
+        guard let value = optional else {
+            missing.append(index)
+            continue
+        }
+        guard !value.isNaN else { return nil }
+        let bits = value == 0 ? UInt64(0) : value.bitPattern
+        var key = bits >> 63 == 0 ? bits ^ (UInt64(1) << 63) : ~bits
+        if !ascending { key = ~key }
+        keys[index] = key
+        if let firstKey { differingBits |= key ^ firstKey } else { firstKey = key }
+        indices.append(index)
+    }
+    var scratch = [Int](repeating: 0, count: indices.count)
+    for shift in stride(from: 0, to: 64, by: 8) where ((differingBits >> shift) & 255) != 0 {
+        var offsets = [Int](repeating: 0, count: 256)
+        for index in indices { offsets[Int((keys[index] >> shift) & 255)] += 1 }
+        var next = 0
+        for bucket in offsets.indices {
+            let count = offsets[bucket]
+            offsets[bucket] = next
+            next += count
+        }
+        for index in indices {
+            let bucket = Int((keys[index] >> shift) & 255)
+            scratch[offsets[bucket]] = index
+            offsets[bucket] += 1
+        }
+        swap(&indices, &scratch)
+    }
+    indices.append(contentsOf: missing)
+    return indices
 }
 
 /// Sorts cached non-null keys once and appends missing rows in their original order.

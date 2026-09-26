@@ -210,13 +210,7 @@ internal enum CSVReader {
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
-                        if nullMatcher.contains(buffer: buffer, offset: offset) {
-                            values.append(nil)
-                        } else if let val = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
-                            values.append(Int64(val))
-                        } else {
-                            values.append(Int64.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset)))
-                        }
+                        values.append(parseCSVInt64(buffer: buffer, offset: offset, nullMatcher: nullMatcher))
                     } else {
                         values.append(nil)
                     }
@@ -227,13 +221,7 @@ internal enum CSVReader {
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
-                        if nullMatcher.contains(buffer: buffer, offset: offset) {
-                            values.append(nil)
-                        } else if let val = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
-                            values.append(val)
-                        } else {
-                            values.append(Double.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset)))
-                        }
+                        values.append(parseCSVDouble(buffer: buffer, offset: offset, nullMatcher: nullMatcher))
                     } else {
                         values.append(nil)
                     }
@@ -350,13 +338,7 @@ internal enum CSVReader {
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
-                    if nullMatcher.contains(buffer: buffer, offset: offset) {
-                        values.append(nil)
-                    } else if let val = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
-                        values.append(Int64(val))
-                    } else {
-                        values.append(Int64.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset)))
-                    }
+                    values.append(parseCSVInt64(buffer: buffer, offset: offset, nullMatcher: nullMatcher))
                 } else {
                     values.append(nil)
                 }
@@ -369,13 +351,7 @@ internal enum CSVReader {
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
-                    if nullMatcher.contains(buffer: buffer, offset: offset) {
-                        values.append(nil)
-                    } else if let val = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
-                        values.append(val)
-                    } else {
-                        values.append(Double.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset)))
-                    }
+                    values.append(parseCSVDouble(buffer: buffer, offset: offset, nullMatcher: nullMatcher))
                 } else {
                     values.append(nil)
                 }
@@ -408,6 +384,42 @@ internal enum CSVReader {
             }
         }
         return values.column(named: name)
+    }
+
+    @inline(__always)
+    private static func parseCSVInt64(
+        buffer: UnsafeBufferPointer<UInt8>,
+        offset: CSVFieldOffset,
+        nullMatcher: CSVNullMatcher
+    ) -> Int64? {
+        if !nullMatcher.canSkipNumericMatch && nullMatcher.contains(buffer: buffer, offset: offset) {
+            return nil
+        }
+        if let value = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
+            return Int64(value)
+        }
+        if nullMatcher.canSkipNumericMatch && nullMatcher.contains(buffer: buffer, offset: offset) {
+            return nil
+        }
+        return Int64.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
+    }
+
+    @inline(__always)
+    private static func parseCSVDouble(
+        buffer: UnsafeBufferPointer<UInt8>,
+        offset: CSVFieldOffset,
+        nullMatcher: CSVNullMatcher
+    ) -> Double? {
+        if !nullMatcher.canSkipNumericMatch && nullMatcher.contains(buffer: buffer, offset: offset) {
+            return nil
+        }
+        if let value = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
+            return value
+        }
+        if nullMatcher.canSkipNumericMatch && nullMatcher.contains(buffer: buffer, offset: offset) {
+            return nil
+        }
+        return Double.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
     }
 
     // MARK: – Streaming CSV Reader (v1.5 mmap-backed)

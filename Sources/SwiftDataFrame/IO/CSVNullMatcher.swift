@@ -5,11 +5,17 @@ internal struct CSVNullMatcher {
     private let nullValues: Set<String>
     private let patterns: [[UInt8]]
     private let requiresString: Bool
+    let canSkipNumericMatch: Bool
 
     init(_ nullValues: Set<String>) {
         self.nullValues = nullValues
         patterns = nullValues.map { Array($0.utf8) }
         requiresString = patterns.contains { $0.contains { $0 >= 128 } }
+        // Successful decimal byte parsing requires an ASCII digit. Such a value
+        // cannot equal a digit-free ASCII null token; Unicode tokens keep String matching.
+        canSkipNumericMatch = !requiresString && !patterns.contains { pattern in
+            pattern.contains { $0 >= 48 && $0 <= 57 }
+        }
     }
 
     func contains(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Bool {

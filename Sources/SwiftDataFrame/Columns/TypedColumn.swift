@@ -75,10 +75,12 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         for flag in mask where flag { kept += 1 }
         var result: [T?] = []
         result.reserveCapacity(kept)
+        var nullCount = 0
         for (val, keep) in zip(values, mask) where keep {
             result.append(val)
+            if case nil = val { nullCount += 1 }
         }
-        return TypedColumn<T>(name: name, values: result)
+        return TypedColumn<T>(name: name, values: result, nullCount: nullCount)
     }
 
     /// Returns a new column containing only unique elements (preserving order of first appearance).
@@ -105,7 +107,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
                 }
             }
         }
-        return TypedColumn<T>(name: name, values: uniqueValues)
+        return TypedColumn<T>(name: name, values: uniqueValues, nullCount: seenNull ? 1 : 0)
     }
 
     /// Gathers elements at the specified row indices using typed indexed loops.
@@ -191,7 +193,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter newName: Target column name.
     /// - Returns: Renamed column instance.
     public func renamed(to newName: String) -> any AnyColumn {
-        TypedColumn<T>(name: newName, values: values)
+        TypedColumn<T>(name: newName, values: values, nullCount: _nullCount)
     }
 
     /// Computes a stable row permutation sorted by column values, with nulls last.

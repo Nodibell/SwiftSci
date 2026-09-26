@@ -8,6 +8,13 @@ struct ColumnNullCountTests {
         let column = TypedColumn<T>(name: "value", values: values)
         let erased: any AnyColumn = column
         #expect(column.nullCount == 2)
+        let renamed = try #require(column.renamed(to: "renamed") as? TypedColumn<T>)
+        #expect(renamed.values == values)
+        #expect(renamed.nullCount == column.nullCount)
+        #expect(renamed.name == "renamed")
+        #expect(renamed.dtype == column.dtype)
+        #expect(column.name == "value")
+        #expect(column.typedUnique.nullCount == 1)
 
         let indices = [3, 1, 0, 1, 2]
         let gathered = try #require(erased.gathered(at: indices) as? TypedColumn<T>)

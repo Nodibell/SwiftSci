@@ -154,13 +154,13 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Returns: Array of row indices matching the condition, or `nil` if unsupported.
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? {
         if let column = self as? TypedColumn<Double> {
-            return filterIndicesFloating(values: column.values, condition: condition)
+            return filterIndicesFloating(values: column.values, nullCount: column.nullCount, condition: condition)
         }
         if let column = self as? TypedColumn<Int64> {
             return filterIndicesInteger(values: column.values, condition: condition)
         }
         if let column = self as? TypedColumn<Float> {
-            return filterIndicesFloating(values: column.values, condition: condition)
+            return filterIndicesFloating(values: column.values, nullCount: column.nullCount, condition: condition)
         }
         if let column = self as? TypedColumn<Int32> {
             return filterIndicesInteger(values: column.values, condition: condition)
@@ -564,7 +564,7 @@ extension TypedColumn where T == Double {
 
 // MARK: – Typed filter indices
 
-private func filterIndicesFloating<T: BinaryFloatingPoint>(values: [T?], condition: FilterCondition) -> [Int]? {
+private func filterIndicesFloating<T: BinaryFloatingPoint>(values: [T?], nullCount: Int, condition: FilterCondition) -> [Int]? {
     switch condition {
     case .isNull: return values.indices.filter { values[$0] == nil }
     case .isNotNull: return selectedIndices(values) { _ in true }
@@ -580,6 +580,17 @@ private func filterIndicesFloating<T: BinaryFloatingPoint>(values: [T?], conditi
         case .notEqual: return selectedIndices(values) { _ in true }
         case .less, .lessEqual: operation = roundedBelow ? .lessEqual : .less
         case .greater, .greaterEqual: operation = roundedBelow ? .greater : .greaterEqual
+        }
+    }
+    // Fusing null checks with native floating comparisons can slow dense selections.
+    if nullCount == 0, let nativeThreshold = T(exactly: threshold) {
+        switch operation {
+        case .equal: return selectedIndices(values) { $0 == nativeThreshold }
+        case .notEqual: return selectedIndices(values) { $0 != nativeThreshold }
+        case .less: return selectedIndices(values) { $0 < nativeThreshold }
+        case .lessEqual: return selectedIndices(values) { $0 <= nativeThreshold }
+        case .greater: return selectedIndices(values) { $0 > nativeThreshold }
+        case .greaterEqual: return selectedIndices(values) { $0 >= nativeThreshold }
         }
     }
     switch operation {

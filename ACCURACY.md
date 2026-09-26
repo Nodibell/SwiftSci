@@ -175,7 +175,7 @@ Execution time on Apple Silicon arm64 (Release build, identical datasets):
 | **ARIMA(1,1,1) Fit + Forecast** (N=500, h=24) | **1.241 ms** | ~213.0 ms | ⚡ **~171×** |
 | **Hypothesis Tests Suite** (t, ANOVA, r, ρ) | **2.268 ms** | ~8.4 ms | ⚡ **~3.7×** |
 | **VADER Sentiment Analysis** (3 sentences) | **0.018 ms** | ~0.45 ms | ⚡ **~25×** |
-| **SwiftLLM Single-Token Incremental Step** | **O(1) Step** | Full recomputation $O(N)$ | ⚡ **Sub-millisecond** |
+| **SwiftLLM Single-Token Incremental Step** | **Cached K/V Step ($O(N)$)** | Full recomputation $O(N^2)$ | ⚡ **Sub-millisecond** |
 | **Metal MSL gemv_q4_0 Matrix-Vector** | **Zero-Copy GPU** | Python loop dequantization | ⚡ **Hardware Native** |
 | **AutoARIMA Zero-Variance Exit** | **< 0.01 ms** | Non-terminating loop | ⚡ **Instant Exit** |
 

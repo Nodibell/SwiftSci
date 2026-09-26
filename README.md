@@ -135,17 +135,17 @@ The following benchmark metrics reflect the certified, dual-language automated t
 | **KMeans Fit** (10k×4, 3 clusters, 50 iters) | **`17.44 ms`** | `7.31 ms` (*Scikit-Learn*) | **Python 2.39×** | Underflow-clamped SIMD distance vs Cython k-means |
 | **SortBy Double Column** (100k rows) | **`44.84 ms`** | `7.49 ms` (*NumPy*) | **Python 5.99×** | Swift sort vs NumPy quicksort in C |
 | **DataFrame SIMD Hash Join** (100k rows) | **`35.20 ms`** | `0.456 ms` (*Pandas*) | **Python 77.19×** | Swift typed hash table vs Pandas C hashtable |
-| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | **`0.125 ms`** | `1.450 ms` (*Full Forward*) | **SwiftSci 11.60×** | $O(1)$ single-token decode ($Q \times K/V$), $\Delta \le 1.03 \times 10^{-7}$ |
+| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | **`0.125 ms`** | `1.450 ms` (*Full Forward*) | **SwiftSci 11.60×** | Architectural comparison: single-token incremental decode with cached K/V ($O(N)$ attention) vs full-sequence forward recomputation ($O(N^2)$); $\Delta \le 1.03 \times 10^{-7}$ |
 | **Metal MSL gemv_q4_0 Kernel** (1024d) | **`0.015 ms`** | `0.045 ms` (*Float32 Dequant*) | **SwiftSci 3.00×** | Zero-copy packed Q4_0 evaluation |
-| **AutoARIMA Zero-Variance Guard** (1000 pts) | **`< 0.01 ms`** | Divergent loop | **Instant Exit** | Guaranteed non-diverging guard |
+| **AutoARIMA Zero-Variance Guard** (1000 pts) | **`< 0.01 ms`** | Divergent loop | **Instant Exit** | Zero-variance fast exit + bounded optimization iterations |
 
-### 🎯 Model Accuracy & Forecast Quality Scorecard
+### 🎯 Validation & Correctness Scorecard
 
 SwiftSci incorporates an automated validation scorecard confirming numerical parity against ground truth test datasets:
 
 ```text
   ┌────────────────────────────────────────────────────────────────────────────────────┐
-  │                    MODEL ACCURACY & FORECAST QUALITY SCORECARD                     │
+  │                    VALIDATION & CORRECTNESS SCORECARD                              │
   ├────────────────────────────────────────────────────────────────────────────────────┤
   │ [Forecast] Holt-Winters (h=24) : RMSE=0.350, MAE=0.281, MAPE=0.21%, R²=0.997       │
   │ [Forecast] ARIMA(1,1,1) (h=24) : RMSE=10.218, MAE=8.557, MAPE=5.87%, R²=-1.555     │

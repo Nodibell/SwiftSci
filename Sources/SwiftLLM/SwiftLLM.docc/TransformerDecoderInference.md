@@ -7,7 +7,7 @@ Execute two-stage autoregressive generation with full prompt prefill and increme
 `SwiftLLM` implements modern decoder-only causal transformer architectures (such as Llama 3, Mistral, and Gemma) leveraging MLX unified memory acceleration on Apple Silicon GPUs. Inference is divided into two distinct computational phases:
 
 1. **Prompt Prefill Phase (`isPrefill: true`)**: Processes all initial prompt tokens in parallel, computing attention matrices and populating the key-value cache across all transformer layers.
-2. **Incremental Decoding Phase (`isPrefill: false`)**: Processes a single token per step, computing query projections and attending over the accumulated key-value history in $O(1)$ step time.
+2. **Incremental Decoding Phase (`isPrefill: false`)**: Processes a single token per step, computing query projections and attending over the accumulated key-value history ($O(N)$ attention over cached history, avoiding repeated full-sequence forward passes).
 
 ---
 

@@ -7,7 +7,7 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 > - **Benchmark Methodology v2:** Byte-identical little-endian IEEE-754 binary vectors (`.bin`) and CSV fixtures with SHA-256 verification, synchronized ML hyperparameters, and 3-tier categorization with `Relative Performance` reporting.
 > - **Descending Null Sort Fix (`SwiftDataFrame`):** Preserved descending order for non-null values while keeping null elements sorted last, working around a Swift 6 compiler closure constraint with `any Comparable` (PR #38).
 > - **GBDT Benchmark Dimension Alignment (`SwiftML`):** Fixed feature and target dimension matching on $1\text{k}\times 4$ fixtures in `MLBenchmarks.swift`, enabling accurate wall-clock measurements (9.09 ms fit vs 32.82 ms in Scikit-Learn, 3.61× speedup).
-> - **Verified Local LLM Runtime Pipeline (`SwiftLLM`):** Two-stage generation loop in `TransformerDecoder` with full prompt prefill into `KVCache` followed by $O(1)$ single-token incremental decode steps ($Q \times \text{all cached } K/V$), strictly filtering logits via `SamplingConfiguration` (repetition penalty, temperature, top-k, top-p).
+> - **Verified Local LLM Runtime Pipeline (`SwiftLLM`):** Two-stage generation loop in `TransformerDecoder` with full prompt prefill into `KVCache` followed by single-token incremental decode with cached $K/V$ ($O(N)$ attention over cached history, avoiding repeated full-sequence forward passes), strictly filtering logits via `SamplingConfiguration` (repetition penalty, temperature, top-k, top-p).
 > - **Rotary Positional Embeddings with Incremental Decoding (`RoPEEmbedding`):** Dynamic `positionOffset` support achieving bit-exact numerical parity ($\Delta \le 1.03 \times 10^{-7}$, well below the $10^{-4}$ Golden Test threshold) vs full sequence forward recomputation.
 > - **Zero-Copy GGUF Packed Quantization (`QuantizedTensor`):** Direct memory layout retention of raw Q4_0 and Q8_0 weights without artificial dequantization; verified numerical parity ($\Delta = 0.0000$) with native Metal MSL `gemv_q4_0` kernels.
 > - **Chat Template Formatting (`SwiftNLP`):** Pre-configured multi-turn renderers for `.llama3`, `.chatML`, and `.mistral` with direct `Tokenizer` integration.
@@ -35,7 +35,7 @@ The table below tracks key architectural breakthroughs, engine upgrades, and per
 | **v3.8.0** | **SwiftAgent Omni-Module Architecture, Typed Structured Tools, Agentic Memory & Real-Time Streaming**<br>SwiftSciToolbox bridging all scientific modules; type-safe AgentToolV2 with JSON schema validation; ReActAgent real-time event streaming; Working, SlidingWindow, and HNSW-backed SemanticVectorMemory; native SwiftUI AgentDialogueController; 96.53%+ test coverage; 100% DocC documentation. | **Omni-Module**: Unified tool calling across stats, ML, forecasting, SQL, vision, NLP.<br>**Agentic Memory**: Sub-millisecond HNSW episodic recall.<br>**Streaming UI**: 60 FPS SwiftUI chat integration. | 🟢 Released |
 | **v3.8.1** | **G-018 Column-Level Text Profiler & Zero-Compromise Precision Sweeps**<br>Native `profileTextColumn(_:)` with multilingual stopword filtering; in-memory SQLite handle; vDSP SIMD Naive Bayes; Holt-Winters Nelder-Mead phase correction ($R^2=0.997$); combinatorial TreeSHAP LUT; zero-allocation TS decomposition; hardware-routed LinearSVC. | **SQLite Ingestion**: **0.032 ms** (⚡ **3.28× vs Pandas**).<br>**NaiveBayes**: **0.026 ms** (⚡ **14.9× vs Sklearn**).<br>**Holt-Winters**: **$R^2 = 0.997$**, **RMSE = 0.350**.<br>**TreeSHAP**: **0.103 ms**.<br>**KMeans**: **11.19 ms** (⚡ **1.07× vs Sklearn**). | 🟢 Released |
 | **v3.10.0** | **Verified Local LLM Runtime Pipeline, KV-Cache Decoding, GGUF Zero-Copy Quantization, Resilient Agents & AutoARIMA Sentry**<br>Two-stage prefill/incremental generation loop; `SamplingConfiguration` logits pipeline; dynamic `positionOffset` in `RoPEEmbedding`; zero-copy `QuantizedTensor` Q4_0/Q8_0 with Metal MSL parity; `ChatMessage` & `ChatTemplate` (`.llama3`, `.chatML`, `.mistral`); resilient ReAct agent loops with schema validation; zero-leak SQLite C-pointer lifecycle under ASan. | **RoPE Incremental Decode**: Bit-exact parity ($\Delta = 1.03 \times 10^{-7}$).<br>**Metal MSL Q4_0 GEMV**: $\Delta = 0.0000$ vs Float32.<br>**AutoARIMA Exit**: $< 0.01$ ms zero-variance guard.<br>**100% DocC API Coverage**: Zero unresolved placeholders. | 🟢 Released |
-| **v3.10.1** | **Benchmark Methodology v2, Descending Null Sort Fix & GBDT Alignment**<br>Deterministic IEEE-754 `.bin` fixtures with SHA-256 verification; Swift `BenchmarkDataLoader` memory-mapped loader; synchronized ML hyperparameters; 3-tier categorization with `Relative Performance` metrics; descending sort with missing values fix (`SwiftDataFrame`, PR #38); self-contained programmatic parquet test; streamlined docs without legacy presentation artifacts. | **Methodology v2**: 100% byte-identical inputs across Swift and Python suites.<br>**GBDT Wall-Clock**: 9.09 ms fit vs 32.82 ms in Scikit-Learn (3.61× speedup).<br>**Null Sort**: Full descending ordering while preserving trailing nulls. | 🟢 Current |
+| **v3.10.1** | **Benchmark Methodology v2, Descending Null Sort Fix & GBDT Alignment**<br>Deterministic IEEE-754 `.bin` fixtures with SHA-256 verification; Swift `BenchmarkDataLoader` memory-mapped loader; synchronized ML hyperparameters; 3-tier categorization with `Relative Performance` metrics; descending sort with missing values fix (`SwiftDataFrame`, PR #38); self-contained programmatic parquet test; streamlined docs without legacy presentation artifacts. | **Methodology v2**: 100% byte-identical shared fixtures for cross-language benchmarks.<br>**GBDT Wall-Clock**: 9.09 ms fit vs 32.82 ms in Scikit-Learn (3.61× speedup).<br>**Null Sort**: Full descending ordering while preserving trailing nulls. | 🟢 Current |
 
 ---
 
@@ -44,7 +44,7 @@ The table below tracks key architectural breakthroughs, engine upgrades, and per
 To ensure rigorous, reproducible, and verifiable performance comparisons, SwiftSci 3.10.1 adopts **Benchmark Methodology v2**:
 
 1. **Strict Apple-to-Apple Shared Fixtures:**
-   - Instead of uncoordinated random data generation, both Swift and Python load identical IEEE-754 little-endian 64-bit float binary vectors (`.bin`) and CSV fixtures generated by [`Benchmarks/generate_fixtures.py`](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Benchmarks/generate_fixtures.py) with SHA-256 integrity validation.
+   - For cross-language benchmarks using the common fixture set, both Swift and Python load identical IEEE-754 little-endian 64-bit float binary vectors (`.bin`) and CSV fixtures generated by [`Benchmarks/generate_fixtures.py`](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Benchmarks/generate_fixtures.py) with SHA-256 integrity validation.
 2. **Algorithmic & Hyperparameter Synchronization:**
    - **PCA**: Both frameworks perform full `.fitTransform()` ($1000 \times 100 \rightarrow 10$ components), computing both the SVD projection and projection matrix.
    - **RandomForest**: Synchronized to 50 trees, `max_depth = 4`, and `criterion = "gini"`.
@@ -105,20 +105,27 @@ All measurements reflect release builds (`-c release`, `-O -whole-module-optimiz
 | **VectorStore Cosine Search** (5k × 128d, top 10) | `0.175 ms` | `0.027 ms` (*NumPy*) | **Python 6.49×** | Swift heap-based top-k vs BLAS matrix-multiply |
 | **Global Average Pooling & Dice Metric** | `0.003 ms` | `0.021 ms` (*NumPy*) | **SwiftSci 7.17×** | Contiguous SIMD reduction (77× less RAM) |
 | **SQLite Direct DataFrame Ingestion** | `0.025 ms` | `0.443 ms` (*Pandas*) | **SwiftSci 17.90×** | Persistent in-memory C-API (63× less RAM) |
-| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | `0.125 ms` | `1.450 ms` (*Full Forward*) | **SwiftSci 11.60×** | $O(1)$ single-token decode ($Q \times K/V$), $\Delta \le 1.03 \times 10^{-7}$ |
+| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | `0.125 ms` | `1.450 ms` (*Full Forward*) | **SwiftSci 11.60×** | Architectural comparison: single-token incremental decode with cached K/V ($O(N)$ attention) vs full-sequence forward recomputation ($O(N^2)$); not an apples-to-apples implementation comparison; $\Delta \le 1.03 \times 10^{-7}$ |
 | **Metal MSL gemv_q4_0 Kernel** (1024d) | `0.015 ms` | `0.045 ms` (*Float32 Dequant*) | **SwiftSci 3.00×** | Zero-copy packed Q4_0 evaluation |
-| **AutoARIMA Zero-Variance Exit** (1000 pts) | `< 0.01 ms` | Divergent loop | **Instant Exit** | Guaranteed non-diverging guard |
+| **AutoARIMA Zero-Variance Exit** (1000 pts) | `< 0.01 ms` | Divergent loop | **Instant Exit** | Zero-variance fast exit + bounded optimization iterations |
 
 ---
 
-## 🎯 Model Accuracy & Forecast Quality Scorecard
+## 🎯 Validation & Correctness Scorecard
 
-SwiftSci 3.10.1 includes an automated evaluation suite (`AccuracyBenchmarks`) that verifies model predictive performance against ground truth test sets across forecasting, regression, classification, clustering, preprocessing, and hypothesis testing:
+SwiftSci 3.10.1 includes an automated evaluation suite (`AccuracyBenchmarks`) that verifies model predictive performance, numerical parity, and runtime safety against reference baselines and theoretical limits:
+
+### 1. Time Series & Forecast Quality
 
 | Task / Domain | Model Evaluated | Test Dataset / Setting | Error Metrics & Accuracy Scores | Status |
 | :--- | :--- | :--- | :--- | :---: |
-| **Time Series Forecast** | `ExponentialSmoothing` (Holt-Winters) | Seasonal Trend Series (horizon=24, period=12) | **RMSE**: `0.350`, **MAE**: `0.281`, **MAPE**: `0.21%`, **$R^2$**: `0.997` | 🟢 High Precision (Exact Match Statsmodels $R^2=0.997$, RMSE=0.331) |
-| **Time Series Forecast** | `ARIMAModel(1,1,1)` | Autoregressive Trend (horizon=24) | **RMSE**: `10.218`, **MAE**: `8.557`, **MAPE**: `5.87%` | 🟢 Exact Gaussian MLE Solution |
+| **Time Series Forecast** | `ExponentialSmoothing` (Holt-Winters) | Seasonal Trend Series (horizon=24, period=12) | **RMSE**: `0.350`, **MAE**: `0.281`, **MAPE**: `0.21%`, **$R^2$**: `0.997` | 🟢 $R^2$ Parity with Statsmodels ($R^2=0.997$; RMSE = 0.350 vs 0.331 reference) |
+| **Time Series Forecast** | `ARIMAModel(1,1,1)` | Autoregressive Trend (horizon=24) | **RMSE**: `10.218`, **MAE**: `8.557`, **MAPE**: `5.87%` | 🟢 Gaussian Maximum-Likelihood Parameter Estimation |
+
+### 2. Supervised Learning & Predictive Parity
+
+| Task / Domain | Model Evaluated | Test Dataset / Setting | Error Metrics & Accuracy Scores | Status |
+| :--- | :--- | :--- | :--- | :---: |
 | **Linear Regression** | `LinearRegression` (LAPACK `dgels_`) | 3-Feature Linear Surface (80/20 split) | **RMSE**: `0.0577`, **MAE**: `0.0502`, **$R^2$**: `0.9999` | 🟢 Exact Least-Squares Solution |
 | **Non-linear Regression** | `GradientBoostedTreesRegressor` | Synthetic Non-linear Surface (80/20 split) | **RMSE**: `0.421`, **MAE**: `0.344`, **$R^2$**: `0.9879` | 🟢 High Precision Ensemble |
 | **Histogram Regression** | `HistGradientBoostingRegressor` | 256-Bin Binned Surface (80/20 split) | **RMSE**: `0.395`, **MAE**: `0.312`, **$R^2$**: `0.9890` | 🟢 Optimal Histogram Bin Splitting |
@@ -126,22 +133,37 @@ SwiftSci 3.10.1 includes an automated evaluation suite (`AccuracyBenchmarks`) th
 | **Histogram Classification** | `HistGradientBoostingClassifier` | 256-Bin Histogram Classifier (80/20 split) | **Accuracy**: `98.00%`, **$F_1$-Score**: `0.980` | 🟢 High Precision GBDT Classification |
 | **Linear Classification** | `LinearSVC` (Metal GPU / Accelerate CPU) | Soft-margin Support Vector Classifier ($C=1.0$) | **Accuracy**: `98.00%`, **$F_1$-Score**: `0.981` | 🟢 Exact Convex Margin Maximization |
 | **Logistic Regression** | `LogisticRegression` (Accelerate CPU) | Binary Cross-Entropy Log-Loss | **Accuracy**: `97.50%`, **$F_1$-Score**: `0.976` | 🟢 Regularized Likelihood Convergence |
-| **NLP Text Classification** | `NaiveBayesClassifier` | 3-Class Document Bag-of-Words | **Accuracy**: `35.00%`, **Macro-$F_1$**: `0.342` | 🟢 Validated (Exact Multinomial Posterior) |
+| **NLP Text Classification** | `NaiveBayesClassifier` | 3-Class Document Bag-of-Words | **Accuracy**: `35.00%`, **Macro-$F_1$**: `0.342` | 🟢 Validated Implementation (Validates multinomial posterior inference; not a predictive accuracy claim on synthetic tokens) |
+
+### 3. Unsupervised Learning & Feature Scaling
+
+| Task / Domain | Model Evaluated | Test Dataset / Setting | Error Metrics & Accuracy Scores | Status |
+| :--- | :--- | :--- | :--- | :---: |
 | **Spectral Decomposition** | `PCA` (Accelerate LAPACK SVD) | 5D Correlated Gaussian Data $\rightarrow$ 2 PCs | **EVR**: `[0.6812, 0.2845]`, **Total EVR**: `96.57%` | 🟢 Exact SVD Singular Value Spectrum |
-| **Clustering Convergence** | `KMeans` (SIMD Underflow Clamped) | 3 Synthetic Gaussian Clusters ($N=600, k=3$) | **Inertia (WCSS)**: `124.50`, **Centroids**: 3 | 🟢 Guaranteed Monotonic Convergence |
+| **Clustering Convergence** | `KMeans` (SIMD Underflow Clamped) | 3 Synthetic Gaussian Clusters ($N=600, k=3$) | **Inertia (WCSS)**: `124.50`, **Centroids**: 3 | 🟢 Bounded Iterative Convergence (Monotonically non-increasing objective within iteration bound) |
 | **Feature Standardization** | `StandardScaler` (vDSP SIMD) | Continuous 3-Column Matrix ($N=1000$) | **Fitted**: $\mu=29.84, \sigma=11.45$ $\rightarrow$ Post-scaled $\mu < 10^{-15}$ | 🟢 Exact Zero-Mean Unit-Variance Parity |
+
+### 4. Inferential Statistics & NLP Parity
+
+| Task / Domain | Model Evaluated | Test Dataset / Setting | Error Metrics & Accuracy Scores | Status |
+| :--- | :--- | :--- | :--- | :---: |
 | **Hypothesis Testing** | `Stats.tTest` (Welch's unequal var.) | Independent Samples ($N_1=1000, N_2=1000$) | **$t$**: `0.1425`, **$p$-value**: `0.8867`, **$df$**: `1987.2` | 🟢 Exact Welch-Satterthwaite Degrees of Freedom |
 | **ANOVA & Correlation** | `Stats.oneWayANOVA` & `pearsonCorrelation` | 3 Groups ($N=3000$) / Bivariate ($N=1000$) | **$F$-statistic**: `0.0892`, **Pearson $r$**: `0.0211` | 🟢 Exact Fisher-Snedecor $F$ and Covariance Parity |
 | **Sentiment Analysis** | `VADERSentimentAnalyzer` | Benchmark English Sentences (Pos, Neg, Neu) | **Compound**: Pos `+0.8126`, Neg `-0.7523`, Neu `0.0000` | 🟢 Exact NLTK Rule-Based Lexicon Parity |
+
+### 5. Local LLM Runtime, Hardware & Safety (Release Gates)
+
+| Verification Gate | Model / Component | Test Dataset / Setting | Observed Metrics & Precision | Status |
+| :--- | :--- | :--- | :--- | :---: |
 | **Local LLM Incremental Decode** | `TransformerDecoder` (RoPE + KV-Cache) | Synthetic Llama-3 block (incremental vs full) | **Max Abs Error**: `1.03e-7` (RoPE), `0.00` (Learned) | 🟢 Bit-Exact Numerical Parity (Gate 4) |
 | **Metal Quantized GEMV** | `QuantizedLinear` (Metal MSL `gemv_q4_0`) | Q4_0 packed weights vs MLX Float32 reference | **Max Abs Error**: `0.0000` | 🟢 Bit-Exact Metal Kernel Parity (Gate 6) |
 | **Compiled Graph Decode** | `MLX.compile` single-token decode | Single-token step eager vs compiled graph | **Max Abs Error**: `< 1e-4` | 🟢 Graph Parity Verified (Gate 7) |
-| **AutoARIMA Zero-Variance Guard** | `AutoARIMA` zero-variance guard | Flat constant series ($y = [5.0, \dots, 5.0]$) | **Order**: $(0,0,0)$, **Runtime**: $< 0.01$ ms | 🟢 Non-Diverging Instant Exit (Gate 8) |
+| **AutoARIMA Optimization Guard** | `AutoARIMA` zero-variance guard | Flat constant series ($y = [5.0, \dots, 5.0]$) | **Order**: $(0,0,0)$, **Runtime**: $< 0.01$ ms | 🟢 Bounded Optimization with Zero-Variance Fast Path (Gate 8) |
 | **Agent Trajectory Resilience** | `ReActAgent` + `StructuredAgentTool` | Malformed JSON & schema error recovery | **Loop Resilience**: 100%, **Crashes**: 0 | 🟢 Autonomous Trajectory Correction (Gate 10) |
 | **Database Memory Safety** | `SQLiteConnection` + `sqlite3_close_v2` | AddressSanitizer (ASan) runtime audit | **Leaks**: 0, **Buffer Errors**: 0 | 🟢 Clean Sanitizer Audit (Gate 11) |
 
 ```bash
-# Run standalone Accuracy and Forecast Quality Scorecard:
+# Run standalone Validation and Correctness Scorecard:
 swift run -c release SwiftSciBenchmarks --suite Accuracy
 ```
 
@@ -155,7 +177,7 @@ swift run -c release SwiftSciBenchmarks --suite Accuracy
 - **Reproducibility**:
   - Deterministic seeds (`seed=42`) across all tests.
   - Multi-round execution ($3 \text{ rounds} \times 7 \text{ iterations} = 21 \text{ samples}$) with 2 warmup iterations.
-  - Trimmed mean (20%) and 95% Confidence Interval error bounds.
+  - **Reported Metric**: **Median wall-clock execution time** is used in the comparison matrix for maximal resistance to system interrupts and outliers. Full sample distributions, including 20% trimmed mean and 95% confidence intervals, are logged in the raw JSON artifacts.
 
 ---
 

@@ -153,6 +153,15 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter condition: Filter condition comparison operator and threshold.
     /// - Returns: Array of row indices matching the condition, or `nil` if unsupported.
     public func filteredIndices(matching condition: FilterCondition) -> [Int]? {
+        switch condition {
+        case .isNull:
+            if _nullCount == 0 { return [] }
+            if _nullCount == count { return Array(values.indices) }
+        case .isNotNull:
+            if _nullCount == 0 { return Array(values.indices) }
+            if _nullCount == count { return [] }
+        default: break
+        }
         if let column = self as? TypedColumn<Double> {
             return filterIndicesFloating(values: column.values, nullCount: column.nullCount, condition: condition)
         }

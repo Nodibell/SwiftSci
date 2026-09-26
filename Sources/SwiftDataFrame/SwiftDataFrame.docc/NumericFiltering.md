@@ -6,6 +6,6 @@ Integer comparisons preserve exact integer values, including values above Double
 
 Float columns without missing values compare at their native width when the threshold is exactly representable. Other Float comparisons widen values exactly to Double. A Double threshold between adjacent Float values is never rounded to Float. NaN follows ordinary floating comparison rules: equality and ordered comparisons are false, while inequality is true. Positive and negative zero compare equal.
 
-Missing values fail every ordinary comparison, including inequality. Use `isNull` to select missing values. `isNotNull` includes NaN because NaN is a present floating value.
+Missing values fail every ordinary comparison, including inequality. Use `isNull` to select missing values. `isNotNull` includes NaN because NaN is a present floating value. Null predicates use the cached null count to avoid scanning columns that contain no missing values or only missing values. Mixed columns retain their existing scan.
 
 These rules correct the former fallback behavior for native integers, Float NaNs and mixed comparisons near precision limits. Custom column implementations and unsupported cross-type comparisons retain their existing fallback behavior.

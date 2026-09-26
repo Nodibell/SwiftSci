@@ -16,21 +16,30 @@ struct MLBenchmarks: BenchmarkSuite {
     // MARK: – Data generators
 
     private static func makeRegression(rows: Int, cols: Int, seed: UInt64 = 42) -> ([[Double]], [Double]) {
-        var rng = BenchmarkLCG(seed: seed)
-        let weights = (0..<cols).map { Double($0 + 1) }   // w_i = i+1
-        let X = (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 1000) / 100.0 - 5.0 } }
-        let y = X.map { row in zip(row, weights).map(*).reduce(0, +) + 1.0 }
-        return (X, y)
+        let xMat = BenchmarkDataLoader.load2DMatrix(filename: "regression_10k_10_X.bin", rows: rows, cols: cols) {
+            var rng = BenchmarkLCG(seed: seed)
+            return (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 1000) / 100.0 - 5.0 } }
+        }
+        let yVec = BenchmarkDataLoader.loadDoubleVector(filename: "regression_10k_10_y.bin", fallbackCount: rows, fallbackSeed: seed)
+        return (xMat, yVec)
     }
 
     private static func makeClassification(rows: Int, cols: Int = 4, seed: UInt64 = 42) -> ([[Double]], [Double]) {
-        var rng = BenchmarkLCG(seed: seed)
-        let X = (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 1000) / 100.0 - 5.0 } }
-        let y = X.map { row in row[0] > 0 && row[1] > 0 ? 0.0 : 1.0 }
-        return (X, y)
+        let xMat = BenchmarkDataLoader.load2DMatrix(filename: "classification_1k_4_X.bin", rows: rows, cols: cols) {
+            var rng = BenchmarkLCG(seed: seed)
+            return (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 1000) / 100.0 - 5.0 } }
+        }
+        let yVec = BenchmarkDataLoader.loadDoubleVector(filename: "classification_1k_4_y.bin", fallbackCount: rows, fallbackSeed: seed)
+        return (xMat, yVec)
     }
 
-    private static func makeCluster(rows: Int, cols: Int = 4, seed: UInt64 = 42) -> [[Double]] {
+    private static func makeCluster(filename: String? = nil, rows: Int, cols: Int = 4, seed: UInt64 = 42) -> [[Double]] {
+        if let filename {
+            return BenchmarkDataLoader.load2DMatrix(filename: filename, rows: rows, cols: cols) {
+                var rng = BenchmarkLCG(seed: seed)
+                return (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 2000) / 100.0 - 10.0 } }
+            }
+        }
         var rng = BenchmarkLCG(seed: seed)
         return (0..<rows).map { _ in (0..<cols).map { _ in Double(rng.next() % 2000) / 100.0 - 10.0 } }
     }
@@ -67,7 +76,8 @@ struct MLBenchmarks: BenchmarkSuite {
         results.append(rfResult)
 
         // ── 3. GBDT Regressor ─────────────────────────────────────────────
-        let (gbX, gbY) = MLBenchmarks.makeRegression(rows: 1_000, cols: 4)
+        let gbX = rfX
+        let gbY = rfX.map { $0[0] * 2.0 + sin($0[1]) }
         let gbResult = await BenchmarkRunner.run(
             name: "GBDT Regressor fit (1k×4, 50 est.)",
             module: module,
@@ -80,7 +90,7 @@ struct MLBenchmarks: BenchmarkSuite {
         results.append(gbResult)
 
         // ── 4. K-Means (SwiftCluster) ─────────────────────────────────────
-        let kmeansData = MLBenchmarks.makeCluster(rows: 10_000, cols: 4)
+        let kmeansData = MLBenchmarks.makeCluster(filename: "kmeans_10k_4.bin", rows: 10_000, cols: 4)
         let kmeansResult = await BenchmarkRunner.run(
             name: "KMeans fit (10k×4, 3 clusters)",
             module: "SwiftCluster",
@@ -93,9 +103,9 @@ struct MLBenchmarks: BenchmarkSuite {
         results.append(kmeansResult)
 
         // ── 5. PCA SVD (SwiftCluster) ─────────────────────────────────────
-        let pcaData = MLBenchmarks.makeCluster(rows: 1_000, cols: 100, seed: 77)
+        let pcaData = MLBenchmarks.makeCluster(filename: "pca_1k_100.bin", rows: 1_000, cols: 100, seed: 77)
         let pcaResult = await BenchmarkRunner.run(
-            name: "PCA SVD fit (1k×100 → 10 comps)",
+            name: "PCA SVD fitTransform (1k×100 → 10 comps)",
             module: "SwiftCluster",
             warmup: 1,
             iterations: 5

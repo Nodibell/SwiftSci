@@ -55,7 +55,9 @@ struct DataFrameBenchmarks: BenchmarkSuite {
         let csvURL: URL
 
         do {
-            csvURL = try tempCSVURL()
+            csvURL = try BenchmarkDataLoader.csvURL(filename: "dataframe_100k.csv") {
+                try tempCSVURL()
+            }
         } catch {
             print("Could not create temporary CSV: \(error)")
             return []

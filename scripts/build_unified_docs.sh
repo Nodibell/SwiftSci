@@ -38,12 +38,9 @@ done
 # 2. Use the web frontend templates from the first target (SwiftDataFrame)
 BASE_TARGET="SwiftDataFrame"
 
-# Preserve main landing page and presentation page if they exist
+# Preserve main landing page if it exists
 if [ -f "docs/index.html" ]; then
   cp "docs/index.html" "$TMP_DIR/landing_index.html"
-fi
-if [ -f "docs/presentation.html" ]; then
-  cp "docs/presentation.html" "$TMP_DIR/presentation.html"
 fi
 
 rm -rf docs
@@ -51,9 +48,6 @@ mkdir -p docs/data/documentation docs/documentation docs/images docs/downloads d
 
 if [ -f "$TMP_DIR/landing_index.html" ]; then
   cp "$TMP_DIR/landing_index.html" docs/index.html
-fi
-if [ -f "$TMP_DIR/presentation.html" ]; then
-  cp "$TMP_DIR/presentation.html" docs/presentation.html
 fi
 
 cp -R "$TMP_DIR/$BASE_TARGET/css" docs/

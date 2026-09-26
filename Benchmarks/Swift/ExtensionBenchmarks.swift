@@ -15,8 +15,8 @@ struct ExtensionBenchmarks: BenchmarkSuite {
     func run() async -> [BenchmarkResult] {
         var results: [BenchmarkResult] = []
 
-        // 1. SwiftVision CNN Feature Extraction & Vision Metrics benchmark
-        let visionRes = await BenchmarkRunner.run(name: "CNN Feature Extraction & Vision Metrics", module: module, warmup: 2, iterations: 10) {
+        // 1. SwiftVision Global Average Pooling & Dice Metric benchmark
+        let visionRes = await BenchmarkRunner.run(name: "Global Average Pooling & Dice Metric", module: module, warmup: 2, iterations: 10) {
             let img = ImageDataset(width: 32, height: 32, channels: 3, data: Array(repeating: 0.8, count: 3072))
             let extractor = CNNFeatureExtractor()
             let feats = extractor.extractFeatures(image: img)

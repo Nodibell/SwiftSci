@@ -20,7 +20,6 @@ struct BenchmarkArgs {
     var rounds: Int? = nil         // optional: number of measurement rounds
     var iterations: Int? = nil     // optional: iterations per round
     var warmup: Int? = nil         // optional: warmup iterations
-    var isPresentation: Bool = false
 
     static func parse() -> BenchmarkArgs {
         var args = BenchmarkArgs()
@@ -46,8 +45,6 @@ struct BenchmarkArgs {
                 if let val = iter.next(), let n = Int(val), n >= 0 {
                     args.warmup = n
                 }
-            case "--presentation":
-                args.isPresentation = true
             default:
                 break
             }
@@ -67,17 +64,8 @@ struct BenchmarkEntryPoint {
         if let it = args.iterations { BenchmarkConfig.defaultIterations = it }
         if let w = args.warmup { BenchmarkConfig.defaultWarmup = w }
 
-        if args.isPresentation {
-            do {
-                try await PresentationCodeRunner.runAll()
-            } catch {
-                print("Error running presentation code examples: \(error)")
-            }
-            return
-        }
-
         print("╔════════════════════════════════════════════════════╗")
-        print("║        SwiftSci Benchmark Suite — v3.8.1           ║")
+        print("║        SwiftSci Benchmark Suite — v3.10.1          ║")
         print("╚════════════════════════════════════════════════════╝")
         print("Platform   : \(platformString())")
         print("Swift      : \(swiftVersion())")

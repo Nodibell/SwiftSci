@@ -1,146 +1,340 @@
-# SwiftSci 3.10.0 Complete Performance Benchmarks
+# SwiftSci 3.10.1 Performance Benchmarks
 
-Official comprehensive comparative benchmark suite results comparing **SwiftSci 3.10.0** (Release Build `-c release`) against Python data science libraries (**NumPy**, **Pandas**, **Scikit-Learn**, **Statsmodels**, **SHAP**, **PyTorch**, **MLX**) on Apple Silicon (M-series / macOS 15 arm64).
+Comprehensive comparative benchmark results for SwiftSci 3.10.1 Release builds compared with Python data-science libraries including NumPy, Pandas, SciPy, Scikit-Learn, Statsmodels, SHAP, PyTorch, and MLX on Apple Silicon / macOS 15 arm64.
 
 > [!NOTE]
-> **What's New in 3.10.0 & Local LLM Runtime Pipeline Parity:**
-> - **Verified Local LLM Runtime Pipeline (`SwiftLLM`):** Two-stage generation loop in `TransformerDecoder` with full prompt prefill into `KVCache` followed by $O(1)$ single-token incremental decode steps ($Q \times \text{all cached } K/V$), strictly filtering logits via `SamplingConfiguration` (repetition penalty, temperature, top-k, top-p).
-> - **Rotary Positional Embeddings with Incremental Decoding (`RoPEEmbedding`):** Dynamic `positionOffset` support achieving bit-exact numerical parity ($\Delta \le 1.03 \times 10^{-7}$, well below the $10^{-4}$ Golden Test threshold) vs full sequence forward recomputation.
-> - **Zero-Copy GGUF Packed Quantization (`QuantizedTensor`):** Direct memory layout retention of raw Q4_0 and Q8_0 weights without artificial dequantization; verified numerical parity ($\Delta = 0.0000$) with native Metal MSL `gemv_q4_0` kernels.
-> - **Chat Template Formatting (`SwiftNLP`):** Pre-configured multi-turn renderers for `.llama3`, `.chatML`, and `.mistral` with direct `Tokenizer` integration.
-> - **Autonomous Agent Sentry & Loop Resilience (`SwiftAgent`):** Structured `AgentParameterSchema` JSON validation and self-correcting `ReActAgent` recovery, preventing infinite reasoning loops.
-> - **Hardened SQLite C-Pointer Safety (`SwiftDatabase`):** Modernized SQLite handle destruction to `sqlite3_close_v2` with explicit `close()` and statement finalization; 0 leaks under AddressSanitizer.
-> - **AutoARIMA Optimization Guards (`SwiftForecast`):** Zero-variance series detection with instant exit ($< 0.01$ ms) and 500-iteration cap preventing divergent optimization loops.
+> **Benchmark Methodology v2**
+>
+> SwiftSci 3.10.1 introduces a revised cross-language benchmark methodology designed to improve fixture reproducibility, parameter synchronization, and interpretation of performance differences:
+> - **Byte-identical little-endian IEEE-754 binary fixtures** and shared CSV fixtures with SHA-256 verification.
+> - **Synchronized workload sizes and selected ML hyperparameters** where the APIs provide equivalent controls.
+> - **Three reporting tiers** separating shared workloads, library-to-library comparisons, and architecture-specific implementations.
+> - **Median wall-clock measurements** for the primary comparison tables, with full sample distributions retained in JSON artifacts.
+>
+> The results measure library and implementation performance on the tested platform. They should not be interpreted as a general comparison of Swift versus Python runtimes.
 
 ---
 
-## ⏱️ Performance & Architecture Evolution Timeline (v3.0 → v3.10.0)
+## What’s New in 3.10.1
 
-The table below tracks key architectural breakthroughs, engine upgrades, and performance milestones across SwiftSci releases:
+### Benchmarking
+- **Benchmark Methodology v2** — deterministic shared fixtures, SHA-256 integrity verification, synchronized parameters, three-tier classification, and relative-performance reporting.
+- **GBDT benchmark dimension alignment** — corrected feature/target dimension handling in [`MLBenchmarks.swift`](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Benchmarks/Swift/MLBenchmarks.swift), producing valid wall-clock measurements for the $1,000 \times 4$ workload.
+- **Descending null sort fix** — descending ordering is now preserved for non-null values while null elements remain at the end (`SwiftDataFrame`, PR #38).
+- **Benchmark data loading** — Swift benchmark fixtures use a memory-mapped [`BenchmarkDataLoader`](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Benchmarks/Swift/BenchmarkDataLoader.swift) for the shared binary inputs.
 
-| Version | Release Focus & Architectural Milestones | Performance & Scaling Highlights | Status |
+### SwiftLLM
+- **Two-stage generation pipeline** — full prompt prefill followed by single-token incremental decoding using cached key/value tensors.
+- **SamplingConfiguration** — logits-level handling of repetition penalty, temperature, top-$k$, and top-$p$.
+- **Incremental RoPE** — dynamic `positionOffset` support with numerical parity against full-sequence recomputation.
+- **GGUF quantization** — direct retention of packed Q4_0/Q8_0 layouts without an intermediate artificial dequantization representation.
+- **Chat templates** — built-in `.llama3`, `.chatML`, and `.mistral` renderers.
+
+### SwiftAgent
+- **Structured parameter validation** — `AgentParameterSchema` JSON validation for tool inputs.
+- **ReAct recovery** — malformed tool calls and schema errors can be corrected without terminating the agent trajectory.
+
+### SwiftDatabase
+- **SQLite lifecycle hardening** — explicit connection closing, statement finalization, and `sqlite3_close_v2`.
+- **ASan validation** — zero reported leaks and buffer errors in the tested lifecycle scenarios.
+
+### SwiftForecast
+- **AutoARIMA optimization guards** — zero-variance detection with a fast exit and bounded optimization iterations.
+
+---
+
+## Performance & Architecture Evolution
+
+The following timeline records selected architectural changes, engine upgrades, and benchmark milestones across SwiftSci releases.
+
+| Version | Release Focus & Architectural Milestones | Performance / Scaling Highlights | Status |
 | :--- | :--- | :--- | :---: |
-| **v3.0.0** | **Accelerate SIMD Foundation & LAPACK Solvers**<br>Apple Accelerate `vDSP` vectorization, LAPACK OLS `dgels_`, initial Data-Oriented Design (DOD) decision trees. | Initial baseline: Accelerate single-pass vector reductions, hardware-accelerated linear regression. | 🟢 Released |
-| **v3.2.0** | **TaskGroup Concurrency & Vector Indexing**<br>Parallelized Random Forest bagging via Swift Concurrency `TaskGroup`, in-memory `VectorStore` cosine similarity index. | In-memory Top-10 vector search over 5,000 vectors (128d) in **0.167 ms**. Multi-core parallel tree generation. | 🟢 Released |
-| **v3.4.0** | **Out-of-Core Streaming & Zero-Copy Views**<br>`ChunkedDataFrame` partitioned streaming, zero-allocation row view structs (`df.rows`), POSIX `mmap` high-throughput CSV parser. | Iteration over 100k rows in **~12 ms**, 100k CSV read in **15.46 ms** (1.26× faster than Pandas), toFlatFeatureMatrix in **20.30 ms**. | 🟢 Released |
-| **v3.5.0** | **Multi-Round Scientific Benchmarks & ML Speedups**<br>$R \times I = 21$ statistical harness (95% CI, 20% trimmed mean, Mach RSS RAM profiling), SIMD categorical encoding, sub-ms error metrics. | **OneHotEncoder**: **5.10 ms** (⚡ **5.03× vs Scikit-Learn**, 13× less RAM: 36 MB vs 465 MB).<br>**Forecast Errors Suite**: **0.84 ms**.<br>**ROC-AUC**: **2.61 ms** (⚡ **1.82× vs Sklearn**).<br>**Two-Sample T-Test**: **0.285 ms** (⚡ **3.93× vs SciPy**). | 🟢 Released |
-| **v3.5.1** | **Pure-Swift NMS & Temporal Anomaly Detection**<br>Autonomous `NonMaximumSuppression.filter` replacing OpenCV/torchvision, Seasonal Hybrid ESD + MAD anomaly detection, analytical 95% forecast intervals. | **Pure-Swift NMS**: Sub-millisecond execution.<br>**ARIMA(1,1,1) fit**: **2.46 ms** (⚡ **86.3× vs Statsmodels**).<br>**Holt-Winters fit**: **6.45 ms** (⚡ **22.4× vs Statsmodels**).<br>Zero-spike partitioned relational hash joins. | 🟢 Released |
-| **v3.5.2** | **Parquet Engine, NumPy Ingestion & GBDT Quantile Loss**<br>Pure-Swift Apache Parquet engine with PyArrow/DuckDB/HuggingFace compatibility (RLE dictionary, def/rep levels, list<item>), native `.npy`/`.npz` tensor reader, SQLite auto-discovery, `GBDTLoss.quantile`. | **Zero-dependency Parquet**: Verified on HuggingFace 5.4k-row datasets.<br>**NumPy reader**: Zero-copy little-endian tensor ingestion with ZIP64 Deflate.<br>**GBDT Quantile**: Non-parametric 80%/95% confidence bands. | 🟢 Released |
-| **v3.6.0** | **HNSW Index, 256-Bin HistGBDT, Concurrent AutoML & Metal Quantization Kernels**<br>Hierarchical Navigable Small World (HNSW) vector search, 256-bin histogram GBDT, TaskGroup concurrent cross-validation, CSR/CSC sparse matrices with Accelerate Sparse BLAS, parallel AutoARIMA, Metal MSL SIMD-group quantization kernels, multi-agent message bus, SQLite 1024 buffering, SCRAM-SHA-256. | **HNSW ANN search**: $O(\log N)$ logarithmic scaling.<br>**HistGBDT**: $O(\text{numBins})$ split evaluation.<br>**SparseMatrix**: 50× RAM reduction via Sparse BLAS.<br>**100% DocC API Coverage**: 1749 public symbols verified. | 🟢 Released |
-| **v3.6.1** | **WordNet Lexicon Expansion, Princeton Data Ingestion & Database Health Protocols**<br>Curated 120-synset core WordNet offline taxonomy across nouns, verbs, adjectives; Princeton WordNet data loader engine; async `ping()` and symmetric endpoint initializers for relational databases. | **WordNet**: 120-concept rich offline taxonomy + Princeton format ingestion.<br>**Database `ping()`**: sub-millisecond connectivity verification. | 🟢 Released |
-| **v3.7.0** | **GBDT CoreML Exporter, Wasserstein Distance W1, Population Stability Index (PSI), Column Modality Inference & Target Leakage Sentry**<br>Direct in-memory Core ML `.mlmodel` / `.mlpackage` exporter for gradient boosted decision trees; distribution drift metrics (Wasserstein distance $W_1$ & PSI with adaptive quantile binning); heuristic statistical modality inference for tabular columns; bivariate correlation leakage detector for preprocessing sentry; 100% DocC documentation across 1,805 public symbols. | **GBDT CoreML**: Zero-dependency iOS/macOS model deployment.<br>**Wasserstein & PSI**: Sub-millisecond continuous/categorical data drift monitoring.<br>**Leakage Sentry**: Automated bivariate screening prevents data leakage.<br>**100% DocC API Coverage**: 1,805 public symbols verified. | 🟢 Released |
-| **v3.8.0** | **SwiftAgent Omni-Module Architecture, Typed Structured Tools, Agentic Memory & Real-Time Streaming**<br>SwiftSciToolbox bridging all scientific modules; type-safe AgentToolV2 with JSON schema validation; ReActAgent real-time event streaming; Working, SlidingWindow, and HNSW-backed SemanticVectorMemory; native SwiftUI AgentDialogueController; 96.53%+ test coverage; 100% DocC documentation. | **Omni-Module**: Unified tool calling across stats, ML, forecasting, SQL, vision, NLP.<br>**Agentic Memory**: Sub-millisecond HNSW episodic recall.<br>**Streaming UI**: 60 FPS SwiftUI chat integration. | 🟢 Released |
-| **v3.8.1** | **G-018 Column-Level Text Profiler & Zero-Compromise Precision Sweeps**<br>Native `profileTextColumn(_:)` with multilingual stopword filtering; in-memory SQLite handle; vDSP SIMD Naive Bayes; Holt-Winters Nelder-Mead phase correction ($R^2=0.997$); combinatorial TreeSHAP LUT; zero-allocation TS decomposition; hardware-routed LinearSVC. | **SQLite Ingestion**: **0.032 ms** (⚡ **3.28× vs Pandas**).<br>**NaiveBayes**: **0.026 ms** (⚡ **14.9× vs Sklearn**).<br>**Holt-Winters**: **$R^2 = 0.997$**, **RMSE = 0.350**.<br>**TreeSHAP**: **0.103 ms**.<br>**KMeans**: **11.19 ms** (⚡ **1.07× vs Sklearn**). | 🟢 Released |
-| **v3.10.0** | **Verified Local LLM Runtime Pipeline, KV-Cache Decoding, GGUF Zero-Copy Quantization, Resilient Agents & AutoARIMA Sentry**<br>Two-stage prefill/incremental generation loop; `SamplingConfiguration` logits pipeline; dynamic `positionOffset` in `RoPEEmbedding`; zero-copy `QuantizedTensor` Q4_0/Q8_0 with Metal MSL parity; `ChatMessage` & `ChatTemplate` (`.llama3`, `.chatML`, `.mistral`); resilient ReAct agent loops with schema validation; zero-leak SQLite C-pointer lifecycle under ASan. | **RoPE Incremental Decode**: Bit-exact parity ($\Delta = 1.03 \times 10^{-7}$).<br>**Metal MSL Q4_0 GEMV**: $\Delta = 0.0000$ vs Float32.<br>**AutoARIMA Exit**: $< 0.01$ ms zero-variance guard.<br>**100% DocC API Coverage**: Zero unresolved placeholders. | 🟢 Current |
+| **v3.0.0** | **Accelerate SIMD Foundation & LAPACK Solvers**<br>Apple Accelerate `vDSP` vectorization, LAPACK OLS `dgels_`, and initial Data-Oriented Design (DOD) decision trees. | Accelerate-backed single-pass vector reductions and hardware-accelerated linear regression established the baseline. | 🟢 Released |
+| **v3.2.0** | **TaskGroup Concurrency & Vector Indexing**<br>Parallelized Random Forest bagging using Swift Concurrency `TaskGroup`; in-memory `VectorStore` cosine-similarity index. | Historical benchmark: in-memory Top-10 vector search over 5,000 vectors (128d) in **0.167 ms**. Multi-core parallel tree generation. | 🟢 Released |
+| **v3.4.0** | **Out-of-Core Streaming & Zero-Copy Views**<br>`ChunkedDataFrame` partitioned streaming, zero-allocation row view structs (`df.rows`), POSIX `mmap` high-throughput CSV parser. | Historical benchmark: 100k-row iteration in **~12 ms**; 100k-row CSV read in **15.46 ms** (1.26× faster than Pandas); `toFlatFeatureMatrix` in **20.30 ms**. | 🟢 Released |
+| **v3.5.0** | **Multi-Round Scientific Benchmarks & ML Speedups**<br>Statistical benchmark harness ($R \times I = 21$), SIMD categorical encoding, and optimized sub-ms error metrics. | Historical benchmarks: `OneHotEncoder` **5.10 ms** (5.03× vs Scikit-Learn, 13× less RAM); `Forecast Errors` **0.84 ms**; `ROC-AUC` **2.61 ms**; `Two-Sample T-Test` **0.285 ms**. | 🟢 Released |
+| **v3.5.1** | **Pure-Swift NMS & Temporal Anomaly Detection**<br>Autonomous `NonMaximumSuppression.filter` replacing OpenCV/torchvision, Seasonal Hybrid ESD + MAD anomaly detection, analytical 95% forecast intervals. | Historical benchmarks: sub-millisecond pure-Swift NMS; `ARIMA(1,1,1)` fit **2.46 ms** and `Holt-Winters` fit **6.45 ms** showed substantially lower fit times than the tested Statsmodels baseline. | 🟢 Released |
+| **v3.5.2** | **Parquet Engine, NumPy Ingestion & GBDT Quantile Loss**<br>Pure-Swift Apache Parquet engine with PyArrow/DuckDB/HuggingFace compatibility (RLE dictionary, def/rep levels, list<item>), native `.npy`/`.npz` tensor reader, SQLite auto-discovery, `GBDTLoss.quantile`. | Zero-dependency Parquet ingestion verified on HuggingFace 5.4k-row datasets; zero-copy little-endian NumPy tensor ingestion with ZIP64 Deflate; non-parametric GBDT quantile regression. | 🟢 Released |
+| **v3.6.0** | **HNSW Index, 256-Bin HistGBDT, Concurrent AutoML & Metal Kernels**<br>Hierarchical Navigable Small World (HNSW) vector search, 256-bin histogram GBDT, TaskGroup concurrent cross-validation, CSR/CSC sparse matrices with Accelerate Sparse BLAS, parallel AutoARIMA, Metal MSL SIMD-group quantization kernels, multi-agent message bus, SQLite 1024 buffering, SCRAM-SHA-256. | HNSW $O(\log N)$ logarithmic search; HistGBDT $O(\text{numBins})$ split evaluation; Sparse BLAS 50× RAM reduction; 100% DocC API coverage across 1,749 public symbols. | 🟢 Released |
+| **v3.6.1** | **WordNet Lexicon Expansion & Database Health Protocols**<br>Curated 120-synset core WordNet offline taxonomy across nouns, verbs, adjectives; Princeton WordNet data loader engine; async `ping()` and symmetric endpoint initializers for relational databases. | Offline WordNet taxonomy + Princeton format ingestion; sub-millisecond database `ping()` connectivity verification. | 🟢 Released |
+| **v3.7.0** | **GBDT CoreML Exporter, Distribution Drift & Leakage Detection**<br>Direct in-memory Core ML `.mlmodel` / `.mlpackage` exporter for gradient boosted decision trees; distribution drift metrics (Wasserstein distance $W_1$ & PSI with adaptive quantile binning); heuristic statistical modality inference for tabular columns; bivariate correlation leakage detector for preprocessing sentry. | Zero-dependency iOS/macOS model deployment; sub-millisecond continuous and categorical drift monitoring; automated bivariate screening preventing data leakage. | 🟢 Released |
+| **v3.8.0** | **SwiftAgent Omni-Module Architecture & Real-Time Streaming**<br>SwiftSciToolbox bridging all scientific modules; type-safe `AgentToolV2` with JSON schema validation; `ReActAgent` real-time event streaming; Working, SlidingWindow, and HNSW-backed `SemanticVectorMemory`; native SwiftUI `AgentDialogueController`. | Unified tool calling across statistics, ML, forecasting, SQL, vision, and NLP; sub-millisecond HNSW episodic recall; 60 FPS SwiftUI streaming integration. | 🟢 Released |
+| **v3.8.1** | **Column Text Profiling & Precision Sweeps**<br>Native `profileTextColumn(_:)` with multilingual stopword filtering; in-memory SQLite handle; vDSP SIMD Naive Bayes; Holt-Winters Nelder-Mead phase correction ($R^2=0.997$); combinatorial TreeSHAP LUT; zero-allocation TS decomposition; hardware-routed LinearSVC. | Historical measurements: SQLite ingestion **0.032 ms**; Naive Bayes **0.026 ms**; Holt-Winters $R^2 = 0.997$, $\text{RMSE} = 0.350$; TreeSHAP **0.103 ms**; KMeans **11.19 ms**. | 🟢 Released |
+| **v3.10.0** | **Verified Local LLM Runtime Pipeline**<br>Two-stage prefill/incremental generation loop; `SamplingConfiguration` logits pipeline; dynamic `positionOffset` in `RoPEEmbedding`; zero-copy `QuantizedTensor` Q4_0/Q8_0 with Metal MSL parity; `ChatMessage` & `ChatTemplate` (`.llama3`, `.chatML`, `.mistral`); resilient ReAct agent loops with schema validation; zero-leak SQLite C-pointer lifecycle under ASan. | RoPE numerical parity ($\Delta \le 1.03 \times 10^{-7}$); Q4_0 Metal MSL GEMV parity ($\Delta = 0.0000$ vs Float32); AutoARIMA zero-variance fast path ($< 0.01$ ms); 100% DocC API coverage. | 🟢 Released |
+| **v3.10.1** | **Benchmark Methodology v2 & Correctness Fixes**<br>Deterministic shared binary fixtures (`.bin`), synchronized workloads, `BenchmarkDataLoader` memory-mapped loader, descending-null sorting fix (`SwiftDataFrame`, PR #38), self-contained programmatic parquet test, and GBDT benchmark dimension alignment. | GBDT fit: **9.092 ms** vs **32.815 ms** Scikit-Learn baseline (**3.61× relative performance**); full descending sort preserving trailing nulls; 100% byte-identical shared fixtures for cross-language benchmarks. | 🟢 Current |
+
+> [!IMPORTANT]
+> Historical measurements were produced under the benchmark methodology, dependency versions, and workloads available at the time of each release. They are retained as architectural history and should not be treated as directly comparable with the v3.10.1 Methodology v2 results unless the fixture, dependency versions, workload, and measurement procedure are identical.
 
 ---
 
-## 📊 Complete Benchmark Matrix
+## Benchmark Methodology v2
 
-The values below represent **Mean ± 95% Confidence Interval** and **Median** from release benchmark runs. Speedups are computed as $\text{Time}_{\text{Python}} / \text{Time}_{\text{Swift}}$; values above `1.0×` indicate that Swift is faster.
+### 1. Shared Fixtures
 
-| Benchmark Scenario | SwiftSci 3.10.0 (Swift) | Python Baseline (Sklearn/NumPy/Pandas) | Speedup | Winner | RAM (Swift vs Py) | Notes |
-| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **OneHotEncoder fitTransform** (50k rows) | **`5.104 ± 0.094 ms`** | `25.677 ± 0.226 ms` (*Scikit-Learn*) | ⚡ **5.03×** | 🟢 **Swift** | **36 MB** vs 465 MB | 🚀 13× less RAM |
-| **Classification ROC-AUC** (50k predictions) | **`2.609 ± 0.038 ms`** | `4.759 ± 0.046 ms` (*Scikit-Learn*) | ⚡ **1.82×** | 🟢 **Swift** | **27 MB** vs 463 MB | Rank-based AUC |
-| **Forecast Errors Suite** (RMSE, MAE, MAPE, R² 100k) | **`0.847 ± 0.016 ms`** | `0.575 ± 0.018 ms` (*Scikit-Learn*) | ~1.4× | 🟢 **Sub-ms** | **24 MB** vs 463 MB | Accelerate vDSP |
-| **Two-Sample T-Test** (100k samples) | **`0.285 ± 0.005 ms`** | `1.120 ± 0.035 ms` (*SciPy*) | ⚡ **3.93×** | 🟢 **Swift** | **18 MB** vs 110 MB | Welch's t-test |
-| **Spearman Rank Correlation** (100k pairs) | **`11.602 ± 0.115 ms`** | `12.450 ± 0.180 ms` (*SciPy*) | ⚡ **1.07×** | 🟢 **Swift** | **22 MB** vs 115 MB | Fast ranking |
-| **VectorStore Cosine Search** (5k × 128d, top 10) | **`0.167 ± 0.004 ms`** | `0.210 ± 0.008 ms` (*NumPy*) | ⚡ **1.26×** | 🟢 **Swift** | **44 MB** vs 95 MB | In-memory Top-K |
-| **KernelSHAP Explain** (5 feats, 100 coalitions) | **`0.187 ± 0.010 ms`** | `0.449 ± 0.028 ms` (*SHAP*) | ⚡ **2.40×** | 🟢 **Swift** | **10 MB** vs 469 MB | Black-box XAI |
-| **LIME Explain** (5 feats, 300 samples) | **`0.062 ± 0.000 ms`** | `0.258 ± 0.005 ms` (*Scikit-Learn*) | ⚡ **4.16×** | 🟢 **Swift** | **10 MB** vs 691 MB | Local Ridge surrogate (200× vs LIME pkg) |
-| **TreeSHAP Explanation** (100 samples) | **`0.103 ± 0.002 ms`** | `0.071 ± 0.002 ms` (*SHAP*) | 0.69× | 🟢 **Near Parity** | **11 MB** vs 691 MB | Precomputed LUT & zero-alloc backtracking (62× less RAM) |
-| **RandomForest fit** (1k×4, 50 trees) | **`3.744 ± 0.064 ms`** | `25.300 ± 0.450 ms` (*Scikit-Learn*) | ⚡ **6.76×** | 🟢 **Swift** | **32 MB** vs 180 MB | Flat DOD Trees |
-| **GBDT Regressor fit** (1k×4, 50 est.) | **`8.023 ± 0.077 ms`** | `32.366 ± 0.520 ms` (*Scikit-Learn*) | ⚡ **4.03×** | 🟢 **Swift** | **32 MB** vs 190 MB | Flat DOD Ensembles |
-| **LinearSVC fit** (1k×4, 100 epochs, Metal GPU) | **`0.402 ± 0.002 ms`** | `0.399 ± 0.024 ms` (*Scikit-Learn*) | 0.99× | 🟢 **Near Parity** | **37 MB** vs 668 MB | LibLinear vs Flat CPU/Metal router (18× less RAM) |
-| **LinearRegression fit** (10k×10, 100 epochs) | **`25.632 ± 0.235 ms`** | `24.921 ± 0.320 ms` (*Scikit-Learn*) | 0.97× | 🟢 **Near Parity** | **28 MB** vs 90 MB | Near parity |
-| **KMeans fit** (10k×4, 3 clusters) | **`11.192 ± 0.140 ms`** | `11.993 ± 0.150 ms` (*Scikit-Learn*) | ⚡ **1.07×** | 🟢 **Swift** | **33 MB** vs 120 MB | Underflow-clamped SIMD distance |
-| **PCA SVD fit** (1k×100 → 10 comps) | **`0.953 ± 0.013 ms`** | `0.732 ± 0.010 ms` (*Scikit-Learn*) | 0.77× | 🟢 **Near Parity** | **36 MB** vs 95 MB | LAPACK SVD |
-| **IsolationForest fit** (1k×10, 100 trees) | **`13.543 ± 0.143 ms`** | `38.093 ± 0.257 ms` (*Scikit-Learn*) | ⚡ **2.81×** | 🟢 **Swift** | **37 MB** vs 668 MB | Outlier detection, 18× less RAM |
-| **ARIMA(1,1,1) fit** (50k pts) | **`2.463 ± 0.035 ms`** | `212.621 ± 3.410 ms` (*Statsmodels*) | ⚡ **86.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Exact MLE |
-| **ARIMA(1,1,1) forecast** (horizon=24) | **`2.566 ± 0.040 ms`** | `213.709 ± 3.500 ms` (*Statsmodels*) | ⚡ **83.3×** | 🟢 **Swift** | **20 MB** vs 240 MB | Fast recursion |
-| **Holt-Winters fit** (50k pts, period=12) | **`0.645 ± 0.012 ms`** | `144.752 ± 2.150 ms` (*Statsmodels*) | ⚡ **224.4×** | 🟢 **Swift** | **22 MB** vs 220 MB | Nelder-Mead ($R^2 = 0.997$, RMSE = 0.350) |
-| **Kalman Filter 1D** (10k observations) | **`57.970 ± 0.420 ms`** | `85.788 ± 1.100 ms` (*NumPy*) | ⚡ **1.48×** | 🟢 **Swift** | **24 MB** vs 130 MB | LAPACK `dgesv` |
-| **TS Decomposition additive** (1k pts) | **`0.088 ± 0.002 ms`** | `0.100 ± 0.002 ms` (*Statsmodels*) | ⚡ **1.14×** | 🟢 **Swift** | **18 MB** vs 110 MB | Zero-alloc Kahan summation |
-| **VADER Sentiment Analysis** (1k sentences) | **`2.763 ± 0.041 ms`** | `3.450 ± 0.060 ms` (*NLTK*) | ⚡ **1.25×** | 🟢 **Swift** | **37 MB** vs 140 MB | 7,500+ rule lexicon |
-| **NaiveBayesClassifier fit** (1k×100, 3 classes) | **`0.026 ± 0.001 ms`** | `0.388 ± 0.014 ms` (*Scikit-Learn*) | ⚡ **14.9×** | 🟢 **Swift** | **44 MB** vs 110 MB | Accelerate vDSP SIMD dot-product |
-| **DataFrame SIMD Hash Join** (100k rows) | **`34.812 ± 0.410 ms`** | `28.400 ± 0.350 ms` (*Pandas*) | ~1.2× | 🟢 **Parity** | **64 MB** vs 140 MB | Typed hash index |
-| **CSV Read** (100k rows) | **`15.465 ± 0.180 ms`** | `19.413 ± 0.250 ms` (*Pandas*) | ⚡ **1.26×** | 🟢 **Swift** | **52 MB** vs 130 MB | POSIX mmap |
-| **CSV Stream Read** (chunk=10k) | **`21.715 ± 0.250 ms`** | `21.921 ± 0.310 ms` (*Pandas*) | ⚡ **1.01×** | 🟢 **Swift** | **32 MB** vs 110 MB | Chunked streaming |
-| **CSV Stream + GroupBy** (100k rows) | **`22.830 ± 0.280 ms`** | `27.603 ± 0.340 ms` (*Pandas*) | ⚡ **1.21×** | 🟢 **Swift** | **38 MB** vs 125 MB | Streaming group-by |
-| **Mean Reduction** (vDSP 1M elements) | **`0.082 ± 0.001 ms`** | `0.121 ± 0.002 ms` (*NumPy*) | ⚡ **1.48×** | 🟢 **Swift** | **18 MB** vs 95 MB | vDSP reduction |
-| **StdDev Reduction** (vDSP 1M elements) | **`0.275 ± 0.003 ms`** | `0.533 ± 0.006 ms` (*NumPy*) | ⚡ **1.94×** | 🟢 **Swift** | **18 MB** vs 95 MB | vDSP reduction |
-| **Variance Reduction** (vDSP 1M elements) | **`0.282 ± 0.003 ms`** | `0.517 ± 0.006 ms` (*NumPy*) | ⚡ **1.84×** | 🟢 **Swift** | **18 MB** vs 95 MB | vDSP reduction |
-| **Pearson Correlation** (500k pairs) | **`0.812 ± 0.010 ms`** | `1.193 ± 0.015 ms` (*NumPy*) | ⚡ **1.47×** | 🟢 **Swift** | **22 MB** vs 110 MB | Vectorized Pearson |
-| **SQLite Direct DataFrame Ingestion** | **`0.032 ± 0.002 ms`** | `0.105 ± 0.006 ms` (*Pandas*) | ⚡ **3.28×** | 🟢 **Swift** | **11 MB** vs 691 MB | In-memory C-API persistent handle (63× less RAM) |
-| **CNN Feature Extraction & Vision Metrics** | **`0.003 ± 0.000 ms`** | `0.008 ± 0.000 ms` (*NumPy*) | ⚡ **2.67×** | 🟢 **Swift** | **9 MB** vs 691 MB | Global pooling & Dice (77× less RAM) |
-| **RAG Context Summary Generation** | **`0.000 ± 0.000 ms`** | `0.001 ± 0.000 ms` (*Pandas*) | ~1.0× | 🟢 **Parity** | **11 MB** vs 691 MB | ReAct schema profile |
-| **OneVsRestClassifier** (5 classes, 100 samples) | **`0.795 ± 0.031 ms`** | `3.413 ± 0.055 ms` (*Scikit-Learn*) | ⚡ **4.29×** | 🟢 **Swift** | **22 MB** vs 691 MB | TaskGroup concurrent OvR (31× less RAM) |
-| **TF-IDF Vectorizer** (50 documents) | **`0.388 ± 0.004 ms`** | `0.359 ± 0.009 ms` (*Scikit-Learn*) | 0.93× | 🟢 **Near Parity** | **22 MB** vs 691 MB | Single-pass sparse tokenization (31× less RAM) |
-| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | **`0.125 ± 0.002 ms`** | `1.450 ± 0.030 ms` (*Full Sequence Forward*) | ⚡ **11.6×** | 🟢 **Bit-Exact** | **UMA Zero-Copy** | $O(1)$ single-token decode ($Q \times K/V$), $\Delta = 1.03 \times 10^{-7}$ |
-| **Metal MSL gemv_q4_0 Kernel** (1024d) | **`0.015 ± 0.001 ms`** | `0.045 ± 0.002 ms` (*Float32 Dequant*) | ⚡ **3.0×** | 🟢 **Bit-Exact** | **Packed Q4_0** (4.5 b/w) | Zero dequant overhead, exact parity with MLX Float32 |
-| **AutoARIMA Zero-Variance Exit** (1000 pts) | **`< 0.01 ms`** | Divergent optimization loop | ⚡ **Instant Exit** | 🟢 **Guaranteed** | **< 1 MB** | Sentry guard terminates before iteration runaway |
+Cross-language benchmarks using the common fixture set operate on the same generated inputs:
+
+- **IEEE-754 64-bit floating-point vectors** use little-endian binary representation (`.bin`).
+- **Shared CSV fixtures** are generated once and consumed identically by both benchmark suites.
+- **Fixture integrity** is verified across runs using SHA-256 manifests.
+- Swift loads binary vectors via [`BenchmarkDataLoader`](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Benchmarks/Swift/BenchmarkDataLoader.swift) with memory-mapped (`mmap`) zero-copy access where applicable.
+- Shared fixtures establish identical input data; they do not imply identical internal implementations.
+
+The deterministic fixture generator is located at:
+[`Benchmarks/generate_fixtures.py`](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftSci/SwiftSci/Benchmarks/generate_fixtures.py)
 
 ---
 
-## 🎯 Model Accuracy & Forecast Quality Scorecard
+### 2. Workload and Hyperparameter Synchronization
 
-SwiftSci 3.10.0 includes an automated evaluation suite (`AccuracyBenchmarks`) that verifies model predictive performance against ground truth test sets across forecasting, regression, classification, clustering, preprocessing, and hypothesis testing:
+Where the underlying APIs expose equivalent parameters, benchmark configurations are synchronized:
 
-| Task / Domain | Model Evaluated | Test Dataset / Setting | Error Metrics & Accuracy Scores | Status |
+- **PCA**: Both implementations perform a complete `fitTransform` workload ($1,000 \times 100 \rightarrow 10$ components), computing both the SVD projection and projection matrix.
+- **Random Forest**: 50 trees, `max_depth = 4`, `criterion = "gini"` on identical $1,000 \times 4$ classification fixtures.
+- **GBDT Regressor**: 50 estimators, `max_depth = 3`, `learning_rate = 0.1` on identical $1,000 \times 4$ continuous regression surfaces.
+- **K-Means**: 10,000 samples $\times$ 4 features, 3 clusters, `max_iter = 50`.
+
+> [!NOTE]
+> Matching exposed hyperparameters does not guarantee identical internal algorithms. Differences in tree construction, initialization, split selection, numerical routines, memory layout, threading, and optimization strategies can remain between implementations.
+
+---
+
+### 3. Interpreting Cross-Language Results
+
+SwiftSci and the Python reference stack use different implementation paths.
+
+The measurements therefore capture the combined effect of:
+- algorithm implementation;
+- data structures;
+- memory layout;
+- vectorization;
+- native numerical libraries;
+- threading and concurrency;
+- framework/runtime overhead;
+- and hardware-specific optimizations.
+
+The results are not measurements of CPython interpreter overhead alone.
+
+---
+
+### 4. Three-Tier Reporting
+
+#### Tier 1 — Shared Workload / Apple-to-Apple
+Identical fixtures, equivalent operation semantics, and matched workload sizes (Accelerate SIMD vs NumPy C, POSIX `mmap` CSV parsing, vector reductions). Implementation details may differ.
+
+#### Tier 2 — Library-to-Library
+Idiomatic ecosystem implementations of comparable scientific or machine-learning operations (SwiftSci vs Scikit-Learn, Statsmodels, or SHAP).
+
+#### Tier 3 — Architecture & Hardware Specialization
+Workloads where SwiftSci uses architecture-specific capabilities such as Apple Metal GPU shaders, Accelerate framework solvers, unified-memory data paths, packed quantized tensors, KV-cache decoding, or native SQLite C bindings. These results are architectural comparisons rather than strict implementation-equivalence benchmarks.
+
+---
+
+## Benchmark Results Matrix
+
+All measurements below are release-build wall-clock timings on the benchmark platform described later in this document.
+
+The primary comparison metric is the **median per-operation wall-clock time** across 21 samples ($3\text{ rounds} \times 7\text{ iterations}$).
+
+Relative Performance is calculated as:
+$$\text{Relative Performance} = \frac{\text{slower measured time}}{\text{faster measured time}}$$
+
+The label (**SwiftSci** or **Python**) identifies which implementation achieved the lower measured time.
+
+$$\text{Example: } \frac{0.119\text{ ms (NumPy)}}{0.081\text{ ms (SwiftSci)}} = 1.46\times \implies \textbf{SwiftSci 1.46×}$$
+
+---
+
+### 1. Shared Workload / Apple-to-Apple
+
+| Benchmark Scenario | SwiftSci | Python Baseline | Relative Performance | Scope / Implementation |
+| :--- | ---: | ---: | :---: | :--- |
+| **Mean Reduction** — 1M doubles | `0.081 ms` | `0.119 ms` (*NumPy*) | **SwiftSci 1.46×** | Accelerate `vDSP_meanvD` vs NumPy C implementation |
+| **StdDev Reduction** — 1M doubles | `0.446 ms` | `0.504 ms` (*NumPy*) | **SwiftSci 1.13×** | Accelerate two-pass SIMD reduction vs NumPy `std` |
+| **Variance Reduction** — 1M doubles | `0.463 ms` | `0.486 ms` (*NumPy*) | **SwiftSci 1.05×** | Accelerate two-pass SIMD reduction vs NumPy `var` |
+| **Pearson Correlation** — 500k pairs | `0.828 ms` | `1.209 ms` (*NumPy*) | **SwiftSci 1.46×** | SIMD covariance / dot-product path |
+| **Two-Sample T-Test** — 100k samples | `0.263 ms` | `0.411 ms` (*SciPy*) | **SwiftSci 1.56×** | Welch unequal-variance t-test |
+| **Spearman Correlation** — 100k pairs | `11.480 ms` | `14.230 ms` (*SciPy*) | **SwiftSci 1.24×** | Parallel rank transformation + Pearson correlation |
+| **CSV Read** — 100k rows | `18.166 ms` | `19.534 ms` (*Pandas*) | **SwiftSci 1.08×** | POSIX `mmap` zero-copy chunk parsing vs Pandas C engine |
+| **CSV Stream Read** — 10k chunks | `51.611 ms` | `22.448 ms` (*Pandas*) | **Python 2.30×** | Swift iterator vs Pandas C engine |
+| **Filter Rows** — 100k rows | `23.014 ms` | `0.741 ms` (*Pandas*) | **Python 31.06×** | Typed Swift filtering vs Pandas vectorized C indexing |
+| **Sort Double Column** — 100k rows | `44.838 ms` | `7.486 ms` (*NumPy*) | **Python 5.99×** | Swift sort vs NumPy quicksort in C |
+| **DataFrame Hash Join** — 100k rows | `35.200 ms` | `0.456 ms` (*Pandas*) | **Python 77.19×** | Swift typed hash table vs Pandas C hashtable |
+| **KMeans Fit** — 10k × 4, 3 clusters, 50 iters | `17.444 ms` | `7.309 ms` (*Scikit-Learn*) | **Python 2.39×** | Underflow-clamped SIMD distance vs Cython k-means |
+| **ROC-AUC** — 50k predictions | `2.651 ms` | `7.601 ms` (*Scikit-Learn*) | **SwiftSci 2.87×** | Single-pass sorted trapezoidal integration |
+| **OneHotEncoder fitTransform** — 50k rows | `5.151 ms` | `31.513 ms` (*Scikit-Learn*) | **SwiftSci 6.12×** | SIMD categorical bitmask transformation (13× less RAM) |
+
+---
+
+### 2. Library-to-Library
+
+| Benchmark Scenario | SwiftSci | Python Baseline | Relative Performance | Scope / Implementation |
+| :--- | ---: | ---: | :---: | :--- |
+| **RandomForest Fit** — 1k × 4, 50 trees, d=4, gini | `4.133 ms` | `31.228 ms` (*Scikit-Learn*) | **SwiftSci 7.56×** | Data-Oriented Design (DOD) tree buffers |
+| **GBDT Regressor Fit** — 1k × 4, 50 estimators | `9.092 ms` | `32.815 ms` (*Scikit-Learn*) | **SwiftSci 3.61×** | Contiguous gradient-boosted ensemble representation |
+| **PCA fitTransform** — 1k × 100 → 10 components | `1.132 ms` | `0.758 ms` (*Scikit-Learn*) | **Python 1.49×** | Accelerate LAPACK `dgesdd_` SVD vs SciPy BLAS |
+| **IsolationForest Fit** — 1k × 10, 100 trees | `13.523 ms` | `38.050 ms` (*Scikit-Learn*) | **SwiftSci 2.81×** | Parallelized data-oriented outlier trees (18× less RAM) |
+| **Holt-Winters Fit** — 50k points, period=12 | `16.112 ms` | `3431.444 ms` (*Statsmodels*) | **SwiftSci 212.97×** | Native Nelder-Mead simplex optimization |
+| **ARIMA(1,1,1) Fit** — 50k points | `2.264 ms` | `594.361 ms` (*Statsmodels*) | **SwiftSci 262.49×** | Native Gaussian likelihood optimization |
+| **KernelSHAP Explain** — 5 features, 100 coalitions | `0.189 ms` | `0.434 ms` (*SHAP*) | **SwiftSci 2.30×** | Coalitional sampling with zero-division numerical guards |
+| **TreeSHAP Explanation** — 100 samples | `0.101 ms` | `0.081 ms` (*SHAP*) | **Python 1.26×** | Precomputed lookup tables and zero-allocation backtracking |
+| **NaiveBayes Fit** — 1k × 100, 3 classes | `0.027 ms` | `0.410 ms` (*Scikit-Learn*) | **SwiftSci 15.35×** | Accelerate `vDSP_dotprD` SIMD dot-products |
+
+---
+
+### 3. Architecture & Hardware Specialization
+
+| Benchmark Scenario | SwiftSci | Reference Baseline | Relative Performance | Scope / Implementation |
+| :--- | ---: | ---: | :---: | :--- |
+| **LinearSVC Fit** — 1k × 4, 100 epochs | `0.404 ms` | `0.384 ms` (*Scikit-Learn*) | **Python 1.05×** | Apple Metal GPU kernel / Accelerate vs LibLinear C |
+| **VectorStore Cosine Search** — 5k × 128d, top 10 | `0.175 ms` | `0.027 ms` (*NumPy*) | **Python 6.49×** | Swift heap-based top-$k$ vs BLAS matrix multiplication |
+| **Global Average Pooling + Dice** | `0.003 ms` | `0.021 ms` (*NumPy*) | **SwiftSci 7.17×** | Contiguous SIMD reduction (77× less RAM) |
+| **SQLite DataFrame Ingestion** | `0.025 ms` | `0.443 ms` (*Pandas*) | **SwiftSci 17.90×** | Native in-memory SQLite C API (63× less RAM) |
+| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | `0.125 ms` | `1.450 ms` (*Full Forward*) | **SwiftSci 11.60×** | Single-token decode with cached K/V vs full-sequence recomputation |
+| **Metal Q4_0 GEMV** — 1024d | `0.015 ms` | `0.045 ms` (*Float32 Reference*) | **SwiftSci 3.00×** | Zero-copy packed Q4_0 evaluation using Metal MSL |
+| **AutoARIMA Zero-Variance Guard** (1000 pts) | `< 0.01 ms` | N/A | — | Zero-variance fast path with bounded optimization |
+
+> [!IMPORTANT]
+> The SwiftLLM incremental-decode measurement is an architectural comparison. Incremental decoding with a KV cache performs attention over the cached context for each new token ($O(N)$ attention), while the reference measurement performs a full-sequence forward pass ($O(N^2)$). The two measurements quantify different execution strategies and should not be interpreted as a like-for-like implementation benchmark.
+
+> [!NOTE]
+> The AutoARIMA zero-variance result is a guard-behavior measurement rather than a conventional speed comparison because there is no finite reference runtime in the baseline case.
+
+---
+
+## Validation & Correctness Scorecard
+
+Performance alone does not establish numerical or behavioral correctness. SwiftSci 3.10.1 therefore includes validation workloads covering forecast quality, supervised learning, numerical methods, NLP, local LLM execution, runtime safety, and optimization guards.
+
+---
+
+### 1. Time Series & Forecasting
+
+| Task | Model | Dataset / Setting | Metrics | Validation |
 | :--- | :--- | :--- | :--- | :---: |
-| **Time Series Forecast** | `ExponentialSmoothing` (Holt-Winters) | Seasonal Trend Series (horizon=24, period=12) | **RMSE**: `0.350`, **MAE**: `0.281`, **MAPE**: `0.21%`, **$R^2$**: `0.997` | 🟢 High Precision (Exact Match Statsmodels $R^2=0.997$, RMSE=0.331) |
-| **Time Series Forecast** | `ARIMAModel(1,1,1)` | Autoregressive Trend (horizon=24) | **RMSE**: `10.218`, **MAE**: `8.557`, **MAPE**: `5.87%` | 🟢 Exact Gaussian MLE Solution |
-| **Linear Regression** | `LinearRegression` (LAPACK `dgels_`) | 3-Feature Linear Surface (80/20 split) | **RMSE**: `0.0577`, **MAE**: `0.0502`, **$R^2$**: `0.9999` | 🟢 Exact Least-Squares Solution |
-| **Non-linear Regression** | `GradientBoostedTreesRegressor` | Synthetic Non-linear Surface (80/20 split) | **RMSE**: `0.421`, **MAE**: `0.344`, **$R^2$**: `0.9879` | 🟢 High Precision Ensemble |
-| **Histogram Regression** | `HistGradientBoostingRegressor` | 256-Bin Binned Surface (80/20 split) | **RMSE**: `0.395`, **MAE**: `0.312`, **$R^2$**: `0.9890` | 🟢 Optimal Histogram Bin Splitting |
-| **Binary Classification** | `RandomForestClassifier` | 2D Decision Boundary (80/20 split, 30 trees) | **Accuracy**: `98.50%`, **$F_1$-Score**: `0.986`, **ROC-AUC**: `0.999` | 🟢 High Precision Ensemble (Parity with Scikit-Learn) |
-| **Histogram Classification** | `HistGradientBoostingClassifier` | 256-Bin Histogram Classifier (80/20 split) | **Accuracy**: `98.00%`, **$F_1$-Score**: `0.980` | 🟢 High Precision GBDT Classification |
-| **Linear Classification** | `LinearSVC` (Metal GPU / Accelerate CPU) | Soft-margin Support Vector Classifier ($C=1.0$) | **Accuracy**: `98.00%`, **$F_1$-Score**: `0.981` | 🟢 Exact Convex Margin Maximization |
-| **Logistic Regression** | `LogisticRegression` (Accelerate CPU) | Binary Cross-Entropy Log-Loss | **Accuracy**: `97.50%`, **$F_1$-Score**: `0.976` | 🟢 Regularized Likelihood Convergence |
-| **NLP Text Classification** | `NaiveBayesClassifier` | 3-Class Document Bag-of-Words | **Accuracy**: `35.00%`, **Macro-$F_1$**: `0.342` | 🟢 Validated (Exact Multinomial Posterior) |
-| **Spectral Decomposition** | `PCA` (Accelerate LAPACK SVD) | 5D Correlated Gaussian Data $\rightarrow$ 2 PCs | **EVR**: `[0.6812, 0.2845]`, **Total EVR**: `96.57%` | 🟢 Exact SVD Singular Value Spectrum |
-| **Clustering Convergence** | `KMeans` (SIMD Underflow Clamped) | 3 Synthetic Gaussian Clusters ($N=600, k=3$) | **Inertia (WCSS)**: `124.50`, **Centroids**: 3 | 🟢 Guaranteed Monotonic Convergence |
-| **Feature Standardization** | `StandardScaler` (vDSP SIMD) | Continuous 3-Column Matrix ($N=1000$) | **Fitted**: $\mu=29.84, \sigma=11.45$ $\rightarrow$ Post-scaled $\mu < 10^{-15}$ | 🟢 Exact Zero-Mean Unit-Variance Parity |
-| **Hypothesis Testing** | `Stats.tTest` (Welch's unequal var.) | Independent Samples ($N_1=1000, N_2=1000$) | **$t$**: `0.1425`, **$p$-value**: `0.8867`, **$df$**: `1987.2` | 🟢 Exact Welch-Satterthwaite Degrees of Freedom |
-| **ANOVA & Correlation** | `Stats.oneWayANOVA` & `pearsonCorrelation` | 3 Groups ($N=3000$) / Bivariate ($N=1000$) | **$F$-statistic**: `0.0892`, **Pearson $r$**: `0.0211` | 🟢 Exact Fisher-Snedecor $F$ and Covariance Parity |
-| **Sentiment Analysis** | `VADERSentimentAnalyzer` | Benchmark English Sentences (Pos, Neg, Neu) | **Compound**: Pos `+0.8126`, Neg `-0.7523`, Neu `0.0000` | 🟢 Exact NLTK Rule-Based Lexicon Parity |
-| **Local LLM Incremental Decode** | `TransformerDecoder` (RoPE + KV-Cache) | Synthetic Llama-3 block (incremental vs full) | **Max Abs Error**: `1.03e-7` (RoPE), `0.00` (Learned) | 🟢 Bit-Exact Numerical Parity (Gate 4) |
-| **Metal Quantized GEMV** | `QuantizedLinear` (Metal MSL `gemv_q4_0`) | Q4_0 packed weights vs MLX Float32 reference | **Max Abs Error**: `0.0000` | 🟢 Bit-Exact Metal Kernel Parity (Gate 6) |
-| **Compiled Graph Decode** | `MLX.compile` single-token decode | Single-token step eager vs compiled graph | **Max Abs Error**: `< 1e-4` | 🟢 Graph Parity Verified (Gate 7) |
-| **AutoARIMA Zero-Variance Guard** | `AutoARIMA` zero-variance guard | Flat constant series ($y = [5.0, \dots, 5.0]$) | **Order**: $(0,0,0)$, **Runtime**: $< 0.01$ ms | 🟢 Non-Diverging Instant Exit (Gate 8) |
-| **Agent Trajectory Resilience** | `ReActAgent` + `StructuredAgentTool` | Malformed JSON & schema error recovery | **Loop Resilience**: 100%, **Crashes**: 0 | 🟢 Autonomous Trajectory Correction (Gate 10) |
-| **Database Memory Safety** | `SQLiteConnection` + `sqlite3_close_v2` | AddressSanitizer (ASan) runtime audit | **Leaks**: 0, **Buffer Errors**: 0 | 🟢 Clean Sanitizer Audit (Gate 11) |
+| **Time Series Forecast** | `ExponentialSmoothing` (Holt-Winters) | Seasonal trend, horizon 24, period 12 | RMSE 0.350; MAE 0.281; MAPE 0.21%; $R^2$ 0.997 | 🟢 $R^2$ parity with reference ($R^2=0.997$); RMSE 0.350 vs reference 0.331 |
+| **Time Series Forecast** | `ARIMAModel(1,1,1)` | Autoregressive trend, horizon 24 | RMSE 10.218; MAE 8.557; MAPE 5.87% | 🟢 Gaussian maximum-likelihood parameter estimation |
+
+---
+
+### 2. Supervised Learning
+
+| Task | Model | Dataset / Setting | Metrics | Validation |
+| :--- | :--- | :--- | :--- | :---: |
+| **Linear Regression** | `LinearRegression` (LAPACK `dgels_`) | 3-feature linear surface, 80/20 split | RMSE 0.0577; MAE 0.0502; $R^2$ 0.9999 | 🟢 Least-squares solution validation |
+| **Non-linear Regression** | `GradientBoostedTreesRegressor` | Synthetic non-linear surface, 80/20 split | RMSE 0.421; MAE 0.344; $R^2$ 0.9879 | 🟢 High-precision ensemble regression validation |
+| **Histogram Regression** | `HistGradientBoostingRegressor` | 256-bin binned surface, 80/20 split | RMSE 0.395; MAE 0.312; $R^2$ 0.9890 | 🟢 Optimal histogram-splitting validation |
+| **Binary Classification** | `RandomForestClassifier` | 2D decision boundary, 80/20 split, 30 trees | Accuracy 98.50%; $F_1$ 0.986; ROC-AUC 0.999 | 🟢 Predictive parity workload (parity with Scikit-Learn) |
+| **Histogram Classification** | `HistGradientBoostingClassifier` | 256-bin classifier, 80/20 split | Accuracy 98.00%; $F_1$ 0.980 | 🟢 Classification validation |
+| **Linear Classification** | `LinearSVC` (Metal GPU / Accelerate CPU) | Soft-margin classifier, $C=1.0$ | Accuracy 98.00%; $F_1$ 0.981 | 🟢 Convex margin optimization validation |
+| **Logistic Regression** | `LogisticRegression` (Accelerate CPU) | Binary cross-entropy workload | Accuracy 97.50%; $F_1$ 0.976 | 🟢 Regularized likelihood convergence |
+| **NLP Classification** | `NaiveBayesClassifier` | 3-class document bag-of-words | Accuracy 35.00%; Macro-$F_1$ 0.342 | 🟢 Posterior-inference implementation validation; not a predictive-quality claim |
+
+---
+
+### 3. Unsupervised Learning & Feature Scaling
+
+| Task | Model | Dataset / Setting | Metrics | Validation |
+| :--- | :--- | :--- | :--- | :---: |
+| **Spectral Decomposition** | `PCA` (Accelerate LAPACK SVD) | 5D correlated Gaussian data $\rightarrow$ 2 PCs | EVR [0.6812, 0.2845]; total EVR 96.57% | 🟢 SVD / explained-variance spectrum validation |
+| **Clustering** | `KMeans` (SIMD Underflow Clamped) | 3 synthetic Gaussian clusters, $N=600, k=3$ | Inertia (WCSS) 124.50; 3 centroids | 🟢 Objective non-increasing within the configured iteration bound |
+| **Feature Standardization** | `StandardScaler` (vDSP SIMD) | Continuous 3-column matrix, $N=1000$ | Fitted: $\mu=29.84, \sigma=11.45$; post-scaled $\mu < 10^{-15}$ | 🟢 Exact zero-mean / unit-variance parity |
+
+---
+
+### 4. Statistics & NLP
+
+| Task | Implementation | Dataset / Setting | Metrics | Validation |
+| :--- | :--- | :--- | :--- | :---: |
+| **Welch T-Test** | `Stats.tTest` (Welch's unequal var.) | Independent samples, $N_1=N_2=1000$ | $t$ 0.1425; $p$ 0.8867; $df$ 1987.2 | 🟢 Welch-Satterthwaite calculation validation |
+| **ANOVA & Correlation** | `Stats.oneWayANOVA` & `pearsonCorrelation` | 3 groups ($N=3000$) / bivariate ($N=1000$) | $F$ 0.0892; Pearson $r$ 0.0211 | 🟢 Fisher-Snedecor $F$ and covariance calculation validation |
+| **Sentiment Analysis** | `VADERSentimentAnalyzer` | Positive, negative, neutral English sentences | Compound: +0.8126, −0.7523, 0.0000 | 🟢 Rule-based lexicon reference validation (NLTK parity) |
+
+---
+
+### 5. Local LLM Runtime & Runtime Safety
+
+| Verification Gate | Component | Test Setting | Observed Result | Validation |
+| :--- | :--- | :--- | :--- | :---: |
+| **Incremental Decode** | `TransformerDecoder` + RoPE + KV-cache | Synthetic Llama-3 block (incremental vs full) | RoPE max abs error $1.03 \times 10^{-7}$; learned positional error 0.00 | 🟢 Numerical parity within tolerance ($\Delta \le 1.03 \times 10^{-7}$) |
+| **Metal Quantized GEMV** | `QuantizedLinear` / `gemv_q4_0` | Q4_0 packed weights vs MLX Float32 reference | Max abs error 0.0000 | 🟢 Numerical parity in tested workload ($\Delta = 0.0000$) |
+| **Compiled Graph Decode** | `MLX.compile` single-token decode | Single-token eager vs compiled graph | Max abs error $< 10^{-4}$ | 🟢 Graph-output parity within tolerance |
+| **AutoARIMA Guard** | `AutoARIMA` zero-variance guard | Constant series $y = [5.0, \dots, 5.0]$ | Order (0,0,0); runtime $< 0.01$ ms | 🟢 Zero-variance fast path with bounded optimization |
+| **Agent Recovery** | `ReActAgent` + `StructuredAgentTool` | Malformed JSON / schema errors | Recovery 100%; crashes 0 | 🟢 Autonomous trajectory correction validated for tested cases |
+| **SQLite Memory Safety** | `SQLiteConnection` + `sqlite3_close_v2` | AddressSanitizer (ASan) runtime audit | Leaks 0; buffer errors 0 | 🟢 Clean ASan result for tested lifecycle |
 
 ```bash
-# Run standalone Accuracy and Forecast Quality Scorecard:
+# Run standalone Validation and Correctness Scorecard:
 swift run -c release SwiftSciBenchmarks --suite Accuracy
 ```
 
 ---
 
-## 🖥️ Benchmark Platform & Methodology
+## Reproducibility & Benchmark Configuration
 
-- **Hardware**: Apple Silicon M-series (Unified Memory Architecture - UMA)
-- **Compiler**: Swift 6 Release (`-O -whole-module-optimization`), Apple Accelerate Framework (`vDSP`, `LAPACK`, `BLAS`), MLX Metal GPU.
-- **Python Baseline**: Python 3.11.9 (`NumPy 2.3.5`, `Pandas 3.0.2`, `Scikit-Learn 1.4`, `Statsmodels 0.14`, `SHAP 0.44`, `PyTorch 2.11`).
-- **Reproducibility**:
-  - Deterministic seeds (`seed=42`) across all tests.
-  - Multi-round execution ($3 \text{ rounds} \times 7 \text{ iterations} = 21 \text{ samples}$) with 2 warmup iterations.
-  - Trimmed mean (20%) and 95% Confidence Interval error bounds.
+### Platform
+- **Hardware**: Apple Silicon M-series with Unified Memory Architecture (UMA).
+- **Operating system**: macOS 15 arm64.
+- **Swift**: Release build with `-O -whole-module-optimization`.
+- **Apple frameworks**: Accelerate (`vDSP`, `BLAS`, `LAPACK`), Metal / MLX where applicable.
+- **Python**: CPython 3.11.9.
+- **NumPy**: `2.3.5`.
+- **Pandas**: `3.0.2`.
+- **Scikit-Learn**: `1.4.2`.
+- **Statsmodels**: `0.14.2`.
+- **SHAP**: `0.44.1`.
+- **PyTorch**: `2.11.0`.
+
+> [!NOTE]
+> Exact package patch versions should be recorded in the benchmark environment and raw JSON artifacts. Performance results are specific to the tested dependency versions and hardware configuration.
+
+### Measurement Procedure
+- 3 benchmark rounds.
+- 7 measured iterations per round.
+- 21 measured samples per benchmark.
+- 2 warmup iterations.
+- Deterministic seed `seed = 42` where supported.
+- **Primary reported metric**: **Median wall-clock execution time**.
+- Raw benchmark artifacts retain individual samples and additional aggregate statistics, including 20% trimmed mean and 95% confidence intervals.
+
+For very small operations, especially measurements below 0.1 ms, timer resolution and operating-system scheduling can contribute to the observed value. Such results should therefore be interpreted together with the raw sample distribution rather than as universal fixed execution times.
 
 ---
 
-## 🛠️ How to Run & Reproduce
+## Reproducing the Benchmarks
 
 ```bash
-# 1. Run Swift native benchmarks with JSON export:
-swift run -c release SwiftSciBenchmarks --rounds 3 --iterations 7 --json swift_results.json
+# 1. Swift native benchmarks
+swift run -c release SwiftSciBenchmarks \
+  --rounds 3 \
+  --iterations 7 \
+  --json swift_results.json
 
-# 2. Run Python comparison suite with JSON export:
+# 2. Python reference benchmarks
 cd Benchmarks/Python
-python3 benchmarks.py --rounds 3 --iterations 7 --json python_results.json
+python3 benchmarks.py \
+  --rounds 3 \
+  --iterations 7 \
+  --json python_results.json
 
-# 3. Generate visual comparison report:
+# 3. Generate the comparison report
 python3 compare.py ../../swift_results.json python_results.json
+
+# 4. Accuracy and correctness suite
+swift run -c release SwiftSciBenchmarks --suite Accuracy
 ```
+
+---
+
+## Interpreting the Results
+
+The benchmark suite demonstrates that SwiftSci can achieve competitive or lower measured execution times in a number of workloads while also exposing cases where established Python libraries remain faster.
+
+Examples include:
+- SwiftSci reductions outperforming the tested NumPy baselines in several numerical workloads.
+- Python/Pandas remaining substantially faster for some DataFrame operations such as filtering and hash joins.
+- Scikit-Learn remaining faster for the tested PCA and K-Means workloads.
+- SwiftSci showing lower measured fit times for the tested Random Forest, GBDT, Isolation Forest, Holt-Winters, and ARIMA configurations.
+- Architecture-specific SwiftSci implementations benefiting from Accelerate, Metal, packed quantization, native SQLite bindings, and KV-cache decoding.
+
+These results are workload-, implementation-, dependency-, and hardware-specific. They are intended to document the performance characteristics of SwiftSci 3.10.1 rather than establish a universal performance ranking between programming languages or ecosystems.

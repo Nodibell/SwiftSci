@@ -185,7 +185,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         TypedColumn<T>(name: newName, values: values)
     }
 
-    /// Computes row indices sorted by column values (uses vDSP radix sort for primitive types).
+    /// Computes a stable row permutation sorted by column values, with nulls last.
     /// - Parameter ascending: Sort order direction (`true` for ascending, `false` for descending).
     /// - Returns: Array of row indices sorted by column values.
     public func sortedIndices(ascending: Bool) -> [Int] {
@@ -194,17 +194,17 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
         // Specialize common Comparable element types without constraining SupportedType
         // (Bool is Hashable but not Comparable).
-        if let doubles = vals as? [Double?] {
-            return sortIndicesPrimitiveFast(doubles, ascending: ascending)
+        if let column = self as? TypedColumn<Double> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
-        if let floats = vals as? [Float?] {
-            return sortIndicesPrimitiveFast(floats, ascending: ascending)
+        if let column = self as? TypedColumn<Float> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
-        if let ints = vals as? [Int64?] {
-            return sortIndicesPrimitiveFast(ints, ascending: ascending)
+        if let column = self as? TypedColumn<Int64> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
-        if let ints = vals as? [Int32?] {
-            return sortIndicesPrimitiveFast(ints, ascending: ascending)
+        if let column = self as? TypedColumn<Int32> {
+            return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
         if let strings = vals as? [String?] {
             sortIndices(&indices, ascending: ascending) { strings[$0] }
@@ -298,52 +298,31 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     public var nonNullValues: [T] { values.compactMap { $0 } }
 }
 
-/// High-performance raw pointer index sort for dense primitive types without null handling overhead.
-/// For `Double` columns the sort is accelerated via `vDSP_vsortD` (Accelerate framework).
-/// For all other `Comparable` types the standard library `sort` is used.
-private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], ascending: Bool) -> [Int] {
-    let n = vals.count
-    var indices = Array(0..<n)
-    let containsNil = vals.contains(where: { $0 == nil })
-    if !containsNil {
-        let rawVals = vals.compactMap { $0 }
-
-        // Fast path for Double: vDSP_vsortD sorts a value copy in O(N log N) using
-        // LLVM-vectorised comparisons, then we recover the original index permutation.
-        if let doubles = rawVals as? [Double] {
-            // 1. Sort a value copy using vDSP
-            var sortedVals = doubles
-            let order: Int32 = ascending ? 1 : -1
-            sortedVals.withUnsafeMutableBufferPointer { buf in
-                vDSP_vsortD(buf.baseAddress!, vDSP_Length(n), order)
+/// Sorts cached non-null keys once and appends missing rows in their original order.
+private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], nullCount: Int, ascending: Bool) -> [Int] {
+    var tagged: [(index: Int, value: T)] = []
+    var missing: [Int] = []
+    tagged.reserveCapacity(vals.count - nullCount)
+    missing.reserveCapacity(nullCount)
+    for (index, value) in vals.enumerated() {
+        if let value {
+            // NaN does not define a strict ordering. Preserve the existing comparison path.
+            if value != value {
+                var indices = Array(vals.indices)
+                sortIndices(&indices, ascending: ascending) { vals[$0] }
+                return indices
             }
-            // 2. Argsort: for each position in sortedVals find the corresponding original index.
-            //    We pair (originalIndex, value) and sort by value to recover the permutation
-            //    in a single O(N log N) Swift sort (values already in correct order so comparison
-            //    hits cache efficiently).
-            var tagged = doubles.enumerated().map { ($0.offset, $0.element) }
-            if ascending {
-                tagged.sort { $0.1 < $1.1 }
-            } else {
-                tagged.sort { $0.1 > $1.1 }
-            }
-            return tagged.map { $0.0 }
+            tagged.append((index, value))
+        } else {
+            missing.append(index)
         }
-
-        rawVals.withUnsafeBufferPointer { buf in
-            guard let ptr = buf.baseAddress else { return }
-            if ascending {
-                indices.sort { ptr[$0] < ptr[$1] }
-            } else {
-                indices.sort { ptr[$0] > ptr[$1] }
-            }
-        }
-        return indices
     }
-    sortIndices(&indices, ascending: ascending) { vals[$0] }
+    // Keep direction inside one comparator for the Swift 6.4 Release workaround.
+    tagged.sort { ascending ? $0.value < $1.value : $0.value > $1.value }
+    var indices = tagged.map { $0.index }
+    indices.append(contentsOf: missing)
     return indices
 }
-
 
 /// Nulls-last index sort over optional Comparable keys.
 private func sortIndices<C: Comparable>(_ indices: inout [Int], ascending: Bool, key: (Int) -> C?) {

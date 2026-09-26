@@ -218,6 +218,12 @@ public struct GroupedDataFrame: Sendable {
             rowGroups.reserveCapacity(rowCapacity)
         }
 
+        init(singleGroupRowCount: Int) {
+            rowGroups = Array(repeating: 0, count: singleGroupRowCount)
+            representatives = [0]
+            counts = [singleGroupRowCount]
+        }
+
         mutating func append(_ group: Int) {
             if group == count {
                 representatives.append(rowGroups.count)
@@ -233,25 +239,12 @@ public struct GroupedDataFrame: Sendable {
         let rowCount = dataFrame.shape.rows
         guard rowCount > 0, !groupColumns.isEmpty else { return GroupIndex(rowCapacity: 0) }
 
-        if groupColumns.count == 1 {
-            let column = dataFrame[column: groupColumns[0]]
-            if let typed = column as? TypedColumn<Int64> {
-                return buildIntegerGroups(typed.values)
-            }
-            if let typed = column as? TypedColumn<Int32> {
-                return buildIntegerGroups(typed.values)
-            }
-            if let typed = column as? TypedColumn<Int> {
-                return buildIntegerGroups(typed.values)
-            }
-        }
-
-        var groups = GroupIndex(rowCapacity: rowCount)
+        var groups = GroupIndex(rowCapacity: 0)
         for column in groupColumns.compactMap({ dataFrame[column: $0] }) {
-            groups = refineGroups(groups.rowGroups, by: column)
+            groups = refineGroups(groups, by: column)
         }
         if groups.rowGroups.isEmpty {
-            for _ in 0..<rowCount { groups.append(0) }
+            return GroupIndex(singleGroupRowCount: rowCount)
         }
         return groups
     }
@@ -297,14 +290,15 @@ public struct GroupedDataFrame: Sendable {
         refineGroups(prefixes, count: values.count) { values[$0] }
     }
 
-    private func refineGroups(_ prefixes: [Int], by column: any AnyColumn) -> GroupIndex {
+    private func refineGroups(_ previous: GroupIndex, by column: any AnyColumn) -> GroupIndex {
+        let prefixes = previous.rowGroups
         switch column {
         case let typed as TypedColumn<Int>:
-            return refineGroups(prefixes, values: typed.values)
+            return refineIntegerGroups(previous, values: typed.values)
         case let typed as TypedColumn<Int64>:
-            return refineGroups(prefixes, values: typed.values)
+            return refineIntegerGroups(previous, values: typed.values)
         case let typed as TypedColumn<Int32>:
-            return refineGroups(prefixes, values: typed.values)
+            return refineIntegerGroups(previous, values: typed.values)
         case let typed as TypedColumn<String>:
             return refineGroups(prefixes, values: typed.values)
         case let typed as TypedColumn<Bool>:
@@ -358,6 +352,53 @@ public struct GroupedDataFrame: Sendable {
         return .described(type, String(describing: value))
     }
 
+    private static let integerGroupLookupByteLimit = 512 * 1024
+
+    private func refineIntegerGroups<T: FixedWidthInteger & SupportedType>(
+        _ previous: GroupIndex, values: [T?]
+    ) -> GroupIndex {
+        if previous.rowGroups.isEmpty { return buildIntegerGroups(values) }
+        if let groups = refineBoundedIntegerGroups(previous, values: values) { return groups }
+        return refineGroups(previous.rowGroups, values: values)
+    }
+
+    private func refineBoundedIntegerGroups<T: FixedWidthInteger>(
+        _ previous: GroupIndex, values: [T?]
+    ) -> GroupIndex? {
+        let slotLimit = Swift.min(values.count,
+            Self.integerGroupLookupByteLimit / MemoryLayout<Int>.stride)
+        let componentLimit = slotLimit / previous.count
+        guard componentLimit > 0 else { return nil }
+
+        var lower = T.max
+        var upper = T.min
+        var hasNull = false
+        for value in values {
+            guard let value else { hasNull = true; continue }
+            if value >= lower && value <= upper { continue }
+            lower = Swift.min(lower, value)
+            upper = Swift.max(upper, value)
+            let (span, overflow) = upper.subtractingReportingOverflow(lower)
+            guard !overflow, let width = Int(exactly: span), width < componentLimit else { return nil }
+        }
+        if lower > upper { return previous }
+
+        let valueSlots = Int(upper - lower) + 1
+        let componentSlots = valueSlots + (hasNull ? 1 : 0)
+        let (tableSlots, overflow) = previous.count.multipliedReportingOverflow(by: componentSlots)
+        guard !overflow, tableSlots <= slotLimit else { return nil }
+
+        var lookup = [Int](repeating: -1, count: tableSlots)
+        var groups = GroupIndex(rowCapacity: values.count)
+        for row in values.indices {
+            let component = values[row].map { Int($0 - lower) } ?? valueSlots
+            let slot = previous.rowGroups[row] * componentSlots + component
+            if lookup[slot] == -1 { lookup[slot] = groups.count }
+            groups.append(lookup[slot])
+        }
+        return groups
+    }
+
     private func buildIntegerGroups<T: FixedWidthInteger>(_ values: [T?]) -> GroupIndex {
         if let groups = buildBoundedIntegerGroups(values) { return groups }
         var groupIndices: [T?: Int] = [:]
@@ -374,8 +415,9 @@ public struct GroupedDataFrame: Sendable {
     }
 
     private func buildBoundedIntegerGroups<T: FixedWidthInteger>(_ values: [T?]) -> GroupIndex? {
-        // Bound the table to 65,536 entries and at most one entry per input row.
-        let slotLimit = Swift.min(values.count, 65_536)
+        // Bound the table to 512 KiB and at most one entry per input row.
+        let slotLimit = Swift.min(values.count,
+            Self.integerGroupLookupByteLimit / MemoryLayout<Int>.stride)
         var lower = T.max
         var upper = T.min
         for case let value? in values {

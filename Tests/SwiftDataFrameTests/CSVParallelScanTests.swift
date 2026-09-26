@@ -57,4 +57,27 @@ struct CSVParallelScanTests {
             }
         }
     }
+    @Test("Unusual delimiters and random bytes retain serial semantics")
+    func randomizedParity() {
+        var state: UInt64 = 0x89ABCDEF
+        for delimiter: UInt8 in [10, 13, 44, 59] {
+            for iteration in 0..<100 {
+                var bytes = [UInt8]()
+                let alphabet: [UInt8] = [0, 9, 10, 13, 32, 44, 59, 65, 127, 195, 169]
+                for _ in 0..<(100 + iteration * 11) {
+                    state = state &* 6364136223846793005 &+ 1
+                    bytes.append(alphabet[Int(state >> 32) % alphabet.count])
+                }
+                bytes.withUnsafeBufferPointer { buffer in
+                    let parser = SystemsCSVParser(delimiterByte: delimiter)
+                    let serial = parser.parseIndex(buffer: buffer, minimumParallelBytes: .max)
+                    let parallel = parser.parseIndex(buffer: buffer, minimumParallelBytes: 0)
+                    #expect(serial.rowStarts == parallel.rowStarts)
+                    #expect(serial.fields.map(\.startOffset) == parallel.fields.map(\.startOffset))
+                    #expect(serial.fields.map(\.length) == parallel.fields.map(\.length))
+                }
+            }
+        }
+    }
+
 }

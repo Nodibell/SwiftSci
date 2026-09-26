@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swiftsci.local/benchmarks/dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "table-v1",
+        "nist-numacc4"
+      ]
+    },
+    "rows": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "generator_version": {
+      "const": 1
+    },
+    "groups": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "fixture": {
+      "type": "string"
+    },
+    "certified": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mean",
+        "variance",
+        "stddev"
+      ],
+      "properties": {
+        "mean": {
+          "type": "number"
+        },
+        "variance": {
+          "type": "number"
+        },
+        "stddev": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "kind",
+    "rows",
+    "sha256",
+    "size_bytes",
+    "source",
+    "license",
+    "generator_version"
+  ]
+}

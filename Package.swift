@@ -429,6 +429,23 @@ let package = Package(
             ]
         ),
 
+        .target(
+            name: "SwiftSciBenchmarkSupport",
+            path: "Benchmarks/Support"
+        ),
+        .executableTarget(
+            name: "SwiftSciBenchmarkWorker",
+            dependencies: ["SwiftSciBenchmarkSupport", "SwiftDataFrame", "SwiftStats", "SwiftPreprocessing"],
+            path: "Benchmarks/Worker",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftSciBenchmarkSupportTests",
+            dependencies: ["SwiftSciBenchmarkSupport"],
+            path: "Tests/SwiftSciBenchmarkSupportTests"
+        ),
+
         // ── SwiftSciBenchmarks ───────────────────────────────────────────
         .executableTarget(
             name: "SwiftSciBenchmarks",

@@ -1,0 +1,80 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "tiny",
+      "id": "tiny-csv-read",
+      "workload": "csv-read-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-filter",
+      "workload": "filter-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-sort",
+      "workload": "sort-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-group-sum",
+      "workload": "group-sum-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-flat-matrix",
+      "workload": "flat-matrix-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-target",
+      "workload": "target-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-standard-scale",
+      "workload": "standard-scale-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-minmax-scale",
+      "workload": "minmax-scale-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "tiny",
+      "id": "tiny-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-stddev",
+      "workload": "stddev-v1"
+    }
+  ],
+  "id": "smoke",
+  "samples": 1,
+  "schema_version": 1,
+  "timeout_seconds": 300,
+  "warmups": 0
+}

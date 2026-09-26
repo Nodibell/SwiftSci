@@ -1,0 +1,10 @@
+{
+  "atol": 1e-08,
+  "id": "mean-v1",
+  "operation": "mean",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 0,
+  "schema_version": 1,
+  "scope": "operation",
+  "semantics": "arithmetic mean; finite float64 inputs"
+}

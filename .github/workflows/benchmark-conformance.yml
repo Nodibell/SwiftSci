@@ -1,0 +1,60 @@
+name: Benchmark conformance
+
+on:
+  pull_request:
+    paths:
+      - 'Sources/**'
+      - 'Benchmarks/**'
+      - 'Tests/SwiftSciBenchmarkSupportTests/**'
+      - 'Package.*'
+      - '.github/workflows/benchmark-conformance.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-conformance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+      - name: Test contracts and install reference engines
+        run: |
+          python3 -m unittest discover -s Benchmarks/Tests
+          python3 -m venv Benchmarks/.venv-standardized
+          Benchmarks/.venv-standardized/bin/python -m pip install -r Benchmarks/Python/requirements-standardized.txt
+      - name: Prepare and build
+        run: |
+          python3 Benchmarks/Tools/bench.py prepare --profile smoke
+          python3 Benchmarks/Tools/bench.py build
+      - name: Verify both engines
+        run: |
+          python3 Benchmarks/Tools/bench.py run --profile smoke \
+            --engines swiftsci,pandas \
+            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
+            --python Benchmarks/.venv-standardized/bin/python \
+            --output Benchmarks/Runs/ci-smoke
+          python3 Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-smoke
+      - name: Retain run evidence and build log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-conformance-${{ github.sha }}
+          path: |
+            Benchmarks/Runs/ci-smoke/
+            ~/Library/Caches/SwiftSci/standardized-benchmarks/build.log
+          retention-days: 30
+          if-no-files-found: warn

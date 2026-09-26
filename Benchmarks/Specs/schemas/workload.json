@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swiftsci.local/benchmarks/workload",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "csv-read",
+        "filter",
+        "sort",
+        "group-sum",
+        "flat-matrix",
+        "target",
+        "standard-scale",
+        "minmax-scale",
+        "mean",
+        "variance",
+        "stddev"
+      ]
+    },
+    "scope": {
+      "enum": [
+        "ingestion",
+        "operation",
+        "fit-transform-export"
+      ]
+    },
+    "output": {
+      "type": "string"
+    },
+    "atol": {
+      "type": "number",
+      "minimum": 0
+    },
+    "rtol": {
+      "type": "number",
+      "minimum": 0
+    },
+    "semantics": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "operation",
+    "scope",
+    "output",
+    "atol",
+    "rtol",
+    "semantics"
+  ]
+}

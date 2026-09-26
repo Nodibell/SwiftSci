@@ -1,0 +1,166 @@
+"""Canonical fixture preparation and independent reference evaluation."""
+
+import csv
+import io
+import math
+import struct
+from contracts import (
+    digest,
+    fields,
+    positive,
+    read_json,
+    repository_file,
+    require,
+    verified_file,
+)
+
+
+def load_manifest(root, name):
+    value = read_json(root / "Benchmarks/Specs/datasets" / (name + ".json"))
+    fields(
+        value,
+        [
+            "schema_version",
+            "id",
+            "kind",
+            "rows",
+            "sha256",
+            "size_bytes",
+            "source",
+            "license",
+            "generator_version",
+        ],
+        ["groups", "fixture", "certified"],
+    )
+    require(
+        value["schema_version"] == 1 and value["id"] == name,
+        "Dataset identity/version mismatch",
+    )
+    require(value["kind"] in ["table-v1", "nist-numacc4"], "Unknown dataset generator")
+    positive(value["rows"], "rows")
+    positive(value["size_bytes"], "size_bytes")
+    require(
+        isinstance(value["sha256"], str)
+        and len(value["sha256"]) == 64
+        and all(c in "0123456789abcdef" for c in value["sha256"]),
+        "Invalid SHA-256",
+    )
+    require(value["generator_version"] == 1, "Unknown generator version")
+    if value["kind"] == "table-v1":
+        positive(value.get("groups"), "groups")
+    else:
+        require(
+            "fixture" in value and "certified" in value,
+            "Missing NIST source or answers",
+        )
+    return value
+
+
+def generate_table(rows, groups):
+    # Exact quarter fractions and integers avoid platform-specific decimal formatting.
+    out = io.StringIO(newline="")
+    out.write("id,group,x,y\n")
+    for i in range(rows):
+        out.write(
+            f"{i},{(i * 17) % groups},{((i * 37) % 1009 - 504) / 4:.2f},{((i * 13) % 701 - 350) / 4:.2f}\n"
+        )
+    return out.getvalue().encode("ascii")
+
+
+def cache_path(root, manifest):
+    return root / "Benchmarks/Data/standardized" / (manifest["sha256"] + ".data")
+
+
+def prepare(root, manifest):
+    path = cache_path(root, manifest)
+    if path.exists():
+        verified_file(path, manifest["sha256"], manifest["size_bytes"])
+        return path
+    if manifest["kind"] == "table-v1":
+        content = generate_table(manifest["rows"], manifest["groups"])
+    else:
+        content = repository_file(root, manifest["fixture"]).read_bytes()
+    require(
+        digest(content) == manifest["sha256"]
+        and len(content) == manifest["size_bytes"],
+        "Generated fixture disagrees with manifest",
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_bytes(content)
+    tmp.replace(path)
+    return path
+
+
+def values(root, manifest):
+    content = verified_file(
+        cache_path(root, manifest), manifest["sha256"], manifest["size_bytes"]
+    )
+    if manifest["kind"] == "nist-numacc4":
+        data = [
+            float(line)
+            for line in content.decode("ascii").splitlines()[60:]
+            if line.strip()
+        ]
+        require(len(data) == manifest["rows"], "NIST row count mismatch")
+        return data
+    reader = csv.DictReader(io.StringIO(content.decode("ascii")))
+    require(reader.fieldnames == ["id", "group", "x", "y"], "Unexpected CSV schema")
+    data = [
+        (int(r["id"]), int(r["group"]), float(r["x"]), float(r["y"])) for r in reader
+    ]
+    require(len(data) == manifest["rows"], "CSV row count mismatch")
+    return data
+
+
+def reference(root, manifest, workload):
+    rows = values(root, manifest)
+    operation = workload["operation"]
+    if manifest["kind"] == "nist-numacc4":
+        require(
+            operation in ["mean", "stddev", "variance"],
+            "NIST dataset only supports statistics",
+        )
+        return [manifest["certified"][operation]]
+    x = [r[2] for r in rows]
+    if operation in ["mean", "stddev", "variance"]:
+        mean = math.fsum(x) / len(x)
+        variance = math.fsum((v - mean) ** 2 for v in x) / (len(x) - 1)
+        return [
+            {"mean": mean, "variance": variance, "stddev": math.sqrt(variance)}[
+                operation
+            ]
+        ]
+    if operation == "target":
+        return x
+    if operation == "flat-matrix":
+        return [v for r in rows for v in r[2:]]
+    if operation == "csv-read":
+        return [v for r in rows for v in r]
+    if operation == "filter":
+        return [v for r in rows if r[2] > 0 for v in r]
+    if operation == "sort":
+        return [v for r in sorted(rows, key=lambda r: (r[2], r[0])) for v in r]
+    if operation == "group-sum":
+        groups = {}
+        for row in rows:
+            groups.setdefault(row[1], []).append(row[2])
+        return [v for k in sorted(groups) for v in [float(k), math.fsum(groups[k])]]
+    columns = [[r[c] for r in rows] for c in [2, 3]]
+    scaled = []
+    for col in columns:
+        if operation == "standard-scale":
+            offset = math.fsum(col) / len(col)
+            span = math.sqrt(math.fsum((v - offset) ** 2 for v in col) / len(col))
+            scaled.append([(v - offset) / (span if span >= 1e-12 else 1) for v in col])
+        else:
+            offset = min(col)
+            span = max(col) - offset
+            scaled.append(
+                [(v - offset) * (1 / span if span >= 1e-12 else 0) for v in col]
+            )
+    return [v for pair in zip(*scaled) for v in pair]
+
+
+def binary(values):
+    return b"".join(struct.pack("<d", v) for v in values)

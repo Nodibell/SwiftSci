@@ -1,0 +1,12 @@
+{
+  "generator_version": 1,
+  "groups": 7,
+  "id": "tiny",
+  "kind": "table-v1",
+  "license": "Same as SwiftSci",
+  "rows": 129,
+  "schema_version": 1,
+  "sha256": "1a42d091f1ead6bc8c43acce1dae5957d7e51270b22c06034b0f25577d84554c",
+  "size_bytes": 2372,
+  "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+}

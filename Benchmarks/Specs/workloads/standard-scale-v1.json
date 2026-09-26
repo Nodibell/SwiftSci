@@ -1,0 +1,10 @@
+{
+  "atol": 1e-12,
+  "id": "standard-scale-v1",
+  "operation": "standard-scale",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 1e-12,
+  "schema_version": 1,
+  "scope": "fit-transform-export",
+  "semantics": "population standard deviation; near-zero scale becomes one; x,y row-major output"
+}

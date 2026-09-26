@@ -20,3 +20,6 @@ python_results.json
 build_errors.txt
 Book/
 documentation-analysis.txt
+# Standardized benchmark working runs
+Benchmarks/Runs/
+Benchmarks/.venv-standardized/

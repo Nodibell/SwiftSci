@@ -1,0 +1,10 @@
+{
+  "atol": 0,
+  "id": "filter-v1",
+  "operation": "filter",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 0,
+  "schema_version": 1,
+  "scope": "operation",
+  "semantics": "x > 0; preserve input order; export id,group,x,y outside timing"
+}

@@ -1,0 +1,17 @@
+{
+  "certified": {
+    "mean": 10000000.2,
+    "stddev": 0.1,
+    "variance": 0.01
+  },
+  "fixture": "Benchmarks/Fixtures/nist/NumAcc4.dat",
+  "generator_version": 1,
+  "id": "nist-numacc4",
+  "kind": "nist-numacc4",
+  "license": "NIST US government reference data; attribution retained in source header",
+  "rows": 1001,
+  "schema_version": 1,
+  "sha256": "ca310dc767f5130f980f8280bbe69e26ba414a4d85a89fc11b6c767b828e5fe4",
+  "size_bytes": 15765,
+  "source": "https://www.itl.nist.gov/div898/strd/univ/data/NumAcc4.dat"
+}

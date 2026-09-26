@@ -1,0 +1,25 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-numacc4-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-numacc4-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-numacc4-stddev",
+      "workload": "stddev-v1"
+    }
+  ],
+  "id": "certification",
+  "samples": 1,
+  "schema_version": 1,
+  "timeout_seconds": 300,
+  "warmups": 0
+}

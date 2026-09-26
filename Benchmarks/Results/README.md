@@ -1,7 +1,8 @@
 # Benchmark results
 
-Files in this directory are generated at runtime and should **not** be committed
-(except this README).
+Selected evidence belongs here with its raw records, source identity and a README explaining scope. Keep ordinary local runs in ignored `Benchmarks/Runs/`.
+
+Use the [standardized runner](../README.md) for new dataframe and numerical comparisons. The commands below reproduce the legacy format; their outputs are not standardized conformance certificates.
 
 ## Generate & compare
 

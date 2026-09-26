@@ -62,6 +62,27 @@ struct StructuredGroupingTests {
         #expect(data.groupBy("date").sum()[column: "value", as: Double.self]?.values == [13, 2])
     }
 
+    @Test func generatedTuplesMatchIndependentRowEquality() throws {
+        let keys: [Int64?] = (0..<257).map { $0 % 13 == 0 ? nil : Int64($0 % 17) + 9_007_199_254_740_992 }
+        let labels: [String?] = (0..<257).map { [nil, "null", "__null__", "a||b", ""][($0 * 7) % 5] }
+        var representatives: [Int] = []
+        var sums: [Double] = []
+        var expectedRows: [Int] = []
+        for row in keys.indices {
+            let found = representatives.firstIndex { keys[$0] == keys[row] && labels[$0] == labels[row] }
+            let group = found ?? representatives.count
+            if found == nil { representatives.append(row); sums.append(0) }
+            sums[group] += Double(row + 1)
+            expectedRows.append(group)
+        }
+        let data = try frame([TypedColumn<Int64>(name: "key", values: keys), TypedColumn<String>(name: "label", values: labels)])
+        let result = data.groupBy("key", "label").sum()
+        #expect(result[column: "key", as: String.self]?.values == representatives.map { keys[$0].map(String.init) })
+        #expect(result[column: "label", as: String.self]?.values == representatives.map { labels[$0] })
+        #expect(result[column: "value", as: Double.self]?.values == sums.map(Optional.init))
+        #expect(data.groupBy("key", "label").transform(["value": .sum])[column: "value_group_sum", as: Double.self]?.values == expectedRows.map { Optional(sums[$0]) })
+    }
+
     private struct CollisionKey: Hashable, CustomStringConvertible {
         let value: Int
         var description: String { "same text" }

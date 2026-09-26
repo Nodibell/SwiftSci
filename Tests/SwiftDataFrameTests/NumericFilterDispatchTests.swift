@@ -160,6 +160,18 @@ struct NumericFilterDispatchTests {
         try check([upperFloat, upperFloat.nextDown, nil, -upperFloat], upperCases)
     }
 
+    @Test func floatingComparisonNearMinimumInteger() throws {
+        let lower = -9_223_372_036_854_775_808.0
+        try check([lower, lower.nextUp, nil], [
+            (.equals(Int64.min + 1), []),
+            (.notEquals(Int64.min + 1), [0, 1]),
+            (.lessThan(Int64.min + 1), [0]),
+            (.lessThanOrEqual(Int64.min + 1), [0]),
+            (.greaterThan(Int64.min + 1), [1]),
+            (.greaterThanOrEqual(Int64.min + 1), [1])
+        ])
+    }
+
     @Test func int32AcceptsThresholdOutsideItsOwnRange() throws {
         let values: [Int32?] = [.min, -1, 0, .max, nil]
         let threshold = Int64(2_147_483_648)

@@ -39,6 +39,7 @@ struct ColumnNullCountTests {
         try checkColumn([Double(1), nil, 3, nil])
         try checkColumn([Float(1), nil, 3, nil])
         try checkColumn([Int64(1), nil, 3, nil])
+        try checkColumn([Int(1), nil, 3, nil])
         try checkColumn([Int32(1), nil, 3, nil])
         try checkColumn(["one", nil, "three", nil])
         try checkColumn([true, nil, false, nil])

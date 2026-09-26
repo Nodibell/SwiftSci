@@ -118,7 +118,16 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
             return doubleCol.vGather(at: indices)
         }
         if let int64Col = self as? TypedColumn<Int64> {
-            return int64Col.gatheredInt64(at: indices)
+            return int64Col.gatheredNumeric(at: indices)
+        }
+        if let column = self as? TypedColumn<Int> {
+            return column.gatheredNumeric(at: indices)
+        }
+        if let column = self as? TypedColumn<Int32> {
+            return column.gatheredNumeric(at: indices)
+        }
+        if let column = self as? TypedColumn<Float> {
+            return column.gatheredNumeric(at: indices)
         }
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
@@ -619,10 +628,10 @@ extension TypedColumn: Equatable where T: Equatable {
 }
 
 
-private extension TypedColumn where T == Int64 {
-    func gatheredInt64(at indices: [Int]) -> TypedColumn<Int64> {
+private extension TypedColumn {
+    func gatheredNumeric(at indices: [Int]) -> TypedColumn<T> {
         if _nullCount == 0 {
-            return TypedColumn<Int64>(name: name, values: indices.map { values[$0] }, nullCount: 0)
+            return TypedColumn<T>(name: name, values: indices.map { values[$0] }, nullCount: 0)
         }
         var gatheredNullCount = 0
         let result = indices.map { index in
@@ -630,6 +639,6 @@ private extension TypedColumn where T == Int64 {
             if case nil = value { gatheredNullCount += 1 }
             return value
         }
-        return TypedColumn<Int64>(name: name, values: result, nullCount: gatheredNullCount)
+        return TypedColumn<T>(name: name, values: result, nullCount: gatheredNullCount)
     }
 }

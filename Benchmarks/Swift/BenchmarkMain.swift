@@ -65,7 +65,7 @@ struct BenchmarkEntryPoint {
         if let w = args.warmup { BenchmarkConfig.defaultWarmup = w }
 
         print("╔════════════════════════════════════════════════════╗")
-        print("║        SwiftSci Benchmark Suite — v3.10.1          ║")
+        print("║        SwiftSci Benchmark Suite — v3.10.2          ║")
         print("╚════════════════════════════════════════════════════╝")
         print("Platform   : \(platformString())")
         print("Swift      : \(swiftVersion())")

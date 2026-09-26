@@ -4,6 +4,27 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.2] - 2026-09-26
+
+### Performance
+- **Typed Numeric Filtering (`SwiftDataFrame`)**: Moved type dispatch outside the row loop; added exact integer/floating comparisons, cached null predicates, and parallel gathering based on estimated output bytes. Corrects precision-boundary and NaN behavior (see [NumericFiltering.md](Sources/SwiftDataFrame/SwiftDataFrame.docc/NumericFiltering.md)).
+- **Adaptive Typed Sorting (`SwiftDataFrame`)**: Stable sort with pre-cached typed keys. Large Double inputs use radix sorting with comparison and NaN fallbacks for ordered, sparse and NaN-containing inputs. Ties and null placement preserved.
+- **Compact Group Key Identity (`SwiftDataFrame`)**: Flat first-seen group IDs replacing per-row String key construction. Bounded integer lookup/refinement for suitable integer domains; typed composite-key identity for general keys. Eliminates sentinel-string collisions (see [GroupKeySemantics.md](Sources/SwiftDataFrame/SwiftDataFrame.docc/GroupKeySemantics.md)).
+- **Compensated Group Aggregates (`SwiftDataFrame`)**: Kahan compensated floating sums and means for grouped reductions.
+- **CSV Reader Overhaul (`SwiftDataFrame`)**: Flat field-metadata storage, lifetime-scoped mapped bytes, parallel scanning for unquoted files, exact final index allocation, fused null counting, and corrected decimal rounding. Reduces 1M-row CSV parsing from ~39 ms to ~14 ms and peak RSS from 310 MB to 186 MB (−40%).
+
+### Added
+- **`GroupedDataFrame.sumChecked()` (`SwiftDataFrame`)**: Opt-in exact integer totals returning `Int64` with explicit `OverflowError` on overflow. Existing `sum()` retains Double results unchanged (see [CheckedIntegerSums.md](Sources/SwiftDataFrame/SwiftDataFrame.docc/CheckedIntegerSums.md)).
+- **API Notes (`SwiftDataFrame.docc`)**: Added `NumericFiltering.md`, `GroupKeySemantics.md`, and `CheckedIntegerSums.md` documenting behavior changes and migration guidance.
+- **CSV/Metal Acceleration Benchmark (`Benchmarks/CSVAcceleration`)**: Opt-in benchmark comparing ARM NEON, parallel NEON, and Metal GPU byte-classification paths. GPU index construction was 18–21% slower than parallel NEON; not integrated into the production parser.
+- **Benchmark Evidence (`Benchmarks/Results/DataFrameOptimization`)**: Raw samples, metadata, parity results, and comparison scripts for all optimization stages. Includes full cross-library comparison against pandas and Kiraa at 100K and 1M rows.
+- **SwiftSci CLI (`SwiftSciCLI`)**: Upgraded CLI version identifier to 3.10.2.
+
+### Fixed
+- **Numeric Comparison Precision (`SwiftDataFrame`)**: Corrected comparisons at integer/float precision boundaries and with NaN/infinity values in filtered columns.
+- **Group Key Collisions (`SwiftDataFrame`)**: Eliminated false-equality collisions between literal sentinel strings and delimiter-containing composite tuple keys.
+- **Decimal Rounding (`SwiftDataFrame`)**: CSV numeric conversion now rounds complete significands once rather than accumulating intermediate rounding error.
+
 ## [3.10.1] - 2026-09-26
 
 ### Fixed

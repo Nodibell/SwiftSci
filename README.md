@@ -1,4 +1,4 @@
-# SwiftSci 3.10.1
+# SwiftSci 3.10.2
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -28,7 +28,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.10.1")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.10.2")
 ]
 ```
 
@@ -108,14 +108,14 @@ print("Sentiment compound score:", score.compound)
 
 ---
 
-## 📊 Performance & Memory Comparison (SwiftSci 3.10.1 vs Python)
+## 📊 Performance & Memory Comparison (SwiftSci 3.10.2 vs Python)
 
 The following benchmark metrics reflect the certified, dual-language automated test harness run on Apple Silicon (M-series, macOS 15, IEEE 754 64-bit Double Precision, Swift 6 Release vs Python 3.11 with Pandas, NumPy, Scikit-Learn, and Statsmodels). All workloads execute on byte-identical shared fixtures with synchronized hyperparameters under **Benchmark Methodology v2**:
 
 > [!NOTE]
 > SwiftSci and the Python reference stack use different implementation paths and optimization strategies. The measured difference therefore reflects both algorithmic implementation and library/runtime overhead, rather than Python interpreter overhead alone.
 
-| Domain / Scenario | SwiftSci 3.10.1 | Python Reference Stack | Relative Performance | Scope / Implementation |
+| Domain / Scenario | SwiftSci 3.10.2 | Python Reference Stack | Relative Performance | Scope / Implementation |
 | :--- | :---: | :---: | :---: | :--- |
 | **Holt-Winters Fit** (50k pts, s=12) | **`16.11 ms`** | `3,431.44 ms` (*Statsmodels*) | **SwiftSci 212.97×** | Native Nelder-Mead simplex optimizer |
 | **ARIMA(1,1,1) Fit** (50k pts) | **`2.26 ms`** | `594.36 ms` (*Statsmodels*) | **SwiftSci 262.49×** | Exact Gaussian likelihood solver |
@@ -154,6 +154,14 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   │ [NLP Cls]  NaiveBayes (3-class) : Accuracy=35.00%, Macro-F1=0.342                  │
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## 🚀 What's New in v3.10.2
+
+- **Typed Numeric Filtering (`SwiftDataFrame`)**: Type dispatch moved outside the row loop with exact integer/float comparisons, cached null predicates and parallel gather. Corrects NaN and precision-boundary behavior (PR #39).
+- **Adaptive Typed Sorting (`SwiftDataFrame`)**: Stable sort with pre-cached typed keys; radix path for large Dense Double inputs with NaN fallback (PR #39).
+- **Compact Group Key Identity (`SwiftDataFrame`)**: First-seen flat group IDs, bounded integer lookup and typed composite-key identity — eliminates per-row String allocation and sentinel collisions (PR #39).
+- **Compensated Group Aggregates (`SwiftDataFrame`)**: Kahan-compensated floating sums and means; new `sumChecked()` for exact `Int64` totals with overflow errors (PR #39).
+- **CSV Reader Overhaul (`SwiftDataFrame`)**: Flat field metadata, lifetime-scoped mapped bytes, parallel unquoted scanning, exact-capacity allocation, fused null counting, corrected decimal rounding. 1M-row CSV: ~39 ms → ~14 ms, peak RSS −40% (PR #39).
 
 ## 🚀 What's New in v3.10.1
 

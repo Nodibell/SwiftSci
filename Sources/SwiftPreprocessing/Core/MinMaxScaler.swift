@@ -106,17 +106,17 @@ public struct MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
         var transformed = [[Double]](repeating: [Double](repeating: range.min, count: cols),
                                      count: data.count)
         let negMin = dataMin.map { -$0 }
+        var shifted = [Double](repeating: 0.0, count: cols)
+        var scaled = [Double](repeating: 0.0, count: cols)
 
         for (r, row) in data.enumerated() {
             guard row.count == cols else {
                 throw PreprocessingError.dimensionMismatch(expected: cols, got: row.count)
             }
             // shifted = row - dataMin
-            var shifted = [Double](repeating: 0.0, count: cols)
             vDSP_vaddD(row, 1, negMin, 1, &shifted, 1, vDSP_Length(cols))
 
             // scaled = shifted * scales
-            var scaled = [Double](repeating: 0.0, count: cols)
             vDSP_vmulD(shifted, 1, scales, 1, &scaled, 1, vDSP_Length(cols))
 
             // result = scaled + rangeMin

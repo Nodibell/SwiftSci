@@ -63,6 +63,7 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
 
         // Extract each column into a contiguous buffer for vDSP
         var colBuf = [Double](repeating: 0.0, count: rows)
+        var shifted = [Double](repeating: 0.0, count: rows)
 
         for c in 0..<cols {
             for r in 0..<rows { colBuf[r] = data[r][c] }
@@ -72,7 +73,6 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
             vDSP_meanvD(colBuf, 1, &m, vDSP_Length(rows))
 
             // vDSP variance: E[(x-μ)²]
-            var shifted = [Double](repeating: 0.0, count: rows)
             var neg = -m
             vDSP_vsaddD(colBuf, 1, &neg, &shifted, 1, vDSP_Length(rows))
             var sumSq = 0.0
@@ -111,13 +111,13 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
         let cols = mean.count
         var transformed = [[Double]](repeating: [Double](repeating: 0.0, count: cols), count: data.count)
         let negMean = mean.map { -$0 }
+        var shifted = [Double](repeating: 0.0, count: cols)
 
         for (r, row) in data.enumerated() {
             guard row.count == cols else {
                 throw PreprocessingError.dimensionMismatch(expected: cols, got: row.count)
             }
             // vDSP: (row - mean) / std  element-wise
-            var shifted = [Double](repeating: 0.0, count: cols)
             vDSP_vaddD(row, 1, negMean, 1, &shifted, 1, vDSP_Length(cols))
             vDSP_vdivD(std, 1, shifted, 1, &transformed[r], 1, vDSP_Length(cols))
         }

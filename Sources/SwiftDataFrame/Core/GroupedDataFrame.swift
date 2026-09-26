@@ -92,12 +92,16 @@ public struct GroupedDataFrame: Sendable {
     }
 
     /// Returns the mean of each numeric column per group.
+    /// Uses compensated Double summation before dividing by the non-null count.
+    /// Integer conversion and intermediate overflow retain Double semantics.
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func mean() -> DataFrame {
         aggregate(using: .mean)
     }
 
     /// Returns the sum of each numeric column per group.
+    /// Uses Neumaier compensation to reduce rounding loss; all-null groups return nil.
+    /// Results use Double, so large integers can lose precision and sums can overflow.
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func sum() -> DataFrame {
         aggregate(using: .sum)
@@ -367,17 +371,30 @@ public struct GroupedDataFrame: Sendable {
             return counts.map { Double($0) }
         case .sum, .mean:
             var sums = [Double](repeating: 0, count: groups.count)
+            var corrections = [Double](repeating: 0, count: groups.count)
             var counts = [Int](repeating: 0, count: groups.count)
             for row in ids.indices {
                 if let value = vals[row]?.doubleValue {
                     let group = ids[row]
-                    sums[group] += value
+                    let sum = sums[group]
+                    let next = sum + value
+                    if next.isFinite {
+                        // Recover the low-order contribution lost by the larger operand.
+                        corrections[group] += abs(sum) >= abs(value)
+                            ? (sum - next) + value
+                            : (value - next) + sum
+                    } else {
+                        // Keep IEEE infinity/NaN propagation without inf - inf in the correction.
+                        corrections[group] = 0
+                    }
+                    sums[group] = next
                     counts[group] += 1
                 }
             }
             return sums.indices.map { group in
                 guard counts[group] > 0 else { return nil }
-                return agg == .mean ? sums[group] / Double(counts[group]) : sums[group]
+                let total = sums[group] + corrections[group]
+                return agg == .mean ? total / Double(counts[group]) : total
             }
         case .min, .max:
             var result = [Double?](repeating: nil, count: groups.count)

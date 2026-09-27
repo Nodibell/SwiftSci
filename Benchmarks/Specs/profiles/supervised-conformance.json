@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "supervised-conformance",
+  "warmups": 1,
+  "samples": 2,
+  "batches": 1,
+  "timeout_seconds": 120,
+  "cases": [
+    {
+      "id": "wine-red-supervised-scale",
+      "dataset": "wine-red-supervised-scale",
+      "workload": "supervised-scale-v1"
+    },
+    {
+      "id": "wine-red-supervised-ols-cpu",
+      "dataset": "wine-red-supervised-ols-cpu",
+      "workload": "supervised-ols-cpu-v1"
+    },
+    {
+      "id": "wdbc-supervised-scale",
+      "dataset": "wdbc-supervised-scale",
+      "workload": "supervised-scale-v1"
+    }
+  ]
+}

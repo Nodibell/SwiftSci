@@ -59,7 +59,9 @@
         "kmeans-one-cpu",
         "kalman-fixed-cpu",
         "vector-cosine",
-        "kernel-shap"
+        "kernel-shap",
+        "supervised-scale",
+        "supervised-ols-cpu"
       ]
     },
     "scope": {

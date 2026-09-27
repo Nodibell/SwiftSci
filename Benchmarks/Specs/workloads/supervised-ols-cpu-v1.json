@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "supervised-ols-cpu-v1",
+  "operation": "supervised-ols-cpu",
+  "scope": "full-pipeline",
+  "output": "finite little-endian float64 sequence; complete output order declared in semantics",
+  "atol": 1e-08,
+  "rtol": 1e-09,
+  "semantics": "Frozen source-order train, validation and test indices; identical predictor rows stay together. Population StandardScaler fits training features only; standard deviation below 1e-12 becomes one. No targets or held-out features affect scaling. CPU float64. Decoding occurs outside timing; gathering splits, constructing, fitting, transforming and exporting occur inside. Both workers rebuild all model state for each repeat. Train-only OLS with intercept. Swift uses public CPU fit with analytical QR and possible gradient-descent fallback; Python uses SciPy gelsy. No same-algorithm speed claim. Output: means, scales, intercept, coefficients, predictions in train/validation/test order, training-target mean, then validation and test blocks each containing model RMSE/MAE/R2 and training-mean constant predictor RMSE/MAE/R2. No quality acceptance threshold has been selected from the test data. Metrics compare implementations numerically and report held-out performance; they do not establish suitability for deployment."
+}

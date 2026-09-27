@@ -1,0 +1,205 @@
+{
+  "schema_version": 1,
+  "source_columns": 32,
+  "id_column_1based": 1,
+  "target_column_1based": 2,
+  "target_encoding": {
+    "B": 0,
+    "M": 1
+  },
+  "target_meaning": {
+    "B": "benign",
+    "M": "malignant"
+  },
+  "predictors": [
+    {
+      "source_column_1based": 3,
+      "name": "mean_radius",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 4,
+      "name": "mean_texture",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 5,
+      "name": "mean_perimeter",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 6,
+      "name": "mean_area",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 7,
+      "name": "mean_smoothness",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 8,
+      "name": "mean_compactness",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 9,
+      "name": "mean_concavity",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 10,
+      "name": "mean_concave_points",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 11,
+      "name": "mean_symmetry",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 12,
+      "name": "mean_fractal_dimension",
+      "measure": "mean",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 13,
+      "name": "standard_error_radius",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 14,
+      "name": "standard_error_texture",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 15,
+      "name": "standard_error_perimeter",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 16,
+      "name": "standard_error_area",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 17,
+      "name": "standard_error_smoothness",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 18,
+      "name": "standard_error_compactness",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 19,
+      "name": "standard_error_concavity",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 20,
+      "name": "standard_error_concave_points",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 21,
+      "name": "standard_error_symmetry",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 22,
+      "name": "standard_error_fractal_dimension",
+      "measure": "standard_error",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 23,
+      "name": "worst_radius",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 24,
+      "name": "worst_texture",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 25,
+      "name": "worst_perimeter",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 26,
+      "name": "worst_area",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 27,
+      "name": "worst_smoothness",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 28,
+      "name": "worst_compactness",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 29,
+      "name": "worst_concavity",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 30,
+      "name": "worst_concave_points",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 31,
+      "name": "worst_symmetry",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    },
+    {
+      "source_column_1based": 32,
+      "name": "worst_fractal_dimension",
+      "measure": "worst",
+      "unit": "not specified by UCI dataset metadata"
+    }
+  ],
+  "worst_definition": "Mean of the three largest values.",
+  "exclude_from_predictors": [
+    "source_id",
+    "diagnosis",
+    "source_line_1based",
+    "split",
+    "target_malignant"
+  ],
+  "source_values": "Retain original published numeric values; no global preprocessing."
+}

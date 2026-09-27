@@ -10,6 +10,8 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Tools"))
 from contracts import read_json, write_json, require, verified_file, validate_values
 from controlled_api_workloads import OPERATIONS as CONTROLLED_API_OPERATIONS, prepare as prepare_controlled, execute as execute_controlled
+from supervised_fixtures import OPERATIONS as SUPERVISED_OPERATIONS
+from supervised_workloads import prepare as prepare_supervised, execute as execute_supervised
 from search_workloads import vector_cosine, canonical_cosine, kernel_shap
 import numpy as np
 import pandas as pd
@@ -53,7 +55,9 @@ try:
     controlled_input = None
     if request["dataset_kind"] == "numerical-fixture-v1":
         numerical = validate_input(read_json(request["input_path"]), op, request["rows"])
-        if op in CONTROLLED_API_OPERATIONS:
+        if op in SUPERVISED_OPERATIONS:
+            controlled_input = prepare_supervised(numerical)
+        elif op in CONTROLLED_API_OPERATIONS:
             controlled_input = prepare_controlled(numerical)
         elif op in ["vector-cosine", "kernel-shap"]:
             controlled_input = numerical
@@ -123,6 +127,8 @@ try:
     anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
 
     def execute():
+        if op in SUPERVISED_OPERATIONS:
+            return execute_supervised(controlled_input)
         if op in CONTROLLED_API_OPERATIONS:
             return execute_controlled(controlled_input)
         if op == "vector-cosine":

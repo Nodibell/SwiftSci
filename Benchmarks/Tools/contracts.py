@@ -108,6 +108,8 @@ def validate_values(actual, expected, atol, rtol):
 
 WORKLOADS = {
     'linear-fixed-cpu', 'logistic-fixed-cpu', 'kmeans-one-cpu', 'kalman-fixed-cpu', 'vector-cosine', 'kernel-shap',
+    "supervised-scale",
+    "supervised-ols-cpu",
     "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu",
     "h2o-q1", "h2o-q2", "h2o-q3", "h2o-q4", "h2o-q5", "wine-pipeline",
     "welch",
@@ -196,6 +198,7 @@ def load_profile(root, name):
             "numerical-binary64",
             "model-conformance",
             "controlled-conformance",
+            "supervised-conformance",
         ],
         "Unknown profile",
     )

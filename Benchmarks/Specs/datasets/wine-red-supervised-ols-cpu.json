@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "wine-red-supervised-ols-cpu",
+  "kind": "numerical-fixture-v1",
+  "rows": 1599,
+  "sha256": "f966120fab67a20a764de2860f8fd74e07c5c18cc24f4605d0c52d1894389419",
+  "size_bytes": 281936,
+  "source": "https://archive.ics.uci.edu/dataset/186/wine+quality",
+  "license": "CC BY 4.0; see Benchmarks/Fixtures/supervised/README.md",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/supervised/inputs/wine-red-supervised-ols-cpu.json",
+  "source_fixture": "Benchmarks/Fixtures/supervised/sources.lock.json",
+  "source_sha256": "cead2074a89bdf755a2490ea8265f8de63df615f3ccd2cc4347364e1b60e8344",
+  "source_size_bytes": 750,
+  "reference_fixture": "Benchmarks/Fixtures/supervised/references/wine-red-supervised-ols-cpu.json",
+  "reference_sha256": "64e9ce0ae28e51877be7d47076b5d75a8ab76129a37d1414960de7e3e077b923",
+  "reference_size_bytes": 41931,
+  "reference_basis": "supervised-reference-v1",
+  "operation": "supervised-ols-cpu",
+  "tolerances": {
+    "atol": 1e-08,
+    "rtol": 1e-09
+  }
+}

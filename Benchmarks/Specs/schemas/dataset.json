@@ -191,7 +191,9 @@
         "kmeans-one-cpu",
         "kalman-fixed-cpu",
         "vector-cosine",
-        "kernel-shap"
+        "kernel-shap",
+        "supervised-scale",
+        "supervised-ols-cpu"
       ]
     },
     "reference_basis": {
@@ -199,7 +201,8 @@
         "nist-decimal-v1",
         "binary64-v1",
         "exact-rational-v1",
-        "controlled-reference-v1"
+        "controlled-reference-v1",
+        "supervised-reference-v1"
       ]
     },
     "reference_sha256": {

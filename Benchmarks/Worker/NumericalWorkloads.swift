@@ -15,6 +15,7 @@ private struct ANOVAInput: Decodable {
 }
 
 enum NumericalInputs {
+  case supervised(SupervisedFixtureInput)
   case ols(features: [[Double]], targets: [Double])
   case anova(groups: [[Double]])
   case pca(PCAFixtureInput)
@@ -29,12 +30,13 @@ enum NumericalInputs {
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = ["ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
+    let isNumerical = ["supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
     guard isNumerical else { return nil }
     switch operation {
+    case "supervised-scale", "supervised-ols-cpu": return .supervised(try SupervisedFixtureInput.decode(data, operation: operation, rows: rows))
     case "linear-fixed-cpu": return .fixedLinear(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))
     case "logistic-fixed-cpu": return .fixedLogistic(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))
     case "kmeans-one-cpu": return .oneCluster(try ControlledKMeansInput.decode(data, rows: rows))
@@ -85,6 +87,7 @@ enum NumericalInputs {
 extension Worker {
   @inline(never) static func executeNumerical(_ input: NumericalInputs) async throws -> Output {
     switch input {
+    case .supervised(let input): return try await executeSupervised(input)
     case .fixedLinear(let input): return try await executeFixedLinear(input)
     case .fixedLogistic(let input): return try await executeFixedLogistic(input)
     case .oneCluster(let input): return try await executeOneCluster(input)

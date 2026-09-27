@@ -5,7 +5,9 @@ from contracts import fields, positive, require, read_json, repository_file, ver
 
 from controlled_fixtures import OPERATIONS as CONTROLLED_OPERATIONS, validate_input as validate_controlled, output_count
 
-OPERATIONS = {"ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS
+from supervised_fixtures import OPERATIONS as SUPERVISED_OPERATIONS, validate_input as validate_supervised, output_count as supervised_output_count
+
+OPERATIONS = {"ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS
 
 
 def finite_vector(values, name):
@@ -15,13 +17,15 @@ def finite_vector(values, name):
 
 def validate_manifest(manifest):
     require(manifest.get("operation") in OPERATIONS, "Unknown numerical fixture operation")
+    supervised = manifest.get("operation") in SUPERVISED_OPERATIONS
+    require(supervised == (manifest.get("reference_basis") == "supervised-reference-v1"), "Supervised reference basis mismatch")
     controlled = manifest.get("operation") in CONTROLLED_OPERATIONS
     require(controlled == (manifest.get("reference_basis") == "controlled-reference-v1"), "Controlled reference basis mismatch")
     exact = manifest.get("operation") in ("pca-cpu", "multinomial-nb-cpu")
     require(exact == (manifest.get("reference_basis") == "exact-rational-v1"), "Reference basis/operation mismatch")
     for key in ["fixture", "source_fixture", "reference_fixture"]:
         require(isinstance(manifest.get(key), str) and manifest[key], f"Missing {key}")
-    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1"), "Unknown reference basis")
+    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1", "supervised-reference-v1"), "Unknown reference basis")
     sha = manifest.get("source_sha256", "")
     require(isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha), "Invalid numerical source checksum")
     positive(manifest.get("source_size_bytes"), "source_size_bytes")
@@ -34,6 +38,8 @@ def validate_manifest(manifest):
 
 
 def validate_input(payload, operation, rows):
+    if operation in SUPERVISED_OPERATIONS:
+        return validate_supervised(payload, operation, rows)
     if operation in CONTROLLED_OPERATIONS:
         return validate_controlled(payload, operation, rows)
     if operation == "ols-cpu":
@@ -82,6 +88,11 @@ def validate_input(payload, operation, rows):
 
 def source_and_input(root, manifest):
     verified_file(repository_file(root, manifest["source_fixture"]), manifest["source_sha256"], manifest["source_size_bytes"])
+    if manifest["operation"] in SUPERVISED_OPERATIONS:
+        lock_path = repository_file(root, manifest["source_fixture"])
+        for source in read_json(lock_path)["sources"]:
+            relative = str((lock_path.parent / source["path"]).relative_to(root))
+            verified_file(repository_file(root, relative), source["sha256"], source["bytes"])
     path = repository_file(root, manifest["fixture"])
     content = verified_file(path, manifest["sha256"], manifest["size_bytes"])
     validate_input(read_json(path), manifest["operation"], manifest["rows"])
@@ -95,10 +106,10 @@ def expected_values(root, manifest, payload):
     require(reference["inputIdentity"] == {"sha256": manifest["sha256"], "bytes": manifest["size_bytes"]}, "Reference input identity mismatch")
     require(reference["source"]["sha256"] == manifest["source_sha256"], "Reference source mismatch")
     require(reference["model"]["observations"] == manifest["rows"], "Reference row count mismatch")
-    if manifest["reference_basis"] == "controlled-reference-v1":
+    if manifest["reference_basis"] in ("controlled-reference-v1", "supervised-reference-v1"):
         require(reference["operation"] == manifest["operation"], "Reference operation mismatch")
         values = reference["independentReference"]["values"]
-        require(len(values) == output_count(payload), "Controlled output shape mismatch")
+        require(len(values) == (supervised_output_count(payload) if manifest["operation"] in SUPERVISED_OPERATIONS else output_count(payload)), "Controlled output shape mismatch")
         finite_vector(values, "controlled answers")
         return values
     if manifest["reference_basis"] == "exact-rational-v1":

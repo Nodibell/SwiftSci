@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "wine-red-supervised-scale",
+  "kind": "numerical-fixture-v1",
+  "rows": 1599,
+  "sha256": "025af70d1def350a89ba580be6df146cc2cc82262448957999f49a30909b376b",
+  "size_bytes": 281934,
+  "source": "https://archive.ics.uci.edu/dataset/186/wine+quality",
+  "license": "CC BY 4.0; see Benchmarks/Fixtures/supervised/README.md",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/supervised/inputs/wine-red-supervised-scale.json",
+  "source_fixture": "Benchmarks/Fixtures/supervised/sources.lock.json",
+  "source_sha256": "cead2074a89bdf755a2490ea8265f8de63df615f3ccd2cc4347364e1b60e8344",
+  "source_size_bytes": 750,
+  "reference_fixture": "Benchmarks/Fixtures/supervised/references/wine-red-supervised-scale.json",
+  "reference_sha256": "248ccfe049ea1b100d67c102baf0a3ad4a7deab49fd9904f76aaae5cc8064904",
+  "reference_size_bytes": 472231,
+  "reference_basis": "supervised-reference-v1",
+  "operation": "supervised-scale",
+  "tolerances": {
+    "atol": 1e-08,
+    "rtol": 1e-09
+  }
+}

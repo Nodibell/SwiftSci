@@ -1,0 +1,20 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "neural-cpu-public-loader",
+      "id": "neural-cpu-public-loader",
+      "workload": "decoder-fixed-f32-v1"
+    },
+    {
+      "dataset": "neural-gpu-public-loader",
+      "id": "neural-gpu-public-loader",
+      "workload": "decoder-fixed-f32-v1"
+    }
+  ],
+  "id": "neural-loader-conformance",
+  "samples": 2,
+  "schema_version": 1,
+  "timeout_seconds": 120,
+  "warmups": 1
+}

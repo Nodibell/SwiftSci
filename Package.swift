@@ -436,7 +436,9 @@ let package = Package(
         ),
         .executableTarget(
             name: "SwiftSciBenchmarkWorker",
-            dependencies: ["SwiftSciBenchmarkSupport", "SwiftDataFrame", "SwiftStats", "SwiftPreprocessing", "SwiftOptimize", "SwiftNLP", "SwiftDatabase", "SwiftAgent", "SwiftVision", "SwiftML", "SwiftCluster", "SwiftForecast", "SwiftExplain"],
+            dependencies: ["SwiftSciBenchmarkSupport", "SwiftDataFrame", "SwiftStats", "SwiftPreprocessing", "SwiftOptimize", "SwiftNLP", "SwiftDatabase", "SwiftAgent", "SwiftVision", "SwiftML", "SwiftCluster", "SwiftForecast", "SwiftExplain", "SwiftLLM",
+                .product(name: "MLX", package: "mlx-swift"),
+                .product(name: "MLXNN", package: "mlx-swift")],
             path: "Benchmarks/Worker",
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings

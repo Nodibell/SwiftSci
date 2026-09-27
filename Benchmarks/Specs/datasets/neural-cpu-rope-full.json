@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/neural/inputs/neural-cpu-rope-full.json",
+  "generator_version": 1,
+  "id": "neural-cpu-rope-full",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "decoder-fixed-f32",
+  "reference_basis": "neural-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/neural/references/neural-cpu-rope-full.json",
+  "reference_sha256": "29afff4d4aea5d1e3d0832b80e9573133882c80e4741cd04c56f6c680bc9b00b",
+  "reference_size_bytes": 1944,
+  "rows": 8,
+  "schema_version": 1,
+  "sha256": "bbb41f09a003dc35ea8e24c645e8c01457d0474d308188f18194306167813a7a",
+  "size_bytes": 11500,
+  "source": "Original fixed tensors; see Benchmarks/Fixtures/neural/README.md",
+  "source_fixture": "Benchmarks/Fixtures/neural/sources.lock.json",
+  "source_sha256": "624ee485b358c0385ab0b8cb31d143507ab026b4285b81258ddf534d937a2e97",
+  "source_size_bytes": 533,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  }
+}

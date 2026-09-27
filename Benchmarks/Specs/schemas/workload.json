@@ -63,7 +63,8 @@
         "supervised-scale",
         "supervised-ols-cpu",
         "supervised-logistic-cpu",
-        "dataframe-semantics"
+        "dataframe-semantics",
+        "decoder-fixed-f32"
       ]
     },
     "scope": {

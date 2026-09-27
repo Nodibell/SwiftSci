@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/neural/inputs/neural-gpu-learned-cached.json",
+  "generator_version": 1,
+  "id": "neural-gpu-learned-cached",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "decoder-fixed-f32",
+  "reference_basis": "neural-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/neural/references/neural-gpu-learned-cached.json",
+  "reference_sha256": "95d9fb62d2b04a86791d8175d03635de9e79c7f38f65ab9e49d62dba9bc22064",
+  "reference_size_bytes": 1960,
+  "rows": 8,
+  "schema_version": 1,
+  "sha256": "164a252ed39ce8404ec952d08bb8ddd4489a9817fc733918548006bd4ab2f4cf",
+  "size_bytes": 11505,
+  "source": "Original fixed tensors; see Benchmarks/Fixtures/neural/README.md",
+  "source_fixture": "Benchmarks/Fixtures/neural/sources.lock.json",
+  "source_sha256": "624ee485b358c0385ab0b8cb31d143507ab026b4285b81258ddf534d937a2e97",
+  "source_size_bytes": 533,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  }
+}

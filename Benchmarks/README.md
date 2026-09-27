@@ -126,3 +126,7 @@ The `supervised-conformance` profile adds frozen, duplicate-safe train/validatio
 ## Dataframe semantic conformance
 
 The `dataframe-conformance` profile contains 24 bounded cases for exact integer handling, null versus NaN, stable sorting, grouping, functional replacement and logical matrix exports. Read the [input and result contract](Fixtures/dataframe/README.md) before interpreting the pandas comparison. It uses explicit compatibility conversions and reports diagnostic timings only. Prepare and run it with the same commands as the other profiles, substituting `dataframe-conformance` as the profile name.
+
+## Fixed neural inference
+
+The `neural-conformance` profile checks fixed Float32 decoder logits on explicitly selected MLX CPU and GPU paths. `neural-cpu-conformance` contains its CPU subset. The separate `neural-loader-conformance` profile checks complete parameter replacement through the public loader and retains failures. See the [fixed decoder contract](Fixtures/neural/README.md) for independent references, cache rules, device requirements and limits. The NumPy comparator runs on CPU; these diagnostic timings do not support matched-backend speed claims.

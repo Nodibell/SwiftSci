@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/neural/inputs/neural-gpu-rope-cached.json",
+  "generator_version": 1,
+  "id": "neural-gpu-rope-cached",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "decoder-fixed-f32",
+  "reference_basis": "neural-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/neural/references/neural-gpu-rope-cached.json",
+  "reference_sha256": "a9aba90847534878f24eaeb91a901ca3fb51aae57d46b1b0a5387007c26c6ade",
+  "reference_size_bytes": 1980,
+  "rows": 8,
+  "schema_version": 1,
+  "sha256": "5de4705caa8332ab8495bdcd8653086fa26014f1bb026911f7200e96b9ba6453",
+  "size_bytes": 11502,
+  "source": "Original fixed tensors; see Benchmarks/Fixtures/neural/README.md",
+  "source_fixture": "Benchmarks/Fixtures/neural/sources.lock.json",
+  "source_sha256": "624ee485b358c0385ab0b8cb31d143507ab026b4285b81258ddf534d937a2e97",
+  "source_size_bytes": 533,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  }
+}

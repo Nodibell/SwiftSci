@@ -195,7 +195,8 @@
         "supervised-scale",
         "supervised-ols-cpu",
         "supervised-logistic-cpu",
-        "dataframe-semantics"
+        "dataframe-semantics",
+        "decoder-fixed-f32"
       ]
     },
     "reference_basis": {
@@ -205,7 +206,8 @@
         "exact-rational-v1",
         "controlled-reference-v1",
         "supervised-reference-v1",
-        "dataframe-reference-v1"
+        "dataframe-reference-v1",
+        "neural-reference-v1"
       ]
     },
     "reference_sha256": {

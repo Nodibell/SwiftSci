@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "bytes": 4774,
+      "path": "generate.py",
+      "sha256": "e904e21195910171ed4b2343365b247f7504b97d598758c25e7ab5d888474c9c"
+    },
+    {
+      "bytes": 3930,
+      "path": "../../Tools/neural_reference.py",
+      "sha256": "18982dd4e8ed626e338cf856e4c9b16ed96f7f8b96371ed058872f7574585551"
+    },
+    {
+      "bytes": 112,
+      "path": "../../Python/requirements-standardized.txt",
+      "sha256": "fc9a7924fc71f890e004d6a60173d171c9577a550a575abe7f15502af357512c"
+    }
+  ]
+}

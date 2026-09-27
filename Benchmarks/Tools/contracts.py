@@ -107,6 +107,7 @@ def validate_values(actual, expected, atol, rtol):
 
 
 WORKLOADS = {
+    "decoder-fixed-f32",
     "dataframe-semantics",
     'linear-fixed-cpu', 'logistic-fixed-cpu', 'kmeans-one-cpu', 'kalman-fixed-cpu', 'vector-cosine', 'kernel-shap',
     "supervised-logistic-cpu",
@@ -202,6 +203,9 @@ def load_profile(root, name):
             "controlled-conformance",
             "supervised-conformance",
             "dataframe-conformance",
+            "neural-conformance",
+            "neural-cpu-conformance",
+            "neural-loader-conformance",
         ],
         "Unknown profile",
     )

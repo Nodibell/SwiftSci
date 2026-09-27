@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/neural/inputs/neural-gpu-public-loader.json",
+  "generator_version": 1,
+  "id": "neural-gpu-public-loader",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "decoder-fixed-f32",
+  "reference_basis": "neural-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/neural/references/neural-gpu-public-loader.json",
+  "reference_sha256": "46a91afaffe3e59fa00b7e0ada45eb8c5f3cb6a76a47eee5b10aeea18a02b067",
+  "reference_size_bytes": 1944,
+  "rows": 8,
+  "schema_version": 1,
+  "sha256": "e659107ca9deef66b3aea8d0cc01de5fae18bf9d63641358f12aea943b180467",
+  "size_bytes": 11507,
+  "source": "Original fixed tensors; see Benchmarks/Fixtures/neural/README.md",
+  "source_fixture": "Benchmarks/Fixtures/neural/sources.lock.json",
+  "source_sha256": "624ee485b358c0385ab0b8cb31d143507ab026b4285b81258ddf534d937a2e97",
+  "source_size_bytes": 533,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  }
+}

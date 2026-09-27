@@ -1,0 +1,35 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "neural-cpu-learned-full",
+      "id": "neural-cpu-learned-full",
+      "workload": "decoder-fixed-f32-v1"
+    },
+    {
+      "dataset": "neural-cpu-learned-cached",
+      "id": "neural-cpu-learned-cached",
+      "workload": "decoder-fixed-f32-v1"
+    },
+    {
+      "dataset": "neural-cpu-rope-full",
+      "id": "neural-cpu-rope-full",
+      "workload": "decoder-fixed-f32-v1"
+    },
+    {
+      "dataset": "neural-cpu-rope-cached",
+      "id": "neural-cpu-rope-cached",
+      "workload": "decoder-fixed-f32-v1"
+    },
+    {
+      "dataset": "neural-cpu-zero-projections",
+      "id": "neural-cpu-zero-projections",
+      "workload": "decoder-fixed-f32-v1"
+    }
+  ],
+  "id": "neural-cpu-conformance",
+  "samples": 2,
+  "schema_version": 1,
+  "timeout_seconds": 120,
+  "warmups": 1
+}

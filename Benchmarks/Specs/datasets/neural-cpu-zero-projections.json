@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/neural/inputs/neural-cpu-zero-projections.json",
+  "generator_version": 1,
+  "id": "neural-cpu-zero-projections",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "decoder-fixed-f32",
+  "reference_basis": "neural-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/neural/references/neural-cpu-zero-projections.json",
+  "reference_sha256": "519178538895f1093abf4fdf644786e679391b58c1db19f7bfb87f638306bf1e",
+  "reference_size_bytes": 790,
+  "rows": 4,
+  "schema_version": 1,
+  "sha256": "6f951b5d093f6964d6ad00efde2ce747351c025acdcf9722dd46486d227148e4",
+  "size_bytes": 9454,
+  "source": "Original fixed tensors; see Benchmarks/Fixtures/neural/README.md",
+  "source_fixture": "Benchmarks/Fixtures/neural/sources.lock.json",
+  "source_sha256": "624ee485b358c0385ab0b8cb31d143507ab026b4285b81258ddf534d937a2e97",
+  "source_size_bytes": 533,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  }
+}

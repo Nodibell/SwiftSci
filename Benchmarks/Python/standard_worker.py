@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats, linalg
 from numerical_fixtures import validate_input
+from neural_workloads import prepare as prepare_neural, execute as execute_neural
 from dataframe_semantic_workloads import prepare as prepare_dataframe, execute as execute_dataframe
 from api_workloads import OPERATIONS as API_OPERATIONS, prepare as prepare_api, execute as execute_api
 import sqlite3
@@ -56,7 +57,9 @@ try:
     controlled_input = None
     if request["dataset_kind"] == "numerical-fixture-v1":
         numerical = validate_input(read_json(request["input_path"]), op, request["rows"])
-        if op == "dataframe-semantics":
+        if op == "decoder-fixed-f32":
+            controlled_input = prepare_neural(numerical)
+        elif op == "dataframe-semantics":
             controlled_input = prepare_dataframe(numerical)
         elif op in SUPERVISED_OPERATIONS:
             controlled_input = prepare_supervised(numerical)
@@ -130,6 +133,8 @@ try:
     anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
 
     def execute():
+        if op == "decoder-fixed-f32":
+            return execute_neural(controlled_input)
         if op == "dataframe-semantics":
             return execute_dataframe(controlled_input)
         if op in SUPERVISED_OPERATIONS:

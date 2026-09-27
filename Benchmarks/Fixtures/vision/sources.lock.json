@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "bytes": 4046,
+      "path": "generate.py",
+      "sha256": "6eca61b08daced4351d76160c39c9b4b3769c37f29f9ab3e69abb6765ea6a4da"
+    },
+    {
+      "bytes": 1409,
+      "path": "../../Tools/vision_reference.py",
+      "sha256": "226f9be8e22037fc5f490c3f0b91a506b56986e6a6b2e7b30a7d604ae5c199a3"
+    },
+    {
+      "bytes": 2750,
+      "path": "../../Tools/vision_fixtures.py",
+      "sha256": "8ea9e782ed15a62eae4e1c3712cb8452e5c6285c67d644954f04979ca54fe2ba"
+    },
+    {
+      "bytes": 1524,
+      "path": "../../Python/vision_workloads.py",
+      "sha256": "2227e1f45ab0012a1a223c418f53706ae73ed673a1d911df7426ab1ffa99e936"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "channels": 1,
+  "device": "cpu",
+  "encoding": "normalized-f32",
+  "height": 5,
+  "layout": "CHW",
+  "operation": "vision-letterbox-cpu",
+  "padding_color": 0.125,
+  "pixels": [
+    0.0,
+    0.09375,
+    0.21875,
+    0.3125,
+    0.4375,
+    0.53125,
+    0.65625,
+    0.75,
+    0.875,
+    0.96875
+  ],
+  "target_height": 5,
+  "target_width": 5,
+  "width": 2
+}

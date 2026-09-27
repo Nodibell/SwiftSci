@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/vision/inputs/vision-cpu-rgb-down-asymmetric.json",
+  "generator_version": 1,
+  "id": "vision-cpu-rgb-down-asymmetric",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "vision-letterbox-cpu",
+  "reference_basis": "vision-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/vision/references/vision-cpu-rgb-down-asymmetric.json",
+  "reference_sha256": "1ff15b8daf50fc1f30d8e4d07cbe1db96f78b3e4ce807ea2598284b665fd156c",
+  "reference_size_bytes": 1709,
+  "rows": 21,
+  "schema_version": 1,
+  "sha256": "6f1d13eb89df07beafdecb6d615c998e18ecfd7001291952310e051b6e6bed13",
+  "size_bytes": 867,
+  "source": "Original images; see Benchmarks/Fixtures/vision/README.md",
+  "source_fixture": "Benchmarks/Fixtures/vision/sources.lock.json",
+  "source_sha256": "f23ea73fcda237a61896ba1749f7bed45761e70b3a88e17cdf09c3dfd48d31de",
+  "source_size_bytes": 689,
+  "tolerances": {
+    "atol": 2e-06,
+    "rtol": 2e-06
+  }
+}

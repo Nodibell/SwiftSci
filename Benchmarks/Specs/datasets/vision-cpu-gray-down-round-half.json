@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/vision/inputs/vision-cpu-gray-down-round-half.json",
+  "generator_version": 1,
+  "id": "vision-cpu-gray-down-round-half",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "vision-letterbox-cpu",
+  "reference_basis": "vision-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/vision/references/vision-cpu-gray-down-round-half.json",
+  "reference_sha256": "7f7a66815143b04a57de9140cff851f318bfa129bb851e436fc432436754e384",
+  "reference_size_bytes": 1065,
+  "rows": 40,
+  "schema_version": 1,
+  "sha256": "2da89c4a448bf9d4a414b40bcaecb6229af116b1b1281a6dbfbf57dca91cc833",
+  "size_bytes": 645,
+  "source": "Original images; see Benchmarks/Fixtures/vision/README.md",
+  "source_fixture": "Benchmarks/Fixtures/vision/sources.lock.json",
+  "source_sha256": "f23ea73fcda237a61896ba1749f7bed45761e70b3a88e17cdf09c3dfd48d31de",
+  "source_size_bytes": 689,
+  "tolerances": {
+    "atol": 2e-06,
+    "rtol": 2e-06
+  }
+}

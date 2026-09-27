@@ -1,0 +1,9 @@
+{
+  "columns": 8,
+  "device": "gpu",
+  "dtype": "float32",
+  "operation": "dataframe-model-sweep",
+  "recipe": "dyadic-v1",
+  "rows": 1024,
+  "stage": "conversion"
+}

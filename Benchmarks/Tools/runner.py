@@ -220,7 +220,7 @@ def plan(root, profile, engines, swift_worker, python):
         oracle_sha256=identity(
             {
                 name: digest((root / "Benchmarks/Tools" / name).read_bytes())
-                for name in ["datasets.py", "numerical_reference.py", "public_datasets.py", "numerical_fixtures.py", "controlled_fixtures.py", "supervised_fixtures.py", "classification_reference.py", "dataframe_fixtures.py", "neural_fixtures.py", "neural_reference.py"]
+                for name in ["datasets.py", "numerical_reference.py", "public_datasets.py", "numerical_fixtures.py", "controlled_fixtures.py", "supervised_fixtures.py", "classification_reference.py", "dataframe_fixtures.py", "neural_fixtures.py", "neural_reference.py", "vision_fixtures.py", "vision_reference.py", "boundary_fixtures.py", "boundary_reference.py", "boundary_sweep.py"]
             }
         ),
     )
@@ -357,6 +357,11 @@ def run(root, resolved, destination, purpose="benchmark"):
                     event.update(status="passed", result=result)
                 except (OSError, ValueError, subprocess.TimeoutExpired) as error:
                     event["error"] = str(error)
+                    if response_path.is_file():
+                        try:
+                            event["failed_result"] = read_json(response_path)
+                        except (OSError, ValueError):
+                            pass
                 run["events"].append(event)
                 with (destination / "events.jsonl").open("a") as log:
                     log.write(json.dumps(event, allow_nan=False) + "\n")

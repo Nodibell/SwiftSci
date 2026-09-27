@@ -1,0 +1,50 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "vision-cpu-rgb-odd-identity",
+      "id": "vision-cpu-rgb-odd-identity",
+      "workload": "vision-letterbox-cpu-v1"
+    },
+    {
+      "dataset": "vision-cpu-gray-odd-identity",
+      "id": "vision-cpu-gray-odd-identity",
+      "workload": "vision-letterbox-cpu-v1"
+    },
+    {
+      "dataset": "vision-cpu-rgb-wide-odd-padding",
+      "id": "vision-cpu-rgb-wide-odd-padding",
+      "workload": "vision-letterbox-cpu-v1"
+    },
+    {
+      "dataset": "vision-cpu-gray-tall-odd-padding",
+      "id": "vision-cpu-gray-tall-odd-padding",
+      "workload": "vision-letterbox-cpu-v1"
+    },
+    {
+      "dataset": "vision-cpu-rgb-up-round-half",
+      "id": "vision-cpu-rgb-up-round-half",
+      "workload": "vision-letterbox-cpu-v1"
+    },
+    {
+      "dataset": "vision-cpu-gray-down-round-half",
+      "id": "vision-cpu-gray-down-round-half",
+      "workload": "vision-letterbox-cpu-v1"
+    },
+    {
+      "dataset": "vision-cpu-rgb-up-asymmetric",
+      "id": "vision-cpu-rgb-up-asymmetric",
+      "workload": "vision-letterbox-cpu-v1"
+    },
+    {
+      "dataset": "vision-cpu-rgb-down-asymmetric",
+      "id": "vision-cpu-rgb-down-asymmetric",
+      "workload": "vision-letterbox-cpu-v1"
+    }
+  ],
+  "id": "vision-conformance",
+  "samples": 2,
+  "schema_version": 1,
+  "timeout_seconds": 60,
+  "warmups": 1
+}

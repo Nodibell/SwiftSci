@@ -22,7 +22,7 @@ concurrency:
 jobs:
   verify:
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -41,70 +41,22 @@ jobs:
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile smoke
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile certification
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py build
-      - name: Verify both engines
+      - name: Reconcile legacy coverage
+        run: Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py inventory
+      - name: Run every CPU conformance profile and retain all failures
         run: |
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile smoke \
-            --engines swiftsci,pandas \
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/acceptance.py \
+            --tier cpu \
             --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
             --python Benchmarks/.venv-standardized/bin/python \
-            --output Benchmarks/Runs/ci-smoke
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-smoke
-      - name: Verify migrated core cases
-        run: |
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py inventory
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile migration-smoke
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile migration-smoke \
-            --engines swiftsci,pandas \
-            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
-            --python Benchmarks/.venv-standardized/bin/python \
-            --output Benchmarks/Runs/ci-migration
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-migration
-      - name: Verify H2O-derived grouping and pinned real-data pipeline
-        run: |
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile public-smoke
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile public-smoke \
-            --engines swiftsci,pandas \
-            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
-            --python Benchmarks/.venv-standardized/bin/python \
-            --output Benchmarks/Runs/ci-public
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-public
-      - name: Verify exact dataframe semantics and matrix exports
-        run: |
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile dataframe-conformance
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile dataframe-conformance \
-            --engines swiftsci,pandas \
-            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
-            --python Benchmarks/.venv-standardized/bin/python \
-            --output Benchmarks/Runs/ci-dataframe
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-dataframe
-      - name: Verify fixed decoder CPU inference
-        run: |
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile neural-cpu-conformance
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile neural-cpu-conformance \
-            --engines swiftsci,pandas \
-            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
-            --python Benchmarks/.venv-standardized/bin/python \
-            --output Benchmarks/Runs/ci-neural-cpu
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-neural-cpu
-      - name: Check every NIST univariate reference dataset
-        run: |
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py certify --engines swiftsci,pandas \
-            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
-            --python Benchmarks/.venv-standardized/bin/python \
-            --output Benchmarks/Runs/ci-nist
-          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-nist
+            --output Benchmarks/Runs/ci-acceptance
       - name: Retain run evidence and build log
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: benchmark-conformance-${{ github.sha }}
           path: |
-            Benchmarks/Runs/ci-smoke/
-            Benchmarks/Runs/ci-nist/
-            Benchmarks/Runs/ci-migration/
-            Benchmarks/Runs/ci-public/
-            Benchmarks/Runs/ci-dataframe/
-            Benchmarks/Runs/ci-neural-cpu/
+            Benchmarks/Runs/ci-acceptance/
             ~/Library/Caches/SwiftSci/standardized-benchmarks/build.log
           retention-days: 30
           if-no-files-found: warn

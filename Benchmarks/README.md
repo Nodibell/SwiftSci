@@ -130,3 +130,24 @@ The `dataframe-conformance` profile contains 24 bounded cases for exact integer 
 ## Fixed neural inference
 
 The `neural-conformance` profile checks fixed Float32 decoder logits on explicitly selected MLX CPU and GPU paths. `neural-cpu-conformance` contains its CPU subset. The separate `neural-loader-conformance` profile checks complete parameter replacement through the public loader and retains failures. See the [fixed decoder contract](Fixtures/neural/README.md) for independent references, cache rules, device requirements and limits. The NumPy comparator runs on CPU; these diagnostic timings do not support matched-backend speed claims.
+
+
+## Complete suite acceptance
+
+`Specs/acceptance.json` assigns every canonical profile to an execution tier and names deferred coverage. `cpu` runs bounded CPU conformance, including numerical, model and supervised cases. `apple` also runs explicit Metal and loader diagnostics. `sweep` runs repeated size profiles and the bounded conversion/computation sweeps. `all` runs every profile. The inventory command separately preserves the disposition of every legacy registration; a replacement contract does not validate historical timing results.
+
+```sh
+Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/acceptance.py \
+  --tier all \
+  --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
+  --python Benchmarks/.venv-standardized/bin/python \
+  --output Benchmarks/Runs/acceptance-unique-name
+```
+
+Build the worker first with `bench.py build`. Use a new output directory for each acceptance run. The command prepares and executes each profile even after another profile fails. It returns nonzero if any profile fails. The report distinguishes complete recorded worker failures from missing evidence, crashes and setup failures. It never converts a known failure into a passing certificate. The source identity, tracked fixture/specification identity, full worker requests, independently reconstructed expected bytes, responses and certificate hashes are checked throughout the run. Keep the checkout unchanged during acceptance.
+
+The GitHub workflow runs the CPU tier and uploads its full output even on failure. Explicit Metal and larger sweeps run locally on an identified Apple silicon host through the same command. Hosted GPU execution and automatic access to a private Mac are not assumed. Existing numerical or loader failures can keep the workflow red until the separate production repair work passes those contracts.
+
+[Vision fixtures](Fixtures/vision/README.md) cover normalized image layout, grayscale expansion, analytic constant resize and padding. [Boundary fixtures](Fixtures/boundary/README.md) cover frame-to-tensor row alignment, dtype, complete affine arithmetic and mutation isolation. They also define 54 bounded size/stage cases and the sweep report command. Existing public-data cases cover CSV-to-feature/target workflows, and migration profiles retain independent Parquet validation.
+
+This completes the declared testing infrastructure scope, not certification of every library API. Arbitrary image interpolation, trained checkpoints and quality targets, unmatched training algorithms, long-context inference and physical zero-copy claims remain explicit research or future contracts. Passing records are workload conformance evidence, not NIST endorsement or third-party accreditation. Establish a formal performance baseline only after production repairs pass the relevant complete suite.

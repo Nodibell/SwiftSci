@@ -64,7 +64,10 @@
         "supervised-ols-cpu",
         "supervised-logistic-cpu",
         "dataframe-semantics",
-        "decoder-fixed-f32"
+        "decoder-fixed-f32",
+        "vision-letterbox-cpu",
+        "dataframe-model",
+        "dataframe-model-sweep"
       ]
     },
     "scope": {

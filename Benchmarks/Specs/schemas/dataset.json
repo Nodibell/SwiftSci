@@ -196,7 +196,10 @@
         "supervised-ols-cpu",
         "supervised-logistic-cpu",
         "dataframe-semantics",
-        "decoder-fixed-f32"
+        "decoder-fixed-f32",
+        "vision-letterbox-cpu",
+        "dataframe-model",
+        "dataframe-model-sweep"
       ]
     },
     "reference_basis": {
@@ -207,7 +210,10 @@
         "controlled-reference-v1",
         "supervised-reference-v1",
         "dataframe-reference-v1",
-        "neural-reference-v1"
+        "neural-reference-v1",
+        "vision-reference-v1",
+        "boundary-reference-v1",
+        "sweep-reference-v1"
       ]
     },
     "reference_sha256": {

@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/vision/inputs/vision-cpu-rgb-wide-odd-padding.json",
+  "generator_version": 1,
+  "id": "vision-cpu-rgb-wide-odd-padding",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "vision-letterbox-cpu",
+  "reference_basis": "vision-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/vision/references/vision-cpu-rgb-wide-odd-padding.json",
+  "reference_sha256": "d95e72cf5c153a5704476b999ff341ca44d11bb90cc81f8f9931471eda14c7e4",
+  "reference_size_bytes": 2060,
+  "rows": 10,
+  "schema_version": 1,
+  "sha256": "94091631d6fd043551bb8e60ec9bda9a4a98318c15f2fae20b18d9fff75039bd",
+  "size_bytes": 611,
+  "source": "Original images; see Benchmarks/Fixtures/vision/README.md",
+  "source_fixture": "Benchmarks/Fixtures/vision/sources.lock.json",
+  "source_sha256": "f23ea73fcda237a61896ba1749f7bed45761e70b3a88e17cdf09c3dfd48d31de",
+  "source_size_bytes": 689,
+  "tolerances": {
+    "atol": 2e-06,
+    "rtol": 2e-06
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "profiles": [
+    {
+      "profile": "boundary-sweep",
+      "tier": "sweep",
+      "purpose": "Bounded size and stage sweeps, not a formal performance baseline"
+    },
+    {
+      "profile": "vision-conformance",
+      "tier": "cpu",
+      "purpose": "Analytic image layout, normalization preservation, constant resize and padding"
+    },
+    {
+      "profile": "boundary-conformance",
+      "tier": "apple",
+      "purpose": "CPU and Metal dataframe to tensor conformance"
+    },
+    {
+      "profile": "boundary-cpu-conformance",
+      "tier": "cpu",
+      "purpose": "CPU dataframe to tensor values, alignment, dtype and isolation"
+    },
+    {
+      "profile": "certification",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "controlled-conformance",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "dataframe-conformance",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "extended",
+      "tier": "sweep",
+      "purpose": "Repeated size/performance characterization, not a formal baseline"
+    },
+    {
+      "profile": "migration-smoke",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "migration",
+      "tier": "sweep",
+      "purpose": "Repeated size/performance characterization, not a formal baseline"
+    },
+    {
+      "profile": "model-conformance",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "neural-conformance",
+      "tier": "apple",
+      "purpose": "Explicit Metal execution and public-loader diagnostic"
+    },
+    {
+      "profile": "neural-cpu-conformance",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "neural-loader-conformance",
+      "tier": "apple",
+      "purpose": "Explicit Metal execution and public-loader diagnostic"
+    },
+    {
+      "profile": "nist",
+      "tier": "sweep",
+      "purpose": "Repeated size/performance characterization, not a formal baseline"
+    },
+    {
+      "profile": "numerical-binary64",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "numerical-conformance",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "public-data",
+      "tier": "sweep",
+      "purpose": "Repeated size/performance characterization, not a formal baseline"
+    },
+    {
+      "profile": "public-smoke",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "smoke",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "standard",
+      "tier": "sweep",
+      "purpose": "Repeated size/performance characterization, not a formal baseline"
+    },
+    {
+      "profile": "supervised-conformance",
+      "tier": "cpu",
+      "purpose": "Bounded correctness and independent output validation"
+    }
+  ],
+  "aliases": {},
+  "deferred": [
+    "Trained vision and language quality require compatible pinned checkpoints and evaluators.",
+    "Unmatched forecast, tree, sampled explanation and multi-cluster training remain research.",
+    "Physical zero-copy, backend allocation counters and long-context inference are not certified.",
+    "Kiraa is an optional unofficial research reference, never a correctness oracle."
+  ]
+}

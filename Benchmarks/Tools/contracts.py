@@ -107,6 +107,8 @@ def validate_values(actual, expected, atol, rtol):
 
 
 WORKLOADS = {
+    "dataframe-model", "dataframe-model-sweep",
+    "vision-letterbox-cpu",
     "decoder-fixed-f32",
     "dataframe-semantics",
     'linear-fixed-cpu', 'logistic-fixed-cpu', 'kmeans-one-cpu', 'kalman-fixed-cpu', 'vector-cosine', 'kernel-shap',
@@ -203,6 +205,8 @@ def load_profile(root, name):
             "controlled-conformance",
             "supervised-conformance",
             "dataframe-conformance",
+            "boundary-conformance", "boundary-cpu-conformance", "boundary-sweep",
+            "vision-conformance",
             "neural-conformance",
             "neural-cpu-conformance",
             "neural-loader-conformance",

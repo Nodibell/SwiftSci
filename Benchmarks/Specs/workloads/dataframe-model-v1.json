@@ -1,0 +1,6 @@
+{
+ "schema_version":1,"id":"dataframe-model-v1","operation":"dataframe-model","scope":"full-pipeline",
+ "output":"Actual shape and precision, row IDs, exported Double features and targets, tensor readback, affine predictions, residuals and mutation-isolation result",
+ "atol":0.00002,"rtol":0,
+ "semantics":"Construct a dataframe, filter and stable-sort rows, export reordered features and aligned targets, allocate MLX tensors, compute fixed affine predictions and residuals, synchronize and extract complete outputs. Check retained data after mutation of exported copies and functional column replacement. Decode outside timing; all other steps inside. Float32 explicitly runs on CPU or GPU; Float64 only on CPU. NumPy comparator always CPU. This tests tensor arithmetic and conversion, not an estimator training or checkpoint API."
+}

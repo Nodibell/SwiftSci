@@ -15,6 +15,9 @@ private struct ANOVAInput: Decodable {
 }
 
 enum NumericalInputs {
+  case boundary(BoundaryInput)
+  case boundarySweep(BoundarySweepInput)
+  case visionLetterbox(VisionLetterboxInput)
   case fixedDecoder(FixedDecoderInput)
   case dataframeSemantics(DataFrameSemanticInput)
   case supervised(SupervisedFixtureInput)
@@ -32,12 +35,15 @@ enum NumericalInputs {
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = ["decoder-fixed-f32", "dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
+    let isNumerical = ["dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
     guard isNumerical else { return nil }
     switch operation {
+    case "dataframe-model": return .boundary(try BoundaryInput.decode(data, rows: rows))
+    case "dataframe-model-sweep": return .boundarySweep(try BoundarySweepInput.decode(data, rows: rows))
+    case "vision-letterbox-cpu": return .visionLetterbox(try VisionLetterboxInput.decode(data, rows: rows))
     case "decoder-fixed-f32": return .fixedDecoder(try FixedDecoderInput.decode(data, rows: rows))
     case "dataframe-semantics": return .dataframeSemantics(try DataFrameSemanticInput.decode(data, rows: rows))
     case "supervised-scale", "supervised-ols-cpu", "supervised-logistic-cpu": return .supervised(try SupervisedFixtureInput.decode(data, operation: operation, rows: rows))
@@ -91,6 +97,9 @@ enum NumericalInputs {
 extension Worker {
   @inline(never) static func executeNumerical(_ input: NumericalInputs) async throws -> Output {
     switch input {
+    case .boundary(let input): return try executeBoundary(input)
+    case .boundarySweep(let input): return try executeBoundarySweep(input)
+    case .visionLetterbox(let input): return try executeVisionLetterbox(input)
     case .fixedDecoder(let input): return try executeFixedDecoder(input)
     case .dataframeSemantics(let input): return try executeDataFrameSemantics(input)
     case .supervised(let input): return try await executeSupervised(input)

@@ -1,0 +1,40 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "boundary-cpu-float32-narrow",
+      "id": "boundary-cpu-float32-narrow",
+      "workload": "dataframe-model-v1"
+    },
+    {
+      "dataset": "boundary-cpu-float32-wide",
+      "id": "boundary-cpu-float32-wide",
+      "workload": "dataframe-model-v1"
+    },
+    {
+      "dataset": "boundary-gpu-float32-narrow",
+      "id": "boundary-gpu-float32-narrow",
+      "workload": "dataframe-model-v1"
+    },
+    {
+      "dataset": "boundary-gpu-float32-wide",
+      "id": "boundary-gpu-float32-wide",
+      "workload": "dataframe-model-v1"
+    },
+    {
+      "dataset": "boundary-cpu-float64-narrow",
+      "id": "boundary-cpu-float64-narrow",
+      "workload": "dataframe-model-v1"
+    },
+    {
+      "dataset": "boundary-cpu-float64-wide",
+      "id": "boundary-cpu-float64-wide",
+      "workload": "dataframe-model-v1"
+    }
+  ],
+  "id": "boundary-conformance",
+  "samples": 2,
+  "schema_version": 1,
+  "timeout_seconds": 120,
+  "warmups": 1
+}

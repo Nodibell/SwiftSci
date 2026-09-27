@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "vision-letterbox-cpu-v1",
+  "operation": "vision-letterbox-cpu",
+  "scope": "operation",
+  "output": "Actual NHWC shape [1,height,width,3] followed by every row-major Float32 tensor value",
+  "atol": 0.000002,
+  "rtol": 0.000002,
+  "semantics": "Explicit MLX CPU and public YOLOPreprocessor.preprocess over normalized CHW gray or RGB ImageDataset. Dimensions 1...32. Identity resize allows spatially varying pixels; changed dimensions require constant planes. Scale is min(targetWidth/width,targetHeight/height); resized dimensions round positive halves upward and clamp to at least one; left/top padding uses integer floor and excess goes right/bottom. Gray expands to RGB. Scalar rational geometry and constant-preservation oracle; NumPy CPU runtime comparator. This bounded contract does not certify arbitrary Lanczos interpolation or raw-byte normalization. Decode outside timing; image and preprocessor construction, preprocessing, tensor evaluation, stream synchronization and full extraction inside timing. No models or weights; diagnostic timings are not matched resampler speed comparisons."
+}

@@ -11,7 +11,14 @@ from dataframe_fixtures import validate_input as validate_dataframe, expected_va
 
 from neural_fixtures import validate_input as validate_neural, output_count as neural_output_count
 
-OPERATIONS = {"decoder-fixed-f32", "dataframe-semantics", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS
+from vision_fixtures import validate_input as validate_vision, output_count as vision_output_count
+
+from boundary_fixtures import validate_input as validate_boundary, output_count as boundary_output_count
+from boundary_sweep import validate_descriptor, reference as sweep_reference, output_count as sweep_output_count
+from contracts import digest
+import struct
+
+OPERATIONS = {"dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS
 
 
 def finite_vector(values, name):
@@ -21,6 +28,14 @@ def finite_vector(values, name):
 
 def validate_manifest(manifest):
     require(manifest.get("operation") in OPERATIONS, "Unknown numerical fixture operation")
+    for operation, basis in [("dataframe-model", "boundary-reference-v1"),("dataframe-model-sweep", "sweep-reference-v1")]:
+        require((manifest.get("operation") == operation) == (manifest.get("reference_basis") == basis), "Boundary reference basis mismatch")
+        if manifest.get("operation") == operation:
+            require(manifest.get("tolerances") in ({"atol":2e-5,"rtol":0},{"atol":1e-12,"rtol":0}), "Boundary tolerance contract mismatch")
+    vision = manifest.get("operation") == "vision-letterbox-cpu"
+    require(vision == (manifest.get("reference_basis") == "vision-reference-v1"), "Vision reference basis mismatch")
+    if vision:
+        require(manifest.get("tolerances") == {"atol": 2e-6, "rtol": 2e-6}, "Vision tolerance contract mismatch")
     neural = manifest.get("operation") == "decoder-fixed-f32"
     require(neural == (manifest.get("reference_basis") == "neural-reference-v1"), "Neural reference basis mismatch")
     if neural:
@@ -37,7 +52,7 @@ def validate_manifest(manifest):
     require(exact == (manifest.get("reference_basis") == "exact-rational-v1"), "Reference basis/operation mismatch")
     for key in ["fixture", "source_fixture", "reference_fixture"]:
         require(isinstance(manifest.get(key), str) and manifest[key], f"Missing {key}")
-    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1", "supervised-reference-v1", "dataframe-reference-v1", "neural-reference-v1"), "Unknown reference basis")
+    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1", "supervised-reference-v1", "dataframe-reference-v1", "neural-reference-v1", "vision-reference-v1", "boundary-reference-v1", "sweep-reference-v1"), "Unknown reference basis")
     sha = manifest.get("source_sha256", "")
     require(isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha), "Invalid numerical source checksum")
     positive(manifest.get("source_size_bytes"), "source_size_bytes")
@@ -50,6 +65,12 @@ def validate_manifest(manifest):
 
 
 def validate_input(payload, operation, rows):
+    if operation == "dataframe-model":
+        return validate_boundary(payload, operation, rows)
+    if operation == "dataframe-model-sweep":
+        return validate_descriptor(payload, operation, rows)
+    if operation == "vision-letterbox-cpu":
+        return validate_vision(payload, operation, rows)
     if operation == "decoder-fixed-f32":
         return validate_neural(payload, operation, rows)
     if operation == "dataframe-semantics":
@@ -104,7 +125,7 @@ def validate_input(payload, operation, rows):
 
 def source_and_input(root, manifest):
     verified_file(repository_file(root, manifest["source_fixture"]), manifest["source_sha256"], manifest["source_size_bytes"])
-    if manifest["operation"] in SUPERVISED_OPERATIONS or manifest["operation"] == "decoder-fixed-f32":
+    if manifest["operation"] in SUPERVISED_OPERATIONS or manifest["operation"] in ("decoder-fixed-f32", "vision-letterbox-cpu", "dataframe-model", "dataframe-model-sweep"):
         lock_path = repository_file(root, manifest["source_fixture"])
         for source in read_json(lock_path)["sources"]:
             relative = str((lock_path.parent / source["path"]).relative_to(root))
@@ -122,6 +143,25 @@ def expected_values(root, manifest, payload):
     require(reference["inputIdentity"] == {"sha256": manifest["sha256"], "bytes": manifest["size_bytes"]}, "Reference input identity mismatch")
     require(reference["source"]["sha256"] == manifest["source_sha256"], "Reference source mismatch")
     require(reference["model"]["observations"] == manifest["rows"], "Reference row count mismatch")
+    if manifest["reference_basis"] in ("boundary-reference-v1", "sweep-reference-v1"):
+        require(manifest["tolerances"] == {"atol": 2e-5 if payload["dtype"] == "float32" else 1e-12, "rtol": 0}, "Boundary dtype tolerance mismatch")
+        require(reference["operation"] == manifest["operation"], "Reference operation mismatch")
+        if manifest["operation"] == "dataframe-model-sweep":
+            values = sweep_reference(payload)
+            raw = struct.pack('<' + 'd'*len(values), *values)
+            require(len(values) == reference["independentReference"]["count"] == sweep_output_count(payload), "Sweep reference count mismatch")
+            require(digest(raw) == reference["independentReference"]["binary64_sha256"], "Sweep reference digest mismatch")
+        else:
+            values = reference["independentReference"]["values"]
+            require(len(values) == boundary_output_count(payload), "Boundary reference count mismatch")
+        finite_vector(values, "boundary answers")
+        return values
+    if manifest["reference_basis"] == "vision-reference-v1":
+        require(reference["operation"] == manifest["operation"], "Reference operation mismatch")
+        values = reference["independentReference"]["values"]
+        require(len(values) == vision_output_count(payload), "Vision reference shape mismatch")
+        finite_vector(values, "vision answers")
+        return values
     if manifest["reference_basis"] == "neural-reference-v1":
         require(reference["operation"] == manifest["operation"], "Reference operation mismatch")
         values = reference["independentReference"]["values"]

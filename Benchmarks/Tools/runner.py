@@ -49,7 +49,7 @@ def source_identity(root):
                     "Benchmarks/Tools/",
                     "Benchmarks/Worker/",
                     "Benchmarks/Support/",
-                    "Benchmarks/Python/standard_worker",
+                    "Benchmarks/Python/",
                 )
             )
             or name in ["Package.swift", "Package.resolved"]

@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "name": "pca-oblique-k1",
+  "operation": "pca-cpu",
+  "source": {
+    "name": "SwiftSci public API exact rational fixtures",
+    "path": "source-spec.json",
+    "sha256": "74b726883e1ae6a20a406eac770e404f03ed119b2baca10e88ed58b77b9346d2",
+    "bytes": 603,
+    "kind": "synthetic rational specification",
+    "generator": "build_exact_model_fixtures.py"
+  },
+  "inputIdentity": {
+    "sha256": "bb5e3212f67f6eed63d10bb81432a3ef2cbcfbc7a29b4ea0d77652bdc3806f19",
+    "bytes": 307
+  },
+  "model": {
+    "observations": 4,
+    "features": 2,
+    "queryObservations": 3,
+    "components": 1,
+    "device": "cpu",
+    "solver": "full",
+    "precision": "float64",
+    "varianceNormalization": "n-1"
+  },
+  "outputOrder": [
+    {
+      "name": "mean",
+      "shape": [
+        2
+      ],
+      "offset": 0,
+      "count": 2,
+      "layout": "row-major"
+    },
+    {
+      "name": "explainedVariance",
+      "shape": [
+        1
+      ],
+      "offset": 2,
+      "count": 1,
+      "layout": "row-major"
+    },
+    {
+      "name": "explainedVarianceRatio",
+      "shape": [
+        1
+      ],
+      "offset": 3,
+      "count": 1,
+      "layout": "row-major"
+    },
+    {
+      "name": "componentProjectors",
+      "shape": [
+        1,
+        2,
+        2
+      ],
+      "offset": 4,
+      "count": 4,
+      "layout": "row-major"
+    },
+    {
+      "name": "trainingScoreGram",
+      "shape": [
+        4,
+        4
+      ],
+      "offset": 8,
+      "count": 16,
+      "layout": "row-major"
+    },
+    {
+      "name": "queryScoreGram",
+      "shape": [
+        3,
+        3
+      ],
+      "offset": 24,
+      "count": 9,
+      "layout": "row-major"
+    },
+    {
+      "name": "trainingQueryScoreGram",
+      "shape": [
+        4,
+        3
+      ],
+      "offset": 33,
+      "count": 12,
+      "layout": "row-major"
+    }
+  ],
+  "exactRationalReference": {
+    "method": "Python standard-library Fraction arithmetic; source specification supplies exact eigensystem or class probabilities, verified algebraically by generator",
+    "values": [
+      10.0,
+      -2.0,
+      66.66666666666667,
+      0.8,
+      0.36,
+      0.48,
+      0.48,
+      0.64,
+      100.0,
+      -100.0,
+      0.0,
+      0.0,
+      -100.0,
+      100.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      25.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      50.0,
+      0.0,
+      0.0,
+      -50.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rationalValues": [
+      "10",
+      "-2",
+      "200/3",
+      "4/5",
+      "9/25",
+      "12/25",
+      "12/25",
+      "16/25",
+      "100",
+      "-100",
+      "0",
+      "0",
+      "-100",
+      "100",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "25",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "50",
+      "0",
+      "0",
+      "-50",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0"
+    ]
+  },
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

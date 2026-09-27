@@ -43,6 +43,7 @@ Choose a new output directory for every run. Existing evidence is never overwrit
 | `public-data` | 100,000 synthetic rows; 1,599 real wine rows | 2 / 5 | 3 |
 | `numerical-conformance` | Eight NIST OLS and eleven ANOVA datasets | 0 / 1 | 1 |
 | `numerical-binary64` | Same 19 inputs with exact-binary64 references | 0 / 1 | 1 |
+| `model-conformance` | Two PCA and one multinomial Naive Bayes fixture | 0 / 1 | 1 |
 
 The first three profiles each contain 11 table workloads and three NIST checks. Both adapters support CSV read, numeric filtering, stable sorting, grouped sum, matrix export, target-vector export, standard scaling, min-max scaling, mean, sample variance and sample standard deviation. The `pandas` adapter uses pandas for dataframe work and NumPy for numerical work.
 
@@ -67,6 +68,8 @@ Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchma
 To run the larger profile, prepare it first and change `--profile` and the output directory. Close competing CPU/GPU workloads and keep power conditions consistent before taking performance measurements. The controller serializes its own builds and runs within this checkout; it cannot prevent other applications or checkouts from consuming resources.
 
 The numerical profiles extend coverage to CPU model fitting and balanced ANOVA. They distinguish original decimal conformance from arithmetic accuracy on binary64 inputs. Difficult cases remain in the profiles even when they fail. Read the [numerical fixture contracts](Fixtures/nist-models/README.md) before interpreting results. These profiles are diagnostic, not performance baselines or a claim of library-wide certification.
+
+The `model-conformance` profile checks exact synthetic PCA and Naive Bayes contracts. Its [fixture documentation](Fixtures/exact-models/README.md) explains sign-invariant comparisons, total-variance ratios and the distinction between class labels and prediction indices. It provides no model-quality claim.
 
 ## What is measured
 

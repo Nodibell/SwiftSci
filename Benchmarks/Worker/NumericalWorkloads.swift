@@ -17,15 +17,23 @@ private struct ANOVAInput: Decodable {
 enum NumericalInputs {
   case ols(features: [[Double]], targets: [Double])
   case anova(groups: [[Double]])
+  case pca(PCAFixtureInput)
+  case naiveBayes(NBFixtureInput)
 
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = operation == "ols-cpu" || operation == "nist-anova"
+    let isNumerical = ["ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
     guard isNumerical else { return nil }
+    if operation == "pca-cpu" {
+      return .pca(try PCAFixtureInput.decode(data, rows: rows))
+    }
+    if operation == "multinomial-nb-cpu" {
+      return .naiveBayes(try NBFixtureInput.decode(data, rows: rows))
+    }
     guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
       throw BenchmarkFailure("Numerical input must be an object")
     }
@@ -62,6 +70,8 @@ enum NumericalInputs {
 extension Worker {
   @inline(never) static func executeNumerical(_ input: NumericalInputs) async throws -> Output {
     switch input {
+    case .pca(let input): return try await executePCA(input)
+    case .naiveBayes(let input): return try await executeNaiveBayes(input)
     case .ols(let features, let targets):
       let model = LinearRegression(device: .cpu)
       try await model.fit(features: features, targets: targets)

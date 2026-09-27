@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "pca-cpu-v1",
+  "operation": "pca-cpu",
+  "scope": "fit-transform-export",
+  "output": "finite little-endian float64 sequence; order and dimensions pinned in reference",
+  "atol": 1e-12,
+  "rtol": 1e-12,
+  "semantics": "Explicit CPU full PCA fit and held-out transform. Sample covariance normalization n-1. Compare mean, selected variances and ratios relative to total variance, each component projector, training and query score Gram matrices, and training-to-query score cross-Gram. Row-major output segments recorded in each exact reference. Sign-invariant comparisons retain transform consistency. Swift uses full SVD; Python uses numpy.linalg.eigh of sample covariance. Algorithms differ. Time includes model fitting, transform, state export and Gram materialization; input decoding excluded. Small diagnostic only, no predictive quality claim."
+}

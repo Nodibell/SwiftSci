@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "name": "multinomial-nb-noncontiguous",
+  "operation": "multinomial-nb-cpu",
+  "source": {
+    "name": "SwiftSci public API exact rational fixtures",
+    "path": "source-spec.json",
+    "sha256": "74b726883e1ae6a20a406eac770e404f03ed119b2baca10e88ed58b77b9346d2",
+    "bytes": 603,
+    "kind": "synthetic rational specification",
+    "generator": "build_exact_model_fixtures.py"
+  },
+  "inputIdentity": {
+    "sha256": "bf8fe2fb3953cda67b33dcc0ea5823ae4d44f1419d6c7e934f6fd7611f0402a0",
+    "bytes": 374
+  },
+  "model": {
+    "observations": 3,
+    "features": 2,
+    "queryObservations": 5,
+    "classes": 2,
+    "device": "cpu",
+    "precision": "float64",
+    "predictionMeaning": "sorted-class indices"
+  },
+  "outputOrder": [
+    {
+      "name": "classes",
+      "shape": [
+        2
+      ],
+      "offset": 0,
+      "count": 2,
+      "layout": "row-major"
+    },
+    {
+      "name": "probabilities",
+      "shape": [
+        5,
+        2
+      ],
+      "offset": 2,
+      "count": 10,
+      "layout": "row-major"
+    },
+    {
+      "name": "predictionIndices",
+      "shape": [
+        5
+      ],
+      "offset": 12,
+      "count": 5,
+      "layout": "row-major"
+    }
+  ],
+  "exactRationalReference": {
+    "method": "Python standard-library Fraction arithmetic; source specification supplies exact eigensystem or class probabilities, verified algebraically by generator",
+    "values": [
+      10.0,
+      20.0,
+      0.3333333333333333,
+      0.6666666666666666,
+      0.13043478260869565,
+      0.8695652173913043,
+      0.6923076923076923,
+      0.3076923076923077,
+      0.40298507462686567,
+      0.5970149253731343,
+      0.9101123595505618,
+      0.0898876404494382,
+      1.0,
+      1.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    "rationalValues": [
+      "10",
+      "20",
+      "1/3",
+      "2/3",
+      "3/23",
+      "20/23",
+      "9/13",
+      "4/13",
+      "27/67",
+      "40/67",
+      "81/89",
+      "8/89",
+      "1",
+      "1",
+      "0",
+      "1",
+      "0"
+    ]
+  },
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

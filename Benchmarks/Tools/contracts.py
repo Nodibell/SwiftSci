@@ -107,7 +107,7 @@ def validate_values(actual, expected, atol, rtol):
 
 
 WORKLOADS = {
-    "ols-cpu", "nist-anova",
+    "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu",
     "h2o-q1", "h2o-q2", "h2o-q3", "h2o-q4", "h2o-q5", "wine-pipeline",
     "welch",
     "student",
@@ -193,6 +193,7 @@ def load_profile(root, name):
             "public-data",
             "numerical-conformance",
             "numerical-binary64",
+            "model-conformance",
         ],
         "Unknown profile",
     )

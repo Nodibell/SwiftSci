@@ -3,7 +3,7 @@
 import math
 from contracts import fields, positive, require, read_json, repository_file, verified_file
 
-OPERATIONS = {"ols-cpu", "nist-anova"}
+OPERATIONS = {"ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"}
 
 
 def finite_vector(values, name):
@@ -13,9 +13,11 @@ def finite_vector(values, name):
 
 def validate_manifest(manifest):
     require(manifest.get("operation") in OPERATIONS, "Unknown numerical fixture operation")
+    exact = manifest.get("operation") in ("pca-cpu", "multinomial-nb-cpu")
+    require(exact == (manifest.get("reference_basis") == "exact-rational-v1"), "Reference basis/operation mismatch")
     for key in ["fixture", "source_fixture", "reference_fixture"]:
         require(isinstance(manifest.get(key), str) and manifest[key], f"Missing {key}")
-    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1"), "Unknown reference basis")
+    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1", "exact-rational-v1"), "Unknown reference basis")
     sha = manifest.get("source_sha256", "")
     require(isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha), "Invalid numerical source checksum")
     positive(manifest.get("source_size_bytes"), "source_size_bytes")
@@ -44,6 +46,28 @@ def validate_input(payload, operation, rows):
         for group in groups:
             finite_vector(group, "ANOVA group")
         require(sum(map(len, groups)) == rows and rows > len(groups), "ANOVA row count mismatch")
+    elif operation in ("pca-cpu", "multinomial-nb-cpu"):
+        required = ["operation", "features", "query", "n_components"] if operation == "pca-cpu" else ["operation", "features", "targets", "query", "alpha"]
+        fields(payload, required)
+        matrix = payload["features"]
+        require(isinstance(matrix, list) and len(matrix) == rows and rows > 1, "Invalid model training rows")
+        for row in matrix:
+            finite_vector(row, "training features")
+        width = len(matrix[0])
+        query = payload["query"]
+        require(isinstance(query, list) and query, "Missing model query rows")
+        for row in query:
+            finite_vector(row, "query features")
+        require(all(len(row) == width for row in matrix + query), "Ragged model matrix")
+        if operation == "pca-cpu":
+            k = payload["n_components"]
+            require(type(k) is int and 1 <= k <= min(rows, width), "Invalid PCA component count")
+        else:
+            finite_vector(payload["targets"], "class labels")
+            require(len(payload["targets"]) == rows and len(set(payload["targets"])) >= 2, "Invalid class labels")
+            require(all(v >= 0 for row in matrix + query for v in row), "Negative multinomial feature")
+            alpha = payload["alpha"]
+            require(type(alpha) in (int, float) and math.isfinite(alpha) and alpha > 0, "Invalid smoothing")
     else:
         require(False, "Unsupported numerical fixture")
     require(payload["operation"] == operation, "Numerical input operation mismatch")
@@ -65,6 +89,19 @@ def expected_values(root, manifest, payload):
     require(reference["inputIdentity"] == {"sha256": manifest["sha256"], "bytes": manifest["size_bytes"]}, "Reference input identity mismatch")
     require(reference["source"]["sha256"] == manifest["source_sha256"], "Reference source mismatch")
     require(reference["model"]["observations"] == manifest["rows"], "Reference row count mismatch")
+    if manifest["reference_basis"] == "exact-rational-v1":
+        require(reference["operation"] == manifest["operation"], "Reference operation mismatch")
+        values = list(reference["exactRationalReference"]["values"])
+        n, p, q = manifest["rows"], len(payload["features"][0]), len(payload["query"])
+        if manifest["operation"] == "pca-cpu":
+            k = payload["n_components"]
+            count = p + 2*k + k*p*p + n*n + q*q + n*q
+        else:
+            c = len(set(payload["targets"]))
+            count = c + q*c + q
+        require(len(values) == count, "Exact model reference shape mismatch")
+        finite_vector(values, "exact model answers")
+        return values
     if manifest["reference_basis"] == "nist-decimal-v1":
         values = list(reference["nistCertifiedValues"])
         derived = reference["independentDecimalReference"]

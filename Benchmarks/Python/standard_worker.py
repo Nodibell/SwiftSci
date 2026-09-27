@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats, linalg
 from numerical_fixtures import validate_input
+from api_workloads import OPERATIONS as API_OPERATIONS, prepare as prepare_api, execute as execute_api
 import sqlite3
 from collections import Counter
 
@@ -46,9 +47,12 @@ try:
     if mixed:
         dtypes["flag"] = "bool"
     numerical = None
+    api_input = None
     if request["dataset_kind"] == "numerical-fixture-v1":
         numerical = validate_input(read_json(request["input_path"]), op, request["rows"])
-        if op == "ols-cpu":
+        if op in API_OPERATIONS:
+            api_input = prepare_api(numerical)
+        elif op == "ols-cpu":
             features = np.asarray(numerical["features"], dtype=np.float64)
             targets = np.asarray(numerical["targets"], dtype=np.float64)
         else:
@@ -112,6 +116,8 @@ try:
     anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
 
     def execute():
+        if api_input is not None:
+            return execute_api(api_input)
         if op == "ols-cpu":
             design = np.column_stack((np.ones(len(targets)), features))
             coefficients, _, rank, _ = linalg.lstsq(design, targets, lapack_driver="gelsy")

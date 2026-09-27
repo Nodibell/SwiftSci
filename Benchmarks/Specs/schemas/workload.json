@@ -51,7 +51,9 @@
         "h2o-q5",
         "wine-pipeline",
         "ols-cpu",
-        "nist-anova"
+        "nist-anova",
+        "pca-cpu",
+        "multinomial-nb-cpu"
       ]
     },
     "scope": {

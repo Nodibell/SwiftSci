@@ -183,13 +183,16 @@
     "operation": {
       "enum": [
         "ols-cpu",
-        "nist-anova"
+        "nist-anova",
+        "pca-cpu",
+        "multinomial-nb-cpu"
       ]
     },
     "reference_basis": {
       "enum": [
         "nist-decimal-v1",
-        "binary64-v1"
+        "binary64-v1",
+        "exact-rational-v1"
       ]
     },
     "reference_sha256": {

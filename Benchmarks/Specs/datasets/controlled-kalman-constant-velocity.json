@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "controlled-kalman-constant-velocity",
+  "kind": "numerical-fixture-v1",
+  "rows": 3,
+  "sha256": "67fb731a8c531f041520eef689795c4ba14d0e36b42fbe86a16b963d8b7ec898",
+  "size_bytes": 580,
+  "source": "repository:Benchmarks/Fixtures/controlled-models/source-spec.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/controlled-models/inputs/kalman-constant-velocity.json",
+  "source_fixture": "Benchmarks/Fixtures/controlled-models/source-spec.json",
+  "source_sha256": "41721c61fc01737034640a890168f54c8df25112792ef372fe4130c5490556c2",
+  "source_size_bytes": 1215,
+  "reference_fixture": "Benchmarks/Fixtures/controlled-models/references/kalman-constant-velocity.json",
+  "reference_sha256": "1069cfcd441eaf025354d1fe3197c74b9f27bf569b81744e79e72b02122df9cb",
+  "reference_size_bytes": 2345,
+  "reference_basis": "controlled-reference-v1",
+  "operation": "kalman-fixed-cpu",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

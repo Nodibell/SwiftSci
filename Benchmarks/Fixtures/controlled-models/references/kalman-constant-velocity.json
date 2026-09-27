@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "name": "kalman-constant-velocity",
+  "operation": "kalman-fixed-cpu",
+  "source": {
+    "name": "SwiftSci controlled inference, centroid, and Kalman fixtures",
+    "path": "source-spec.json",
+    "kind": "synthetic controlled model specification",
+    "sha256": "41721c61fc01737034640a890168f54c8df25112792ef372fe4130c5490556c2",
+    "bytes": 1215
+  },
+  "inputIdentity": {
+    "sha256": "67fb731a8c531f041520eef689795c4ba14d0e36b42fbe86a16b963d8b7ec898",
+    "bytes": 580
+  },
+  "model": {
+    "observations": 3,
+    "stateSize": 2,
+    "observationSize": 1,
+    "stateOrder": [
+      "mean",
+      "row-major covariance"
+    ],
+    "device": "cpu implementation; no public routing API",
+    "precision": "float64",
+    "predictUpdatesInternalState": false
+  },
+  "outputOrder": [
+    {
+      "name": "filteredStates",
+      "shape": [
+        3,
+        6
+      ],
+      "offset": 0,
+      "count": 18,
+      "layout": "row-major"
+    },
+    {
+      "name": "nextPrediction",
+      "shape": [
+        6
+      ],
+      "offset": 18,
+      "count": 6,
+      "layout": "row-major"
+    }
+  ],
+  "independentReference": {
+    "method": "Exact Fraction Kalman recurrence with supplied matrices; Ppost = Pprior - K H Pprior; exact Gauss-Jordan innovation inverse",
+    "values": [
+      1.0,
+      1.0,
+      0.6923076923076923,
+      0.3076923076923077,
+      0.3076923076923077,
+      0.9423076923076923,
+      2.0,
+      1.0,
+      0.7142857142857143,
+      0.35714285714285715,
+      0.35714285714285715,
+      0.7458791208791209,
+      3.7079823505816285,
+      1.3221018852787805,
+      0.7079823505816285,
+      0.3221018852787806,
+      0.3221018852787806,
+      0.640593662254312,
+      5.030084235860409,
+      1.3221018852787805,
+      2.2427797833935017,
+      0.9626955475330926,
+      0.9626955475330926,
+      0.890593662254312
+    ],
+    "exactValues": [
+      "1",
+      "1",
+      "9/13",
+      "4/13",
+      "4/13",
+      "49/52",
+      "2",
+      "1",
+      "5/7",
+      "5/14",
+      "5/14",
+      "543/728",
+      "9244/2493",
+      "3296/2493",
+      "1765/2493",
+      "803/2493",
+      "803/2493",
+      "1597/2493",
+      "4180/831",
+      "3296/2493",
+      "2485/1108",
+      "800/831",
+      "800/831",
+      "8881/9972"
+    ]
+  },
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

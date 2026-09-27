@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "controlled-cosine-distinct",
+  "kind": "numerical-fixture-v1",
+  "rows": 5,
+  "sha256": "dc8923a90ba712d5ec3f263d9dcf7cf7ba8bfede108c4daea3001033d06ad7ef",
+  "size_bytes": 251,
+  "source": "repository:Benchmarks/Fixtures/controlled-search/sources/cosine-distinct.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/controlled-search/inputs/cosine-distinct.json",
+  "source_fixture": "Benchmarks/Fixtures/controlled-search/sources/cosine-distinct.json",
+  "source_sha256": "43a6146126aab8616ac3d1e59d848b91f1a0da56c99f2c706caae006d3cb6332",
+  "source_size_bytes": 541,
+  "reference_fixture": "Benchmarks/Fixtures/controlled-search/references/cosine-distinct.json",
+  "reference_sha256": "e796bd6dc843cd993ec2b88670f26b35646039b2c6fb6a5a1339b3a285b2549f",
+  "reference_size_bytes": 893,
+  "reference_basis": "controlled-reference-v1",
+  "operation": "vector-cosine",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

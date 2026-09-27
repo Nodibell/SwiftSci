@@ -1,0 +1,32 @@
+{
+  "operation": "kernel-shap",
+  "referenceBasis": "controlled-reference-v1",
+  "source": {
+    "path": "sources/kernel-interaction.json",
+    "sha256": "d5e9fc8002818d91aa1bbf9cb74ff6eccd73ea359df1351b7fd651416b6a8e33",
+    "bytes": 457
+  },
+  "inputIdentity": {
+    "sha256": "2456d75797c465ae52d3456daefdf275fdb537dc770804116baf0d644313d3d8",
+    "bytes": 214
+  },
+  "model": {
+    "observations": 1
+  },
+  "independentReference": {
+    "values": [
+      2.0,
+      7.0,
+      6.0,
+      15.0
+    ],
+    "exactValues": [
+      "2",
+      "7",
+      "6",
+      "15"
+    ],
+    "method": "Exhaustive coalition Shapley formula using Fraction arithmetic; missing features use exact background column means."
+  },
+  "outputOrder": "baseline, phi0, phi1, prediction"
+}

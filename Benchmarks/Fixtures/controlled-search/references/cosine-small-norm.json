@@ -1,0 +1,28 @@
+{
+  "operation": "vector-cosine",
+  "referenceBasis": "controlled-reference-v1",
+  "source": {
+    "path": "sources/cosine-small-norm.json",
+    "sha256": "773db1d80add28f859d9360f610ed9e0967dc9cb9a3efbe2116d82dd9397abfb",
+    "bytes": 404
+  },
+  "inputIdentity": {
+    "sha256": "70a384b453b23f2baaae9f6ea4f35ba55f7b574d8eeb60be3f856349d348b34c",
+    "bytes": 137
+  },
+  "model": {
+    "observations": 1
+  },
+  "independentReference": {
+    "values": [
+      0.0,
+      1.0
+    ],
+    "exactValues": [
+      "0",
+      "1"
+    ],
+    "method": "Exact rational dot products and exact rational norms; descending score, equal-score rows canonicalized by input index."
+  },
+  "outputOrder": "inputRowIndex, cosineScore"
+}

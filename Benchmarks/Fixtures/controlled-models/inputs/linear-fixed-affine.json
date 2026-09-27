@@ -1,0 +1,26 @@
+{
+  "operation": "linear-fixed-cpu",
+  "weights": [
+    2,
+    -1
+  ],
+  "bias": 3,
+  "features": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      -2,
+      4
+    ],
+    [
+      3,
+      -1
+    ]
+  ]
+}

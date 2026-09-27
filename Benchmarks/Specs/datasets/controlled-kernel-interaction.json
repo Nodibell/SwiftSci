@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "controlled-kernel-interaction",
+  "kind": "numerical-fixture-v1",
+  "rows": 1,
+  "sha256": "2456d75797c465ae52d3456daefdf275fdb537dc770804116baf0d644313d3d8",
+  "size_bytes": 214,
+  "source": "repository:Benchmarks/Fixtures/controlled-search/sources/kernel-interaction.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/controlled-search/inputs/kernel-interaction.json",
+  "source_fixture": "Benchmarks/Fixtures/controlled-search/sources/kernel-interaction.json",
+  "source_sha256": "d5e9fc8002818d91aa1bbf9cb74ff6eccd73ea359df1351b7fd651416b6a8e33",
+  "source_size_bytes": 457,
+  "reference_fixture": "Benchmarks/Fixtures/controlled-search/references/kernel-interaction.json",
+  "reference_sha256": "5507d91fb20b8c6b72df9481ccceda292dfbb535a0325d396a31e954e7fda6df",
+  "reference_size_bytes": 767,
+  "reference_basis": "controlled-reference-v1",
+  "operation": "kernel-shap",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

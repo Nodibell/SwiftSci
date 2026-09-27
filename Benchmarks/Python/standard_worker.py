@@ -9,6 +9,8 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Tools"))
 from contracts import read_json, write_json, require, verified_file, validate_values
+from controlled_api_workloads import OPERATIONS as CONTROLLED_API_OPERATIONS, prepare as prepare_controlled, execute as execute_controlled
+from search_workloads import vector_cosine, canonical_cosine, kernel_shap
 import numpy as np
 import pandas as pd
 from scipy import stats, linalg
@@ -48,9 +50,14 @@ try:
         dtypes["flag"] = "bool"
     numerical = None
     api_input = None
+    controlled_input = None
     if request["dataset_kind"] == "numerical-fixture-v1":
         numerical = validate_input(read_json(request["input_path"]), op, request["rows"])
-        if op in API_OPERATIONS:
+        if op in CONTROLLED_API_OPERATIONS:
+            controlled_input = prepare_controlled(numerical)
+        elif op in ["vector-cosine", "kernel-shap"]:
+            controlled_input = numerical
+        elif op in API_OPERATIONS:
             api_input = prepare_api(numerical)
         elif op == "ols-cpu":
             features = np.asarray(numerical["features"], dtype=np.float64)
@@ -116,6 +123,12 @@ try:
     anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
 
     def execute():
+        if op in CONTROLLED_API_OPERATIONS:
+            return execute_controlled(controlled_input)
+        if op == "vector-cosine":
+            return vector_cosine(controlled_input)
+        if op == "kernel-shap":
+            return kernel_shap(controlled_input)
         if api_input is not None:
             return execute_api(api_input)
         if op == "ols-cpu":
@@ -332,6 +345,8 @@ try:
         return frame.sort_values("group")
 
     def canonical(output):
+        if op == "vector-cosine":
+            return np.asarray(canonical_cosine(output, request["rows"], controlled_input["top_k"]), dtype="<f8")
         if op in h2o_queries:
             keys, aggregates = h2o_queries[op]
             require(set(output.columns) == set(keys + list(aggregates)), "Grouped output schema mismatch")

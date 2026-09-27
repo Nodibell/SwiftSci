@@ -19,15 +19,30 @@ enum NumericalInputs {
   case anova(groups: [[Double]])
   case pca(PCAFixtureInput)
   case naiveBayes(NBFixtureInput)
+  case fixedLinear(ControlledInferenceInput)
+  case fixedLogistic(ControlledInferenceInput)
+  case oneCluster(ControlledKMeansInput)
+  case controlledKalman(ControlledKalmanInput)
+  case vectorCosine(VectorCosineFixtureInput)
+  case kernelSHAP(KernelSHAPFixtureInput)
 
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = ["ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"].contains(operation)
+    let isNumerical = ["ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
     guard isNumerical else { return nil }
+    switch operation {
+    case "linear-fixed-cpu": return .fixedLinear(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))
+    case "logistic-fixed-cpu": return .fixedLogistic(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))
+    case "kmeans-one-cpu": return .oneCluster(try ControlledKMeansInput.decode(data, rows: rows))
+    case "kalman-fixed-cpu": return .controlledKalman(try ControlledKalmanInput.decode(data, rows: rows))
+    case "vector-cosine": return .vectorCosine(try VectorCosineFixtureInput.decode(data, rows: rows))
+    case "kernel-shap": return .kernelSHAP(try KernelSHAPFixtureInput.decode(data, rows: rows))
+    default: break
+    }
     if operation == "pca-cpu" {
       return .pca(try PCAFixtureInput.decode(data, rows: rows))
     }
@@ -70,6 +85,12 @@ enum NumericalInputs {
 extension Worker {
   @inline(never) static func executeNumerical(_ input: NumericalInputs) async throws -> Output {
     switch input {
+    case .fixedLinear(let input): return try await executeFixedLinear(input)
+    case .fixedLogistic(let input): return try await executeFixedLogistic(input)
+    case .oneCluster(let input): return try await executeOneCluster(input)
+    case .controlledKalman(let input): return try await executeControlledKalman(input)
+    case .vectorCosine(let input): return try executeVectorCosine(input)
+    case .kernelSHAP(let input): return await executeKernelSHAP(input)
     case .pca(let input): return try await executePCA(input)
     case .naiveBayes(let input): return try await executeNaiveBayes(input)
     case .ols(let features, let targets):

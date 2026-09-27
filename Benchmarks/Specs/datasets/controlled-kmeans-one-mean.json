@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "controlled-kmeans-one-mean",
+  "kind": "numerical-fixture-v1",
+  "rows": 4,
+  "sha256": "1eac40c0cf8148e6f9c35530120d65c9860d9e27df55f29ff61a88c6e00c7b57",
+  "size_bytes": 335,
+  "source": "repository:Benchmarks/Fixtures/controlled-models/source-spec.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/controlled-models/inputs/kmeans-one-mean.json",
+  "source_fixture": "Benchmarks/Fixtures/controlled-models/source-spec.json",
+  "source_sha256": "41721c61fc01737034640a890168f54c8df25112792ef372fe4130c5490556c2",
+  "source_size_bytes": 1215,
+  "reference_fixture": "Benchmarks/Fixtures/controlled-models/references/kmeans-one-mean.json",
+  "reference_sha256": "187c3e755da7f89933aa20b61f6ec2428f7f0ad6457cb9dc971e34a9060b29af",
+  "reference_size_bytes": 1711,
+  "reference_basis": "controlled-reference-v1",
+  "operation": "kmeans-one-cpu",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

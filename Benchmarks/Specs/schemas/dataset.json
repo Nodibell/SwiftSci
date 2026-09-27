@@ -185,14 +185,21 @@
         "ols-cpu",
         "nist-anova",
         "pca-cpu",
-        "multinomial-nb-cpu"
+        "multinomial-nb-cpu",
+        "linear-fixed-cpu",
+        "logistic-fixed-cpu",
+        "kmeans-one-cpu",
+        "kalman-fixed-cpu",
+        "vector-cosine",
+        "kernel-shap"
       ]
     },
     "reference_basis": {
       "enum": [
         "nist-decimal-v1",
         "binary64-v1",
-        "exact-rational-v1"
+        "exact-rational-v1",
+        "controlled-reference-v1"
       ]
     },
     "reference_sha256": {

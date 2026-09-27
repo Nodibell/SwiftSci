@@ -53,7 +53,13 @@
         "ols-cpu",
         "nist-anova",
         "pca-cpu",
-        "multinomial-nb-cpu"
+        "multinomial-nb-cpu",
+        "linear-fixed-cpu",
+        "logistic-fixed-cpu",
+        "kmeans-one-cpu",
+        "kalman-fixed-cpu",
+        "vector-cosine",
+        "kernel-shap"
       ]
     },
     "scope": {

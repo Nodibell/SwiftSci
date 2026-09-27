@@ -11,6 +11,7 @@ import SwiftStats
     case chunks([DataFrame], inputRows: [Int])
     case written(URL)
     case values([Double])
+    case cosineResults([(Int, Double)])
     case text(String)
   }
   static func main() async {
@@ -108,6 +109,11 @@ import SwiftStats
         let actual: [Double]
         switch output {
         case .values(let values): actual = values
+        case .cosineResults(let matches):
+          guard case .vectorCosine(let input)? = numericalInputs else {
+            throw BenchmarkFailure("Missing cosine inputs")
+          }
+          actual = try canonicalCosineFixtureValues(matches, entryCount: input.entryCount, expectedCount: input.topK)
         case .text(let text): actual = text.utf8.map(Double.init)
         case .frame(let result):
           actual = try canonical(result, operation: op, mixed: request.dataset_kind != "table-v1")

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "kmeans-one-cpu-v1",
+  "operation": "kmeans-one-cpu",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; layout declared in independent fixture reference",
+  "atol": 1e-12,
+  "rtol": 1e-12,
+  "semantics": "Explicit CPU KMeans with exactly one cluster. Export centroid, all training labels, all query labels and independently recomputed inertia. Compare with the exact arithmetic mean. This does not validate controlled initialization or convergence of multiple clusters. Python directly computes the one-cluster solution; it is not a matched iterative algorithm. All declared computations and output materialization are timed except input decoding and specified preparation. Diagnostic timings are not a formal performance baseline."
+}

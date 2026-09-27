@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "controlled-cosine-small-norm",
+  "kind": "numerical-fixture-v1",
+  "rows": 1,
+  "sha256": "70a384b453b23f2baaae9f6ea4f35ba55f7b574d8eeb60be3f856349d348b34c",
+  "size_bytes": 137,
+  "source": "repository:Benchmarks/Fixtures/controlled-search/sources/cosine-small-norm.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/controlled-search/inputs/cosine-small-norm.json",
+  "source_fixture": "Benchmarks/Fixtures/controlled-search/sources/cosine-small-norm.json",
+  "source_sha256": "773db1d80add28f859d9360f610ed9e0967dc9cb9a3efbe2116d82dd9397abfb",
+  "source_size_bytes": 404,
+  "reference_fixture": "Benchmarks/Fixtures/controlled-search/references/cosine-small-norm.json",
+  "reference_sha256": "512fe6548b3a7d1410358402476c65564280828929a9d579a3cb5056c3f152cb",
+  "reference_size_bytes": 719,
+  "reference_basis": "controlled-reference-v1",
+  "operation": "vector-cosine",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

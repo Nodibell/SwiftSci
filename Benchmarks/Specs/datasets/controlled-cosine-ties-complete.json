@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "controlled-cosine-ties-complete",
+  "kind": "numerical-fixture-v1",
+  "rows": 5,
+  "sha256": "03596cdc2dbbbea4bd4e6d64dea1c403fb58126b14ede21d75c06570270126dc",
+  "size_bytes": 252,
+  "source": "repository:Benchmarks/Fixtures/controlled-search/sources/cosine-ties-complete.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/controlled-search/inputs/cosine-ties-complete.json",
+  "source_fixture": "Benchmarks/Fixtures/controlled-search/sources/cosine-ties-complete.json",
+  "source_sha256": "1657dada70e1491c2f05a2d7424b40a64aa898fe124540971c50ec00860e009a",
+  "source_size_bytes": 605,
+  "reference_fixture": "Benchmarks/Fixtures/controlled-search/references/cosine-ties-complete.json",
+  "reference_sha256": "5b9bb3a230908a1549372edb242716c046919db8147a920371afb7f71a97439f",
+  "reference_size_bytes": 1002,
+  "reference_basis": "controlled-reference-v1",
+  "operation": "vector-cosine",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "kalman-fixed-cpu-v1",
+  "operation": "kalman-fixed-cpu",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; layout declared in independent fixture reference",
+  "atol": 1e-12,
+  "rtol": 1e-12,
+  "semantics": "Construct a fresh Kalman filter, set all supplied state-transition, observation, covariance and initial-state inputs, filter every observation, then predict one further state. Export each mean and row-major covariance, including the final prediction. Float64 scalar and two-state cases, nonsingular innovations, Joseph covariance update. A new instance is required for every sample. All declared computations and output materialization are timed except input decoding and specified preparation. Diagnostic timings are not a formal performance baseline."
+}

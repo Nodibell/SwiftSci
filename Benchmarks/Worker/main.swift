@@ -8,6 +8,7 @@ import SwiftStats
 @main struct Worker {
   enum Output {
     case frame(DataFrame)
+    case chunks([DataFrame])
     case values([Double])
   }
   static func main() async {
@@ -38,7 +39,7 @@ import SwiftStats
           throw BenchmarkFailure("Missing NIST data offset")
         }
         x = try decodeUnivariate(input, skipRows: skipRows, rows: request.rows)
-      } else if op == "csv-read" {
+      } else if op == "csv-read" || op.hasPrefix("csv-stream-") {
         frame = nil
         x = []
       } else {
@@ -49,14 +50,34 @@ import SwiftStats
         frame = loaded
         x = try loaded.toTargetVector("x")
       }
+      let y = try frame?.toTargetVector("y") ?? []
+      let right: DataFrame? = op == "inner-join" ? try DataFrame(columns: [
+        TypedColumn<Int64>(name: "id", values: (0..<request.rows).map(Int64.init)),
+        TypedColumn<Double>(name: "weight", values: (0..<request.rows).map { Double($0) / 4 }),
+      ]) : nil
       var samples = [BenchmarkSample]()
       for index in 0..<(request.warmups + request.samples) {
         let start = ContinuousClock.now
         let output: Output
         if op == "csv-read" {
           output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path)))
+        } else if op.hasPrefix("csv-stream-") {
+          var chunks = [DataFrame]()
+          for try await chunk in DataFrame.readCSVStream(
+            contentsOf: URL(fileURLWithPath: request.input_path), chunkSize: 10000)
+          {
+            switch op {
+            case "csv-stream-read": chunks.append(chunk)
+            case "csv-stream-filter":
+              chunks.append(try chunk.filter(column: "x", where: .greaterThan(0)))
+            case "csv-stream-group":
+              chunks.append(chunk.groupBy("group").agg(["x": .sum, "y": .mean]))
+            default: throw BenchmarkFailure("Unsupported streaming operation")
+            }
+          }
+          output = .chunks(chunks)
         } else {
-          output = try execute(op, frame: frame, x: x)
+          output = try execute(op, frame: frame, x: x, y: y, right: right)
         }
         let duration = start.duration(to: .now).components
         let elapsed = duration.seconds * 1_000_000_000 + duration.attoseconds / 1_000_000_000
@@ -64,10 +85,16 @@ import SwiftStats
         switch output {
         case .values(let values): actual = values
         case .frame(let result):
-          if op == "group-sum" {
-            actual = try canonicalGroups(result)
-          } else {
-            actual = try result.toFlatFeatureMatrix(["id", "group", "x", "y"]).flat
+          actual = try canonical(result, operation: op)
+        case .chunks(let chunks):
+          actual = try chunks.enumerated().flatMap { index, result -> [Double] in
+            if op == "csv-stream-group" {
+              let rows = try canonicalGroups(result, includeMean: true)
+              return stride(from: 0, to: rows.count, by: 3).flatMap {
+                [Double(index)] + Array(rows[$0..<($0 + 3)])
+              }
+            }
+            return try canonical(result, operation: op)
           }
         }
         let sample = try BenchmarkSample(
@@ -85,23 +112,34 @@ import SwiftStats
       exit(1)
     }
   }
-  static func canonicalGroups(_ result: DataFrame) throws -> [Double] {
+  static func canonical(_ result: DataFrame, operation: String) throws -> [Double] {
+    if operation == "group-sum" || operation == "group-sum-mean" {
+      return try canonicalGroups(result, includeMean: operation == "group-sum-mean")
+    }
+    let frame = operation == "inner-join" ? try result.sortBy("id") : result
+    let columns = ["id", "group", "x", "y"] + (operation == "inner-join" ? ["weight"] : [])
+    return try frame.toFlatFeatureMatrix(columns).flat
+  }
+  static func canonicalGroups(_ result: DataFrame, includeMean: Bool = false) throws -> [Double] {
     guard let keys = result[column: "group", as: String.self] else {
       throw BenchmarkFailure("Missing string group keys")
     }
     let sums = try result.toTargetVector("x_sum")
-    let pairs = try (0..<result.shape.rows).map { row -> (Double, Double) in
+    let means = includeMean ? try result.toTargetVector("y_mean") : []
+    let rows = try (0..<result.shape.rows).map { row -> [Double] in
       guard let text = keys.value(at: row) as? String, let key = Double(text) else {
         throw BenchmarkFailure("Invalid numeric group key")
       }
-      return (key, sums[row])
+      return [key, sums[row]] + (includeMean ? [means[row]] : [])
     }
-    return pairs.sorted { $0.0 < $1.0 }.flatMap { [$0.0, $0.1] }
+    return rows.sorted { $0[0] < $1[0] }.flatMap { $0 }
   }
-  @inline(never) static func execute(_ op: String, frame: DataFrame?, x: [Double])
+  @inline(never) static func execute(_ op: String, frame: DataFrame?, x: [Double], y: [Double], right: DataFrame?)
     throws -> Output
   {
     switch op {
+    case "pearson": return .values([try Stats.pearsonCorrelation(x, y)])
+    case "spearman": return .values([try Stats.spearmanCorrelation(x, y)])
     case "mean": return .values([try Stats.mean(x)])
     case "variance": return .values([try Stats.variance(x, ddof: 1)])
     case "stddev": return .values([try Stats.standardDeviation(x, ddof: 1)])
@@ -109,6 +147,17 @@ import SwiftStats
     }
     guard let frame else { throw BenchmarkFailure("Operation requires a table") }
     switch op {
+    case "row-sum":
+      var sum = 0.0
+      for row in frame.rows {
+        guard let value = row.double("x") else { throw BenchmarkFailure("Missing row value") }
+        sum += value
+      }
+      return .values([sum])
+    case "inner-join":
+      guard let right else { throw BenchmarkFailure("Missing right join table") }
+      return .frame(try frame.joinSIMD(right, on: "id", how: .inner))
+    case "group-sum-mean": return .frame(frame.groupBy("group").agg(["x": .sum, "y": .mean]))
     case "filter": return .frame(try frame.filter(column: "x", where: .greaterThan(0)))
     case "sort": return .frame(try frame.sortBy("x"))
     case "group-sum": return .frame(frame.groupBy("group").agg(["x": .sum]))

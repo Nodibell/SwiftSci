@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "inner-join-v1",
+  "operation": "inner-join",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "inner join unique id against prepared right table id, weight=id/4; canonicalize by id outside timing; output original columns followed by weight"
+}

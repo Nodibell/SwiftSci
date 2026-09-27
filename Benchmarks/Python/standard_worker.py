@@ -37,14 +37,63 @@ try:
                 request["input_path"],
                 dtype={"id": "int64", "group": "int64", "x": "float64", "y": "float64"},
             )
-            if op != "csv-read"
+            if op != "csv-read" and not op.startswith("csv-stream-")
             else None
         )
         x = frame["x"].to_numpy() if frame is not None else None
     if frame is not None:
         require(len(frame) == request["rows"], "Row count mismatch")
 
+    y = frame["y"].to_numpy() if frame is not None else None
+    right = (
+        pd.DataFrame(
+            {
+                "id": np.arange(request["rows"], dtype=np.int64),
+                "weight": np.arange(request["rows"], dtype=np.float64) / 4,
+            }
+        )
+        if op == "inner-join"
+        else None
+    )
+
     def execute():
+        if op.startswith("csv-stream-"):
+            chunks = []
+            for chunk in pd.read_csv(
+                request["input_path"],
+                chunksize=10000,
+                dtype={"id": "int64", "group": "int64", "x": "float64", "y": "float64"},
+            ):
+                if op == "csv-stream-read":
+                    chunks.append(chunk)
+                elif op == "csv-stream-filter":
+                    chunks.append(chunk.loc[chunk.x > 0])
+                elif op == "csv-stream-group":
+                    chunks.append(
+                        chunk.groupby("group", sort=False, as_index=False).agg(
+                            x_sum=("x", "sum"), y_mean=("y", "mean")
+                        )
+                    )
+                else:
+                    raise ValueError("Unsupported streaming operation")
+            return chunks
+        if op == "row-sum":
+            total = 0.0
+            for row in frame.itertuples(index=False):
+                total += row.x
+            return total
+        if op == "inner-join":
+            return frame.merge(right, on="id", how="inner", sort=False)
+        if op == "group-sum-mean":
+            return frame.groupby("group", sort=False, as_index=False).agg(
+                x_sum=("x", "sum"), y_mean=("y", "mean")
+            )
+        if op == "pearson":
+            return np.corrcoef(x, y)[0, 1]
+        if op == "spearman":
+            return np.corrcoef(
+                pd.Series(x).rank(method="average"), pd.Series(y).rank(method="average")
+            )[0, 1]
         if op == "csv-read":
             return pd.read_csv(
                 request["input_path"],
@@ -84,6 +133,21 @@ try:
         raise ValueError("Unsupported operation: " + op)
 
     def canonical(output):
+        if op.startswith("csv-stream-"):
+            arrays = []
+            for index, chunk in enumerate(output):
+                if op == "csv-stream-group":
+                    chunk = chunk.sort_values("group")[["group", "x_sum", "y_mean"]]
+                    arrays.append(
+                        np.column_stack((np.full(len(chunk), index), chunk)).ravel()
+                    )
+                else:
+                    arrays.append(chunk.to_numpy(dtype=np.float64).ravel())
+            return np.concatenate(arrays) if arrays else np.array([], dtype=np.float64)
+        if op == "inner-join":
+            output = output.sort_values("id")[["id", "group", "x", "y", "weight"]]
+        if op == "group-sum-mean":
+            output = output.sort_values("group")[["group", "x_sum", "y_mean"]]
         if op == "group-sum":
             output = output.sort_values("group")[["group", "x"]]
         return np.asarray(output, dtype="<f8").ravel(order="C")

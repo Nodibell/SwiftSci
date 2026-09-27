@@ -107,6 +107,14 @@ def validate_values(actual, expected, atol, rtol):
 
 
 WORKLOADS = {
+    "csv-stream-read",
+    "csv-stream-filter",
+    "csv-stream-group",
+    "group-sum-mean",
+    "row-sum",
+    "inner-join",
+    "pearson",
+    "spearman",
     "csv-read",
     "filter",
     "sort",
@@ -157,7 +165,16 @@ def load_workload(root, name):
 
 def load_profile(root, name):
     require(
-        name in ["smoke", "standard", "extended", "certification", "nist"],
+        name
+        in [
+            "smoke",
+            "standard",
+            "extended",
+            "certification",
+            "nist",
+            "migration-smoke",
+            "migration",
+        ],
         "Unknown profile",
     )
     value = read_json(root / "Benchmarks/Specs/profiles" / (name + ".json"))

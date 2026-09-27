@@ -153,6 +153,42 @@ def values(root, manifest):
     return data
 
 
+def average_ranks(values):
+    order = sorted(range(len(values)), key=values.__getitem__)
+    ranks = [0.0] * len(values)
+    begin = 0
+    while begin < len(order):
+        end = begin + 1
+        while end < len(order) and values[order[end]] == values[order[begin]]:
+            end += 1
+        for index in order[begin:end]:
+            ranks[index] = (begin + 1 + end) / 2
+        begin = end
+    return ranks
+
+
+def correlation(x, y):
+    mx, my = math.fsum(x) / len(x), math.fsum(y) / len(y)
+    cx, cy = [v - mx for v in x], [v - my for v in y]
+    return math.fsum(a * b for a, b in zip(cx, cy)) / math.sqrt(
+        math.fsum(a * a for a in cx) * math.fsum(b * b for b in cy)
+    )
+
+
+def grouped_reference(rows):
+    groups = {}
+    for row in rows:
+        groups.setdefault(row[1], []).append(row)
+    return [
+        [
+            float(k),
+            math.fsum(r[2] for r in groups[k]),
+            math.fsum(r[3] for r in groups[k]) / len(groups[k]),
+        ]
+        for k in sorted(groups)
+    ]
+
+
 def reference(root, manifest, workload):
     rows = values(root, manifest)
     operation = workload["operation"]
@@ -171,13 +207,33 @@ def reference(root, manifest, workload):
                 operation
             ]
         ]
+    if operation in ["pearson", "spearman"]:
+        y = [r[3] for r in rows]
+        return [
+            correlation(average_ranks(x), average_ranks(y))
+            if operation == "spearman"
+            else correlation(x, y)
+        ]
+    if operation == "row-sum":
+        return [math.fsum(x)]
+    if operation == "group-sum-mean":
+        return [v for r in grouped_reference(rows) for v in r]
+    if operation == "csv-stream-group":
+        return [
+            v
+            for start in range(0, len(rows), 10000)
+            for r in grouped_reference(rows[start : start + 10000])
+            for v in [start // 10000, *r]
+        ]
+    if operation == "inner-join":
+        return [v for r in rows for v in [*r, r[0] / 4]]
     if operation == "target":
         return x
     if operation == "flat-matrix":
         return [v for r in rows for v in r[2:]]
-    if operation == "csv-read":
+    if operation in ["csv-read", "csv-stream-read"]:
         return [v for r in rows for v in r]
-    if operation == "filter":
+    if operation in ["filter", "csv-stream-filter"]:
         return [v for r in rows if r[2] > 0 for v in r]
     if operation == "sort":
         return [v for r in sorted(rows, key=lambda r: (r[2], r[0])) for v in r]
@@ -186,6 +242,10 @@ def reference(root, manifest, workload):
         for row in rows:
             groups.setdefault(row[1], []).append(row[2])
         return [v for k in sorted(groups) for v in [float(k), math.fsum(groups[k])]]
+    require(
+        operation in ["standard-scale", "minmax-scale"],
+        "Unsupported reference operation",
+    )
     columns = [[r[c] for r in rows] for c in [2, 3]]
     scaled = []
     for col in columns:

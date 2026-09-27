@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "group-sum-mean-v1",
+  "operation": "group-sum-mean",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "atol": 1e-10,
+  "rtol": 1e-12,
+  "semantics": "group by group; sum x and mean y; output group, x_sum, y_mean sorted by group outside timing"
+}

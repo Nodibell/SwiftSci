@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "migration-smoke",
+  "warmups": 0,
+  "samples": 1,
+  "batches": 1,
+  "timeout_seconds": 180,
+  "cases": [
+    {
+      "id": "tiny-csv-stream-read",
+      "dataset": "tiny",
+      "workload": "csv-stream-read-v1"
+    },
+    {
+      "id": "tiny-csv-stream-filter",
+      "dataset": "tiny",
+      "workload": "csv-stream-filter-v1"
+    },
+    {
+      "id": "tiny-csv-stream-group",
+      "dataset": "tiny",
+      "workload": "csv-stream-group-v1"
+    },
+    {
+      "id": "tiny-group-sum-mean",
+      "dataset": "tiny",
+      "workload": "group-sum-mean-v1"
+    },
+    {
+      "id": "tiny-row-sum",
+      "dataset": "tiny",
+      "workload": "row-sum-v1"
+    },
+    {
+      "id": "tiny-inner-join",
+      "dataset": "tiny",
+      "workload": "inner-join-v1"
+    },
+    {
+      "id": "tiny-pearson",
+      "dataset": "tiny",
+      "workload": "pearson-v1"
+    },
+    {
+      "id": "tiny-spearman",
+      "dataset": "tiny",
+      "workload": "spearman-v1"
+    }
+  ]
+}

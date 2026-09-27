@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "csv-stream-group-v1",
+  "operation": "csv-stream-group",
+  "scope": "ingestion",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "atol": 1e-10,
+  "rtol": 1e-12,
+  "semantics": "read CSV in 10000-row chunks; independently group each chunk by group, sum x and mean y; output chunk index, group, x_sum, y_mean sorted by chunk then group"
+}

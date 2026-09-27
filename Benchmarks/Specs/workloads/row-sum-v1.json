@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "row-sum-v1",
+  "operation": "row-sum",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "iterate every dataframe row and sum x; retain and validate resulting scalar"
+}

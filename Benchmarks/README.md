@@ -1,6 +1,175 @@
-# Standardized benchmarks
+# Testing, validation, and benchmarks
 
-Use `Tools/bench.py` for reproducible dataframe and numerical comparisons. It verifies input hashes, checks complete outputs against independent answers, runs each case in a fresh process, and preserves every timing sample. Benchmark code is development tooling and is not part of any public library product.
+This suite checks SwiftSci results against independent answers and measures completed work under declared conditions. It separates library tests, tests of the benchmark machinery, numerical conformance, and performance comparisons. Benchmark code is development tooling and is not part of a public library product.
+
+The [structure map](#suite-structure) connects the execution flow to its owning folders. The [component definitions](#component-definitions) describe those responsibilities. [Run locally](#run-locally) contains the commands, and [complete suite acceptance](#complete-suite-acceptance) describes execution tiers and failure handling.
+
+## Suite structure
+
+The boxes group components by their location under `Benchmarks/`. Arrows show the flow of inputs and results, not directory nesting. Rounded nodes link to definitions below. Some Markdown viewers disable [Mermaid click links](https://mermaid.js.org/syntax/flowchart.html#interaction), so the same destinations appear beneath the diagram.
+
+```mermaid
+flowchart TB
+	subgraph fixtures["Fixtures/"]
+		inputs([Versioned input data])
+		answers([Published and generated reference answers])
+	end
+	subgraph specs["Specs/"]
+		datasets([datasets/])
+		workloads([workloads/])
+		profiles([profiles/ and acceptance.json])
+	end
+	subgraph tools["Tools/"]
+		prepare([Fixture preparation and independent references])
+		runner([Build and run controller])
+		audit([Acceptance and evidence audit])
+		reports([Reports and comparisons])
+	end
+	swift([Worker/ with Support/])
+	python([Python/])
+	runs([Runs/ local evidence])
+
+	inputs --> prepare
+	answers --> prepare
+	datasets --> prepare
+	workloads --> prepare
+	prepare --> runner
+	profiles --> runner
+	runner --> swift
+	runner --> python
+	swift -->|Validated results or recorded failures| runs
+	python -->|Validated results or recorded failures| runs
+	runs --> audit
+	profiles --> audit
+	audit --> reports
+
+	click inputs href "#fixtures-and-reference-answers" "Input provenance and reference answers"
+	click answers href "#fixtures-and-reference-answers" "Independent reference answers"
+	click datasets href "#experiment-specifications" "Dataset manifests"
+	click workloads href "#experiment-specifications" "Operation and measurement contracts"
+	click profiles href "#experiment-specifications" "Profiles and execution policy"
+	click prepare href "#preparation-and-reference-evaluation" "Fixture preparation and independent reference evaluation"
+	click runner href "#build-and-run-controller" "Build and execution ownership"
+	click swift href "#workers-and-output-validation" "Swift worker and support protocol"
+	click python href "#workers-and-output-validation" "Python comparison worker"
+	click runs href "#run-evidence" "Local run artifacts"
+	click audit href "#acceptance-and-reporting" "Acceptance and evidence audit"
+	click reports href "#acceptance-and-reporting" "Reporting and comparison rules"
+```
+
+Diagram destinations: [fixtures and answers](#fixtures-and-reference-answers), [specifications](#experiment-specifications), [preparation](#preparation-and-reference-evaluation), [controller](#build-and-run-controller), [workers](#workers-and-output-validation), [evidence](#run-evidence), and [acceptance and reports](#acceptance-and-reporting).
+
+Output validation happens inside each worker. It has no separate pipeline folder. The Swift worker uses [Support/Protocol.swift](Support/Protocol.swift), and Python adapters validate their outputs before returning responses. Several orchestration steps share `Tools/`. Generated inputs and run evidence belong to local working directories rather than committed fixture sources.
+
+## Component definitions
+
+### Fixtures and reference answers
+
+[Fixtures/](Fixtures/) owns bundled source data, provenance, licenses, generators, and frozen reference artifacts. Published answers, analytic calculations, and independent high-precision implementations provide the expected values. Agreement between SwiftSci and pandas alone does not establish correctness.
+
+| Fixture family | Purpose and definition |
+| --- | --- |
+| Deterministic tables | Fixed formulas and checksums for repeatable sizes. [Dataset manifests](Specs/datasets/) identify inputs, and [datasets.py](Tools/datasets.py) generates tables. |
+| NIST univariate | Published mean and standard deviation, with variance derived from standard deviation. [NIST fixture contract](Fixtures/nist/README.md). |
+| NIST regression and ANOVA | Separate original-decimal conformance from accuracy on binary64 inputs. [Numerical fixture contracts](Fixtures/nist-models/README.md). |
+| Public data | H2O-derived grouping distributions and UCI wine preprocessing. [Public dataset provenance](Fixtures/public-data.md). |
+| Supervised data | Frozen, duplicate-safe splits, train-only preprocessing, and complete held-out outputs for wine and WDBC. [Supervised dataset guide](Fixtures/supervised/README.md). |
+| Exact and controlled models | Declared PCA, classification, inference, clustering, filtering, search, and explanation calculations. [Exact models](Fixtures/exact-models/README.md) and [controlled models](Fixtures/controlled-models/README.md). |
+| Neural inference | Fixed weights, complete logits, cache behavior, and public parameter loading on explicit CPU and GPU paths. [Fixed decoder contract](Fixtures/neural/README.md). |
+| Vision preprocessing | Normalized image layout, grayscale expansion, analytic constant resize, and padding. [Vision fixture contract](Fixtures/vision/README.md). |
+| Dataframe-to-tensor integration | Row alignment, feature order, precision, mutation isolation, and bounded stage and size sweeps. [Boundary fixture contract](Fixtures/boundary/README.md). |
+| Public scientific and model workflows | Typed CSV, filter/join/matrix/OLS integration, training-only preprocessing, and fresh-process native/Core ML persistence diagnostics. [Workflow contracts and limits](Fixtures/workflows/README.md). |
+
+Model conformance checks declared calculations. It does not establish trained-model quality, clinical utility, or accuracy on unseen application data.
+
+### Experiment specifications
+
+[Specs/](Specs/) holds the records that define each experiment. A case pairs one dataset with one workload. A profile selects cases and their execution settings.
+
+| Location | Responsibility |
+| --- | --- |
+| [datasets/](Specs/datasets/) | Input identity, provenance, generator version, byte count, checksum, and reference links. |
+| [workloads/](Specs/workloads/) | Operation semantics, timing boundary, output representation, and numerical tolerances. |
+| [profiles/](Specs/profiles/) | Cases, warmups, measured samples, independent process batches, and timeouts. |
+| [schemas/](Specs/schemas/) | JSON schemas for serialized specifications and worker records. Runtime checks also live in the controller and worker implementations. |
+| [acceptance.json](Specs/acceptance.json) | Canonical profile coverage, CPU, Apple, and sweep tiers, plus explicitly deferred work. |
+| [legacy-inventory.json](Specs/legacy-inventory.json) | Mappings from historical workloads to standardized replacements or research dispositions. |
+
+[contracts.py](Tools/contracts.py) validates specifications and computes experiment identities. The resolved plan records dataset and workload definitions with the source and engine identities. A changed operation or measurement boundary requires a new workload contract.
+
+### Preparation and reference evaluation
+
+[Tools/datasets.py](Tools/datasets.py) verifies or generates inputs and dispatches independent reference evaluation. Specialized fixture and reference modules also live in [Tools/](Tools/). Fixture-specific regeneration scripts remain beside their data in `Fixtures/`.
+
+[Data/standardized/](#local-artifacts) holds prepared inputs locally. Preparation verifies their checksums. Corrupt cached data causes a failure rather than silent replacement. Expected output bytes are produced outside the measured operation and retained with the run.
+
+### Build and run controller
+
+[Tools/bench.py](Tools/bench.py) exposes `prepare`, `build`, `run`, `certify`, `audit`, `report`, `compare`, and `inventory`. [Tools/runner.py](Tools/runner.py) owns build snapshots, resolved plans, worker processes, repetitions, and incremental result records.
+
+The builder copies tracked files into a separate directory and builds a Release executable. It verifies source and binary fingerprints and rejects coverage-instrumented executables. The `build-for-testing` action compiles targets without executing the library test suite.
+
+The runner starts a fresh process for each case, engine, and batch. Each process performs its configured warmups and measured samples. Builds and runs use a checkout-level lock. Other applications can still compete for CPU, GPU, and memory resources.
+
+### Workers and output validation
+
+[Worker/](Worker/) contains Swift adapters that call SwiftSci APIs. [Support/](Support/) defines the Swift request, sample, and response protocol, verifies input bytes, and checks complete numerical outputs.
+
+[Python/standard_worker.py](Python/standard_worker.py) dispatches the comparison implementations in [Python/](Python/). The engine name `pandas` includes NumPy, SciPy, PyArrow, and other declared implementations where the operation requires them. It does not mean every calculation uses pandas.
+
+Both workers validate every output element against independent expected values. Shape, row order, target alignment, and device requirements form part of the relevant contracts. Each numerical workload declares its absolute and relative tolerances. Parquet output receives an additional independent readback check.
+
+Workers keep outputs alive through the end timestamp. Reference evaluation and answer comparison happen outside timing. GPU workloads explicitly select the device and complete the required evaluation and synchronization. The NumPy comparator runs on CPU, so those comparisons do not establish matched GPU performance.
+
+### Run evidence
+
+Each local run directory contains the following records:
+
+| Artifact | Contents |
+| --- | --- |
+| `run.json` | Resolved plan, source and binary identities, environment, events, samples, and summaries. |
+| `events.jsonl` | Incremental records of completed worker attempts. |
+| `*.request.json` and `*.response.json` | Exact worker requests and responses, including sample metadata or failures. |
+| `*.expected.f64` | Expected numerical output bytes used for validation. |
+| `*.log` | Worker diagnostics and failure details. |
+| `certificate.json` | Run checksum, contract identity, source identity, case identities, validated sample count, and status. |
+| `acceptance.json` | Cross-profile coverage and outcomes, written in the parent directory of an acceptance run. |
+
+A run directory is never overwritten. Incomplete evidence, crashes, timeouts, and wrong answers cannot produce a passing certificate. A certificate is an unsigned local conformance record for its declared workloads. It does not imply NIST endorsement or third-party accreditation.
+
+### Acceptance and reporting
+
+[Tools/acceptance.py](Tools/acceptance.py) prepares and executes every profile selected by [the acceptance policy](Specs/acceptance.json). It continues after failed profiles and distinguishes recorded worker failures from missing evidence or infrastructure failures. Source and specification identities must remain unchanged throughout acceptance.
+
+[Tools/reporting.py](Tools/reporting.py) audits recorded runs, summarizes samples, and compares compatible experiments. The report uses a median within each process, followed by a median of those process medians. It preserves every sample and does not trim outliers. Unresolved timings cannot support a speedup ratio.
+
+[Tools/sweeps.py](Tools/sweeps.py) reports the bounded conversion, prepared-computation, and full-pipeline sweeps. Whole-process peak resident memory, logical source bytes, and logical tensor bytes are separate measurements. None is an operation-specific allocation count.
+
+Comparison requires compatible experiment contracts, environments, reference-engine versions, and case coverage. A passing correctness check is required before a measurement can support a performance comparison. Diagnostic timings do not establish a formal performance baseline.
+
+## Tests and continuous integration
+
+| Location | What it verifies |
+| --- | --- |
+| [Repository Tests/](../Tests/) | Library APIs and regressions, organized by SwiftSci module. |
+| [Benchmarks/Tests/](Tests/) | Fixture generation, independent references, contracts, workers, reporting, timeouts, rejection checks, and altered evidence. |
+| [SwiftSciBenchmarkSupportTests](../Tests/SwiftSciBenchmarkSupportTests/) | Swift protocol validation and malformed input or output rejection. |
+| [Ordinary CI](../.github/workflows/ci.yml) | A selected library test set. The workflow explicitly skips several MLX-dependent suites. |
+| [Benchmark conformance CI](../.github/workflows/benchmark-conformance.yml) | Benchmark controller tests, legacy coverage reconciliation, and the complete CPU acceptance tier. Evidence is retained even when a run fails. |
+
+Explicit Metal diagnostics and larger sweeps run on an identified Apple silicon host through the same acceptance command. The CPU tier still uses the macOS Swift build. It is not a promise of cross-platform support. Shared-runner timings do not gate performance.
+
+## Local artifacts
+
+`Benchmarks/Data/standardized/` contains prepared inputs. `Benchmarks/Runs/` contains local run evidence. Both are generated working data, so their definitions are linked here instead of linking to run directories that may not exist in a clean checkout.
+
+Build snapshots, build records, logs, and products live under `~/Library/Caches/SwiftSci/standardized-benchmarks/` by default. They are outside the repository checkout.
+
+## Historical and research work
+
+[Results/](Results/) preserves historical measurements. [Specs/legacy-inventory.json](Specs/legacy-inventory.json) records which historical workloads have standardized replacements and which remain research. The research implementations in [Swift/](Swift/), [CSVAcceleration/](CSVAcceleration/), and legacy [Python/](Python/) scripts have different measurement contracts.
+
+Kiraa is an unofficial research reference with known bugs. It is neither an independent correctness oracle nor a supported standardized engine. Trained-model quality, unmatched algorithms, long-context inference, and physical zero-copy claims remain outside the current conformance scope.
 
 ## Run locally
 
@@ -107,7 +276,7 @@ A certificate is a local workload-conformance record. It binds the run checksum,
 
 ## CI and development
 
-The `Benchmark conformance` workflow runs protocol tests, both adapters on the smoke and migration-smoke profiles, all 27 NIST reference cases per engine, and the public-data smoke cases, then audits the results. It retains evidence for 30 days, including failed runs. Shared-runner timings do not gate a PR. The normal package test suite includes `SwiftSciBenchmarkSupportTests`, which rejects invalid output, corrupt data and malformed binary fixtures.
+The [Benchmark conformance workflow](../.github/workflows/benchmark-conformance.yml) runs controller tests, reconciles legacy coverage, and executes every profile in the CPU acceptance tier. It retains evidence for 30 days, including failed runs. Known numerical failures keep the job failed. Shared-runner timings do not gate a PR. The normal package test suite includes `SwiftSciBenchmarkSupportTests`, which rejects invalid output, corrupt data, and malformed binary fixtures.
 
 Add a workload by defining its semantics and tolerance, adding an independent reference and both worker implementations, then including it in a profile. Change the workload version when semantics change. Add generator versions and checksum manifests for new datasets. A faster result is usable only after its output passes validation.
 
@@ -131,7 +300,6 @@ The `dataframe-conformance` profile contains 24 bounded cases for exact integer 
 
 The `neural-conformance` profile checks fixed Float32 decoder logits on explicitly selected MLX CPU and GPU paths. `neural-cpu-conformance` contains its CPU subset. The separate `neural-loader-conformance` profile checks complete parameter replacement through the public loader and retains failures. See the [fixed decoder contract](Fixtures/neural/README.md) for independent references, cache rules, device requirements and limits. The NumPy comparator runs on CPU; these diagnostic timings do not support matched-backend speed claims.
 
-
 ## Complete suite acceptance
 
 `Specs/acceptance.json` assigns every canonical profile to an execution tier and names deferred coverage. `cpu` runs bounded CPU conformance, including numerical, model and supervised cases. `apple` also runs explicit Metal and loader diagnostics. `sweep` runs repeated size profiles and the bounded conversion/computation sweeps. `all` runs every profile. The inventory command separately preserves the disposition of every legacy registration; a replacement contract does not validate historical timing results.
@@ -151,3 +319,7 @@ The GitHub workflow runs the CPU tier and uploads its full output even on failur
 [Vision fixtures](Fixtures/vision/README.md) cover normalized image layout, grayscale expansion, analytic constant resize and padding. [Boundary fixtures](Fixtures/boundary/README.md) cover frame-to-tensor row alignment, dtype, complete affine arithmetic and mutation isolation. They also define 54 bounded size/stage cases and the sweep report command. Existing public-data cases cover CSV-to-feature/target workflows, and migration profiles retain independent Parquet validation.
 
 This completes the declared testing infrastructure scope, not certification of every library API. Arbitrary image interpolation, trained checkpoints and quality targets, unmatched training algorithms, long-context inference and physical zero-copy claims remain explicit research or future contracts. Passing records are workload conformance evidence, not NIST endorsement or third-party accreditation. Establish a formal performance baseline only after production repairs pass the relevant complete suite.
+
+## Public workflow conformance
+
+The `scientific-workflow` profile checks four complete CSV-to-numerical-result cases with declared column types, duplicate join keys, and reordered inputs. The `persisted-workflow` profile checks training-only preprocessing and prediction, native regressor reload, and composite Core ML pipeline export in fresh processes. Read the [workflow contracts](Fixtures/workflows/README.md) for the distinction between fitted-state validation and persistence, diagnostic timing limits, and retained failure evidence. Both profiles run in the CPU acceptance tier. CI also challenges passing workers with corrupt answers and malformed inputs.

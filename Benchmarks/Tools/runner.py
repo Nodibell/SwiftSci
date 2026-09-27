@@ -111,9 +111,9 @@ def build(root, products, packages):
         shutil.copyfile(p, dest)
     args = [
         "xcodebuild",
-        "build",
+        "build-for-testing",
         "-scheme",
-        "SwiftSciBenchmarkWorker",
+        "SwiftSci-Package",
         "-configuration",
         "Release",
         "-destination",
@@ -124,6 +124,8 @@ def build(root, products, packages):
         str(packages),
         "-onlyUsePackageVersionsFromResolvedFile",
         "-skipPackagePluginValidation",
+        "-enableCodeCoverage",
+        "NO",
         "SWIFT_ENABLE_CODE_COVERAGE=NO",
         "ENABLE_TESTABILITY=YES",
         "CLANG_ENABLE_CODE_COVERAGE=NO",

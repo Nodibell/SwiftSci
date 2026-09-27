@@ -12,6 +12,7 @@ from contracts import ContractError, digest, load_profile, read_json, require
 from datasets import load_manifest, prepare
 from runner import build, plan, run
 from reporting import comparison, summarize, audit
+from inventory import INVENTORY_PATH, discover, reconcile
 
 
 def main():
@@ -28,6 +29,9 @@ def main():
             p.add_argument("--swift-worker")
             p.add_argument("--python", default=sys.executable)
             p.add_argument("--output", type=Path)
+    p = commands.add_parser("inventory")
+    p.add_argument("--discover", action="store_true")
+    p.add_argument("--suite", choices=["standardized-core", "research"])
     p = commands.add_parser("build")
     p.add_argument(
         "--cache",
@@ -47,6 +51,24 @@ def main():
     p.add_argument("baseline", type=Path)
     p.add_argument("candidate", type=Path)
     args = parser.parse_args()
+    if args.command == "inventory":
+        require(
+            not (args.discover and args.suite), "Use --discover or --suite, not both"
+        )
+        if args.discover:
+            result = discover(root)
+        else:
+            inventory = read_json(root / INVENTORY_PATH)
+            result = {
+                "summary": reconcile(root, inventory),
+                "entries": [
+                    entry
+                    for entry in inventory["entries"]
+                    if args.suite is None or entry["suite"] == args.suite
+                ],
+            }
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0
     if args.command == "audit":
         evidence = read_json(args.run_directory / "run.json")
         certificate = read_json(args.run_directory / "certificate.json")
@@ -60,7 +82,7 @@ def main():
             and certificate["contract_hash"] == evidence["plan"]["contract_hash"],
             "Certificate mismatch",
         )
-        audit(evidence)
+        audit(evidence, args.run_directory)
         print("PASS: complete validated run with matching certificate")
         return 0
     if args.command == "report":

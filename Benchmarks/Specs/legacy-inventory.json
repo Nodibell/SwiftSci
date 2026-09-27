@@ -1,0 +1,1669 @@
+{
+  "schema_version": 1,
+  "scope": "Canonical legacy Swift suites, Python timing registrations and Python accuracy result keys, plus the two untimed Swift t-test diagnostics. Finder duplicate files are excluded. A standardized-core disposition names a replacement contract; it does not certify historical outputs or preserve legacy problem sizes. Research entries remain available only for exploratory legacy runs and cannot support certified cross-engine comparisons.",
+  "experimental_references": [
+    {
+      "id": "kiraa",
+      "role": "experimental-reference",
+      "optional": true,
+      "official": false,
+      "known_buggy": true,
+      "correctness_oracle": false,
+      "certification_engine": false
+    }
+  ],
+  "entries": [
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "anova",
+      "kind": "accuracy-result",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "anova",
+          "workload": "anova-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "arima",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "ARIMA order matches but fitting objective and initialization are not a shared contract. No independently checked forecast output or quality threshold."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "correlation",
+      "kind": "accuracy-result",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "pearson",
+          "workload": "pearson-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        },
+        {
+          "operation": "spearman",
+          "workload": "spearman-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "decision_tree_cls",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs explicit split/tie semantics and independent prediction validation. Printed metrics substitute zero predictions on error."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "decision_tree_reg",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs explicit split/tie semantics and independent prediction validation. Printed metrics substitute zero predictions on error."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "gbdt",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs shared model-fitting semantics, prediction output and independent quality threshold. Printed metrics substitute zero predictions on error."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "hist_gbdt_cls",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift maxBins=256 differs from sklearn max_bins=255. Requires common fit semantics and independently checked predictions."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "hist_gbdt_reg",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift maxBins=256 differs from sklearn max_bins=255. Needs common fitting contract and independently checked predictions."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "holt_winters",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift fixes beta and gamma to 0.1; statsmodels optimizes fit parameters. No independently checked forecast output or quality threshold."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "kmeans",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Seed 42 does not establish shared initialization across libraries; needs explicit initialization and checked centroid/inertia outputs."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "linear_ols",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs shared fixture, prediction output, and independent tolerance check. Printed metrics substitute zero predictions on error and are absent from Swift result JSON."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "linear_svc",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift uses 500 gradient epochs at learningRate=0.1; sklearn uses dual=auto and max_iter=1000. Requires common optimization semantics and validation."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "logistic_regression",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift uses 500 gradient epochs at learningRate=0.1; sklearn uses its default regularized solver. Requires a shared objective and validation contract."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "minmax_scaler",
+      "kind": "accuracy-result",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "minmax-scale",
+          "workload": "minmax-scale-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "naive_bayes",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Common synthetic count data and alpha=1 exist, but predictions and macro-F1 have no independent output comparison or threshold."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "paired_ttest",
+      "kind": "accuracy-result",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "paired",
+          "workload": "paired-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "pca",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "PCA full-SVD inputs match generator logic, but EVR parity is printed only; no structured Swift spectra or tolerance check."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "random_forest",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "No shared forest random initialization fixture; independent prediction checks and quality threshold missing."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "standard_scaler",
+      "kind": "accuracy-result",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "standard-scale",
+          "workload": "standard-scale-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "student_ttest",
+      "kind": "accuracy-result",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "student",
+          "workload": "student-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "vader",
+      "kind": "accuracy-result",
+      "suite": "research",
+      "replacements": [],
+      "reason": "No pinned shared VADER lexicon fixture or independently checked polarity outputs. Python downloads optional NLTK lexicon at import."
+    },
+    {
+      "source": "Benchmarks/Python/accuracy_benchmarks.py",
+      "name": "welch_ttest",
+      "kind": "accuracy-result",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "welch",
+          "workload": "welch-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "ARIMA(1,1,1) Accuracy (RMSE, MAE, MAPE, R²)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "ARIMA order matches but fitting objective and initialization are not a shared contract. No independently checked forecast output or quality threshold."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "ARIMA(1,1,1) fit (50k pts)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Different random walks and potentially different estimators; pin input, initialization, estimation, and validation."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "CSV Read (100k rows, 5 cols)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "csv-read",
+          "workload": "csv-read-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "CSV Stream + Filter",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "csv-stream-filter",
+          "workload": "csv-stream-filter-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "CSV Stream + GroupBy",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "csv-stream-group",
+          "workload": "csv-stream-group-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "CSV Stream Read (chunk=10k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "csv-stream-read",
+          "workload": "csv-stream-read-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Classification ROC-AUC (50k predictions)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "roc-auc",
+          "workload": "roc-auc-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "DataFrame SIMD Hash Join (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "inner-join",
+          "workload": "inner-join-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Filter rows (predicate, 100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "filter",
+          "workload": "filter-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Forecast Errors Suite (RMSE, MAE, MAPE, R² 100k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "regression-metrics",
+          "workload": "regression-metrics-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "GBDT Regressor Quality (RMSE, MAE, R²)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs shared model-fitting semantics, prediction output and independent quality threshold. Printed metrics substitute zero predictions on error."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "GBDT Regressor fit (1k×4, 50 est.)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin seed, loss, initialization, split rules, and prediction validation."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Global Average Pooling & Dice Metric",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "pool-dice",
+          "workload": "pool-dice-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "GroupBy + sum/mean (4 groups)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "group-sum-mean",
+          "workload": "group-sum-mean-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Holt-Winters Accuracy (RMSE, MAE, MAPE, R²)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift fixes beta and gamma to 0.1; statsmodels optimizes fit parameters. No independently checked forecast output or quality threshold."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Holt-Winters fit (50k pts, period=12)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift fixes beta and gamma while optimizing alpha; Python optimizes unrestricted smoothing parameters and initialization."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "IsolationForest fit (1k×10, 100 trees)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin random generation, subsampling, seed, and score convention; input bytes currently differ."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "KMeans fit (10k×4, 3 clusters)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin initialization and convergence; compare permutation-invariant centers and independent inertia."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "KernelSHAP Explain (5 feats, 100 coalitions)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Sum model has exact SHAP values, but coalition sampling, shared input, and explainer setup timing differ."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "LIME Explain (5 feats, 300 samples)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Python handwritten weighted Ridge and Swift sampling require shared perturbations, weights, regularization, and independent weighted solve."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "LinearRegression fit (10k×10, 100 epochs)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift fixed learning rate and epochs differ from SGDRegressor defaults and stopping; fallback target definitions differ."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "LinearSVC fit (1k×4, 100 epochs)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift gradient epochs and automatic device differ from Python liblinear iterations; input bytes differ."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Mean (NumPy, 1M elements)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "mean",
+          "workload": "mean-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "NaiveBayes Quality (Accuracy, Macro-F1)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Common synthetic count data and alpha=1 exist, but predictions and macro-F1 have no independent output comparison or threshold."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "NaiveBayesClassifier fit (1k×100, 3 classes)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Python is MultinomialNB; establish Swift distribution, smoothing, class priors, and independent log-probability validation."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "OneHotEncoder fitTransform (50k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "onehot",
+          "workload": "onehot-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "OneVsRestClassifier (5 classes, 100 samples)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Python explicitly uses logistic regression; pin Swift base model, optimizer, and validation outputs."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "PCA SVD fitTransform (1k×100 → 10 comps)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin solver and centering; validate projection or subspace invariants because component signs vary."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Parquet Read Snappy (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "parquet-read",
+          "workload": "parquet-read-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Parquet Write Snappy (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "parquet-write",
+          "workload": "parquet-write-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Pearson Correlation (NumPy, 500k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "pearson",
+          "workload": "pearson-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "RAG Context Summary Generation",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "rag-summary",
+          "workload": "rag-summary-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "RandomForest Quality (Accuracy, F1)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "No shared forest random initialization fixture; independent prediction checks and quality threshold missing."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "RandomForest fit (1k×4, 50 trees)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin seed, bootstrap, feature sampling, prediction output, and concurrency; Python requests n_jobs=-1."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "SQLite Direct DataFrame Ingestion",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "sqlite-ingest",
+          "workload": "sqlite-ingest-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "SortBy double column (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "sort",
+          "workload": "sort-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Spearman Rank Correlation (100k pairs)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "spearman",
+          "workload": "spearman-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "StdDev (NumPy, 1M elements)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "stddev",
+          "workload": "stddev-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "TF-IDF Vectorizer (50 documents)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "tfidf",
+          "workload": "tfidf-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "TS Decomposition additive (1k pts)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Legacy size mismatch: Swift uses 50000 points but Python 1000; pin edges, trend filter, and component validation."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "TreeSHAP Explanation (100 samples)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Independently trained trees and inputs differ; use a fixed tree with exact coalition enumeration and align batching."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Two-Sample T-Test (100k samples)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "welch",
+          "workload": "welch-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "Variance (NumPy, 1M elements)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "variance",
+          "workload": "variance-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Python/benchmarks.py",
+      "name": "VectorStore Cosine Search (5k × 128d, top 10)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin normalization timing and ordered top-k output; Python pre-normalizes and returns unsorted argpartition indices."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "ARIMA(1,1,1) Forecast (RMSE, MAE, R²)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "ARIMA order matches but fitting objective and initialization are not a shared contract. No independently checked forecast output or quality threshold."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "DecisionTree Classifier (Accuracy, F1)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs explicit split/tie semantics and independent prediction validation. Printed metrics substitute zero predictions on error."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "DecisionTree Regressor (RMSE, R²)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs explicit split/tie semantics and independent prediction validation. Printed metrics substitute zero predictions on error."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "GBDT Regressor Quality (RMSE, R²)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs shared model-fitting semantics, prediction output and independent quality threshold. Printed metrics substitute zero predictions on error."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "HistGBDT Classifier (Accuracy, F1)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift maxBins=256 differs from sklearn max_bins=255. Requires common fit semantics and independently checked predictions."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "HistGBDT Regressor (RMSE, R²)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift maxBins=256 differs from sklearn max_bins=255. Needs common fitting contract and independently checked predictions."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "Holt-Winters Forecast (RMSE, MAE, R²)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift fixes beta and gamma to 0.1; statsmodels optimizes fit parameters. No independently checked forecast output or quality threshold."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "Hypothesis Tests & Correlation Suite",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "welch",
+          "workload": "welch-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        },
+        {
+          "operation": "anova",
+          "workload": "anova-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        },
+        {
+          "operation": "pearson",
+          "workload": "pearson-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        },
+        {
+          "operation": "spearman",
+          "workload": "spearman-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "K-Means Convergence (WCSS Inertia)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Seed 42 does not establish shared initialization across libraries; needs explicit initialization and checked centroid/inertia outputs."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "LinearSVC (Accuracy, F1)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift uses 500 gradient epochs at learningRate=0.1; sklearn uses dual=auto and max_iter=1000. Requires common optimization semantics and validation."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "LogisticRegression (Accuracy, F1)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift uses 500 gradient epochs at learningRate=0.1; sklearn uses its default regularized solver. Requires a shared objective and validation contract."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "MinMaxScaler Parity (vDSP)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "minmax-scale",
+          "workload": "minmax-scale-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "NaiveBayes (Accuracy, Macro-F1)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Common synthetic count data and alpha=1 exist, but predictions and macro-F1 have no independent output comparison or threshold."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "OLS Linear Regression (LAPACK)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Needs shared fixture, prediction output, and independent tolerance check. Printed metrics substitute zero predictions on error and are absent from Swift result JSON."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "PCA SVD Spectrum (EVR Parity)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "PCA full-SVD inputs match generator logic, but EVR parity is printed only; no structured Swift spectra or tolerance check."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "Paired t-test",
+      "kind": "untimed-diagnostic",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "paired",
+          "workload": "paired-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "RandomForest Classifier (Accuracy, F1)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "No shared forest random initialization fixture; independent prediction checks and quality threshold missing."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "StandardScaler Parity (vDSP)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "standard-scale",
+          "workload": "standard-scale-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "Student t-test",
+      "kind": "untimed-diagnostic",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "student",
+          "workload": "student-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/AccuracyBenchmarks.swift",
+      "name": "VADER Sentiment Polarity Analysis",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "No pinned shared VADER lexicon fixture or independently checked polarity outputs. Python downloads optional NLTK lexicon at import."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "CSV Read (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "csv-read",
+          "workload": "csv-read-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "CSV Stream + Filter",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "csv-stream-filter",
+          "workload": "csv-stream-filter-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "CSV Stream + GroupBy",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "csv-stream-group",
+          "workload": "csv-stream-group-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "CSV Stream Read (chunk=10k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "csv-stream-read",
+          "workload": "csv-stream-read-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "DataFrame SIMD Hash Join (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "inner-join",
+          "workload": "inner-join-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "Filter rows (100k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "filter",
+          "workload": "filter-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "GroupBy + Aggregation",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "group-sum-mean",
+          "workload": "group-sum-mean-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "Parquet Read Snappy (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "parquet-read",
+          "workload": "parquet-read-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "Parquet Write Snappy (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "parquet-write",
+          "workload": "parquet-write-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "SortBy double column",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "sort",
+          "workload": "sort-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "Zero-Allocation df.rows iteration (100k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "row-sum",
+          "workload": "row-sum-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/DataFrameBenchmarks.swift",
+      "name": "toFlatFeatureMatrix (100k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "flat-matrix",
+          "workload": "flat-matrix-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/ExplainBenchmarks.swift",
+      "name": "KernelSHAP Explain (5 feats, 100 coalitions)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Sum model has exact SHAP values, but coalition sampling, shared input, and explainer setup timing differ."
+    },
+    {
+      "source": "Benchmarks/Swift/ExplainBenchmarks.swift",
+      "name": "LIME Explain (5 feats, 300 samples)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Python handwritten weighted Ridge and Swift sampling require shared perturbations, weights, regularization, and independent weighted solve."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "Classification ROC-AUC (50k predictions)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "roc-auc",
+          "workload": "roc-auc-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "Forecast Errors Suite (RMSE, MAE, MAPE, R² 100k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "regression-metrics",
+          "workload": "regression-metrics-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "Global Average Pooling & Dice Metric",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "pool-dice",
+          "workload": "pool-dice-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "NaiveBayesClassifier fit (1k×100, 3 classes)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Python is MultinomialNB; establish Swift distribution, smoothing, class priors, and independent log-probability validation."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "OneHotEncoder fitTransform (50k rows)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "onehot",
+          "workload": "onehot-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "OneVsRestClassifier (5 classes, 100 samples)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Python explicitly uses logistic regression; pin Swift base model, optimizer, and validation outputs."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "RAG Context Summary Generation",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "rag-summary",
+          "workload": "rag-summary-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "SQLite Direct DataFrame Ingestion",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "sqlite-ingest",
+          "workload": "sqlite-ingest-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "TF-IDF Vectorizer (50 documents)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "tfidf",
+          "workload": "tfidf-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "TreeSHAP Explanation (100 samples)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Independently trained trees and inputs differ; use a fixed tree with exact coalition enumeration and align batching."
+    },
+    {
+      "source": "Benchmarks/Swift/ExtensionBenchmarks.swift",
+      "name": "VADER Sentiment Analysis (1k sentences)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "No legacy Python timing counterpart; pin lexicon and rules and validate independently calculated examples."
+    },
+    {
+      "source": "Benchmarks/Swift/ForecastBenchmarks.swift",
+      "name": "ARIMA(1,1,1) fit (50k pts)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Different random walks and potentially different estimators; pin input, initialization, estimation, and validation."
+    },
+    {
+      "source": "Benchmarks/Swift/ForecastBenchmarks.swift",
+      "name": "ARIMA(1,1,1) forecast horizon=24 (50k pts)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "No legacy Python counterpart; existing timing includes fit plus horizon-24 forecast and needs an explicit contract."
+    },
+    {
+      "source": "Benchmarks/Swift/ForecastBenchmarks.swift",
+      "name": "Holt-Winters fit (50k pts, period=12)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift fixes beta and gamma while optimizing alpha; Python optimizes unrestricted smoothing parameters and initialization."
+    },
+    {
+      "source": "Benchmarks/Swift/ForecastBenchmarks.swift",
+      "name": "Kalman Filter 1D (10k obs)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "No legacy Python counterpart and nondeterministic Swift observations; pin state transition, covariance, input, and independent recurrence."
+    },
+    {
+      "source": "Benchmarks/Swift/ForecastBenchmarks.swift",
+      "name": "TS Decomposition additive (1k pts)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Legacy size mismatch: Swift uses 50000 points but Python 1000; pin edges, trend filter, and component validation."
+    },
+    {
+      "source": "Benchmarks/Swift/LLMBenchmarks.swift",
+      "name": "LLM Forward Pass (seqLen=64)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Unpinned newly initialized weights and tokenizer; logits are evaluated but not independently validated. No Python LLM case exists in legacy benchmarks.py."
+    },
+    {
+      "source": "Benchmarks/Swift/LLMBenchmarks.swift",
+      "name": "LLM Generate (10 tokens)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Unpinned model weights and sampling randomness; counted stream events are not checked. Need generation/stopping and token-output contract. No Python counterpart exists."
+    },
+    {
+      "source": "Benchmarks/Swift/MLBenchmarks.swift",
+      "name": "GBDT Regressor fit (1k×4, 50 est.)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin seed, loss, initialization, split rules, and prediction validation."
+    },
+    {
+      "source": "Benchmarks/Swift/MLBenchmarks.swift",
+      "name": "IsolationForest fit (1k×10, 100 trees)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin random generation, subsampling, seed, and score convention; input bytes currently differ."
+    },
+    {
+      "source": "Benchmarks/Swift/MLBenchmarks.swift",
+      "name": "KMeans fit (10k×4, 3 clusters)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin initialization and convergence; compare permutation-invariant centers and independent inertia."
+    },
+    {
+      "source": "Benchmarks/Swift/MLBenchmarks.swift",
+      "name": "LinearRegression fit (10k×10, 100 epochs)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift fixed learning rate and epochs differ from SGDRegressor defaults and stopping; fallback target definitions differ."
+    },
+    {
+      "source": "Benchmarks/Swift/MLBenchmarks.swift",
+      "name": "LinearSVC fit (1k×4, 100 epochs, Metal GPU)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Swift gradient epochs and automatic device differ from Python liblinear iterations; input bytes differ."
+    },
+    {
+      "source": "Benchmarks/Swift/MLBenchmarks.swift",
+      "name": "PCA SVD fitTransform (1k×100 → 10 comps)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin solver and centering; validate projection or subspace invariants because component signs vary."
+    },
+    {
+      "source": "Benchmarks/Swift/MLBenchmarks.swift",
+      "name": "RandomForest fit (1k×4, 50 trees)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin seed, bootstrap, feature sampling, prediction output, and concurrency; Python requests n_jobs=-1."
+    },
+    {
+      "source": "Benchmarks/Swift/MLBenchmarks.swift",
+      "name": "VectorStore Cosine Search (5k × 128d, top 10)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Pin normalization timing and ordered top-k output; Python pre-normalizes and returns unsorted argpartition indices."
+    },
+    {
+      "source": "Benchmarks/Swift/StatsBenchmarks.swift",
+      "name": "Mean (vDSP, 1M elements)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "mean",
+          "workload": "mean-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/StatsBenchmarks.swift",
+      "name": "Pearson Correlation (500k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "pearson",
+          "workload": "pearson-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/StatsBenchmarks.swift",
+      "name": "Spearman Correlation (100k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "spearman",
+          "workload": "spearman-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/StatsBenchmarks.swift",
+      "name": "StdDev (vDSP, 1M elements)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "stddev",
+          "workload": "stddev-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/StatsBenchmarks.swift",
+      "name": "Two-Sample T-Test (100k)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "welch",
+          "workload": "welch-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/StatsBenchmarks.swift",
+      "name": "Variance (vDSP, 1M elements)",
+      "kind": "timed",
+      "suite": "standardized-core",
+      "replacements": [
+        {
+          "operation": "variance",
+          "workload": "variance-v1",
+          "profiles": [
+            "migration-smoke",
+            "migration"
+          ]
+        }
+      ],
+      "reason": "Replaced by explicit shared-fixture workloads with checked outputs and declared timing scope. Legacy timings and accuracy printouts are not certified."
+    },
+    {
+      "source": "Benchmarks/Swift/VisionBenchmarks.swift",
+      "name": "UNetSegmentationModel predict (128×128 image)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Randomly initialized UNet with 128x128 constant input; no pinned weights, independent expected mask or Python counterpart."
+    },
+    {
+      "source": "Benchmarks/Swift/VisionBenchmarks.swift",
+      "name": "YOLOPreprocessor letterbox (1920×1080 → 640×640)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Constant planar RGB 1920x1080 input becomes 640x360 with 140-row padding. Analytic shape/content/padding checks are feasible but absent; output is discarded; no Python counterpart."
+    },
+    {
+      "source": "Benchmarks/Swift/VisionBenchmarks.swift",
+      "name": "YOLOv8Detector detect (640×640 real GPU inference)",
+      "kind": "timed",
+      "suite": "research",
+      "replacements": [],
+      "reason": "Randomly initialized YOLO layers without loadWeights; constant 640x480 image, 640x640 preprocessing. No pinned weights, expected detections or Python counterpart."
+    }
+  ]
+}

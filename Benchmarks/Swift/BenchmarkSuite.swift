@@ -112,6 +112,7 @@ public struct BenchmarkResult: Codable, Sendable {
 
 /// Full report written to JSON output.
 public struct BenchmarkReport: Codable {
+    public let evidenceStatus: String
     public let platform: String
     public let swiftVersion: String
     public let timestamp: String

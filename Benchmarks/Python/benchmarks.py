@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 """
 SwiftSci Python Benchmark Suite — v3.8.0
-Mirrors the Swift benchmarks in Benchmarks/Swift/ for direct comparison.
+Legacy research workloads. Outputs do not establish cross-library equivalence.
 
 Usage:
-    python3 benchmarks.py                        # console output only
-    python3 benchmarks.py --json python_results.json
-    python3 benchmarks.py --suite ML
-    python3 benchmarks.py --filter "Join"
-    python3 benchmarks.py --rounds 3 --iterations 7
+    python3 benchmarks.py --research                        # console output only
+    python3 benchmarks.py --research --json python_results.json
+    python3 benchmarks.py --research --suite ML
+    python3 benchmarks.py --research --filter "Join"
+    python3 benchmarks.py --research --rounds 3 --iterations 7
 
-All datasets are generated with numpy.random.seed(42) so they are
-deterministically equivalent to the LCG data on the Swift side.
+Fallback generators and workload semantics differ between runners.
+Use the standardized runner for validated comparisons.
 """
+
+import sys
+
+if __name__ == "__main__" and "--research" not in sys.argv[1:]:
+    sys.exit(
+        "This legacy runner requires --research. Its outputs are unvalidated "
+        "research, with no certification or production claims. "
+        "Use Benchmarks/Tools/bench.py for standardized runs."
+    )
 
 import argparse
 import json
@@ -20,7 +29,6 @@ import math
 import os
 import platform
 import resource
-import sys
 import time
 from datetime import datetime, timezone
 
@@ -536,7 +544,10 @@ def main():
     parser.add_argument("--rounds", type=int, default=3, help="Number of measurement rounds")
     parser.add_argument("--iterations", type=int, default=7, help="Iterations per round")
     parser.add_argument("--warmup", type=int, default=2, help="Warmup iterations")
+    parser.add_argument("--research", action="store_true", required=True,
+                        help="Opt in to unvalidated research; no certification or production claims")
     args = parser.parse_args()
+    print("UNVALIDATED RESEARCH: no certification or production claims.")
 
     BenchmarkConfig.default_rounds = args.rounds
     BenchmarkConfig.default_iterations = args.iterations
@@ -586,6 +597,7 @@ def main():
 
     if args.json:
         report = {
+            "evidenceStatus": "unvalidated-research",
             "platform": f"{platform.machine()} ({platform.system()})",
             "pythonVersion": sys.version.split()[0],
             "timestamp": datetime.now(timezone.utc).isoformat(),

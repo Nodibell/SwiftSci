@@ -2,43 +2,31 @@
 
 Selected evidence belongs here with its raw records, source identity and a README explaining scope. Keep ordinary local runs in ignored `Benchmarks/Runs/`.
 
-Use the [standardized runner](../README.md) for new dataframe and numerical comparisons. The commands below reproduce the legacy format; their outputs are not standardized conformance certificates.
+Use the [standardized runner](../README.md) for new comparisons and conformance records. Existing files remain historical evidence under their original measurement rules. They do not acquire certification when a workload migrates.
 
-## Generate & compare
+## Compare standardized runs
+
+Build, run and audit each revision as described in the runner guide, then compare compatible run directories:
 
 ```bash
-# from SwiftAnalytics/SwiftAnalytics (package root)
-mkdir -p Benchmarks/Results
-
-swift run -c release SwiftSciBenchmarks \
-  --json Benchmarks/Results/swift_results.json
-
-python3 Benchmarks/Python/benchmarks.py \
-  --json Benchmarks/Results/python_results.json
-
-python3 Benchmarks/Python/compare.py \
-  Benchmarks/Results/swift_results.json \
-  Benchmarks/Results/python_results.json
+python3 Benchmarks/Tools/bench.py compare Benchmarks/Runs/baseline Benchmarks/Runs/candidate
 ```
 
-## CI gate vs informational
+The legacy `Python/compare.py` command is retired. Its name matching, zero-duration ratios and CI gates cannot establish a valid comparison.
 
-`compare.py` prints every matched pair. Only a small **CI gate** set can fail
-the process (exit 1) when Swift is >2× slower than Python:
+## Reproduce legacy research
 
-| Gated (must stay competitive) | Informational (tracked for 0.8) |
-| ----------------------------- | ------------------------------- |
-| Pearson correlation           | Mean / StdDev / Variance        |
-| Holt-Winters, ARIMA fit/forecast | CSV / Filter / GroupBy / Sort |
-| Kalman Filter 1D              | RandomForest / GBDT / KMeans / PCA |
-| TS Decomposition additive     | LinearRegression (near-parity after SGD align) |
+Run from the repository root. These commands label outputs as unvalidated research, with no certification or production claims:
 
-Use `--gate-all` to apply the threshold to every matched pair (local audits).
+```bash
+swift run -c release SwiftSciBenchmarks --research \
+  --json Benchmarks/Results/swift_research.json
+python3 Benchmarks/Python/benchmarks.py --research \
+  --json Benchmarks/Results/python_research.json
+python3 Benchmarks/Python/accuracy_benchmarks.py --research \
+  --json Benchmarks/Results/accuracy_research.json
+```
 
-## Fairness notes (v0.7)
+Use a new filename to preserve existing results. A common seed or similar operation name does not establish equivalent inputs, algorithms or timing boundaries. Learned-model and GPU results remain research unless a standardized workload independently validates their complete output.
 
-- **LinearRegression** — Python uses `SGDRegressor` (100 epochs), matching
-  Swift’s gradient-descent fit (not closed-form OLS).
-- **Kalman Filter 1D** — Python runs a NumPy constant-velocity filter aligned
-  with `KalmanFilter.oneDimensional` (not an EWM stand-in).
-- **TS Decomposition** — Python uses `statsmodels.tsa.seasonal.seasonal_decompose`.
+Kiraa results under `DataFrameOptimization` refer to an unofficial development build with known bugs. Treat that build as an optional experimental reference, never an accuracy oracle or production baseline.

@@ -15,7 +15,9 @@
         "table-v1",
         "nist-univariate-v1",
         "mixed-table-v1",
-        "parquet-table-v1"
+        "parquet-table-v1",
+        "h2o-group-v1",
+        "wine-quality-v1"
       ]
     },
     "rows": {
@@ -134,6 +136,20 @@
           }
         }
       }
+    },
+    "distribution": {
+      "enum": [
+        "uniform",
+        "hot-key"
+      ]
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_size_bytes": {
+      "type": "integer",
+      "minimum": 1
     }
   },
   "required": [
@@ -170,8 +186,38 @@
         }
       },
       "else": {
+        "if": {
+          "properties": {
+            "kind": {
+              "const": "wine-quality-v1"
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "fixture",
+            "source_sha256",
+            "source_size_bytes"
+          ]
+        },
+        "else": {
+          "required": [
+            "groups"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "h2o-group-v1"
+          }
+        }
+      },
+      "then": {
         "required": [
-          "groups"
+          "distribution"
         ]
       }
     }

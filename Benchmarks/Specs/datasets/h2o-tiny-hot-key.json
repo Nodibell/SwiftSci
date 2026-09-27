@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "h2o-tiny-hot-key",
+  "kind": "h2o-group-v1",
+  "rows": 257,
+  "groups": 7,
+  "distribution": "hot-key",
+  "sha256": "5684336f232bbd5cc1da6885b8b7874faa4e48660ae3dc4b222829b626ae011b",
+  "size_bytes": 8157,
+  "source": "https://github.com/h2oai/db-benchmark/blob/c7421051af7530951d16b1505158371aebc0d2c1/datatable/groupby-datatable.R; independently generated data, not upstream random stream",
+  "license": "SwiftSci repository license; generated synthetic data",
+  "generator_version": 1
+}

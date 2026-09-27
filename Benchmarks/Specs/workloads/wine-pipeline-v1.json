@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "wine-pipeline-v1",
+  "operation": "wine-pipeline",
+  "scope": "full-pipeline",
+  "output": "selected row IDs, then quality targets, then row-major 11-feature standardized matrix",
+  "atol": 1e-10,
+  "rtol": 1e-10,
+  "semantics": "Read pinned derived UCI red wine CSV; quality >= 6; stable ascending sort by alcohol; fit population standard scaling on those selected rows for all 11 features; export IDs, quality target and row-major feature matrix. Original row order breaks alcohol ties. All stages timed, full outputs retained. Independent 50-digit Decimal reference. Descriptive preprocessing benchmark, not a training/validation split or predictive-accuracy claim."
+}

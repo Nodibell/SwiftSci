@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "wine-quality-red",
+  "kind": "wine-quality-v1",
+  "rows": 1599,
+  "source": "https://archive.ics.uci.edu/dataset/186/wine+quality",
+  "license": "CC BY 4.0; Cortez, Cerdeira, Almeida, Matos and Reis (2009); DOI 10.24432/C56S3T",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/uci/winequality-red.csv",
+  "source_sha256": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e",
+  "source_size_bytes": 84199,
+  "sha256": "f54f1488ea72487f6604930ccb5c1d1b5e75e2aa540ffe720c1d1a4de26abc94",
+  "size_bytes": 91063
+}

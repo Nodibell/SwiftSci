@@ -59,6 +59,15 @@ jobs:
             --python Benchmarks/.venv-standardized/bin/python \
             --output Benchmarks/Runs/ci-migration
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-migration
+      - name: Verify H2O-derived grouping and pinned real-data pipeline
+        run: |
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile public-smoke
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile public-smoke \
+            --engines swiftsci,pandas \
+            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
+            --python Benchmarks/.venv-standardized/bin/python \
+            --output Benchmarks/Runs/ci-public
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/ci-public
       - name: Check every NIST univariate reference dataset
         run: |
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py certify --engines swiftsci,pandas \
@@ -75,6 +84,7 @@ jobs:
             Benchmarks/Runs/ci-smoke/
             Benchmarks/Runs/ci-nist/
             Benchmarks/Runs/ci-migration/
+            Benchmarks/Runs/ci-public/
             ~/Library/Caches/SwiftSci/standardized-benchmarks/build.log
           retention-days: 30
           if-no-files-found: warn

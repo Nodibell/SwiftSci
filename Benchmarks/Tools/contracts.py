@@ -107,6 +107,7 @@ def validate_values(actual, expected, atol, rtol):
 
 
 WORKLOADS = {
+    "h2o-q1", "h2o-q2", "h2o-q3", "h2o-q4", "h2o-q5", "wine-pipeline",
     "welch",
     "student",
     "paired",
@@ -163,7 +164,7 @@ def load_workload(root, name):
     )
     require(value["operation"] in WORKLOADS, "Unsupported operation")
     require(
-        value["scope"] in ["ingestion", "operation", "fit-transform-export"],
+        value["scope"] in ["ingestion", "operation", "fit-transform-export", "full-pipeline"],
         "Invalid timing scope",
     )
     for k in ["atol", "rtol"]:
@@ -187,6 +188,8 @@ def load_profile(root, name):
             "nist",
             "migration-smoke",
             "migration",
+            "public-smoke",
+            "public-data",
         ],
         "Unknown profile",
     )

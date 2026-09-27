@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "id": "public-smoke",
+  "warmups": 0,
+  "samples": 1,
+  "batches": 1,
+  "timeout_seconds": 180,
+  "cases": [
+    {
+      "id": "tiny-uniform-h2o-q1",
+      "dataset": "h2o-tiny-uniform",
+      "workload": "h2o-q1-v1"
+    },
+    {
+      "id": "tiny-uniform-h2o-q2",
+      "dataset": "h2o-tiny-uniform",
+      "workload": "h2o-q2-v1"
+    },
+    {
+      "id": "tiny-uniform-h2o-q3",
+      "dataset": "h2o-tiny-uniform",
+      "workload": "h2o-q3-v1"
+    },
+    {
+      "id": "tiny-uniform-h2o-q4",
+      "dataset": "h2o-tiny-uniform",
+      "workload": "h2o-q4-v1"
+    },
+    {
+      "id": "tiny-uniform-h2o-q5",
+      "dataset": "h2o-tiny-uniform",
+      "workload": "h2o-q5-v1"
+    },
+    {
+      "id": "tiny-hot-key-h2o-q1",
+      "dataset": "h2o-tiny-hot-key",
+      "workload": "h2o-q1-v1"
+    },
+    {
+      "id": "tiny-hot-key-h2o-q2",
+      "dataset": "h2o-tiny-hot-key",
+      "workload": "h2o-q2-v1"
+    },
+    {
+      "id": "tiny-hot-key-h2o-q3",
+      "dataset": "h2o-tiny-hot-key",
+      "workload": "h2o-q3-v1"
+    },
+    {
+      "id": "tiny-hot-key-h2o-q4",
+      "dataset": "h2o-tiny-hot-key",
+      "workload": "h2o-q4-v1"
+    },
+    {
+      "id": "tiny-hot-key-h2o-q5",
+      "dataset": "h2o-tiny-hot-key",
+      "workload": "h2o-q5-v1"
+    },
+    {
+      "id": "wine-red-pipeline",
+      "dataset": "wine-quality-red",
+      "workload": "wine-pipeline-v1"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ def load_manifest(root, name):
             "license",
             "generator_version",
         ],
-        ["groups", "fixture", "certified", "data_start_line", "tolerances"],
+        ["groups", "fixture", "certified", "data_start_line", "tolerances", "distribution", "source_sha256", "source_size_bytes"],
     )
     require(
         value["schema_version"] == 1 and value["id"] == name,
@@ -38,7 +38,7 @@ def load_manifest(root, name):
     )
     require(
         value["kind"]
-        in ["table-v1", "mixed-table-v1", "parquet-table-v1", "nist-univariate-v1"],
+        in ["table-v1", "mixed-table-v1", "parquet-table-v1", "nist-univariate-v1", "h2o-group-v1", "wine-quality-v1"],
         "Unknown dataset generator",
     )
     positive(value["rows"], "rows")
@@ -50,7 +50,12 @@ def load_manifest(root, name):
         "Invalid SHA-256",
     )
     require(value["generator_version"] == 1, "Unknown generator version")
-    if value["kind"] != "nist-univariate-v1":
+    if value["kind"] == "wine-quality-v1":
+        require(isinstance(value.get("fixture"), str), "Missing source fixture")
+        sha = value.get("source_sha256", "")
+        require(isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha), "Invalid source checksum")
+        positive(value.get("source_size_bytes"), "source_size_bytes")
+    elif value["kind"] != "nist-univariate-v1":
         positive(value.get("groups"), "groups")
     else:
         require(
@@ -77,6 +82,9 @@ def load_manifest(root, name):
                     and number >= 0,
                     "Invalid reference tolerance",
                 )
+    if value["kind"] == "h2o-group-v1":
+        require(value.get("distribution") in ["uniform", "hot-key"], "Unknown key distribution")
+        require(value["groups"] <= value["rows"], "More key levels than rows")
     return value
 
 
@@ -94,6 +102,11 @@ def parse_univariate(content, data_start_line, rows):
 
 
 def resolve_workload(dataset, workload):
+    from public_datasets import H2O_QUERIES
+    operation = workload["operation"]
+    kind = dataset["kind"]
+    require((operation in H2O_QUERIES) == (kind == "h2o-group-v1"), "H2O workload/dataset mismatch")
+    require((operation == "wine-pipeline") == (kind == "wine-quality-v1"), "Wine workload/dataset mismatch")
     if dataset["kind"] != "nist-univariate-v1":
         return workload
     operation = workload["operation"]
@@ -169,7 +182,13 @@ def prepare(root, manifest):
     if path.exists():
         verified_file(path, manifest["sha256"], manifest["size_bytes"])
         return path
-    if manifest["kind"] == "table-v1":
+    if manifest["kind"] == "h2o-group-v1":
+        from public_datasets import generate_h2o
+        content = generate_h2o(manifest["rows"], manifest["groups"], manifest["distribution"])
+    elif manifest["kind"] == "wine-quality-v1":
+        from public_datasets import derive_wine
+        content = derive_wine(root, manifest)
+    elif manifest["kind"] == "table-v1":
         content = generate_table(manifest["rows"], manifest["groups"])
     elif manifest["kind"] == "mixed-table-v1":
         content = generate_mixed_table(manifest["rows"], manifest["groups"])
@@ -193,6 +212,9 @@ def values(root, manifest):
     content = verified_file(
         cache_path(root, manifest), manifest["sha256"], manifest["size_bytes"]
     )
+    if manifest["kind"] in ["h2o-group-v1", "wine-quality-v1"]:
+        from public_datasets import parse_rows
+        return parse_rows(content, manifest)
     if manifest["kind"] == "nist-univariate-v1":
         return parse_univariate(content, manifest["data_start_line"], manifest["rows"])
     if manifest["kind"] == "parquet-table-v1":
@@ -267,6 +289,12 @@ def grouped_reference(rows):
 def reference(root, manifest, workload):
     rows = values(root, manifest)
     operation = workload["operation"]
+    if manifest["kind"] == "h2o-group-v1":
+        from public_datasets import group_reference
+        return group_reference(rows, operation)
+    if manifest["kind"] == "wine-quality-v1":
+        from public_datasets import wine_reference
+        return wine_reference(rows)
     if manifest["kind"] == "nist-univariate-v1":
         require(
             operation in ["mean", "stddev", "variance"],

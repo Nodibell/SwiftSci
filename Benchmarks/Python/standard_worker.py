@@ -32,6 +32,16 @@ try:
         "x": "float64",
         "y": "float64",
     }
+    wine_features = ["fixed_acidity", "volatile_acidity", "citric_acid", "residual_sugar", "chlorides", "free_sulfur_dioxide", "total_sulfur_dioxide", "density", "pH", "sulphates", "alcohol"]
+    h2o_queries = {
+        "h2o-q1": (["id1"], {"v1": "sum"}),
+        "h2o-q2": (["id1", "id2"], {"v1": "sum"}),
+        "h2o-q3": (["id3"], {"v1": "sum", "v3": "mean"}),
+        "h2o-q4": (["id4"], {"v1": "mean", "v2": "mean", "v3": "mean"}),
+        "h2o-q5": (["id6"], {"v1": "sum", "v2": "sum", "v3": "sum"}),
+    }
+    if op in h2o_queries:
+        dtypes = {**{f"id{i}": "str" for i in range(1, 4)}, **{f"id{i}": "int64" for i in range(4, 7)}, "v1": "int64", "v2": "int64", "v3": "float64"}
     if mixed:
         dtypes["flag"] = "bool"
     if request["dataset_kind"] == "nist-univariate-v1":
@@ -49,15 +59,15 @@ try:
                 request["input_path"],
                 dtype=dtypes,
             )
-            if op not in ["csv-read", "parquet-read"]
+            if op not in ["csv-read", "parquet-read", "wine-pipeline"]
             and not op.startswith("csv-stream-")
             else None
         )
-        x = frame["x"].to_numpy() if frame is not None else None
+        x = frame["x"].to_numpy() if frame is not None and op not in h2o_queries else None
     if frame is not None:
         require(len(frame) == request["rows"], "Row count mismatch")
 
-    y = frame["y"].to_numpy() if frame is not None else None
+    y = frame["y"].to_numpy() if frame is not None and op not in h2o_queries else None
     right = (
         pd.DataFrame(
             {
@@ -92,6 +102,17 @@ try:
     anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
 
     def execute():
+        if op in h2o_queries:
+            keys, aggregates = h2o_queries[op]
+            return frame.groupby(keys, sort=False, as_index=False).agg(aggregates)
+        if op == "wine-pipeline":
+            loaded = pd.read_csv(request["input_path"], dtype={**{k: "float64" for k in wine_features}, "id": "int64", "quality": "int64"})
+            require(len(loaded) == request["rows"] and list(loaded.columns) == ["id", *wine_features, "quality"], "Wine input shape mismatch")
+            selected = loaded.loc[loaded.quality >= 6].sort_values("alcohol", kind="stable")
+            values = selected[wine_features].to_numpy(dtype=np.float64)
+            scale = values.std(axis=0, ddof=0)
+            standardized = (values - values.mean(axis=0)) / np.where(scale < 1e-12, 1, scale)
+            return np.concatenate((selected.id.to_numpy(), selected.quality.to_numpy(), standardized.ravel(order="C")))
         if op in ["welch", "student", "paired"]:
             result = (
                 stats.ttest_rel(y, x)
@@ -286,6 +307,15 @@ try:
         return frame.sort_values("group")
 
     def canonical(output):
+        if op in h2o_queries:
+            keys, aggregates = h2o_queries[op]
+            require(set(output.columns) == set(keys + list(aggregates)), "Grouped output schema mismatch")
+            output = output.copy()
+            for key in keys:
+                if key in ["id1", "id2", "id3"]:
+                    require(output[key].str.fullmatch(r"key[0-9]+").all(), "Malformed grouped key")
+                    output[key] = output[key].str[3:].astype("int64")
+            return output.sort_values(keys)[keys + list(aggregates)].to_numpy(dtype=np.float64).ravel(order="C")
         if op == "rag-summary":
             return np.frombuffer(output.encode("utf-8"), dtype=np.uint8).astype(
                 np.float64

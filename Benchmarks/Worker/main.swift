@@ -41,7 +41,7 @@ import SwiftStats
           throw BenchmarkFailure("Missing NIST data offset")
         }
         x = try decodeUnivariate(input, skipRows: skipRows, rows: request.rows)
-      } else if op == "csv-read" || op == "parquet-read" || op.hasPrefix("csv-stream-") {
+      } else if op == "wine-pipeline" || op == "csv-read" || op == "parquet-read" || op.hasPrefix("csv-stream-") {
         frame = nil
         x = []
       } else {
@@ -50,9 +50,9 @@ import SwiftStats
           throw BenchmarkFailure("Row count mismatch")
         }
         frame = loaded
-        x = try loaded.toTargetVector("x")
+        x = op.hasPrefix("h2o-") ? [] : try loaded.toTargetVector("x")
       }
-      let y = try frame?.toTargetVector("y") ?? []
+      let y = op.hasPrefix("h2o-") ? [] : try frame?.toTargetVector("y") ?? []
       let right: DataFrame? = op == "inner-join" ? try DataFrame(columns: [
         TypedColumn<Int64>(name: "id", values: (0..<request.rows).map(Int64.init)),
         TypedColumn<Double>(name: "weight", values: (0..<request.rows).map { Double($0) / 4 }),
@@ -62,7 +62,9 @@ import SwiftStats
       for index in 0..<(request.warmups + request.samples) {
         let start = ContinuousClock.now
         let output: Output
-        if op == "csv-read" {
+        if op == "wine-pipeline" {
+          output = try await winePipeline(path: request.input_path, rows: request.rows)
+        } else if op == "csv-read" {
           output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path)))
         } else if op == "sqlite-ingest" {
           output = .frame(try await sqliteIngest())
@@ -133,6 +135,7 @@ import SwiftStats
     }
   }
   static func canonical(_ result: DataFrame, operation: String, mixed: Bool) throws -> [Double] {
+    if operation.hasPrefix("h2o-") { return try canonicalH2O(result, operation: operation) }
     if operation == "sqlite-ingest" {
       guard result.columnNames == ["id", "val"] else { throw BenchmarkFailure("SQL schema mismatch") }
       return try result.toFlatFeatureMatrix(["id", "val"]).flat
@@ -190,6 +193,7 @@ import SwiftStats
     default: break
     }
     guard let frame else { throw BenchmarkFailure("Operation requires a table") }
+    if op.hasPrefix("h2o-") { return try h2o(op, frame: frame) }
     switch op {
     case "row-sum":
       var sum = 0.0

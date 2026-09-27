@@ -527,7 +527,8 @@ public enum ParquetReader: Sendable {
                 numValues: header.numValues,
                 encoding: header.encoding,
                 dictionary: dictionary,
-                expectedRowCount: numRows
+                expectedRowCount: numRows,
+                legacyBooleanBytes: true
             )
         }
     }
@@ -538,7 +539,8 @@ public enum ParquetReader: Sendable {
         numValues: Int,
         encoding: Int32,
         dictionary: [Any?],
-        expectedRowCount: Int
+        expectedRowCount: Int,
+        legacyBooleanBytes: Bool = false
     ) throws -> [Any?] {
         guard !payload.isEmpty && numValues > 0 else { return [] }
 
@@ -617,7 +619,10 @@ public enum ParquetReader: Sendable {
             } else {
                 // PLAIN values
                 let plainSlice = payload.subdata(in: offset..<payload.count)
-                return try decodePlainValues(payload: plainSlice, schema: schema, count: numValues, defLevels: defLevels)
+                return try decodePlainValues(
+                    payload: plainSlice, schema: schema, count: numValues,
+                    defLevels: defLevels, legacyBooleanBytes: legacyBooleanBytes
+                )
             }
         }
     }
@@ -760,7 +765,8 @@ public enum ParquetReader: Sendable {
         payload: Data,
         schema: SchemaElem,
         count: Int,
-        defLevels: [UInt8]? = nil
+        defLevels: [UInt8]? = nil,
+        legacyBooleanBytes: Bool = false
     ) throws -> [Any?] {
         guard !payload.isEmpty && count > 0 else { return [] }
 
@@ -771,6 +777,7 @@ public enum ParquetReader: Sendable {
             let byteCount = rawBuf.count
             var offset = 0
             var results: [Any?] = []
+            var booleanBit = 0
             results.reserveCapacity(count)
 
             for i in 0..<count {
@@ -811,10 +818,16 @@ public enum ParquetReader: Sendable {
                     results.append(Double(bitPattern: raw))
 
                 case 0: // BOOLEAN
-                    guard offset < byteCount else { results.append(nil); continue }
-                    let val = ptr[offset] != 0
-                    offset += 1
-                    results.append(val)
+                    if legacyBooleanBytes {
+                        guard offset < byteCount else { results.append(nil); continue }
+                        results.append(ptr[offset] != 0)
+                        offset += 1
+                    } else {
+                        let byte = booleanBit / 8
+                        guard byte < byteCount else { results.append(nil); continue }
+                        results.append((ptr[byte] & UInt8(1 << (booleanBit % 8))) != 0)
+                        booleanBit += 1
+                    }
 
                 case 6: // BYTE_ARRAY
                     guard offset + 4 <= byteCount else { results.append(nil); continue }

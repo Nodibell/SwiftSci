@@ -74,6 +74,7 @@ let package = Package(
             name: "SwiftDataFrameTests",
             dependencies: ["SwiftDataFrame"],
             path: "Tests/SwiftDataFrameTests",
+            resources: [.copy("Fixtures/ParquetInterop")],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),

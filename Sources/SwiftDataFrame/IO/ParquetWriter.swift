@@ -47,21 +47,26 @@ public enum ParquetWriter: Sendable {
             ))
 
             // Build Page Data
-            let pageData = try encodeDataPage(column: col, rowCount: rowCount)
-            let uncompressedSize = Int64(pageData.count)
-
-            // Snappy compress
+            let pageData = try encodeDataPagePayload(column: col, rowCount: rowCount)
             let compressedData = SnappyDecompressor.compress(data: pageData)
-            let compressedSize = Int64(compressedData.count)
+            let pageHeader = try encodePageHeader(
+                uncompressedSize: Int32(pageData.count),
+                compressedSize: Int32(compressedData.count),
+                numValues: Int32(rowCount)
+            )
+            let uncompressedSize = Int64(pageHeader.count + pageData.count)
+            let compressedSize = Int64(pageHeader.count + compressedData.count)
 
-            fileBytes.append(contentsOf: [UInt8](compressedData))
+            fileBytes.append(contentsOf: pageHeader)
+            fileBytes.append(contentsOf: compressedData)
 
             colChunksMeta.append(ParquetReader.ColChunkInfo(
                 codec: 1, // SNAPPY
                 numValues: Int64(rowCount),
                 totalUncompressedSize: uncompressedSize,
                 totalCompressedSize: compressedSize,
-                dataPageOffset: colStartOffset
+                dataPageOffset: colStartOffset,
+                pathInSchema: [col.name]
             ))
         }
 
@@ -114,7 +119,7 @@ public enum ParquetWriter: Sendable {
         }
     }
 
-    private static func encodeDataPage(column: any AnyColumn, rowCount: Int) throws -> Data {
+    private static func encodeDataPagePayload(column: any AnyColumn, rowCount: Int) throws -> Data {
         var pageBytes = [UInt8]()
 
         // 1. Definition Levels (1 for present, 0 for null)
@@ -167,6 +172,13 @@ public enum ParquetWriter: Sendable {
         pageBytes.append(contentsOf: defPayload)
 
         // 2. Plain Encoded Values (Direct typed fast-path)
+        var booleanCount = 0
+        func appendBoolean(_ value: Bool) {
+            let bit = booleanCount % 8
+            if bit == 0 { pageBytes.append(0) }
+            if value { pageBytes[pageBytes.count - 1] |= UInt8(1 << bit) }
+            booleanCount += 1
+        }
         if let c = column as? TypedColumn<Int64> {
             pageBytes.reserveCapacity(pageBytes.count + rowCount * 8)
             for vOpt in c.values {
@@ -208,10 +220,10 @@ public enum ParquetWriter: Sendable {
                 }
             }
         } else if let c = column as? TypedColumn<Bool> {
-            pageBytes.reserveCapacity(pageBytes.count + rowCount)
+            pageBytes.reserveCapacity(pageBytes.count + (rowCount + 7) / 8)
             for vOpt in c.values {
                 if let val = vOpt {
-                    pageBytes.append(val ? 1 : 0)
+                    appendBoolean(val)
                 }
             }
         } else if let c = column as? TypedColumn<String> {
@@ -273,7 +285,7 @@ public enum ParquetWriter: Sendable {
                     }
                 case .boolean:
                     if let b = val as? Bool {
-                        pageBytes.append(b ? 1 : 0)
+                        appendBoolean(b)
                     }
                 case .utf8:
                     let s = "\(val)"
@@ -291,20 +303,7 @@ public enum ParquetWriter: Sendable {
             }
         }
 
-        // Prepend PageHeader
-        let uncompressedPageSize = Int32(pageBytes.count)
-        let pageHeaderBytes = try encodePageHeader(
-            uncompressedSize: uncompressedPageSize,
-            compressedSize: uncompressedPageSize,
-            numValues: Int32(rowCount)
-        )
-
-        var fullPage = [UInt8]()
-        fullPage.reserveCapacity(pageHeaderBytes.count + pageBytes.count)
-        fullPage.append(contentsOf: pageHeaderBytes)
-        fullPage.append(contentsOf: pageBytes)
-
-        return Data(fullPage)
+        return Data(pageBytes)
     }
 
     private static func encodePageHeader(
@@ -378,6 +377,10 @@ public enum ParquetWriter: Sendable {
                 writer.writeFieldBegin(fieldId: 5, type: .i32)
                 writer.writeZigZagI32(numCh)
             }
+            if elem.type == 6 {
+                writer.writeFieldBegin(fieldId: 6, type: .i32)
+                writer.writeZigZagI32(0) // UTF8 converted type
+            }
             writer.writeFieldStop()
             writer.popStruct()
         }
@@ -394,11 +397,25 @@ public enum ParquetWriter: Sendable {
             // columns (field 1: list<ColumnChunk>)
             writer.writeFieldBegin(fieldId: 1, type: .list)
             writer.writeListBegin(elemType: .struct, size: rg.columns.count)
-            for colChunk in rg.columns {
+            for (columnIndex, colChunk) in rg.columns.enumerated() {
                 writer.pushStruct()
+                writer.writeFieldBegin(fieldId: 2, type: .i64)
+                writer.writeZigZagI64(0) // Deprecated ColumnChunk.file_offset
                 // meta_data (field 3: ColumnMetaData)
                 writer.writeFieldBegin(fieldId: 3, type: .struct)
                 writer.pushStruct()
+                guard let physicalType = fileMeta.schema[columnIndex + 1].type else {
+                    throw SwiftMLError.emptySchema
+                }
+                writer.writeFieldBegin(fieldId: 1, type: .i32)
+                writer.writeZigZagI32(physicalType)
+                writer.writeFieldBegin(fieldId: 2, type: .list)
+                writer.writeListBegin(elemType: .i32, size: 2)
+                writer.writeZigZagI32(0) // PLAIN
+                writer.writeZigZagI32(3) // RLE definition levels
+                writer.writeFieldBegin(fieldId: 3, type: .list)
+                writer.writeListBegin(elemType: .binary, size: colChunk.pathInSchema.count)
+                for component in colChunk.pathInSchema { writer.writeString(component) }
                 // codec (field 4)
                 writer.writeFieldBegin(fieldId: 4, type: .i32)
                 writer.writeZigZagI32(colChunk.codec)
@@ -420,6 +437,8 @@ public enum ParquetWriter: Sendable {
                 writer.writeFieldStop()
                 writer.popStruct()
             }
+            writer.writeFieldBegin(fieldId: 2, type: .i64)
+            writer.writeZigZagI64(rg.columns.reduce(0) { $0 + $1.totalUncompressedSize })
             // num_rows (field 3)
             writer.writeFieldBegin(fieldId: 3, type: .i64)
             writer.writeZigZagI64(rg.numRows)

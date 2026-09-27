@@ -10,10 +10,12 @@ import SwiftStats
 import SwiftVision
 
 struct CoreInputs {
+  let anovaGroups: [[Double]]
   let labels: [Int]
   let categories: [[String]]
   let documents: [String]
-  init(operation: String, rows: Int) {
+  init(operation: String, rows: Int, x: [Double], y: [Double]) {
+    anovaGroups = operation == "anova" ? [x, y, zip(x, y).map { ($0 + $1) / 2 }] : []
     labels = operation == "roc-auc" ? (0..<rows).map { $0 % 2 } : []
     categories = operation == "onehot"
       ? (0..<rows).map { ["dept_\($0 % 8)", "region_\($0 % 4)"] } : []
@@ -34,7 +36,7 @@ extension Worker {
       return .values([result.statistic, result.pValue, result.degreesOfFreedom,
         result.confidenceInterval.lower, result.confidenceInterval.upper, result.effectSize])
     case "anova":
-      let result = try Stats.oneWayANOVA(groups: [x, y])
+      let result = try Stats.oneWayANOVA(groups: inputs.anovaGroups)
       return .values([result.fStatistic, result.pValue, Double(result.dfBetween), Double(result.dfWithin), result.etaSquared])
     case "regression-metrics":
       return .values([

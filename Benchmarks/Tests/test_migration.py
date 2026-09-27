@@ -149,7 +149,7 @@ class MigrationContracts(unittest.TestCase):
         paired = welch([1, 2, 3], [2, 2, 2], method="paired")
         self.assertEqual(paired[:3], [0, 1, 2])
         # Equal group means give F=0, p=1 and zero explained variance.
-        self.assertEqual(anova([[1, 3], [0, 4]]), [0, 1, 1, 2, 0])
+        self.assertEqual(anova([[1, 3], [0, 4], [2, 2]]), [0, 1, 2, 3, 0])
 
 
 class ArtifactAudit(unittest.TestCase):

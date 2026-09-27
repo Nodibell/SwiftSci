@@ -57,7 +57,7 @@ import SwiftStats
         TypedColumn<Int64>(name: "id", values: (0..<request.rows).map(Int64.init)),
         TypedColumn<Double>(name: "weight", values: (0..<request.rows).map { Double($0) / 4 }),
       ]) : nil
-      let coreInputs = CoreInputs(operation: op, rows: request.rows)
+      let coreInputs = CoreInputs(operation: op, rows: request.rows, x: x, y: y)
       var samples = [BenchmarkSample]()
       for index in 0..<(request.warmups + request.samples) {
         let start = ContinuousClock.now

@@ -274,14 +274,22 @@ def reference(root, manifest, workload):
         )
         return [manifest["certified"][operation]]
     x = [r[2] for r in rows]
-    if operation in ["welch", "student", "paired", "anova", "regression-metrics", "roc-auc", "tfidf"]:
+    if operation in [
+        "welch",
+        "student",
+        "paired",
+        "anova",
+        "regression-metrics",
+        "roc-auc",
+        "tfidf",
+    ]:
         import numerical_reference as nr
 
         y = [r[3] for r in rows]
         if operation in ["welch", "student", "paired"]:
             return nr.welch(x, y, method=operation)
         if operation == "anova":
-            return nr.anova([x, y])
+            return nr.anova([x, y, [(a + b) / 2 for a, b in zip(x, y)]])
         if operation == "regression-metrics":
             return nr.regression_metrics(x, y)
         if operation == "roc-auc":

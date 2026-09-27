@@ -89,6 +89,8 @@ try:
         else None
     )
 
+    anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
+
     def execute():
         if op in ["welch", "student", "paired"]:
             result = (
@@ -112,17 +114,16 @@ try:
                 else (np.mean(x) - np.mean(y)) / pooled,
             ]
         if op == "anova":
-            result = stats.f_oneway(x, y)
-            mean = (np.sum(x) + np.sum(y)) / (len(x) + len(y))
-            between = (
-                len(x) * (np.mean(x) - mean) ** 2 + len(y) * (np.mean(y) - mean) ** 2
-            )
-            within = np.sum((x - np.mean(x)) ** 2) + np.sum((y - np.mean(y)) ** 2)
+            result = stats.f_oneway(*anova_groups)
+            size = sum(map(len, anova_groups))
+            mean = sum(np.sum(g) for g in anova_groups) / size
+            between = sum(len(g) * (np.mean(g) - mean) ** 2 for g in anova_groups)
+            within = sum(np.sum((g - np.mean(g)) ** 2) for g in anova_groups)
             return [
                 result.statistic,
                 result.pvalue,
-                1,
-                len(x) + len(y) - 2,
+                2,
+                size - 3,
                 between / (between + within),
             ]
         if op == "regression-metrics":

@@ -61,7 +61,8 @@
         "vector-cosine",
         "kernel-shap",
         "supervised-scale",
-        "supervised-ols-cpu"
+        "supervised-ols-cpu",
+        "supervised-logistic-cpu"
       ]
     },
     "scope": {

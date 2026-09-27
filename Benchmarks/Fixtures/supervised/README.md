@@ -1,6 +1,6 @@
 # Frozen supervised datasets
 
-This pack separates data preparation, numerical conformance and predictive quality. Its three current cases check train-only scaling on WDBC and red wine, then train-only OLS regression on red wine. WDBC classifier training is not yet part of this profile.
+This pack separates data preparation, numerical conformance and predictive quality. Its six cases check train-only scaling on WDBC and red wine, train-only OLS regression on red wine, and three fixed-update binary-classifier checkpoints on WDBC.
 
 ## Sources and attribution
 
@@ -39,4 +39,16 @@ Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --pro
 
 Run `supervised-conformance` with the worker arguments in the [benchmark guide](../../README.md). The profile uses one checked warmup and two checked samples per case. Input decoding stays outside timing. Split gathering, construction, scaling, fitting, prediction, metrics and complete output materialization are timed together. These small conformance timings are diagnostic and are not the formal performance baseline.
 
-Regeneration tests compare every derived byte. Leakage tests perturb held-out features and targets and require unchanged fitted parameters and training outputs. Full-output checks prevent a matching aggregate metric from concealing wrong predictions. Large trained models, classification quality and shared optimization trajectories require additional contracts.
+Regeneration tests compare every derived byte. Leakage tests perturb held-out features and targets and require unchanged fitted parameters and training outputs. Full-output checks prevent a matching aggregate metric from concealing wrong predictions. Large trained models and predictive-quality acceptance thresholds require additional contracts.
+
+## Controlled classifier updates
+
+WDBC classification uses malignant = 1 and benign = 0. Three cases request zero, one and 32 full-batch gradient updates from zero weights and bias. The learning rate is 0.125, exactly representable by the Swift API's Float parameter and the Python adapter. The objective is mean binary cross-entropy with an intercept and no regularization. Each update computes all probabilities from the old parameters, averages the weight and bias gradients over training rows, then updates them together. There is no shuffle, stochastic batch, early stopping or hyperparameter selection. These checkpoints test a defined finite computation and do not certify convergence.
+
+The zero-update case exercises probabilities of 0.5, all-negative labels under the strict `p > 0.5` rule, and complete score ties. The one-update case also has a closed-form gradient check from initial probability 0.5. The 32-update case checks accumulated updates. Training-only scaling and frozen row partitions are the same as the preprocessing cases.
+
+Every learned parameter, both probabilities for every row, and every returned label are checked. For validation and test separately, the worker calls the actual Swift metrics APIs for accuracy, positive-label precision, recall and F1, log loss, ROC AUC and Brier score. Adapter-computed confusion counts use TN, FP, FN, TP order. A second block scores a constant predictor equal to training-positive prevalence. Both classes are required in each partition. Precision with no positive predictions is zero. Probability 0.5 maps to class zero. Log loss clips to `[1e-15, 1-1e-15]`. ROC ties receive half credit, including a constant predictor's AUC of 0.5.
+
+The [scikit-learn metric definitions](https://scikit-learn.org/stable/modules/model_evaluation.html) describe these scoring measures. The reference implements high-precision sigmoid updates directly and calculates ROC AUC by pairwise concordance. The Python runtime uses NumPy matrix arithmetic, SciPy sigmoid and average ranks for AUC; the Swift runtime uses its public model and metrics APIs. The reference runs at 80 digits and must produce the same binary64 answers at 120 digits. Neither runtime imports reference code. Outputs and tolerance are declared in `supervised-logistic-cpu-v1`.
+
+These finite-update comparisons are distinct from scikit-learn's default regularized, convergence-based LogisticRegression estimator. They do not claim a tuned classifier or clinical utility. No quality threshold is inferred from held-out results, and no production implementation is changed to make a fixture pass.

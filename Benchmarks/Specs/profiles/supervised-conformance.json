@@ -20,6 +20,21 @@
       "id": "wdbc-supervised-scale",
       "dataset": "wdbc-supervised-scale",
       "workload": "supervised-scale-v1"
+    },
+    {
+      "id": "wdbc-supervised-logistic-cpu-epochs0",
+      "dataset": "wdbc-supervised-logistic-cpu-epochs0",
+      "workload": "supervised-logistic-cpu-v1"
+    },
+    {
+      "id": "wdbc-supervised-logistic-cpu-epochs1",
+      "dataset": "wdbc-supervised-logistic-cpu-epochs1",
+      "workload": "supervised-logistic-cpu-v1"
+    },
+    {
+      "id": "wdbc-supervised-logistic-cpu-epochs32",
+      "dataset": "wdbc-supervised-logistic-cpu-epochs32",
+      "workload": "supervised-logistic-cpu-v1"
     }
   ]
 }

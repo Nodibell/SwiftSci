@@ -108,6 +108,7 @@ def validate_values(actual, expected, atol, rtol):
 
 WORKLOADS = {
     'linear-fixed-cpu', 'logistic-fixed-cpu', 'kmeans-one-cpu', 'kalman-fixed-cpu', 'vector-cosine', 'kernel-shap',
+    "supervised-logistic-cpu",
     "supervised-scale",
     "supervised-ols-cpu",
     "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu",

@@ -24,7 +24,7 @@ class SupervisedFixtures(unittest.TestCase):
             yield m,w,p,reference(ROOT,m,w)
 
     def test_all_outputs_match_independent_reference(self):
-        cases=list(self.cases());self.assertEqual(len(cases),3)
+        cases=list(self.cases());self.assertEqual(len(cases),6)
         for m,w,p,expected in cases:
             self.assertEqual(output_count(p),len(expected))
             for _ in range(2):validate_values(execute(prepare_runtime(p)).tolist(),expected,w['atol'],w['rtol'])
@@ -55,9 +55,10 @@ class SupervisedFixtures(unittest.TestCase):
             for k in ('validation','test'):
                 for i in q['splits'][k]:
                     q['features'][i]=[v+1000 for v in q['features'][i]]
-                    q['targets'][i]+=10000
+                    q['targets'][i]=1-q['targets'][i] if p['operation']=='supervised-logistic-cpu' else q['targets'][i]+10000
             a=execute(prepare_runtime(p));b=execute(prepare_runtime(q))
             prefix=2*width+ntrain*width if p['operation']=='supervised-scale' else 3*width+1+ntrain
+            if p['operation']=='supervised-logistic-cpu': prefix=3*width+1+2*ntrain
             self.assertEqual(a[:prefix].tolist(),b[:prefix].tolist())
             self.assertFalse((a==b).all())
             with mp.workdps(80):

@@ -71,6 +71,9 @@ def reference(payload):
     output = means+scales
     if payload['operation'] == 'supervised-scale':
         return output+[v for name in SPLITS for row in z[name] for v in row]
+    if payload['operation'] == 'supervised-logistic-cpu':
+        from classification_reference import reference as classifier_reference
+        return classifier_reference(payload,means,scales,z)
     targets = {name: [mp.mpf(payload['targets'][i]) for i in payload['splits'][name]] for name in SPLITS}
     design = mp.matrix([[1]+row for row in z['train']])
     beta,_ = mp.qr_solve(design, mp.matrix(targets['train']))
@@ -96,12 +99,17 @@ def main():
         ids,names,x,y=read_source(raw,source['kind']); splits=partition(x)
         split_artifact={'schema_version':1,'source_sha256':source['sha256'],'algorithm':'feature-content-sha256-v1; buckets 0..5 train, 6..7 validation, 8..9 test; source order retained','indices':splits,'row_ids':{k:[ids[i] for i in v] for k,v in splits.items()}}
         write(base/'splits'/f"{source['kind']}.json",split_artifact)
-        for operation in (['supervised-scale','supervised-ols-cpu'] if source['kind']=='wine-red' else ['supervised-scale']):
-            name=source['kind']+'-'+operation
+        cases = [('supervised-scale', None), ('supervised-ols-cpu', None)] if source['kind']=='wine-red' else [('supervised-scale', None)] + [('supervised-logistic-cpu', n) for n in (0,1,32)]
+        for operation, epochs in cases:
+            name=source['kind']+'-'+operation+(f'-epochs{epochs}' if epochs is not None else '')
             payload=dict(operation=operation,row_ids=ids,feature_names=names,features=x,targets=y,splits=splits)
+            if epochs is not None: payload['training'] = {'epochs':epochs,'learning_rate':0.125}
             validate_input(payload,operation,len(x)); input_path=base/'inputs'/f'{name}.json';write(input_path,payload)
             values=reference(payload)
             ref={'operation':operation,'source':{'sha256':sha(lock_bytes)},'raw_source_sha256':source['sha256'],'inputIdentity':{'sha256':sha(input_path.read_bytes()),'bytes':input_path.stat().st_size},'model':{'observations':len(x)},'method':'mpmath 1.4.1 at 80 decimal digits; exact binary64 raw inputs; population scaling from training rows; high precision QR for OLS','independentReference':{'values':[float(v) for v in values]},'split_counts':{k:len(v) for k,v in splits.items()}}
+            if epochs is not None:
+                ref['method']='mpmath 1.4.1 at 80 decimal digits; train-only population scaling; zero initialization; full-batch gradient descent on mean unregularized binary cross entropy; fixed update count; pairwise ROC concordance with half credit for ties'
+                ref['training']=payload['training']
             write(base/'references'/f'{name}.json',ref)
             inventory.append({'id':name,'operation':operation,'rows':len(x),'features':len(names),'split_counts':ref['split_counts'],'output_count':len(values)})
     write(base/'inventory.json',inventory)

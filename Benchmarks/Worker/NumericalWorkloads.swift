@@ -30,13 +30,13 @@ enum NumericalInputs {
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = ["supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
+    let isNumerical = ["supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
     guard isNumerical else { return nil }
     switch operation {
-    case "supervised-scale", "supervised-ols-cpu": return .supervised(try SupervisedFixtureInput.decode(data, operation: operation, rows: rows))
+    case "supervised-scale", "supervised-ols-cpu", "supervised-logistic-cpu": return .supervised(try SupervisedFixtureInput.decode(data, operation: operation, rows: rows))
     case "linear-fixed-cpu": return .fixedLinear(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))
     case "logistic-fixed-cpu": return .fixedLogistic(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))
     case "kmeans-one-cpu": return .oneCluster(try ControlledKMeansInput.decode(data, rows: rows))

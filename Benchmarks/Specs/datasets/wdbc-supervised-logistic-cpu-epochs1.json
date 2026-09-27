@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "wdbc-supervised-logistic-cpu-epochs1",
+  "kind": "numerical-fixture-v1",
+  "rows": 569,
+  "sha256": "26a0c80868a2ca2dcf95e420b7003b87c50b26ef8415fa21b10ce6e1738f4dc3",
+  "size_bytes": 266603,
+  "source": "https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic",
+  "license": "CC BY 4.0; see Benchmarks/Fixtures/supervised/README.md",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/supervised/inputs/wdbc-supervised-logistic-cpu-epochs1.json",
+  "source_fixture": "Benchmarks/Fixtures/supervised/sources.lock.json",
+  "source_sha256": "cead2074a89bdf755a2490ea8265f8de63df615f3ccd2cc4347364e1b60e8344",
+  "source_size_bytes": 750,
+  "reference_fixture": "Benchmarks/Fixtures/supervised/references/wdbc-supervised-logistic-cpu-epochs1.json",
+  "reference_sha256": "8313b51071e57e7c811e5242274f93d408f81e9bd2ed3ac9c89ebd2bb16f4709",
+  "reference_size_bytes": 40101,
+  "reference_basis": "supervised-reference-v1",
+  "operation": "supervised-logistic-cpu",
+  "tolerances": {
+    "atol": 1e-08,
+    "rtol": 1e-09
+  }
+}

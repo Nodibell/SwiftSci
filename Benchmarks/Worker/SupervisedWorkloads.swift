@@ -5,6 +5,11 @@ import SwiftPreprocessing
 import SwiftSciBenchmarkSupport
 
 struct SupervisedFixtureInput: Decodable {
+  struct Training: Decodable {
+    let epochs: Int
+    let learning_rate: Double
+  }
+
   struct Splits: Decodable {
     let train: [Int]
     let validation: [Int]
@@ -17,16 +22,24 @@ struct SupervisedFixtureInput: Decodable {
   let features: [[Double]]
   let targets: [Double]
   let splits: Splits
+  let training: Training?
 
   static func decode(_ data: Data, operation: String, rows: Int) throws -> Self {
+    var fields: Set<String> = ["operation", "row_ids", "feature_names", "features", "targets", "splits"]
+    if operation == "supervised-logistic-cpu" { fields.insert("training") }
     guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-      Set(object.keys) == Set(["operation", "row_ids", "feature_names", "features", "targets", "splits"]),
+      Set(object.keys) == fields,
       let splitObject = object["splits"] as? [String: Any],
       Set(splitObject.keys) == Set(["train", "validation", "test"])
     else { throw BenchmarkFailure("Unexpected supervised input fields") }
+    if operation == "supervised-logistic-cpu" {
+      guard let controls = object["training"] as? [String: Any], Set(controls.keys) == Set(["epochs", "learning_rate"]) else {
+        throw BenchmarkFailure("Unexpected classifier training fields")
+      }
+    }
     let input = try JSONDecoder().decode(Self.self, from: data)
     let columns = input.feature_names.count
-    guard ["supervised-scale", "supervised-ols-cpu"].contains(operation),
+    guard ["supervised-scale", "supervised-ols-cpu", "supervised-logistic-cpu"].contains(operation),
       input.operation == operation, rows > 0, columns > 0,
       input.row_ids.count == rows, Set(input.row_ids).count == rows,
       input.row_ids.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
@@ -62,6 +75,14 @@ struct SupervisedFixtureInput: Decodable {
         }
       }
     }
+    if operation == "supervised-logistic-cpu" {
+      guard let controls = input.training, (0...128).contains(controls.epochs),
+        controls.learning_rate.isFinite, controls.learning_rate > 0, controls.learning_rate <= 1,
+        Double(Float(controls.learning_rate)) == controls.learning_rate,
+        input.targets.allSatisfy({ $0 == 0 || $0 == 1 }),
+        partitions.allSatisfy({ Set($0.map { input.targets[$0] }) == Set([0.0,1.0]) })
+      else { throw BenchmarkFailure("Invalid classifier controls or binary class coverage") }
+    }
     return input
   }
 }
@@ -90,6 +111,9 @@ extension Worker {
         values.allSatisfy(\.isFinite)
       else { throw BenchmarkFailure("Invalid supervised scale output layout") }
       return .values(values)
+    }
+    if input.operation == "supervised-logistic-cpu" {
+      return try await executeSupervisedClassifier(input: input, means: means, scales: scales, scaled: scaled, targets: targets)
     }
     guard input.operation == "supervised-ols-cpu" else {
       throw BenchmarkFailure("Unsupported supervised operation")

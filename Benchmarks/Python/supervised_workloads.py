@@ -1,6 +1,7 @@
 """NumPy/SciPy implementation of the frozen supervised workflow."""
 import numpy as np
 from scipy import linalg
+from classification_workloads import execute as execute_classifier
 
 
 def prepare(payload):
@@ -24,6 +25,8 @@ def execute(prepared):
     result=[means,scales]
     if payload['operation']=='supervised-scale':
         return np.concatenate(result+[z[name].ravel() for name in names])
+    if payload['operation']=='supervised-logistic-cpu':
+        return execute_classifier(payload,means,scales,z,y)
     train_y=y[splits['train']]
     design=np.column_stack((np.ones(len(train)),z['train']))
     beta,_,rank,_=linalg.lstsq(design,train_y,lapack_driver='gelsy')

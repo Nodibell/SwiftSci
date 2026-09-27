@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "onehot-v1",
+  "operation": "onehot",
+  "scope": "fit-transform-export",
+  "output": "finite little-endian float64 sequence declared in semantics",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "prepared two categorical columns dept_(id mod 8), region_(id mod 4); fit sorted categories and produce full dense row-major one-hot matrix"
+}

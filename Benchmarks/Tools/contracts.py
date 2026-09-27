@@ -107,6 +107,19 @@ def validate_values(actual, expected, atol, rtol):
 
 
 WORKLOADS = {
+    "welch",
+    "student",
+    "paired",
+    "anova",
+    "regression-metrics",
+    "roc-auc",
+    "onehot",
+    "tfidf",
+    "sqlite-ingest",
+    "rag-summary",
+    "pool-dice",
+    "parquet-read",
+    "parquet-write",
     "csv-stream-read",
     "csv-stream-filter",
     "csv-stream-group",

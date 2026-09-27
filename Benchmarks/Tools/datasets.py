@@ -37,7 +37,9 @@ def load_manifest(root, name):
         "Dataset identity/version mismatch",
     )
     require(
-        value["kind"] in ["table-v1", "nist-univariate-v1"], "Unknown dataset generator"
+        value["kind"]
+        in ["table-v1", "mixed-table-v1", "parquet-table-v1", "nist-univariate-v1"],
+        "Unknown dataset generator",
     )
     positive(value["rows"], "rows")
     positive(value["size_bytes"], "size_bytes")
@@ -48,7 +50,7 @@ def load_manifest(root, name):
         "Invalid SHA-256",
     )
     require(value["generator_version"] == 1, "Unknown generator version")
-    if value["kind"] == "table-v1":
+    if value["kind"] != "nist-univariate-v1":
         positive(value.get("groups"), "groups")
     else:
         require(
@@ -113,6 +115,51 @@ def generate_table(rows, groups):
     return out.getvalue().encode("ascii")
 
 
+def generate_mixed_table(rows, groups):
+    numeric = generate_table(rows, groups).decode("ascii").splitlines()
+    result = ["id,group,x,y,flag"]
+    for line in numeric[1:]:
+        i, group, x, y = line.split(",")
+        result.append(
+            f"{i},category{group},{x},{y},{'true' if int(i) % 2 == 0 else 'false'}"
+        )
+    return ("\n".join(result) + "\n").encode("ascii")
+
+
+def generate_parquet(rows, groups):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    require(
+        pa.__version__ == "25.0.1",
+        "Parquet fixture generation requires pinned pyarrow 25.0.1",
+    )
+    records = list(
+        csv.DictReader(io.StringIO(generate_mixed_table(rows, groups).decode()))
+    )
+    table = pa.table(
+        {
+            "id": pa.array([int(r["id"]) for r in records], type=pa.int64()),
+            "group": [r["group"] for r in records],
+            "x": [float(r["x"]) for r in records],
+            "y": [float(r["y"]) for r in records],
+            "flag": [r["flag"] == "true" for r in records],
+        }
+    )
+    sink = pa.BufferOutputStream()
+    pq.write_table(
+        table,
+        sink,
+        version="1.0",
+        data_page_version="1.0",
+        compression="snappy",
+        use_dictionary=False,
+        write_statistics=False,
+        row_group_size=rows,
+    )
+    return sink.getvalue().to_pybytes()
+
+
 def cache_path(root, manifest):
     return root / "Benchmarks/Data/standardized" / (manifest["sha256"] + ".data")
 
@@ -124,6 +171,10 @@ def prepare(root, manifest):
         return path
     if manifest["kind"] == "table-v1":
         content = generate_table(manifest["rows"], manifest["groups"])
+    elif manifest["kind"] == "mixed-table-v1":
+        content = generate_mixed_table(manifest["rows"], manifest["groups"])
+    elif manifest["kind"] == "parquet-table-v1":
+        content = generate_parquet(manifest["rows"], manifest["groups"])
     else:
         content = repository_file(root, manifest["fixture"]).read_bytes()
     require(
@@ -144,7 +195,31 @@ def values(root, manifest):
     )
     if manifest["kind"] == "nist-univariate-v1":
         return parse_univariate(content, manifest["data_start_line"], manifest["rows"])
+    if manifest["kind"] == "parquet-table-v1":
+        content = generate_mixed_table(manifest["rows"], manifest["groups"])
     reader = csv.DictReader(io.StringIO(content.decode("ascii")))
+    if manifest["kind"] in ["mixed-table-v1", "parquet-table-v1"]:
+        require(
+            reader.fieldnames == ["id", "group", "x", "y", "flag"],
+            "Unexpected mixed CSV schema",
+        )
+        result = []
+        for r in reader:
+            require(
+                r["group"].startswith("category") and r["flag"] in ["true", "false"],
+                "Malformed mixed table",
+            )
+            result.append(
+                (
+                    int(r["id"]),
+                    int(r["group"][8:]),
+                    float(r["x"]),
+                    float(r["y"]),
+                    float(r["flag"] == "true"),
+                )
+            )
+        require(len(result) == manifest["rows"], "CSV row count mismatch")
+        return result
     require(reader.fieldnames == ["id", "group", "x", "y"], "Unexpected CSV schema")
     data = [
         (int(r["id"]), int(r["group"]), float(r["x"]), float(r["y"])) for r in reader
@@ -199,6 +274,32 @@ def reference(root, manifest, workload):
         )
         return [manifest["certified"][operation]]
     x = [r[2] for r in rows]
+    if operation in ["welch", "student", "paired", "anova", "regression-metrics", "roc-auc", "tfidf"]:
+        import numerical_reference as nr
+
+        y = [r[3] for r in rows]
+        if operation in ["welch", "student", "paired"]:
+            return nr.welch(x, y, method=operation)
+        if operation == "anova":
+            return nr.anova([x, y])
+        if operation == "regression-metrics":
+            return nr.regression_metrics(x, y)
+        if operation == "roc-auc":
+            return [nr.auc([int(r[0]) % 2 for r in rows], x)]
+        return nr.tfidf(len(rows))
+    if operation == "onehot":
+        return [
+            float(level == r[0] % modulus)
+            for r in rows
+            for modulus in [8, 4]
+            for level in range(modulus)
+        ]
+    if operation == "sqlite-ingest":
+        return [1, 10.5, 2, 20]
+    if operation == "rag-summary":
+        return list(b"## BenchDF Profile\n- Rows: 0, Columns: 0\n- Columns: \n")
+    if operation == "pool-dice":
+        return [0.8, 0.8, 0.8, 1.0]
     if operation in ["mean", "stddev", "variance"]:
         mean = math.fsum(x) / len(x)
         variance = math.fsum((v - mean) ** 2 for v in x) / (len(x) - 1)
@@ -230,8 +331,8 @@ def reference(root, manifest, workload):
     if operation == "target":
         return x
     if operation == "flat-matrix":
-        return [v for r in rows for v in r[2:]]
-    if operation in ["csv-read", "csv-stream-read"]:
+        return [v for r in rows for v in r[2:4]]
+    if operation in ["csv-read", "csv-stream-read", "parquet-read", "parquet-write"]:
         return [v for r in rows for v in r]
     if operation in ["filter", "csv-stream-filter"]:
         return [v for r in rows if r[2] > 0 for v in r]

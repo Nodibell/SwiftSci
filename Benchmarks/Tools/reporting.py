@@ -2,7 +2,7 @@
 
 import math
 import statistics
-from contracts import fields, positive, require
+from contracts import fields, positive, require, repository_file, verified_file
 
 
 def validate_worker(result, request):
@@ -112,7 +112,34 @@ def summarize(run):
     return output
 
 
-def audit(run):
+def audit_artifacts(event, profile, directory=None):
+    records = event.get("artifacts", [])
+    require(len(records) == profile["samples"], "Missing Parquet artifact evidence")
+    token = f"{event['case_id']}-{event['engine']}-{event['batch']}"
+    for index, record in enumerate(records, start=profile["warmups"]):
+        expected_name = f"{token}.response.json.sample{index}.parquet"
+        fields(record, ["file", "sha256", "bytes", "independently_validated"])
+        require(record["file"] == expected_name, "Parquet artifact name mismatch")
+        require(
+            record["independently_validated"] is True,
+            "Parquet artifact was not validated",
+        )
+        require(
+            isinstance(record["sha256"], str)
+            and len(record["sha256"]) == 64
+            and all(c in "0123456789abcdef" for c in record["sha256"]),
+            "Invalid artifact digest",
+        )
+        positive(record["bytes"], "artifact bytes")
+        if directory is not None:
+            verified_file(
+                repository_file(directory, record["file"]),
+                record["sha256"],
+                record["bytes"],
+            )
+
+
+def audit(run, directory=None):
     require(
         run.get("schema_version") == 1 and run.get("status") == "passed",
         "Run is incomplete or failed",
@@ -123,6 +150,7 @@ def audit(run):
         for e in run["plan"]["engines"]
         for b in range(run["plan"]["profile"]["batches"])
     }
+    cases = {c["case"]["id"]: c for c in run["plan"]["cases"]}
     observed = set()
     for event in run["events"]:
         key = (event["case_id"], event["engine"], event["batch"])
@@ -138,6 +166,11 @@ def audit(run):
             event["result"],
             dict(case_key=expected[key], samples=run["plan"]["profile"]["samples"]),
         )
+        if (
+            cases[event["case_id"]].get("workload", {}).get("operation")
+            == "parquet-write"
+        ):
+            audit_artifacts(event, run["plan"]["profile"], directory)
         observed.add(key)
     require(observed == expected.keys(), "Incomplete run coverage")
     return True

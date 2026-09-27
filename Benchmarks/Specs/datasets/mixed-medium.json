@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "mixed-medium",
+  "kind": "mixed-table-v1",
+  "rows": 100000,
+  "groups": 4,
+  "sha256": "1568b3a5239d9150273d45cb4888cd18fd402036a573324d8f693c4f9fb79d7a",
+  "size_bytes": 3440517,
+  "source": "SwiftSci deterministic quarter-fraction table with category strings and alternating Boolean flags; PyArrow 25.0.1 Snappy when Parquet",
+  "license": "Repository license",
+  "generator_version": 1
+}

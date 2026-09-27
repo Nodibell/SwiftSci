@@ -17,6 +17,7 @@ from contracts import (
     require,
     verified_file,
     write_json,
+    validate_values,
 )
 from datasets import load_manifest, cache_path, reference, binary, resolve_workload
 from reporting import validate_worker, summarize
@@ -165,7 +166,7 @@ def plan(root, profile, engines, swift_worker, python):
                 [
                     python,
                     "-c",
-                    "import pandas,numpy,sys;print(pandas.__version__,numpy.__version__,sys.version)",
+                    "import pandas,numpy,scipy,pyarrow,sys;print(pandas.__version__,numpy.__version__,scipy.__version__,pyarrow.__version__,sys.version)",
                 ]
             )
             engine_records[engine] = dict(
@@ -188,8 +189,13 @@ def plan(root, profile, engines, swift_worker, python):
         profile=profile,
         cases=cases,
         threads=THREAD_ENV,
-        measurement="materialized-output-alive-v3",
-        oracle_sha256=digest((root / "Benchmarks/Tools/datasets.py").read_bytes()),
+        measurement="materialized-output-alive-v4",
+        oracle_sha256=identity(
+            {
+                name: digest((root / "Benchmarks/Tools" / name).read_bytes())
+                for name in ["datasets.py", "numerical_reference.py"]
+            }
+        ),
     )
     return dict(
         schema_version=1,
@@ -200,6 +206,52 @@ def plan(root, profile, engines, swift_worker, python):
         environment=environment(),
         source=source_identity(root),
     )
+
+
+def validate_parquet_artifacts(response_path, request, expected):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    require(
+        pa.__version__ == "25.0.1", "Artifact validation requires pinned PyArrow 25.0.1"
+    )
+    records = []
+    for index in range(request["warmups"], request["warmups"] + request["samples"]):
+        path = Path(str(response_path) + f".sample{index}.parquet")
+        data = path.read_bytes()
+        table = pq.read_table(path)
+        require(
+            table.column_names == ["id", "group", "x", "y", "flag"],
+            "Parquet schema mismatch",
+        )
+        require(
+            pa.types.is_boolean(table.schema.field("flag").type),
+            "Parquet Boolean type lost",
+        )
+        rows = table.to_pylist()
+        require(len(rows) == request["rows"], "Parquet row count mismatch")
+        actual = []
+        for row in rows:
+            key = row["group"]
+            require(
+                isinstance(key, str)
+                and key.startswith("category")
+                and key[8:].isdigit(),
+                "Malformed Parquet category",
+            )
+            actual.extend(
+                [row["id"], int(key[8:]), row["x"], row["y"], float(row["flag"])]
+            )
+        validate_values(actual, expected, request["atol"], request["rtol"])
+        records.append(
+            dict(
+                file=path.name,
+                sha256=digest(data),
+                bytes=len(data),
+                independently_validated=True,
+            )
+        )
+    return records
 
 
 def run(root, resolved, destination, purpose="benchmark"):
@@ -220,7 +272,8 @@ def run(root, resolved, destination, purpose="benchmark"):
     for case in resolved["cases"]:
         dataset = case["dataset"]
         workload = case["workload"]
-        expected = binary(reference(root, dataset, workload))
+        expected_values = reference(root, dataset, workload)
+        expected = binary(expected_values)
         expected_path = destination / (case["case"]["id"] + ".expected.f64")
         expected_path.write_bytes(expected)
         for batch in range(profile["batches"]):
@@ -270,6 +323,10 @@ def run(root, resolved, destination, purpose="benchmark"):
                     )
                     result = read_json(response_path)
                     validate_worker(result, request)
+                    if workload["operation"] == "parquet-write":
+                        event["artifacts"] = validate_parquet_artifacts(
+                            response_path, request, expected_values
+                        )
                     event.update(status="passed", result=result)
                 except (OSError, ValueError, subprocess.TimeoutExpired) as error:
                     event["error"] = str(error)

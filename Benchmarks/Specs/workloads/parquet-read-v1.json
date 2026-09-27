@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "parquet-read-v1",
+  "operation": "parquet-read",
+  "scope": "ingestion",
+  "output": "finite little-endian float64 canonical rows; id, category code, x, y, Boolean flag",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "read checksum-pinned Snappy Parquet bytes into a full materialized frame; validate all values and row order"
+}

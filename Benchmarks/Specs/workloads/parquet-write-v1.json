@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "parquet-write-v1",
+  "operation": "parquet-write",
+  "scope": "operation",
+  "output": "finite little-endian float64 canonical rows; id, category code, x, y, Boolean flag",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "write prepared mixed frame with Snappy compression; file complete at end timestamp; validate every written file through independent PyArrow reader outside timing"
+}

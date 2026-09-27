@@ -45,6 +45,146 @@
       "id": "tiny-spearman",
       "dataset": "tiny",
       "workload": "spearman-v1"
+    },
+    {
+      "id": "mixed-tiny-csv-read",
+      "dataset": "mixed-tiny",
+      "workload": "csv-read-v1"
+    },
+    {
+      "id": "mixed-tiny-csv-stream-read",
+      "dataset": "mixed-tiny",
+      "workload": "csv-stream-read-v1"
+    },
+    {
+      "id": "mixed-tiny-csv-stream-filter",
+      "dataset": "mixed-tiny",
+      "workload": "csv-stream-filter-v1"
+    },
+    {
+      "id": "mixed-tiny-csv-stream-group",
+      "dataset": "mixed-tiny",
+      "workload": "csv-stream-group-v1"
+    },
+    {
+      "id": "mixed-tiny-filter",
+      "dataset": "mixed-tiny",
+      "workload": "filter-v1"
+    },
+    {
+      "id": "mixed-tiny-group-sum-mean",
+      "dataset": "mixed-tiny",
+      "workload": "group-sum-mean-v1"
+    },
+    {
+      "id": "mixed-tiny-sort",
+      "dataset": "mixed-tiny",
+      "workload": "sort-v1"
+    },
+    {
+      "id": "mixed-tiny-flat-matrix",
+      "dataset": "mixed-tiny",
+      "workload": "flat-matrix-v1"
+    },
+    {
+      "id": "mixed-tiny-row-sum",
+      "dataset": "mixed-tiny",
+      "workload": "row-sum-v1"
+    },
+    {
+      "id": "mixed-tiny-inner-join",
+      "dataset": "mixed-tiny",
+      "workload": "inner-join-v1"
+    },
+    {
+      "id": "mixed-tiny-parquet-write",
+      "dataset": "mixed-tiny",
+      "workload": "parquet-write-v1"
+    },
+    {
+      "id": "mixed-tiny-standard-scale",
+      "dataset": "mixed-tiny",
+      "workload": "standard-scale-v1"
+    },
+    {
+      "id": "mixed-tiny-minmax-scale",
+      "dataset": "mixed-tiny",
+      "workload": "minmax-scale-v1"
+    },
+    {
+      "id": "parquet-tiny-read",
+      "dataset": "parquet-tiny",
+      "workload": "parquet-read-v1"
+    },
+    {
+      "id": "tiny-welch",
+      "dataset": "tiny",
+      "workload": "welch-v1"
+    },
+    {
+      "id": "tiny-regression-metrics",
+      "dataset": "tiny",
+      "workload": "regression-metrics-v1"
+    },
+    {
+      "id": "tiny-roc-auc",
+      "dataset": "tiny",
+      "workload": "roc-auc-v1"
+    },
+    {
+      "id": "tiny-onehot",
+      "dataset": "tiny",
+      "workload": "onehot-v1"
+    },
+    {
+      "id": "tiny-tfidf",
+      "dataset": "tiny",
+      "workload": "tfidf-v1"
+    },
+    {
+      "id": "tiny-sqlite-ingest",
+      "dataset": "tiny",
+      "workload": "sqlite-ingest-v1"
+    },
+    {
+      "id": "tiny-rag-summary",
+      "dataset": "tiny",
+      "workload": "rag-summary-v1"
+    },
+    {
+      "id": "tiny-pool-dice",
+      "dataset": "tiny",
+      "workload": "pool-dice-v1"
+    },
+    {
+      "id": "tiny-mean",
+      "dataset": "tiny",
+      "workload": "mean-v1"
+    },
+    {
+      "id": "tiny-variance",
+      "dataset": "tiny",
+      "workload": "variance-v1"
+    },
+    {
+      "id": "tiny-stddev",
+      "dataset": "tiny",
+      "workload": "stddev-v1"
+    },
+    {
+      "id": "tiny-student",
+      "dataset": "tiny",
+      "workload": "student-v1"
+    },
+    {
+      "id": "tiny-paired",
+      "dataset": "tiny",
+      "workload": "paired-v1"
+    },
+    {
+      "id": "tiny-anova",
+      "dataset": "tiny",
+      "workload": "anova-v1"
     }
   ]
 }

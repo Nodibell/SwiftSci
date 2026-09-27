@@ -8,8 +8,10 @@ import SwiftStats
 @main struct Worker {
   enum Output {
     case frame(DataFrame)
-    case chunks([DataFrame])
+    case chunks([DataFrame], inputRows: [Int])
+    case written(URL)
     case values([Double])
+    case text(String)
   }
   static func main() async {
     guard CommandLine.arguments.count == 3 else {
@@ -39,7 +41,7 @@ import SwiftStats
           throw BenchmarkFailure("Missing NIST data offset")
         }
         x = try decodeUnivariate(input, skipRows: skipRows, rows: request.rows)
-      } else if op == "csv-read" || op.hasPrefix("csv-stream-") {
+      } else if op == "csv-read" || op == "parquet-read" || op.hasPrefix("csv-stream-") {
         frame = nil
         x = []
       } else {
@@ -55,17 +57,29 @@ import SwiftStats
         TypedColumn<Int64>(name: "id", values: (0..<request.rows).map(Int64.init)),
         TypedColumn<Double>(name: "weight", values: (0..<request.rows).map { Double($0) / 4 }),
       ]) : nil
+      let coreInputs = CoreInputs(operation: op, rows: request.rows)
       var samples = [BenchmarkSample]()
       for index in 0..<(request.warmups + request.samples) {
         let start = ContinuousClock.now
         let output: Output
         if op == "csv-read" {
           output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path)))
+        } else if op == "sqlite-ingest" {
+          output = .frame(try await sqliteIngest())
+        } else if op == "parquet-read" {
+          output = .frame(try await ParquetReader.read(url: URL(fileURLWithPath: request.input_path)))
+        } else if op == "parquet-write" {
+          guard let frame else { throw BenchmarkFailure("Missing write input") }
+          let path = outputURL.appendingPathExtension("sample\(index).parquet")
+          try await ParquetWriter.write(dataFrame: frame, to: path)
+          output = .written(path)
         } else if op.hasPrefix("csv-stream-") {
           var chunks = [DataFrame]()
+          var inputRows = [Int]()
           for try await chunk in DataFrame.readCSVStream(
             contentsOf: URL(fileURLWithPath: request.input_path), chunkSize: 10000)
           {
+            inputRows.append(chunk.shape.rows)
             switch op {
             case "csv-stream-read": chunks.append(chunk)
             case "csv-stream-filter":
@@ -75,26 +89,32 @@ import SwiftStats
             default: throw BenchmarkFailure("Unsupported streaming operation")
             }
           }
-          output = .chunks(chunks)
+          output = .chunks(chunks, inputRows: inputRows)
         } else {
-          output = try execute(op, frame: frame, x: x, y: y, right: right)
+          output = try executeCore(op, x: x, y: y, inputs: coreInputs)
+            ?? execute(op, frame: frame, x: x, y: y, right: right)
         }
         let duration = start.duration(to: .now).components
         let elapsed = duration.seconds * 1_000_000_000 + duration.attoseconds / 1_000_000_000
         let actual: [Double]
         switch output {
         case .values(let values): actual = values
+        case .text(let text): actual = text.utf8.map(Double.init)
         case .frame(let result):
-          actual = try canonical(result, operation: op)
-        case .chunks(let chunks):
+          actual = try canonical(result, operation: op, mixed: request.dataset_kind != "table-v1")
+        case .written(let path):
+          actual = try canonical(try await ParquetReader.read(url: path), operation: op, mixed: true)
+        case .chunks(let chunks, let inputRows):
+          let expectedSizes = stride(from: 0, to: request.rows, by: 10000).map { min(10000, request.rows - $0) }
+          guard inputRows == expectedSizes else { throw BenchmarkFailure("Streaming chunk boundaries differ") }
           actual = try chunks.enumerated().flatMap { index, result -> [Double] in
             if op == "csv-stream-group" {
-              let rows = try canonicalGroups(result, includeMean: true)
+              let rows = try canonicalGroups(result, includeMean: true, mixed: request.dataset_kind != "table-v1")
               return stride(from: 0, to: rows.count, by: 3).flatMap {
                 [Double(index)] + Array(rows[$0..<($0 + 3)])
               }
             }
-            return try canonical(result, operation: op)
+            return try canonical(result, operation: op, mixed: request.dataset_kind != "table-v1")
           }
         }
         let sample = try BenchmarkSample(
@@ -112,22 +132,46 @@ import SwiftStats
       exit(1)
     }
   }
-  static func canonical(_ result: DataFrame, operation: String) throws -> [Double] {
+  static func canonical(_ result: DataFrame, operation: String, mixed: Bool) throws -> [Double] {
+    if operation == "sqlite-ingest" {
+      guard result.columnNames == ["id", "val"] else { throw BenchmarkFailure("SQL schema mismatch") }
+      return try result.toFlatFeatureMatrix(["id", "val"]).flat
+    }
     if operation == "group-sum" || operation == "group-sum-mean" {
-      return try canonicalGroups(result, includeMean: operation == "group-sum-mean")
+      return try canonicalGroups(result, includeMean: operation == "group-sum-mean", mixed: mixed)
     }
     let frame = operation == "inner-join" ? try result.sortBy("id") : result
+    if mixed {
+      let ids = try frame.toTargetVector("id")
+      let xs = try frame.toTargetVector("x"), ys = try frame.toTargetVector("y")
+      guard let groups = frame[column: "group", as: String.self],
+        let flags = frame[column: "flag", as: Bool.self] else {
+        throw BenchmarkFailure("Mixed table lost category or Boolean column")
+      }
+      let weights = operation == "inner-join" ? try frame.toTargetVector("weight") : []
+      return try (0..<frame.shape.rows).flatMap { row -> [Double] in
+        guard let label = groups.value(at: row) as? String,
+          label.hasPrefix("category"), let group = Double(label.dropFirst(8)),
+          let flag = flags.value(at: row) as? Bool else {
+          throw BenchmarkFailure("Malformed mixed output")
+        }
+        return [ids[row], group, xs[row], ys[row], flag ? 1 : 0]
+          + (operation == "inner-join" ? [weights[row]] : [])
+      }
+    }
     let columns = ["id", "group", "x", "y"] + (operation == "inner-join" ? ["weight"] : [])
     return try frame.toFlatFeatureMatrix(columns).flat
   }
-  static func canonicalGroups(_ result: DataFrame, includeMean: Bool = false) throws -> [Double] {
+  static func canonicalGroups(_ result: DataFrame, includeMean: Bool = false, mixed: Bool = false) throws -> [Double] {
     guard let keys = result[column: "group", as: String.self] else {
       throw BenchmarkFailure("Missing string group keys")
     }
     let sums = try result.toTargetVector("x_sum")
     let means = includeMean ? try result.toTargetVector("y_mean") : []
     let rows = try (0..<result.shape.rows).map { row -> [Double] in
-      guard let text = keys.value(at: row) as? String, let key = Double(text) else {
+      guard let text = keys.value(at: row) as? String,
+        !mixed || text.hasPrefix("category"),
+        let key = Double(mixed ? String(text.dropFirst(8)) : text) else {
         throw BenchmarkFailure("Invalid numeric group key")
       }
       return [key, sums[row]] + (includeMean ? [means[row]] : [])

@@ -13,7 +13,9 @@
     "kind": {
       "enum": [
         "table-v1",
-        "nist-univariate-v1"
+        "nist-univariate-v1",
+        "mixed-table-v1",
+        "parquet-table-v1"
       ]
     },
     "rows": {

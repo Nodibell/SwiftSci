@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "sqlite-ingest-v1",
+  "operation": "sqlite-ingest",
+  "scope": "ingestion",
+  "output": "finite little-endian float64 sequence declared in semantics",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "create in-memory database and two-row table id,val with (1,10.5),(2,20); query ordered by id into frame; close connection; output complete id,val rows"
+}

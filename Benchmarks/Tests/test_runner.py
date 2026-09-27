@@ -197,3 +197,33 @@ class AuditTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InstrumentationTests(unittest.TestCase):
+    def test_coverage_sections_reject_worker_even_when_build_settings_claim_no_coverage(
+        self,
+    ):
+        from runner import verify_uninstrumented
+
+        for name in [
+            "__llvm_prf_cnts",
+            "__llvm_prf_data",
+            "__llvm_covmap",
+            "__llvm_covfun",
+        ]:
+            with (
+                self.subTest(section=name),
+                patch(
+                    "runner.command",
+                    return_value=f"  sectname __text\n  sectname {name}\n",
+                ),
+            ):
+                with self.assertRaises(ContractError):
+                    verify_uninstrumented(Path("worker"))
+        with patch(
+            "runner.command", return_value="  sectname __text\n  sectname __cstring\n"
+        ):
+            verify_uninstrumented(Path("worker"))
+        with patch("runner.command", return_value=""):
+            with self.assertRaises(ContractError):
+                verify_uninstrumented(Path("worker"))

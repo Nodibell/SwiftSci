@@ -4,6 +4,7 @@ import json
 import datetime
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -80,6 +81,22 @@ def environment():
     return result
 
 
+def verify_uninstrumented(worker):
+    sections = re.findall(
+        r"^\s*sectname\s+(\S+)",
+        command(["xcrun", "otool", "-l", str(worker)]),
+        re.MULTILINE,
+    )
+    require(sections, "Cannot inspect benchmark Mach-O sections")
+    coverage = [
+        name for name in sections if name.startswith(("__llvm_prf", "__llvm_cov"))
+    ]
+    require(
+        not coverage,
+        f"Benchmark contains coverage instrumentation: {coverage}; rebuild with coverage disabled",
+    )
+
+
 def build(root, products, packages):
     """Build a manifest-verified tracked snapshot outside cloud-synced source."""
     source = source_identity(root)
@@ -107,6 +124,8 @@ def build(root, products, packages):
         str(packages),
         "-onlyUsePackageVersionsFromResolvedFile",
         "-skipPackagePluginValidation",
+        "-enableCodeCoverage",
+        "NO",
         "ENABLE_TESTABILITY=YES",
         "CLANG_ENABLE_CODE_COVERAGE=NO",
     ]
@@ -117,6 +136,7 @@ def build(root, products, packages):
         )
     worker = products / "Build/Products/Release/SwiftSciBenchmarkWorker"
     require(worker.is_file(), "Worker build did not produce executable")
+    verify_uninstrumented(worker)
     require(
         source_identity(root) == source,
         "Source changed during build; rebuild before reporting",
@@ -128,6 +148,7 @@ def build(root, products, packages):
             source=source,
             command=args,
             binary_sha256=digest(worker.read_bytes()),
+            coverage_instrumentation="absent",
             log=str(log),
             snapshot=str(snapshot),
             environment=environment(),
@@ -152,6 +173,11 @@ def plan(root, profile, engines, swift_worker, python):
             worker = Path(swift_worker).resolve()
             record = read_json(Path(str(worker) + ".build.json"))
             verified_file(worker, record["binary_sha256"])
+            require(
+                record.get("coverage_instrumentation") == "absent",
+                "Worker has no coverage-instrumentation check; rebuild",
+            )
+            verify_uninstrumented(worker)
             require(
                 record["environment"] == environment(),
                 "Build and run toolchains differ; rebuild",
@@ -189,7 +215,7 @@ def plan(root, profile, engines, swift_worker, python):
         profile=profile,
         cases=cases,
         threads=THREAD_ENV,
-        measurement="materialized-output-alive-v4",
+        measurement="materialized-output-alive-v5",
         oracle_sha256=identity(
             {
                 name: digest((root / "Benchmarks/Tools" / name).read_bytes())

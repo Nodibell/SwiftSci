@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "nist-smls04-binary64",
+  "kind": "numerical-fixture-v1",
+  "rows": 189,
+  "sha256": "cdbb3899ab9c90b572fcb00a5c7679d9d5cad2434d3637cd6c286dead5799518",
+  "size_bytes": 3371,
+  "source": "https://www.itl.nist.gov/div898/strd/anova/SmLs04.dat",
+  "license": "NIST StRD; original notices retained",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/nist-models/inputs/SmLs04.json",
+  "source_fixture": "Benchmarks/Fixtures/nist-models/originals/SmLs04.dat",
+  "source_sha256": "1308eb1581f28ce6c9de4ca9520fcc729f916c34f1f9dee10fb6e6581e5b4ce7",
+  "source_size_bytes": 7064,
+  "reference_fixture": "Benchmarks/Fixtures/nist-models/references/SmLs04.json",
+  "reference_sha256": "057fd252af7df0ef649fe0c2b93397eb580514c4c0133c13c7860448232d0edf",
+  "reference_size_bytes": 2549,
+  "reference_basis": "binary64-v1",
+  "operation": "nist-anova",
+  "tolerances": {
+    "atol": 1e-10,
+    "rtol": 1e-09
+  }
+}

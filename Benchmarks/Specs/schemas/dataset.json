@@ -17,7 +17,8 @@
         "mixed-table-v1",
         "parquet-table-v1",
         "h2o-group-v1",
-        "wine-quality-v1"
+        "wine-quality-v1",
+        "numerical-fixture-v1"
       ]
     },
     "rows": {
@@ -73,51 +74,73 @@
       "minimum": 1
     },
     "tolerances": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "mean",
-        "stddev",
-        "variance"
-      ],
-      "properties": {
-        "mean": {
+      "oneOf": [
+        {
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "atol",
-            "rtol"
+            "mean",
+            "stddev",
+            "variance"
           ],
           "properties": {
-            "atol": {
-              "type": "number",
-              "minimum": 0
+            "mean": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "atol",
+                "rtol"
+              ],
+              "properties": {
+                "atol": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "rtol": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
             },
-            "rtol": {
-              "type": "number",
-              "minimum": 0
+            "stddev": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "atol",
+                "rtol"
+              ],
+              "properties": {
+                "atol": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "rtol": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "variance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "atol",
+                "rtol"
+              ],
+              "properties": {
+                "atol": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "rtol": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
             }
           }
         },
-        "stddev": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "atol",
-            "rtol"
-          ],
-          "properties": {
-            "atol": {
-              "type": "number",
-              "minimum": 0
-            },
-            "rtol": {
-              "type": "number",
-              "minimum": 0
-            }
-          }
-        },
-        "variance": {
+        {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -135,7 +158,7 @@
             }
           }
         }
-      }
+      ]
     },
     "distribution": {
       "enum": [
@@ -148,6 +171,32 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "source_size_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_fixture": {
+      "type": "string"
+    },
+    "reference_fixture": {
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "ols-cpu",
+        "nist-anova"
+      ]
+    },
+    "reference_basis": {
+      "enum": [
+        "nist-decimal-v1",
+        "binary64-v1"
+      ]
+    },
+    "reference_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reference_size_bytes": {
       "type": "integer",
       "minimum": 1
     }
@@ -201,9 +250,52 @@
           ]
         },
         "else": {
-          "required": [
-            "groups"
-          ]
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "numerical-fixture-v1"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fixture",
+              "source_fixture",
+              "source_sha256",
+              "source_size_bytes",
+              "reference_fixture",
+              "reference_sha256",
+              "reference_size_bytes",
+              "reference_basis",
+              "operation",
+              "tolerances"
+            ],
+            "properties": {
+              "tolerances": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "atol",
+                  "rtol"
+                ],
+                "properties": {
+                  "atol": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "rtol": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "groups"
+            ]
+          }
         }
       }
     },

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "numerical-conformance",
+  "warmups": 0,
+  "samples": 1,
+  "batches": 1,
+  "timeout_seconds": 120,
+  "cases": [
+    {
+      "id": "nist-atmwtag-decimal",
+      "dataset": "nist-atmwtag-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-longley-decimal",
+      "dataset": "nist-longley-decimal",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-norris-decimal",
+      "dataset": "nist-norris-decimal",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-pontius-decimal",
+      "dataset": "nist-pontius-decimal",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-sirstv-decimal",
+      "dataset": "nist-sirstv-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls01-decimal",
+      "dataset": "nist-smls01-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls02-decimal",
+      "dataset": "nist-smls02-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls03-decimal",
+      "dataset": "nist-smls03-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls04-decimal",
+      "dataset": "nist-smls04-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls05-decimal",
+      "dataset": "nist-smls05-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls06-decimal",
+      "dataset": "nist-smls06-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls07-decimal",
+      "dataset": "nist-smls07-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls08-decimal",
+      "dataset": "nist-smls08-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls09-decimal",
+      "dataset": "nist-smls09-decimal",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-wampler1-decimal",
+      "dataset": "nist-wampler1-decimal",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-wampler2-decimal",
+      "dataset": "nist-wampler2-decimal",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-wampler3-decimal",
+      "dataset": "nist-wampler3-decimal",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-wampler4-decimal",
+      "dataset": "nist-wampler4-decimal",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-wampler5-decimal",
+      "dataset": "nist-wampler5-decimal",
+      "workload": "ols-cpu-v1"
+    }
+  ]
+}

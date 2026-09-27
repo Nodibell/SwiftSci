@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Tools"))
 from contracts import read_json, write_json, require, verified_file, validate_values
 import numpy as np
 import pandas as pd
-from scipy import stats
+from scipy import stats, linalg
+from numerical_fixtures import validate_input
 import sqlite3
 from collections import Counter
 
@@ -44,7 +45,16 @@ try:
         dtypes = {**{f"id{i}": "str" for i in range(1, 4)}, **{f"id{i}": "int64" for i in range(4, 7)}, "v1": "int64", "v2": "int64", "v3": "float64"}
     if mixed:
         dtypes["flag"] = "bool"
-    if request["dataset_kind"] == "nist-univariate-v1":
+    numerical = None
+    if request["dataset_kind"] == "numerical-fixture-v1":
+        numerical = validate_input(read_json(request["input_path"]), op, request["rows"])
+        if op == "ols-cpu":
+            features = np.asarray(numerical["features"], dtype=np.float64)
+            targets = np.asarray(numerical["targets"], dtype=np.float64)
+        else:
+            groups = [np.asarray(g, dtype=np.float64) for g in numerical["groups"]]
+        frame = x = None
+    elif request["dataset_kind"] == "nist-univariate-v1":
         x = np.loadtxt(
             request["input_path"], skiprows=request["input_skip_rows"], dtype=np.float64
         )
@@ -102,6 +112,15 @@ try:
     anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
 
     def execute():
+        if op == "ols-cpu":
+            design = np.column_stack((np.ones(len(targets)), features))
+            coefficients, _, rank, _ = linalg.lstsq(design, targets, lapack_driver="gelsy")
+            require(rank == design.shape[1], "Rank-deficient OLS fixture")
+            predictions = design @ coefficients
+            residual = targets - predictions
+            return np.concatenate((coefficients, [np.dot(residual, residual)], predictions))
+        if op == "nist-anova":
+            return [stats.f_oneway(*groups).statistic, len(groups)-1, request["rows"]-len(groups)]
         if op in h2o_queries:
             keys, aggregates = h2o_queries[op]
             return frame.groupby(keys, sort=False, as_index=False).agg(aggregates)

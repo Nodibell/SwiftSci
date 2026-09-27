@@ -220,7 +220,7 @@ def plan(root, profile, engines, swift_worker, python):
         oracle_sha256=identity(
             {
                 name: digest((root / "Benchmarks/Tools" / name).read_bytes())
-                for name in ["datasets.py", "numerical_reference.py", "public_datasets.py"]
+                for name in ["datasets.py", "numerical_reference.py", "public_datasets.py", "numerical_fixtures.py"]
             }
         ),
     )

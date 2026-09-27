@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "nist-norris-binary64",
+  "kind": "numerical-fixture-v1",
+  "rows": 36,
+  "sha256": "489a8242684b33910aa33b03d1313374381af666bb83a994a8bf9b64d3202c6a",
+  "size_bytes": 1333,
+  "source": "https://www.itl.nist.gov/div898/strd/lls/data/LINKS/DATA/Norris.dat",
+  "license": "NIST StRD; original notices retained",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/nist-models/inputs/Norris.json",
+  "source_fixture": "Benchmarks/Fixtures/nist-models/originals/Norris.dat",
+  "source_sha256": "5ab6906c68a9c4b2eb1661c0cd7d2a09f5a469a6d4e05b6b691f190f5f7b944f",
+  "source_size_bytes": 2688,
+  "reference_fixture": "Benchmarks/Fixtures/nist-models/references/Norris.json",
+  "reference_sha256": "9450ab5a56e6b7ebc9194d8af2783ce923bb7e2db2de1e0c3288bd4a117cb4e1",
+  "reference_size_bytes": 9317,
+  "reference_basis": "binary64-v1",
+  "operation": "ols-cpu",
+  "tolerances": {
+    "atol": 1e-10,
+    "rtol": 1e-09
+  }
+}

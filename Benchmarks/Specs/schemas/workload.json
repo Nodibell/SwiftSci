@@ -49,7 +49,9 @@
         "h2o-q3",
         "h2o-q4",
         "h2o-q5",
-        "wine-pipeline"
+        "wine-pipeline",
+        "ols-cpu",
+        "nist-anova"
       ]
     },
     "scope": {

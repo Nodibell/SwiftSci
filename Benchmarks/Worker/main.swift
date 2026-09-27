@@ -33,9 +33,14 @@ import SwiftStats
       let expected = try decodeDoubles(
         verifiedData(path: request.expected_path, sha256: request.expected_sha256))
       let op = request.operation
+      let numericalInputs = try NumericalInputs.decode(
+        input, operation: op, datasetKind: request.dataset_kind, rows: request.rows)
       let frame: DataFrame?
       let x: [Double]
-      if request.dataset_kind == "nist-univariate-v1" {
+      if numericalInputs != nil {
+        frame = nil
+        x = []
+      } else if request.dataset_kind == "nist-univariate-v1" {
         frame = nil
         guard let skipRows = request.input_skip_rows else {
           throw BenchmarkFailure("Missing NIST data offset")
@@ -62,7 +67,9 @@ import SwiftStats
       for index in 0..<(request.warmups + request.samples) {
         let start = ContinuousClock.now
         let output: Output
-        if op == "wine-pipeline" {
+        if let numericalInputs {
+          output = try await executeNumerical(numericalInputs)
+        } else if op == "wine-pipeline" {
           output = try await winePipeline(path: request.input_path, rows: request.rows)
         } else if op == "csv-read" {
           output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path)))

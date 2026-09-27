@@ -30,7 +30,7 @@ def load_manifest(root, name):
             "license",
             "generator_version",
         ],
-        ["groups", "fixture", "certified", "data_start_line", "tolerances", "distribution", "source_sha256", "source_size_bytes"],
+        ["groups", "fixture", "certified", "data_start_line", "tolerances", "distribution", "source_sha256", "source_size_bytes", "source_fixture", "operation", "reference_fixture", "reference_sha256", "reference_size_bytes", "reference_basis"],
     )
     require(
         value["schema_version"] == 1 and value["id"] == name,
@@ -38,7 +38,7 @@ def load_manifest(root, name):
     )
     require(
         value["kind"]
-        in ["table-v1", "mixed-table-v1", "parquet-table-v1", "nist-univariate-v1", "h2o-group-v1", "wine-quality-v1"],
+        in ["table-v1", "mixed-table-v1", "parquet-table-v1", "nist-univariate-v1", "h2o-group-v1", "wine-quality-v1", "numerical-fixture-v1"],
         "Unknown dataset generator",
     )
     positive(value["rows"], "rows")
@@ -50,7 +50,10 @@ def load_manifest(root, name):
         "Invalid SHA-256",
     )
     require(value["generator_version"] == 1, "Unknown generator version")
-    if value["kind"] == "wine-quality-v1":
+    if value["kind"] == "numerical-fixture-v1":
+        from numerical_fixtures import validate_manifest
+        validate_manifest(value)
+    elif value["kind"] == "wine-quality-v1":
         require(isinstance(value.get("fixture"), str), "Missing source fixture")
         sha = value.get("source_sha256", "")
         require(isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha), "Invalid source checksum")
@@ -103,8 +106,13 @@ def parse_univariate(content, data_start_line, rows):
 
 def resolve_workload(dataset, workload):
     from public_datasets import H2O_QUERIES
+    from numerical_fixtures import OPERATIONS
     operation = workload["operation"]
     kind = dataset["kind"]
+    require((operation in OPERATIONS) == (kind == "numerical-fixture-v1"), "Numerical workload/dataset mismatch")
+    if kind == "numerical-fixture-v1":
+        require(operation == dataset["operation"], "Numerical operation mismatch")
+        return dict(workload, **dataset["tolerances"])
     require((operation in H2O_QUERIES) == (kind == "h2o-group-v1"), "H2O workload/dataset mismatch")
     require((operation == "wine-pipeline") == (kind == "wine-quality-v1"), "Wine workload/dataset mismatch")
     if dataset["kind"] != "nist-univariate-v1":
@@ -182,7 +190,10 @@ def prepare(root, manifest):
     if path.exists():
         verified_file(path, manifest["sha256"], manifest["size_bytes"])
         return path
-    if manifest["kind"] == "h2o-group-v1":
+    if manifest["kind"] == "numerical-fixture-v1":
+        from numerical_fixtures import source_and_input
+        content = source_and_input(root, manifest)
+    elif manifest["kind"] == "h2o-group-v1":
         from public_datasets import generate_h2o
         content = generate_h2o(manifest["rows"], manifest["groups"], manifest["distribution"])
     elif manifest["kind"] == "wine-quality-v1":
@@ -287,6 +298,13 @@ def grouped_reference(rows):
 
 
 def reference(root, manifest, workload):
+    if manifest["kind"] == "numerical-fixture-v1":
+        from numerical_fixtures import validate_input, expected_values, source_and_input
+        source_and_input(root, manifest)
+        cached = cache_path(root, manifest)
+        verified_file(cached, manifest["sha256"], manifest["size_bytes"])
+        payload = validate_input(read_json(cached), workload["operation"], manifest["rows"])
+        return expected_values(root, manifest, payload)
     rows = values(root, manifest)
     operation = workload["operation"]
     if manifest["kind"] == "h2o-group-v1":

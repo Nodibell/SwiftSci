@@ -1,0 +1,86 @@
+import Foundation
+import SwiftML
+import SwiftSciBenchmarkSupport
+import SwiftStats
+
+private struct OLSInput: Decodable {
+  let operation: String
+  let features: [[Double]]
+  let targets: [Double]
+}
+
+private struct ANOVAInput: Decodable {
+  let operation: String
+  let groups: [[Double]]
+}
+
+enum NumericalInputs {
+  case ols(features: [[Double]], targets: [Double])
+  case anova(groups: [[Double]])
+
+  static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
+    throws -> NumericalInputs?
+  {
+    let isNumerical = operation == "ols-cpu" || operation == "nist-anova"
+    guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
+      throw BenchmarkFailure("Numerical workload/dataset mismatch")
+    }
+    guard isNumerical else { return nil }
+    guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+      throw BenchmarkFailure("Numerical input must be an object")
+    }
+    let fields: Set<String> = operation == "ols-cpu"
+      ? ["operation", "features", "targets"] : ["operation", "groups"]
+    guard Set(object.keys) == fields else {
+      throw BenchmarkFailure("Unexpected numerical input fields")
+    }
+    if operation == "ols-cpu" {
+      let input = try JSONDecoder().decode(OLSInput.self, from: data)
+      guard input.operation == operation else {
+        throw BenchmarkFailure("Numerical input operation mismatch")
+      }
+      guard rows > 0, input.features.count == rows, input.targets.count == rows,
+        let columns = input.features.first?.count, columns > 0,
+        input.features.allSatisfy({ $0.count == columns && $0.allSatisfy(\.isFinite) }),
+        input.targets.allSatisfy(\.isFinite)
+      else { throw BenchmarkFailure("Invalid OLS dimensions or values") }
+      guard rows > columns else { throw BenchmarkFailure("Underdetermined OLS fixture") }
+      return .ols(features: input.features, targets: input.targets)
+    }
+    let input = try JSONDecoder().decode(ANOVAInput.self, from: data)
+    guard input.operation == operation else {
+      throw BenchmarkFailure("Numerical input operation mismatch")
+    }
+    guard input.groups.count >= 2,
+      input.groups.allSatisfy({ !$0.isEmpty && $0.allSatisfy(\.isFinite) }),
+      input.groups.reduce(0, { $0 + $1.count }) == rows, rows > input.groups.count
+    else { throw BenchmarkFailure("Invalid ANOVA dimensions or values") }
+    return .anova(groups: input.groups)
+  }
+}
+
+extension Worker {
+  @inline(never) static func executeNumerical(_ input: NumericalInputs) async throws -> Output {
+    switch input {
+    case .ols(let features, let targets):
+      let model = LinearRegression(device: .cpu)
+      try await model.fit(features: features, targets: targets)
+      guard await model.resolvedDevice == .cpu else {
+        throw BenchmarkFailure("OLS did not resolve to CPU")
+      }
+      let predictions = try await model.predict(features: features)
+      let parameters = await model.getWeightsAndBias()
+      guard let weights = parameters.weights, let bias = parameters.bias,
+        weights.count == features[0].count, predictions.count == targets.count
+      else { throw BenchmarkFailure("Missing or invalid OLS result dimensions") }
+      let rss = zip(targets, predictions).reduce(0.0) { sum, pair in
+        let residual = pair.0 - pair.1
+        return sum + residual * residual
+      }
+      return .values([bias] + weights + [rss] + predictions)
+    case .anova(let groups):
+      let result = try Stats.oneWayANOVA(groups: groups)
+      return .values([result.fStatistic, Double(result.dfBetween), Double(result.dfWithin)])
+    }
+  }
+}

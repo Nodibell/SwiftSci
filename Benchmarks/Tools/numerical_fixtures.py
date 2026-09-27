@@ -1,5 +1,7 @@
 """Strict numerical fixture inputs and pinned independent expected values."""
 
+from workflow_fixtures import OPERATIONS as WORKFLOW_OPERATIONS, validate_input as validate_workflow
+from workflow_reference import reference as workflow_reference
 import math
 from contracts import fields, positive, require, read_json, repository_file, verified_file
 
@@ -18,7 +20,7 @@ from boundary_sweep import validate_descriptor, reference as sweep_reference, ou
 from contracts import digest
 import struct
 
-OPERATIONS = {"dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS
+OPERATIONS = {"dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS | WORKFLOW_OPERATIONS
 
 
 def finite_vector(values, name):
@@ -32,6 +34,10 @@ def validate_manifest(manifest):
         require((manifest.get("operation") == operation) == (manifest.get("reference_basis") == basis), "Boundary reference basis mismatch")
         if manifest.get("operation") == operation:
             require(manifest.get("tolerances") in ({"atol":2e-5,"rtol":0},{"atol":1e-12,"rtol":0}), "Boundary tolerance contract mismatch")
+    workflow = manifest.get("operation") in WORKFLOW_OPERATIONS
+    require(workflow == (manifest.get("reference_basis") == "workflow-reference-v1"), "Workflow reference basis mismatch")
+    if workflow:
+        require(manifest.get("tolerances") == {"atol":1e-8,"rtol":1e-10}, "Workflow tolerance contract mismatch")
     vision = manifest.get("operation") == "vision-letterbox-cpu"
     require(vision == (manifest.get("reference_basis") == "vision-reference-v1"), "Vision reference basis mismatch")
     if vision:
@@ -52,7 +58,7 @@ def validate_manifest(manifest):
     require(exact == (manifest.get("reference_basis") == "exact-rational-v1"), "Reference basis/operation mismatch")
     for key in ["fixture", "source_fixture", "reference_fixture"]:
         require(isinstance(manifest.get(key), str) and manifest[key], f"Missing {key}")
-    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1", "supervised-reference-v1", "dataframe-reference-v1", "neural-reference-v1", "vision-reference-v1", "boundary-reference-v1", "sweep-reference-v1"), "Unknown reference basis")
+    require(manifest.get("reference_basis") in ("workflow-reference-v1", "nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1", "supervised-reference-v1", "dataframe-reference-v1", "neural-reference-v1", "vision-reference-v1", "boundary-reference-v1", "sweep-reference-v1"), "Unknown reference basis")
     sha = manifest.get("source_sha256", "")
     require(isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha), "Invalid numerical source checksum")
     positive(manifest.get("source_size_bytes"), "source_size_bytes")
@@ -65,6 +71,8 @@ def validate_manifest(manifest):
 
 
 def validate_input(payload, operation, rows):
+    if operation in WORKFLOW_OPERATIONS:
+        return validate_workflow(payload, operation, rows)
     if operation == "dataframe-model":
         return validate_boundary(payload, operation, rows)
     if operation == "dataframe-model-sweep":
@@ -125,7 +133,7 @@ def validate_input(payload, operation, rows):
 
 def source_and_input(root, manifest):
     verified_file(repository_file(root, manifest["source_fixture"]), manifest["source_sha256"], manifest["source_size_bytes"])
-    if manifest["operation"] in SUPERVISED_OPERATIONS or manifest["operation"] in ("decoder-fixed-f32", "vision-letterbox-cpu", "dataframe-model", "dataframe-model-sweep"):
+    if manifest["operation"] in WORKFLOW_OPERATIONS or manifest["operation"] in SUPERVISED_OPERATIONS or manifest["operation"] in ("decoder-fixed-f32", "vision-letterbox-cpu", "dataframe-model", "dataframe-model-sweep"):
         lock_path = repository_file(root, manifest["source_fixture"])
         for source in read_json(lock_path)["sources"]:
             relative = str((lock_path.parent / source["path"]).relative_to(root))
@@ -143,6 +151,12 @@ def expected_values(root, manifest, payload):
     require(reference["inputIdentity"] == {"sha256": manifest["sha256"], "bytes": manifest["size_bytes"]}, "Reference input identity mismatch")
     require(reference["source"]["sha256"] == manifest["source_sha256"], "Reference source mismatch")
     require(reference["model"]["observations"] == manifest["rows"], "Reference row count mismatch")
+    if manifest["reference_basis"] == "workflow-reference-v1":
+        require(reference["operation"] == manifest["operation"], "Workflow reference operation mismatch")
+        values = workflow_reference(payload)
+        require(reference["independentReference"]["values"] == values, "Independent workflow reference differs")
+        finite_vector(values, "workflow answers")
+        return values
     if manifest["reference_basis"] in ("boundary-reference-v1", "sweep-reference-v1"):
         require(manifest["tolerances"] == {"atol": 2e-5 if payload["dtype"] == "float32" else 1e-12, "rtol": 0}, "Boundary dtype tolerance mismatch")
         require(reference["operation"] == manifest["operation"], "Reference operation mismatch")

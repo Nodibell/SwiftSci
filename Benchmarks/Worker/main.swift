@@ -15,6 +15,11 @@ import SwiftStats
     case text(String)
   }
   static func main() async {
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--workflow-reload" {
+      let status = await reloadWorkflow(requestURL: URL(fileURLWithPath: CommandLine.arguments[2]),
+        responseURL: URL(fileURLWithPath: CommandLine.arguments[3]))
+      exit(status)
+    }
     guard CommandLine.arguments.count == 3 else {
       fputs("Expected request and response paths\n", stderr)
       exit(2)
@@ -69,7 +74,7 @@ import SwiftStats
         let start = ContinuousClock.now
         let output: Output
         if let numericalInputs {
-          output = try await executeNumerical(numericalInputs)
+          output = try await executeNumerical(numericalInputs, artifactDirectory: outputURL.appendingPathExtension("sample\(index)"))
         } else if op == "wine-pipeline" {
           output = try await winePipeline(path: request.input_path, rows: request.rows)
         } else if op == "csv-read" {

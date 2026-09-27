@@ -199,7 +199,9 @@
         "decoder-fixed-f32",
         "vision-letterbox-cpu",
         "dataframe-model",
-        "dataframe-model-sweep"
+        "dataframe-model-sweep",
+        "scientific-workflow",
+        "persisted-regression"
       ]
     },
     "reference_basis": {
@@ -213,7 +215,8 @@
         "neural-reference-v1",
         "vision-reference-v1",
         "boundary-reference-v1",
-        "sweep-reference-v1"
+        "sweep-reference-v1",
+        "workflow-reference-v1"
       ]
     },
     "reference_sha256": {

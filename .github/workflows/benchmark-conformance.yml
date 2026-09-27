@@ -50,6 +50,13 @@ jobs:
             --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
             --python Benchmarks/.venv-standardized/bin/python \
             --output Benchmarks/Runs/ci-acceptance
+      - name: Challenge passing public workflow workers
+        if: always() && hashFiles('Benchmarks/Runs/ci-acceptance/scientific-workflow/run.json', 'Benchmarks/Runs/ci-acceptance/persisted-workflow/run.json') != ''
+        run: |
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tests/check_public_workflow_workers.py \
+            --run Benchmarks/Runs/ci-acceptance/scientific-workflow \
+            --run Benchmarks/Runs/ci-acceptance/persisted-workflow \
+            --output Benchmarks/Runs/ci-workflow-controls
       - name: Retain run evidence and build log
         if: always()
         uses: actions/upload-artifact@v7
@@ -57,6 +64,7 @@ jobs:
           name: benchmark-conformance-${{ github.sha }}
           path: |
             Benchmarks/Runs/ci-acceptance/
+            Benchmarks/Runs/ci-workflow-controls/
             ~/Library/Caches/SwiftSci/standardized-benchmarks/build.log
           retention-days: 30
           if-no-files-found: warn

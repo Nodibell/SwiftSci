@@ -110,6 +110,16 @@
       "profile": "supervised-conformance",
       "tier": "cpu",
       "purpose": "Bounded correctness and independent output validation"
+    },
+    {
+      "profile": "scientific-workflow",
+      "tier": "cpu",
+      "purpose": "Public CSV, filter, join, matrix and numerical result workflow"
+    },
+    {
+      "profile": "persisted-workflow",
+      "tier": "cpu",
+      "purpose": "Training-only public regression pipeline and fresh-process Core ML/native reload diagnostics"
     }
   ],
   "aliases": {},

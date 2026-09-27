@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/workflows/inputs/workflow-regression-fit-heldout-shift.json",
+  "generator_version": 1,
+  "id": "workflow-regression-fit-heldout-shift",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "persisted-regression",
+  "reference_basis": "workflow-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/workflows/references/workflow-regression-fit-heldout-shift.json",
+  "reference_sha256": "7f83d7a79a8a2a3d96a2d9210e3fcf04c7abc3435f6a65cca38de9a6976aff6a",
+  "reference_size_bytes": 1255,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "60d0929eec28c5b705cc6cb3993304ae2decefa198ffceb4d0ea2f706f2f7a9c",
+  "size_bytes": 696,
+  "source": "Original bounded scientific and training workflow fixtures; see Benchmarks/Fixtures/workflows/README.md",
+  "source_fixture": "Benchmarks/Fixtures/workflows/sources.lock.json",
+  "source_sha256": "e3fc6d2d573b5784d7dda020c364c5d2c922ccd540c93ab8834dc9b00aa12bdb",
+  "source_size_bytes": 553,
+  "tolerances": {
+    "atol": 1e-08,
+    "rtol": 1e-10
+  }
+}

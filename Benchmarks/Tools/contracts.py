@@ -107,6 +107,7 @@ def validate_values(actual, expected, atol, rtol):
 
 
 WORKLOADS = {
+    "scientific-workflow", "persisted-regression",
     "dataframe-model", "dataframe-model-sweep",
     "vision-letterbox-cpu",
     "decoder-fixed-f32",
@@ -190,6 +191,7 @@ def load_profile(root, name):
     require(
         name
         in [
+            "scientific-workflow", "persisted-workflow",
             "smoke",
             "standard",
             "extended",

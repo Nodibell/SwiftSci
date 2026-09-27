@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/workflows/inputs/workflow-regression-native.json",
+  "generator_version": 1,
+  "id": "workflow-regression-native",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "persisted-regression",
+  "reference_basis": "workflow-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/workflows/references/workflow-regression-native.json",
+  "reference_sha256": "1a2dfcfa8419321d8b826e2e0a270af5609bf22e1bce68a8434d7350ea5f8988",
+  "reference_size_bytes": 1272,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "f9a935811894e8e71f3d088a841d02701731a73700a071aeb78cc80c28dc3aaa",
+  "size_bytes": 694,
+  "source": "Original bounded scientific and training workflow fixtures; see Benchmarks/Fixtures/workflows/README.md",
+  "source_fixture": "Benchmarks/Fixtures/workflows/sources.lock.json",
+  "source_sha256": "e3fc6d2d573b5784d7dda020c364c5d2c922ccd540c93ab8834dc9b00aa12bdb",
+  "source_size_bytes": 553,
+  "tolerances": {
+    "atol": 1e-08,
+    "rtol": 1e-10
+  }
+}

@@ -67,7 +67,9 @@
         "decoder-fixed-f32",
         "vision-letterbox-cpu",
         "dataframe-model",
-        "dataframe-model-sweep"
+        "dataframe-model-sweep",
+        "scientific-workflow",
+        "persisted-regression"
       ]
     },
     "scope": {

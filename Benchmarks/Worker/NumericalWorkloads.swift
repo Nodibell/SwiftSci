@@ -15,6 +15,7 @@ private struct ANOVAInput: Decodable {
 }
 
 enum NumericalInputs {
+  case publicWorkflow(PublicWorkflowInput)
   case boundary(BoundaryInput)
   case boundarySweep(BoundarySweepInput)
   case visionLetterbox(VisionLetterboxInput)
@@ -35,12 +36,13 @@ enum NumericalInputs {
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = ["dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
+    let isNumerical = ["scientific-workflow", "persisted-regression", "dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
     guard isNumerical else { return nil }
     switch operation {
+    case "scientific-workflow", "persisted-regression": return .publicWorkflow(try PublicWorkflowInput.decode(data, operation: operation, rows: rows))
     case "dataframe-model": return .boundary(try BoundaryInput.decode(data, rows: rows))
     case "dataframe-model-sweep": return .boundarySweep(try BoundarySweepInput.decode(data, rows: rows))
     case "vision-letterbox-cpu": return .visionLetterbox(try VisionLetterboxInput.decode(data, rows: rows))
@@ -95,8 +97,9 @@ enum NumericalInputs {
 }
 
 extension Worker {
-  @inline(never) static func executeNumerical(_ input: NumericalInputs) async throws -> Output {
+  @inline(never) static func executeNumerical(_ input: NumericalInputs, artifactDirectory: URL) async throws -> Output {
     switch input {
+    case .publicWorkflow(let input): return .values(try await input.execute(directory: artifactDirectory))
     case .boundary(let input): return try executeBoundary(input)
     case .boundarySweep(let input): return try executeBoundarySweep(input)
     case .visionLetterbox(let input): return try executeVisionLetterbox(input)

@@ -17,6 +17,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats, linalg
 from numerical_fixtures import validate_input
+from public_workflows import execute as execute_workflow
+from workflow_fixtures import OPERATIONS as WORKFLOW_OPERATIONS
 from boundary_workloads import prepare as prepare_boundary, execute as execute_boundary
 from boundary_sweep import prepare as prepare_sweep, execute as execute_sweep
 from vision_workloads import prepare as prepare_vision, execute as execute_vision
@@ -60,7 +62,9 @@ try:
     controlled_input = None
     if request["dataset_kind"] == "numerical-fixture-v1":
         numerical = validate_input(read_json(request["input_path"]), op, request["rows"])
-        if op == "dataframe-model":
+        if op in WORKFLOW_OPERATIONS:
+            controlled_input = numerical
+        elif op == "dataframe-model":
             controlled_input = prepare_boundary(numerical)
         elif op == "dataframe-model-sweep":
             controlled_input = prepare_sweep(numerical)
@@ -142,6 +146,8 @@ try:
     anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
 
     def execute():
+        if op in WORKFLOW_OPERATIONS:
+            return execute_workflow(controlled_input, Path(str(destination) + f".sample{index}"))
         if op == "dataframe-model":
             return execute_boundary(controlled_input)
         if op == "dataframe-model-sweep":

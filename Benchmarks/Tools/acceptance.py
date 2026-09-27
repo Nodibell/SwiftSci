@@ -97,7 +97,7 @@ def inspect_run(directory, profile, source, engines, root):
                 response = read_json(response_path)
                 fields(response, ['schema_version','case_key','status','samples','peak_rss_bytes','engine_version','error'])
                 require(response['schema_version'] == 1 and response['samples'] == [] and
-                        type(response['peak_rss_bytes']) is int and response['peak_rss_bytes'] > 0 and
+                        type(response['peak_rss_bytes']) is int and response['peak_rss_bytes'] >= 0 and
                         isinstance(response['engine_version'],str) and response['engine_version'], 'Invalid failed response fields')
                 require(event.get('failed_result') == response, 'Failed response differs from event')
                 require(response['status'] == 'failed' and response['case_key'] == expected[key], 'Invalid failed response')

@@ -100,6 +100,24 @@ class AcceptanceTests(unittest.TestCase):
             self.assertEqual(result['failures'][0]['worker_error'], 'Output mismatch')
             self.assertEqual(result['infrastructure_errors'], [])
 
+    def test_failed_response_accepts_unmeasured_rss_but_rejects_invalid_rss(self):
+        for value in (0, -1, True, 1.0, '0', None):
+            with self.subTest(rss=value), tempfile.TemporaryDirectory() as temporary:
+                fixture = self.fixture(Path(temporary), failed=True)
+                response = read_json(fixture.response_path)
+                if value is None:
+                    del response['peak_rss_bytes']
+                else:
+                    response['peak_rss_bytes'] = value
+                fixture.run['events'][0]['failed_result'] = copy.deepcopy(response)
+                write_json(fixture.response_path, response)
+                self.persist(fixture)
+                result = self.inspect(fixture)
+                self.assertEqual(result['status'], 'failed')
+                self.assertEqual(result['passed'], 0)
+                self.assertEqual(result['coverage_complete'], type(value) is int and value == 0)
+                self.assertEqual(len(result['failures']), 1 if type(value) is int and value == 0 else 0)
+
     def test_worker_crash_is_not_numerical_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
             result = self.inspect(self.fixture(Path(temporary), failed=True, missing_response=True))
@@ -188,7 +206,7 @@ class AcceptanceTests(unittest.TestCase):
 
     def test_malformed_or_stale_failed_response_is_infrastructure_failure(self):
         mutations = {'schema_version': 2, 'case_key': '0'*64, 'status': 'passed',
-                     'samples': [{}], 'peak_rss_bytes': 0, 'engine_version': '',
+                     'samples': [{}], 'peak_rss_bytes': -1, 'engine_version': '',
                      'error': '', 'unexpected': True}
         for key, value in mutations.items():
             with self.subTest(field=key), tempfile.TemporaryDirectory() as temporary:

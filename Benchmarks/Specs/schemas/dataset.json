@@ -194,7 +194,8 @@
         "kernel-shap",
         "supervised-scale",
         "supervised-ols-cpu",
-        "supervised-logistic-cpu"
+        "supervised-logistic-cpu",
+        "dataframe-semantics"
       ]
     },
     "reference_basis": {
@@ -203,7 +204,8 @@
         "binary64-v1",
         "exact-rational-v1",
         "controlled-reference-v1",
-        "supervised-reference-v1"
+        "supervised-reference-v1",
+        "dataframe-reference-v1"
       ]
     },
     "reference_sha256": {

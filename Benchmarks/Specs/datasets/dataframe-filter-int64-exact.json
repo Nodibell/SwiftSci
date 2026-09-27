@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-filter-int64-exact.json",
+  "generator_version": 1,
+  "id": "dataframe-filter-int64-exact",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-filter-int64-exact.json",
+  "reference_sha256": "5bf06e3aa6ed19081c4b3b5efe146c176f5083ba6511ac7577d7cf2d2361a1c3",
+  "reference_size_bytes": 1481,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "4267672f6a5575b9dcb62b8965f2a444bc29380f00c4cff2ea834017683d44b0",
+  "size_bytes": 611,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

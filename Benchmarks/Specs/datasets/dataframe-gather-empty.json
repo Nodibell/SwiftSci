@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-gather-empty.json",
+  "generator_version": 1,
+  "id": "dataframe-gather-empty",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-gather-empty.json",
+  "reference_sha256": "72ad1c52f025172c31907b0902e3cfc36ea6ac47d5e1907ca40930a4a1699425",
+  "reference_size_bytes": 1068,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "205b18918e0a0b2f385537503753554b4e93b4321e1eb5b8a54fa5f6fcce09a2",
+  "size_bytes": 554,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

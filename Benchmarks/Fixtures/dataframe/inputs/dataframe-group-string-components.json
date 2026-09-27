@@ -1,0 +1,55 @@
+{
+  "action": "group-count",
+  "columns": [
+    {
+      "name": "k1",
+      "type": "utf8",
+      "values": [
+        "a|b",
+        "a",
+        null,
+        "null",
+        "__null__",
+        "a|b",
+        null,
+        "a"
+      ]
+    },
+    {
+      "name": "k2",
+      "type": "utf8",
+      "values": [
+        "c",
+        "b|c",
+        "",
+        "",
+        "",
+        "c",
+        "",
+        "b|c"
+      ]
+    },
+    {
+      "name": "v",
+      "type": "float64",
+      "values": [
+        1.0,
+        null,
+        "NaN",
+        4.0,
+        null,
+        6.0,
+        null,
+        8.0
+      ]
+    }
+  ],
+  "operation": "dataframe-semantics",
+  "parameters": {
+    "columns": [
+      "k1",
+      "k2"
+    ],
+    "value": "v"
+  }
+}

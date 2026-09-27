@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-select-order.json",
+  "generator_version": 1,
+  "id": "dataframe-select-order",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-select-order.json",
+  "reference_sha256": "717369605a87d62f032ffb7c67735c1e8fa3b099a9b215417fd50a4653973eb8",
+  "reference_size_bytes": 1731,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "dab6c8bc85103c8ef58653b10e289e73064136e299d64a7054659618a16ee698",
+  "size_bytes": 585,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "action": "matrix",
+  "columns": [
+    {
+      "name": "x",
+      "type": "float64",
+      "values": [
+        1.25,
+        null,
+        -2.0
+      ]
+    },
+    {
+      "name": "id",
+      "type": "int64",
+      "values": [
+        "9007199254740993",
+        "-7",
+        null
+      ]
+    },
+    {
+      "name": "flag",
+      "type": "bool",
+      "values": [
+        true,
+        false,
+        null
+      ]
+    }
+  ],
+  "operation": "dataframe-semantics",
+  "parameters": {
+    "columns": [
+      "flag",
+      "id",
+      "x"
+    ],
+    "target": "x"
+  }
+}

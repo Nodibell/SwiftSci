@@ -1,0 +1,37 @@
+{
+  "action": "filter",
+  "columns": [
+    {
+      "name": "value",
+      "type": "float64",
+      "values": [
+        null,
+        "NaN",
+        "-Inf",
+        -0.0,
+        0.0,
+        1.5,
+        "+Inf"
+      ]
+    },
+    {
+      "name": "row",
+      "type": "int64",
+      "values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ]
+    }
+  ],
+  "operation": "dataframe-semantics",
+  "parameters": {
+    "column": "value",
+    "predicate": "gt",
+    "value": 0.0
+  }
+}

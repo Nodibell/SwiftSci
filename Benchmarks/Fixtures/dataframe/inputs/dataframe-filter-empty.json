@@ -1,0 +1,35 @@
+{
+  "action": "filter",
+  "columns": [
+    {
+      "name": "id",
+      "type": "int64",
+      "values": [
+        "-9223372036854775808",
+        "9007199254740993",
+        null,
+        "9223372036854775807",
+        "-9007199254740993",
+        "9007199254740993"
+      ]
+    },
+    {
+      "name": "label",
+      "type": "utf8",
+      "values": [
+        "\u03b1",
+        "null",
+        "",
+        "a|b",
+        "__null__",
+        "\ud83d\ude80"
+      ]
+    }
+  ],
+  "operation": "dataframe-semantics",
+  "parameters": {
+    "column": "id",
+    "predicate": "gt",
+    "value": "9223372036854775807"
+  }
+}

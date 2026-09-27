@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats, linalg
 from numerical_fixtures import validate_input
+from dataframe_semantic_workloads import prepare as prepare_dataframe, execute as execute_dataframe
 from api_workloads import OPERATIONS as API_OPERATIONS, prepare as prepare_api, execute as execute_api
 import sqlite3
 from collections import Counter
@@ -55,7 +56,9 @@ try:
     controlled_input = None
     if request["dataset_kind"] == "numerical-fixture-v1":
         numerical = validate_input(read_json(request["input_path"]), op, request["rows"])
-        if op in SUPERVISED_OPERATIONS:
+        if op == "dataframe-semantics":
+            controlled_input = prepare_dataframe(numerical)
+        elif op in SUPERVISED_OPERATIONS:
             controlled_input = prepare_supervised(numerical)
         elif op in CONTROLLED_API_OPERATIONS:
             controlled_input = prepare_controlled(numerical)
@@ -127,6 +130,8 @@ try:
     anova_groups = [x, y, (x + y) / 2] if op == "anova" else None
 
     def execute():
+        if op == "dataframe-semantics":
+            return execute_dataframe(controlled_input)
         if op in SUPERVISED_OPERATIONS:
             return execute_supervised(controlled_input)
         if op in CONTROLLED_API_OPERATIONS:

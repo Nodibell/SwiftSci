@@ -7,7 +7,9 @@ from controlled_fixtures import OPERATIONS as CONTROLLED_OPERATIONS, validate_in
 
 from supervised_fixtures import OPERATIONS as SUPERVISED_OPERATIONS, validate_input as validate_supervised, output_count as supervised_output_count
 
-OPERATIONS = {"ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS
+from dataframe_fixtures import validate_input as validate_dataframe, expected_values as dataframe_expected
+
+OPERATIONS = {"dataframe-semantics", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS
 
 
 def finite_vector(values, name):
@@ -17,6 +19,10 @@ def finite_vector(values, name):
 
 def validate_manifest(manifest):
     require(manifest.get("operation") in OPERATIONS, "Unknown numerical fixture operation")
+    dataframe = manifest.get("operation") == "dataframe-semantics"
+    require(dataframe == (manifest.get("reference_basis") == "dataframe-reference-v1"), "Dataframe reference basis mismatch")
+    if dataframe:
+        require(manifest.get("tolerances") == {"atol": 0, "rtol": 0}, "Dataframe encoding requires exact comparison")
     supervised = manifest.get("operation") in SUPERVISED_OPERATIONS
     require(supervised == (manifest.get("reference_basis") == "supervised-reference-v1"), "Supervised reference basis mismatch")
     controlled = manifest.get("operation") in CONTROLLED_OPERATIONS
@@ -25,7 +31,7 @@ def validate_manifest(manifest):
     require(exact == (manifest.get("reference_basis") == "exact-rational-v1"), "Reference basis/operation mismatch")
     for key in ["fixture", "source_fixture", "reference_fixture"]:
         require(isinstance(manifest.get(key), str) and manifest[key], f"Missing {key}")
-    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1", "supervised-reference-v1"), "Unknown reference basis")
+    require(manifest.get("reference_basis") in ("nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1", "supervised-reference-v1", "dataframe-reference-v1"), "Unknown reference basis")
     sha = manifest.get("source_sha256", "")
     require(isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha), "Invalid numerical source checksum")
     positive(manifest.get("source_size_bytes"), "source_size_bytes")
@@ -38,6 +44,8 @@ def validate_manifest(manifest):
 
 
 def validate_input(payload, operation, rows):
+    if operation == "dataframe-semantics":
+        return validate_dataframe(payload, operation, rows)
     if operation in SUPERVISED_OPERATIONS:
         return validate_supervised(payload, operation, rows)
     if operation in CONTROLLED_OPERATIONS:
@@ -106,6 +114,12 @@ def expected_values(root, manifest, payload):
     require(reference["inputIdentity"] == {"sha256": manifest["sha256"], "bytes": manifest["size_bytes"]}, "Reference input identity mismatch")
     require(reference["source"]["sha256"] == manifest["source_sha256"], "Reference source mismatch")
     require(reference["model"]["observations"] == manifest["rows"], "Reference row count mismatch")
+    if manifest["reference_basis"] == "dataframe-reference-v1":
+        require(reference["operation"] == manifest["operation"], "Reference operation mismatch")
+        values = reference["independentReference"]["values"]
+        require(values == dataframe_expected(payload), "Dataframe pinned reference disagrees with scalar contract")
+        finite_vector(values, "dataframe encoding")
+        return values
     if manifest["reference_basis"] in ("controlled-reference-v1", "supervised-reference-v1"):
         require(reference["operation"] == manifest["operation"], "Reference operation mismatch")
         values = reference["independentReference"]["values"]

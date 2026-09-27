@@ -1,0 +1,45 @@
+{
+  "action": "group-count",
+  "columns": [
+    {
+      "name": "key",
+      "type": "int64",
+      "values": [
+        "9007199254740992",
+        "9007199254740993",
+        null,
+        "9007199254740992",
+        null
+      ]
+    },
+    {
+      "name": "v",
+      "type": "int64",
+      "values": [
+        "1",
+        null,
+        "3",
+        "4",
+        null
+      ]
+    },
+    {
+      "name": "other",
+      "type": "float64",
+      "values": [
+        null,
+        2.0,
+        "NaN",
+        null,
+        null
+      ]
+    }
+  ],
+  "operation": "dataframe-semantics",
+  "parameters": {
+    "columns": [
+      "key"
+    ],
+    "value": "v"
+  }
+}

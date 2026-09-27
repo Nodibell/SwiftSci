@@ -62,7 +62,8 @@
         "kernel-shap",
         "supervised-scale",
         "supervised-ols-cpu",
-        "supervised-logistic-cpu"
+        "supervised-logistic-cpu",
+        "dataframe-semantics"
       ]
     },
     "scope": {

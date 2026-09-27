@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-group-string-components.json",
+  "generator_version": 1,
+  "id": "dataframe-group-string-components",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-group-string-components.json",
+  "reference_sha256": "fcbbdb31330d4e372f98f94258014a2366178b33fb1853f1ab5f6a20beacef03",
+  "reference_size_bytes": 2726,
+  "rows": 8,
+  "schema_version": 1,
+  "sha256": "541b149aac5f8f57a66b023795f9833a85a8a21ca4d202bec7a8e9067befa96a",
+  "size_bytes": 749,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

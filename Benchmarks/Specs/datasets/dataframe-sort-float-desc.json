@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-sort-float-desc.json",
+  "generator_version": 1,
+  "id": "dataframe-sort-float-desc",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-sort-float-desc.json",
+  "reference_sha256": "c8e36bcd4d3a656b82e56e7e13dac4fa7cc9fe9bf614d3f324e5f0bb003dc5d5",
+  "reference_size_bytes": 1497,
+  "rows": 7,
+  "schema_version": 1,
+  "sha256": "2c2c1facf7ad7315f47b7559bdb4ae9815d968e3471c0a0d3c90746f83e8359d",
+  "size_bytes": 507,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

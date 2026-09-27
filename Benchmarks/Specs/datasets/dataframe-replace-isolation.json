@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-replace-isolation.json",
+  "generator_version": 1,
+  "id": "dataframe-replace-isolation",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-replace-isolation.json",
+  "reference_sha256": "8e1a5e563c3df268eb8fcb5f2224a636957c07a6e94506ea3b094ed6347682d4",
+  "reference_size_bytes": 2229,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "6ff827fd80ac9a2d547a86ecde29facb87aea85ef099cbd5d75569ca85cd562e",
+  "size_bytes": 647,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

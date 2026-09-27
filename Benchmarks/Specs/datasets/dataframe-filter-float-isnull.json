@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-filter-float-isnull.json",
+  "generator_version": 1,
+  "id": "dataframe-filter-float-isnull",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-filter-float-isnull.json",
+  "reference_sha256": "a9f4a75507bee946550d4fcb9d44bfb22d33d295442baa82f96a71862b2bb883",
+  "reference_size_bytes": 1128,
+  "rows": 7,
+  "schema_version": 1,
+  "sha256": "f4eae1f1f613e991d0e597ee060edaf23b481b9dd4cc5c085ebe658889a7cbf3",
+  "size_bytes": 533,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

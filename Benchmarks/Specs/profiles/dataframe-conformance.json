@@ -1,0 +1,130 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "dataframe-gather-int64",
+      "id": "dataframe-gather-int64",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-gather-empty",
+      "id": "dataframe-gather-empty",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-select-order",
+      "id": "dataframe-select-order",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-sort-int64-asc",
+      "id": "dataframe-sort-int64-asc",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-sort-int64-desc",
+      "id": "dataframe-sort-int64-desc",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-int64-exact",
+      "id": "dataframe-filter-int64-exact",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-empty",
+      "id": "dataframe-filter-empty",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-matrix-nullable",
+      "id": "dataframe-matrix-nullable",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-matrix-nonsquare",
+      "id": "dataframe-matrix-nonsquare",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-matrix-duplicate",
+      "id": "dataframe-matrix-duplicate",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-matrix-empty-selection",
+      "id": "dataframe-matrix-empty-selection",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-replace-isolation",
+      "id": "dataframe-replace-isolation",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-group-string-components",
+      "id": "dataframe-group-string-components",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-group-int64",
+      "id": "dataframe-group-int64",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-float-eq",
+      "id": "dataframe-filter-float-eq",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-float-ne",
+      "id": "dataframe-filter-float-ne",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-float-lt",
+      "id": "dataframe-filter-float-lt",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-float-le",
+      "id": "dataframe-filter-float-le",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-float-gt",
+      "id": "dataframe-filter-float-gt",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-float-ge",
+      "id": "dataframe-filter-float-ge",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-float-isnull",
+      "id": "dataframe-filter-float-isnull",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-filter-float-isnotnull",
+      "id": "dataframe-filter-float-isnotnull",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-sort-float-asc",
+      "id": "dataframe-sort-float-asc",
+      "workload": "dataframe-semantics-v1"
+    },
+    {
+      "dataset": "dataframe-sort-float-desc",
+      "id": "dataframe-sort-float-desc",
+      "workload": "dataframe-semantics-v1"
+    }
+  ],
+  "id": "dataframe-conformance",
+  "samples": 2,
+  "schema_version": 1,
+  "timeout_seconds": 120,
+  "warmups": 1
+}

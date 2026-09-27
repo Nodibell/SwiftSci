@@ -15,6 +15,7 @@ private struct ANOVAInput: Decodable {
 }
 
 enum NumericalInputs {
+  case dataframeSemantics(DataFrameSemanticInput)
   case supervised(SupervisedFixtureInput)
   case ols(features: [[Double]], targets: [Double])
   case anova(groups: [[Double]])
@@ -30,12 +31,13 @@ enum NumericalInputs {
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = ["supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
+    let isNumerical = ["dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
     guard isNumerical else { return nil }
     switch operation {
+    case "dataframe-semantics": return .dataframeSemantics(try DataFrameSemanticInput.decode(data, rows: rows))
     case "supervised-scale", "supervised-ols-cpu", "supervised-logistic-cpu": return .supervised(try SupervisedFixtureInput.decode(data, operation: operation, rows: rows))
     case "linear-fixed-cpu": return .fixedLinear(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))
     case "logistic-fixed-cpu": return .fixedLogistic(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))
@@ -87,6 +89,7 @@ enum NumericalInputs {
 extension Worker {
   @inline(never) static func executeNumerical(_ input: NumericalInputs) async throws -> Output {
     switch input {
+    case .dataframeSemantics(let input): return try executeDataFrameSemantics(input)
     case .supervised(let input): return try await executeSupervised(input)
     case .fixedLinear(let input): return try await executeFixedLinear(input)
     case .fixedLogistic(let input): return try await executeFixedLogistic(input)

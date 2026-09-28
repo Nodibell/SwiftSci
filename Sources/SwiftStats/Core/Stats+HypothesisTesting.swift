@@ -152,6 +152,9 @@ extension Stats {
             return Double(group.count) * difference * difference
         })
         let ssWithin = compensatedSum(groups.lazy.map { group in
+            if let centeredSquares = CenteredMoments.sumOfSquares(group) {
+                return centeredSquares
+            }
             let groupOrigin = group[0]
             let groupMean = compensatedSum(group.lazy.map { $0 - groupOrigin }) / Double(group.count)
             return compensatedSum(group.lazy.map {

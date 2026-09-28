@@ -46,4 +46,18 @@ struct CenteredVarianceTests {
         #expect(throws: StatsError.emptyInput) { try Stats.variance([] as [Double]) }
         #expect(throws: StatsError.invalidDDOF(-1)) { try Stats.variance([1.0, 2.0] as [Double], ddof: -1) }
     }
+    @Test("ANOVA retains its exact translated-group result across block boundaries",
+          arguments: [1, 51, 52, 1000])
+    func anovaGroups(repetitions: Int) throws {
+        let size = 5 * repetitions
+        let groups = (0..<3).map { group in
+            (0..<size).map { 1e12 + Double($0 % 5 - 2) + Double(group) }
+        }
+        let expected = Double(size - 1) / 2
+        for ordered in [groups, Array(groups.reversed())] {
+            let result = try Stats.oneWayANOVA(groups: ordered)
+            #expect(abs(result.fStatistic - expected) < expected * 1e-13)
+        }
+    }
+
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "tier": "cpu",
-  "coverage_sha256": "674a8c12d1815dad07c773759779c9bf9d45f664f0a226f4a140fe34a937b81f",
+  "coverage_sha256": "6166c4640c3b5a776a259b30341c512f99e355b3bd38b54d723f6819458232c7",
   "entries": [
     {
       "profile": "numerical-binary64",
@@ -9,7 +9,7 @@
       "engine": "pandas",
       "case_key": "7095d33204fcc176e95997a971d5a0f93014874198aac66a186dbb3db151e830",
       "classification": "comparator-accuracy",
-      "reference_basis": "exact-binary64",
+      "reference_basis": "binary64-v1",
       "errors": [
         "Output mismatch at 0: 1.000000002634046 != 1.0",
         "Output mismatch at 0: 1.0000000028854616 != 1.0"
@@ -27,7 +27,7 @@
       "engine": "pandas",
       "case_key": "e723b995028672e574ac2d2588540d12777e73222fa9184726d845aeec3da018",
       "classification": "comparator-accuracy",
-      "reference_basis": "exact-binary64",
+      "reference_basis": "binary64-v1",
       "errors": [
         "Output mismatch at 0: 1.0000003187603246 != 1.0",
         "Output mismatch at 0: 1.0000003429656807 != 1.0"
@@ -45,7 +45,7 @@
       "engine": "swiftsci",
       "case_key": "b6ecc52332b2024360baa48e93c1d62c18f8059a902a187c5a6178e5702bf6d1",
       "classification": "input-representation",
-      "reference_basis": "original-decimal",
+      "reference_basis": "nist-decimal-v1",
       "errors": [
         "Output mismatch: 21.000811887818774 versus 21.0"
       ],
@@ -61,7 +61,7 @@
       "engine": "pandas",
       "case_key": "b6ecc52332b2024360baa48e93c1d62c18f8059a902a187c5a6178e5702bf6d1",
       "classification": "input-representation",
-      "reference_basis": "original-decimal",
+      "reference_basis": "nist-decimal-v1",
       "errors": [
         "Output mismatch at 0: 21.000811887818774 != 21.0"
       ],
@@ -77,7 +77,7 @@
       "engine": "swiftsci",
       "case_key": "47377209970c3d1458192c190869e3cf1a0c42d995a3cecceccd32c9ae511bcc",
       "classification": "input-representation",
-      "reference_basis": "original-decimal",
+      "reference_basis": "nist-decimal-v1",
       "errors": [
         "Output mismatch: 201.01300409594845 versus 201.0"
       ],
@@ -93,7 +93,7 @@
       "engine": "pandas",
       "case_key": "47377209970c3d1458192c190869e3cf1a0c42d995a3cecceccd32c9ae511bcc",
       "classification": "input-representation",
-      "reference_basis": "original-decimal",
+      "reference_basis": "nist-decimal-v1",
       "errors": [
         "Output mismatch at 0: 201.01300409594847 != 201.0"
       ],
@@ -109,7 +109,7 @@
       "engine": "swiftsci",
       "case_key": "97a5015d371b83fe6ad061d86a65c6e9d4923490bb7ae29d6660a10462c4004a",
       "classification": "input-representation",
-      "reference_basis": "original-decimal",
+      "reference_basis": "nist-decimal-v1",
       "errors": [
         "Output mismatch: 2001.134926220951 versus 2001.0"
       ],
@@ -125,7 +125,7 @@
       "engine": "pandas",
       "case_key": "97a5015d371b83fe6ad061d86a65c6e9d4923490bb7ae29d6660a10462c4004a",
       "classification": "input-representation",
-      "reference_basis": "original-decimal",
+      "reference_basis": "nist-decimal-v1",
       "errors": [
         "Output mismatch at 0: 2001.134926220951 != 2001.0"
       ],
@@ -141,7 +141,7 @@
       "engine": "pandas",
       "case_key": "a3a521a1f3d3cb3a77035135c1204de46e8ec84c7ae34c1e532c958594777904",
       "classification": "comparator-accuracy",
-      "reference_basis": "original-decimal",
+      "reference_basis": "nist-decimal-v1",
       "errors": [
         "Output mismatch at 0: 1.000000002634046 != 1.0",
         "Output mismatch at 0: 1.0000000028854616 != 1.0"
@@ -159,7 +159,7 @@
       "engine": "pandas",
       "case_key": "e6cff6554cf1271199895148b590f4539a91fb8b50860bb56c7c2a3cba0645fb",
       "classification": "comparator-accuracy",
-      "reference_basis": "original-decimal",
+      "reference_basis": "nist-decimal-v1",
       "errors": [
         "Output mismatch at 0: 1.0000003187603246 != 1.0",
         "Output mismatch at 0: 1.0000003429656807 != 1.0"

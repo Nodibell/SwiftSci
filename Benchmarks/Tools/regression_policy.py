@@ -18,12 +18,14 @@ def expected_cases(root, policy):
             case_key = identity(dict(case=case, dataset=dataset, workload=workload))
             for engine in ('swiftsci', 'pandas'):
                 for batch in range(profile['batches']):
-                    expected[(profile['id'], case['id'], engine, batch)] = case_key
+                    expected[(profile['id'], case['id'], engine, batch)] = dict(
+                        case_key=case_key, profile_key=identity(profile),
+                        reference_basis=dataset.get('reference_basis', 'fixture-defined'))
     return expected
 
 
 def coverage_identity(expected):
-    return identity([dict(profile=k[0], case=k[1], engine=k[2], batch=k[3], case_key=v)
+    return identity([dict(profile=k[0], case=k[1], engine=k[2], batch=k[3], **v)
                      for k, v in sorted(expected.items())])
 
 
@@ -44,10 +46,14 @@ def load_baseline(root, expected):
         key = (entry['profile'], entry['case'], entry['engine'])
         require(key not in keys, 'Duplicate failure baseline entry')
         keys.add(key)
-        require(expected.get((*key, 0)) == entry['case_key'], 'Stale failure baseline contract')
+        binding = expected.get((*key, 0), {})
+        require(binding.get('case_key') == entry['case_key'], 'Stale failure baseline contract')
+        require(binding.get('reference_basis') == entry['reference_basis'], 'Reference basis differs from dataset')
         require(entry['classification'] in CLASSIFICATIONS, 'Unknown failure classification')
-        require(entry['engine'] != 'pandas' or entry['classification'] != 'implementation-defect',
-                'Comparator failure must not be classified as a SwiftSci implementation defect')
+        require(entry['classification'] == 'input-representation' or
+                (entry['engine'], entry['classification']) in
+                {('swiftsci', 'implementation-defect'), ('pandas', 'comparator-accuracy')},
+                'Failure classification differs from engine role')
         for field in ('errors', 'evidence'):
             values = entry[field]
             require(isinstance(values, list) and values and
@@ -83,10 +89,13 @@ def evaluate(report, baseline, expected):
             block('inconsistent-status', profile=name)
         for failure in failures:
             key = (name, failure['case'], failure['engine'], failure['batch'])
-            if key in observed or expected.get(key) != failure.get('case_key'):
+            if key in observed or expected.get(key, {}).get('case_key') != failure.get('case_key'):
                 block('invalid-failure-identity', profile=name, case=failure['case'])
             observed[key] = failure
             entry = inventory.get(key[:3])
+            token = f'{key[1]}-{key[2]}-{key[3]}'
+            if failure.get('error') != f'Worker exited 1; see {token}.log':
+                block('unexpected-worker-exit', profile=name, **failure)
             if entry is None:
                 block('unclassified-failure', profile=name, **failure)
             elif (entry['case_key'] != failure.get('case_key') or
@@ -97,7 +106,7 @@ def evaluate(report, baseline, expected):
                                   reference_basis=entry['reference_basis'], reason=entry['reason']))
     for key, entry in inventory.items():
         applicable = [k for k in expected if k[:3] == key]
-        if not applicable or any(expected[k] != entry['case_key'] for k in applicable):
+        if not applicable or any(expected[k]['case_key'] != entry['case_key'] for k in applicable):
             block('stale-baseline', profile=key[0], case=key[1], engine=key[2])
         for execution in applicable:
             if execution not in observed:

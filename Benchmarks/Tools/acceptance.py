@@ -94,6 +94,8 @@ def inspect_run(directory, profile, source, engines, root):
             require(event['status'] == 'failed', 'Invalid event status')
             detail = dict(case=key[0], engine=key[1], batch=key[2], case_key=expected[key], error=event.get('error', ''))
             try:
+                require(event.get('error') == f'Worker exited 1; see {token}.log',
+                        'Unexpected worker exit or timeout')
                 response = read_json(response_path)
                 fields(response, ['schema_version','case_key','status','samples','peak_rss_bytes','engine_version','error'])
                 require(response['schema_version'] == 1 and response['samples'] == [] and

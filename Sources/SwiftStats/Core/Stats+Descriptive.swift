@@ -28,15 +28,11 @@ extension Stats {
         return vDSP.mean(values)
     }
 
-    /// Sample or population variance using a numerically stable two-pass centered deviation algorithm backed by Accelerate vDSP.
+    /// Sample or population variance using two passes over values relative to an observed origin.
     ///
-    /// ## Numerical Stability
-    /// Implements a two-pass centered deviation algorithm:
-    /// 1. First pass computes the sample mean $\mu = \frac{1}{N}\sum x_i$ using `vDSP_meanvD`.
-    /// 2. Second pass computes centered residuals $x_i - \mu$ via `vDSP_vsaddD` and sums their squares with `vDSP.sumOfSquares`.
-    ///
-    /// This avoids catastrophic floating-point cancellation inherent to the naive $E[X^2] - (E[X])^2$ formula when
-    /// the sample variance is small relative to the squared mean (e.g. $[10^9+1, 10^9+2, 10^9+3]$).
+    /// Compensated accumulation and blocked SIMD fused arithmetic preserve small spreads
+    /// without allocating a centered copy. Inputs outside the centered representation's
+    /// finite range use the existing Accelerate path.
     ///
     /// - Parameters:
     ///   - values: Input numeric sample array.
@@ -50,6 +46,10 @@ extension Stats {
         guard ddof >= 0 else { throw StatsError.invalidDDOF(ddof) }
         let n = Double(values.count)
         guard n > Double(ddof) else { throw StatsError.insufficientData(minimum: ddof + 1, got: values.count) }
+
+        if let centeredSquares = CenteredMoments.sumOfSquares(values) {
+            return centeredSquares / (n - Double(ddof))
+        }
 
         var meanVal = 0.0
         let len = vDSP_Length(values.count)

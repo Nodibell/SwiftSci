@@ -34,6 +34,37 @@ struct TransformerDecoderTests {
         "hel lo</w>" // hello</w>
     ]
     
+    @Test("Batched GPU RoPE cached logits match full execution", arguments: [1, 2, 3])
+    func batchedRotaryCache(batch: Int) {
+        registerCmlxBundle()
+        Device.withDefaultDevice(.gpu) {
+            let tokenizer = BPETokenizer(vocab: vocab, merges: merges)
+            let config = LLMConfig(vocabSize: vocab.count, numLayers: 1, hiddenDim: 8,
+                numHeads: 2, intermediateSize: 6, maxSeqLen: 8,
+                positionalEncoding: .rope(base: 10_000))
+            let decoder = TransformerDecoder(config: config, tokenizer: tokenizer)
+            let fixed = decoder.parameters().flattened().map { name, tensor in
+                let values = (0..<tensor.size).map { Float(($0 * 7 + 3) % 17 - 8) / 32 }
+                return (name, MLXArray(values, tensor.shape))
+            }
+            decoder.update(parameters: NestedDictionary.unflattened(fixed))
+            let tokens = (0..<batch).map { b in (0..<4).map { ($0 + b) % vocab.count } }
+            let full = decoder.forward(MLXArray(tokens.flatMap { $0 }, [batch, 4]))
+            eval(full)
+            let caches = [KVCache()]
+            var chunks: [MLXArray] = []
+            for range in [0..<2, 2..<3, 3..<4] {
+                let input = MLXArray(tokens.flatMap { Array($0[range]) }, [batch, range.count])
+                let chunk = decoder.forward(input, caches: caches, offset: range.lowerBound)
+                eval(chunk)
+                chunks.append(chunk)
+                #expect(caches[0].count == range.upperBound)
+            }
+            let error = MLX.abs(concatenated(chunks, axis: 1) - full).max().item(Float.self)
+            #expect(error < 2e-5)
+        }
+    }
+
     @Test("Public loader replaces every attention projection")
     func publicAttentionWeights() throws {
         registerCmlxBundle()

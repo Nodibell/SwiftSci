@@ -323,3 +323,13 @@ This completes the declared testing infrastructure scope, not certification of e
 ## Public workflow conformance
 
 The `scientific-workflow` profile checks four complete CSV-to-numerical-result cases with declared column types, duplicate join keys, and reordered inputs. The `persisted-workflow` profile checks training-only preprocessing and prediction, native regressor reload, and composite Core ML pipeline export in fresh processes. Read the [workflow contracts](Fixtures/workflows/README.md) for the distinction between fitted-state validation and persistence, diagnostic timing limits, and retained failure evidence. Both profiles run in the CPU acceptance tier. CI also challenges passing workers with corrupt answers and malformed inputs.
+
+## Known failures and the CI regression policy
+
+Conformance remains strict: failed engine cases retain failed responses, runs, and certificates. The default acceptance command exits nonzero for any conformance failure.
+
+CPU CI also applies `Benchmarks/Specs/known-failures.json` with `acceptance.py --tier cpu --check-baseline`. This reviewed inventory binds each exception to its profile, case, engine, resolved contract hash, reference basis, classification, and exact observed worker error. CPU coverage and contract identities are pinned. New or changed failures, missing profiles or cases, infrastructure errors, and unexpected passes block the policy check. An unexpected pass requires removing or reviewing the stale entry. Tolerances are not changed.
+
+The separate `regression-policy.json` reports the policy result and the strict conformance result. A passing regression policy is not a conformance certificate. `swiftsci` is the implementation under test; the `pandas` adapter is a comparison engine, not the correctness oracle. Independent fixture/reference definitions remain authoritative. Classification distinguishes implementation defects, input representation limits, and comparator accuracy failures.
+
+Exact error signatures deliberately fail closed. A new platform or toolchain may produce a different diagnostic or numerical result for a known case. Investigate it and add evidence in a reviewed commit rather than introducing broad error patterns or automatic baseline updates. Remove entries in the same contribution that repairs them. Contract or coverage changes require reviewing the inventory and its coverage hash. The reviewed inventory currently applies only to the CPU tier; other tiers retain strict acceptance behavior.

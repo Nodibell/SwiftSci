@@ -6,6 +6,26 @@ import SwiftPreprocessing
 @Suite("LinearRegression Tests")
 struct LinearRegressionTests {
     
+    @Test("OLS recovers coefficients under large orthogonal residuals")
+    func largeOrthogonalResiduals() async throws {
+        let features = (0..<5).map { i -> [Double] in
+            let x = Double(i)
+            return [x, x * x, x * x * x]
+        }
+        let noise = [1.0, -4, 6, -4, 1]
+        let targets = features.enumerated().map { i, row in
+            7 - 2 * row[0] + 3 * row[1] + 0.5 * row[2] + 1e8 * noise[i]
+        }
+        let model = LinearRegression(device: .cpu)
+        try await model.fit(features: features, targets: targets)
+        let weights = try #require(await model.getWeights())
+        let bias = try #require(await model.getBias())
+        for (actual, expected) in zip(weights, [-2.0, 3, 0.5]) {
+            #expect(abs(actual - expected) < 1e-10)
+        }
+        #expect(abs(bias - 7) < 1e-10)
+    }
+
     @Test("Supplied linear parameters predict without fitting", arguments: [ExecutionDevice.cpu, .auto, .gpu, .ane])
     func suppliedParameters(device: ExecutionDevice) async throws {
         let model = LinearRegression(weights: [2, -3], bias: 5, device: device)

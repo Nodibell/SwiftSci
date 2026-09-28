@@ -211,12 +211,16 @@ public final class VectorStore: @unchecked Sendable {
         
         guard !entries.isEmpty else { return [] }
 
+        let scaledQuery: [Double]
         let queryNorm: Double
         if metric == .cosineSimilarity {
-            var sumSq: Double = 0
-            vDSP_svesqD(query, 1, &sumSq, vDSP_Length(query.count))
+            let scale = query.reduce(0.0) { max($0, abs($1)) }
+            scaledQuery = scale > 0 ? query.map { $0 / scale } : query
+            var sumSq = 0.0
+            vDSP_svesqD(scaledQuery, 1, &sumSq, vDSP_Length(scaledQuery.count))
             queryNorm = sqrt(sumSq)
         } else {
+            scaledQuery = []
             queryNorm = 1.0
         }
 
@@ -233,13 +237,20 @@ public final class VectorStore: @unchecked Sendable {
             let score: Double
             switch metric {
             case .cosineSimilarity:
-                var dot: Double = 0
-                vDSP_dotprD(query, 1, entry.vector, 1, &dot, vDSP_Length(dim))
-                var entrySumSq: Double = 0
-                vDSP_svesqD(entry.vector, 1, &entrySumSq, vDSP_Length(dim))
-                let entryNorm = sqrt(entrySumSq)
-                let denom = queryNorm * entryNorm
-                score = denom > 1e-12 ? (dot / denom) : 0.0
+                // Independent scaling preserves cosine while avoiding norm underflow/overflow.
+                let scale = entry.vector.prefix(dim).reduce(0.0) { max($0, abs($1)) }
+                if scale == 0 || queryNorm == 0 {
+                    score = 0
+                } else {
+                    var dot = 0.0
+                    var sumSq = 0.0
+                    for i in 0..<dim {
+                        let value = entry.vector[i] / scale
+                        dot += scaledQuery[i] * value
+                        sumSq += value * value
+                    }
+                    score = dot / (queryNorm * sqrt(sumSq))
+                }
 
             case .dotProduct:
                 var dot: Double = 0

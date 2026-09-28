@@ -34,6 +34,31 @@ struct TransformerDecoderTests {
         "hel lo</w>" // hello</w>
     ]
     
+    @Test("Public loader replaces every attention projection")
+    func publicAttentionWeights() throws {
+        registerCmlxBundle()
+        let tokenizer = BPETokenizer(vocab: vocab, merges: merges)
+        let decoder = TransformerDecoder(vocabSize: vocab.count, tokenizer: tokenizer,
+            dimensions: 8, numHeads: 2, maxSeqLen: 8)
+        let names = [("q_proj", "query_proj"), ("k_proj", "key_proj"),
+                     ("v_proj", "value_proj"), ("o_proj", "out_proj")]
+        var supplied: [String: MLXArray] = [:]
+        for layer in decoder.layers.indices {
+            for (index, name) in names.enumerated() {
+                supplied["model.layers.\(layer).self_attn.\(name.0).weight"] =
+                    MLXArray(Array(repeating: Float(index + 1), count: 64)).reshaped([8, 8])
+            }
+        }
+        _ = decoder.loadWeights(supplied)
+        let loaded = Dictionary(uniqueKeysWithValues: decoder.parameters().flattened())
+        for layer in decoder.layers.indices {
+            for (index, name) in names.enumerated() {
+                let tensor = try #require(loaded["layers.\(layer).attention.\(name.1).weight"])
+                #expect(tensor.asArray(Float.self) == Array(repeating: Float(index + 1), count: 64))
+            }
+        }
+    }
+
     @Test("TransformerDecoder forward pass logits shape")
     func testTransformerForwardPass() throws {
         // Setup MLX metallib access if needed

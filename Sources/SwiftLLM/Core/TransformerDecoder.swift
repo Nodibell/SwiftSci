@@ -446,10 +446,10 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             let srcPfx = "model.layers.\(i)"
             let dstPfx = "layers.\(i)"
 
-            mapParam(srcKey: "\(srcPfx).self_attn.q_proj.weight", dstKey: "\(dstPfx).attention.queryProjection.weight")
-            mapParam(srcKey: "\(srcPfx).self_attn.k_proj.weight", dstKey: "\(dstPfx).attention.keyProjection.weight")
-            mapParam(srcKey: "\(srcPfx).self_attn.v_proj.weight", dstKey: "\(dstPfx).attention.valueProjection.weight")
-            mapParam(srcKey: "\(srcPfx).self_attn.o_proj.weight", dstKey: "\(dstPfx).attention.outProjection.weight")
+            mapParam(srcKey: "\(srcPfx).self_attn.q_proj.weight", dstKey: "\(dstPfx).attention.query_proj.weight")
+            mapParam(srcKey: "\(srcPfx).self_attn.k_proj.weight", dstKey: "\(dstPfx).attention.key_proj.weight")
+            mapParam(srcKey: "\(srcPfx).self_attn.v_proj.weight", dstKey: "\(dstPfx).attention.value_proj.weight")
+            mapParam(srcKey: "\(srcPfx).self_attn.o_proj.weight", dstKey: "\(dstPfx).attention.out_proj.weight")
 
             mapParam(srcKey: "\(srcPfx).mlp.gate_proj.weight", dstKey: "\(dstPfx).ffn.gate.weight")
             mapParam(srcKey: "\(srcPfx).mlp.up_proj.weight", dstKey: "\(dstPfx).ffn.up.weight")

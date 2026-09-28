@@ -49,7 +49,7 @@ class AcceptanceTests(unittest.TestCase):
         event = dict(case_id='tiny', engine='swiftsci', batch=0,
                      case_key=key, status=response['status'])
         if failed:
-            event.update(error='Worker exited 1', failed_result=copy.deepcopy(response))
+            event.update(error='Worker exited 1; see tiny-swiftsci-0.log', failed_result=copy.deepcopy(response))
         else:
             event['result'] = copy.deepcopy(response)
         run = dict(schema_version=1, status=response['status'], events=[event],
@@ -125,6 +125,19 @@ class AcceptanceTests(unittest.TestCase):
             self.assertFalse(result['coverage_complete'])
             self.assertEqual(result['failures'], [])
             self.assertEqual(len(result['infrastructure_errors']), 1)
+
+    def test_crash_or_timeout_after_failed_response_is_infrastructure(self):
+        for error in ('Worker exited -11; see tiny-swiftsci-0.log',
+                      'Command timed out after 5 seconds',
+                      'Worker exited 2; see tiny-swiftsci-0.log'):
+            with self.subTest(error=error), tempfile.TemporaryDirectory() as temporary:
+                fixture = self.fixture(Path(temporary), failed=True)
+                fixture.run['events'][0]['error'] = error
+                self.persist(fixture)
+                result = self.inspect(fixture)
+                self.assertFalse(result['coverage_complete'])
+                self.assertEqual(result['failures'], [])
+                self.assertEqual(len(result['infrastructure_errors']), 1)
 
     def test_incomplete_duplicate_and_source_drift_rejected(self):
         for mutation in ('missing', 'duplicate', 'source'):

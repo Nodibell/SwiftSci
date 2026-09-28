@@ -5,16 +5,41 @@ import SwiftDataFrame
 
 extension Stats {
 
-    /// Dot product of two vectors using vDSP.dot.
-    /// - Parameters:
-    ///   - a: First vector or numeric operand.
-    ///   - b: Second vector or numeric operand.
-    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
-    /// - Returns: Computed numerical scalar value.
+    /// Returns a dot product using the performance policy.
+    ///
+    /// The reduction order is implementation-dependent. Use the explicit accuracy
+    /// overload when cancellation requires compensated accumulation.
+    /// - Throws: `StatsError.emptyInput` or a size-mismatch error.
     public static func dotProduct(_ a: [Double], _ b: [Double]) throws -> Double {
+        try dotProduct(a, b, accuracy: .performance)
+    }
+
+    /// Returns a dot product with the selected arithmetic policy.
+    ///
+    /// Both policies accept and return `Double`. NaN propagates; opposite infinite
+    /// contributions and zero multiplied by infinity produce NaN. Compensated mode
+    /// retains rounding corrections and uses exact products for unsafe ranges or
+    /// severe cancellation. It does not promise universally correct rounding.
+    /// - Parameters:
+    ///   - a: First vector.
+    ///   - b: Second vector, with the same number of elements as `a`.
+    ///   - accuracy: Throughput or compensated accumulation.
+    /// - Throws: `StatsError.emptyInput` or a size-mismatch error.
+    public static func dotProduct(
+        _ a: [Double], _ b: [Double], accuracy: DotProductAccuracy
+    ) throws -> Double {
         try requireNonEmpty(a)
         try requireSameSize(a, b)
-        return vDSP.dot(a, b)
+        switch accuracy {
+        case .performance:
+            // Small vectors favor vDSP. Avoid narrowing counts outside CBLAS's Int32 range.
+            if a.count >= 4096 && a.count <= Int(Int32.max) {
+                return cblas_ddot(Int32(a.count), a, 1, b, 1)
+            }
+            return vDSP.dot(a, b)
+        case .compensated:
+            return CompensatedDotProduct.evaluate(a, b)
+        }
     }
 
     /// Vector norm: L1, L2 (Euclidean), or L∞.

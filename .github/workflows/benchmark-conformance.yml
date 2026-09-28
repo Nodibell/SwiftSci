@@ -43,10 +43,10 @@ jobs:
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py build
       - name: Reconcile legacy coverage
         run: Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py inventory
-      - name: Run every CPU conformance profile and retain all failures
+      - name: Check CPU regression policy and retain strict conformance results
         run: |
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/acceptance.py \
-            --tier cpu \
+            --tier cpu --check-baseline \
             --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
             --python Benchmarks/.venv-standardized/bin/python \
             --output Benchmarks/Runs/ci-acceptance

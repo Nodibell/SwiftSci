@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "tier": "cpu",
+  "coverage_sha256": "db229f4bde15699260b873fd8063a20b61c3bd1d8f3e7f2f1b583018f09ebccc",
+  "entries": [
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-wampler4-binary64",
+      "engine": "pandas",
+      "case_key": "7095d33204fcc176e95997a971d5a0f93014874198aac66a186dbb3db151e830",
+      "classification": "comparator-accuracy",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch at 0: 1.000000002634046 != 1.0",
+        "Output mismatch at 0: 1.0000000028854616 != 1.0"
+      ],
+      "reason": "Comparison-engine accuracy failure against the independent reference; this is not an oracle or tolerance error.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
+        "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged.",
+        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259",
+        "Recorded local acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-wampler5-binary64",
+      "engine": "pandas",
+      "case_key": "e723b995028672e574ac2d2588540d12777e73222fa9184726d845aeec3da018",
+      "classification": "comparator-accuracy",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch at 0: 1.0000003187603246 != 1.0",
+        "Output mismatch at 0: 1.0000003429656807 != 1.0"
+      ],
+      "reason": "Comparison-engine accuracy failure against the independent reference; this is not an oracle or tolerance error.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
+        "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged.",
+        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259",
+        "Recorded local acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-wampler4-decimal",
+      "engine": "pandas",
+      "case_key": "a3a521a1f3d3cb3a77035135c1204de46e8ec84c7ae34c1e532c958594777904",
+      "classification": "comparator-accuracy",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch at 0: 1.000000002634046 != 1.0",
+        "Output mismatch at 0: 1.0000000028854616 != 1.0"
+      ],
+      "reason": "Comparison-engine accuracy failure against the independent reference; this is not an oracle or tolerance error.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
+        "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged.",
+        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259",
+        "Recorded local acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-wampler5-decimal",
+      "engine": "pandas",
+      "case_key": "e6cff6554cf1271199895148b590f4539a91fb8b50860bb56c7c2a3cba0645fb",
+      "classification": "comparator-accuracy",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch at 0: 1.0000003187603246 != 1.0",
+        "Output mismatch at 0: 1.0000003429656807 != 1.0"
+      ],
+      "reason": "Comparison-engine accuracy failure against the independent reference; this is not an oracle or tolerance error.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
+        "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged.",
+        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259",
+        "Recorded local acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09"
+      ]
+    }
+  ]
+}

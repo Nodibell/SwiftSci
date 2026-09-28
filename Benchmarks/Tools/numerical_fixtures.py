@@ -3,6 +3,7 @@
 from workflow_fixtures import OPERATIONS as WORKFLOW_OPERATIONS, validate_input as validate_workflow
 from workflow_reference import reference as workflow_reference
 import math
+import re
 from contracts import fields, positive, require, read_json, repository_file, verified_file
 
 from controlled_fixtures import OPERATIONS as CONTROLLED_OPERATIONS, validate_input as validate_controlled, output_count
@@ -20,7 +21,7 @@ from boundary_sweep import validate_descriptor, reference as sweep_reference, ou
 from contracts import digest
 import struct
 
-OPERATIONS = {"dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS | WORKFLOW_OPERATIONS
+OPERATIONS = {"dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "ols-cpu", "nist-anova", "nist-anova-decimal", "pca-cpu", "multinomial-nb-cpu"} | CONTROLLED_OPERATIONS | SUPERVISED_OPERATIONS | WORKFLOW_OPERATIONS
 
 
 def finite_vector(values, name):
@@ -56,6 +57,10 @@ def validate_manifest(manifest):
     require(controlled == (manifest.get("reference_basis") == "controlled-reference-v1"), "Controlled reference basis mismatch")
     exact = manifest.get("operation") in ("pca-cpu", "multinomial-nb-cpu")
     require(exact == (manifest.get("reference_basis") == "exact-rational-v1"), "Reference basis/operation mismatch")
+    if manifest.get("operation") == "nist-anova-decimal":
+        require(manifest.get("reference_basis") == "nist-decimal-v1", "Decimal ANOVA requires original-decimal references")
+    if manifest.get("operation") == "nist-anova":
+        require(manifest.get("reference_basis") == "binary64-v1", "Binary64 ANOVA requires binary64 references")
     for key in ["fixture", "source_fixture", "reference_fixture"]:
         require(isinstance(manifest.get(key), str) and manifest[key], f"Missing {key}")
     require(manifest.get("reference_basis") in ("workflow-reference-v1", "nist-decimal-v1", "binary64-v1", "exact-rational-v1", "controlled-reference-v1", "supervised-reference-v1", "dataframe-reference-v1", "neural-reference-v1", "vision-reference-v1", "boundary-reference-v1", "sweep-reference-v1"), "Unknown reference basis")
@@ -96,12 +101,16 @@ def validate_input(payload, operation, rows):
             finite_vector(row, "features")
         require(all(len(row) == len(matrix[0]) for row in matrix), "Ragged OLS features")
         require(rows >= len(matrix[0]) + 1, "Underdetermined OLS fixture")
-    elif operation == "nist-anova":
+    elif operation in ("nist-anova", "nist-anova-decimal"):
         fields(payload, ["operation", "groups"])
         groups = payload["groups"]
         require(isinstance(groups, list) and len(groups) >= 2, "ANOVA needs groups")
         for group in groups:
-            finite_vector(group, "ANOVA group")
+            if operation == "nist-anova-decimal":
+                require(isinstance(group, list) and group, "Empty decimal ANOVA group")
+                require(all(isinstance(v, str) and re.fullmatch(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", v) for v in group), "Invalid decimal ANOVA token")
+            else:
+                finite_vector(group, "ANOVA group")
         require(sum(map(len, groups)) == rows and rows > len(groups), "ANOVA row count mismatch")
     elif operation in ("pca-cpu", "multinomial-nb-cpu"):
         required = ["operation", "features", "query", "n_components"] if operation == "pca-cpu" else ["operation", "features", "targets", "query", "alpha"]

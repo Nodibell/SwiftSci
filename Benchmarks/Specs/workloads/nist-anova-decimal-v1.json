@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "nist-anova-decimal-v1",
+  "operation": "nist-anova-decimal",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; output order declared in semantics",
+  "atol": 1e-10,
+  "rtol": 1e-09,
+  "semantics": "One-way ANOVA from original decimal strings. Times decimal parsing, exact common-origin subtraction, binary64 residual conversion, public ANOVA and output materialization. Output: F statistic, between-group degrees of freedom, within-group degrees of freedom. Original-decimal NIST certified references and unchanged tolerances. JSON decoding is outside timing. Python uses checked decimal centering then SciPy f_oneway. No p-value certification claim."
+}

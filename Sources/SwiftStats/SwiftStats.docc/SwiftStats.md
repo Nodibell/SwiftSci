@@ -30,3 +30,4 @@ let tTest = Stats.ttest(groupA, groupB)
 - <doc:HypothesisTesting>
 
 - <doc:ChoosingDotProductAccuracy>
+- <doc:DecimalANOVA>

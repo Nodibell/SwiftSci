@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "tier": "cpu",
-  "coverage_sha256": "6166c4640c3b5a776a259b30341c512f99e355b3bd38b54d723f6819458232c7",
+  "coverage_sha256": "db229f4bde15699260b873fd8063a20b61c3bd1d8f3e7f2f1b583018f09ebccc",
   "entries": [
     {
       "profile": "numerical-binary64",
@@ -18,7 +18,8 @@
       "evidence": [
         "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
         "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged.",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
+        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259",
+        "Recorded local acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09"
       ]
     },
     {
@@ -36,103 +37,8 @@
       "evidence": [
         "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
         "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged.",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
-      ]
-    },
-    {
-      "profile": "numerical-conformance",
-      "case": "nist-smls07-decimal",
-      "engine": "swiftsci",
-      "case_key": "b6ecc52332b2024360baa48e93c1d62c18f8059a902a187c5a6178e5702bf6d1",
-      "classification": "input-representation",
-      "reference_basis": "nist-decimal-v1",
-      "errors": [
-        "Output mismatch: 21.000811887818774 versus 21.0"
-      ],
-      "reason": "Rounded binary64 input does not preserve the original-decimal problem; the explicit decimal-input contribution removes this entry.",
-      "evidence": [
-        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
-      ]
-    },
-    {
-      "profile": "numerical-conformance",
-      "case": "nist-smls07-decimal",
-      "engine": "pandas",
-      "case_key": "b6ecc52332b2024360baa48e93c1d62c18f8059a902a187c5a6178e5702bf6d1",
-      "classification": "input-representation",
-      "reference_basis": "nist-decimal-v1",
-      "errors": [
-        "Output mismatch at 0: 21.000811887818774 != 21.0"
-      ],
-      "reason": "Rounded binary64 input does not preserve the original-decimal problem; the explicit decimal-input contribution removes this entry.",
-      "evidence": [
-        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
-      ]
-    },
-    {
-      "profile": "numerical-conformance",
-      "case": "nist-smls08-decimal",
-      "engine": "swiftsci",
-      "case_key": "47377209970c3d1458192c190869e3cf1a0c42d995a3cecceccd32c9ae511bcc",
-      "classification": "input-representation",
-      "reference_basis": "nist-decimal-v1",
-      "errors": [
-        "Output mismatch: 201.01300409594845 versus 201.0"
-      ],
-      "reason": "Rounded binary64 input does not preserve the original-decimal problem; the explicit decimal-input contribution removes this entry.",
-      "evidence": [
-        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
-      ]
-    },
-    {
-      "profile": "numerical-conformance",
-      "case": "nist-smls08-decimal",
-      "engine": "pandas",
-      "case_key": "47377209970c3d1458192c190869e3cf1a0c42d995a3cecceccd32c9ae511bcc",
-      "classification": "input-representation",
-      "reference_basis": "nist-decimal-v1",
-      "errors": [
-        "Output mismatch at 0: 201.01300409594847 != 201.0"
-      ],
-      "reason": "Rounded binary64 input does not preserve the original-decimal problem; the explicit decimal-input contribution removes this entry.",
-      "evidence": [
-        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
-      ]
-    },
-    {
-      "profile": "numerical-conformance",
-      "case": "nist-smls09-decimal",
-      "engine": "swiftsci",
-      "case_key": "97a5015d371b83fe6ad061d86a65c6e9d4923490bb7ae29d6660a10462c4004a",
-      "classification": "input-representation",
-      "reference_basis": "nist-decimal-v1",
-      "errors": [
-        "Output mismatch: 2001.134926220951 versus 2001.0"
-      ],
-      "reason": "Rounded binary64 input does not preserve the original-decimal problem; the explicit decimal-input contribution removes this entry.",
-      "evidence": [
-        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
-      ]
-    },
-    {
-      "profile": "numerical-conformance",
-      "case": "nist-smls09-decimal",
-      "engine": "pandas",
-      "case_key": "97a5015d371b83fe6ad061d86a65c6e9d4923490bb7ae29d6660a10462c4004a",
-      "classification": "input-representation",
-      "reference_basis": "nist-decimal-v1",
-      "errors": [
-        "Output mismatch at 0: 2001.134926220951 != 2001.0"
-      ],
-      "reason": "Rounded binary64 input does not preserve the original-decimal problem; the explicit decimal-input contribution removes this entry.",
-      "evidence": [
-        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
+        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259",
+        "Recorded local acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09"
       ]
     },
     {
@@ -150,7 +56,8 @@
       "evidence": [
         "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
         "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged.",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
+        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259",
+        "Recorded local acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09"
       ]
     },
     {
@@ -168,7 +75,8 @@
       "evidence": [
         "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
         "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged.",
-        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259"
+        "Recorded local acceptance at 36053baca6bf38a9233ca9798c151816f4bdf259",
+        "Recorded local acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09"
       ]
     }
   ]

@@ -44,7 +44,10 @@ struct TransformerDecoderTests {
                 positionalEncoding: .rope(base: 10_000))
             let decoder = TransformerDecoder(config: config, tokenizer: tokenizer)
             let fixed = decoder.parameters().flattened().map { name, tensor in
-                let values = (0..<tensor.size).map { Float(($0 * 7 + 3) % 17 - 8) / 32 }
+                let values: [Float] = (0..<tensor.size).map { index in
+                    let numerator: Int = (index * 7 + 3) % 17 - 8
+                    return Float(numerator) / Float(32)
+                }
                 return (name, MLXArray(values, tensor.shape))
             }
             decoder.update(parameters: NestedDictionary.unflattened(fixed))

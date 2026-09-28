@@ -35,14 +35,21 @@ struct BoundarySweepInput {
       ["conversion", "prepared", "pipeline"].contains(recipe.stage)
     else { throw BenchmarkFailure("Invalid bounded boundary sweep descriptor") }
     let names = (0..<recipe.columns).map { "x\($0)" }
+    let rowIDs: [Int64] = (0..<rows).map { Int64(($0 * 37) % rows) }
+    let features: [[Double]] = (0..<rows).map { i in
+      (0..<recipe.columns).map { j in
+        let value = (i * 7 + j * 3) % 19 - 9
+        return Double(value) / 8
+      }
+    }
+    let targets: [Double] = (0..<rows).map { Double($0 % 17) / 4 - 1 }
+    let filterValues: [Double] = (0..<rows).map { Double($0 % 4) }
+    let sortKeys: [Double] = (0..<rows).map { Double($0 % 11) }
+    let weights: [Double] = (0..<recipe.columns).map { Double($0 + 1) / 8 }
     let input = BoundaryInput(operation: "dataframe-model", device: recipe.device, dtype: recipe.dtype,
-      row_ids: (0..<rows).map { Int64(($0 * 37) % rows) }, feature_names: names,
-      feature_order: Array(names.reversed()),
-      features: (0..<rows).map { i in (0..<recipe.columns).map { j in Double((i * 7 + j * 3) % 19 - 9) / 8 } },
-      targets: (0..<rows).map { Double($0 % 17) / 4 - 1 },
-      filter_values: (0..<rows).map { Double($0 % 4) }, filter_threshold: 1,
-      sort_keys: (0..<rows).map { Double($0 % 11) }, ascending: true,
-      weights: (0..<recipe.columns).map { Double($0 + 1) / 8 }, bias: -0.375)
+      row_ids: rowIDs, feature_names: names, feature_order: Array(names.reversed()),
+      features: features, targets: targets, filter_values: filterValues, filter_threshold: 1,
+      sort_keys: sortKeys, ascending: true, weights: weights, bias: -0.375)
     let source = recipe.stage == "pipeline" ? nil : try input.sourceFrame()
     let prepared: BoundaryPrepared?
     if recipe.stage == "prepared", let source {

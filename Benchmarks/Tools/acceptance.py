@@ -92,8 +92,10 @@ def inspect_run(directory, profile, source, engines, root):
                 audit_artifacts(event, profile, directory)
         else:
             require(event['status'] == 'failed', 'Invalid event status')
-            detail = dict(case=key[0], engine=key[1], batch=key[2], error=event.get('error', ''))
+            detail = dict(case=key[0], engine=key[1], batch=key[2], case_key=expected[key], error=event.get('error', ''))
             try:
+                require(event.get('error') == f'Worker exited 1; see {token}.log',
+                        'Unexpected worker exit or timeout')
                 response = read_json(response_path)
                 fields(response, ['schema_version','case_key','status','samples','peak_rss_bytes','engine_version','error'])
                 require(response['schema_version'] == 1 and response['samples'] == [] and
@@ -159,10 +161,28 @@ def main():
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--swift-worker', required=True)
     parser.add_argument('--python', default=sys.executable)
+    parser.add_argument('--check-baseline', action='store_true',
+                        help='Apply reviewed CPU regression policy; raw conformance stays strict')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
-    report = execute(root, load_policy(root), args.tier, args.output.resolve(), args.swift_worker, args.python)
+    policy = load_policy(root)
+    if args.check_baseline:
+        from regression_policy import BASELINE, expected_cases, load_baseline, evaluate
+        require(args.tier == 'cpu', 'Reviewed baseline applies only to the CPU tier')
+        expected = expected_cases(root, policy)
+        baseline = load_baseline(root, expected)
+        baseline_hash = digest((root / BASELINE).read_bytes())
+    report = execute(root, policy, args.tier, args.output.resolve(), args.swift_worker, args.python)
     print(json.dumps({k: report[k] for k in ('status', 'coverage_complete')}, indent=2))
+    if args.check_baseline:
+        require(digest((root / BASELINE).read_bytes()) == baseline_hash, 'Failure baseline changed during execution')
+        result = evaluate(report, baseline, expected)
+        result.update(source=report['source'], baseline_sha256=baseline_hash,
+                      acceptance_sha256=digest((args.output / 'acceptance.json').read_bytes()))
+        write_json(args.output / 'regression-policy.json', result)
+        print(json.dumps(dict(regression_policy=result['status'], conformance=report['status'],
+                              known_failures=len(result['known_failures']), blocking=len(result['blocking'])), indent=2))
+        return 0 if result['status'] == 'passed' else 1
     return 0 if report['status'] == 'passed' else 1
 
 

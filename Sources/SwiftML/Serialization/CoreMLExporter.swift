@@ -449,7 +449,10 @@ public enum CoreMLExporter {
 
     /// Encodes a feature standard scaler as a binary Apple Core ML `.mlmodel` artifact.
     ///
-    /// The output uses the `Scaler` Core ML message with `specificationVersion = 4`.
+    /// A single feature uses a Core ML `Scaler`. Multiple named features use a pipeline
+    /// of scalar stages, with `specificationVersion = 4` and the same public feature names.
+    /// Shift and scale arrays must be empty, contain one broadcast value, or match the input count.
+    /// Output names must match the input count.
     ///
     /// - Parameters:
     ///   - name: Model display name.

@@ -1,10 +1,26 @@
 import Testing
 import Foundation
+import SwiftPreprocessing
 @testable import SwiftML
 
 @Suite("LinearRegression Tests")
 struct LinearRegressionTests {
     
+    @Test("Supplied linear parameters predict without fitting", arguments: [ExecutionDevice.cpu, .auto, .gpu, .ane])
+    func suppliedParameters(device: ExecutionDevice) async throws {
+        let model = LinearRegression(weights: [2, -3], bias: 5, device: device)
+        let predictions = try await model.predict(features: [[1, 2], [-2, 1]])
+        #expect(predictions == [1, -2])
+        #expect(await model.resolvedDevice == ((device == .cpu || device == .auto) ? .cpu : .gpu))
+    }
+
+    @Test("Supplied CPU linear parameters retain Double precision")
+    func suppliedDoublePrecision() async throws {
+        let coefficient = 1 + Double(sign: .plus, exponent: -40, significand: 1)
+        let model = LinearRegression(weights: [coefficient], bias: 0, device: .cpu)
+        #expect(try await model.predict(features: [[1]]) == [coefficient])
+    }
+
     @Test("LinearRegression convergence on clean data")
     func testConvergence() async throws {
         // Equation: y = 2 * x1 + 3 * x2 + 5

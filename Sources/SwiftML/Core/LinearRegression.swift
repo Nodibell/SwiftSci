@@ -35,6 +35,10 @@ public actor LinearRegression: RegressorEstimator {
         self.requestedDevice = device
         self.cpuWeights = weights
         self.cpuBias = bias
+        // Supplied Double parameters need no training workload for automatic routing.
+        self.resolvedDevice = (device == .auto || device == .cpu) ? .cpu : .gpu
+        self.weights = MLXArray(weights.map { Float($0) }).reshaped([weights.count, 1])
+        self.bias = MLXArray([Float(bias)])
     }
 
     /// Get weights and bias.

@@ -62,11 +62,11 @@ public actor PCA {
     
     /// Explained variance of the selected components. Shape: [nComponents]
     public private(set) var explainedVariance: [Double]?
+    private var totalVariance: Double?
 
     /// Explained variance ratio of each selected component (percentage of total variance).
     public var explainedVarianceRatio: [Double]? {
-        guard let explainedVariance = explainedVariance else { return nil }
-        let totalVar = explainedVariance.reduce(0.0, +)
+        guard let explainedVariance, let totalVar = totalVariance else { return nil }
         guard totalVar > 0 else { return explainedVariance.map { _ in 0.0 } }
         return explainedVariance.map { $0 / totalVar }
     }
@@ -134,6 +134,7 @@ public actor PCA {
             self.mean = results.mean
             self.components = results.components
             self.explainedVariance = results.explainedVariance
+            self.totalVariance = results.totalVariance
         }
     }
     
@@ -196,6 +197,9 @@ public actor PCA {
         self.mean = colMeans
         self.components = comp
         self.explainedVariance = expVar
+        self.totalVariance = Xc.reduce(0.0) { total, row in
+            total + row.reduce(0.0) { $0 + $1 * $1 }
+        } * scaleFactor
     }
 
     private func fitCPUCov(_ X: [[Double]]) throws {
@@ -269,6 +273,7 @@ public actor PCA {
         self.mean = colMeans
         self.components = comp
         self.explainedVariance = expVar
+        self.totalVariance = w.reduce(0.0) { $0 + max(0, $1) }
     }
 
     private func fitCPUSVD(_ X: [[Double]]) throws {
@@ -358,6 +363,7 @@ public actor PCA {
         self.mean = colMeans
         self.components = comp
         self.explainedVariance = expVar
+        self.totalVariance = s.reduce(0.0) { $0 + $1 * $1 } / df
     }
     
     // MARK: - GPU Backend (MLX SVD)
@@ -365,7 +371,7 @@ public actor PCA {
     private static func runFitGPU(
         X: [[Double]],
         nComponents: Int
-    ) -> (mean: [Double], components: [[Double]], explainedVariance: [Double]) {
+    ) -> (mean: [Double], components: [[Double]], explainedVariance: [Double], totalVariance: Double) {
         let numSamples = X.count
         let numFeatures = X[0].count
         
@@ -406,7 +412,7 @@ public actor PCA {
             expVar.append((s[k] * s[k]) / df)
         }
         
-        return (colMeans, comp, expVar)
+        return (colMeans, comp, expVar, s.reduce(0.0) { $0 + $1 * $1 } / df)
     }
     
     /// Projects the given dataset X onto the principal components.

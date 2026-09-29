@@ -70,7 +70,7 @@ try:
             controlled_input = prepare_sweep(numerical)
         elif op == "vision-letterbox-cpu":
             controlled_input = prepare_vision(numerical)
-        elif op == "decoder-fixed-f32":
+        elif op in ("decoder-fixed-f32", "decoder-shaped-f32"):
             controlled_input = prepare_neural(numerical)
         elif op == "dataframe-semantics":
             controlled_input = prepare_dataframe(numerical)
@@ -156,7 +156,7 @@ try:
             return execute_sweep(controlled_input)
         if op == "vision-letterbox-cpu":
             return execute_vision(controlled_input)
-        if op == "decoder-fixed-f32":
+        if op in ("decoder-fixed-f32", "decoder-shaped-f32"):
             return execute_neural(controlled_input)
         if op == "dataframe-semantics":
             return execute_dataframe(controlled_input)

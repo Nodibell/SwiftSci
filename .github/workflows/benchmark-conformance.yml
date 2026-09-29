@@ -75,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [neural-cpu-conformance, boundary-cpu-conformance]
+        profile: [neural-cpu-conformance, boundary-cpu-conformance, neural-shaped-cpu-conformance]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

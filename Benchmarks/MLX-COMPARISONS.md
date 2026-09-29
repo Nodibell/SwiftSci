@@ -48,4 +48,6 @@ The boundary adapter uses pandas for filtering, stable ordering and aligned feat
 
 The `pandas` engine remains a CPU NumPy mathematical comparison for GPU-requested cases. The `mlx` engine honors the requested device, but shares the MLX backend family with Swift; agreement between those two implementations alone cannot prove backend correctness. Whole-process RSS includes imports, preparation and validation. It is not a device allocation counter or evidence of zero-copy conversion.
 
-Larger decoder architectures, long contexts, tokenizer and stopping contracts, quantized inference, pretrained checkpoints, MLX-LM and llama.cpp comparisons remain separate follow-up work. The existing boundary sweep is bounded to 8,192 rows and 64 features. This addition does not certify language quality or memory-capacity limits.
+The [bounded shape/context pack](Fixtures/neural-shaped/README.md) adds widths 16 and 32 and contexts of 8, 32 and 128 tokens through `neural-shaped-conformance`. Its CPU profile is `neural-shaped-cpu-conformance`. Both retain end-to-end diagnostic timing.
+
+Deeper decoder architectures, contexts beyond 128 tokens, tokenizer and stopping contracts, quantized inference, pretrained checkpoints, MLX-LM and llama.cpp comparisons remain separate follow-up work. The existing boundary sweep is bounded to 8,192 rows and 64 features. This addition does not certify language quality or memory-capacity limits.

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "bytes": 4578,
+      "path": "generate.py",
+      "sha256": "abce4548360ee172e2ef85fcdc25cb0417744d6f8ef62e2ef133bff316eced6d"
+    },
+    {
+      "bytes": 3798,
+      "path": "../../Tools/neural_shapes.py",
+      "sha256": "5d5b65f305e4cfe30281c1c100efcfb5d404bf981f2b89cca34831656a70ed7c"
+    },
+    {
+      "bytes": 4343,
+      "path": "../../Tools/neural_shaped_reference.py",
+      "sha256": "4f640068281cba6f6492ea10823e058b9331e7e65e16880a3707e38c4fdc0bb1"
+    },
+    {
+      "bytes": 112,
+      "path": "../../Python/requirements-standardized.txt",
+      "sha256": "fc9a7924fc71f890e004d6a60173d171c9577a550a575abe7f15502af357512c"
+    }
+  ]
+}

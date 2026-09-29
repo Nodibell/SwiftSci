@@ -304,6 +304,8 @@ The `dataframe-conformance` profile contains 24 bounded cases for exact integer 
 
 The `neural-conformance` profile checks fixed Float32 decoder logits on explicitly selected MLX CPU and GPU paths. `neural-cpu-conformance` contains its CPU subset. The separate `neural-loader-conformance` profile checks complete parameter replacement through the public loader and retains failures. See the [fixed decoder contract](Fixtures/neural/README.md) for independent references, cache rules, device requirements and limits. The NumPy comparator runs on CPU; these diagnostic timings do not support matched-backend speed claims.
 
+The [bounded decoder shape pack](Fixtures/neural-shaped/README.md) adds widths 16 and 32 and contexts through 128 tokens. Use `neural-shaped-conformance` for CPU and Metal or `neural-shaped-cpu-conformance` for CI. All complete logits use independent scalar references; cached runs also check cumulative cache lengths.
+
 ## Complete suite acceptance
 
 `Specs/acceptance.json` assigns every canonical profile to an execution tier and names deferred coverage. `cpu` runs bounded CPU conformance, including numerical, model and supervised cases. `apple` also runs explicit Metal and loader diagnostics. `sweep` runs repeated size profiles and the bounded conversion/computation sweeps. `all` runs every profile. The inventory command separately preserves the disposition of every legacy registration; a replacement contract does not validate historical timing results.

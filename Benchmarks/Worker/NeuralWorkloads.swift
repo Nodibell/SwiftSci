@@ -12,6 +12,32 @@ struct FixedDecoderInput {
     let values: [Float]
   }
 
+  struct Config {
+    let vocab: Int
+    let hidden: Int
+    let heads: Int
+    let intermediate: Int
+    let maxLength: Int
+    static let tiny = Config(vocab: 7, hidden: 8, heads: 2, intermediate: 6, maxLength: 8)
+
+    var shapes: [String: [Int]] {
+      [
+        "embedding.weight": [vocab, hidden], "posEmbedding.weight": [maxLength, hidden],
+        "finalNorm.weight": [hidden], "lmHead.weight": [vocab, hidden],
+        "layers.0.norm1.weight": [hidden], "layers.0.norm2.weight": [hidden],
+        "layers.0.attention.query_proj.weight": [hidden, hidden],
+        "layers.0.attention.key_proj.weight": [hidden, hidden],
+        "layers.0.attention.value_proj.weight": [hidden, hidden],
+        "layers.0.attention.out_proj.weight": [hidden, hidden],
+        "layers.0.ffn.gate.weight": [intermediate, hidden],
+        "layers.0.ffn.up.weight": [intermediate, hidden],
+        "layers.0.ffn.down.weight": [hidden, intermediate],
+      ]
+    }
+  }
+
+  let config: Config
+  let chunkSizes: [Int]
   let device: String
   let position: String
   let execution: String
@@ -19,26 +45,14 @@ struct FixedDecoderInput {
   let tokens: [[Int32]]
   let weights: [String: Weight]
 
-  static let shapes: [String: [Int]] = [
-    "embedding.weight": [7, 8],
-    "posEmbedding.weight": [8, 8],
-    "finalNorm.weight": [8],
-    "lmHead.weight": [7, 8],
-    "layers.0.norm1.weight": [8],
-    "layers.0.norm2.weight": [8],
-    "layers.0.attention.query_proj.weight": [8, 8],
-    "layers.0.attention.key_proj.weight": [8, 8],
-    "layers.0.attention.value_proj.weight": [8, 8],
-    "layers.0.attention.out_proj.weight": [8, 8],
-    "layers.0.ffn.gate.weight": [6, 8],
-    "layers.0.ffn.up.weight": [6, 8],
-    "layers.0.ffn.down.weight": [8, 6],
-  ]
+  static let shapes = Config.tiny.shapes
 
   private init(
     device: String, position: String, execution: String, loading: String,
-    tokens: [[Int32]], weights: [String: Weight]
+    tokens: [[Int32]], weights: [String: Weight], config: Config, chunkSizes: [Int]
   ) {
+    self.config = config
+    self.chunkSizes = chunkSizes
     self.device = device
     self.position = position
     self.execution = execution
@@ -49,24 +63,56 @@ struct FixedDecoderInput {
 
   static func decode(_ data: Data, rows: Int) throws -> FixedDecoderInput {
     guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-      Set(object.keys) == ["operation", "device", "position", "execution", "loading", "tokens", "weights"],
-      object["operation"] as? String == "decoder-fixed-f32",
+      let operation = object["operation"] as? String,
+      ["decoder-fixed-f32", "decoder-shaped-f32"].contains(operation)
+    else { throw BenchmarkFailure("Invalid decoder operation") }
+    let shaped = operation == "decoder-shaped-f32"
+    var config = Config.tiny
+    if shaped {
+      guard let raw = object["config"] as? [String: Any],
+        Set(raw.keys) == ["vocab_size", "hidden_dim", "num_heads", "intermediate_size", "max_seq_len"]
+      else { throw BenchmarkFailure("Invalid decoder config") }
+      config = try Config(
+        vocab: boundedInteger(raw["vocab_size"]!, range: 1...32),
+        hidden: boundedInteger(raw["hidden_dim"]!, range: 1...32),
+        heads: boundedInteger(raw["num_heads"]!, range: 1...4),
+        intermediate: boundedInteger(raw["intermediate_size"]!, range: 1...64),
+        maxLength: boundedInteger(raw["max_seq_len"]!, range: 1...128))
+      guard config.hidden % config.heads == 0, (config.hidden / config.heads) % 2 == 0 else {
+        throw BenchmarkFailure("Decoder head width must be even")
+      }
+    }
+    let shapes = config.shapes
+    let keys: Set<String> = ["operation", "device", "position", "execution", "loading", "tokens", "weights"]
+    guard Set(object.keys) == (shaped ? keys.union(["config", "chunk_sizes"]) : keys),
       let device = object["device"] as? String, ["cpu", "gpu"].contains(device),
       let position = object["position"] as? String, ["learned", "rope"].contains(position),
       let execution = object["execution"] as? String, ["full", "cached"].contains(execution),
       let loading = object["loading"] as? String, ["direct", "public-loader"].contains(loading),
+      !shaped || loading == "direct",
       let rawTokens = object["tokens"] as? [[Any]], (1...2).contains(rawTokens.count),
-      let sequence = rawTokens.first?.count, (1...4).contains(sequence),
+      let sequence = rawTokens.first?.count, (1...(shaped ? config.maxLength : 4)).contains(sequence),
       rawTokens.allSatisfy({ $0.count == sequence }),
       rows == rawTokens.count * sequence,
-      execution != "cached" || sequence == 4,
+      shaped || execution != "cached" || sequence == 4,
       let rawWeights = object["weights"] as? [String: Any],
       Set(rawWeights.keys) == Set(shapes.keys)
     else { throw BenchmarkFailure("Invalid fixed decoder input contract") }
 
+    var chunkSizes = execution == "cached" ? [2, 1, 1] : []
+    if shaped {
+      guard let chunks = object["chunk_sizes"] as? [Any] else {
+        throw BenchmarkFailure("Invalid decoder chunks")
+      }
+      chunkSizes = try chunks.map { try boundedInteger($0, range: 1...128) }
+      guard (execution == "full" && chunkSizes.isEmpty)
+        || (execution == "cached" && chunkSizes.count >= 2 && chunkSizes.reduce(0, +) == sequence
+          && chunkSizes.dropFirst().allSatisfy({ $0 == 1 }))
+      else { throw BenchmarkFailure("Cache requires a prefix followed by single tokens") }
+    }
     let tokens = try rawTokens.map { row in
       try row.map { value -> Int32 in
-        let integer = try boundedInteger(value, range: 0...6)
+        let integer = try boundedInteger(value, range: 0...(config.vocab - 1))
         return Int32(integer)
       }
     }
@@ -77,7 +123,7 @@ struct FixedDecoderInput {
         let dimensions = entry["shape"] as? [Any], dimensions.count == expectedShape.count,
         let values = entry["values"] as? [Any], values.count == expectedShape.reduce(1, *)
       else { throw BenchmarkFailure("Invalid decoder weight structure: \(key)") }
-      let shape = try dimensions.map { try boundedInteger($0, range: 1...8) }
+      let shape = try dimensions.map { try boundedInteger($0, range: 1...128) }
       guard shape == expectedShape else { throw BenchmarkFailure("Invalid decoder weight shape: \(key)") }
       let floats = try values.map { value -> Float in
         guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else {
@@ -94,7 +140,7 @@ struct FixedDecoderInput {
     }
     return FixedDecoderInput(
       device: device, position: position, execution: execution, loading: loading,
-      tokens: tokens, weights: weights)
+      tokens: tokens, weights: weights, config: config, chunkSizes: chunkSizes)
   }
 
   private static func boundedInteger(_ value: Any, range: ClosedRange<Int>) throws -> Int {
@@ -113,8 +159,9 @@ extension Worker {
     return try Device.withDefaultDevice(device) {
       try Stream.withNewDefaultStream(device: device) {
         let config = LLMConfig(
-          vocabSize: 7, numLayers: 1, hiddenDim: 8, numHeads: 2, intermediateSize: 6,
-          maxSeqLen: 8, rmsNormEps: 0.0009765625,
+          vocabSize: input.config.vocab, numLayers: 1, hiddenDim: input.config.hidden,
+          numHeads: input.config.heads, intermediateSize: input.config.intermediate,
+          maxSeqLen: input.config.maxLength, rmsNormEps: 0.0009765625,
           positionalEncoding: input.position == "learned" ? .learned : .rope(base: 10000))
         let tokenizer = BPETokenizer(vocab: ["<unk>": 0], merges: [])
         let model = TransformerDecoder(config: config, tokenizer: tokenizer)
@@ -155,29 +202,32 @@ extension Worker {
         } else {
           let cache = KVCache()
           var chunks = [MLXArray]()
-          for range in [0..<2, 2..<3, 3..<4] {
+          var start = 0
+          for size in input.chunkSizes {
+            let range = start..<(start + size)
             let tokens = MLXArray(input.tokens.flatMap { Array($0[range]) }, [batch, range.count])
             let chunk = model.forward(tokens, caches: [cache], offset: range.lowerBound)
-            guard chunk.dtype == .float32, chunk.shape == [batch, range.count, 7] else {
+            guard chunk.dtype == .float32, chunk.shape == [batch, range.count, input.config.vocab] else {
               throw BenchmarkFailure("Invalid cached decoder output shape or dtype")
             }
             eval(chunk)
             chunks.append(chunk)
+            start += size
+            guard cache.count == start else { throw BenchmarkFailure("Invalid decoder cache length") }
             counts.append(Double(cache.count))
           }
-          guard counts == [2, 3, 4] else { throw BenchmarkFailure("Invalid decoder cache lengths") }
           logits = concatenated(chunks, axis: 1)
         }
-        guard logits.dtype == .float32, logits.shape == [batch, sequence, 7] else {
+        guard logits.dtype == .float32, logits.shape == [batch, sequence, input.config.vocab] else {
           throw BenchmarkFailure("Invalid decoder output shape or dtype")
         }
         eval(logits)
         StreamOrDevice.default.stream.synchronize()
         let values = logits.asArray(Float.self)
-        guard values.count == batch * sequence * 7, values.allSatisfy(\.isFinite) else {
+        guard values.count == batch * sequence * input.config.vocab, values.allSatisfy(\.isFinite) else {
           throw BenchmarkFailure("Invalid decoder output values")
         }
-        var result = [Double(batch), Double(sequence), 7] + values.map(Double.init)
+        var result = [Double(batch), Double(sequence), Double(input.config.vocab)] + values.map(Double.init)
         if input.execution == "cached" { result += [Double(counts.count)] + counts }
         return .values(result)
       }

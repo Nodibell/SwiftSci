@@ -1,11 +1,11 @@
 """Supported MLX comparison contracts and explicit execution placement."""
-OPERATIONS = frozenset({'decoder-fixed-f32', 'dataframe-model', 'dataframe-model-sweep'})
+OPERATIONS = frozenset({'decoder-fixed-f32', 'decoder-shaped-f32', 'dataframe-model', 'dataframe-model-sweep'})
 
 
 def check_supported(payload):
     if payload['operation'] not in OPERATIONS:
         raise ValueError('Unsupported MLX comparison operation: ' + payload['operation'])
-    if payload['operation'] == 'decoder-fixed-f32' and payload['loading'] != 'direct':
+    if payload['operation'] in ('decoder-fixed-f32', 'decoder-shaped-f32') and payload['loading'] != 'direct':
         raise ValueError('The Swift public weight loader has no equivalent Python MLX contract')
 
 
@@ -19,7 +19,7 @@ class MLXWorkload:
         self.device = mx.cpu if payload['device'] == 'cpu' else mx.gpu
         self.stream = mx.new_stream(self.device)
         with mx.stream(self.stream):
-            if payload['operation'] == 'decoder-fixed-f32':
+            if payload['operation'] in ('decoder-fixed-f32', 'decoder-shaped-f32'):
                 from mlx_neural_workloads import execute
                 self.state = payload
             else:

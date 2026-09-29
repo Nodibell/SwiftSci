@@ -42,7 +42,7 @@ enum NumericalInputs {
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = ["scientific-workflow", "persisted-regression", "dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "nist-anova-decimal", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
+    let isNumerical = ["scientific-workflow", "persisted-regression", "dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "decoder-shaped-f32", "dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "nist-anova-decimal", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
@@ -52,7 +52,7 @@ enum NumericalInputs {
     case "dataframe-model": return .boundary(try BoundaryInput.decode(data, rows: rows))
     case "dataframe-model-sweep": return .boundarySweep(try BoundarySweepInput.decode(data, rows: rows))
     case "vision-letterbox-cpu": return .visionLetterbox(try VisionLetterboxInput.decode(data, rows: rows))
-    case "decoder-fixed-f32": return .fixedDecoder(try FixedDecoderInput.decode(data, rows: rows))
+    case "decoder-fixed-f32", "decoder-shaped-f32": return .fixedDecoder(try FixedDecoderInput.decode(data, rows: rows))
     case "dataframe-semantics": return .dataframeSemantics(try DataFrameSemanticInput.decode(data, rows: rows))
     case "supervised-scale", "supervised-ols-cpu", "supervised-logistic-cpu": return .supervised(try SupervisedFixtureInput.decode(data, operation: operation, rows: rows))
     case "linear-fixed-cpu": return .fixedLinear(try ControlledInferenceInput.decode(data, operation: operation, rows: rows))

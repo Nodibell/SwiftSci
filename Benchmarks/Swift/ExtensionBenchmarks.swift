@@ -70,7 +70,7 @@ struct ExtensionBenchmarks: BenchmarkSuite {
         let tfidfRes = await BenchmarkRunner.run(name: "TF-IDF Vectorizer (50 documents)", module: module, warmup: 2, iterations: 10) {
             let vec = TFIDFVectorizer()
             let docs = Array(repeating: "уряд ухвалив новий законопроект про бюджет на наступний рік", count: 50)
-            _ = try await vec.fitTransform(docs)
+            _ = try vec.fitTransform(docs)
         }
         results.append(tfidfRes)
 

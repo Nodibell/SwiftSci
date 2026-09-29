@@ -70,7 +70,7 @@ struct MLBenchmarks: BenchmarkSuite {
             warmup: 1,
             iterations: 5
         ) {
-            let rf = try RandomForestClassifier(nEstimators: 50, maxDepth: 4, criterion: .gini)
+            let rf = RandomForestClassifier(nEstimators: 50, maxDepth: 4, criterion: .gini)
             try await rf.fit(features: rfX, targets: rfY)
         }
         results.append(rfResult)

@@ -74,7 +74,7 @@ The legacy report used a replica of `BenchmarkLCG` for pseudo-random inputs. A c
 
 Models trained on both analytical linear systems ($y = 3x_1 - 2x_2 + 1.5x_3 + 0.5 + \epsilon$) and non-linear target manifolds ($y = 2x_1 + 3\sin(x_2) + \epsilon$).
 
-| Model | Configuration / Method | SwiftSci 3.10.2 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
+| Model | Configuration / Method | SwiftSci 3.10.3 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **OLS Linear Regression** | Accelerate LAPACK `dgels_` vs `LinearRegression` | **RMSE = 0.0533**<br>MAE = 0.0452<br>**$R^2$ = 0.99988** | **RMSE = 0.0533**<br>MAE = 0.0452<br>**$R^2$ = 0.99988** | $\Delta \text{RMSE} = 0.000$<br>$\Delta R^2 = 0.0000$ | 🎯 **Exact Match at Reported Precision** |
 | **GBDT Regressor** | 30 trees, depth = 4, $\eta = 0.1$ | **RMSE = 0.490**<br>**$R^2$ = 0.9851** | **RMSE = 0.490**<br>**$R^2$ = 0.9851** | $\Delta \text{RMSE} = 0.000$<br>$\Delta R^2 = 0.0000$ | 🎯 **Exact Match at Reported Precision** |
@@ -89,7 +89,7 @@ Models trained on both analytical linear systems ($y = 3x_1 - 2x_2 + 1.5x_3 + 0.
 
 Evaluation on non-linear decision boundary ($0.8x_1 + 0.6x_2 > 0$) and multi-class text feature counts.
 
-| Model | Configuration | SwiftSci 3.10.2 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
+| Model | Configuration | SwiftSci 3.10.3 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **DecisionTree Classifier** | maxDepth = 5, Gini criterion | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | $\Delta \text{Acc} = 0.00\%$ | 🎯 **Exact Match at Reported Precision** |
 | **HistGBDT Classifier** | 30 trees, depth = 4, $\eta = 0.1$ | **Accuracy = 97.00%**<br>$F_1$ = 0.968 | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | $\Delta \text{Acc} = 1.00\%$ | ✅ **High Predictive Agreement** |
@@ -106,7 +106,7 @@ Evaluation on non-linear decision boundary ($0.8x_1 + 0.6x_2 > 0$) and multi-cla
 
 Dimensionality reduction and clustering tested on 5-dimensional Gaussian data and multi-cluster synthetic blobs.
 
-| Algorithm | Metric / Output | SwiftSci 3.10.2 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
+| Algorithm | Metric / Output | SwiftSci 3.10.3 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **PCA (5D $\rightarrow$ 2D)** | Component 1 EVR<br>Component 2 EVR<br>Total Subspace Var | $\text{EVR}_1$ = **0.6204**<br>$\text{EVR}_2$ = **0.3796**<br>$\Sigma$ = 100.00% | $\text{EVR}_1$ = **0.6204**<br>$\text{EVR}_2$ = **0.3796**<br>$\Sigma$ = 100.00% | $\Delta \text{EVR}_1 = 0.0000$<br>$\Delta \text{EVR}_2 = 0.0000$ | 🎯 **Numerical Match at Reported Precision** |
 | **K-Means ($k=3, N=600$)** | WCSS Inertia<br>Centroid Count | **Inertia = 394.31**<br>Centroids = 3 | **Inertia = 394.31**<br>Centroids = 3 | $\Delta \text{Inertia} = \mathbf{0.00}$ | 🎯 **Numerical Match at Reported Precision** |
@@ -119,7 +119,7 @@ Dimensionality reduction and clustering tested on 5-dimensional Gaussian data an
 
 Feature scaling operations evaluated for numerical stability and bounds preservation.
 
-| Transformer | Metric | SwiftSci 3.10.2 | Python Baseline (Scikit-Learn) | Numerical Precision ($\Delta$) | Status |
+| Transformer | Metric | SwiftSci 3.10.3 | Python Baseline (Scikit-Learn) | Numerical Precision ($\Delta$) | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **StandardScaler** | Column 0 Mean ($\mu_0$)<br>Column 0 Std ($\sigma_0$)<br>Post-scaled Mean | $\mu_0$ = **30.6374**<br>$\sigma_0$ = **11.5337**<br>$\mu'$ = -3.21 × 10⁻¹⁷ | $\mu_0$ = **30.6374**<br>$\sigma_0$ = **11.5337**<br>$\mu'$ = -3.10 × 10⁻¹⁷ | $\Delta \mu_0 < 10^{-15}$<br>$\Delta \sigma_0 < 10^{-15}$ | 🎯 **Exact Match at Reported Precision** |
 | **MinMaxScaler** | Data Bounds [$\min_0$, $\max_0$]<br>Scaled Range [$y_{\min}$, $y_{\max}$] | [10.03, 49.78]<br>[0.0000, 1.0000] | [10.03, 49.78]<br>[0.0000, 1.0000] | $\Delta \le 10^{-15}$ | 🎯 **Exact Match at Reported Precision** |
@@ -130,7 +130,7 @@ Feature scaling operations evaluated for numerical stability and bounds preserva
 
 Comparison of two independent samples ($N=1000$), paired samples, and multiple groups against **SciPy 1.17** (`scipy.stats`).
 
-| Test / Metric | SwiftSci 3.10.2 | SciPy Reference (scipy.stats) | Difference ($\Delta$) | Status |
+| Test / Metric | SwiftSci 3.10.3 | SciPy Reference (scipy.stats) | Difference ($\Delta$) | Status |
 | :--- | :---: | :---: | :---: | :---: |
 | **Welch's Two-Sample t-test** | $t$ = **-0.0323**, $p$ = **0.9742503**<br>$df$ = 1840.0 | $t$ = **-0.0323**, $p$ = **0.9742503**<br>$df$ = 1840.0 | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
 | **Student's Pooled t-test** | $t$ = **-0.0323**, $p$ = **0.9742500** | $t$ = **-0.0323**, $p$ = **0.9742500** | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
@@ -147,7 +147,7 @@ Comparison of two independent samples ($N=1000$), paired samples, and multiple g
 
 Comparison against **Statsmodels 0.14** on seasonal trend series ($N=500$, period = 12).
 
-| Model | SwiftSci 3.10.2 | Python (Statsmodels) | Explanation & Analysis |
+| Model | SwiftSci 3.10.3 | Python (Statsmodels) | Explanation & Analysis |
 | :--- | :---: | :---: | :--- |
 | **Holt-Winters (Additive)** | **RMSE = 0.350**<br>MAE = 0.275<br>**MAPE = 0.19%**<br>**$R^2$ = 0.997** | **RMSE = 0.331**<br>MAE = 0.288<br>**MAPE = 0.20%**<br>**$R^2$ = 0.997** | ✅ **High Predictive Agreement** — $R^2$ agrees at reported precision (0.997), while RMSE (0.350 vs 0.331) and MAE differ modestly due to numerical optimization paths |
 | **ARIMA(1,1,1)** | **RMSE = 10.218**<br>MAE = 8.557<br>**MAPE = 5.87%**<br>$R^2$ = -1.555 | **RMSE = 22.158**<br>MAE = 20.400<br>**MAPE = 14.15%**<br>$R^2$ = -11.014 | 🟢 **Lower RMSE in this test workload** — SwiftSci RMSE is approximately 2.17× lower than the Statsmodels reference on this specific test series; parameters estimated via Gaussian maximum-likelihood recursion |
@@ -160,7 +160,7 @@ Comparison against **NLTK 3.10** (`nltk.sentiment.vader.SentimentIntensityAnalyz
 
 | Test Sentence | Polarity Category | SwiftSci Compound Score | NLTK Compound Score | Parity Alignment |
 | :--- | :---: | :---: | :---: | :---: |
-| *"SwiftSci 3.10.2 is incredibly fast, robust and accurate!"* | **Positive** | **+0.4772** | **+0.4534** | ✅ Consistent Polarity Classification |
+| *"SwiftSci 3.10.3 is incredibly fast, robust and accurate!"* | **Positive** | **+0.4772** | **+0.4534** | ✅ Consistent Polarity Classification |
 | *"The algorithm failed completely with disastrous and horrible errors."* | **Negative** | **-0.9052** | **-0.9243** | ✅ Consistent Polarity Classification |
 | *"The dataset contains standard numerical observations and measurements."* | **Neutral** | **0.0000** | **0.0000** | 🎯 **Exact Match at Reported Precision** |
 
@@ -170,7 +170,7 @@ Comparison against **NLTK 3.10** (`nltk.sentiment.vader.SentimentIntensityAnalyz
 
 Numerical parity verification between incremental generation loops, full-context forward passes, and Metal MSL compute shaders:
 
-| Verification Gate | Test Setting & Model | SwiftSci 3.10.2 Metric | Reference Baseline | Observed Discrepancy | Verification Status |
+| Verification Gate | Test Setting & Model | SwiftSci 3.10.3 Metric | Reference Baseline | Observed Discrepancy | Verification Status |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **Gate 4: RoPE Incremental Decode** | 2-layer Llama-3 style TransformerDecoder | Incremental token generation with dynamic `positionOffset` | Full sequence forward pass (recomputing attention) | **maxAbsError = 1.03 × 10⁻⁷** | 🎯 **Numerical Parity Within Tolerance** (acceptance tolerance $< 10^{-4}$) |
 | **Gate 4: Learned Positional Decode** | 2-layer TransformerDecoder with absolute embeddings | Incremental token decode via cached K/V | Full sequence forward pass | **maxAbsError = 0.0000** | 🎯 **Exact Match on Tested Block** |

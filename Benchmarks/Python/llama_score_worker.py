@@ -7,10 +7,10 @@ from pathlib import Path
 import sys
 
 import mlx.core as mx
-from mlx.utils import tree_flatten
 from mlx_lm import load, stream_generate
 from mlx_lm.models.cache import make_prompt_cache
 import numpy as np
+from llama_precision import MODES, prepare_precision
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'Tools'))
 from llama_score_analysis import validate_request
@@ -20,7 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--model', type=Path, required=True)
     parser.add_argument('--request', type=Path, required=True)
-    parser.add_argument('--precision', choices=['bf16', 'float32'], required=True)
+    parser.add_argument('--precision', choices=MODES, required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     request_bytes = args.request.read_bytes()
@@ -38,14 +38,9 @@ def main():
         with mx.stream(mx.new_stream(mx.gpu)):
             model, tokenizer = load(str(args.model), tokenizer_config={'trust_remote_code': False})
             model.eval()
-            if args.precision == 'float32':
-                model.set_dtype(mx.float32)
-            mx.eval(model.parameters())
-            mx.synchronize()
-            report['parameter_dtypes'] = sorted({str(v.dtype) for _, v in tree_flatten(model.parameters())})
-            expected_dtype = 'mlx.core.' + ('bfloat16' if args.precision == 'bf16' else 'float32')
-            if report['parameter_dtypes'] != [expected_dtype]:
-                raise ValueError('Model parameter dtype differs from the requested precision')
+            model, precision = prepare_precision(model, args.precision)
+            report.update(precision)
+            expected_dtype = precision['expected_cache_dtype']
             for case in request['cases']:
                 rendered = tokenizer.apply_chat_template([dict(role='user', content=case['text'])],
                     tokenize=False, add_generation_prompt=True, date_string=request['template_date'])
@@ -79,6 +74,8 @@ def main():
                 row = dict(id=case['id'], cache_dtypes=cache_dtypes, generated_tokens=generated, probes=[])
                 for position in case['positions']:
                     raw, native = raw_scores[position], normalized_scores[position]
+                    if str(raw.dtype) != precision['expected_logits_dtype']:
+                        raise ValueError('Output precision differs from the experiment contract')
                     if raw.shape != (128256,) or native.shape != raw.shape:
                         raise ValueError('Unexpected score shape')
                     raw_array = np.asarray(raw.astype(mx.float32))

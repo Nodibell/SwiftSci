@@ -27,7 +27,7 @@ The controller requires the instrumented BF16 token choices to match the uninstr
 
 ## Separate the precision questions
 
-The worker runs in separate processes for BF16 and Float32. The Float32 run promotes the existing BF16 checkpoint values exactly; it does not recover precision lost when the original checkpoint was created. Both model parameters and KV-cache dtypes must match the requested precision. The checkpoint files remain unchanged.
+The worker runs in separate processes for BF16, BF16 with a Float32 output projection, and full Float32. The [mixed-precision experiment](PRECISION.md) checks whether widening only the final matrix multiplication is sufficient. The Float32 run promotes the existing BF16 checkpoint values exactly; it does not recover precision lost when the original checkpoint was created. Model-body, output-score and KV-cache dtypes must match the requested policy. The mixed mode requires BF16 body parameters and cache with Float32 output scores. The checkpoint files remain unchanged.
 
 Each probe records:
 
@@ -49,6 +49,7 @@ The ordinary comparison files remain present. Score collection adds:
 | --- | --- |
 | `score-request.json` | Exact prompt IDs, forced continuation and selected positions. |
 | `scores-bf16/scores.json` | BF16 model/cache precision, token choices, ties and artifact identities. |
+| `scores-head-float32/scores.json` | The same observations with a BF16 body/cache and a Float32 output projection. |
 | `scores-float32/scores.json` | The same observations for Float32 computation. |
 | `scores-*/scores.npz` | Full raw logits and native log probabilities as Float32 arrays, loaded without pickle. BF16 values promote exactly. |
 | `score-analysis.json` | Competing-token margins, normalization effects, rounding sensitivity and candidate-only error measures. |

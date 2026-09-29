@@ -1,7 +1,6 @@
 """Shared-prefix candidate score diagnostics; neither runtime is a numeric oracle."""
 import json
 import math
-from pathlib import Path
 import subprocess
 
 import numpy as np
@@ -76,7 +75,7 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
     request_path = output / 'score-request.json'
     request_path.write_text(json.dumps(request, indent=2) + '\n')
     score_sets = {}
-    for precision in ['bf16', 'float32']:
+    for precision in ['bf16', 'head-float32', 'float32']:
         destination = output / ('scores-' + precision)
         with (output / ('scores-' + precision + '.log')).open('w') as log:
             subprocess.run([str(python.absolute()), str(ROOT / 'Benchmarks/Python/llama_score_worker.py'),
@@ -94,14 +93,17 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
                   request_sha256=sha(request_path), numerical_certificate=False,
                   scope='llama.cpp top-20 pre-sampling log probabilities; MLX full-vocabulary logits',
                   model_precision_experiment='BF16 checkpoint promoted exactly to Float32; not higher-precision original weights',
-                  score_artifacts={p: sha(output / ('scores-' + p) / 'scores.npz') for p in score_sets}, probes=[])
+                  score_artifacts={p: sha(output / ('scores-' + p) / 'scores.npz') for p in score_sets},
+                  precision_memory={p: {k: m[k] for k in ['retained_parameter_bytes', 'additional_output_weight_bytes', 'body_parameter_dtypes']} for p, (m, _) in score_sets.items()}, probes=[])
     for case in request['cases']:
         result = results_by_id[case['id']]
         baseline = reference_by_id[case['id']]['samples'][0]['tokens']
         bf_meta, bf_arrays = score_sets['bf16']
         fp_meta, fp_arrays = score_sets['float32']
+        head_meta, head_arrays = score_sets['head-float32']
         bf_case = next(c for c in bf_meta['cases'] if c['id'] == case['id'])
         fp_case = next(c for c in fp_meta['cases'] if c['id'] == case['id'])
+        head_case = next(c for c in head_meta['cases'] if c['id'] == case['id'])
         for position in case['positions']:
             cpp_scores = [s['response']['completion_probabilities'][position] for s in result['samples']]
             if not all(s == cpp_scores[0] for s in cpp_scores):
@@ -114,6 +116,7 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
                 raise ValueError('llama.cpp score index differs from generated token')
             bf_probe = next(p for p in bf_case['probes'] if p['position'] == position)
             fp_probe = next(p for p in fp_case['probes'] if p['position'] == position)
+            head_probe = next(p for p in head_case['probes'] if p['position'] == position)
             if bf_probe['native_argmax'] != baseline[position]:
                 raise ValueError('Instrumented BF16 prediction differs from the uninstrumented baseline')
             key = bf_probe['array_key']
@@ -124,6 +127,10 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
                 mlx_bf16_token=baseline[position], cpp_token=cpp_token,
                 mlx_bf16_raw_argmax=bf_probe['raw_argmax'], mlx_float32_token=fp_probe['native_argmax'],
                 mlx_float32_matches_cpp=fp_probe['native_argmax'] == cpp_token,
+                mlx_head_float32_token=head_probe['native_argmax'],
+                mlx_head_float32_matches_cpp=head_probe['native_argmax'] == cpp_token,
+                head_float32_top_tie_count=head_probe['raw_top_tie_count'],
+                head_float32=candidate_metrics(head_arrays[key + '-logits'], cpp['top_logprobs'], baseline[position], cpp_token),
                 bf16_top_tie_count=bf_probe['raw_top_tie_count'],
                 float32_top_tie_count=fp_probe['raw_top_tie_count'],
                 float32_rounded_bf16_token=fp_probe['rounded_bf16_argmax'],
@@ -138,4 +145,5 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
                 mlx_float32_top_tokens=fp_probe['top_tokens']))
     (output / 'score-analysis.json').write_text(json.dumps(report, indent=2) + '\n')
     return dict(status=report['status'], probe_count=len(report['probes']), numerical_certificate=False,
-                float32_agrees_with_cpp=sum(p['mlx_float32_matches_cpp'] for p in report['probes']))
+                float32_agrees_with_cpp=sum(p['mlx_float32_matches_cpp'] for p in report['probes']),
+                head_float32_agrees_with_cpp=sum(p['mlx_head_float32_matches_cpp'] for p in report['probes']))

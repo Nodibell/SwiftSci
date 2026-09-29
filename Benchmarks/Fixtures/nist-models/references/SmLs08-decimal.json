@@ -1,0 +1,86 @@
+{
+  "inputIdentity": {
+    "sha256": "5fe99df83b6d52f12c56dfef9e6d5d15e576cbe6359693d83bcee096a2c78643",
+    "bytes": 45391
+  },
+  "name": "SmLs08",
+  "source": {
+    "name": "SmLs08",
+    "path": "originals/SmLs08.dat",
+    "url": "https://www.itl.nist.gov/div898/strd/anova/SmLs08.dat",
+    "datasetPage": "https://www.itl.nist.gov/div898/strd/anova/SmLs08.html",
+    "sha256": "87dd38dfffeb65d39dbe3e8ba73bd16644fc396c1aad03fc0295225f3ba6aef9",
+    "bytes": 61097,
+    "accessed": "2026-09-27",
+    "license": "NIST StRD; original notices retained",
+    "licenseUrl": "https://www.nist.gov/open/copyright-fair-use-and-licensing-statements-srd-data-software-and-technical-series-publications",
+    "attribution": "NIST Statistical Reference Datasets, Standard Reference Database 140, https://doi.org/10.18434/T43G6C",
+    "originalFileUnmodified": true
+  },
+  "dataLines": {
+    "first": 61,
+    "last": 1869,
+    "oneBased": true
+  },
+  "model": {
+    "design": "one-way balanced",
+    "treatmentOrder": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "groups": 9,
+    "replicatesPerGroup": 201,
+    "observations": 1809
+  },
+  "difficulty": "higher",
+  "outputOrder": [
+    "fStatistic",
+    "dfBetween",
+    "dfWithin"
+  ],
+  "nistCertifiedValues": [
+    "2.01000000000000E+02",
+    "8",
+    "1800"
+  ],
+  "independentDecimalReference": {
+    "method": "centered one-way ANOVA sums and regularized incomplete beta survival at 80 decimal digits",
+    "values": [
+      "200.99999999999999999999999999999999999999999999999999999999999999999896451328293",
+      "8.0",
+      "1800.0"
+    ],
+    "pValue": "4.0371418857539825716938038240162711467197260160039061868042925285772117314657189e-243",
+    "pValueIsNISTCertified": false
+  },
+  "binary64InputDiagnostic": {
+    "method": "same ANOVA formula on exact binary64 input values",
+    "values": [
+      "201.01300409594845467487763943035332232991116465679280535123955483822188215915641",
+      "8.0",
+      "1800.0"
+    ],
+    "pValue": "3.9281407852383081996239946461348031191873260149079586779618593544145353706406545e-243"
+  },
+  "certifiedRoundingChecks": [
+    {
+      "absoluteError": "1.0354867170673549372956872628396215699746326882142122798704544602699614419991011e-66",
+      "roundingBound": "0.0000000000005000000001"
+    },
+    {
+      "absoluteError": "0.0",
+      "roundingBound": "0.5000000001"
+    },
+    {
+      "absoluteError": "0.0",
+      "roundingBound": "0.5000000001"
+    }
+  ]
+}

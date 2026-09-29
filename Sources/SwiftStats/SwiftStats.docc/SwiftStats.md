@@ -28,3 +28,6 @@ let tTest = Stats.ttest(groupA, groupB)
 ### Guides & Tutorials
 - <doc:DescriptiveStatistics>
 - <doc:HypothesisTesting>
+
+- <doc:ChoosingDotProductAccuracy>
+- <doc:DecimalANOVA>

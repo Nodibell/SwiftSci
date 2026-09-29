@@ -9,7 +9,7 @@
     {
       "id": "nist-atmwtag-decimal",
       "dataset": "nist-atmwtag-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-longley-decimal",
@@ -29,52 +29,52 @@
     {
       "id": "nist-sirstv-decimal",
       "dataset": "nist-sirstv-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls01-decimal",
       "dataset": "nist-smls01-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls02-decimal",
       "dataset": "nist-smls02-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls03-decimal",
       "dataset": "nist-smls03-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls04-decimal",
       "dataset": "nist-smls04-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls05-decimal",
       "dataset": "nist-smls05-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls06-decimal",
       "dataset": "nist-smls06-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls07-decimal",
       "dataset": "nist-smls07-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls08-decimal",
       "dataset": "nist-smls08-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-smls09-decimal",
       "dataset": "nist-smls09-decimal",
-      "workload": "nist-anova-v1"
+      "workload": "nist-anova-decimal-v1"
     },
     {
       "id": "nist-wampler1-decimal",

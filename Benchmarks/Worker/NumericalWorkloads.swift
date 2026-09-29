@@ -14,6 +14,11 @@ private struct ANOVAInput: Decodable {
   let groups: [[Double]]
 }
 
+private struct DecimalANOVAInput: Decodable {
+  let operation: String
+  let groups: [[String]]
+}
+
 enum NumericalInputs {
   case publicWorkflow(PublicWorkflowInput)
   case boundary(BoundaryInput)
@@ -24,6 +29,7 @@ enum NumericalInputs {
   case supervised(SupervisedFixtureInput)
   case ols(features: [[Double]], targets: [Double])
   case anova(groups: [[Double]])
+  case decimalANOVA(groups: [[String]])
   case pca(PCAFixtureInput)
   case naiveBayes(NBFixtureInput)
   case fixedLinear(ControlledInferenceInput)
@@ -36,7 +42,7 @@ enum NumericalInputs {
   static func decode(_ data: Data, operation: String, datasetKind: String, rows: Int)
     throws -> NumericalInputs?
   {
-    let isNumerical = ["scientific-workflow", "persisted-regression", "dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
+    let isNumerical = ["scientific-workflow", "persisted-regression", "dataframe-model", "dataframe-model-sweep", "vision-letterbox-cpu", "decoder-fixed-f32", "dataframe-semantics", "supervised-logistic-cpu", "supervised-scale", "supervised-ols-cpu", "ols-cpu", "nist-anova", "nist-anova-decimal", "pca-cpu", "multinomial-nb-cpu", "linear-fixed-cpu", "logistic-fixed-cpu", "kmeans-one-cpu", "kalman-fixed-cpu", "vector-cosine", "kernel-shap"].contains(operation)
     guard isNumerical == (datasetKind == "numerical-fixture-v1") else {
       throw BenchmarkFailure("Numerical workload/dataset mismatch")
     }
@@ -84,6 +90,14 @@ enum NumericalInputs {
       guard rows > columns else { throw BenchmarkFailure("Underdetermined OLS fixture") }
       return .ols(features: input.features, targets: input.targets)
     }
+    if operation == "nist-anova-decimal" {
+      let input = try JSONDecoder().decode(DecimalANOVAInput.self, from: data)
+      guard input.operation == operation, input.groups.count >= 2,
+        input.groups.allSatisfy({ !$0.isEmpty }),
+        input.groups.reduce(0, { $0 + $1.count }) == rows, rows > input.groups.count
+      else { throw BenchmarkFailure("Invalid decimal ANOVA dimensions") }
+      return .decimalANOVA(groups: input.groups)
+    }
     let input = try JSONDecoder().decode(ANOVAInput.self, from: data)
     guard input.operation == operation else {
       throw BenchmarkFailure("Numerical input operation mismatch")
@@ -130,6 +144,9 @@ extension Worker {
         return sum + residual * residual
       }
       return .values([bias] + weights + [rss] + predictions)
+    case .decimalANOVA(let groups):
+      let result = try Stats.oneWayANOVA(decimalGroups: groups)
+      return .values([result.fStatistic, Double(result.dfBetween), Double(result.dfWithin)])
     case .anova(let groups):
       let result = try Stats.oneWayANOVA(groups: groups)
       return .values([result.fStatistic, Double(result.dfBetween), Double(result.dfWithin)])

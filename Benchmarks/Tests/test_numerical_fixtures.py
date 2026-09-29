@@ -95,3 +95,39 @@ class NumericalFixtures(unittest.TestCase):
             resolve_workload(m, load_workload(ROOT, 'nist-anova-v1'))
         with self.assertRaises(ContractError):
             resolve_workload(load_manifest(ROOT, 'tiny'), load_workload(ROOT, 'ols-cpu-v1'))
+
+    def test_original_decimal_tokens_survive_fixture_construction(self):
+        for case in load_profile(ROOT, 'numerical-conformance')['cases']:
+            m, w = self.fixture(case['dataset'])
+            if m['operation'] != 'nist-anova-decimal':
+                continue
+            payload = json.loads(prepare(ROOT, m).read_text())
+            original = (ROOT / m['source_fixture']).read_text().splitlines()[60:]
+            expected = {}
+            for line in original:
+                if line.strip():
+                    label, token = line.split()
+                    expected.setdefault(label, []).append(token)
+            self.assertEqual(payload['groups'], list(expected.values()))
+            binary = load_manifest(ROOT, case['dataset'].replace('-decimal', '-binary64'))
+            self.assertNotEqual(m['sha256'], binary['sha256'])
+            self.assertEqual(m['tolerances'], binary['tolerances'])
+            decimal_reference = json.loads((ROOT / m['reference_fixture']).read_text())
+            binary_reference = json.loads((ROOT / binary['reference_fixture']).read_text())
+            for key in ['nistCertifiedValues', 'independentDecimalReference', 'binary64InputDiagnostic']:
+                self.assertEqual(decimal_reference[key], binary_reference[key])
+
+    def test_decimal_fixture_rejects_numeric_tokens_and_answer_leakage(self):
+        for value in [1.1, True, None, '1x', 'NaN', ' 1', '1_000', '١']:
+            with self.assertRaises(ContractError):
+                validate_input(dict(operation='nist-anova-decimal', groups=[['1', '2'], [value, '4']]), 'nist-anova-decimal', 4)
+        with self.assertRaises(ContractError):
+            validate_input(dict(operation='nist-anova-decimal', groups=[['1', '2'], ['3', '4']], expected=[1]), 'nist-anova-decimal', 4)
+
+    def test_decimal_and_binary64_operations_cannot_swap_reference_bases(self):
+        from numerical_fixtures import validate_manifest
+        for suffix, basis in [('decimal', 'binary64-v1'), ('binary64', 'nist-decimal-v1')]:
+            m, _ = self.fixture('nist-smls09-' + suffix)
+            m['reference_basis'] = basis
+            with self.assertRaises(ContractError):
+                validate_manifest(m)

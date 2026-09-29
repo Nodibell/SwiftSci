@@ -82,6 +82,8 @@ try:
             controlled_input = numerical
         elif op in API_OPERATIONS:
             api_input = prepare_api(numerical)
+        elif op == "nist-anova-decimal":
+            decimal_groups = numerical["groups"]
         elif op == "ols-cpu":
             features = np.asarray(numerical["features"], dtype=np.float64)
             targets = np.asarray(numerical["targets"], dtype=np.float64)
@@ -175,6 +177,14 @@ try:
             predictions = design @ coefficients
             residual = targets - predictions
             return np.concatenate((coefficients, [np.dot(residual, residual)], predictions))
+        if op == "nist-anova-decimal":
+            from decimal import Decimal, Inexact, localcontext
+            with localcontext() as context:
+                context.prec = 80
+                context.traps[Inexact] = True
+                origin = Decimal(decimal_groups[0][0])
+                centered = [np.asarray([float(Decimal(v) - origin) for v in g]) for g in decimal_groups]
+            return [stats.f_oneway(*centered).statistic, len(centered)-1, request["rows"]-len(centered)]
         if op == "nist-anova":
             return [stats.f_oneway(*groups).statistic, len(groups)-1, request["rows"]-len(groups)]
         if op in h2o_queries:

@@ -184,6 +184,7 @@
       "enum": [
         "ols-cpu",
         "nist-anova",
+        "nist-anova-decimal",
         "pca-cpu",
         "multinomial-nb-cpu",
         "linear-fixed-cpu",

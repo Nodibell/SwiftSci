@@ -148,6 +148,14 @@ def main():
         input_bytes = (base_dir/inputs).read_bytes()
         reference = {'inputIdentity': {'sha256': sha(input_bytes), 'bytes': len(input_bytes)}, 'name':name, 'source':source, 'dataLines':{'first':first, 'last':last, 'oneBased':True}, 'model':model, 'difficulty':re.search(r'(Lower|Average|Higher) Level of Difficulty', header)[1].lower(), 'outputOrder':order, 'nistCertifiedValues':certified, 'independentDecimalReference':independent, 'binary64InputDiagnostic':binary, 'certifiedRoundingChecks':checks}
         write_json(base_dir/reference_path, reference)
+        if name in ANOVA:
+            # Keep source decimal tokens intact; the public API performs centering.
+            decimal_fixture = {'operation':'nist-anova-decimal', 'groups':list(groups.values())}
+            decimal_path = base_dir / f'inputs/{name}-decimal.json'
+            write_json(decimal_path, decimal_fixture)
+            decimal_bytes = decimal_path.read_bytes()
+            decimal_reference = dict(reference, inputIdentity={'sha256':sha(decimal_bytes), 'bytes':len(decimal_bytes)})
+            write_json(base_dir / f'references/{name}-decimal.json', decimal_reference)
         print(f'{name}: {model["observations"]} rows verified; {len(certified)} outputs')
 
 if __name__ == '__main__':

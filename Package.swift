@@ -430,6 +430,25 @@ let package = Package(
             ]
         ),
 
+        .target(
+            name: "SwiftSciBenchmarkSupport",
+            path: "Benchmarks/Support"
+        ),
+        .executableTarget(
+            name: "SwiftSciBenchmarkWorker",
+            dependencies: ["SwiftSciBenchmarkSupport", "SwiftDataFrame", "SwiftStats", "SwiftPreprocessing", "SwiftOptimize", "SwiftNLP", "SwiftDatabase", "SwiftAgent", "SwiftVision", "SwiftML", "SwiftCluster", "SwiftForecast", "SwiftExplain", "SwiftLLM",
+                .product(name: "MLX", package: "mlx-swift"),
+                .product(name: "MLXNN", package: "mlx-swift")],
+            path: "Benchmarks/Worker",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftSciBenchmarkSupportTests",
+            dependencies: ["SwiftSciBenchmarkSupport"],
+            path: "Tests/SwiftSciBenchmarkSupportTests"
+        ),
+
         // ── SwiftSciBenchmarks ───────────────────────────────────────────
         .executableTarget(
             name: "SwiftSciBenchmarks",

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "linear-fixed-cpu-v1",
+  "operation": "linear-fixed-cpu",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; layout declared in independent fixture reference",
+  "atol": 1e-12,
+  "rtol": 1e-12,
+  "semantics": "Construct the public CPU LinearRegression with supplied weights and bias, without fitting. Export bias, weights and every row-order prediction. This checks model initialization and inference. No fitted training step or workaround is allowed. All declared computations and output materialization are timed except input decoding and specified preparation. Diagnostic timings are not a formal performance baseline."
+}

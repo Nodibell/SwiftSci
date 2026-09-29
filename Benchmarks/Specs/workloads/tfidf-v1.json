@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "tfidf-v1",
+  "operation": "tfidf",
+  "scope": "fit-transform-export",
+  "output": "finite little-endian float64 sequence declared in semantics",
+  "atol": 1e-12,
+  "rtol": 1e-12,
+  "semantics": "prepared alternating documents alpha beta beta and beta gamma; lowercase unigrams without stop words; sorted vocabulary; TF=count/document length, smooth IDF=log((1+n)/(1+df))+1; no L2 normalization; dense row-major output"
+}

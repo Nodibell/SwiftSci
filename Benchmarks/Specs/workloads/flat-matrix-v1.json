@@ -1,0 +1,10 @@
+{
+  "atol": 0,
+  "id": "flat-matrix-v1",
+  "operation": "flat-matrix",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 0,
+  "schema_version": 1,
+  "scope": "operation",
+  "semantics": "export x,y as row-major float64"
+}

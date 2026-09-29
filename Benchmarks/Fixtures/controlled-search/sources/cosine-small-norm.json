@@ -1,0 +1,18 @@
+{
+  "description": "Identical nonzero small vectors have mathematical cosine one. Both input values decode to the same binary64 number, so the exact normalized score remains one.",
+  "input": {
+    "operation": "vector-cosine",
+    "vectors": [
+      [
+        1e-07,
+        0
+      ]
+    ],
+    "query": [
+      1e-07,
+      0
+    ],
+    "top_k": 1
+  },
+  "outputOrder": "inputRowIndex, cosineScore"
+}

@@ -1,0 +1,10 @@
+{
+  "atol": 1e-12,
+  "id": "minmax-scale-v1",
+  "operation": "minmax-scale",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 1e-12,
+  "schema_version": 1,
+  "scope": "fit-transform-export",
+  "semantics": "range [0,1]; zero-span column becomes zero; x,y row-major output"
+}

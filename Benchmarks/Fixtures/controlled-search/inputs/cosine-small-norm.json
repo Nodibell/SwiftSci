@@ -1,0 +1,14 @@
+{
+  "operation": "vector-cosine",
+  "vectors": [
+    [
+      1e-07,
+      0
+    ]
+  ],
+  "query": [
+    1e-07,
+    0
+  ],
+  "top_k": 1
+}

@@ -1,0 +1,70 @@
+name: Benchmark conformance
+
+on:
+  pull_request:
+    paths:
+      - 'Sources/**'
+      - 'Benchmarks/**'
+      - 'Tests/SwiftSciBenchmarkSupportTests/**'
+      - 'Package.*'
+      - '.github/workflows/benchmark-conformance.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-conformance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+      - name: Test contracts and install reference engines
+        run: |
+          python3 -m venv Benchmarks/.venv-standardized
+          Benchmarks/.venv-standardized/bin/python -m pip install -r Benchmarks/Python/requirements-standardized.txt
+          Benchmarks/.venv-standardized/bin/python -m unittest discover -s Benchmarks/Tests
+      - name: Prepare and build
+        run: |
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile smoke
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile certification
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py build
+      - name: Reconcile legacy coverage
+        run: Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py inventory
+      - name: Check CPU regression policy and retain strict conformance results
+        run: |
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/acceptance.py \
+            --tier cpu --check-baseline \
+            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
+            --python Benchmarks/.venv-standardized/bin/python \
+            --output Benchmarks/Runs/ci-acceptance
+      - name: Challenge passing public workflow workers
+        if: always() && hashFiles('Benchmarks/Runs/ci-acceptance/scientific-workflow/run.json', 'Benchmarks/Runs/ci-acceptance/persisted-workflow/run.json') != ''
+        run: |
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tests/check_public_workflow_workers.py \
+            --run Benchmarks/Runs/ci-acceptance/scientific-workflow \
+            --run Benchmarks/Runs/ci-acceptance/persisted-workflow \
+            --output Benchmarks/Runs/ci-workflow-controls
+      - name: Retain run evidence and build log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-conformance-${{ github.sha }}
+          path: |
+            Benchmarks/Runs/ci-acceptance/
+            Benchmarks/Runs/ci-workflow-controls/
+            ~/Library/Caches/SwiftSci/standardized-benchmarks/build.log
+          retention-days: 30
+          if-no-files-found: warn

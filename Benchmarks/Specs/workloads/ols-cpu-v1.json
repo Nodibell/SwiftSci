@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "ols-cpu-v1",
+  "operation": "ols-cpu",
+  "scope": "fit-transform-export",
+  "output": "finite little-endian float64 sequence; output order declared in semantics",
+  "atol": 1e-10,
+  "rtol": 1e-09,
+  "semantics": "CPU float64 fit with intercept, in-sample prediction, coefficient export and residual sum of squares. Swift public LinearRegression CPU API attempts analytical QR and has a gradient-descent fallback; Python uses scipy.linalg.lstsq with gelsy. No identical solver claim. Output: intercept, feature-order coefficients, residual sum of squares, all row-order predictions. Input decoding is outside timing; construction, fitting and complete numeric output are inside. Dataset selects the original-decimal or exact-binary64-input reference."
+}

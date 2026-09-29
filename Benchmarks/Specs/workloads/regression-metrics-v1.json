@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "regression-metrics-v1",
+  "operation": "regression-metrics",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence declared in semantics",
+  "atol": 1e-09,
+  "rtol": 1e-11,
+  "semantics": "prepared x as truth, y as prediction; RMSE, MAE, MAPE percent excluding abs(x)<=1e-12, R squared"
+}

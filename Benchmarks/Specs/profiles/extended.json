@@ -1,0 +1,80 @@
+{
+  "batches": 3,
+  "cases": [
+    {
+      "dataset": "large",
+      "id": "large-csv-read",
+      "workload": "csv-read-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-filter",
+      "workload": "filter-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-sort",
+      "workload": "sort-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-group-sum",
+      "workload": "group-sum-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-flat-matrix",
+      "workload": "flat-matrix-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-target",
+      "workload": "target-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-standard-scale",
+      "workload": "standard-scale-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-minmax-scale",
+      "workload": "minmax-scale-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "large",
+      "id": "large-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-stddev",
+      "workload": "stddev-v1"
+    }
+  ],
+  "id": "extended",
+  "samples": 5,
+  "schema_version": 1,
+  "timeout_seconds": 300,
+  "warmups": 2
+}

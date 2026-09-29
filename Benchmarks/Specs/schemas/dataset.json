@@ -1,0 +1,344 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swiftsci.local/benchmarks/dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "table-v1",
+        "nist-univariate-v1",
+        "mixed-table-v1",
+        "parquet-table-v1",
+        "h2o-group-v1",
+        "wine-quality-v1",
+        "numerical-fixture-v1"
+      ]
+    },
+    "rows": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "generator_version": {
+      "const": 1
+    },
+    "groups": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "fixture": {
+      "type": "string"
+    },
+    "certified": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mean",
+        "variance",
+        "stddev"
+      ],
+      "properties": {
+        "mean": {
+          "type": "number"
+        },
+        "variance": {
+          "type": "number"
+        },
+        "stddev": {
+          "type": "number"
+        }
+      }
+    },
+    "data_start_line": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tolerances": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mean",
+            "stddev",
+            "variance"
+          ],
+          "properties": {
+            "mean": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "atol",
+                "rtol"
+              ],
+              "properties": {
+                "atol": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "rtol": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "stddev": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "atol",
+                "rtol"
+              ],
+              "properties": {
+                "atol": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "rtol": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "variance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "atol",
+                "rtol"
+              ],
+              "properties": {
+                "atol": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "rtol": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "atol",
+            "rtol"
+          ],
+          "properties": {
+            "atol": {
+              "type": "number",
+              "minimum": 0
+            },
+            "rtol": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "distribution": {
+      "enum": [
+        "uniform",
+        "hot-key"
+      ]
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_size_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_fixture": {
+      "type": "string"
+    },
+    "reference_fixture": {
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "ols-cpu",
+        "nist-anova",
+        "pca-cpu",
+        "multinomial-nb-cpu",
+        "linear-fixed-cpu",
+        "logistic-fixed-cpu",
+        "kmeans-one-cpu",
+        "kalman-fixed-cpu",
+        "vector-cosine",
+        "kernel-shap",
+        "supervised-scale",
+        "supervised-ols-cpu",
+        "supervised-logistic-cpu",
+        "dataframe-semantics",
+        "decoder-fixed-f32",
+        "vision-letterbox-cpu",
+        "dataframe-model",
+        "dataframe-model-sweep",
+        "scientific-workflow",
+        "persisted-regression"
+      ]
+    },
+    "reference_basis": {
+      "enum": [
+        "nist-decimal-v1",
+        "binary64-v1",
+        "exact-rational-v1",
+        "controlled-reference-v1",
+        "supervised-reference-v1",
+        "dataframe-reference-v1",
+        "neural-reference-v1",
+        "vision-reference-v1",
+        "boundary-reference-v1",
+        "sweep-reference-v1",
+        "workflow-reference-v1"
+      ]
+    },
+    "reference_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reference_size_bytes": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "kind",
+    "rows",
+    "sha256",
+    "size_bytes",
+    "source",
+    "license",
+    "generator_version"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "nist-univariate-v1"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "fixture",
+          "certified",
+          "data_start_line",
+          "tolerances"
+        ],
+        "properties": {
+          "rows": {
+            "minimum": 2
+          }
+        }
+      },
+      "else": {
+        "if": {
+          "properties": {
+            "kind": {
+              "const": "wine-quality-v1"
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "fixture",
+            "source_sha256",
+            "source_size_bytes"
+          ]
+        },
+        "else": {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "numerical-fixture-v1"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fixture",
+              "source_fixture",
+              "source_sha256",
+              "source_size_bytes",
+              "reference_fixture",
+              "reference_sha256",
+              "reference_size_bytes",
+              "reference_basis",
+              "operation",
+              "tolerances"
+            ],
+            "properties": {
+              "tolerances": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "atol",
+                  "rtol"
+                ],
+                "properties": {
+                  "atol": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "rtol": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "groups"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "h2o-group-v1"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "distribution"
+        ]
+      }
+    }
+  ]
+}

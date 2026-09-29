@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "name": "linear-fixed-affine",
+  "operation": "linear-fixed-cpu",
+  "source": {
+    "name": "SwiftSci controlled inference, centroid, and Kalman fixtures",
+    "path": "source-spec.json",
+    "kind": "synthetic controlled model specification",
+    "sha256": "41721c61fc01737034640a890168f54c8df25112792ef372fe4130c5490556c2",
+    "bytes": 1215
+  },
+  "inputIdentity": {
+    "sha256": "1e8de9d91fb7dc2e057411bc8939d98d8cab78795b78bc99b6fb5c347eb7103a",
+    "bytes": 227
+  },
+  "model": {
+    "observations": 4,
+    "features": 2,
+    "device": "cpu",
+    "precision": "float64",
+    "parameterOrder": [
+      "bias",
+      "feature-order weights"
+    ]
+  },
+  "outputOrder": [
+    {
+      "name": "parameters",
+      "shape": [
+        3
+      ],
+      "offset": 0,
+      "count": 3,
+      "layout": "row-major"
+    },
+    {
+      "name": "predictions",
+      "shape": [
+        4
+      ],
+      "offset": 3,
+      "count": 4,
+      "layout": "row-major"
+    }
+  ],
+  "independentReference": {
+    "method": "Exact Fraction affine dot products with supplied weights and bias",
+    "values": [
+      3.0,
+      2.0,
+      -1.0,
+      3.0,
+      3.0,
+      -5.0,
+      10.0
+    ],
+    "exactValues": [
+      "3",
+      "2",
+      "-1",
+      "3",
+      "3",
+      "-5",
+      "10"
+    ]
+  },
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

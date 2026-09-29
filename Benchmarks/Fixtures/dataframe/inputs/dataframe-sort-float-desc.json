@@ -1,0 +1,36 @@
+{
+  "action": "sort",
+  "columns": [
+    {
+      "name": "value",
+      "type": "float64",
+      "values": [
+        2.0,
+        null,
+        -0.0,
+        0.0,
+        2.0,
+        "-Inf",
+        "+Inf"
+      ]
+    },
+    {
+      "name": "row",
+      "type": "int64",
+      "values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ]
+    }
+  ],
+  "operation": "dataframe-semantics",
+  "parameters": {
+    "ascending": false,
+    "column": "value"
+  }
+}

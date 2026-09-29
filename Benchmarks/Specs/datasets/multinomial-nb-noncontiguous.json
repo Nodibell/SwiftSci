@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "multinomial-nb-noncontiguous",
+  "kind": "numerical-fixture-v1",
+  "rows": 3,
+  "sha256": "bf8fe2fb3953cda67b33dcc0ea5823ae4d44f1419d6c7e934f6fd7611f0402a0",
+  "size_bytes": 374,
+  "source": "repository:Benchmarks/Fixtures/exact-models/source-spec.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/exact-models/inputs/multinomial-nb-noncontiguous.json",
+  "source_fixture": "Benchmarks/Fixtures/exact-models/source-spec.json",
+  "source_sha256": "74b726883e1ae6a20a406eac770e404f03ed119b2baca10e88ed58b77b9346d2",
+  "source_size_bytes": 603,
+  "reference_fixture": "Benchmarks/Fixtures/exact-models/references/multinomial-nb-noncontiguous.json",
+  "reference_sha256": "a30549d41c1602fe1733a0d2906b75bc18328cd252ce1cae328053d31649b359",
+  "reference_size_bytes": 2087,
+  "reference_basis": "exact-rational-v1",
+  "operation": "multinomial-nb-cpu",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

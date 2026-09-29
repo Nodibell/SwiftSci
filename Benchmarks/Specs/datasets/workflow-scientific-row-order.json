@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/workflows/inputs/workflow-scientific-row-order.json",
+  "generator_version": 1,
+  "id": "workflow-scientific-row-order",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "scientific-workflow",
+  "reference_basis": "workflow-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/workflows/references/workflow-scientific-row-order.json",
+  "reference_sha256": "ebbaa5759624f8bb87da664a4c02e20cce2ad83f28a14685817d5f95c9606e84",
+  "reference_size_bytes": 1382,
+  "rows": 9,
+  "schema_version": 1,
+  "sha256": "6f8d45954516099bd9ca892f60e6aa909f6c3fdb362158b6d169e6b82ad7acbb",
+  "size_bytes": 373,
+  "source": "Original bounded scientific and training workflow fixtures; see Benchmarks/Fixtures/workflows/README.md",
+  "source_fixture": "Benchmarks/Fixtures/workflows/sources.lock.json",
+  "source_sha256": "e3fc6d2d573b5784d7dda020c364c5d2c922ccd540c93ab8834dc9b00aa12bdb",
+  "source_size_bytes": 553,
+  "tolerances": {
+    "atol": 1e-08,
+    "rtol": 1e-10
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "name": "logistic-fixed-mixed-logits",
+  "operation": "logistic-fixed-cpu",
+  "source": {
+    "name": "SwiftSci controlled inference, centroid, and Kalman fixtures",
+    "path": "source-spec.json",
+    "kind": "synthetic controlled model specification",
+    "sha256": "41721c61fc01737034640a890168f54c8df25112792ef372fe4130c5490556c2",
+    "bytes": 1215
+  },
+  "inputIdentity": {
+    "sha256": "4a4bb04defb0ede5101888497666c1101cf70d37f495b3a5e2697838d534a83d",
+    "bytes": 258
+  },
+  "model": {
+    "observations": 5,
+    "features": 2,
+    "device": "cpu",
+    "precision": "float64",
+    "parameterOrder": [
+      "bias",
+      "feature-order weights"
+    ],
+    "threshold": 0.5
+  },
+  "outputOrder": [
+    {
+      "name": "parameters",
+      "shape": [
+        3
+      ],
+      "offset": 0,
+      "count": 3,
+      "layout": "row-major"
+    },
+    {
+      "name": "probabilities",
+      "shape": [
+        5,
+        2
+      ],
+      "offset": 3,
+      "count": 10,
+      "layout": "row-major"
+    },
+    {
+      "name": "labels",
+      "shape": [
+        5
+      ],
+      "offset": 13,
+      "count": 5,
+      "layout": "row-major"
+    }
+  ],
+  "independentReference": {
+    "method": "Exact Fraction logits; Decimal sigmoid and complementary probabilities at 80 digits; strict probability > 0.5 labels",
+    "values": [
+      0.0,
+      2.0,
+      -1.0,
+      0.5,
+      0.5,
+      0.11920292202211756,
+      0.8807970779778824,
+      0.8807970779778824,
+      0.11920292202211756,
+      0.9525741268224333,
+      0.04742587317756678,
+      0.5,
+      0.5,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "exactValues": [
+      "0",
+      "2",
+      "-1",
+      "0.5",
+      "0.5",
+      "0.11920292202211755594027085869760320479361570137103172420159474993902337771168077",
+      "0.88079707797788244405972914130239679520638429862896827579840525006097662228831923",
+      "0.88079707797788244405972914130239679520638429862896827579840525006097662228831924",
+      "0.11920292202211755594027085869760320479361570137103172420159474993902337771168076",
+      "0.95257412682243321912115184822824779861382056757939089928211199122555128849728977",
+      "0.047425873177566780878848151771752201386179432420609100717888008774448711502710233",
+      "0.5",
+      "0.5",
+      "0",
+      "1",
+      "0",
+      "0",
+      "0"
+    ]
+  },
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

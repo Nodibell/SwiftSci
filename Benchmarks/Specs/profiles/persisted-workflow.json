@@ -1,0 +1,40 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "workflow-regression-fit",
+      "id": "workflow-regression-fit",
+      "workload": "persisted-regression-v1"
+    },
+    {
+      "dataset": "workflow-regression-fit-heldout-shift",
+      "id": "workflow-regression-fit-heldout-shift",
+      "workload": "persisted-regression-v1"
+    },
+    {
+      "dataset": "workflow-regression-native",
+      "id": "workflow-regression-native",
+      "workload": "persisted-regression-v1"
+    },
+    {
+      "dataset": "workflow-regression-native-heldout-shift",
+      "id": "workflow-regression-native-heldout-shift",
+      "workload": "persisted-regression-v1"
+    },
+    {
+      "dataset": "workflow-regression-coreml",
+      "id": "workflow-regression-coreml",
+      "workload": "persisted-regression-v1"
+    },
+    {
+      "dataset": "workflow-regression-coreml-heldout-shift",
+      "id": "workflow-regression-coreml-heldout-shift",
+      "workload": "persisted-regression-v1"
+    }
+  ],
+  "id": "persisted-workflow",
+  "samples": 2,
+  "schema_version": 1,
+  "timeout_seconds": 120,
+  "warmups": 0
+}

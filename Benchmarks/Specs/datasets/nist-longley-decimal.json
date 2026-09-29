@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "nist-longley-decimal",
+  "kind": "numerical-fixture-v1",
+  "rows": 16,
+  "sha256": "de407d6f39e5f7641080e9772637abfcc03309c183b19c5ed3cf93354a5d81e0",
+  "size_bytes": 1853,
+  "source": "https://www.itl.nist.gov/div898/strd/lls/data/LINKS/DATA/Longley.dat",
+  "license": "NIST StRD; original notices retained",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/nist-models/inputs/Longley.json",
+  "source_fixture": "Benchmarks/Fixtures/nist-models/originals/Longley.dat",
+  "source_sha256": "fc4b0c824f8f0b834eb8e7d1c4c7e0b3cebdd7987bcb085e8f5e1007582480ea",
+  "source_size_bytes": 2987,
+  "reference_fixture": "Benchmarks/Fixtures/nist-models/references/Longley.json",
+  "reference_sha256": "18c5348c5bc42026d0b7a382a8a105b524a94fb99747f79ddf87a570c68a3bf9",
+  "reference_size_bytes": 7816,
+  "reference_basis": "nist-decimal-v1",
+  "operation": "ols-cpu",
+  "tolerances": {
+    "atol": 1e-10,
+    "rtol": 1e-09
+  }
+}

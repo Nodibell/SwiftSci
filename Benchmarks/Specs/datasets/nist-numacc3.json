@@ -1,0 +1,32 @@
+{
+  "certified": {
+    "mean": 1000000.2,
+    "stddev": 0.1,
+    "variance": 0.01
+  },
+  "data_start_line": 61,
+  "fixture": "Benchmarks/Fixtures/nist/NumAcc3.dat",
+  "generator_version": 1,
+  "id": "nist-numacc3",
+  "kind": "nist-univariate-v1",
+  "license": "NIST US government reference data; attribution retained in source header",
+  "rows": 1001,
+  "schema_version": 1,
+  "sha256": "66df1b96596735936f37fd889e7c1c6ce998eb2b523bfc46c98ec1737e992aec",
+  "size_bytes": 14830,
+  "source": "https://www.itl.nist.gov/div898/strd/univ/data/NumAcc3.dat",
+  "tolerances": {
+    "mean": {
+      "atol": 2.3283064365386963e-10,
+      "rtol": 1e-14
+    },
+    "stddev": {
+      "atol": 2.3283064365386963e-10,
+      "rtol": 1e-12
+    },
+    "variance": {
+      "atol": 4.656612878498404e-11,
+      "rtol": 2e-12
+    }
+  }
+}

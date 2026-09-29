@@ -1,0 +1,10 @@
+{
+  "atol": 0,
+  "id": "csv-read-v1",
+  "operation": "csv-read",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 0,
+  "schema_version": 1,
+  "scope": "ingestion",
+  "semantics": "row-major id,group,x,y; force full materialization; warm filesystem cache"
+}

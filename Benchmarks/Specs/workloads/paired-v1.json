@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "paired-v1",
+  "operation": "paired",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence declared in semantics",
+  "atol": 1e-08,
+  "rtol": 1e-10,
+  "semantics": "Paired two-sided t-test after=y, before=x; statistic, p-value, degrees of freedom, 95% after-minus-before CI lower/upper, paired Cohen d; independent 60-digit mpmath density integration"
+}

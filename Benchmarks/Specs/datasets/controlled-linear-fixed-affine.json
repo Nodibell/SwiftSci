@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "controlled-linear-fixed-affine",
+  "kind": "numerical-fixture-v1",
+  "rows": 4,
+  "sha256": "1e8de9d91fb7dc2e057411bc8939d98d8cab78795b78bc99b6fb5c347eb7103a",
+  "size_bytes": 227,
+  "source": "repository:Benchmarks/Fixtures/controlled-models/source-spec.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/controlled-models/inputs/linear-fixed-affine.json",
+  "source_fixture": "Benchmarks/Fixtures/controlled-models/source-spec.json",
+  "source_sha256": "41721c61fc01737034640a890168f54c8df25112792ef372fe4130c5490556c2",
+  "source_size_bytes": 1215,
+  "reference_fixture": "Benchmarks/Fixtures/controlled-models/references/linear-fixed-affine.json",
+  "reference_sha256": "68c89fc63ad849fa774845911d4ddce4edfb1bc2e2aed295673cdf83cc9e9529",
+  "reference_size_bytes": 1377,
+  "reference_basis": "controlled-reference-v1",
+  "operation": "linear-fixed-cpu",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

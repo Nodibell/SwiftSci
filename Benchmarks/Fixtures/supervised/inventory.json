@@ -1,0 +1,74 @@
+[
+  {
+    "id": "wine-red-supervised-scale",
+    "operation": "supervised-scale",
+    "rows": 1599,
+    "features": 11,
+    "split_counts": {
+      "train": 959,
+      "validation": 298,
+      "test": 342
+    },
+    "output_count": 17611
+  },
+  {
+    "id": "wine-red-supervised-ols-cpu",
+    "operation": "supervised-ols-cpu",
+    "rows": 1599,
+    "features": 11,
+    "split_counts": {
+      "train": 959,
+      "validation": 298,
+      "test": 342
+    },
+    "output_count": 1646
+  },
+  {
+    "id": "wdbc-supervised-scale",
+    "operation": "supervised-scale",
+    "rows": 569,
+    "features": 30,
+    "split_counts": {
+      "train": 328,
+      "validation": 115,
+      "test": 126
+    },
+    "output_count": 17130
+  },
+  {
+    "id": "wdbc-supervised-logistic-cpu-epochs0",
+    "operation": "supervised-logistic-cpu",
+    "rows": 569,
+    "features": 30,
+    "split_counts": {
+      "train": 328,
+      "validation": 115,
+      "test": 126
+    },
+    "output_count": 1843
+  },
+  {
+    "id": "wdbc-supervised-logistic-cpu-epochs1",
+    "operation": "supervised-logistic-cpu",
+    "rows": 569,
+    "features": 30,
+    "split_counts": {
+      "train": 328,
+      "validation": 115,
+      "test": 126
+    },
+    "output_count": 1843
+  },
+  {
+    "id": "wdbc-supervised-logistic-cpu-epochs32",
+    "operation": "supervised-logistic-cpu",
+    "rows": 569,
+    "features": 30,
+    "split_counts": {
+      "train": 328,
+      "validation": 115,
+      "test": 126
+    },
+    "output_count": 1843
+  }
+]

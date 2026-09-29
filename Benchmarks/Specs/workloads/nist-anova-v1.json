@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "nist-anova-v1",
+  "operation": "nist-anova",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; output order declared in semantics",
+  "atol": 1e-10,
+  "rtol": 1e-09,
+  "semantics": "Balanced one-way ANOVA on predecoded float64 groups. Output: F statistic, between-group degrees of freedom, within-group degrees of freedom. Dataset selects original-decimal certified answers or an independently computed exact-binary64-input reference. No p-value certification claim."
+}

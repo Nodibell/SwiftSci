@@ -1,0 +1,364 @@
+{
+  "reference_basis": "controlled-reference-v1",
+  "source": {
+    "name": "SwiftSci controlled inference, centroid, and Kalman fixtures",
+    "path": "source-spec.json",
+    "kind": "synthetic controlled model specification",
+    "sha256": "41721c61fc01737034640a890168f54c8df25112792ef372fe4130c5490556c2",
+    "bytes": 1215
+  },
+  "fixtures": [
+    {
+      "name": "linear-fixed-affine",
+      "operation": "linear-fixed-cpu",
+      "rows": 4,
+      "input": "inputs/linear-fixed-affine.json",
+      "reference": "references/linear-fixed-affine.json",
+      "inputFields": [
+        "operation",
+        "weights",
+        "bias",
+        "features"
+      ],
+      "inputShapes": {
+        "weights": [
+          2
+        ],
+        "bias": [],
+        "features": [
+          4,
+          2
+        ]
+      },
+      "output_values": 7,
+      "outputOrder": [
+        {
+          "name": "parameters",
+          "shape": [
+            3
+          ],
+          "offset": 0,
+          "count": 3,
+          "layout": "row-major"
+        },
+        {
+          "name": "predictions",
+          "shape": [
+            4
+          ],
+          "offset": 3,
+          "count": 4,
+          "layout": "row-major"
+        }
+      ],
+      "inputIdentity": {
+        "sha256": "1e8de9d91fb7dc2e057411bc8939d98d8cab78795b78bc99b6fb5c347eb7103a",
+        "bytes": 227
+      },
+      "referenceIdentity": {
+        "sha256": "68c89fc63ad849fa774845911d4ddce4edfb1bc2e2aed295673cdf83cc9e9529",
+        "bytes": 1377
+      }
+    },
+    {
+      "name": "logistic-fixed-mixed-logits",
+      "operation": "logistic-fixed-cpu",
+      "rows": 5,
+      "input": "inputs/logistic-fixed-mixed-logits.json",
+      "reference": "references/logistic-fixed-mixed-logits.json",
+      "inputFields": [
+        "operation",
+        "weights",
+        "bias",
+        "features"
+      ],
+      "inputShapes": {
+        "weights": [
+          2
+        ],
+        "bias": [],
+        "features": [
+          5,
+          2
+        ]
+      },
+      "output_values": 18,
+      "outputOrder": [
+        {
+          "name": "parameters",
+          "shape": [
+            3
+          ],
+          "offset": 0,
+          "count": 3,
+          "layout": "row-major"
+        },
+        {
+          "name": "probabilities",
+          "shape": [
+            5,
+            2
+          ],
+          "offset": 3,
+          "count": 10,
+          "layout": "row-major"
+        },
+        {
+          "name": "labels",
+          "shape": [
+            5
+          ],
+          "offset": 13,
+          "count": 5,
+          "layout": "row-major"
+        }
+      ],
+      "inputIdentity": {
+        "sha256": "4a4bb04defb0ede5101888497666c1101cf70d37f495b3a5e2697838d534a83d",
+        "bytes": 258
+      },
+      "referenceIdentity": {
+        "sha256": "bf2bda1378db9eb46884a4f273ed02854e81762b414c4483cc2c9b111bda14ac",
+        "bytes": 2439
+      }
+    },
+    {
+      "name": "kmeans-one-mean",
+      "operation": "kmeans-one-cpu",
+      "rows": 4,
+      "input": "inputs/kmeans-one-mean.json",
+      "reference": "references/kmeans-one-mean.json",
+      "inputFields": [
+        "operation",
+        "features",
+        "query",
+        "n_clusters",
+        "max_iterations",
+        "tolerance",
+        "seed"
+      ],
+      "inputShapes": {
+        "features": [
+          4,
+          2
+        ],
+        "query": [
+          2,
+          2
+        ],
+        "n_clusters": [],
+        "max_iterations": [],
+        "tolerance": [],
+        "seed": []
+      },
+      "output_values": 9,
+      "outputOrder": [
+        {
+          "name": "centroids",
+          "shape": [
+            1,
+            2
+          ],
+          "offset": 0,
+          "count": 2,
+          "layout": "row-major"
+        },
+        {
+          "name": "trainingLabels",
+          "shape": [
+            4
+          ],
+          "offset": 2,
+          "count": 4,
+          "layout": "row-major"
+        },
+        {
+          "name": "queryLabels",
+          "shape": [
+            2
+          ],
+          "offset": 6,
+          "count": 2,
+          "layout": "row-major"
+        },
+        {
+          "name": "inertia",
+          "shape": [
+            1
+          ],
+          "offset": 8,
+          "count": 1,
+          "layout": "row-major"
+        }
+      ],
+      "inputIdentity": {
+        "sha256": "1eac40c0cf8148e6f9c35530120d65c9860d9e27df55f29ff61a88c6e00c7b57",
+        "bytes": 335
+      },
+      "referenceIdentity": {
+        "sha256": "187c3e755da7f89933aa20b61f6ec2428f7f0ad6457cb9dc971e34a9060b29af",
+        "bytes": 1711
+      }
+    },
+    {
+      "name": "kalman-scalar",
+      "operation": "kalman-fixed-cpu",
+      "rows": 3,
+      "input": "inputs/kalman-scalar.json",
+      "reference": "references/kalman-scalar.json",
+      "inputFields": [
+        "operation",
+        "state_size",
+        "observation_size",
+        "transition",
+        "observation_matrix",
+        "process_noise",
+        "measurement_noise",
+        "initial_mean",
+        "initial_covariance",
+        "observations"
+      ],
+      "inputShapes": {
+        "state_size": [],
+        "observation_size": [],
+        "transition": [
+          1,
+          1
+        ],
+        "observation_matrix": [
+          1,
+          1
+        ],
+        "process_noise": [
+          1,
+          1
+        ],
+        "measurement_noise": [
+          1,
+          1
+        ],
+        "initial_mean": [
+          1
+        ],
+        "initial_covariance": [
+          1,
+          1
+        ],
+        "observations": [
+          3,
+          1
+        ]
+      },
+      "output_values": 8,
+      "outputOrder": [
+        {
+          "name": "filteredStates",
+          "shape": [
+            3,
+            2
+          ],
+          "offset": 0,
+          "count": 6,
+          "layout": "row-major"
+        },
+        {
+          "name": "nextPrediction",
+          "shape": [
+            2
+          ],
+          "offset": 6,
+          "count": 2,
+          "layout": "row-major"
+        }
+      ],
+      "inputIdentity": {
+        "sha256": "257a10ca73588a4da2ecaef631f142d6dd8e1882565a0ffd05d5c1c4be732401",
+        "bytes": 441
+      },
+      "referenceIdentity": {
+        "sha256": "dd26be79c6ff68685dd8f68466a35ef5acabd6528c1dc3e0506e3bc9c23ff3d6",
+        "bytes": 1678
+      }
+    },
+    {
+      "name": "kalman-constant-velocity",
+      "operation": "kalman-fixed-cpu",
+      "rows": 3,
+      "input": "inputs/kalman-constant-velocity.json",
+      "reference": "references/kalman-constant-velocity.json",
+      "inputFields": [
+        "operation",
+        "state_size",
+        "observation_size",
+        "transition",
+        "observation_matrix",
+        "process_noise",
+        "measurement_noise",
+        "initial_mean",
+        "initial_covariance",
+        "observations"
+      ],
+      "inputShapes": {
+        "state_size": [],
+        "observation_size": [],
+        "transition": [
+          2,
+          2
+        ],
+        "observation_matrix": [
+          1,
+          2
+        ],
+        "process_noise": [
+          2,
+          2
+        ],
+        "measurement_noise": [
+          1,
+          1
+        ],
+        "initial_mean": [
+          2
+        ],
+        "initial_covariance": [
+          2,
+          2
+        ],
+        "observations": [
+          3,
+          1
+        ]
+      },
+      "output_values": 24,
+      "outputOrder": [
+        {
+          "name": "filteredStates",
+          "shape": [
+            3,
+            6
+          ],
+          "offset": 0,
+          "count": 18,
+          "layout": "row-major"
+        },
+        {
+          "name": "nextPrediction",
+          "shape": [
+            6
+          ],
+          "offset": 18,
+          "count": 6,
+          "layout": "row-major"
+        }
+      ],
+      "inputIdentity": {
+        "sha256": "67fb731a8c531f041520eef689795c4ba14d0e36b42fbe86a16b963d8b7ec898",
+        "bytes": 580
+      },
+      "referenceIdentity": {
+        "sha256": "1069cfcd441eaf025354d1fe3197c74b9f27bf569b81744e79e72b02122df9cb",
+        "bytes": 2345
+      }
+    }
+  ]
+}

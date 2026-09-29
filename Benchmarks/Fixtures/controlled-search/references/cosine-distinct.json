@@ -1,0 +1,40 @@
+{
+  "operation": "vector-cosine",
+  "referenceBasis": "controlled-reference-v1",
+  "source": {
+    "path": "sources/cosine-distinct.json",
+    "sha256": "43a6146126aab8616ac3d1e59d848b91f1a0da56c99f2c706caae006d3cb6332",
+    "bytes": 541
+  },
+  "inputIdentity": {
+    "sha256": "dc8923a90ba712d5ec3f263d9dcf7cf7ba8bfede108c4daea3001033d06ad7ef",
+    "bytes": 251
+  },
+  "model": {
+    "observations": 5
+  },
+  "independentReference": {
+    "values": [
+      0.0,
+      1.0,
+      1.0,
+      0.96,
+      2.0,
+      0.8,
+      3.0,
+      0.6
+    ],
+    "exactValues": [
+      "0",
+      "1",
+      "1",
+      "24/25",
+      "2",
+      "4/5",
+      "3",
+      "3/5"
+    ],
+    "method": "Exact rational dot products and exact rational norms; descending score, equal-score rows canonicalized by input index."
+  },
+  "outputOrder": "For each match: inputRowIndex, cosineScore; descending score."
+}

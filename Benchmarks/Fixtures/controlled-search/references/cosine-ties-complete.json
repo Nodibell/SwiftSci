@@ -1,0 +1,44 @@
+{
+  "operation": "vector-cosine",
+  "referenceBasis": "controlled-reference-v1",
+  "source": {
+    "path": "sources/cosine-ties-complete.json",
+    "sha256": "1657dada70e1491c2f05a2d7424b40a64aa898fe124540971c50ec00860e009a",
+    "bytes": 605
+  },
+  "inputIdentity": {
+    "sha256": "03596cdc2dbbbea4bd4e6d64dea1c403fb58126b14ede21d75c06570270126dc",
+    "bytes": 252
+  },
+  "model": {
+    "observations": 5
+  },
+  "independentReference": {
+    "values": [
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      2.0,
+      0.6,
+      3.0,
+      0.6,
+      4.0,
+      -1.0
+    ],
+    "exactValues": [
+      "0",
+      "1",
+      "1",
+      "1",
+      "2",
+      "3/5",
+      "3",
+      "3/5",
+      "4",
+      "-1"
+    ],
+    "method": "Exact rational dot products and exact rational norms; descending score, equal-score rows canonicalized by input index."
+  },
+  "outputOrder": "For each match: inputRowIndex, cosineScore; descending score, equivalent ties canonicalized by inputRowIndex outside timing."
+}

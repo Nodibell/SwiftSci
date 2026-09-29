@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "controlled-kernel-affine",
+  "kind": "numerical-fixture-v1",
+  "rows": 2,
+  "sha256": "11dd7d3f48a77aff19a8eb3688e71ae6f18bf7504d08d7d850eb609b1d073c87",
+  "size_bytes": 245,
+  "source": "repository:Benchmarks/Fixtures/controlled-search/sources/kernel-affine.json",
+  "license": "Repository license; original synthetic fixture",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/controlled-search/inputs/kernel-affine.json",
+  "source_fixture": "Benchmarks/Fixtures/controlled-search/sources/kernel-affine.json",
+  "source_sha256": "ffd4e139deb0d4a969a01e1dcf9530bb8707cd9abe218fb6bcaa85e389c20e74",
+  "source_size_bytes": 496,
+  "reference_fixture": "Benchmarks/Fixtures/controlled-search/references/kernel-affine.json",
+  "reference_sha256": "173043be54b8a0fe1cd2ea4e6e56eb8558455fb38d10d038dc7840112bf512e6",
+  "reference_size_bytes": 760,
+  "reference_basis": "controlled-reference-v1",
+  "operation": "kernel-shap",
+  "tolerances": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  }
+}

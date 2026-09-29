@@ -1,0 +1,10 @@
+{
+  "atol": 1e-08,
+  "id": "stddev-v1",
+  "operation": "stddev",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 0,
+  "schema_version": 1,
+  "scope": "operation",
+  "semantics": "sample standard deviation; ddof=1; finite float64 inputs"
+}

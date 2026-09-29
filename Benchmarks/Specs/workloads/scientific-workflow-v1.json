@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "scientific-workflow-v1",
+  "operation": "scientific-workflow",
+  "scope": "full-pipeline",
+  "output": "Complete ordered numeric outputs defined in Benchmarks/Fixtures/workflows/README.md",
+  "atol": 1e-08,
+  "rtol": 1e-10,
+  "semantics": "Stage original CSV bytes, read both files through the public parser with explicit Int64 IDs and Double numeric columns, filter quality >= 1 excluding missing, inner-join by site with duplicate multiplicity, stable-sort by observation/calibration IDs, export reordered matrices and targets, fit CPU OLS and predict. Validate all IDs, features, targets, parameters, predictions and residuals. Includes staging writes. Bounded diagnostic only."
+}

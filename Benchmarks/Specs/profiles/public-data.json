@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "id": "public-data",
+  "warmups": 2,
+  "samples": 5,
+  "batches": 3,
+  "timeout_seconds": 180,
+  "cases": [
+    {
+      "id": "medium-uniform-h2o-q1",
+      "dataset": "h2o-medium-uniform",
+      "workload": "h2o-q1-v1"
+    },
+    {
+      "id": "medium-uniform-h2o-q2",
+      "dataset": "h2o-medium-uniform",
+      "workload": "h2o-q2-v1"
+    },
+    {
+      "id": "medium-uniform-h2o-q3",
+      "dataset": "h2o-medium-uniform",
+      "workload": "h2o-q3-v1"
+    },
+    {
+      "id": "medium-uniform-h2o-q4",
+      "dataset": "h2o-medium-uniform",
+      "workload": "h2o-q4-v1"
+    },
+    {
+      "id": "medium-uniform-h2o-q5",
+      "dataset": "h2o-medium-uniform",
+      "workload": "h2o-q5-v1"
+    },
+    {
+      "id": "medium-hot-key-h2o-q1",
+      "dataset": "h2o-medium-hot-key",
+      "workload": "h2o-q1-v1"
+    },
+    {
+      "id": "medium-hot-key-h2o-q2",
+      "dataset": "h2o-medium-hot-key",
+      "workload": "h2o-q2-v1"
+    },
+    {
+      "id": "medium-hot-key-h2o-q3",
+      "dataset": "h2o-medium-hot-key",
+      "workload": "h2o-q3-v1"
+    },
+    {
+      "id": "medium-hot-key-h2o-q4",
+      "dataset": "h2o-medium-hot-key",
+      "workload": "h2o-q4-v1"
+    },
+    {
+      "id": "medium-hot-key-h2o-q5",
+      "dataset": "h2o-medium-hot-key",
+      "workload": "h2o-q5-v1"
+    },
+    {
+      "id": "wine-red-pipeline",
+      "dataset": "wine-quality-red",
+      "workload": "wine-pipeline-v1"
+    }
+  ]
+}

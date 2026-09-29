@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "model-conformance",
+  "warmups": 0,
+  "samples": 1,
+  "batches": 1,
+  "timeout_seconds": 120,
+  "cases": [
+    {
+      "id": "pca-oblique-k2",
+      "dataset": "pca-oblique-k2",
+      "workload": "pca-cpu-v1"
+    },
+    {
+      "id": "pca-oblique-k1",
+      "dataset": "pca-oblique-k1",
+      "workload": "pca-cpu-v1"
+    },
+    {
+      "id": "multinomial-nb-noncontiguous",
+      "dataset": "multinomial-nb-noncontiguous",
+      "workload": "multinomial-nb-cpu-v1"
+    }
+  ]
+}

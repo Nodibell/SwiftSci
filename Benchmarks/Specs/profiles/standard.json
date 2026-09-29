@@ -1,0 +1,80 @@
+{
+  "batches": 3,
+  "cases": [
+    {
+      "dataset": "medium",
+      "id": "medium-csv-read",
+      "workload": "csv-read-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-filter",
+      "workload": "filter-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-sort",
+      "workload": "sort-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-group-sum",
+      "workload": "group-sum-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-flat-matrix",
+      "workload": "flat-matrix-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-target",
+      "workload": "target-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-standard-scale",
+      "workload": "standard-scale-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-minmax-scale",
+      "workload": "minmax-scale-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "medium",
+      "id": "medium-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-stddev",
+      "workload": "stddev-v1"
+    }
+  ],
+  "id": "standard",
+  "samples": 5,
+  "schema_version": 1,
+  "timeout_seconds": 300,
+  "warmups": 2
+}

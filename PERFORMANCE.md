@@ -1,6 +1,8 @@
-# SwiftSci 3.10.2 Performance Benchmarks
+# SwiftSci 3.10.2 historical performance benchmarks
 
-Comprehensive comparative benchmark results for SwiftSci 3.10.2 Release builds compared with Python data-science libraries including NumPy, Pandas, SciPy, Scikit-Learn, Statsmodels, SHAP, PyTorch, and MLX on Apple Silicon / macOS 15 arm64.
+Use the [standardized benchmark guide](Benchmarks/README.md) for current runs, audits and comparisons. The results below are historical research records. They are unvalidated under the standardized contracts and make no certification or production claims. Learned-model and GPU entries remain research unless a separately audited workload covers them. Preserve their original values when reproducing or discussing this report.
+
+Historical research measurements for SwiftSci 3.10.2 Release builds alongside Python data-science libraries including NumPy, Pandas, SciPy, Scikit-Learn, Statsmodels, SHAP, PyTorch, and MLX on Apple Silicon / macOS 15 arm64.
 
 > [!NOTE]
 > **Benchmark Methodology v2**
@@ -214,7 +216,7 @@ $$\text{Example: } \frac{0.119\text{ ms (NumPy)}}{0.081\text{ ms (SwiftSci)}} = 
 
 ### 4. Large-Scale DataFrame Workloads (1,000,000 Rows)
 
-Detailed matched comparisons on identical 1,000,000-row fixtures recorded during the v3.10.2 optimization suite against Python/Pandas and Kiraa:
+Historical measurements recorded during the v3.10.2 optimization suite against Python/Pandas and Kiraa follow. The Kiraa development build used here is unofficial and has known bugs. It remains an optional experimental reference, never an accuracy oracle or production baseline. These rows have not passed standardized conformance checks:
 
 | Operation | SwiftSci 3.10.2 | pandas / Python | Kiraa | Relative Performance (vs Pandas) | Scope / Architecture |
 | :--- | ---: | ---: | ---: | :---: | :--- |
@@ -291,8 +293,8 @@ Performance alone does not establish numerical or behavioral correctness. SwiftS
 | **SQLite Memory Safety** | `SQLiteConnection` + `sqlite3_close_v2` | AddressSanitizer (ASan) runtime audit | Leaks 0; buffer errors 0 | 🟢 Clean ASan result for tested lifecycle |
 
 ```bash
-# Run standalone Validation and Correctness Scorecard:
-swift run -c release SwiftSciBenchmarks --suite Accuracy
+# Run the legacy accuracy research suite:
+swift run -c release SwiftSciBenchmarks --research --suite Accuracy
 ```
 
 ---
@@ -328,28 +330,26 @@ For very small operations, especially measurements below 0.1 ms, timer resolutio
 
 ---
 
-## Reproducing the Benchmarks
+## Reproducing runs
+
+Follow the [standardized benchmark guide](Benchmarks/README.md) for environment setup, builds and audited runs. Use `migration-smoke` for a quick migration check and `migration` for repeated measurements. Compare compatible run directories:
 
 ```bash
-# 1. Swift native benchmarks
-swift run -c release SwiftSciBenchmarks \
-  --rounds 3 \
-  --iterations 7 \
-  --json swift_results.json
-
-# 2. Python reference benchmarks
-cd Benchmarks/Python
-python3 benchmarks.py \
-  --rounds 3 \
-  --iterations 7 \
-  --json python_results.json
-
-# 3. Generate the comparison report
-python3 compare.py ../../swift_results.json python_results.json
-
-# 4. Accuracy and correctness suite
-swift run -c release SwiftSciBenchmarks --suite Accuracy
+python3 Benchmarks/Tools/bench.py inventory
+python3 Benchmarks/Tools/bench.py compare Benchmarks/Runs/baseline Benchmarks/Runs/candidate
 ```
+
+To reproduce legacy research from the repository root:
+
+```bash
+swift run -c release SwiftSciBenchmarks --research \
+  --rounds 3 --iterations 7 --json swift_research.json
+python3 Benchmarks/Python/benchmarks.py --research \
+  --rounds 3 --iterations 7 --json python_research.json
+swift run -c release SwiftSciBenchmarks --research --suite Accuracy
+```
+
+`Benchmarks/Python/compare.py` is retired. Legacy JSON files cannot be compared with the standardized command or used as conformance certificates.
 
 ---
 

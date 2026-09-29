@@ -8,17 +8,26 @@ Uses the SAME BenchmarkLCG generator as the Swift side:
     state = (state * 6364136223846793005 + 1442695040888963407) mod 2^64
     double = (state >> 11) / (1 << 53)
 
-This guarantees bit-identical datasets for a 100% fair apples-to-apples comparison.
+A shared generator does not establish matching semantics or validated outputs.
+These workloads are unvalidated research, with no certification or production claims.
 
 Usage:
-    python3 accuracy_benchmarks.py
-    python3 accuracy_benchmarks.py --json accuracy_results.json
+    python3 accuracy_benchmarks.py --research
+    python3 accuracy_benchmarks.py --research --json accuracy_results.json
 """
+
+import sys
+
+if __name__ == "__main__" and "--research" not in sys.argv[1:]:
+    sys.exit(
+        "This legacy runner requires --research. Its outputs are unvalidated "
+        "research, with no certification or production claims. "
+        "Use Benchmarks/Tools/bench.py for standardized runs."
+    )
 
 import argparse
 import json
 import math
-import sys
 import numpy as np
 from sklearn.linear_model import LinearRegression as SkLinearRegression, LogisticRegression as SkLogisticRegression
 from sklearn.svm import LinearSVC as SkLinearSVC
@@ -428,13 +437,17 @@ def run_accuracy_benchmarks():
 def main():
     parser = argparse.ArgumentParser(description="SwiftSci Python Accuracy Benchmarks v3.8.1")
     parser.add_argument("--json", metavar="PATH", help="Export accuracy results to JSON")
+    parser.add_argument("--research", action="store_true", required=True,
+                        help="Opt in to unvalidated research; no certification or production claims")
     args = parser.parse_args()
+    print("UNVALIDATED RESEARCH: no certification or production claims.")
 
     results = run_accuracy_benchmarks()
+    report = {"evidenceStatus": "unvalidated-research", "results": results}
 
     if args.json:
         with open(args.json, "w") as f:
-            json.dump(results, f, indent=2)
+            json.dump(report, f, indent=2)
         print(f"✅ Results exported to: {args.json}\n")
 
 

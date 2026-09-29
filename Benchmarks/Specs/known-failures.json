@@ -1,0 +1,480 @@
+{
+  "schema_version": 1,
+  "tier": "cpu",
+  "coverage_sha256": "6166c4640c3b5a776a259b30341c512f99e355b3bd38b54d723f6819458232c7",
+  "entries": [
+    {
+      "profile": "controlled-conformance",
+      "case": "controlled-linear-fixed-affine",
+      "engine": "swiftsci",
+      "case_key": "c03b578603fdfbad0decbbb1bc2559de264bcaf21eaf418ad7847f0e344c704b",
+      "classification": "implementation-defect",
+      "reference_basis": "controlled-reference-v1",
+      "errors": [
+        "Model must be fitted before calling predict or transform."
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "controlled-conformance",
+      "case": "controlled-logistic-fixed-mixed-logits",
+      "engine": "swiftsci",
+      "case_key": "f49880d853b950aac5dc0cf1ca5a1813665189c487fedf96f56e1893c2d43c4c",
+      "classification": "implementation-defect",
+      "reference_basis": "controlled-reference-v1",
+      "errors": [
+        "Model must be fitted before calling predict or transform."
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "controlled-conformance",
+      "case": "controlled-cosine-small-norm",
+      "engine": "swiftsci",
+      "case_key": "033cff97f739cf44b7d1c270f2ac91e71f37af11528bdb045c869cd650e1049a",
+      "classification": "implementation-defect",
+      "reference_basis": "controlled-reference-v1",
+      "errors": [
+        "Output mismatch: 0.0 versus 1.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "model-conformance",
+      "case": "pca-oblique-k1",
+      "engine": "swiftsci",
+      "case_key": "1a35cc21c950cfb443b0db5b6da3884a448898604a58afd47e28d7830ebecca3",
+      "classification": "implementation-defect",
+      "reference_basis": "exact-rational-v1",
+      "errors": [
+        "Output mismatch: 1.0 versus 0.8"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-atmwtag-binary64",
+      "engine": "swiftsci",
+      "case_key": "35cebae79afa33eef9a8bdeea62708166f96b293570f60967cbc0ed93172fa73",
+      "classification": "implementation-defect",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch: 15.946733593790675 versus 15.946733566676926"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-smls04-binary64",
+      "engine": "swiftsci",
+      "case_key": "2defe96ad219df4855a7ae9787ecec36f2807504af3aba1a151823df9321be23",
+      "classification": "implementation-defect",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch: 21.000000038029 versus 21.0000000007761"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-smls06-binary64",
+      "engine": "swiftsci",
+      "case_key": "8f8afa62b84f6ef0dbe6b21c2769c31f9ba3bf0e14deed54f24b307cd3f7a100",
+      "classification": "implementation-defect",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch: 2000.9999826583844 versus 2001.0000001288329"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-smls07-binary64",
+      "engine": "swiftsci",
+      "case_key": "2144451c983bebb28e018bf4359390927a7e3347da90e3dd386d57cde0419567",
+      "classification": "implementation-defect",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch: 21.03988962187173 versus 21.00081188781877"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-smls08-binary64",
+      "engine": "swiftsci",
+      "case_key": "e2b9f2b3e9f636412040f7c42e50da810b4b4d730c52e7da9e50eb1d31ea42cc",
+      "classification": "implementation-defect",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch: 200.89125346619366 versus 201.01300409594845"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-smls09-binary64",
+      "engine": "swiftsci",
+      "case_key": "ba9da701ec64bc742ceb1253d02bd7ca339542299fac2ff8f6ccc9c946962c7d",
+      "classification": "implementation-defect",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch: 1983.9428610886403 versus 2001.1349262209505"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-wampler4-binary64",
+      "engine": "swiftsci",
+      "case_key": "7095d33204fcc176e95997a971d5a0f93014874198aac66a186dbb3db151e830",
+      "classification": "implementation-defect",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch: 0.9999999987239907 versus 1.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-wampler4-binary64",
+      "engine": "pandas",
+      "case_key": "7095d33204fcc176e95997a971d5a0f93014874198aac66a186dbb3db151e830",
+      "classification": "comparator-accuracy",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch at 0: 1.000000002634046 != 1.0",
+        "Output mismatch at 0: 1.0000000028854616 != 1.0"
+      ],
+      "reason": "Comparison-engine accuracy failure against the independent reference; this is not an oracle or tolerance error.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
+        "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged."
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-wampler5-binary64",
+      "engine": "swiftsci",
+      "case_key": "e723b995028672e574ac2d2588540d12777e73222fa9184726d845aeec3da018",
+      "classification": "implementation-defect",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch: 0.9999998836057622 versus 1.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-binary64",
+      "case": "nist-wampler5-binary64",
+      "engine": "pandas",
+      "case_key": "e723b995028672e574ac2d2588540d12777e73222fa9184726d845aeec3da018",
+      "classification": "comparator-accuracy",
+      "reference_basis": "binary64-v1",
+      "errors": [
+        "Output mismatch at 0: 1.0000003187603246 != 1.0",
+        "Output mismatch at 0: 1.0000003429656807 != 1.0"
+      ],
+      "reason": "Comparison-engine accuracy failure against the independent reference; this is not an oracle or tolerance error.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
+        "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged."
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-atmwtag-decimal",
+      "engine": "swiftsci",
+      "case_key": "a0c599a82b2ff110884f84330f724fa88cbbd433fb9db41a4ade6cddfafa230e",
+      "classification": "implementation-defect",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch: 15.946733593790675 versus 15.946733567793"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-smls04-decimal",
+      "engine": "swiftsci",
+      "case_key": "78de35a83e14bf9c7d828526524133829b8b68d690da5a6384a227cf850475f2",
+      "classification": "implementation-defect",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch: 21.000000038029 versus 21.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-smls06-decimal",
+      "engine": "swiftsci",
+      "case_key": "62a291b75f0fd195a6f5fc99c61c64a2dafa34420284f297d2e4a94812bf754e",
+      "classification": "implementation-defect",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch: 2000.9999826583844 versus 2001.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-smls07-decimal",
+      "engine": "swiftsci",
+      "case_key": "b6ecc52332b2024360baa48e93c1d62c18f8059a902a187c5a6178e5702bf6d1",
+      "classification": "implementation-defect",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch: 21.03988962187173 versus 21.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-smls07-decimal",
+      "engine": "pandas",
+      "case_key": "b6ecc52332b2024360baa48e93c1d62c18f8059a902a187c5a6178e5702bf6d1",
+      "classification": "input-representation",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch at 0: 21.000811887818774 != 21.0"
+      ],
+      "reason": "Binary64 conversion loses original-decimal information; the explicit decimal-input follow-up must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-smls08-decimal",
+      "engine": "swiftsci",
+      "case_key": "47377209970c3d1458192c190869e3cf1a0c42d995a3cecceccd32c9ae511bcc",
+      "classification": "implementation-defect",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch: 200.89125346619366 versus 201.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-smls08-decimal",
+      "engine": "pandas",
+      "case_key": "47377209970c3d1458192c190869e3cf1a0c42d995a3cecceccd32c9ae511bcc",
+      "classification": "input-representation",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch at 0: 201.01300409594847 != 201.0"
+      ],
+      "reason": "Binary64 conversion loses original-decimal information; the explicit decimal-input follow-up must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-smls09-decimal",
+      "engine": "swiftsci",
+      "case_key": "97a5015d371b83fe6ad061d86a65c6e9d4923490bb7ae29d6660a10462c4004a",
+      "classification": "implementation-defect",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch: 1983.9428610886403 versus 2001.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-smls09-decimal",
+      "engine": "pandas",
+      "case_key": "97a5015d371b83fe6ad061d86a65c6e9d4923490bb7ae29d6660a10462c4004a",
+      "classification": "input-representation",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch at 0: 2001.134926220951 != 2001.0"
+      ],
+      "reason": "Binary64 conversion loses original-decimal information; the explicit decimal-input follow-up must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-wampler4-decimal",
+      "engine": "swiftsci",
+      "case_key": "a3a521a1f3d3cb3a77035135c1204de46e8ec84c7ae34c1e532c958594777904",
+      "classification": "implementation-defect",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch: 0.9999999987239907 versus 1.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-wampler4-decimal",
+      "engine": "pandas",
+      "case_key": "a3a521a1f3d3cb3a77035135c1204de46e8ec84c7ae34c1e532c958594777904",
+      "classification": "comparator-accuracy",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch at 0: 1.000000002634046 != 1.0",
+        "Output mismatch at 0: 1.0000000028854616 != 1.0"
+      ],
+      "reason": "Comparison-engine accuracy failure against the independent reference; this is not an oracle or tolerance error.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
+        "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged."
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-wampler5-decimal",
+      "engine": "swiftsci",
+      "case_key": "e6cff6554cf1271199895148b590f4539a91fb8b50860bb56c7c2a3cba0645fb",
+      "classification": "implementation-defect",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch: 0.9999998836057622 versus 1.0"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "numerical-conformance",
+      "case": "nist-wampler5-decimal",
+      "engine": "pandas",
+      "case_key": "e6cff6554cf1271199895148b590f4539a91fb8b50860bb56c7c2a3cba0645fb",
+      "classification": "comparator-accuracy",
+      "reference_basis": "nist-decimal-v1",
+      "errors": [
+        "Output mismatch at 0: 1.0000003187603246 != 1.0",
+        "Output mismatch at 0: 1.0000003429656807 != 1.0"
+      ],
+      "reason": "Comparison-engine accuracy failure against the independent reference; this is not an oracle or tolerance error.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883",
+        "Local CPU acceptance at 34b532a6e0550b1ab9cde03d1b0b9d355a492b09; comparison engine unchanged."
+      ]
+    },
+    {
+      "profile": "persisted-workflow",
+      "case": "workflow-regression-native",
+      "engine": "swiftsci",
+      "case_key": "611d026b17a141a7aeb369a0616f8af485cd12987c049e498de3781902195086",
+      "classification": "implementation-defect",
+      "reference_basis": "workflow-reference-v1",
+      "errors": [
+        "Fresh-process native reload failed: Model must be fitted before calling predict or transform."
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "persisted-workflow",
+      "case": "workflow-regression-native-heldout-shift",
+      "engine": "swiftsci",
+      "case_key": "1e50031302455a465cd925b4e9462f0afeb9ff17c1ce64da8b82acb60c357f31",
+      "classification": "implementation-defect",
+      "reference_basis": "workflow-reference-v1",
+      "errors": [
+        "Fresh-process native reload failed: Model must be fitted before calling predict or transform."
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "persisted-workflow",
+      "case": "workflow-regression-coreml",
+      "engine": "swiftsci",
+      "case_key": "6b0477331dc0418055c5cd54bac112510c8dd0bbd4e62b478b9ec2b229262148",
+      "classification": "implementation-defect",
+      "reference_basis": "workflow-reference-v1",
+      "errors": [
+        "Fresh-process coreml reload failed: Error Domain=com.apple.CoreML Code=3 \"compiler error: Error reading protobuf spec. validator error: Feature descriptions exceeded 1\" UserInfo={NSLocalizedDescription=compiler error: Error reading protobuf spec. validator error: Feature descriptions exceeded 1}"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    },
+    {
+      "profile": "persisted-workflow",
+      "case": "workflow-regression-coreml-heldout-shift",
+      "engine": "swiftsci",
+      "case_key": "a19c462866fda85273fe658ce6c4aa7698e26c0e2b3b280c0ee88cdd63201bfb",
+      "classification": "implementation-defect",
+      "reference_basis": "workflow-reference-v1",
+      "errors": [
+        "Fresh-process coreml reload failed: Error Domain=com.apple.CoreML Code=3 \"compiler error: Error reading protobuf spec. validator error: Feature descriptions exceeded 1\" UserInfo={NSLocalizedDescription=compiler error: Error reading protobuf spec. validator error: Feature descriptions exceeded 1}"
+      ],
+      "reason": "Recorded SwiftSci defect; follow-up repair must remove this entry.",
+      "evidence": [
+        "https://github.com/Nodibell/SwiftSci/actions/runs/36476527883"
+      ]
+    }
+  ]
+}

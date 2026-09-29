@@ -1,0 +1,34 @@
+{
+  "description": "Controlled exact arithmetic fixture; authored for numerical validation without production-derived expected values.",
+  "input": {
+    "operation": "vector-cosine",
+    "vectors": [
+      [
+        3,
+        4
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        -3,
+        -4
+      ]
+    ],
+    "query": [
+      3,
+      4
+    ],
+    "top_k": 5
+  },
+  "outputOrder": "For each match: inputRowIndex, cosineScore; descending score, equivalent ties canonicalized by inputRowIndex outside timing."
+}

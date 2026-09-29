@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "supervised-scale-v1",
+  "operation": "supervised-scale",
+  "scope": "full-pipeline",
+  "output": "finite little-endian float64 sequence; complete output order declared in semantics",
+  "atol": 1e-08,
+  "rtol": 1e-09,
+  "semantics": "Frozen source-order train, validation and test indices; identical predictor rows stay together. Population StandardScaler fits training features only; standard deviation below 1e-12 becomes one. No targets or held-out features affect scaling. CPU float64. Decoding occurs outside timing; gathering splits, constructing, fitting, transforming and exporting occur inside. Both workers rebuild all model state for each repeat. Output: means, effective scales, all scaled rows in train/validation/test order, row-major."
+}

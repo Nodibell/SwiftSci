@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "decoder-fixed-f32-v1",
+  "operation": "decoder-fixed-f32",
+  "scope": "operation",
+  "output": "Actual batch, sequence and vocabulary dimensions followed by complete row-major logits; cached execution adds chunk count and observed cache lengths",
+  "atol": 0.00002,
+  "rtol": 0.00002,
+  "semantics": "Fixed one-layer Float32 decoder with complete parameter readback, independent 80-digit scalar logits, learned or rotary positions, full or prefix-2 then single-token cached execution. Swift explicitly selects MLX CPU or GPU; pandas engine uses NumPy CPU for both requests. Decode outside timing. Model and cache construction, weight loading/readback, token allocation, forward execution, output evaluation, stream synchronization and extraction are timed. Fresh model/cache per invocation. This is end-to-end diagnostic conformance, not steady-state throughput or a speed comparison between matched backends. Public-loader failures remain in a separate diagnostic profile without adjusted answers."
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "nist-pontius-binary64",
+  "kind": "numerical-fixture-v1",
+  "rows": 40,
+  "sha256": "e961b91d9b4dc81490a009006fa5708965dd93af81b98c4e75e76a85c85968f6",
+  "size_bytes": 2637,
+  "source": "https://www.itl.nist.gov/div898/strd/lls/data/LINKS/DATA/Pontius.dat",
+  "license": "NIST StRD; original notices retained",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/nist-models/inputs/Pontius.json",
+  "source_fixture": "Benchmarks/Fixtures/nist-models/originals/Pontius.dat",
+  "source_sha256": "de60baa5dc66fd804f9316f895bc5aa2b8f791c09d1ecc1ec39f8b199b8c15c7",
+  "source_size_bytes": 2748,
+  "reference_fixture": "Benchmarks/Fixtures/nist-models/references/Pontius.json",
+  "reference_sha256": "28aa4ce1cd8300db9d049bcac3ea43790ec8d16532c2d19891fbfac70ea597c7",
+  "reference_size_bytes": 10593,
+  "reference_basis": "binary64-v1",
+  "operation": "ols-cpu",
+  "tolerances": {
+    "atol": 1e-10,
+    "rtol": 1e-09
+  }
+}

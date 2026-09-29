@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "kind": "wine-red",
+      "path": "../uci/winequality-red.csv",
+      "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv",
+      "doi": "10.24432/C56S3T",
+      "license": "CC BY 4.0",
+      "sha256": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e",
+      "bytes": 84199
+    },
+    {
+      "kind": "wdbc",
+      "path": "originals/wdbc.data",
+      "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data",
+      "doi": "10.24432/C5DW2B",
+      "license": "CC BY 4.0",
+      "sha256": "d606af411f3e5be8a317a5a8b652b425aaf0ff38ca683d5327ffff94c3695f4a",
+      "bytes": 124103
+    }
+  ]
+}

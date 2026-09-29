@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swiftsci.local/benchmarks/workload",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "anova",
+        "csv-read",
+        "csv-stream-filter",
+        "csv-stream-group",
+        "csv-stream-read",
+        "filter",
+        "flat-matrix",
+        "group-sum",
+        "group-sum-mean",
+        "inner-join",
+        "mean",
+        "minmax-scale",
+        "onehot",
+        "paired",
+        "parquet-read",
+        "parquet-write",
+        "pearson",
+        "pool-dice",
+        "rag-summary",
+        "regression-metrics",
+        "roc-auc",
+        "row-sum",
+        "sort",
+        "spearman",
+        "sqlite-ingest",
+        "standard-scale",
+        "stddev",
+        "student",
+        "target",
+        "tfidf",
+        "variance",
+        "welch",
+        "h2o-q1",
+        "h2o-q2",
+        "h2o-q3",
+        "h2o-q4",
+        "h2o-q5",
+        "wine-pipeline",
+        "ols-cpu",
+        "nist-anova",
+        "pca-cpu",
+        "multinomial-nb-cpu",
+        "linear-fixed-cpu",
+        "logistic-fixed-cpu",
+        "kmeans-one-cpu",
+        "kalman-fixed-cpu",
+        "vector-cosine",
+        "kernel-shap",
+        "supervised-scale",
+        "supervised-ols-cpu",
+        "supervised-logistic-cpu",
+        "dataframe-semantics",
+        "decoder-fixed-f32",
+        "vision-letterbox-cpu",
+        "dataframe-model",
+        "dataframe-model-sweep",
+        "scientific-workflow",
+        "persisted-regression"
+      ]
+    },
+    "scope": {
+      "enum": [
+        "ingestion",
+        "operation",
+        "fit-transform-export",
+        "full-pipeline"
+      ]
+    },
+    "output": {
+      "type": "string"
+    },
+    "atol": {
+      "type": "number",
+      "minimum": 0
+    },
+    "rtol": {
+      "type": "number",
+      "minimum": 0
+    },
+    "semantics": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "operation",
+    "scope",
+    "output",
+    "atol",
+    "rtol",
+    "semantics"
+  ]
+}

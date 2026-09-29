@@ -1,0 +1,145 @@
+{
+  "batches": 3,
+  "cases": [
+    {
+      "dataset": "nist-pidigits",
+      "id": "nist-pidigits-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-pidigits",
+      "id": "nist-pidigits-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-pidigits",
+      "id": "nist-pidigits-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-lottery",
+      "id": "nist-lottery-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-lottery",
+      "id": "nist-lottery-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-lottery",
+      "id": "nist-lottery-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-lew",
+      "id": "nist-lew-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-lew",
+      "id": "nist-lew-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-lew",
+      "id": "nist-lew-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-mavro",
+      "id": "nist-mavro-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-mavro",
+      "id": "nist-mavro-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-mavro",
+      "id": "nist-mavro-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-michelso",
+      "id": "nist-michelso-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-michelso",
+      "id": "nist-michelso-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-michelso",
+      "id": "nist-michelso-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-numacc1",
+      "id": "nist-numacc1-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-numacc1",
+      "id": "nist-numacc1-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-numacc1",
+      "id": "nist-numacc1-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-numacc2",
+      "id": "nist-numacc2-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-numacc2",
+      "id": "nist-numacc2-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-numacc2",
+      "id": "nist-numacc2-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-numacc3",
+      "id": "nist-numacc3-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-numacc3",
+      "id": "nist-numacc3-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-numacc3",
+      "id": "nist-numacc3-stddev",
+      "workload": "stddev-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-numacc4-mean",
+      "workload": "mean-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-numacc4-variance",
+      "workload": "variance-v1"
+    },
+    {
+      "dataset": "nist-numacc4",
+      "id": "nist-numacc4-stddev",
+      "workload": "stddev-v1"
+    }
+  ],
+  "id": "nist",
+  "samples": 5,
+  "schema_version": 1,
+  "timeout_seconds": 300,
+  "warmups": 2
+}

@@ -1,0 +1,44 @@
+{
+  "operation": "kalman-fixed-cpu",
+  "state_size": 1,
+  "observation_size": 1,
+  "transition": [
+    [
+      1
+    ]
+  ],
+  "observation_matrix": [
+    [
+      1
+    ]
+  ],
+  "process_noise": [
+    [
+      1
+    ]
+  ],
+  "measurement_noise": [
+    [
+      1
+    ]
+  ],
+  "initial_mean": [
+    0
+  ],
+  "initial_covariance": [
+    [
+      1
+    ]
+  ],
+  "observations": [
+    [
+      1
+    ],
+    [
+      2
+    ],
+    [
+      3
+    ]
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "h2o-q2-v1",
+  "operation": "h2o-q2",
+  "scope": "operation",
+  "output": "numeric keys followed by aggregates in declared order, sorted by numeric key tuple outside timing",
+  "atol": 1e-10,
+  "rtol": 1e-12,
+  "semantics": "H2O-derived h2o-q2: group by ['id1', 'id2']; aggregates [('v1', 'sum')]. Prepared nine-column frame; finite non-null data. String key labels encode numeric suffixes. Full result validation; grouping and aggregation timed; canonical sorting excluded. Independent Decimal accumulator reference."
+}

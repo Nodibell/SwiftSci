@@ -1,0 +1,70 @@
+{
+  "independentReference": {
+    "method": "rational geometry; identity or constant plane; Float32 output",
+    "values": [
+      1,
+      4,
+      4,
+      3,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.75,
+      0.125,
+      0.125,
+      0.125,
+      0.125,
+      0.125,
+      0.125,
+      0.125,
+      0.125,
+      0.125,
+      0.125,
+      0.125,
+      0.125
+    ]
+  },
+  "inputIdentity": {
+    "bytes": 645,
+    "sha256": "2da89c4a448bf9d4a414b40bcaecb6229af116b1b1281a6dbfbf57dca91cc833"
+  },
+  "model": {
+    "observations": 40
+  },
+  "operation": "vision-letterbox-cpu",
+  "source": {
+    "sha256": "f23ea73fcda237a61896ba1749f7bed45761e70b3a88e17cdf09c3dfd48d31de"
+  }
+}

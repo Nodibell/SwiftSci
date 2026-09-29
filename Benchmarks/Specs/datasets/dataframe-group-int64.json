@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-group-int64.json",
+  "generator_version": 1,
+  "id": "dataframe-group-int64",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-group-int64.json",
+  "reference_sha256": "d60799dca26c037d507bf5a034827f9af8b0ecc9d7cad7a4ff5c8d3cd2c15ad5",
+  "reference_size_bytes": 2255,
+  "rows": 5,
+  "schema_version": 1,
+  "sha256": "ca8df0e402ce29790eb7dfba7fd7bb1545aa2634f82bd8592596b4feaf68062d",
+  "size_bytes": 660,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

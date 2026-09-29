@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "spearman-v1",
+  "operation": "spearman",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "atol": 1e-12,
+  "rtol": 1e-12,
+  "semantics": "Spearman correlation of prepared x and y vectors; average one-based ranks for ties; output coefficient only, exclude p-value"
+}

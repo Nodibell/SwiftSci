@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "nist-smls05-decimal",
+  "kind": "numerical-fixture-v1",
+  "rows": 1809,
+  "sha256": "d11e0dbe988fe53008d9b7aed86b218de685df6578df44fbd54297a6e99b6a42",
+  "size_bytes": 30911,
+  "source": "https://www.itl.nist.gov/div898/strd/anova/SmLs05.dat",
+  "license": "NIST StRD; original notices retained",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/nist-models/inputs/SmLs05.json",
+  "source_fixture": "Benchmarks/Fixtures/nist-models/originals/SmLs05.dat",
+  "source_sha256": "7b1333e6e56ced74145096df774cfb1f6305213cb28f9a8222c418ca85d0c296",
+  "source_size_bytes": 55668,
+  "reference_fixture": "Benchmarks/Fixtures/nist-models/references/SmLs05.json",
+  "reference_sha256": "3fef0da0577d60b1874ab9b89f5e780cb1d37e88c2a107623d894c7c8bfda2df",
+  "reference_size_bytes": 2522,
+  "reference_basis": "nist-decimal-v1",
+  "operation": "nist-anova",
+  "tolerances": {
+    "atol": 1e-10,
+    "rtol": 1e-09
+  }
+}

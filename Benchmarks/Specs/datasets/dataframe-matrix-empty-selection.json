@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-matrix-empty-selection.json",
+  "generator_version": 1,
+  "id": "dataframe-matrix-empty-selection",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-matrix-empty-selection.json",
+  "reference_sha256": "c722873c54229eaf09cb14ebc615fef2e5a973fb2e1b34fe6b58b25ae8500220",
+  "reference_size_bytes": 865,
+  "rows": 3,
+  "schema_version": 1,
+  "sha256": "470bdfe053bdae47fc195e4b1a96d80de5731e752115aef7e8cb0d47112dfd07",
+  "size_bytes": 528,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

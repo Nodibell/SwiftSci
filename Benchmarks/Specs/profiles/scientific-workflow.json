@@ -1,0 +1,30 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "workflow-scientific",
+      "id": "workflow-scientific",
+      "workload": "scientific-workflow-v1"
+    },
+    {
+      "dataset": "workflow-scientific-unique-keys",
+      "id": "workflow-scientific-unique-keys",
+      "workload": "scientific-workflow-v1"
+    },
+    {
+      "dataset": "workflow-scientific-feature-order",
+      "id": "workflow-scientific-feature-order",
+      "workload": "scientific-workflow-v1"
+    },
+    {
+      "dataset": "workflow-scientific-row-order",
+      "id": "workflow-scientific-row-order",
+      "workload": "scientific-workflow-v1"
+    }
+  ],
+  "id": "scientific-workflow",
+  "samples": 2,
+  "schema_version": 1,
+  "timeout_seconds": 120,
+  "warmups": 0
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "wdbc-supervised-scale",
+  "kind": "numerical-fixture-v1",
+  "rows": 569,
+  "sha256": "dbe41e061a28302ebce68a9f477a16431d9faf9536e4647fb2a839ce02f74a52",
+  "size_bytes": 266531,
+  "source": "https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic",
+  "license": "CC BY 4.0; see Benchmarks/Fixtures/supervised/README.md",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/supervised/inputs/wdbc-supervised-scale.json",
+  "source_fixture": "Benchmarks/Fixtures/supervised/sources.lock.json",
+  "source_sha256": "cead2074a89bdf755a2490ea8265f8de63df615f3ccd2cc4347364e1b60e8344",
+  "source_size_bytes": 750,
+  "reference_fixture": "Benchmarks/Fixtures/supervised/references/wdbc-supervised-scale.json",
+  "reference_sha256": "366e9955b4b3a1c99d9fe2c7939634e24d326bb02fc40bab22055ec0509b7818",
+  "reference_size_bytes": 458676,
+  "reference_basis": "supervised-reference-v1",
+  "operation": "supervised-scale",
+  "tolerances": {
+    "atol": 1e-08,
+    "rtol": 1e-09
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "sweep-cpu-float32-128x8-conversion",
+      "id": "sweep-cpu-float32-128x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-128x8-prepared",
+      "id": "sweep-cpu-float32-128x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-128x8-pipeline",
+      "id": "sweep-cpu-float32-128x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-128x64-conversion",
+      "id": "sweep-cpu-float32-128x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-128x64-prepared",
+      "id": "sweep-cpu-float32-128x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-128x64-pipeline",
+      "id": "sweep-cpu-float32-128x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-1024x8-conversion",
+      "id": "sweep-cpu-float32-1024x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-1024x8-prepared",
+      "id": "sweep-cpu-float32-1024x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-1024x8-pipeline",
+      "id": "sweep-cpu-float32-1024x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-1024x64-conversion",
+      "id": "sweep-cpu-float32-1024x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-1024x64-prepared",
+      "id": "sweep-cpu-float32-1024x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-1024x64-pipeline",
+      "id": "sweep-cpu-float32-1024x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-8192x8-conversion",
+      "id": "sweep-cpu-float32-8192x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-8192x8-prepared",
+      "id": "sweep-cpu-float32-8192x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-8192x8-pipeline",
+      "id": "sweep-cpu-float32-8192x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-8192x64-conversion",
+      "id": "sweep-cpu-float32-8192x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-8192x64-prepared",
+      "id": "sweep-cpu-float32-8192x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float32-8192x64-pipeline",
+      "id": "sweep-cpu-float32-8192x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-128x8-conversion",
+      "id": "sweep-cpu-float64-128x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-128x8-prepared",
+      "id": "sweep-cpu-float64-128x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-128x8-pipeline",
+      "id": "sweep-cpu-float64-128x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-128x64-conversion",
+      "id": "sweep-cpu-float64-128x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-128x64-prepared",
+      "id": "sweep-cpu-float64-128x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-128x64-pipeline",
+      "id": "sweep-cpu-float64-128x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-1024x8-conversion",
+      "id": "sweep-cpu-float64-1024x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-1024x8-prepared",
+      "id": "sweep-cpu-float64-1024x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-1024x8-pipeline",
+      "id": "sweep-cpu-float64-1024x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-1024x64-conversion",
+      "id": "sweep-cpu-float64-1024x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-1024x64-prepared",
+      "id": "sweep-cpu-float64-1024x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-1024x64-pipeline",
+      "id": "sweep-cpu-float64-1024x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-8192x8-conversion",
+      "id": "sweep-cpu-float64-8192x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-8192x8-prepared",
+      "id": "sweep-cpu-float64-8192x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-8192x8-pipeline",
+      "id": "sweep-cpu-float64-8192x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-8192x64-conversion",
+      "id": "sweep-cpu-float64-8192x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-8192x64-prepared",
+      "id": "sweep-cpu-float64-8192x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-cpu-float64-8192x64-pipeline",
+      "id": "sweep-cpu-float64-8192x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-128x8-conversion",
+      "id": "sweep-gpu-float32-128x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-128x8-prepared",
+      "id": "sweep-gpu-float32-128x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-128x8-pipeline",
+      "id": "sweep-gpu-float32-128x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-128x64-conversion",
+      "id": "sweep-gpu-float32-128x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-128x64-prepared",
+      "id": "sweep-gpu-float32-128x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-128x64-pipeline",
+      "id": "sweep-gpu-float32-128x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-1024x8-conversion",
+      "id": "sweep-gpu-float32-1024x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-1024x8-prepared",
+      "id": "sweep-gpu-float32-1024x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-1024x8-pipeline",
+      "id": "sweep-gpu-float32-1024x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-1024x64-conversion",
+      "id": "sweep-gpu-float32-1024x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-1024x64-prepared",
+      "id": "sweep-gpu-float32-1024x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-1024x64-pipeline",
+      "id": "sweep-gpu-float32-1024x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-8192x8-conversion",
+      "id": "sweep-gpu-float32-8192x8-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-8192x8-prepared",
+      "id": "sweep-gpu-float32-8192x8-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-8192x8-pipeline",
+      "id": "sweep-gpu-float32-8192x8-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-8192x64-conversion",
+      "id": "sweep-gpu-float32-8192x64-conversion",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-8192x64-prepared",
+      "id": "sweep-gpu-float32-8192x64-prepared",
+      "workload": "dataframe-model-sweep-v1"
+    },
+    {
+      "dataset": "sweep-gpu-float32-8192x64-pipeline",
+      "id": "sweep-gpu-float32-8192x64-pipeline",
+      "workload": "dataframe-model-sweep-v1"
+    }
+  ],
+  "id": "boundary-sweep",
+  "samples": 2,
+  "schema_version": 1,
+  "timeout_seconds": 120,
+  "warmups": 1
+}

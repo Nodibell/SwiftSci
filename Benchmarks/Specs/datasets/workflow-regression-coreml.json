@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/workflows/inputs/workflow-regression-coreml.json",
+  "generator_version": 1,
+  "id": "workflow-regression-coreml",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "persisted-regression",
+  "reference_basis": "workflow-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/workflows/references/workflow-regression-coreml.json",
+  "reference_sha256": "e56d80c9caf3f03f558f180626869c454731c496449256c6a59307b4f0adb1ba",
+  "reference_size_bytes": 1272,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "b0dd63c7f6db4fbfc64520c723a0911960571eff302988d2fb6cdb7b644ea82d",
+  "size_bytes": 694,
+  "source": "Original bounded scientific and training workflow fixtures; see Benchmarks/Fixtures/workflows/README.md",
+  "source_fixture": "Benchmarks/Fixtures/workflows/sources.lock.json",
+  "source_sha256": "e3fc6d2d573b5784d7dda020c364c5d2c922ccd540c93ab8834dc9b00aa12bdb",
+  "source_size_bytes": 553,
+  "tolerances": {
+    "atol": 1e-08,
+    "rtol": 1e-10
+  }
+}

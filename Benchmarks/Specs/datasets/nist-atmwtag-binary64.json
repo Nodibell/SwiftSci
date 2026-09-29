@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "nist-atmwtag-binary64",
+  "kind": "numerical-fixture-v1",
+  "rows": 48,
+  "sha256": "adc7a1c5e97eb270280d2ee42cb665d95f795d3dc8ca3b6e761a0be9961f6195",
+  "size_bytes": 982,
+  "source": "https://www.itl.nist.gov/div898/strd/anova/AtmWtAg.dat",
+  "license": "NIST StRD; original notices retained",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/nist-models/inputs/AtmWtAg.json",
+  "source_fixture": "Benchmarks/Fixtures/nist-models/originals/AtmWtAg.dat",
+  "source_sha256": "5a1083c9062d3966f244bffa376fc9b033244abf86a0d0dd016af39cd71fb8a7",
+  "source_size_bytes": 3171,
+  "reference_fixture": "Benchmarks/Fixtures/nist-models/references/AtmWtAg.json",
+  "reference_sha256": "d5f5e6ce41c4049200bca89cc251faf6b8553ccecec18192940242b701dc8808",
+  "reference_size_bytes": 2446,
+  "reference_basis": "binary64-v1",
+  "operation": "nist-anova",
+  "tolerances": {
+    "atol": 1e-10,
+    "rtol": 1e-09
+  }
+}

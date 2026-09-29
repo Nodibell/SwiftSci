@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "name": "SwiftSci public API exact rational fixtures",
+  "pca": {
+    "features": [[16,6],[4,-10],[14,-5],[6,1]],
+    "query": [[13,2],[14,-5],[10,-2]],
+    "mean": ["10","-2"],
+    "components": [["3/5","4/5"],["4/5","-3/5"]],
+    "explained_variance": ["200/3","50/3"],
+    "component_counts": [2,1]
+  },
+  "naive_bayes": {
+    "features": [[3,0],[1,0],[0,2]],
+    "targets": [20,20,10],
+    "query": [[0,0],[1,0],[0,1],[1,1],[0,2]],
+    "alpha": 1,
+    "classes": [10,20],
+    "class_priors": ["1/3","2/3"],
+    "feature_probabilities": [["1/4","3/4"],["5/6","1/6"]]
+  }
+}

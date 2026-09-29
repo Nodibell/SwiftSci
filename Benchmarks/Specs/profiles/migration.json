@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "id": "migration",
+  "warmups": 2,
+  "samples": 5,
+  "batches": 3,
+  "timeout_seconds": 180,
+  "cases": [
+    {
+      "id": "medium-csv-stream-read",
+      "dataset": "medium",
+      "workload": "csv-stream-read-v1"
+    },
+    {
+      "id": "medium-csv-stream-filter",
+      "dataset": "medium",
+      "workload": "csv-stream-filter-v1"
+    },
+    {
+      "id": "medium-csv-stream-group",
+      "dataset": "medium",
+      "workload": "csv-stream-group-v1"
+    },
+    {
+      "id": "medium-group-sum-mean",
+      "dataset": "medium",
+      "workload": "group-sum-mean-v1"
+    },
+    {
+      "id": "medium-row-sum",
+      "dataset": "medium",
+      "workload": "row-sum-v1"
+    },
+    {
+      "id": "medium-inner-join",
+      "dataset": "medium",
+      "workload": "inner-join-v1"
+    },
+    {
+      "id": "medium-pearson",
+      "dataset": "medium",
+      "workload": "pearson-v1"
+    },
+    {
+      "id": "medium-spearman",
+      "dataset": "medium",
+      "workload": "spearman-v1"
+    },
+    {
+      "id": "mixed-medium-csv-read",
+      "dataset": "mixed-medium",
+      "workload": "csv-read-v1"
+    },
+    {
+      "id": "mixed-medium-csv-stream-read",
+      "dataset": "mixed-medium",
+      "workload": "csv-stream-read-v1"
+    },
+    {
+      "id": "mixed-medium-csv-stream-filter",
+      "dataset": "mixed-medium",
+      "workload": "csv-stream-filter-v1"
+    },
+    {
+      "id": "mixed-medium-csv-stream-group",
+      "dataset": "mixed-medium",
+      "workload": "csv-stream-group-v1"
+    },
+    {
+      "id": "mixed-medium-filter",
+      "dataset": "mixed-medium",
+      "workload": "filter-v1"
+    },
+    {
+      "id": "mixed-medium-group-sum-mean",
+      "dataset": "mixed-medium",
+      "workload": "group-sum-mean-v1"
+    },
+    {
+      "id": "mixed-medium-sort",
+      "dataset": "mixed-medium",
+      "workload": "sort-v1"
+    },
+    {
+      "id": "mixed-medium-flat-matrix",
+      "dataset": "mixed-medium",
+      "workload": "flat-matrix-v1"
+    },
+    {
+      "id": "mixed-medium-row-sum",
+      "dataset": "mixed-medium",
+      "workload": "row-sum-v1"
+    },
+    {
+      "id": "mixed-medium-inner-join",
+      "dataset": "mixed-medium",
+      "workload": "inner-join-v1"
+    },
+    {
+      "id": "mixed-medium-parquet-write",
+      "dataset": "mixed-medium",
+      "workload": "parquet-write-v1"
+    },
+    {
+      "id": "mixed-medium-standard-scale",
+      "dataset": "mixed-medium",
+      "workload": "standard-scale-v1"
+    },
+    {
+      "id": "mixed-medium-minmax-scale",
+      "dataset": "mixed-medium",
+      "workload": "minmax-scale-v1"
+    },
+    {
+      "id": "parquet-medium-read",
+      "dataset": "parquet-medium",
+      "workload": "parquet-read-v1"
+    },
+    {
+      "id": "medium-welch",
+      "dataset": "medium",
+      "workload": "welch-v1"
+    },
+    {
+      "id": "medium-regression-metrics",
+      "dataset": "medium",
+      "workload": "regression-metrics-v1"
+    },
+    {
+      "id": "medium-roc-auc",
+      "dataset": "medium",
+      "workload": "roc-auc-v1"
+    },
+    {
+      "id": "medium-onehot",
+      "dataset": "medium",
+      "workload": "onehot-v1"
+    },
+    {
+      "id": "medium-tfidf",
+      "dataset": "medium",
+      "workload": "tfidf-v1"
+    },
+    {
+      "id": "tiny-sqlite-ingest",
+      "dataset": "tiny",
+      "workload": "sqlite-ingest-v1"
+    },
+    {
+      "id": "tiny-rag-summary",
+      "dataset": "tiny",
+      "workload": "rag-summary-v1"
+    },
+    {
+      "id": "tiny-pool-dice",
+      "dataset": "tiny",
+      "workload": "pool-dice-v1"
+    },
+    {
+      "id": "large-mean",
+      "dataset": "large",
+      "workload": "mean-v1"
+    },
+    {
+      "id": "large-variance",
+      "dataset": "large",
+      "workload": "variance-v1"
+    },
+    {
+      "id": "large-stddev",
+      "dataset": "large",
+      "workload": "stddev-v1"
+    },
+    {
+      "id": "medium-student",
+      "dataset": "medium",
+      "workload": "student-v1"
+    },
+    {
+      "id": "medium-paired",
+      "dataset": "medium",
+      "workload": "paired-v1"
+    },
+    {
+      "id": "medium-anova",
+      "dataset": "medium",
+      "workload": "anova-v1"
+    }
+  ]
+}

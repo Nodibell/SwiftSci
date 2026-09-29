@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "bytes": 3779,
+      "path": "generate.py",
+      "sha256": "7c5bc94a2d4e60788f5653b87842266775aab43e4ed8cf0a5031524397483958"
+    },
+    {
+      "bytes": 1061,
+      "path": "../../Tools/boundary_cases.py",
+      "sha256": "55a36023cbf821bafa10c97d95709d62f87b404a9ff4da950e6fe52e88810a12"
+    },
+    {
+      "bytes": 1452,
+      "path": "../../Tools/boundary_reference.py",
+      "sha256": "6e81f078385cb02bbf3dc4cd0848075b1bb4b584a331366fb9cca7f235cac008"
+    },
+    {
+      "bytes": 3134,
+      "path": "../../Tools/boundary_sweep.py",
+      "sha256": "b9bccc1ac0b90fa155bbfce41b9d935d938b8a1c20287c014d6a45fbea6fb86c"
+    },
+    {
+      "bytes": 2539,
+      "path": "../../Tools/boundary_fixtures.py",
+      "sha256": "cc0fe57aeb6c2ca7bc16438d0033bce632851ef7f1f7a3c53f4920e589af3e0e"
+    },
+    {
+      "bytes": 112,
+      "path": "../../Python/requirements-standardized.txt",
+      "sha256": "fc9a7924fc71f890e004d6a60173d171c9577a550a575abe7f15502af357512c"
+    }
+  ]
+}

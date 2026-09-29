@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/boundary/inputs/sweep-gpu-float32-128x64-conversion.json",
+  "generator_version": 1,
+  "id": "sweep-gpu-float32-128x64-conversion",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-model-sweep",
+  "reference_basis": "sweep-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/boundary/references/sweep-gpu-float32-128x64-conversion.json",
+  "reference_sha256": "e697d015b37640d945d4f2c5173be353c95d38d7514372b8216dc77ddf26de40",
+  "reference_size_bytes": 490,
+  "rows": 128,
+  "schema_version": 1,
+  "sha256": "2aa4725da94d28c08c8b4bcc0af1e46a5e87f72e2f06c891492e49eec38faf74",
+  "size_bytes": 166,
+  "source": "Original deterministic boundary fixtures; see Benchmarks/Fixtures/boundary/README.md",
+  "source_fixture": "Benchmarks/Fixtures/boundary/sources.lock.json",
+  "source_sha256": "c853b018c21e89fde85779d8195ba68a31a9f1acd9f16beb64ecef3bfd73ea24",
+  "source_size_bytes": 1030,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 0
+  }
+}

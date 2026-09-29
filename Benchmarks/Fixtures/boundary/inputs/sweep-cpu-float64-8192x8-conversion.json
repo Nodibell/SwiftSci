@@ -1,0 +1,9 @@
+{
+  "columns": 8,
+  "device": "cpu",
+  "dtype": "float64",
+  "operation": "dataframe-model-sweep",
+  "recipe": "dyadic-v1",
+  "rows": 8192,
+  "stage": "conversion"
+}

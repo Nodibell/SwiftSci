@@ -1,0 +1,61 @@
+{
+  "source": {
+    "name": "SwiftSci public API exact rational fixtures",
+    "path": "source-spec.json",
+    "sha256": "74b726883e1ae6a20a406eac770e404f03ed119b2baca10e88ed58b77b9346d2",
+    "bytes": 603,
+    "kind": "synthetic rational specification",
+    "generator": "build_exact_model_fixtures.py"
+  },
+  "reference_basis": "exact-rational-v1",
+  "fixtures": [
+    {
+      "name": "pca-oblique-k2",
+      "operation": "pca-cpu",
+      "input": "inputs/pca-oblique-k2.json",
+      "reference": "references/pca-oblique-k2.json",
+      "rows": 4,
+      "output_values": 51,
+      "inputIdentity": {
+        "sha256": "d377d5e7d032c0987c5f7ede7b9c959f52a95836b6ca81db07d73832332add79",
+        "bytes": 307
+      },
+      "referenceIdentity": {
+        "sha256": "33ac8a933b1a95ec8618f9abba36a6074e9e9386b6c709d63c862ca580562b37",
+        "bytes": 3421
+      }
+    },
+    {
+      "name": "pca-oblique-k1",
+      "operation": "pca-cpu",
+      "input": "inputs/pca-oblique-k1.json",
+      "reference": "references/pca-oblique-k1.json",
+      "rows": 4,
+      "output_values": 45,
+      "inputIdentity": {
+        "sha256": "bb5e3212f67f6eed63d10bb81432a3ef2cbcfbc7a29b4ea0d77652bdc3806f19",
+        "bytes": 307
+      },
+      "referenceIdentity": {
+        "sha256": "a2763689f68cd918c9bdbf3b060b123cc8085df3189dddaa6bc1109c2ee7d925",
+        "bytes": 3225
+      }
+    },
+    {
+      "name": "multinomial-nb-noncontiguous",
+      "operation": "multinomial-nb-cpu",
+      "input": "inputs/multinomial-nb-noncontiguous.json",
+      "reference": "references/multinomial-nb-noncontiguous.json",
+      "rows": 3,
+      "output_values": 17,
+      "inputIdentity": {
+        "sha256": "bf8fe2fb3953cda67b33dcc0ea5823ae4d44f1419d6c7e934f6fd7611f0402a0",
+        "bytes": 374
+      },
+      "referenceIdentity": {
+        "sha256": "a30549d41c1602fe1733a0d2906b75bc18328cd252ce1cae328053d31649b359",
+        "bytes": 2087
+      }
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "id": "controlled-conformance",
+  "warmups": 1,
+  "samples": 2,
+  "batches": 1,
+  "timeout_seconds": 120,
+  "cases": [
+    {
+      "id": "controlled-kalman-constant-velocity",
+      "dataset": "controlled-kalman-constant-velocity",
+      "workload": "kalman-fixed-cpu-v1"
+    },
+    {
+      "id": "controlled-kalman-scalar",
+      "dataset": "controlled-kalman-scalar",
+      "workload": "kalman-fixed-cpu-v1"
+    },
+    {
+      "id": "controlled-kmeans-one-mean",
+      "dataset": "controlled-kmeans-one-mean",
+      "workload": "kmeans-one-cpu-v1"
+    },
+    {
+      "id": "controlled-linear-fixed-affine",
+      "dataset": "controlled-linear-fixed-affine",
+      "workload": "linear-fixed-cpu-v1"
+    },
+    {
+      "id": "controlled-logistic-fixed-mixed-logits",
+      "dataset": "controlled-logistic-fixed-mixed-logits",
+      "workload": "logistic-fixed-cpu-v1"
+    },
+    {
+      "id": "controlled-cosine-distinct",
+      "dataset": "controlled-cosine-distinct",
+      "workload": "vector-cosine-v1"
+    },
+    {
+      "id": "controlled-cosine-small-norm",
+      "dataset": "controlled-cosine-small-norm",
+      "workload": "vector-cosine-v1"
+    },
+    {
+      "id": "controlled-cosine-ties-complete",
+      "dataset": "controlled-cosine-ties-complete",
+      "workload": "vector-cosine-v1"
+    },
+    {
+      "id": "controlled-kernel-affine",
+      "dataset": "controlled-kernel-affine",
+      "workload": "kernel-shap-v1"
+    },
+    {
+      "id": "controlled-kernel-interaction",
+      "dataset": "controlled-kernel-interaction",
+      "workload": "kernel-shap-v1"
+    }
+  ]
+}

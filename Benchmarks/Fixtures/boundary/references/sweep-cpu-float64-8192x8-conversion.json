@@ -1,0 +1,18 @@
+{
+  "independentReference": {
+    "binary64_sha256": "e094dc8434bca3dda36d897a8d18d1d5aa88724d3c4fd8a39783afe615d12863",
+    "count": 110595,
+    "precision_decimal_digits": 100
+  },
+  "inputIdentity": {
+    "bytes": 166,
+    "sha256": "d3f93bf53a36727d1c01170d07b3980bd3531c6c8bc1b19d87db9b26376e0d94"
+  },
+  "model": {
+    "observations": 8192
+  },
+  "operation": "dataframe-model-sweep",
+  "source": {
+    "sha256": "c853b018c21e89fde85779d8195ba68a31a9f1acd9f16beb64ecef3bfd73ea24"
+  }
+}

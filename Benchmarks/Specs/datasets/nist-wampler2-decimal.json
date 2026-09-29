@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "nist-wampler2-decimal",
+  "kind": "numerical-fixture-v1",
+  "rows": 21,
+  "sha256": "6258846af6d2d7868b219e779bf36f087f10c1b64fd32eea55e6f40a28781733",
+  "size_bytes": 1977,
+  "source": "https://www.itl.nist.gov/div898/strd/lls/data/LINKS/DATA/Wampler2.dat",
+  "license": "NIST StRD; original notices retained",
+  "generator_version": 1,
+  "fixture": "Benchmarks/Fixtures/nist-models/inputs/Wampler2.json",
+  "source_fixture": "Benchmarks/Fixtures/nist-models/originals/Wampler2.dat",
+  "source_sha256": "01ba5f08b5b9f84431f3754216e006939a80264a1caa69fe08b3cbc543f9ee3e",
+  "source_size_bytes": 2414,
+  "reference_fixture": "Benchmarks/Fixtures/nist-models/references/Wampler2.json",
+  "reference_sha256": "fe14691b818bce5d7f434a893c465700a522055637151c6f3f42441a7d836b55",
+  "reference_size_bytes": 6492,
+  "reference_basis": "nist-decimal-v1",
+  "operation": "ols-cpu",
+  "tolerances": {
+    "atol": 1e-10,
+    "rtol": 1e-09
+  }
+}

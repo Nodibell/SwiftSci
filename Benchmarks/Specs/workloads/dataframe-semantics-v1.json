@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "dataframe-semantics-v1",
+  "operation": "dataframe-semantics",
+  "scope": "operation",
+  "output": "Exact finite integer words encoding typed frames and row-major matrix exports; see Benchmarks/Fixtures/dataframe/README.md",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "Original bounded API conformance fixtures for exact Int64, null versus NaN, stable ordering, component-wise grouping, functional replacement and logical matrix exports. Decode and validate inputs outside timing. Include dataframe construction, operations and full result encoding inside timing. Pandas uses declared compatibility conversions, not default pandas semantics. Diagnostic timings are not a formal performance baseline."
+}

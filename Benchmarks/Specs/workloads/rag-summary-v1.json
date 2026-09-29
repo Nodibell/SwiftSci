@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "rag-summary-v1",
+  "operation": "rag-summary",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence declared in semantics",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "construct empty DataFrame and generate BenchDF Markdown profile; validate complete UTF-8 bytes as numeric sequence"
+}

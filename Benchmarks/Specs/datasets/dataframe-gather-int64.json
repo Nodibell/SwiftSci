@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-gather-int64.json",
+  "generator_version": 1,
+  "id": "dataframe-gather-int64",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-gather-int64.json",
+  "reference_sha256": "97d5f2ed2750d2d74437cd693bdc4fe2dea73672cd16a09fe01901abe4f31d3c",
+  "reference_size_bytes": 1758,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "d3a26e748f54466d1cf5e646f2599d9f19efb27cf2b413820de83bb80101f1a4",
+  "size_bytes": 621,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

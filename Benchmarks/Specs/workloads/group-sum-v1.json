@@ -1,0 +1,10 @@
+{
+  "atol": 0,
+  "id": "group-sum-v1",
+  "operation": "group-sum",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 0,
+  "schema_version": 1,
+  "scope": "operation",
+  "semantics": "group by integer group; sum x; canonicalize group order outside timing"
+}

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "numerical-binary64",
+  "warmups": 0,
+  "samples": 1,
+  "batches": 1,
+  "timeout_seconds": 120,
+  "cases": [
+    {
+      "id": "nist-atmwtag-binary64",
+      "dataset": "nist-atmwtag-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-longley-binary64",
+      "dataset": "nist-longley-binary64",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-norris-binary64",
+      "dataset": "nist-norris-binary64",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-pontius-binary64",
+      "dataset": "nist-pontius-binary64",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-sirstv-binary64",
+      "dataset": "nist-sirstv-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls01-binary64",
+      "dataset": "nist-smls01-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls02-binary64",
+      "dataset": "nist-smls02-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls03-binary64",
+      "dataset": "nist-smls03-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls04-binary64",
+      "dataset": "nist-smls04-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls05-binary64",
+      "dataset": "nist-smls05-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls06-binary64",
+      "dataset": "nist-smls06-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls07-binary64",
+      "dataset": "nist-smls07-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls08-binary64",
+      "dataset": "nist-smls08-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-smls09-binary64",
+      "dataset": "nist-smls09-binary64",
+      "workload": "nist-anova-v1"
+    },
+    {
+      "id": "nist-wampler1-binary64",
+      "dataset": "nist-wampler1-binary64",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-wampler2-binary64",
+      "dataset": "nist-wampler2-binary64",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-wampler3-binary64",
+      "dataset": "nist-wampler3-binary64",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-wampler4-binary64",
+      "dataset": "nist-wampler4-binary64",
+      "workload": "ols-cpu-v1"
+    },
+    {
+      "id": "nist-wampler5-binary64",
+      "dataset": "nist-wampler5-binary64",
+      "workload": "ols-cpu-v1"
+    }
+  ]
+}

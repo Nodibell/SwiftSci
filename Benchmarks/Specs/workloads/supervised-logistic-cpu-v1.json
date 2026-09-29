@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "supervised-logistic-cpu-v1",
+  "operation": "supervised-logistic-cpu",
+  "scope": "full-pipeline",
+  "output": "finite little-endian float64 sequence; complete output order declared in semantics",
+  "atol": 1e-08,
+  "rtol": 1e-09,
+  "semantics": "CPU binary logistic regression, zero-initialized weights and bias, full-batch gradient descent on mean unregularized binary cross entropy, fixed learning rate and epoch count in payload. Rate must be exactly Float32-representable because the Swift public API accepts Float. Population standardization fits training predictors only. Classification is one iff positive probability >0.5. Output: means, scales, bias, weights; row-major [p0,p1] probabilities for train/validation/test; labels in same row order; training-positive prevalence; validation then test blocks, each with model then constant-prevalence scores [TN,FP,FN,TP,accuracy,precision1,recall1,F1,logLoss,ROC_AUC,Brier]. Zero precision denominator gives zero. Both classes required in every split. Log loss clips to [1e-15,1-1e-15]; ROC ties receive half credit. Decoding is outside timing; gathering, scaling, construction, training, all prediction calls, metrics and complete output are inside. Fresh state every repeat. Finite-step numerical equivalence only, not convergence or tuned predictive-quality certification; timings diagnostic, no formal performance baseline."
+}

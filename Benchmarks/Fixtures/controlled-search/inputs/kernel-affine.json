@@ -1,0 +1,25 @@
+{
+  "operation": "kernel-shap",
+  "instance": [
+    4,
+    2
+  ],
+  "background": [
+    [
+      0,
+      0
+    ],
+    [
+      2,
+      4
+    ]
+  ],
+  "model": {
+    "bias": 5,
+    "weights": [
+      2,
+      -3
+    ],
+    "interaction": 0
+  }
+}

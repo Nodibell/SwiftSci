@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-matrix-nullable.json",
+  "generator_version": 1,
+  "id": "dataframe-matrix-nullable",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-matrix-nullable.json",
+  "reference_sha256": "9a2adcb0118b14dc3a15e6c88525145ac98d1826721720e4572cbe580f8e6521",
+  "reference_size_bytes": 1333,
+  "rows": 3,
+  "schema_version": 1,
+  "sha256": "532e9f1ba1f2728a3f2507bb27cd269ed8de3cf82843950fd25da427630f5a3a",
+  "size_bytes": 569,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

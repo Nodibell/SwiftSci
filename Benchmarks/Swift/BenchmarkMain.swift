@@ -1,12 +1,12 @@
 // BenchmarkMain.swift
-// Entry point for the SwiftSci benchmark runner.
+// Entry point for unvalidated legacy research workloads.
 //
 // Usage:
-//   swift run -c release SwiftSciBenchmarks                  # console output only
-//   swift run -c release SwiftSciBenchmarks --json results.json # + write JSON file
+//   swift run -c release SwiftSciBenchmarks --research                  # console output only
+//   swift run -c release SwiftSciBenchmarks --research --json results.json # + write JSON file
 //
-// The JSON file can be compared against Benchmarks/Python/python_results.json
-// using the compare.py script.
+// Results make no certification or production claims.
+// Use Benchmarks/Tools/bench.py for validated comparisons.
 
 
 import Foundation
@@ -14,6 +14,7 @@ import Foundation
 // MARK: – CLI argument parsing
 
 struct BenchmarkArgs {
+    var research = false
     var jsonOutputPath: String? = nil
     var filter: String? = nil      // optional: run only benchmarks whose name contains this string
     var suite: String? = nil       // optional: run only suites whose module contains this string
@@ -27,6 +28,8 @@ struct BenchmarkArgs {
         var iter = argv.makeIterator()
         while let arg = iter.next() {
             switch arg {
+            case "--research":
+                args.research = true
             case "--json":
                 args.jsonOutputPath = iter.next()
             case "--filter":
@@ -59,6 +62,12 @@ struct BenchmarkArgs {
 struct BenchmarkEntryPoint {
     static func main() async {
         let args = BenchmarkArgs.parse()
+        guard args.research else {
+            let message = "This legacy runner requires --research. Its outputs are unvalidated research, with no certification or production claims. Use Benchmarks/Tools/bench.py for standardized runs.\n"
+            FileHandle.standardError.write(Data(message.utf8))
+            exit(2)
+        }
+        print("UNVALIDATED RESEARCH: no certification or production claims.")
 
         if let r = args.rounds { BenchmarkConfig.defaultRounds = r }
         if let it = args.iterations { BenchmarkConfig.defaultIterations = it }
@@ -113,6 +122,7 @@ struct BenchmarkEntryPoint {
         // ── JSON export ────────────────────────────────────────────────────
         if let path = args.jsonOutputPath {
             let report = BenchmarkReport(
+                evidenceStatus: "unvalidated-research",
                 platform: platformString(),
                 swiftVersion: swiftVersion(),
                 timestamp: ISO8601DateFormatter().string(from: Date()),

@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-sort-int64-asc.json",
+  "generator_version": 1,
+  "id": "dataframe-sort-int64-asc",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-sort-int64-asc.json",
+  "reference_sha256": "42bda4fbe6cbf1c3106a0c538f9594f7deeba75270725081d7e7352f98b108d4",
+  "reference_size_bytes": 1731,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "ee4bee9dd9c65639400e279fc787d04523034076534c16a56f8b6bd144e59d2c",
+  "size_bytes": 576,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

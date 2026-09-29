@@ -1,0 +1,25 @@
+{
+  "description": "Controlled exact arithmetic fixture; authored for numerical validation without production-derived expected values.",
+  "input": {
+    "operation": "kernel-shap",
+    "instance": [
+      3,
+      5
+    ],
+    "background": [
+      [
+        1,
+        2
+      ]
+    ],
+    "model": {
+      "bias": 0,
+      "weights": [
+        0,
+        0
+      ],
+      "interaction": 1
+    }
+  },
+  "outputOrder": "baseline, phi0, phi1, prediction"
+}

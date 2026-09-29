@@ -1,0 +1,6 @@
+{
+ "schema_version":1,"id":"dataframe-model-sweep-v1","operation":"dataframe-model-sweep","scope":"operation",
+ "output":"Stage-specific actual outputs: conversion returns shape, precision, IDs, Double matrix, targets and tensor readback; prepared returns shape, precision, predictions and residuals; pipeline adds all outputs and isolation result",
+ "atol":0.00002,"rtol":0,
+ "semantics":"Recipe expansion is outside timing. Conversion starts from a materialized frame and includes filter/sort, both matrix exports, tensor construction, synchronization and extraction. Prepared computation starts from evaluated tensors and includes affine math, residuals, synchronization and output extraction. Pipeline includes dataframe construction, conversion, arithmetic and isolation checks. Each stage returns only actual results from that stage. Explicit CPU Float32/Float64 or GPU Float32; NumPy comparator is CPU. Process peak RSS includes setup and validation, so it is not stage allocation. These bounded sweeps test measurement infrastructure and do not establish a formal performance baseline."
+}

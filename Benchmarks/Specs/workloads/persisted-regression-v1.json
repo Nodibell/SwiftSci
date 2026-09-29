@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "persisted-regression-v1",
+  "operation": "persisted-regression",
+  "scope": "full-pipeline",
+  "output": "Complete ordered numeric outputs defined in Benchmarks/Fixtures/workflows/README.md",
+  "atol": 1e-08,
+  "rtol": 1e-10,
+  "semantics": "Fit public StandardScaler and RegressionPipeline/CPU LinearRegression on training rows only. Validate fitted state, scaled inputs, predictions, residuals and unchanged training state. Fit route ends here. Native route reloads saved regressor in a fresh process using already scaled held-out inputs. Core ML route exports the fitted scaler and regressor as a composite pipeline, compiles and predicts from raw held-out inputs in a fresh CPU-only process. NumPy comparator uses independent least-squares and NPZ reload, not Core ML or Swift native formats. Includes export, compilation, process startup and reload; timings and parent-only RSS are diagnostic and not comparable deployment baselines."
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "csv-stream-filter-v1",
+  "operation": "csv-stream-filter",
+  "scope": "ingestion",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "read CSV in 10000-row chunks; filter x > 0 per chunk; retain filtered chunks and validate every row in input order"
+}

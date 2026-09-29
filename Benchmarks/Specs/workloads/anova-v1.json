@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "anova-v1",
+  "operation": "anova",
+  "scope": "operation",
+  "output": "finite little-endian float64 sequence declared in semantics",
+  "atol": 1e-08,
+  "rtol": 1e-10,
+  "semantics": "One-way ANOVA for three prepared groups x,y,z with z=(x+y)/2 prepared outside timing; F statistic, p-value, between/within degrees of freedom, eta squared; independent 60-digit sums and incomplete-beta reference"
+}

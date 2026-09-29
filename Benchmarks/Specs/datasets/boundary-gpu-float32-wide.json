@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/boundary/inputs/boundary-gpu-float32-wide.json",
+  "generator_version": 1,
+  "id": "boundary-gpu-float32-wide",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-model",
+  "reference_basis": "boundary-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/boundary/references/boundary-gpu-float32-wide.json",
+  "reference_sha256": "4afb6fa4eec3c39350f90e7051c9bb6653c7c704f3cc8ef7e6495224360a5730",
+  "reference_size_bytes": 1163,
+  "rows": 7,
+  "schema_version": 1,
+  "sha256": "300547b18e7b139d4eb3f9d68f48043ea0d07c36a268eda564e74a1cbdd81592",
+  "size_bytes": 1226,
+  "source": "Original deterministic boundary fixtures; see Benchmarks/Fixtures/boundary/README.md",
+  "source_fixture": "Benchmarks/Fixtures/boundary/sources.lock.json",
+  "source_sha256": "c853b018c21e89fde85779d8195ba68a31a9f1acd9f16beb64ecef3bfd73ea24",
+  "source_size_bytes": 1030,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 0
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-filter-empty.json",
+  "generator_version": 1,
+  "id": "dataframe-filter-empty",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-filter-empty.json",
+  "reference_sha256": "53d8de809190df97b7011a0850cbb8b312e0c14014c6dec8f1d545283ef2c50b",
+  "reference_size_bytes": 1068,
+  "rows": 6,
+  "schema_version": 1,
+  "sha256": "1fb40f5d6db8fb6f288172147a1e899f6d0ec2ec2080a472ce9acbecd61519ad",
+  "size_bytes": 614,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

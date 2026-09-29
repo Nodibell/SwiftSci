@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swiftsci.local/benchmarks/response",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "case_key": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "elapsed_ns",
+          "output_sha256",
+          "maximum_absolute_error",
+          "validated"
+        ],
+        "properties": {
+          "elapsed_ns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "output_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "maximum_absolute_error": {
+            "type": "number",
+            "minimum": 0
+          },
+          "validated": {
+            "const": true
+          },
+          "timing_resolved": {
+            "type": "boolean"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "elapsed_ns": {
+                  "const": 0
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "timing_resolved"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "elapsed_ns": {
+                  "maximum": 999
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "timing_resolved": {
+                  "const": false
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "timing_resolved": {
+                  "const": true
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "peak_rss_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "engine_version": {
+      "type": "string"
+    },
+    "error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_key",
+    "status",
+    "samples",
+    "peak_rss_bytes",
+    "engine_version"
+  ]
+}

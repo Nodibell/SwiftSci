@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/dataframe/inputs/dataframe-filter-float-eq.json",
+  "generator_version": 1,
+  "id": "dataframe-filter-float-eq",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "dataframe-semantics",
+  "reference_basis": "dataframe-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/dataframe/references/dataframe-filter-float-eq.json",
+  "reference_sha256": "b5103151f094413ab9959a4192f865391ee2ae8d05f167da584d0dac146727b3",
+  "reference_size_bytes": 1209,
+  "rows": 7,
+  "schema_version": 1,
+  "sha256": "f35259caadb89b527e65f99b93d5b8b939c6ec56d9bcc5fac327d0cd706597c4",
+  "size_bytes": 528,
+  "source": "Original bounded fixtures; see Benchmarks/Fixtures/dataframe/README.md",
+  "source_fixture": "Benchmarks/Fixtures/dataframe/generate.py",
+  "source_sha256": "f269584e9b1f99b6ee9338ca471d6233106283df0b86e80a6e1bde17754b5bed",
+  "source_size_bytes": 5818,
+  "tolerances": {
+    "atol": 0,
+    "rtol": 0
+  }
+}

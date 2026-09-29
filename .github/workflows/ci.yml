@@ -225,7 +225,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   deploy-pages:
     name: Deploy to GitHub Pages
-    if: github.ref == 'refs/heads/main'
+    if: github.repository == 'Nodibell/SwiftSci' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [build, docc-check]
     permissions:
       pages: write

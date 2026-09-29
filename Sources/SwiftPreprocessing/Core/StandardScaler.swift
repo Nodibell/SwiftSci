@@ -63,6 +63,7 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
 
         // Extract each column into a contiguous buffer for vDSP
         var colBuf = [Double](repeating: 0.0, count: rows)
+        var shifted = [Double](repeating: 0.0, count: rows)
 
         for c in 0..<cols {
             for r in 0..<rows { colBuf[r] = data[r][c] }
@@ -72,7 +73,6 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
             vDSP_meanvD(colBuf, 1, &m, vDSP_Length(rows))
 
             // vDSP variance: E[(x-μ)²]
-            var shifted = [Double](repeating: 0.0, count: rows)
             var neg = -m
             vDSP_vsaddD(colBuf, 1, &neg, &shifted, 1, vDSP_Length(rows))
             var sumSq = 0.0
@@ -111,13 +111,13 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
         let cols = mean.count
         var transformed = [[Double]](repeating: [Double](repeating: 0.0, count: cols), count: data.count)
         let negMean = mean.map { -$0 }
+        var shifted = [Double](repeating: 0.0, count: cols)
 
         for (r, row) in data.enumerated() {
             guard row.count == cols else {
                 throw PreprocessingError.dimensionMismatch(expected: cols, got: row.count)
             }
             // vDSP: (row - mean) / std  element-wise
-            var shifted = [Double](repeating: 0.0, count: cols)
             vDSP_vaddD(row, 1, negMean, 1, &shifted, 1, vDSP_Length(cols))
             vDSP_vdivD(std, 1, shifted, 1, &transformed[r], 1, vDSP_Length(cols))
         }
@@ -133,5 +133,76 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
     public mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
         try fit(data)
         return try transform(data)
+    }
+}
+
+
+extension StandardScaler {
+    /// Fits directly from compact columns without constructing nested rows.
+    public mutating func fit(_ batch: PreparedNumericBatch) throws {
+        guard batch.rowCount > 0, batch.columnCount > 0 else { throw PreprocessingError.emptyInput }
+        var means = [Double](), deviations = [Double]()
+        means.reserveCapacity(batch.columnCount); deviations.reserveCapacity(batch.columnCount)
+        var shifted = [Double](repeating: 0, count: batch.rowCount)
+        for column in batch.columns {
+            var mean = 0.0
+            vDSP_meanvD(column.values, 1, &mean, vDSP_Length(batch.rowCount))
+            var negativeMean = -mean
+            vDSP_vsaddD(column.values, 1, &negativeMean, &shifted, 1, vDSP_Length(batch.rowCount))
+            var sumSquares = 0.0
+            vDSP_svesqD(shifted, 1, &sumSquares, vDSP_Length(batch.rowCount))
+            let deviation = (sumSquares / Double(batch.rowCount)).squareRoot()
+            means.append(mean); deviations.append(deviation < 1e-12 ? 1 : deviation)
+        }
+        lock.lock()
+        mean = means; std = deviations
+        lock.unlock()
+    }
+
+    /// Transforms compact columns. As in the existing matrix API, missing inputs
+    /// participate as NaN and every output is a numeric value, including NaN.
+    public func transform(_ batch: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        lock.lock()
+        let means = mean, deviations = std
+        lock.unlock()
+        guard let means, let deviations else { throw PreprocessingError.fitNotCalled }
+        guard batch.rowCount > 0 else { return batch.replacingNumericColumns(Array(repeating: [], count: batch.columnCount)) }
+        guard batch.columnCount == means.count else {
+            throw PreprocessingError.dimensionMismatch(expected: means.count, got: batch.columnCount)
+        }
+        var columns = (0..<batch.columnCount).map { _ in [Double](repeating: 0, count: batch.rowCount) }
+        var row = [Double](repeating: 0, count: batch.columnCount)
+        var shifted = row, output = row
+        let negativeMeans = means.map { -$0 }
+        // vDSP division rounding can depend on vector length and stride. Reuse a
+        // bounded row workspace to preserve the existing API's exact operation.
+        for r in 0..<batch.rowCount {
+            for c in 0..<batch.columnCount { row[c] = batch.columns[c].values[r] }
+            vDSP_vaddD(row, 1, negativeMeans, 1, &shifted, 1, vDSP_Length(batch.columnCount))
+            vDSP_vdivD(deviations, 1, shifted, 1, &output, 1, vDSP_Length(batch.columnCount))
+            for c in 0..<batch.columnCount { columns[c][r] = output[c] }
+        }
+        return batch.replacingNumericColumns(columns)
+    }
+
+    /// Fits and transforms a prepared batch, retaining its column order.
+    public mutating func fitTransform(_ batch: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        try fit(batch)
+        return try transform(batch)
+    }
+
+    /// Fits dataframe columns directly, preserving the existing conversion rules.
+    public mutating func fit(_ frame: DataFrame, columns: [String]) throws {
+        try fit(frame.prepareNumericBatch(columns))
+    }
+
+    /// Replaces only the requested dataframe columns with their scaled values.
+    public func transform(_ frame: DataFrame, columns: [String]) throws -> DataFrame {
+        try transform(frame.prepareNumericBatch(columns)).replacingColumns(in: frame)
+    }
+
+    /// Prepares dataframe columns once, then fits and transforms them directly.
+    public mutating func fitTransform(_ frame: DataFrame, columns: [String]) throws -> DataFrame {
+        try fitTransform(frame.prepareNumericBatch(columns)).replacingColumns(in: frame)
     }
 }

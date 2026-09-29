@@ -106,17 +106,17 @@ public struct MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
         var transformed = [[Double]](repeating: [Double](repeating: range.min, count: cols),
                                      count: data.count)
         let negMin = dataMin.map { -$0 }
+        var shifted = [Double](repeating: 0.0, count: cols)
+        var scaled = [Double](repeating: 0.0, count: cols)
 
         for (r, row) in data.enumerated() {
             guard row.count == cols else {
                 throw PreprocessingError.dimensionMismatch(expected: cols, got: row.count)
             }
             // shifted = row - dataMin
-            var shifted = [Double](repeating: 0.0, count: cols)
             vDSP_vaddD(row, 1, negMin, 1, &shifted, 1, vDSP_Length(cols))
 
             // scaled = shifted * scales
-            var scaled = [Double](repeating: 0.0, count: cols)
             vDSP_vmulD(shifted, 1, scales, 1, &scaled, 1, vDSP_Length(cols))
 
             // result = scaled + rangeMin
@@ -135,5 +135,75 @@ public struct MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
     public mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
         try fit(data)
         return try transform(data)
+    }
+}
+
+
+extension MinMaxScaler {
+    /// Fits directly from compact columns without constructing nested rows.
+    public mutating func fit(_ batch: PreparedNumericBatch) throws {
+        guard batch.rowCount > 0, batch.columnCount > 0 else { throw PreprocessingError.emptyInput }
+        var minima = [Double](), maxima = [Double]()
+        minima.reserveCapacity(batch.columnCount); maxima.reserveCapacity(batch.columnCount)
+        for column in batch.columns {
+            var minimum = 0.0, maximum = 0.0
+            vDSP_minvD(column.values, 1, &minimum, vDSP_Length(batch.rowCount))
+            vDSP_maxvD(column.values, 1, &maximum, vDSP_Length(batch.rowCount))
+            minima.append(minimum); maxima.append(maximum)
+        }
+        lock.lock()
+        dataMin = minima; dataMax = maxima
+        lock.unlock()
+    }
+
+    /// Transforms compact columns. As in the existing matrix API, missing inputs
+    /// participate as NaN and every output is a numeric value, including NaN.
+    public func transform(_ batch: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        lock.lock()
+        let minima = dataMin, maxima = dataMax
+        lock.unlock()
+        guard let minima, let maxima else { throw PreprocessingError.fitNotCalled }
+        guard batch.rowCount > 0 else { return batch.replacingNumericColumns(Array(repeating: [], count: batch.columnCount)) }
+        guard batch.columnCount == minima.count else {
+            throw PreprocessingError.dimensionMismatch(expected: minima.count, got: batch.columnCount)
+        }
+        var columns = [[Double]]()
+        columns.reserveCapacity(batch.columnCount)
+        let count = vDSP_Length(batch.rowCount)
+        var shifted = [Double](repeating: 0, count: batch.rowCount)
+        var scaled = [Double](repeating: 0, count: batch.rowCount)
+        for index in 0..<batch.columnCount {
+            var output = [Double](repeating: 0, count: batch.rowCount)
+            var negativeMinimum = -minima[index]
+            let span = maxima[index] - minima[index]
+            var scale = span < 1e-12 ? 0 : (range.max - range.min) / span
+            var offset = range.min
+            vDSP_vsaddD(batch.columns[index].values, 1, &negativeMinimum, &shifted, 1, count)
+            vDSP_vsmulD(shifted, 1, &scale, &scaled, 1, count)
+            vDSP_vsaddD(scaled, 1, &offset, &output, 1, count)
+            columns.append(output)
+        }
+        return batch.replacingNumericColumns(columns)
+    }
+
+    /// Fits and transforms a prepared batch, retaining its column order.
+    public mutating func fitTransform(_ batch: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        try fit(batch)
+        return try transform(batch)
+    }
+
+    /// Fits dataframe columns directly, preserving the existing conversion rules.
+    public mutating func fit(_ frame: DataFrame, columns: [String]) throws {
+        try fit(frame.prepareNumericBatch(columns))
+    }
+
+    /// Replaces only the requested dataframe columns with their scaled values.
+    public func transform(_ frame: DataFrame, columns: [String]) throws -> DataFrame {
+        try transform(frame.prepareNumericBatch(columns)).replacingColumns(in: frame)
+    }
+
+    /// Prepares dataframe columns once, then fits and transforms them directly.
+    public mutating func fitTransform(_ frame: DataFrame, columns: [String]) throws -> DataFrame {
+        try fitTransform(frame.prepareNumericBatch(columns)).replacingColumns(in: frame)
     }
 }

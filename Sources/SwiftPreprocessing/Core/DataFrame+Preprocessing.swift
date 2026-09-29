@@ -19,13 +19,7 @@ extension PreprocessingTransformer {
     /// - Returns: A new `DataFrame` with transformed numeric column values.
     public func transform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
         let result = try transform(df.toFeatureMatrix(columns))
-        var out = df
-        for (i, name) in columns.enumerated() {
-            out = try out.withColumn(name, column: TypedColumn<Double>(
-                name: name, values: result.map { Optional($0[i]) }
-            ))
-        }
-        return out
+        return try df.replacingFeatures(columns: columns, with: result)
     }
 
     /// Fits transformer parameters on specified DataFrame columns and transforms them in a single step.
@@ -35,12 +29,23 @@ extension PreprocessingTransformer {
     /// - Throws: `PreprocessingError` if fitting or transformation fails.
     /// - Returns: A new `DataFrame` with transformed numeric column values.
     public mutating func fitTransform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
-        try fit(df, columns: columns)
-        return try transform(df, columns: columns)
+        let features = try df.toFeatureMatrix(columns)
+        try fit(features)
+        return try df.replacingFeatures(columns: columns, with: transform(features))
     }
 }
 
 extension DataFrame {
+    fileprivate func replacingFeatures(columns: [String], with result: [[Double]]) throws -> DataFrame {
+        var output = self
+        for (index, name) in columns.enumerated() {
+            output = try output.withColumn(name, column: TypedColumn<Double>(
+                name: name, values: result.map { Optional($0[index]) }
+            ))
+        }
+        return output
+    }
+
     private func extractFeatures(columns names: [String], allowNaN: Bool = false) throws -> [[Double]] {
         return try toFeatureMatrix(names)
     }
@@ -51,9 +56,8 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: Fitted feature scaler transformer instance.
     public func fitStandardScaler(columns names: [String]) throws -> StandardScaler {
-        let features = try extractFeatures(columns: names)
         var scaler = StandardScaler()
-        try scaler.fit(features)
+        try scaler.fit(self, columns: names)
         return scaler
     }
     
@@ -64,16 +68,7 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func standardScale(columns names: [String], scaler: StandardScaler) throws -> DataFrame {
-        let features = try extractFeatures(columns: names)
-        let scaled = try scaler.transform(features)
-        
-        var df = self
-        for (colIdx, colName) in names.enumerated() {
-            let colValues = (0..<shape.rows).map { rowIdx in scaled[rowIdx][colIdx] }
-            let newCol = TypedColumn<Double>(name: colName, values: colValues)
-            df = try df.withColumn(colName, column: newCol)
-        }
-        return df
+        try scaler.transform(self, columns: names)
     }
     
     /// Fits and scales the specified columns using StandardScaler, returning the scaled DataFrame and scaler.
@@ -82,8 +77,8 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func standardScale(columns names: [String]) throws -> (scaled: DataFrame, scaler: StandardScaler) {
-        let scaler = try fitStandardScaler(columns: names)
-        let scaledDf = try standardScale(columns: names, scaler: scaler)
+        var scaler = StandardScaler()
+        let scaledDf = try scaler.fitTransform(self, columns: names)
         return (scaledDf, scaler)
     }
 
@@ -93,9 +88,8 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: Fitted feature scaler transformer instance.
     public func fitMinMaxScaler(columns names: [String]) throws -> MinMaxScaler {
-        let features = try extractFeatures(columns: names)
         var scaler = MinMaxScaler()
-        try scaler.fit(features)
+        try scaler.fit(self, columns: names)
         return scaler
     }
     
@@ -106,16 +100,7 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func minMaxScale(columns names: [String], scaler: MinMaxScaler) throws -> DataFrame {
-        let features = try extractFeatures(columns: names)
-        let scaled = try scaler.transform(features)
-        
-        var df = self
-        for (colIdx, colName) in names.enumerated() {
-            let colValues = (0..<shape.rows).map { rowIdx in scaled[rowIdx][colIdx] }
-            let newCol = TypedColumn<Double>(name: colName, values: colValues)
-            df = try df.withColumn(colName, column: newCol)
-        }
-        return df
+        try scaler.transform(self, columns: names)
     }
     
     /// Fits and scales the specified columns using MinMaxScaler, returning the scaled DataFrame and scaler.
@@ -124,8 +109,8 @@ extension DataFrame {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func minMaxScale(columns names: [String]) throws -> (scaled: DataFrame, scaler: MinMaxScaler) {
-        let scaler = try fitMinMaxScaler(columns: names)
-        let scaledDf = try minMaxScale(columns: names, scaler: scaler)
+        var scaler = MinMaxScaler()
+        let scaledDf = try scaler.fitTransform(self, columns: names)
         return (scaledDf, scaler)
     }
 

@@ -120,6 +120,16 @@
       "profile": "persisted-workflow",
       "tier": "cpu",
       "purpose": "Training-only public regression pipeline and fresh-process Core ML/native reload diagnostics"
+    },
+    {
+      "profile": "tabular-smoke",
+      "tier": "sweep",
+      "purpose": "Explicit native Polars/DuckDB overlap of migration workloads; omitted operations remain in the full migration profile"
+    },
+    {
+      "profile": "tabular-migration",
+      "tier": "sweep",
+      "purpose": "Explicit native Polars/DuckDB overlap of migration workloads; omitted operations remain in the full migration profile"
     }
   ],
   "aliases": {},

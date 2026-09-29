@@ -197,6 +197,7 @@ def load_profile(root, name):
             "extended",
             "certification",
             "nist",
+            "tabular-smoke", "tabular-migration",
             "migration-smoke",
             "migration",
             "public-smoke",

@@ -1,0 +1,4 @@
+-r requirements-standardized.txt
+polars==1.44.2
+polars-runtime-32==1.44.2
+duckdb==1.5.6

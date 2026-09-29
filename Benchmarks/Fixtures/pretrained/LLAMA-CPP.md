@@ -2,6 +2,8 @@
 
 This optional diagnostic runs the [pinned Llama checkpoint](README.md#pinned-inputs) through two reference runtimes on Apple silicon. It verifies the GGUF conversion before comparing tokenization and greedy generation. SwiftSci's real-checkpoint generation remains blocked by the [documented compatibility gaps](README.md#observed-compatibility-gaps).
 
+The optional [shared-prefix score diagnostic](SCORES.md) investigates generation differences and sensitivity to MLX compute precision.
+
 The comparison produces integration evidence. It does not issue a numerical certificate, grade answer quality or establish a production performance baseline.
 
 ## What is controlled

@@ -54,6 +54,7 @@ def main():
     parser.add_argument('--python', type=Path, required=True, help='Pinned MLX-LM environment')
     parser.add_argument('--server', type=Path, required=True, help='llama-server from llama.cpp 7fe450e19')
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--scores', action='store_true', help='Probe shared-prefix candidate scores and MLX Float32 sensitivity')
     args = parser.parse_args()
     model, gguf_path, server, output = [p.resolve() for p in (args.model, args.gguf, args.server, args.output)]
     manifest = json.loads(MANIFEST.read_text())
@@ -146,7 +147,8 @@ def main():
                 start = time.perf_counter_ns()
                 result = request('completion', dict(prompt=case['prompt_tokens'], n_predict=32, temperature=0,
                     seed=0, cache_prompt=False, return_tokens=True, repeat_penalty=1.0,
-                    presence_penalty=0.0, frequency_penalty=0.0, samplers=['temperature']))
+                    presence_penalty=0.0, frequency_penalty=0.0, samplers=['temperature'],
+                    n_probs=20 if args.scores else 0, post_sampling_probs=False))
                 elapsed = time.perf_counter_ns() - start
                 if result['truncated'] or result['timings']['cache_n'] != 0 or result['tokens_evaluated'] != len(chat):
                     raise ValueError('Prompt truncated, cached, or changed')
@@ -160,6 +162,9 @@ def main():
             mlx_first = case['samples'][0]
             row['cross_runtime_tokens'] = token_agreement(visible_tokens(mlx_first['tokens'], eos), visible_tokens(first['tokens'], eos))
             row['cross_runtime_stop_equal'] = mlx_first['finish_reason'] == {'eos': 'stop', 'limit': 'length'}[first['stop_type']]
+        if args.scores:
+            from llama_score_analysis import run_diagnostics
+            record['score_diagnostics'] = run_diagnostics(record, reference, model, args.python, output, eos)
         verify_checkpoint(model, manifest)
         require_conversion(conversion, gguf_path)
         if source_identity(ROOT) != source or sha(PROMPTS) != record['prompts_sha256'] or sha(server) != record['server_sha256']:

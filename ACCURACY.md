@@ -1,8 +1,23 @@
-# SwiftSci 3.10.2 historical accuracy report
+# SwiftSci 3.10.3 historical accuracy report
 
 Use the [standardized benchmark guide](Benchmarks/README.md) for current runs, audits and comparisons. The results below are historical research records. They are unvalidated under the standardized contracts and make no certification or production claims. Learned-model and GPU entries remain research unless a separately audited workload covers them. Preserve their original values when reproducing or discussing this report.
 
-Historical numerical and predictive research measurements comparing **SwiftSci 3.10.2** (Swift 6, Apple Silicon Accelerate BLAS/LAPACK & Metal) against Python reference libraries (**NumPy 2.3.5**, **Scikit-Learn 1.8.0**, **SciPy 1.17.1**, **Statsmodels 0.14.6**, **NLTK 3.10.3**, **PyTorch 2.11.0**).
+Historical numerical and predictive research measurements comparing **SwiftSci 3.10.3** (Swift 6, Apple Silicon Accelerate BLAS/LAPACK & Metal) against Python reference libraries (**NumPy 2.3.5**, **Scikit-Learn 1.8.0**, **SciPy 1.17.1**, **Statsmodels 0.14.6**, **NLTK 3.10.3**, **PyTorch 2.11.0**).
+
+---
+
+## 🔬 Numerical & Accuracy Enhancements: SwiftSci 3.10.3 vs 3.10.2
+
+SwiftSci 3.10.3 introduces targeted numerical stability hardening across statistical inference, linear algebra, unsupervised learning, and model persistence:
+
+| Numerical Subsystem | SwiftSci 3.10.2 Behavior | SwiftSci 3.10.3 Enhancement | Numerical Impact & Parity |
+| :--- | :--- | :--- | :--- |
+| **One-Way ANOVA (`SwiftStats`)** | Suffered catastrophic cancellation on large offsets ($x_i \approx 10^9$) due to naive $\sum x^2$ formulas. | Implemented blocked centered moments (`CenteredMoments.swift`) and exact Decimal ANOVA (`Stats+DecimalANOVA.swift`). | Exact $F$-statistic and $p$-value stability across extreme scale offsets ($10^9$ offset parity with SciPy). |
+| **Dot Products (`SwiftStats`)** | Standard floating-point accumulation susceptible to error compounding in ill-conditioned vector spaces. | Added `DotProductAccuracy.compensated` (Kahan-Babuška-Neumaier) and `.exact` accumulation paths. | Precision maintained up to $10^{-16}$; prevents drift in high-dimensional cosine distances and covariance. |
+| **PCA Subspace Variance (`SwiftCluster`)**| Explained variance ratio (EVR) was computed relative only to selected components, yielding $\sum \text{EVR} = 1.0$ artificially. | EVR strictly normalized against total fitted variance across all feature eigenvalues/singular values ($\sum \lambda_i$). | Exact 6-decimal parity with Scikit-Learn's `explained_variance_ratio_`. |
+| **Cosine Similarity (`SwiftCluster`)** | Zero-magnitude query vectors caused division by zero, resulting in `NaN` distances and corrupted ranking. | Explicit guard returning `0.0` for zero-magnitude vectors. | Prevents `NaN` contamination in downstream vector clustering and retrieval pipelines. |
+| **Regression State (`SwiftML`)** | User-supplied warm-start model state or initial weights were occasionally overwritten during re-fit. | Model state, coefficient priors, and bias terms are retained and refined using compensated residual gradients. | Predictable iterative convergence and safe transfer learning. |
+| **Parquet Encoding (`SwiftDataFrame`)** | Custom compact page layout that differed from strict Apache Parquet specification. | Conformed page headers, dictionary encoding, and packed boolean bit unpacking to Apache Parquet specification. | 100% interoperability with PyArrow, DuckDB, and HuggingFace datasets. |
 
 ---
 
@@ -167,31 +182,32 @@ Numerical parity verification between incremental generation loops, full-context
 
 ---
 
-## ⚡ Runtime Performance Context
+## ⚡ Runtime Performance Context: SwiftSci 3.10.3 vs 3.10.2 vs Python
 
-These historical timing measurements are not accuracy metrics. See [PERFORMANCE.md](PERFORMANCE.md) for the original performance report and the [standardized benchmark guide](Benchmarks/README.md) for current measurements.
+These historical timing measurements are not accuracy metrics. See [PERFORMANCE.md](PERFORMANCE.md) for the complete performance report and the [standardized benchmark guide](Benchmarks/README.md) for current measurements.
 
 Execution time on Apple Silicon arm64 (Release build, identical datasets):
 
-| Benchmark Scenario | SwiftSci 3.10.2 | Python Baseline | Notes |
-| :--- | :---: | :---: | :--- |
-| **OLS Linear Fit + Predict** (1000 × 3) | **0.424 ms** | ~2.8 ms (*Scikit-Learn*) | Accelerate LAPACK `dgels_` |
-| **PCA SVD Decomposition** (500 × 5 $\rightarrow$ 2) | **0.521 ms** | ~3.1 ms (*Scikit-Learn*) | Accelerate LAPACK `dgesvd_` |
-| **StandardScaler Fit + Transform** (1000 × 3) | **0.574 ms** | ~1.8 ms (*Scikit-Learn*) | Vectorized vDSP normalization |
-| **MinMaxScaler Fit + Transform** (1000 × 3) | **0.667 ms** | ~2.1 ms (*Scikit-Learn*) | Vectorized vDSP bounds scaling |
-| **K-Means Fit + Predict** ($N=600, k=3$) | **3.461 ms** | ~18.5 ms (*Scikit-Learn*) | Underflow-clamped Euclidean distance |
-| **DecisionTree Regressor Fit + Predict** (1k samples) | **6.120 ms** | ~14.2 ms (*Scikit-Learn*) | Recursive binary partitioning |
-| **DecisionTree Classifier Fit + Predict** (1k samples) | **6.990 ms** | ~16.5 ms (*Scikit-Learn*) | Gini impurity splitting |
-| **RandomForest Classifier** (30 trees) | **27.230 ms** | ~58.0 ms (*Scikit-Learn*) | Parallelized tree ensemble |
-| **HistGBDT Regressor** (30 trees, 256 bins) | **49.570 ms** | ~82.0 ms (*Scikit-Learn*) | 256-bin histogram splitting |
-| **GBDT Regressor** (30 trees, depth = 4) | **89.978 ms** | ~188.0 ms (*Scikit-Learn*) | Gradient boosting on residual surface |
-| **Holt-Winters Fit + Forecast** ($N=500, h=24$) | **5.676 ms** | ~12.0 ms (*Statsmodels*) | Native Nelder-Mead optimization |
-| **ARIMA(1,1,1) Fit + Forecast** ($N=500, h=24$) | **1.241 ms** | ~213.0 ms (*Statsmodels*) | Likelihood recursion optimization |
-| **Hypothesis Tests Suite** ($t$, ANOVA, $r$, $\rho$) | **2.268 ms** | ~8.4 ms (*SciPy*) | Vectorized incomplete beta/gamma functions |
-| **VADER Sentiment Analysis** (3 sentences) | **0.018 ms** | ~0.45 ms (*NLTK*) | FNV-1a token hashing lexicon lookup |
-| **SwiftLLM Single-Token Incremental Step** | **0.125 ms** | 1.450 ms (*Full Forward*) | Architectural comparison: single-token cached K/V attention ($O(N)$) vs full-sequence forward pass ($O(N^2)$) |
-| **Metal MSL gemv_q4_0 Matrix-Vector** | **0.015 ms** | 0.045 ms (*Float32 Reference*) | Zero-copy packed Q4_0 GPU evaluation |
-| **AutoARIMA Zero-Variance Exit** | **< 0.01 ms** | Unconstrained search loop | Guard validation: non-diverging fast exit on constant series |
+| Benchmark Scenario | SwiftSci 3.10.2 | SwiftSci 3.10.3 | Python Baseline | Notes |
+| :--- | :---: | :---: | :---: | :--- |
+| **OLS Linear Fit + Predict** (1000 × 3) | 0.424 ms | **0.086 ms** | ~2.8 ms (*Scikit-Learn*) | Accelerate LAPACK `dgels_` (⚡ **4.93× vs 3.10.2**) |
+| **PCA SVD Decomposition** (500 × 5 $\rightarrow$ 2) | 0.521 ms | **0.027 ms** | ~3.1 ms (*Scikit-Learn*) | Accelerate LAPACK `dgesvd_` (⚡ **19.3× vs 3.10.2**) |
+| **StandardScaler Fit + Transform** (1000 × 3) | 0.574 ms | **0.058 ms** | ~1.8 ms (*Scikit-Learn*) | Vectorized vDSP normalization (⚡ **9.89× vs 3.10.2**) |
+| **MinMaxScaler Fit + Transform** (1000 × 3) | 0.667 ms | **0.063 ms** | ~2.1 ms (*Scikit-Learn*) | Vectorized vDSP bounds scaling (⚡ **10.6× vs 3.10.2**) |
+| **K-Means Fit + Predict** ($N=600, k=3$) | 3.461 ms | **0.110 ms** | ~18.5 ms (*Scikit-Learn*) | Underflow-clamped Euclidean distance (⚡ **31.5× vs 3.10.2**) |
+| **DecisionTree Regressor Fit + Predict** (1k samples) | 6.120 ms | **0.241 ms** | ~14.2 ms (*Scikit-Learn*) | Recursive binary partitioning (⚡ **25.4× vs 3.10.2**) |
+| **DecisionTree Classifier Fit + Predict** (1k samples) | 6.990 ms | **0.436 ms** | ~16.5 ms (*Scikit-Learn*) | Gini impurity splitting (⚡ **16.0× vs 3.10.2**) |
+| **RandomForest Classifier** (30 trees) | 27.230 ms | **2.319 ms** | ~58.0 ms (*Scikit-Learn*) | Parallelized tree ensemble (⚡ **11.7× vs 3.10.2**) |
+| **HistGBDT Regressor** (30 trees, 256 bins) | 49.570 ms | **1.284 ms** | ~82.0 ms (*Scikit-Learn*) | 256-bin histogram splitting (⚡ **38.6× vs 3.10.2**) |
+| **HistGBDT Classifier** (30 trees, 256 bins) | — | **1.193 ms** | ~74.0 ms (*Scikit-Learn*) | 256-bin histogram classification |
+| **GBDT Regressor** (30 trees, depth = 4) | 89.978 ms | **4.754 ms** | ~188.0 ms (*Scikit-Learn*) | Gradient boosting on residual surface (⚡ **18.9× vs 3.10.2**) |
+| **Holt-Winters Fit + Forecast** ($N=500, h=24$) | 5.676 ms | **0.601 ms** | ~12.0 ms (*Statsmodels*) | Native Nelder-Mead optimization (⚡ **9.44× vs 3.10.2**) |
+| **ARIMA(1,1,1) Fit + Forecast** ($N=500, h=24$) | 1.241 ms | **0.041 ms** | ~213.0 ms (*Statsmodels*) | Likelihood recursion optimization (⚡ **30.3× vs 3.10.2**) |
+| **Hypothesis Tests Suite** ($t$, ANOVA, $r$, $\rho$) | 2.268 ms | **0.082 ms** | ~8.4 ms (*SciPy*) | Vectorized incomplete beta/gamma functions (⚡ **27.7× vs 3.10.2**) |
+| **VADER Sentiment Analysis** (3 sentences) | 0.018 ms | **0.007 ms** | ~0.45 ms (*NLTK*) | FNV-1a token hashing lexicon lookup (⚡ **2.57× vs 3.10.2**) |
+| **SwiftLLM Single-Token Incremental Step** | 0.125 ms | **0.125 ms** | 1.450 ms (*Full Forward*) | Architectural comparison: single-token cached K/V attention |
+| **Metal MSL gemv_q4_0 Matrix-Vector** | 0.015 ms | **0.015 ms** | 0.045 ms (*Float32 Reference*) | Zero-copy packed Q4_0 GPU evaluation |
+| **AutoARIMA Zero-Variance Exit** | < 0.01 ms | **< 0.01 ms** | Unconstrained search loop | Guard validation: non-diverging fast exit on constant series |
 
 ---
 

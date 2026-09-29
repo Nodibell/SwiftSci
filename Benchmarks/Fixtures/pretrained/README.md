@@ -29,7 +29,7 @@ PY
 
 The downloaded pack occupies about 2.48 GB. The integration controller verifies it against the manifest before use. No custom model code is trusted or downloaded for execution. See [MLX-LM's documentation](https://github.com/ml-explore/mlx-lm) for its loader and generation APIs.
 
-The separately installed [llama.cpp runtime](https://github.com/ggml-org/llama.cpp/blob/master/docs/install.md) requires GGUF weights. This pack uses safetensors and does not execute llama.cpp. A same-source GGUF conversion and conversion-parity check must precede its inclusion in comparisons. Installing its executable alone does not validate model compatibility.
+The optional [llama.cpp comparison](LLAMA-CPP.md) converts these same safetensors to BF16 GGUF, verifies every weight, and compares tokenization and greedy generation against MLX-LM. It runs separately from the SwiftSci inspection below.
 
 ## Run the integration diagnostic
 
@@ -48,7 +48,7 @@ Metal is required for the reference run; there is no CPU fallback. The controlle
 
 ## Interpret the results
 
-`reference.json` records package versions, cold model-load time, checkpoint-tokenizer outputs, chat-template inputs and three greedy generation runs per prompt. The first run per prompt is warmup. Generation stops at EOS or 32 tokens. Token sequences must repeat across runs. A passing smoke result means the reference executed and repeated consistently; it does not establish response quality or numerical agreement with SwiftSci.
+`reference.json` records package versions, cold model-load time, checkpoint-tokenizer outputs, chat-template inputs with the fixed date in `prompts.json`, observed cache dtypes and three greedy generation runs per prompt. The first run per prompt is warmup. Generation stops at EOS or 32 tokens. Token sequences must repeat across runs. A passing smoke result means the reference executed and repeated consistently; it does not establish response quality or numerical agreement with SwiftSci.
 
 `swift.json` records actual parser results, checkpoint/public-model projection shapes and tokenization comparisons. The inspection model uses eight positions to bound the unused learned-position allocation; projection shapes retain the checkpoint's layer widths. The inspector does not install incompatible weights or attempt generation when those checks identify a mismatch.
 

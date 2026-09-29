@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "revision": "7fe450e19305b828c199d602c23a8337aaa1f03b",
+  "version": "0.5.0",
+  "build": 11146,
+  "archive_url": "https://api.github.com/repos/ggml-org/llama.cpp/tarball/7fe450e19305b828c199d602c23a8337aaa1f03b",
+  "archive_sha256": "ab71e8f46a7bee2fd0d273cd997a4b283debf7623adc1c5f28f31b6c6f68ac83",
+  "archive_bytes": 37563017,
+  "conversion_outtype": "bf16",
+  "requirements": "../../Python/requirements-gguf.txt"
+}

@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "template_date": "29 Sep 2026",
   "license": "MIT, repository LICENSE; original validation prompts",
   "cases": [
     {"id": "scientific-explanation", "text": "Explain in two sentences why subtracting two nearly equal floating-point numbers can lose precision."},

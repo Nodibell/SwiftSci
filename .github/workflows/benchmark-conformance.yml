@@ -68,3 +68,40 @@ jobs:
             ~/Library/Caches/SwiftSci/standardized-benchmarks/build.log
           retention-days: 30
           if-no-files-found: warn
+
+  mlx:
+    runs-on: macos-26
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [neural-cpu-conformance, boundary-cpu-conformance]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install Python MLX
+        run: |
+          python3 -m venv Benchmarks/.venv-standardized
+          Benchmarks/.venv-standardized/bin/python -m pip install -r Benchmarks/Python/requirements-mlx.txt
+      - name: Test MLX adapter
+        run: Benchmarks/.venv-standardized/bin/python -m unittest discover -s Benchmarks/Tests -p test_mlx_workers.py
+      - name: Check Python MLX CPU comparison
+        run: |
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile "${{ matrix.profile }}"
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run \
+            --profile "${{ matrix.profile }}" --engines mlx \
+            --python Benchmarks/.venv-standardized/bin/python \
+            --output "Benchmarks/Runs/ci-mlx/${{ matrix.profile }}"
+      - name: Audit comparison evidence
+        if: always() && hashFiles('Benchmarks/Runs/ci-mlx/**/run.json') != ''
+        run: Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit "Benchmarks/Runs/ci-mlx/${{ matrix.profile }}"
+      - name: Retain MLX evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-mlx-${{ matrix.profile }}-${{ github.sha }}
+          path: Benchmarks/Runs/ci-mlx/
+          retention-days: 30
+          if-no-files-found: warn

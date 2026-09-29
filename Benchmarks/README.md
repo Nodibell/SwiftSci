@@ -197,6 +197,10 @@ Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py report Benchm
 
 Choose a new output directory for every run. Existing evidence is never overwritten. Rebuild after changing sources or after another Xcode command replaces the worker in the same derived-data directory. A binary checksum mismatch requires a rebuild; do not edit the build record. The builder copies Git-tracked files, including staged additions and their working contents, into a separate cache directory. Stage new source files before building. This excludes untracked cloud-sync duplicate files without changing the checkout. Xcode uses the package-level Release `build-for-testing` action with `-enableCodeCoverage NO` and dependencies pinned in `Package.resolved`. This compiles the targets without running the test suite. The generated Swift package scheme can ignore coverage settings during a plain `build` action. The builder and run planner inspect the actual Mach-O binary and reject LLVM profiling or coverage sections. A compiler setting alone is not proof that instrumentation is absent. It permits package plugins for this invocation only.
 
+## Optional Python MLX comparison
+
+The `mlx` engine executes the fixed decoder and dataframe-to-tensor contracts on the fixture-selected CPU or Metal GPU. [Run MLX comparisons](MLX-COMPARISONS.md) describes installation, supported cases, synchronization, and interpretation. Independent high-precision answers remain the correctness reference. Python MLX is an additional implementation, not an independent oracle for the MLX backend shared with Swift.
+
 ## Profiles and supported operations
 
 | Profile | Table rows | Warmups / measured samples per process | Independent processes per case and engine |

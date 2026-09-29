@@ -286,9 +286,9 @@ public struct AccuracyBenchmarks: BenchmarkSuite {
         results.append(svcResult)
 
         // 3.3 Random Forest Classifier
-        let rf = try? RandomForestClassifier(nEstimators: 30, maxDepth: 5, criterion: .gini)
-        _ = try? await rf?.fit(features: clsXTrain, targets: clsYTrain)
-        let rfPred = (try? await rf?.predict(features: clsXTest)) ?? Array(repeating: 0, count: 200)
+        let rf = RandomForestClassifier(nEstimators: 30, maxDepth: 5, criterion: .gini)
+        _ = try? await rf.fit(features: clsXTrain, targets: clsYTrain)
+        let rfPred = (try? await rf.predict(features: clsXTest)) ?? Array(repeating: 0, count: 200)
         let rfAcc = Metrics.accuracy(yTrue: yTestInt, yPred: rfPred)
         let rfF1  = Metrics.f1Score(yTrue: yTestInt, yPred: rfPred, label: 1)
 
@@ -298,7 +298,7 @@ public struct AccuracyBenchmarks: BenchmarkSuite {
             name: "RandomForest Classifier (Accuracy, F1)",
             module: module, warmup: 1, iterations: 3
         ) {
-            let m = try RandomForestClassifier(nEstimators: 30, maxDepth: 5, criterion: .gini)
+            let m = RandomForestClassifier(nEstimators: 30, maxDepth: 5, criterion: .gini)
             try await m.fit(features: clsXTrain, targets: clsYTrain)
             _ = try await m.predict(features: clsXTest)
         }

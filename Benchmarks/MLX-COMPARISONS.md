@@ -51,3 +51,7 @@ The `pandas` engine remains a CPU NumPy mathematical comparison for GPU-requeste
 The [bounded shape/context pack](Fixtures/neural-shaped/README.md) adds widths 16 and 32 and contexts of 8, 32 and 128 tokens through `neural-shaped-conformance`. Its CPU profile is `neural-shaped-cpu-conformance`. Both retain end-to-end diagnostic timing.
 
 Deeper decoder architectures, contexts beyond 128 tokens, tokenizer and stopping contracts, quantized inference, pretrained checkpoints, MLX-LM and llama.cpp comparisons remain separate follow-up work. The existing boundary sweep is bounded to 8,192 rows and 64 features. This addition does not certify language quality or memory-capacity limits.
+
+## Real-checkpoint integration
+
+The opt-in [Llama integration diagnostic](Fixtures/pretrained/README.md) runs a pinned real checkpoint in MLX-LM and checks SwiftSci public API compatibility. Its smoke results and integration blockers are separate from standardized numerical conformance.

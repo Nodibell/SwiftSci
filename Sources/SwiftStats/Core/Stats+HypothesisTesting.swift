@@ -128,24 +128,37 @@ extension Stats {
         let k = groups.count
         let n = groups.reduce(0) { $0 + $1.count }  // total observations
 
-        let grandMean = try mean(groups.flatMap { $0 })
-
-        // SS_between = Σ nᵢ (x̄ᵢ - x̄)²
-        var ssBetween = 0.0
-        for g in groups {
-            let ni   = Double(g.count)
-            let xBar = vDSP.mean(g)
-            ssBetween += ni * pow(xBar - grandMean, 2)
+        func compensatedSum<S: Sequence>(_ values: S) -> Double where S.Element == Double {
+            var sum = 0.0
+            var correction = 0.0
+            for value in values {
+                let next = sum + value
+                correction += abs(sum) >= abs(value) ? (sum - next) + value : (value - next) + sum
+                sum = next
+            }
+            return sum + correction
         }
 
-        // SS_within = Σ Σ (xᵢⱼ - x̄ᵢ)²
-        var ssWithin = 0.0
-        for g in groups {
-            let xBar = vDSP.mean(g)
-            var centered = [Double](repeating: 0, count: g.count)
-            vDSP.add(-xBar, g, result: &centered)
-            ssWithin += vDSP.sumOfSquares(centered)
+        // Keep means relative to an observed value so small differences survive large offsets.
+        let origin = groups[0][0]
+        let means = groups.map { group in
+            compensatedSum(group.lazy.map { $0 - origin }) / Double(group.count)
         }
+        let grandMean = compensatedSum(zip(groups, means).lazy.map {
+            Double($0.0.count) * $0.1
+        }) / Double(n)
+        let ssBetween = compensatedSum(zip(groups, means).lazy.map { group, mean in
+            let difference = mean - grandMean
+            return Double(group.count) * difference * difference
+        })
+        let ssWithin = compensatedSum(groups.lazy.map { group in
+            let groupOrigin = group[0]
+            let groupMean = compensatedSum(group.lazy.map { $0 - groupOrigin }) / Double(group.count)
+            return compensatedSum(group.lazy.map {
+                let difference = ($0 - groupOrigin) - groupMean
+                return difference * difference
+            })
+        })
 
         let dfBetween = k - 1
         let dfWithin  = n - k

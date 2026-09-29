@@ -19,6 +19,17 @@ struct PCATests {
         }
     }
     
+    @Test("Truncated PCA ratios use all feature variance", arguments: [SVDSolver.full, .randomized, .auto])
+    func truncatedVariance(solver: SVDSolver) async throws {
+        let model = try PCA(nComponents: 1, svdSolver: solver, device: .cpu)
+        #expect(await model.explainedVarianceRatio == nil)
+        try await model.fit([[2, 0], [-2, 0], [0, 1], [0, -1]])
+        let ratios = try #require(await model.explainedVarianceRatio)
+        #expect(abs(ratios[0] - 0.8) < 1e-12)
+        try await model.fit([[1, 0], [-1, 0], [0, 0], [0, 0]])
+        #expect(abs((await model.explainedVarianceRatio)![0] - 1) < 1e-12)
+    }
+
     @Test("PCA basic fit and transform")
     func testPCABasic() async throws {
         // Synthetic 2D dataset where y is highly correlated with x

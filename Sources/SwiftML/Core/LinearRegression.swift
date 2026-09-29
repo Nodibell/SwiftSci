@@ -4,6 +4,28 @@ import Accelerate
 import MLX
 import SwiftPreprocessing
 
+private struct OLSAccumulator {
+    private(set) var high: Double
+    private(set) var low = 0.0
+    var value: Double { high + low }
+
+    init(_ value: Double = 0) { high = value }
+
+    mutating func add(_ value: Double) {
+        let sum = high + value
+        let recovered = sum - high
+        let error = (high - (sum - recovered)) + (value - recovered) + low
+        high = sum + error
+        low = error - (high - sum)
+    }
+
+    mutating func addProduct(_ left: Double, _ right: Double) {
+        let product = left * right
+        add(product)
+        add((-product).addingProduct(left, right))
+    }
+}
+
 /// Ordinary Least Squares linear regression using LAPACK analytical OLS or gradient descent.
 public actor LinearRegression: RegressorEstimator {
     /// The weights.
@@ -35,6 +57,10 @@ public actor LinearRegression: RegressorEstimator {
         self.requestedDevice = device
         self.cpuWeights = weights
         self.cpuBias = bias
+        // Supplied Double parameters need no training workload for automatic routing.
+        self.resolvedDevice = (device == .auto || device == .cpu) ? .cpu : .gpu
+        self.weights = MLXArray(weights.map { Float($0) }).reshaped([weights.count, 1])
+        self.bias = MLXArray([Float(bias)])
     }
 
     /// Get weights and bias.
@@ -151,8 +177,58 @@ public actor LinearRegression: RegressorEstimator {
             throw SwiftMLError.trainingFailed("LAPACK dgels_ solve failed with info = \(info)")
         }
 
-        let w = Array(bVec[0..<numFeatures])
-        let b = bVec[numFeatures]
+        var solution = Array(bVec.prefix(cols))
+        let columnScales = (0..<cols).map { column in
+            column == numFeatures ? 1.0 : features.reduce(0.0) { max($0, abs($1[column])) }
+        }
+        func gradient(at parameters: [Double]) -> [Double] {
+            var sums = Array(repeating: OLSAccumulator(), count: cols)
+            for row in 0..<rows {
+                var residual = OLSAccumulator(targets[row])
+                for column in 0..<numFeatures {
+                    residual.addProduct(-features[row][column], parameters[column])
+                }
+                residual.add(-parameters[numFeatures])
+                for column in 0..<cols {
+                    let value = column == numFeatures ? 1.0 : features[row][column]
+                    sums[column].addProduct(value, residual.high)
+                    sums[column].addProduct(value, residual.low)
+                }
+            }
+            return sums.map { $0.value }
+        }
+        func gradientNorm(_ values: [Double]) -> Double {
+            zip(values, columnScales).reduce(0.0) {
+                max($0, abs($1.0) / max($1.1, Double.leastNormalMagnitude))
+            }
+        }
+
+        // Refine least-squares stationarity using R from dgels, without forming AᵀA.
+        // Product roundoff must survive the residual and gradient sums when noise is large.
+        var residualGradient = gradient(at: solution)
+        for _ in 0..<3 {
+            guard residualGradient.allSatisfy(\.isFinite), gradientNorm(residualGradient) > 0 else { break }
+            var correction = residualGradient
+            for i in 0..<cols {
+                var sum = OLSAccumulator(correction[i])
+                for j in 0..<i { sum.addProduct(-AColMajor[i * rows + j], correction[j]) }
+                correction[i] = sum.value / AColMajor[i * rows + i]
+            }
+            for i in (0..<cols).reversed() {
+                var sum = OLSAccumulator(correction[i])
+                for j in (i + 1)..<cols { sum.addProduct(-AColMajor[j * rows + i], correction[j]) }
+                correction[i] = sum.value / AColMajor[i * rows + i]
+            }
+            let candidate = zip(solution, correction).map(+)
+            guard candidate.allSatisfy(\.isFinite), candidate != solution else { break }
+            let candidateGradient = gradient(at: candidate)
+            guard candidateGradient.allSatisfy(\.isFinite),
+                  gradientNorm(candidateGradient) < gradientNorm(residualGradient) else { break }
+            solution = candidate
+            residualGradient = candidateGradient
+        }
+        let w = Array(solution.prefix(numFeatures))
+        let b = solution[numFeatures]
 
         if b.isNaN || b.isInfinite || w.contains(where: { $0.isNaN || $0.isInfinite }) {
             throw SwiftMLError.trainingFailed("OLS solution contains NaN or Infinity.")

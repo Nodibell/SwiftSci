@@ -3,6 +3,23 @@ import XCTest
 
 final class VectorStoreTests: XCTestCase {
 
+    func testCosinePreservesDirectionAcrossMagnitudes() {
+        for magnitude in [1e-300, 1e-7, 1.0, 1e300] {
+            let store = VectorStore(metric: .cosineSimilarity)
+            store.add(id: "same", vector: [magnitude, magnitude])
+            store.add(id: "opposite", vector: [-magnitude, -magnitude])
+            store.add(id: "orthogonal", vector: [magnitude, -magnitude])
+            store.add(id: "zero", vector: [0, 0])
+            let results = store.search(query: [magnitude, magnitude], topK: 4)
+            let scores = Dictionary(uniqueKeysWithValues: results.map { ($0.id, $0.score) })
+            XCTAssertEqual(scores["same"]!, 1, accuracy: 1e-14)
+            XCTAssertEqual(scores["opposite"]!, -1, accuracy: 1e-14)
+            XCTAssertEqual(scores["orthogonal"]!, 0, accuracy: 1e-14)
+            XCTAssertEqual(scores["zero"]!, 0)
+            XCTAssertTrue(store.search(query: [0, 0]).allSatisfy { $0.score == 0 })
+        }
+    }
+
     func testCosineSimilaritySearch() {
         let store = VectorStore(metric: .cosineSimilarity)
         XCTAssertTrue(store.isEmpty)

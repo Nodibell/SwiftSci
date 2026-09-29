@@ -181,6 +181,25 @@ struct TTestTests {
         #expect(result.pValue > 0.99)
     }
 
+    @Test("ANOVA within-group variance is independent of group order")
+    func anovaSeparatedOffsets() throws {
+        let groups = [[1e16, 1e16 + 2, 1e16 + 4], [0.0, 1, 2]]
+        for ordered in [groups, Array(groups.reversed())] {
+            let result = try Stats.oneWayANOVA(groups: ordered)
+            #expect(abs(result.fStatistic / 6e31 - 1) < 1e-14)
+        }
+    }
+
+    @Test("ANOVA preserves representable differences at large offsets", arguments: [0.0, 1e12, 281474976710656.0])
+    func anovaTranslation(offset: Double) throws {
+        let groups = [[0.0, 1, 3], [4.0, 5, 9]].map { $0.map { $0 + offset } }
+        let result = try Stats.oneWayANOVA(groups: groups)
+        #expect(abs(result.fStatistic - 7) < 1e-12)
+        #expect(abs(result.etaSquared - 7.0 / 11.0) < 1e-12)
+        #expect(result.dfBetween == 1)
+        #expect(result.dfWithin == 4)
+    }
+
     @Test("ANOVA with equal groups: F ≈ 0, p ≈ 1")
     func anovaEqualGroups() throws {
         let g = [[1.0, 2.0, 3.0], [1.0, 2.0, 3.0], [1.0, 2.0, 3.0]]

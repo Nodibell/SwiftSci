@@ -206,8 +206,19 @@ public final class TransformerBlock: Module, UnaryLayer {
         v = unflatten(v, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
 
         if let rope = self.rope {
-            q = rope(q, offset: offset)
-            k = rope(k, offset: offset)
+            if q.shape[0] > 1 && q.shape[2] == 1 {
+                // Pinned MLX single-token RoPE dispatch omits the batch dimension.
+                // Folding batches into heads keeps every independent position in the grid.
+                let qShape = q.shape
+                let kShape = k.shape
+                q = rope(q.reshaped([1, qShape[0] * qShape[1], 1, qShape[3]]), offset: offset)
+                    .reshaped(qShape)
+                k = rope(k.reshaped([1, kShape[0] * kShape[1], 1, kShape[3]]), offset: offset)
+                    .reshaped(kShape)
+            } else {
+                q = rope(q, offset: offset)
+                k = rope(k, offset: offset)
+            }
         }
 
         let finalK: MLXArray
@@ -446,10 +457,10 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             let srcPfx = "model.layers.\(i)"
             let dstPfx = "layers.\(i)"
 
-            mapParam(srcKey: "\(srcPfx).self_attn.q_proj.weight", dstKey: "\(dstPfx).attention.queryProjection.weight")
-            mapParam(srcKey: "\(srcPfx).self_attn.k_proj.weight", dstKey: "\(dstPfx).attention.keyProjection.weight")
-            mapParam(srcKey: "\(srcPfx).self_attn.v_proj.weight", dstKey: "\(dstPfx).attention.valueProjection.weight")
-            mapParam(srcKey: "\(srcPfx).self_attn.o_proj.weight", dstKey: "\(dstPfx).attention.outProjection.weight")
+            mapParam(srcKey: "\(srcPfx).self_attn.q_proj.weight", dstKey: "\(dstPfx).attention.query_proj.weight")
+            mapParam(srcKey: "\(srcPfx).self_attn.k_proj.weight", dstKey: "\(dstPfx).attention.key_proj.weight")
+            mapParam(srcKey: "\(srcPfx).self_attn.v_proj.weight", dstKey: "\(dstPfx).attention.value_proj.weight")
+            mapParam(srcKey: "\(srcPfx).self_attn.o_proj.weight", dstKey: "\(dstPfx).attention.out_proj.weight")
 
             mapParam(srcKey: "\(srcPfx).mlp.gate_proj.weight", dstKey: "\(dstPfx).ffn.gate.weight")
             mapParam(srcKey: "\(srcPfx).mlp.up_proj.weight", dstKey: "\(dstPfx).ffn.up.weight")

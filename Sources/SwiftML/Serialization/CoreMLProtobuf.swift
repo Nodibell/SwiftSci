@@ -518,6 +518,54 @@ internal func buildScalerModel(
     shiftValues: [Double],
     scaleValues: [Double]
 ) -> Data {
+    let outs = outputNames ?? inputNames.map { "scaled_\($0)" }
+    precondition(!inputNames.isEmpty && outs.count == inputNames.count)
+    precondition([0, 1, inputNames.count].contains(shiftValues.count))
+    precondition([0, 1, inputNames.count].contains(scaleValues.count))
+    if inputNames.count > 1 {
+        var model = ProtobufWriter()
+        model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
+        var description = ProtobufWriter()
+        for input in inputNames {
+            description.writeBytesField(fieldNumber: ModelDescriptionField.input, bytes: encodeDoubleFeature(name: input))
+        }
+        for output in outs {
+            description.writeBytesField(fieldNumber: ModelDescriptionField.output, bytes: encodeDoubleFeature(name: output))
+        }
+        model.writeBytesField(fieldNumber: ModelField.description, bytes: description.data)
+
+        // Core ML Scaler accepts one scalar or array feature, not multiple named scalars.
+        // Stage overlapping names so one output cannot replace another scaler's input.
+        var stageNames = outs
+        let needsStaging = !Set(inputNames).isDisjoint(with: outs)
+        if needsStaging {
+            var usedNames = Set(inputNames + outs)
+            stageNames = inputNames.indices.map { index in
+                var stageName = "__swiftsci_scaled_\(index)"
+                while usedNames.contains(stageName) { stageName += "_" }
+                usedNames.insert(stageName)
+                return stageName
+            }
+        }
+        var pipeline = ProtobufWriter()
+        for index in inputNames.indices {
+            let shift = shiftValues.isEmpty ? [] : [shiftValues[shiftValues.count == 1 ? 0 : index]]
+            let scale = scaleValues.isEmpty ? [] : [scaleValues[scaleValues.count == 1 ? 0 : index]]
+            let stage = buildScalerModel(name: name, inputNames: [inputNames[index]],
+                outputNames: [stageNames[index]], shiftValues: shift, scaleValues: scale)
+            pipeline.writeBytesField(fieldNumber: PipelineField.models, bytes: stage)
+        }
+        if needsStaging {
+            for index in outs.indices {
+                let rename = buildScalerModel(name: name, inputNames: [stageNames[index]],
+                    outputNames: [outs[index]], shiftValues: [], scaleValues: [])
+                pipeline.writeBytesField(fieldNumber: PipelineField.models, bytes: rename)
+            }
+        }
+        model.writeBytesField(fieldNumber: ModelField.pipeline, bytes: pipeline.data)
+        return model.data
+    }
+
     var model = ProtobufWriter()
     model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
 
@@ -525,7 +573,6 @@ internal func buildScalerModel(
     for name in inputNames {
         desc.writeBytesField(fieldNumber: ModelDescriptionField.input, bytes: encodeDoubleFeature(name: name))
     }
-    let outs = outputNames ?? inputNames.map { "scaled_\($0)" }
     for name in outs {
         desc.writeBytesField(fieldNumber: ModelDescriptionField.output, bytes: encodeDoubleFeature(name: name))
     }

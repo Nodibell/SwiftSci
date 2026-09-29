@@ -1,7 +1,26 @@
 import XCTest
+import CoreML
 @testable import SwiftML
 
 final class CoreMLPipelineTests: XCTestCase {
+
+    func testScalerCompilesAndPredictsNamedFeatures() throws {
+        for outputs in [["scaled_x", "scaled_y"], ["y", "x"]] {
+            let data = CoreMLExporter.exportBinaryStandardScaler(inputNames: ["x", "y"],
+                outputNames: outputs, shiftValues: [-10, -20], scaleValues: [0.5, 0.25])
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("Scaler-\(UUID()).mlmodel")
+            defer { try? FileManager.default.removeItem(at: url) }
+            try data.write(to: url)
+            let compiled = try MLModel.compileModel(at: url)
+            defer { try? FileManager.default.removeItem(at: compiled) }
+            let configuration = MLModelConfiguration()
+            configuration.computeUnits = .cpuOnly
+            let model = try MLModel(contentsOf: compiled, configuration: configuration)
+            let result = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: ["x": 12.0, "y": 28.0]))
+            XCTAssertEqual(result.featureValue(for: outputs[0])!.doubleValue, 1, accuracy: 1e-12)
+            XCTAssertEqual(result.featureValue(for: outputs[1])!.doubleValue, 2, accuracy: 1e-12)
+        }
+    }
 
     func testPipelineClassifierSerialization() throws {
         // Create scaler binary

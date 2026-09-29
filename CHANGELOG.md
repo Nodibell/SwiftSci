@@ -4,6 +4,25 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.3] - 2026-09-29
+
+### Performance
+- **Compact Numeric Storage (`SwiftDataFrame`)**: Introduced contiguous numerical column layouts with separate null validity bitmasks (`CompactNumericColumn`), enabling zero-copy/low-overhead feature extraction and direct scaling. Standard and min-max scaling workflows show up to 10–40× speedup with 4–5× lower peak resident memory (PR #45).
+- **Compensated Numerical Reductions (`SwiftStats`, `SwiftML`)**: Blocked centered moments for ANOVA, bounded SIMD reductions for variance, and compensated dot-product policies preserving precision across large dataset scales (PR #44).
+
+### Fixed
+- **Swift 6 SPI / Compiler Error (`Benchmarks`)**: Resolved fatal compiler error in `AccuracyBenchmarks.swift` caused by optional chaining on non-optional `RandomForestClassifier` under Swift 6, unblocking automated builds on Swift Package Index (PR #47).
+- **PCA Variance Normalization (`SwiftCluster`)**: Fixed PCA explained variance ratios normalization by total fitted variance across all components (PR #43).
+- **Cosine Similarity Zero Vectors (`SwiftCluster`)**: Preserved numerical stability and eliminated NaN propagation when computing cosine similarity against zero-magnitude vectors (PR #43).
+- **Regression Model State (`SwiftML`)**: Ensured fitted weights are properly preserved in linear and logistic regression models when initialized with supplied state (PR #43).
+- **ANOVA Cancellation & Numerical Stability (`SwiftStats`)**: Avoided catastrophic cancellation on large offsets in one-way ANOVA and ensured decimal observation fidelity (PR #43, PR #44).
+- **Parquet Interoperability (`SwiftDataFrame`)**: Fixed standard page layouts, dictionary decoding, and packed boolean bit unpacking for Apache Parquet files (PR #42).
+- **CoreML Model Export (`SwiftML`)**: Named scalers are now exported as valid Core ML pipeline stages (PR #43).
+- **LLM Rotary Fixtures (`SwiftLLM`)**: Fixed single-token rotary encoding batch coverage and attention weight mapping to MLX parameter registers (PR #43).
+
+### Added
+- **Standardized Benchmark Infrastructure (`Benchmarks`)**: Introduced reproducible `bench.py` CLI runner with deterministic IEEE-754 fixtures, 84-case automated test matrix, SHA-256 integrity verification, and audit certificates comparing SwiftSci vs Python/Pandas/Scikit-Learn (PR #41).
+
 ## [3.10.2] - 2026-09-26
 
 ### Performance

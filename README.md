@@ -1,4 +1,4 @@
-# SwiftSci 3.10.2
+# SwiftSci 3.10.3
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -28,7 +28,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.10.2")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.10.3")
 ]
 ```
 
@@ -108,14 +108,14 @@ print("Sentiment compound score:", score.compound)
 
 ---
 
-## 📊 Performance & Memory Comparison (SwiftSci 3.10.2 vs Python)
+## 📊 Performance & Memory Comparison (SwiftSci 3.10.3 vs Python)
 
 The following benchmark metrics reflect the certified, dual-language automated test harness run on Apple Silicon (M-series, macOS 15, IEEE 754 64-bit Double Precision, Swift 6 Release vs Python 3.11 with Pandas, NumPy, Scikit-Learn, and Statsmodels). All workloads execute on byte-identical shared fixtures with synchronized hyperparameters under **Benchmark Methodology v2**:
 
 > [!NOTE]
 > SwiftSci and the Python reference stack use different implementation paths and optimization strategies. The measured difference therefore reflects both algorithmic implementation and library/runtime overhead, rather than Python interpreter overhead alone.
 
-| Domain / Scenario | SwiftSci 3.10.2 | Python Reference Stack | Relative Performance | Scope / Implementation |
+| Domain / Scenario | SwiftSci 3.10.3 | Python Reference Stack | Relative Performance | Scope / Implementation |
 | :--- | :---: | :---: | :---: | :--- |
 | **Holt-Winters Fit** (50k pts, s=12) | **`16.11 ms`** | `3,431.44 ms` (*Statsmodels*) | **SwiftSci 212.97×** | Native Nelder-Mead simplex optimizer |
 | **ARIMA(1,1,1) Fit** (50k pts) | **`2.26 ms`** | `594.36 ms` (*Statsmodels*) | **SwiftSci 262.49×** | Exact Gaussian likelihood solver |
@@ -155,6 +155,15 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+## 🚀 What's New in v3.10.3
+
+- **Compact Numeric Storage (`SwiftDataFrame`)**: High-performance contiguous numerical buffers with separate null validity bitmasks (`CompactNumericColumn`). Accelerates DataFrame scaling (StandardScaler & MinMaxScaler) by up to 10–40× and slashes peak resident memory by 4–5× (PR #45).
+- **Compensated Numerical Precision (`SwiftStats`, `SwiftML`)**: Blocked centered moments in ANOVA, bounded SIMD reductions for variance, and compensated dot-product policies to eliminate numerical drift and cancellation (PR #44).
+- **Swift 6 & Swift Package Index Compatibility (`Benchmarks`)**: Resolved Swift 6 strict compiler error in `AccuracyBenchmarks.swift`, unblocking automated builds on the Swift Package Index (PR #47).
+- **Parquet Interoperability (`SwiftDataFrame`)**: Robust standard page layouts, dictionary decoding, and packed boolean bit unpacking for Apache Parquet files (PR #42).
+- **Correctness & Certification Repairs (`SwiftCluster`, `SwiftML`, `SwiftStats`, `SwiftLLM`)**: Fixed PCA explained variance normalization, guarded cosine similarity against zero-magnitude vectors, ensured state initialization in linear/logistic regression, eliminated large-offset ANOVA cancellation, and corrected LLM single-token rotary encoding batch coverage (PR #43).
+- **Reproducible Benchmark Suite (`Benchmarks`)**: Dual-language automated test harness (`bench.py`) with 84 execution cases, NIST conformance verification, and cryptographic audit certificates (PR #41).
+
 ## 🚀 What's New in v3.10.2
 
 - **Typed Numeric Filtering (`SwiftDataFrame`)**: Type dispatch moved outside the row loop with exact integer/float comparisons, cached null predicates and parallel gather. Corrects NaN and precision-boundary behavior (PR #39).
@@ -190,103 +199,7 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
 - **Hardened C-Pointer Memory Safety (`SwiftDatabase`)**:
   - SQLite zero-copy connector upgraded to `sqlite3_close_v2`, explicit `close()` lifecycle, and hardened statement finalization, verified clean under AddressSanitizer.
 
-## 🚀 What's New in v3.9.0
-
-- **Advanced NLP Vectorization & Text Cleaning (`SwiftNLP`)**:
-  - `TFIDFVectorizer`: Support for configurable n-gram extraction (`ngramRange: 1...2` / `1...3`), sublinear term frequency scaling ($1 + \log(\text{tf})$), and maximum document frequency pruning (`maxDF: 0.8`).
-  - `TextCleaner`: Fast scalar-based regex normalizer stripping HTML tags, emails, URLs, special punctuation, and excess whitespace.
-- **Stratification & Advanced Imbalanced Resampling (`SwiftPreprocessing`)**:
-  - `trainTestSplit`: Added `stratify` parameter preserving exact multi-class proportions across train and test partitions.
-  - `DataFrame.trainTestSplit`: Added `stratifyColumn` for stratified tabular splits.
-  - `StratifiedKFold`: K-Fold split generator with strict per-fold class frequency preservation.
-  - `BorderlineSMOTE`: Decision-boundary danger-zone synthetic oversampling.
-  - `ADASYN`: Adaptive density-weighted synthetic minority oversampling.
-  - `DataFrame.resample`: Resampling pipeline supporting SMOTE, BorderlineSMOTE, ADASYN, and RandomUndersampler with automatic categorical string target encoding/decoding.
-- **Manifold Learning & High-Dimensional Projection (`SwiftCluster`)**:
-  - `TSNE`: Exact t-Distributed Stochastic Neighbor Embedding with binary search for perplexity entropy, early exaggeration, adaptive momentum, and KL-divergence reporting.
-  - `DataFrame.tsne`: Direct dimensionality reduction on numerical DataFrame columns producing low-dimensional coordinates (`tsne_1`, `tsne_2`).
-- **Model Interpretability & Feature Importance (`SwiftML`)**:
-  - `OneVsRestClassifier` & `LinearSVCOneVsRest`: Added `topFeatures(classIndex:topN:vocabulary:)`, `topFeatures(classIndex:topN:featureNames:)`, and `topFeaturesPerClass` to inspect the most predictive tokens and feature weights per category.
-  - `FeatureImportance`: Standardized Sendable/Codable representation of feature weights and indices.
-- **Exploratory Data Analysis (EDA) Interactive Charts (`SwiftVisualization`)**:
-  - `ChartExporter.plotClassDistribution` & `DataFrame.plotClassDistribution`: Interactive Plotly bar chart with class frequencies and percentage labels.
-  - `ChartExporter.plotBoxPlot` & `DataFrame.plotBoxPlot`: Interactive box plots with quartile statistics, medians, and outlier detection.
-
----
-
-## 🚀 What's New in v3.8.2
-
-- **Multi-Page Apache Parquet Stream Decoding (`SwiftDataFrame`, `SwiftNLP`)**: Full multi-page stream decoding in `ParquetReader` supporting Snappy decompression across concatenated data and dictionary pages; added direct path ingestion `DataFrame.readParquet(_ path: String)`.
-- **Native Core ML Bundle Export (`SwiftML`)**: Automated `.mlpackage` directory export via `CoreMLExporter.export(...)` generating schema-complete metadata and feature descriptions for native Apple Silicon deployment.
-- **Non-Throwing Random Forest Initializers (`SwiftML`)**: Streamlined `RandomForestClassifier` and `RandomForestRegressor` initialization with automatic hyperparameter safety clamping, eliminating unnecessary `try` expressions.
-- **Ergonomic Probability & Prediction APIs (`SwiftML`, `SwiftNLP`)**:
-  - `ProbabilityMatrix`: Added 2D matrix subscripts `probs[row, col]`, row indexing `probs[row]`, and `probs.probabilities` array access.
-  - `NaiveBayesClassifier`: Added direct single-instance prediction `predict(instance: [Double]) async throws -> Int`.
-  - `MultinomialNaiveBayes` & `ComplementNaiveBayes`: Maintained first-class `Codable` struct status alongside concurrent actors for JSON persistence pipelines.
-- **7-Domain Scientific Accuracy Scorecard (`Benchmarks`)**: Complete verification matrix across Tabular ML, LAPACK OLS, Clustering, NLP, AutoML, and Time Series validating 100% parity with Python scikit-learn and statsmodels.
-
----
-
-## 🚀 What's New in v3.8.1
-
-- **Tabular Column-Level Text & Lexical Profiler (G-018):** Native `DataFrame.profileTextColumn(_:)` computing 20 lexical metrics (TTR, hapax legomena, Shannon entropy, top-K terms) with multi-language stopword pruning (English, Ukrainian, German, French, Spanish).
-- **Zero-Compromise Precision Optimizations (IEEE 754 64-bit Double Precision):**
-  - **Direct In-Memory SQLite Ingestion:** Swift 6 actor-isolated persistent handle replacing disk roundtrips: **0.032 ms** (⚡ **3.28× faster than Pandas** 0.105 ms, 63× less RAM).
-  - **Vectorized Naive Bayes Classifier:** Flat 1D memory buffers with Apple Accelerate `vDSP_dotprD` SIMD dot-products and Log-Sum-Exp trick: **0.026 ms** (⚡ **14.9× faster than Scikit-Learn** 0.388 ms).
-  - **Holt-Winters Phase Shift Correction & 3D Nelder-Mead Optimization:** Seasonal index alignment and simplex parameter optimization achieving **$R^2 = 0.997$** and **RMSE = 0.350** (exact match with Statsmodels) in **0.645 ms** (⚡ **224× faster than Statsmodels**).
-  - **Combinatorial TreeSHAP:** Precomputed 64×64 combinatorial weight LUT and zero-allocation in-place path backtracking over tree nodes: **0.103 ms** (11 MB vs 691 MB).
-  - **Single-Pass Sparse TF-IDF Vectorizer:** Fast character-level tokenizer with single-pass sparse accumulation: **0.388 ms** (22 MB vs 691 MB).
-  - **Hardware-Routed LinearSVC:** Automatic CPU/GPU router (`cells < 50_000 ? .cpu : .gpu`) and flat contiguous gradient buffers: **0.402 ms** (37 MB vs 668 MB).
-  - **KMeans Clustering:** SIMD distance cache with floating-point underflow clamp: **11.192 ms** (⚡ **1.07× faster than Scikit-Learn** 11.993 ms).
-  - **Zero-Allocation Time Series Decomposition:** Zero-allocation Kahan summation ($< 10^{-16}$ error): **0.088 ms** (⚡ **1.14× faster than Statsmodels** 0.100 ms).
-
----
-
-## 🚀 What's New in v3.8.0
-
-- **SwiftAgent Omni-Module Architecture (`SwiftSciToolbox`):** Unified high-level tool suite providing ready-to-use agent tools bridging all core scientific modules: DataFrame profiling and transformation (`SwiftDataFrame`), vectorized descriptive statistics and correlation (`SwiftStats`), automated model training and inference (`SwiftML`), time series forecasting (`SwiftForecast`), hyperparameter cross-validation (`SwiftOptimize`), asynchronous database query execution (`SwiftDatabase`), computer vision classification (`SwiftVision`), natural language tokenization and metrics (`SwiftNLP`), and feature attribution (`SwiftExplain`).
-- **Typed Structured Tool Calling Protocol (`AgentToolV2`):** Type-safe tool specification protocol requiring explicit JSON parameter validation schemas (`JSONSchema`) and asynchronous execution handlers with structured dictionary inputs.
-- **Real-Time Asynchronous Event Streaming (`ReActAgent.stream`):** Asynchronous stream interface yielding fine-grained execution events (`.thoughtDelta`, `.toolCallScheduled`, `.toolExecutionCompleted`, `.answerDelta`, and `.completed`) as reasoning evolves, enabling real-time terminal progress and interactive UI rendering.
-- **Multi-Tier Agent Memory System (`AgentMemory`):** Modular conversation and episodic memory with short-term `WorkingMemory`, capacity-capped `SlidingWindowMemory`, and SIMD vDSP-accelerated `SemanticVectorMemory` for vector cosine similarity retrieval.
-- **Native SwiftUI Reactive Dialogue Controller (`AgentDialogueController`):** Swift 6 `@Observable` controller providing end-to-end management of streaming dialogue history, cooperative task cancellation, error handling, and reactive state publication for SwiftUI frontends.
-- **100.00% DocC Coverage & High-Coverage Test Suite:** Comprehensive documentation across all public symbols and extensive test coverage (96.53%+ overall patch coverage).
-
----
-
-## 🚀 What's New in v3.7.0
-
-- **GBDT CoreML Model Serialization (`SwiftML`):** Full `CoreMLExportable` conformance for `GradientBoostedTreesRegressor`, enabling direct export of trained gradient boosted tree ensembles to Apple Core ML specifications (`.mlmodel` / `.mlpackage`) with leaf shrinkage (`learningRate`), base initial prediction, and split threshold evaluation for sub-millisecond on-device inference.
-- **Statistical Data Drift Detection (`SwiftStats`):** Added 1D Wasserstein distance (`Stats.wassersteinDistance(_:_:)`) via sorted cumulative empirical distributions and Population Stability Index (`Stats.populationStabilityIndex(reference:actual:numBins:)`) with quantile binning and Laplace smoothing.
-- **Automated Modality Inference & Corpus Profiling (`SwiftDataFrame` & `SwiftNLP`):** Added `DataFrame.inferModality()` identifying dataset archetypes (`.tabularNumeric`, `.tabularMixed`, `.pureTextNLP`, `.timeSeries`) and `CorpusLexicalProfiler` computing Type-Token Ratio (TTR), Hapax Legomena, and empirical Shannon entropy.
-- **Target Leakage Detection (`SwiftOptimize`):** Added `TargetLeakageDetector` auditing feature spaces for high Pearson correlation ($|r| \ge 0.98$), monotonic Spearman rank alignment, and row-index correlation prior to model training.
-- **100% Rich DocC Documentation Quality Overhaul:** Eliminated all 1,239 `<#description#>` and `<#error description#>` placeholders across 117 files, replacing them with mathematically exact parameter, error, and return documentation, backed by zero-placeholder CI enforcement.
-
----
-
-## 🚀 What's New in v3.6.1
-
-- **Expanded WordNet Taxonomy (`SwiftNLP`):** Enriched default vocabulary from 6 synsets to a curated taxonomy of ~120 core synsets spanning organisms, human professions, artifacts, computing, sciences, mathematics, verbs, and qualitative adjectives with full hypernym/hyponym graph connectivity.
-- **Princeton WordNet Data Ingestion Engine (`SwiftNLP`):** Native loader and parser (`WordNet.load(fromDataFile:pos:)`, `WordNet.load(fromDirectory:)`, `WordNet.parsePrincetonData`) capable of reading official Princeton WordNet database distribution files (`dict/data.noun`, `dict/data.verb`).
-- **Database Driver Health Check & Connectivity Verification (`SwiftDatabase`):** Added async `ping() -> Bool` across all database drivers (`SQLiteConnection`, `PostgreSQLConnection`, `MySQLConnection`).
-- **Symmetric Endpoint Initializers (`SwiftDatabase`):** Added convenience `init(host:port:user:password:database:sslMode:)` to `MySQLConnection` and `PostgreSQLConnection`.
-- **Pure-Swift Wire Protocol Documentation Alignment:** Clarified full native implementations of PostgreSQL v3.0 (with SCRAM-SHA-256 and TLS) and MySQL Client/Server Protocol 4.1+ (with TLS) in DocC catalogs.
-
----
-
-## 🚀 What's New in v3.6.0
-
-- **HNSW Approximate Nearest Neighbor Graph Index (`SwiftCluster`):** Sub-millisecond $O(\log N)$ approximate nearest neighbor search over 100k+ high-dimensional embeddings with vDSP cosine/L2 acceleration.
-- **256-Bin Histogram GBDT (`SwiftML`):** Tabular gradient boosting (`HistGradientBoostingClassifier` / `HistGradientBoostingRegressor`) with 256 discrete bins and $O(\text{numBins})$ split evaluations.
-- **Concurrent TaskGroup Cross-Validation & AutoML (`SwiftOptimize`):** Bounded concurrent fold evaluations utilizing all CPU cores with cooperative task cancellation.
-- **EarlyStopping Callbacks (`SwiftML`):** Training callbacks with `patience`, `minDelta`, and parameter restoration for MLP and GBDT.
-- **CSR / CSC Sparse Matrices (`SwiftPreprocessing`):** Compressed sparse matrix storage accelerated with Apple Accelerate Sparse BLAS.
-- **Parallel AutoARIMA Order Search (`SwiftForecast`):** Concurrent grid search for $(p,d,q) \times (P,D,Q)_s$ parameters.
-- **Metal MSL SIMD-Group Quantization Kernels (`SwiftLLM`):** Custom GPU kernels for 4-bit/8-bit dequantization and GEMM using `simdgroup_matrix`.
-- **Multi-Agent Orchestrator & Async Stream Bus (`SwiftAgent`):** `MultiAgentOrchestrator` and `AgentMessageBus` for multi-agent collaborative workflows.
-- **SQLite 1024-Row Buffer Ingestion & SCRAM-SHA-256 (`SwiftDatabase`):** High-throughput buffered SQLite reading and RFC 5802/7677 compliant SCRAM-SHA-256 PostgreSQL authentication.
-- **Enterprise Safety & Parity Hardening:** SVD Moore-Penrose pseudo-inverse in KalmanFilter, `svdFlip` PCA alignment, Welford two-pass variance, XSS-sanitization in Plotly export, Xoshiro256++ PRNG, byte-level BPE decoder, and 100% DocC API coverage with structured tags.
-
-> For previous version notes (v3.5.2, v3.5.1, etc.), see [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).
+> For earlier release notes and historical changes (v3.9.0 and earlier), see [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

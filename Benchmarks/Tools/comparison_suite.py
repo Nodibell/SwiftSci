@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the complete local tabular comparison plus existing CPU qualification."""
+"""Run the complete tabular comparison plus existing CPU qualification."""
 import argparse
 from datetime import datetime, timezone
 import json
@@ -33,7 +33,7 @@ def report(root, output, manifest):
         failures.extend(dict(profile=entry['profile'], case=e['case_id'], engine=e['engine'], batch=e['batch'], error=e.get('failed_result',{}).get('error', e.get('error'))) for e in run['events'] if e['status']!='passed')
     write_json(output/'measurements.json', rows)
     write_json(output/'failures.json', failures)
-    lines=['# Local four-engine benchmark trial', '',
+    lines=['# Four-engine benchmark comparison', '',
            f"Source commit: `{manifest['source']['commit']}`. Source fingerprint: `{manifest['source']['tree_sha256']}`.", '',
            'All runs use native arm64 execution and one thread per engine. Each performance case uses three fresh processes, two warmups, and five measured samples per process. Times retain materialized output; correctness validation follows timing. Peak RSS includes the interpreter, input preparation, independent reference buffers, and validation allocations, so it is whole-process memory rather than kernel allocation.', '',
            'These are sequential desktop measurements, not a formal performance baseline. Group and join outputs are canonicalized after timing. Stable sorting and numerical exports retain declared row alignment. DuckDB results are fetched into Arrow tables or NumPy arrays inside timing. Query setup outside timing applies only to already-prepared inputs; CSV, Parquet, and the wine pipeline include ingestion.', '',
@@ -85,7 +85,7 @@ def main():
     with (output/'cpu-acceptance.log').open('w') as log:
         acceptance=subprocess.run([args.python,str(root/'Benchmarks/Tools/acceptance.py'),'--tier','cpu','--check-baseline','--swift-worker',args.swift_worker,'--python',args.python,'--output',str(output/'cpu-acceptance')],cwd=root,stdout=log,stderr=subprocess.STDOUT)
     manifest.update(finished_utc=datetime.now(timezone.utc).isoformat(),cpu_policy_exit_code=acceptance.returncode)
-    if source_identity(root)!=manifest['source']:raise RuntimeError('Source changed during trial')
+    if source_identity(root)!=manifest['source']:raise RuntimeError('Source changed during comparison')
     write_json(output/'suite.json',manifest);report(root,output,manifest)
     print('Report:',output/'README.md',flush=True)
     return 0 if acceptance.returncode==0 and all(e['status']=='passed' and e.get('audit')=='passed' for e in manifest['runs']) else 1

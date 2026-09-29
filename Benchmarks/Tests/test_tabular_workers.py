@@ -16,7 +16,7 @@ from contracts import digest
 
 
 @unittest.skipUnless(all(importlib.util.find_spec(name) for name in ("polars", "duckdb")),
-                     "Optional local trial: install Benchmarks/Python/requirements-trial.txt")
+                     "Optional comparison engines: install Benchmarks/Python/requirements-comparison.txt")
 class TabularWorkersTests(unittest.TestCase):
     def test_native_operations_match_complete_expected_outputs(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -83,6 +83,30 @@ Applies 2D rotation to Query and Key projections based on position index $m$:
 $$Q_{\text{rot}} = \text{RoPE}(Q, m), \quad K_{\text{rot}} = \text{RoPE}(K, m)$$
 During incremental autoregressive decoding, `RoPEEmbedding` dynamically incorporates `positionOffset` (corresponding to the number of prior cached tokens), ensuring correct relative attention geometry across arbitrary context lengths without learned position embeddings.
 
+### Llama wavelength-dependent rotary scaling
+
+Llama 3.1 and 3.2 checkpoints can specify `rope_type: "llama3"`. Their scaling leaves short wavelengths unchanged, slows long wavelengths by the configured factor, and blends the intermediate band. A different base or a uniform position scale cannot express this rule.
+
+```swift
+let encoding = PositionalEncodingScheme.llama3RoPE(
+    base: 500_000,
+    scaling: Llama3RoPEScaling(
+        factor: 32,
+        lowFrequencyFactor: 1,
+        highFrequencyFactor: 4,
+        originalContextLength: 8192
+    )
+)
+```
+
+These values match the Llama 3.2 1B checkpoint. Supply the values from your own checkpoint for other models. `LLMConfig.llama1B` now selects this encoding. The original Llama 3 8B preset retains ordinary RoPE.
+
+`RoPEEmbedding` precomputes one frequency denominator per rotated pair and passes that array to MLX's native rotary kernel. These constants are excluded from model weights. The kernel supports CPU and Apple GPU execution, partial rotary dimensions, both pair layouts, and position offsets. `scale` remains a uniform position multiplier in addition to the optional wavelength scaling.
+
+Existing `.rope(base:)` calls and unscaled `RoPEEmbedding` construction retain their behavior. Exhaustive switches over `PositionalEncodingScheme` must handle the new `.llama3RoPE` case. The Llama 3.2 preset now produces different rotations by design. Its default sequence allocation remains 8192; matching rotary parameters alone does not establish full checkpoint or long-context generation compatibility.
+
+The frequency rule follows [Meta's Llama reference](https://github.com/meta-llama/llama-models/blob/main/models/llama3/model.py) with explicit parameters from the checkpoint. Tests compare rotations with an independent Double calculation, including long offsets. Their error budget accounts for Float32 phase rounding before evaluating sine and cosine.
+
 ### Two-Stage KV-Cache Generation (Prefill + Decode)
 Generation executes in two distinct stages:
 1. **Prefill Pass**: Evaluates the entire prompt sequence $[0 ..< N]$ in parallel, writing Key and Value projections into `KVCache`.

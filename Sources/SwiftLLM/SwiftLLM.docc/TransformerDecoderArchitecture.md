@@ -112,6 +112,16 @@ Generation executes in two distinct stages:
 1. **Prefill Pass**: Evaluates the entire prompt sequence $[0 ..< N]$ in parallel, writing Key and Value projections into `KVCache`.
 2. **Incremental Decode Steps**: Processes only the single newest token $[N+1]$ at each step. The new Query vector performs dot-product attention against all cached Key and Value vectors ($Q_{N+1} \cdot K_{\text{accumulated}}^T$), eliminating redundant $O(N^2)$ prompt recomputation.
 
+### Ending generation
+
+Set `LLMConfig.eosTokenIDs` to the stop-token IDs from the checkpoint configuration.
+Both `generate(prompt:options:)` and `generateStream(prompt:options:)` stop before
+emitting a sampled stop token. Stop tokens in the input prompt do not end generation.
+
+The Llama 3.2 1B preset uses `[128001, 128008, 128009]`. Custom configurations and
+other presets default to an empty set, preserving their existing generation behavior.
+This setting controls token IDs, not text-based stop sequences or UTF-8 streaming.
+
 ### SwiGLU Feed-Forward Network
 Replaces legacy ReLU/GELU activations with Swish-Gated Linear Units (Llama-style):
 

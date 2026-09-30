@@ -54,6 +54,8 @@ public struct LLMConfig: Sendable {
     public var positionalEncoding: PositionalEncodingScheme
     /// Use the token embedding matrix for output logits instead of a separate head.
     public var tieWordEmbeddings: Bool
+    /// Token IDs that end generation without being emitted. Empty preserves legacy behavior.
+    public var eosTokenIDs: Set<Int>
 
     /// Creates an LLM configuration.
     /// - Parameters:
@@ -67,6 +69,7 @@ public struct LLMConfig: Sendable {
     ///   - rmsNormEps: RMSNorm epsilon (default `1e-5`).
     ///   - positionalEncoding: Positional encoding scheme (default `.rope(base: 10_000.0)`).
     ///   - tieWordEmbeddings: Share input and output weights. Defaults to `false`.
+    ///   - eosTokenIDs: Checkpoint stop-token IDs. Defaults to an empty set.
     public init(
         vocabSize: Int,
         numLayers: Int,
@@ -77,7 +80,8 @@ public struct LLMConfig: Sendable {
         maxSeqLen: Int = 2048,
         rmsNormEps: Float = 1e-5,
         positionalEncoding: PositionalEncodingScheme = .rope(base: 10_000.0),
-        tieWordEmbeddings: Bool = false
+        tieWordEmbeddings: Bool = false,
+        eosTokenIDs: Set<Int> = []
     ) {
         self.vocabSize          = vocabSize
         self.numLayers          = numLayers
@@ -89,6 +93,7 @@ public struct LLMConfig: Sendable {
         self.rmsNormEps         = rmsNormEps
         self.positionalEncoding = positionalEncoding
         self.tieWordEmbeddings = tieWordEmbeddings
+        self.eosTokenIDs = eosTokenIDs
         _ = validatedKVHeadCount()
     }
 
@@ -114,7 +119,7 @@ public struct LLMConfig: Sendable {
         LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32, numKVHeads: 8,
                   intermediateSize: 8192, maxSeqLen: 8192,
                   positionalEncoding: .llama3RoPE(scaling: Llama3RoPEScaling(factor: 32)),
-                  tieWordEmbeddings: true)
+                  tieWordEmbeddings: true, eosTokenIDs: [128001, 128008, 128009])
     }
 
     /// Approximate Llama 3-8B compatible configuration.
@@ -558,6 +563,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
                 for _ in 0..<options.maxTokens {
                     if Task.isCancelled { break }
                     let nextToken = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
+                    if self.config.eosTokenIDs.contains(nextToken) { break }
                     let decoded = tokenizer.decode(tokens: [nextToken])
                     if decoded.isEmpty || decoded == "<unk>" { break }
                     continuation.yield(decoded)
@@ -607,6 +613,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
                 for _ in 0..<options.maxTokens {
                     if Task.isCancelled { break }
                     let nextToken = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
+                    if self.config.eosTokenIDs.contains(nextToken) { break }
                     let decoded = tokenizer.decode(tokens: [nextToken])
                     if decoded.isEmpty || decoded == "<unk>" { break }
                     continuation.yield(decoded)

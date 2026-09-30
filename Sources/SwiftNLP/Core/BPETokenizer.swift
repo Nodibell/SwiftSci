@@ -76,19 +76,8 @@ public struct BPETokenizer: Tokenizer, Sendable {
     /// - Returns: Reconstructed UTF-8 text. Legacy mode normalizes word boundaries;
     ///   Llama 3 mode preserves whitespace and special-token text.
     public func decode(tokens: [Int]) -> String {
-        if let llama3 {
-            var bytes: [UInt8] = []
-            for id in tokens {
-                guard let token = decoder[id] else { continue }
-                if llama3.specialTokens.contains(token) {
-                    bytes.append(contentsOf: token.utf8)
-                } else {
-                    for scalar in token.unicodeScalars {
-                        if let byte = Self.byteDecoder[Character(scalar)] { bytes.append(byte) }
-                    }
-                }
-            }
-            return String(decoding: bytes, as: UTF8.self)
+        if llama3 != nil {
+            return String(decoding: tokens.flatMap { llama3Bytes(for: $0) }, as: UTF8.self)
         }
         let subwords = tokens.compactMap { decoder[$0] }
         let joined = subwords.joined()
@@ -119,6 +108,21 @@ public struct BPETokenizer: Tokenizer, Sendable {
         return decoded.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
+    /// Buffers incomplete UTF-8 scalars for Llama byte-level tokenizers.
+    /// Legacy tokenizers retain their existing per-token text decoding.
+    public func makeStreamDecoder() -> TokenStreamDecoder {
+        if llama3 != nil {
+            return TokenStreamDecoder(decodeBytes: { self.llama3Bytes(for: $0) })
+        }
+        return TokenStreamDecoder(decodeToken: { self.decode(tokens: [$0]) })
+    }
+
+    private func llama3Bytes(for id: Int) -> [UInt8] {
+        guard let llama3, let token = decoder[id] else { return [] }
+        if llama3.specialTokens.contains(token) { return Array(token.utf8) }
+        return token.unicodeScalars.compactMap { Self.byteDecoder[Character($0)] }
+    }
+
     // MARK: - Helper BPE Algorithm
     
     static let byteEncoder: [UInt8: Character] = Self.makeByteEncoder()

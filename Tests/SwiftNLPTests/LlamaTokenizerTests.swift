@@ -49,6 +49,18 @@ struct LlamaTokenizerTests {
         return try JSONSerialization.data(withJSONObject: root)
     }
 
+    @Test("Streaming preserves split Unicode scalars, whitespace, and literal replacement characters")
+    func streamingUnicode() throws {
+        let tokenizer = try BPETokenizer(llama3TokenizerJSON: fixture())
+        for text in [" café e\u{301} 世界 👩‍🔬 🇺🇦\r\n", "\u{0}\u{7} � ", "<|begin_of_text|>hello<|eot_id|>"] {
+            var stream = tokenizer.makeStreamDecoder()
+            var actual = ""
+            for token in tokenizer.encode(text: text) { actual += stream.append(token) ?? "" }
+            actual += stream.finish()
+            #expect(Array(actual.utf8) == Array(text.utf8))
+        }
+    }
+
     private func changed(_ mutate: (inout [String: Any]) -> Void) throws -> Data {
         var root = try #require(JSONSerialization.jsonObject(with: fixture()) as? [String: Any])
         mutate(&root)

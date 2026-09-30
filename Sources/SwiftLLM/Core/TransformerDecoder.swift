@@ -17,6 +17,7 @@ import SwiftNLP
 ///     numLayers: 16,
 ///     hiddenDim: 2048,
 ///     numHeads: 32,
+///     numKVHeads: 8,
 ///     intermediateSize: 8192,
 ///     maxSeqLen: 8192
 /// )
@@ -36,8 +37,11 @@ public struct LLMConfig: Sendable {
     public var numLayers: Int
     /// Hidden (embedding) dimensionality.
     public var hiddenDim: Int
-    /// Number of attention heads.
+    /// Number of query attention heads.
     public var numHeads: Int
+    /// Number of key/value heads. `nil` follows `numHeads`, preserving multi-head attention.
+    /// A supplied count must be positive and divide `numHeads` exactly.
+    public var numKVHeads: Int?
     /// Feed-forward network intermediate dimension (SwiGLU gate/up projection size).
     public var intermediateSize: Int
     /// Maximum supported input sequence length.
@@ -52,7 +56,8 @@ public struct LLMConfig: Sendable {
     ///   - vocabSize: Vocabulary size.
     ///   - numLayers: Number of decoder layers (e.g. 16 for 1B, 32 for 7B).
     ///   - hiddenDim: Model hidden dimension (e.g. 2048 for 1B, 4096 for 7B).
-    ///   - numHeads: Number of attention heads.
+    ///   - numHeads: Number of query attention heads.
+    ///   - numKVHeads: Key/value head count. `nil` uses the current query-head count.
     ///   - intermediateSize: SwiGLU FFN inner projection size (typically `hiddenDim * 4`).
     ///   - maxSeqLen: Maximum token sequence length (default `2048`).
     ///   - rmsNormEps: RMSNorm epsilon (default `1e-5`).
@@ -62,6 +67,7 @@ public struct LLMConfig: Sendable {
         numLayers: Int,
         hiddenDim: Int,
         numHeads: Int,
+        numKVHeads: Int? = nil,
         intermediateSize: Int? = nil,
         maxSeqLen: Int = 2048,
         rmsNormEps: Float = 1e-5,
@@ -71,10 +77,21 @@ public struct LLMConfig: Sendable {
         self.numLayers          = numLayers
         self.hiddenDim          = hiddenDim
         self.numHeads           = numHeads
+        self.numKVHeads         = numKVHeads
         self.intermediateSize   = intermediateSize ?? (hiddenDim * 4)
         self.maxSeqLen          = maxSeqLen
         self.rmsNormEps         = rmsNormEps
         self.positionalEncoding = positionalEncoding
+        _ = validatedKVHeadCount()
+    }
+
+    func validatedKVHeadCount() -> Int {
+        precondition(numHeads > 0 && hiddenDim > 0 && hiddenDim % numHeads == 0,
+                     "hiddenDim must be positive and divisible by a positive numHeads")
+        let count = numKVHeads ?? numHeads
+        precondition(count > 0 && numHeads % count == 0,
+                     "numKVHeads must be positive and divide numHeads")
+        return count
     }
 
     // MARK: - Presets
@@ -86,13 +103,13 @@ public struct LLMConfig: Sendable {
 
     /// Approximate Llama 3.2-1B compatible configuration.
     public static var llama1B: LLMConfig {
-        LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32,
+        LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32, numKVHeads: 8,
                   intermediateSize: 8192, maxSeqLen: 8192, positionalEncoding: .rope(base: 500_000.0))
     }
 
     /// Approximate Llama 3-8B compatible configuration.
     public static var llama8B: LLMConfig {
-        LLMConfig(vocabSize: 128_256, numLayers: 32, hiddenDim: 4096, numHeads: 32,
+        LLMConfig(vocabSize: 128_256, numLayers: 32, hiddenDim: 4096, numHeads: 32, numKVHeads: 8,
                   intermediateSize: 14336, maxSeqLen: 8192, positionalEncoding: .rope(base: 500_000.0))
     }
 
@@ -154,12 +171,17 @@ public final class TransformerBlock: Module, UnaryLayer {
     @ModuleInfo public var norm2: RMSNorm
     @ModuleInfo public var ffn: SwiGLUFFN
     @ModuleInfo public var rope: RoPEEmbedding?
+    private let numKVHeads: Int
 
     /// Creates a decoder block.
     /// - Parameter config: Full LLM configuration.
     public init(config: LLMConfig) {
+        let kvHeads = config.validatedKVHeadCount()
+        self.numKVHeads = kvHeads
         self.norm1     = RMSNorm(dimensions: config.hiddenDim, eps: config.rmsNormEps)
-        self.attention = MultiHeadAttention(dimensions: config.hiddenDim, numHeads: config.numHeads)
+        self.attention = kvHeads == config.numHeads
+            ? MultiHeadAttention(dimensions: config.hiddenDim, numHeads: config.numHeads)
+            : GroupedQueryAttention(dimensions: config.hiddenDim, numHeads: config.numHeads, numKVHeads: kvHeads)
         self.norm2     = RMSNorm(dimensions: config.hiddenDim, eps: config.rmsNormEps)
         self.ffn       = SwiGLUFFN(config: config)
 
@@ -202,8 +224,8 @@ public final class TransformerBlock: Module, UnaryLayer {
 
         let numHeads = attention.numHeads
         q = unflatten(q, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
-        k = unflatten(k, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
-        v = unflatten(v, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
+        k = unflatten(k, axis: -1, shape: [numKVHeads, -1]).transposed(0, 2, 1, 3)
+        v = unflatten(v, axis: -1, shape: [numKVHeads, -1]).transposed(0, 2, 1, 3)
 
         if let rope = self.rope {
             if q.shape[0] > 1 && q.shape[2] == 1 {
@@ -312,6 +334,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
     ///   - config: Model architecture configuration.
     ///   - tokenizer: Tokenizer for text ↔ token-ID conversion.
     public init(config: LLMConfig, tokenizer: any Tokenizer) {
+        _ = config.validatedKVHeadCount()
         self.config    = config
         self.tokenizer = tokenizer
 

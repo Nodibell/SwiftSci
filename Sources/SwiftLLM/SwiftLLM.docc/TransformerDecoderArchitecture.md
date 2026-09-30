@@ -55,6 +55,29 @@ High-throughput, on-device causal language model execution on Apple Silicon Unif
 
 ## 1. Core Architectural Components
 
+### Grouped-query attention
+
+`LLMConfig.numHeads` is the query-head count. `numKVHeads` sets the key/value head count. Its default, `nil`, follows the current query-head count and preserves ordinary multi-head attention. Setting it to one selects multi-query attention. Other positive divisors select grouped-query attention.
+
+```swift
+let config = LLMConfig(
+	vocabSize: 128_256,
+	numLayers: 16,
+	hiddenDim: 2048,
+	numHeads: 32,
+	numKVHeads: 8,
+	intermediateSize: 8192
+)
+```
+
+The head dimension is `hiddenDim / numHeads`. Query and output projections retain the hidden width. Key and value projections each have shape `[numKVHeads * headDimension, hiddenDim]`. For the example above, K/V weights are `[512, 2048]` and cached tensors are `[batch, 8, sequence, 64]`.
+
+The cache retains eight KV heads. It does not expand them to 32 query heads. Those cache tensors use one quarter of the elements of the corresponding full-head cache. This describes tensor storage, not total process memory or a measured speedup. MLX's native scaled-dot-product attention consumes the grouped layout directly.
+
+The public `TransformerBlock.attention` property remains a `MultiHeadAttention`. Its direct-call path also handles grouped heads, and existing projection parameter paths remain unchanged. Configuration construction and model construction reject nonpositive head counts and nondivisible head layouts with preconditions.
+
+The `llama1B` and `llama8B` presets now use eight KV heads. Their K/V parameter shapes therefore differ from earlier approximate presets. To retain the old full-head layout, set `numKVHeads` to `nil` before constructing the model. These presets still do not establish full checkpoint compatibility; rotary scaling and tied output embeddings require separate validation.
+
 ### RoPE (Rotary Position Embedding) with Dynamic Offset
 Applies 2D rotation to Query and Key projections based on position index $m$:
 $$Q_{\text{rot}} = \text{RoPE}(Q, m), \quad K_{\text{rot}} = \text{RoPE}(K, m)$$

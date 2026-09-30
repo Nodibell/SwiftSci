@@ -26,6 +26,31 @@ The initializer rejects unsupported normalization, padding, truncation, token-st
 
 `decode(tokens:)` preserves whitespace and includes special-token text. Unknown IDs are omitted, consistent with the existing tokenizer API. Incomplete UTF-8 sequences decode with replacement characters, so decoding individual generated tokens can differ from decoding the complete token sequence.
 
+## Streaming generated text
+
+Create a separate decoder for each generated response:
+
+```swift
+var stream = tokenizer.makeStreamDecoder()
+for token in generatedTokenIDs {
+    if let text = stream.append(token) {
+        output(text)
+    }
+}
+output(stream.finish())
+```
+
+For Llama byte-level tokenizers, `append` retains at most three trailing bytes of an
+incomplete UTF-8 scalar. It returns `nil` when no complete text is available yet.
+Complete text is emitted immediately. `finish` flushes unfinished bytes using the
+same replacement-character rules as `decode(tokens:)`; repeated calls return an
+empty string. Decoding does not normalize whitespace or discard literal replacement
+characters. Each token is processed once without decoding the entire response again.
+
+Both `TransformerDecoder` generation APIs use this decoder. Other tokenizers retain
+per-token decoding through the default `Tokenizer.makeStreamDecoder()` implementation.
+A custom byte tokenizer can supply `TokenStreamDecoder(decodeBytes:)` to opt in.
+
 ## Chat formatting
 
 The initializer reads `tokenizer.json`. It does not execute the chat template in `tokenizer_config.json`.

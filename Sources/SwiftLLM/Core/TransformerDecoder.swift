@@ -546,6 +546,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
 
         return AsyncStream<String> { continuation in
             let task = Task {
+                var textDecoder = tokenizer.makeStreamDecoder()
                 var tokens = tokenizer.encode(text: prompt)
                 if tokens.isEmpty { tokens = [0] }
                 tokens = Array(tokens.suffix(maxSeqLen))
@@ -564,9 +565,10 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
                     if Task.isCancelled { break }
                     let nextToken = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
                     if self.config.eosTokenIDs.contains(nextToken) { break }
-                    let decoded = tokenizer.decode(tokens: [nextToken])
-                    if decoded.isEmpty || decoded == "<unk>" { break }
-                    continuation.yield(decoded)
+                    if let decoded = textDecoder.append(nextToken) {
+                        if decoded.isEmpty || decoded == "<unk>" { break }
+                        continuation.yield(decoded)
+                    }
                     tokens.append(nextToken)
 
                     if tokens.count >= maxSeqLen { break }
@@ -576,6 +578,10 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
                     let stepLogits = self.forward(inputToken, caches: caches, offset: currentOffset)
                     lastLogits = stepLogits[0, 0]
                     eval(lastLogits)
+                }
+                if !Task.isCancelled {
+                    let finalText = textDecoder.finish()
+                    if !finalText.isEmpty { continuation.yield(finalText) }
                 }
                 continuation.finish()
             }
@@ -597,6 +603,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
 
         return AsyncThrowingStream<String, any Error> { continuation in
             let task = Task {
+                var textDecoder = tokenizer.makeStreamDecoder()
                 var tokens = tokenizer.encode(text: prompt)
                 if tokens.isEmpty { tokens = [0] }
                 tokens = Array(tokens.suffix(maxSeqLen))
@@ -614,9 +621,10 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
                     if Task.isCancelled { break }
                     let nextToken = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
                     if self.config.eosTokenIDs.contains(nextToken) { break }
-                    let decoded = tokenizer.decode(tokens: [nextToken])
-                    if decoded.isEmpty || decoded == "<unk>" { break }
-                    continuation.yield(decoded)
+                    if let decoded = textDecoder.append(nextToken) {
+                        if decoded.isEmpty || decoded == "<unk>" { break }
+                        continuation.yield(decoded)
+                    }
                     tokens.append(nextToken)
 
                     if tokens.count >= maxSeqLen { break }
@@ -626,6 +634,10 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
                     let stepLogits = self.forward(inputToken, caches: caches, offset: currentOffset)
                     lastLogits = stepLogits[0, 0]
                     eval(lastLogits)
+                }
+                if !Task.isCancelled {
+                    let finalText = textDecoder.finish()
+                    if !finalText.isEmpty { continuation.yield(finalText) }
                 }
                 continuation.finish()
             }

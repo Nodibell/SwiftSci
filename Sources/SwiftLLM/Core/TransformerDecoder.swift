@@ -52,6 +52,8 @@ public struct LLMConfig: Sendable {
     public var rmsNormEps: Float
     /// Positional encoding scheme (default `.rope(base: 10_000.0)`).
     public var positionalEncoding: PositionalEncodingScheme
+    /// Use the token embedding matrix for output logits instead of a separate head.
+    public var tieWordEmbeddings: Bool
 
     /// Creates an LLM configuration.
     /// - Parameters:
@@ -64,6 +66,7 @@ public struct LLMConfig: Sendable {
     ///   - maxSeqLen: Maximum token sequence length (default `2048`).
     ///   - rmsNormEps: RMSNorm epsilon (default `1e-5`).
     ///   - positionalEncoding: Positional encoding scheme (default `.rope(base: 10_000.0)`).
+    ///   - tieWordEmbeddings: Share input and output weights. Defaults to `false`.
     public init(
         vocabSize: Int,
         numLayers: Int,
@@ -73,7 +76,8 @@ public struct LLMConfig: Sendable {
         intermediateSize: Int? = nil,
         maxSeqLen: Int = 2048,
         rmsNormEps: Float = 1e-5,
-        positionalEncoding: PositionalEncodingScheme = .rope(base: 10_000.0)
+        positionalEncoding: PositionalEncodingScheme = .rope(base: 10_000.0),
+        tieWordEmbeddings: Bool = false
     ) {
         self.vocabSize          = vocabSize
         self.numLayers          = numLayers
@@ -84,6 +88,7 @@ public struct LLMConfig: Sendable {
         self.maxSeqLen          = maxSeqLen
         self.rmsNormEps         = rmsNormEps
         self.positionalEncoding = positionalEncoding
+        self.tieWordEmbeddings = tieWordEmbeddings
         _ = validatedKVHeadCount()
     }
 
@@ -94,6 +99,7 @@ public struct LLMConfig: Sendable {
         precondition(count > 0 && numHeads % count == 0,
                      "numKVHeads must be positive and divide numHeads")
         return count
+
     }
 
     // MARK: - Presets
@@ -107,7 +113,8 @@ public struct LLMConfig: Sendable {
     public static var llama1B: LLMConfig {
         LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32, numKVHeads: 8,
                   intermediateSize: 8192, maxSeqLen: 8192,
-                  positionalEncoding: .llama3RoPE(scaling: Llama3RoPEScaling(factor: 32)))
+                  positionalEncoding: .llama3RoPE(scaling: Llama3RoPEScaling(factor: 32)),
+                  tieWordEmbeddings: true)
     }
 
     /// Approximate Llama 3-8B compatible configuration.
@@ -319,7 +326,8 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
     /// Stack of N decoder blocks.
     @ModuleInfo public var layers: [TransformerBlock]
     @ModuleInfo public var finalNorm: RMSNorm
-    @ModuleInfo public var lmHead: Linear
+    /// Independent output projection, or `nil` when logits use the current token embedding.
+    @ModuleInfo public var lmHead: Linear?
 
     // MARK: Configuration
 
@@ -348,7 +356,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
         self.posEmbedding = Embedding(embeddingCount: config.maxSeqLen,  dimensions: config.hiddenDim)
         self.layers       = (0..<config.numLayers).map { _ in TransformerBlock(config: config) }
         self.finalNorm    = RMSNorm(dimensions: config.hiddenDim, eps: config.rmsNormEps)
-        self.lmHead       = Linear(config.hiddenDim, config.vocabSize, bias: false)
+        self.lmHead       = config.tieWordEmbeddings ? nil : Linear(config.hiddenDim, config.vocabSize, bias: false)
 
         super.init()
     }
@@ -404,7 +412,9 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             h = layer.forward(h, mask: mask, cache: cache, offset: offset)
         }
 
-        return lmHead(finalNorm(h))
+        h = finalNorm(h)
+        if let lmHead { return lmHead(h) }
+        return embedding.asLinear(h)
     }
 
     /// Executes the full N-layer decoder forward pass without KV caching.
@@ -505,7 +515,9 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
 
         // Final norm & LM head
         mapParam(srcKey: "model.norm.weight", dstKey: "finalNorm.weight")
-        mapParam(srcKey: "lm_head.weight", dstKey: "lmHead.weight")
+        if lmHead != nil {
+            mapParam(srcKey: "lm_head.weight", dstKey: "lmHead.weight")
+        }
 
         if !params.isEmpty {
             self.update(parameters: NestedDictionary.unflattened(params))

@@ -13,6 +13,7 @@ struct LlamaRotaryScalingTests {
             var config = LLMConfig.llama1B
             config.hiddenDim = 64
             config.numHeads = 1
+            config.numKVHeads = nil
             config.intermediateSize = 8
             let rope = try #require(TransformerBlock(config: config).rope)
             let input = MLXArray.ones([1, 1, 2, 64])

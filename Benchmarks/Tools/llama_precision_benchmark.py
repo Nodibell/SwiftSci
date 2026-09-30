@@ -12,7 +12,7 @@ from llama_score_analysis import validate_request
 
 
 def summarize(runs):
-    modes = ['bf16', 'head-float32', 'float32']
+    modes = ['bf16', 'head-float32', 'shared-float32', 'float32']
     case_ids = {c['id'] for c in runs[0]['cases']}
     summary = {}
     for mode in modes:
@@ -55,7 +55,7 @@ def main():
     validate_request(json.loads(request_path.read_text()))
     expected = {}
     score_hashes = {}
-    for mode in ['bf16', 'head-float32', 'float32']:
+    for mode in ['bf16', 'head-float32', 'shared-float32', 'float32']:
         path = args.score_run / ('scores-' + mode) / 'scores.json'
         score_hashes[mode] = sha(path)
         score = json.loads(path.read_text())
@@ -72,7 +72,7 @@ def main():
     try:
         with (args.output / 'python-environment.txt').open('w') as stream:
             subprocess.run([str(args.python.absolute()), '-m', 'pip', 'freeze'], check=True, stdout=stream)
-        for block, modes in enumerate([['bf16', 'head-float32', 'float32'], ['float32', 'head-float32', 'bf16']]):
+        for block, modes in enumerate([['bf16', 'head-float32', 'shared-float32', 'float32'], ['float32', 'shared-float32', 'head-float32', 'bf16']]):
             for mode in modes:
                 name = f'block-{block + 1}-{mode}'
                 command = [str(args.python.absolute()), str(ROOT / 'Benchmarks/Python/llama_precision_timing_worker.py'),

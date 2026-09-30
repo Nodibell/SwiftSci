@@ -50,6 +50,7 @@ The ordinary comparison files remain present. Score collection adds:
 | `score-request.json` | Exact prompt IDs, forced continuation and selected positions. |
 | `scores-bf16/scores.json` | BF16 model/cache precision, token choices, ties and artifact identities. |
 | `scores-head-float32/scores.json` | The same observations with a BF16 body/cache and a Float32 output projection. |
+| `scores-shared-float32/scores.json` | The same observations with one shared Float32 embedding/output matrix, BF16 gathered input rows and a BF16 body/cache. |
 | `scores-float32/scores.json` | The same observations for Float32 computation. |
 | `scores-*/scores.npz` | Full raw logits and native log probabilities as Float32 arrays, loaded without pickle. BF16 values promote exactly. |
 | `score-analysis.json` | Competing-token margins, normalization effects, rounding sensitivity and candidate-only error measures. |

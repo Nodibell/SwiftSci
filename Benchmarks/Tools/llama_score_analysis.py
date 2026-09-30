@@ -75,7 +75,7 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
     request_path = output / 'score-request.json'
     request_path.write_text(json.dumps(request, indent=2) + '\n')
     score_sets = {}
-    for precision in ['bf16', 'head-float32', 'float32']:
+    for precision in ['bf16', 'head-float32', 'shared-float32', 'float32']:
         destination = output / ('scores-' + precision)
         with (output / ('scores-' + precision + '.log')).open('w') as log:
             subprocess.run([str(python.absolute()), str(ROOT / 'Benchmarks/Python/llama_score_worker.py'),
@@ -101,9 +101,11 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
         bf_meta, bf_arrays = score_sets['bf16']
         fp_meta, fp_arrays = score_sets['float32']
         head_meta, head_arrays = score_sets['head-float32']
+        shared_meta, shared_arrays = score_sets['shared-float32']
         bf_case = next(c for c in bf_meta['cases'] if c['id'] == case['id'])
         fp_case = next(c for c in fp_meta['cases'] if c['id'] == case['id'])
         head_case = next(c for c in head_meta['cases'] if c['id'] == case['id'])
+        shared_case = next(c for c in shared_meta['cases'] if c['id'] == case['id'])
         for position in case['positions']:
             cpp_scores = [s['response']['completion_probabilities'][position] for s in result['samples']]
             if not all(s == cpp_scores[0] for s in cpp_scores):
@@ -117,6 +119,7 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
             bf_probe = next(p for p in bf_case['probes'] if p['position'] == position)
             fp_probe = next(p for p in fp_case['probes'] if p['position'] == position)
             head_probe = next(p for p in head_case['probes'] if p['position'] == position)
+            shared_probe = next(p for p in shared_case['probes'] if p['position'] == position)
             if bf_probe['native_argmax'] != baseline[position]:
                 raise ValueError('Instrumented BF16 prediction differs from the uninstrumented baseline')
             key = bf_probe['array_key']
@@ -130,6 +133,12 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
                 mlx_head_float32_token=head_probe['native_argmax'],
                 mlx_head_float32_matches_cpp=head_probe['native_argmax'] == cpp_token,
                 head_float32_top_tie_count=head_probe['raw_top_tie_count'],
+                mlx_shared_float32_token=shared_probe['native_argmax'],
+                mlx_shared_float32_matches_cpp=shared_probe['native_argmax'] == cpp_token,
+                shared_float32_top_tie_count=shared_probe['raw_top_tie_count'],
+                shared_to_head_logits_exact=bool(np.array_equal(shared_arrays[key + '-logits'], head_arrays[key + '-logits'])),
+                shared_to_head_logit_max_abs=float(np.max(np.abs(shared_arrays[key + '-logits'].astype(np.float64) - head_arrays[key + '-logits']))),
+                shared_float32=candidate_metrics(shared_arrays[key + '-logits'], cpp['top_logprobs'], baseline[position], cpp_token),
                 head_float32=candidate_metrics(head_arrays[key + '-logits'], cpp['top_logprobs'], baseline[position], cpp_token),
                 bf16_top_tie_count=bf_probe['raw_top_tie_count'],
                 float32_top_tie_count=fp_probe['raw_top_tie_count'],
@@ -146,4 +155,6 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
     (output / 'score-analysis.json').write_text(json.dumps(report, indent=2) + '\n')
     return dict(status=report['status'], probe_count=len(report['probes']), numerical_certificate=False,
                 float32_agrees_with_cpp=sum(p['mlx_float32_matches_cpp'] for p in report['probes']),
-                head_float32_agrees_with_cpp=sum(p['mlx_head_float32_matches_cpp'] for p in report['probes']))
+                head_float32_agrees_with_cpp=sum(p['mlx_head_float32_matches_cpp'] for p in report['probes']),
+                shared_float32_agrees_with_cpp=sum(p['mlx_shared_float32_matches_cpp'] for p in report['probes']),
+                shared_to_head_logits_exact=all(p['shared_to_head_logits_exact'] for p in report['probes']))

@@ -27,9 +27,12 @@ let conversation: [ChatMessage] = [
 
 | Preset | Target Models | Format Structure |
 |---|---|---|
-| **`.llama3`** | Llama 3, Llama 3.1, Llama 3.2 | `<|begin_of_text|><|start_header_id|>role<|end_header_id|>\n\ncontent<|eot_id|>` |
+| **`.llama3`** | Generic Llama 3 headers | `<|start_header_id|>role<|end_header_id|>\n\ncontent<|eot_id|>` |
+| **`.llama32Instruct(date:)`** | Pinned Llama 3.2 1B Instruct text chats | BOS, dated system header, trimmed messages, and string tool results |
 | **`.chatML`** | Qwen 2.5, Hermes, Yi | `<|im_start|>role\ncontent<|im_end|>` |
 | **`.mistral`** | Mistral 7B, Mixtral | `[INST] system\n\nuser [/INST] assistant` |
+
+See <doc:LlamaTokenizer> for the checkpoint-specific template, supported message types, and tokenizer requirements.
 
 ## 3. Rendering & Tokenization
 

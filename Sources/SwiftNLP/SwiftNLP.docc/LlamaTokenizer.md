@@ -30,7 +30,21 @@ The initializer rejects unsupported normalization, padding, truncation, token-st
 
 The initializer reads `tokenizer.json`. It does not execute the chat template in `tokenizer_config.json`.
 
-An already rendered checkpoint chat prompt uses `encode(text:)`, because that prompt contains its own beginning-of-text token. SwiftSci's generic `ChatTemplate.llama3` renderer is separate from the checkpoint template. Its output has not been established as equivalent to the checkpoint's system headers, dates, or tool formatting.
+`ChatTemplate.llama32Instruct(date:)` implements the pinned checkpoint's text-conversation formatting. The date is explicit, so the same inputs produce the same prompt without consulting the clock or locale.
+
+```swift
+let template = ChatTemplate.llama32Instruct(date: "30 Sep 2026")
+let ids = template.encode(
+	messages: [.system("Be concise."), .user("What is 2 + 2?")],
+	using: tokenizer
+)
+```
+
+The renderer emits BOS once, followed by the dated system header. It trims ordinary message content using the checkpoint's whitespace rules. It emits string tool responses as JSON strings under the `ipython` role, preserving their whitespace. A leading system message supplies the system content. Later system messages retain their position in the conversation.
+
+The renderer supports the checkpoint's `tools=None` path. It does not accept tool definitions, structured tool calls, structured tool results, or multimodal content. As a Swift API convenience, an empty conversation produces the dated system header and an optional assistant header. The reference's conversation wrapper requires a nonempty message list, so this empty-input behavior is tested separately.
+
+An already rendered prompt uses `encode(text:)`, because it contains its own BOS. `ChatTemplate.encode` also uses this method and does not add another BOS. The generic `ChatTemplate.llama3` style retains its existing behavior and is separate from this checkpoint-specific style.
 
 ## Compatibility and validation
 
@@ -40,4 +54,6 @@ Self-contained `LlamaTokenizerTests` cover byte preservation, Unicode, special t
 
 The pinned tokenizer comes from `mlx-community/Llama-3.2-1B-Instruct-bf16`, revision `863c846a9ac6fad4e49e1743d52984dff262e953`. Its SHA-256 is `79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4`. Reference IDs were produced with `tokenizers` 0.23.2. The rendered-chat cases use `transformers` 5.17.0 and a fixed date. Checkpoint files remain external to the repository.
 
-Tokenizer parity alone does not establish native checkpoint loading or generation correctness.
+`Llama32ChatTemplateTests` checks rendered bytes against the pinned checkpoint template, including ordinary messages, string tool responses, Unicode, and generation-header control. With `SWIFTSCI_LLAMA_TOKENIZER_JSON` set, it also checks complete prompt token IDs. The tokenizer configuration SHA-256 is `9823dcfdc1121869029da45192238e85cf44f0b232a6d9dc20e4fe6f4242a14e` at the same pinned revision.
+
+Tokenizer and chat-template parity do not establish native checkpoint loading or generation correctness.

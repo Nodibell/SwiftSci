@@ -100,6 +100,25 @@ print("Loaded GGUF Model with \(ggufModel.tensors.count) quantized tensors.")
 
 ---
 
+### Tied input and output embeddings
+
+Some checkpoints, including Llama 3.2 1B, set `tie_word_embeddings` to `true`. They use the token embedding matrix for both input lookup and output logits, so the checkpoint can omit `lm_head.weight`.
+
+Set `LLMConfig.tieWordEmbeddings` to `true` to select this layout. The `llama1B` preset enables it. Other presets and custom configurations retain the default `false`.
+
+A tied decoder has no independent output module or output-weight parameter. It calls the current embedding's `asLinear` operation after final normalization. Checkpoint reloads, parameter updates, embedding replacement, and quantized embedding replacement therefore affect both uses. Training accumulates input and output contributions into the single embedding parameter.
+
+`loadWeights` requires `model.embed_tokens.weight` in tied mode and does not report a missing `lm_head.weight`. If both keys are supplied, the embedding is authoritative and the separate output tensor is ignored. An output tensor alone does not substitute for missing embeddings. Untied models continue to require `lm_head.weight`.
+
+`TransformerDecoder.lmHead` is now `Linear?`. Callers that access the independent head directly must unwrap it. A `nil` head selects projection through the embedding; it does not disable output logits. This represents the absence of a separate module and avoids keeping an unused vocabulary-sized matrix merely to preserve the old property type.
+
+```swift
+if let independentHead = decoder.lmHead {
+    // Inspect or use the independent projection in an untied model.
+    print(independentHead.shape)
+}
+```
+
 ## 3. End-to-End Decoder Configuration & Two-Stage Inference
 
 Construct a `TransformerDecoder` and perform two-stage cached generation:

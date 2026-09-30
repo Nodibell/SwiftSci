@@ -177,7 +177,7 @@ public final class TransformerBlock: Module, UnaryLayer {
     /// - Parameter x: Input `[batch, seq, hiddenDim]`.
     /// - Returns: Output `[batch, seq, hiddenDim]`.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
-        let mask = x.shape[1] > 1 ? MultiHeadAttention.createAdditiveCausalMask(x.shape[1]) : nil
+        let mask = x.shape[1] > 1 ? MultiHeadAttention.createAdditiveCausalMask(x.shape[1]).asType(x.dtype) : nil
         return forward(x, mask: mask, cache: nil, offset: 0)
     }
 
@@ -368,7 +368,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             h = h + posEmbedding(positions)
         }
 
-        let mask: MLXArray? = seqLen > 1 ? MultiHeadAttention.createAdditiveCausalMask(seqLen) : nil
+        let mask: MLXArray? = seqLen > 1 ? MultiHeadAttention.createAdditiveCausalMask(seqLen).asType(h.dtype) : nil
 
         for (idx, layer) in layers.enumerated() {
             let cache = caches?[idx]

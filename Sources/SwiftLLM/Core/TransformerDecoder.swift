@@ -25,6 +25,8 @@ import SwiftNLP
 public enum PositionalEncodingScheme: Sendable, Equatable {
     /// Rotary Positional Embedding (RoPE) applied to Q and K with configurable base frequency.
     case rope(base: Float = 10_000.0)
+    /// Llama 3.1/3.2 rotary encoding with explicit checkpoint scaling parameters.
+    case llama3RoPE(base: Float = 500_000.0, scaling: Llama3RoPEScaling)
     /// Classical learned additive positional embeddings.
     case learned
 }
@@ -87,7 +89,8 @@ public struct LLMConfig: Sendable {
     /// Approximate Llama 3.2-1B compatible configuration.
     public static var llama1B: LLMConfig {
         LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32,
-                  intermediateSize: 8192, maxSeqLen: 8192, positionalEncoding: .rope(base: 500_000.0))
+                  intermediateSize: 8192, maxSeqLen: 8192,
+                  positionalEncoding: .llama3RoPE(scaling: Llama3RoPEScaling(factor: 32)))
     }
 
     /// Approximate Llama 3-8B compatible configuration.
@@ -167,6 +170,9 @@ public final class TransformerBlock: Module, UnaryLayer {
         case .rope(let base):
             let headDim = config.hiddenDim / config.numHeads
             self.rope = RoPEEmbedding(dimensions: headDim, base: base)
+        case .llama3RoPE(let base, let scaling):
+            let headDim = config.hiddenDim / config.numHeads
+            self.rope = RoPEEmbedding(dimensions: headDim, base: base, scaling: scaling)
         case .learned:
             self.rope = nil
         }

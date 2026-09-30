@@ -7,6 +7,26 @@ import SwiftNLP
 
 @Suite("Llama rotary scaling", .serialized)
 struct LlamaRotaryScalingTests {
+    @Test("Transition-band frequencies match the checkpoint reference", arguments: [false, true])
+    func transitionFrequencies(gpu: Bool) {
+        Device.withDefaultDevice(gpu ? .gpu : .cpu) {
+            let scaling = Llama3RoPEScaling(factor: 32)
+            let actual = scaling.frequencyDenominators(dimensions: 64, base: 500_000)
+                .asArray(Float.self)
+            // mlx-lm 0.31.2 Llama 3 scaling, MLX 0.31.1, Float32, head dimension 64.
+            // Allow one ULP for backend power rounding in the transition band.
+            let reference: [(Int, Float)] = [
+                (15, 774.86474609375),
+                (16, 2327.9814453125),
+                (17, 10300.4794921875),
+            ]
+            for (index, expected) in reference {
+                #expect(abs(actual[index] - expected) <= expected.ulp,
+                    "GPU=\(gpu), frequency=\(index), actual=\(actual[index]), expected=\(expected)")
+            }
+        }
+    }
+
     @Test("Llama 3.2 preset applies wavelength-dependent scaling")
     func checkpointScaling() throws {
         try Device.withDefaultDevice(.cpu) {

@@ -31,6 +31,8 @@ The downloaded pack occupies about 2.48 GB. The integration controller verifies 
 
 The optional [llama.cpp comparison](LLAMA-CPP.md) converts these same safetensors to BF16 GGUF, verifies every weight, and compares tokenization and greedy generation against MLX-LM. It runs separately from the SwiftSci inspection below.
 
+The [longer-prompt and batch suite](GENERATION.md) adds bounded free-running generation, deterministic sensor-record checks and comparisons across four MLX-LM precision policies. It is separate from native SwiftSci validation.
+
 ## Run the integration diagnostic
 
 Build after staging new source files, as the build tool copies tracked files to an isolated source snapshot. Choose a fresh result directory.

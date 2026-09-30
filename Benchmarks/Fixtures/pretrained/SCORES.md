@@ -1,6 +1,6 @@
 # Diagnose Llama token-choice differences
 
-The [cross-runtime comparison](LLAMA-CPP.md) can capture scores at the first differing token while preserving the preceding token sequence. This diagnostic distinguishes changes in token ranking from tokenization or prompt differences. It does not declare either runtime a numerical oracle.
+The [cross-runtime comparison](LLAMA-CPP.md) can capture scores at the first differing content token while preserving the preceding token sequence. This diagnostic distinguishes changes in token ranking from tokenization or prompt differences. It does not declare either runtime a numerical oracle.
 
 ## Run
 
@@ -19,7 +19,9 @@ The ordinary comparison runs first. llama.cpp additionally returns its top 20 pr
 
 ## Hold the token history fixed
 
-For each prompt, [the analysis controller](../../Tools/llama_score_analysis.py) selects the first generated token and the first token where the runtimes disagree. If the complete sequences agree, it selects the final content token as a control. Positions are zero-based indices into generated tokens, excluding the prompt.
+For each prompt, [the analysis controller](../../Tools/llama_score_analysis.py) selects the first generated token and the first differing content token where both runtimes have generated a token. If the content sequences and stopping reasons agree, it selects the final content token as a control. Positions are zero-based indices into generated tokens, excluding the prompt.
+
+A disagreement where one runtime stops or reaches its limit while the other continues is recorded in `unsupported_cases`. The diagnostic does not substitute an earlier matching token for that decision. It also records empty-content cases as unsupported. If no supported cases remain, `score-analysis.json` has status `unsupported` and zero probes; no score workers run. The ordinary generation comparison still records the differing outputs and stop reasons.
 
 The [MLX score worker](../../Python/llama_score_worker.py) reuses the recorded prompt IDs and forces the shared continuation one token at a time. It preserves MLX-LM's normal prefill/decode partition. A logits processor records the model output and returns it unchanged. A sampler records MLX's native log probabilities before selecting the requested continuation token. At the final probe position it uses ordinary greedy selection.
 
@@ -27,7 +29,7 @@ The controller requires the instrumented BF16 token choices to match the uninstr
 
 ## Separate the precision questions
 
-The worker runs in separate processes for BF16, BF16 with a Float32 output projection, and full Float32. The [mixed-precision experiment](PRECISION.md) checks whether widening only the final matrix multiplication is sufficient. The Float32 run promotes the existing BF16 checkpoint values exactly; it does not recover precision lost when the original checkpoint was created. Model-body, output-score and KV-cache dtypes must match the requested policy. The mixed mode requires BF16 body parameters and cache with Float32 output scores. The checkpoint files remain unchanged.
+The worker runs in separate processes for BF16, both separate-matrix and shared-matrix Float32 output projections, and full Float32. The [mixed-precision experiment](PRECISION.md) checks whether widening only the final matrix multiplication is sufficient. The Float32 run promotes the existing BF16 checkpoint values exactly; it does not recover precision lost when the original checkpoint was created. Model-body, output-score and KV-cache dtypes must match the requested policy. The mixed mode requires BF16 body parameters and cache with Float32 output scores. The checkpoint files remain unchanged.
 
 Each probe records:
 
@@ -56,7 +58,7 @@ The ordinary comparison files remain present. Score collection adds:
 | `score-analysis.json` | Competing-token margins, normalization effects, rounding sensitivity and candidate-only error measures. |
 | `scores-*.log` | Worker diagnostics. |
 
-A completed score analysis means the measurements were collected and its consistency checks passed. It is not a conformance pass. The parent comparison retains `completed-with-differences` when the ordinary BF16 generations differ, even if the Float32 probes agree.
+A completed score analysis means the supported measurements were collected and their consistency checks passed. Any unsupported cases remain listed separately. It is not a conformance pass. The parent comparison retains `completed-with-differences` when the ordinary BF16 generations differ, even if the Float32 probes agree.
 
 ## Observations from the pinned checkpoint
 

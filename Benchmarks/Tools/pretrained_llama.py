@@ -24,6 +24,13 @@ def verify_checkpoint(directory, manifest):
         if not path.is_file() or path.stat().st_size!=artifact['bytes'] or sha(path)!=artifact['sha256']:
             raise ValueError('Missing or changed checkpoint artifact: '+artifact['path'])
 
+    expected = {artifact['path'] for artifact in manifest['artifacts']}
+    observed = {p.relative_to(directory).as_posix() for p in directory.rglob('*')
+                if p.is_file() and p.relative_to(directory).parts[0] != '.cache'}
+    observed.update(p.relative_to(directory).as_posix() for p in directory.glob('model*.safetensors'))
+    if observed != expected:
+        raise ValueError('Checkpoint input inventory differs from the pinned manifest')
+
 
 def main():
     from runner import source_identity

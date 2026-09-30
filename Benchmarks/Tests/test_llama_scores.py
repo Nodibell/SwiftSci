@@ -73,3 +73,35 @@ class LlamaScoreTests(unittest.TestCase):
         row = make_request(comparison, reference, [128009])['cases'][0]
         self.assertEqual(row['positions'], [0, 2])
         self.assertIsNone(row['first_difference'])
+
+    def test_stop_and_length_disagreements_are_explicitly_unsupported(self):
+        for left, right, left_stop, right_stop in [
+            ([7, 8, 128009], [7, 8, 9, 10], 'stop', 'limit'),
+            ([7, 8, 9, 10], [7, 8], 'length', 'eos'),
+            ([7, 8], [7, 8], 'length', 'eos'),
+            ([128009], [9, 10], 'stop', 'limit'),
+        ]:
+            ref = case()
+            ref['samples'] = [dict(tokens=left, finish_reason=left_stop)]
+            comparison = dict(cases=[dict(id='fixture', samples=[dict(response=dict(tokens=right, stop_type=right_stop))])])
+            reference = dict(template_date='29 Sep 2026', cases=[ref])
+            request = make_request(comparison, reference, [128009])
+            self.assertEqual(request['cases'], [])
+            self.assertEqual(len(request['unsupported_cases']), 1)
+            self.assertEqual(request['unsupported_cases'][0]['reason'], 'stopping-or-length-divergence')
+
+    def test_all_unsupported_cases_do_not_report_successful_score_collection(self):
+        import json
+        import tempfile
+        from llama_score_analysis import run_diagnostics
+        ref = case()
+        ref['samples'] = [dict(tokens=[7, 8, 128009], finish_reason='stop')]
+        comparison = dict(cases=[dict(id='fixture', samples=[dict(response=dict(tokens=[7, 8, 9], stop_type='limit'))])])
+        reference = dict(template_date='29 Sep 2026', cases=[ref])
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            report = run_diagnostics(comparison, reference, None, None, output, [128009])
+            self.assertEqual(report['status'], 'unsupported')
+            self.assertEqual(report['probe_count'], 0)
+            self.assertFalse(report['numerical_certificate'])
+            self.assertEqual(json.loads((output / 'score-analysis.json').read_text()), report)

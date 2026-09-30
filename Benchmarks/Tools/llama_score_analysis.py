@@ -28,20 +28,29 @@ def make_request(comparison, reference, eos):
     reference_cases = {c['id']: c for c in reference['cases']}
     if len(reference_cases) != len(reference['cases']) or set(reference_cases) != {c['id'] for c in comparison['cases']}:
         raise ValueError('Comparison/reference cases differ')
-    request = dict(schema_version=1, template_date=reference['template_date'], cases=[])
+    request = dict(schema_version=1, template_date=reference['template_date'], cases=[], unsupported_cases=[])
     for result in comparison['cases']:
         case = reference_cases[result['id']]
         left = visible_tokens(case['samples'][0]['tokens'], eos)
         right = visible_tokens(result['samples'][0]['response']['tokens'], eos)
         shared = token_agreement(left, right)['common_prefix_tokens']
-        if not left or not right:
-            raise ValueError('No content tokens to probe')
+        mlx_stop = case['samples'][0].get('finish_reason')
+        cpp_stop = result['samples'][0]['response'].get('stop_type')
+        normalized_cpp_stop = {'eos': 'stop', 'limit': 'length'}.get(cpp_stop)
+        length_diverges = shared == min(len(left), len(right)) and len(left) != len(right)
+        stopping_diverges = left == right and mlx_stop is not None and normalized_cpp_stop is not None and mlx_stop != normalized_cpp_stop
+        if length_diverges or stopping_diverges or not left or not right:
+            request['unsupported_cases'].append(dict(id=case['id'], common_prefix_tokens=shared,
+                reason='stopping-or-length-divergence' if length_diverges or stopping_diverges else 'no-content-token-probe',
+                mlx_finish_reason=mlx_stop, cpp_stop_type=cpp_stop))
+            continue
         decision = min(shared, len(left) - 1, len(right) - 1)
         request['cases'].append(dict(id=case['id'], text=case['text'], rendered_prompt=case['rendered_prompt'],
             prompt_tokens=case['prompt_tokens'], forced_tokens=left[:decision],
             positions=sorted({0, decision}), decision_position=decision,
             first_difference=shared if shared < min(len(left), len(right)) else None))
-    validate_request(request)
+    if request['cases']:
+        validate_request(request)
     return request
 
 
@@ -74,6 +83,12 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
     request = make_request(comparison, reference, eos)
     request_path = output / 'score-request.json'
     request_path.write_text(json.dumps(request, indent=2) + '\n')
+    if not request['cases']:
+        report = dict(schema_version=1, status='unsupported', purpose='shared-prefix-score-diagnostic',
+            request_sha256=sha(request_path), numerical_certificate=False, probe_count=0,
+            unsupported_cases=request['unsupported_cases'])
+        (output / 'score-analysis.json').write_text(json.dumps(report, indent=2) + '\n')
+        return report
     score_sets = {}
     for precision in ['bf16', 'head-float32', 'shared-float32', 'float32']:
         destination = output / ('scores-' + precision)
@@ -91,6 +106,7 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
     reference_by_id = {c['id']: c for c in reference['cases']}
     report = dict(schema_version=1, status='completed-with-observations', purpose='shared-prefix-score-diagnostic',
                   request_sha256=sha(request_path), numerical_certificate=False,
+                  unsupported_cases=request['unsupported_cases'],
                   scope='llama.cpp top-20 pre-sampling log probabilities; MLX full-vocabulary logits',
                   model_precision_experiment='BF16 checkpoint promoted exactly to Float32; not higher-precision original weights',
                   score_artifacts={p: sha(output / ('scores-' + p) / 'scores.npz') for p in score_sets},
@@ -154,6 +170,7 @@ def run_diagnostics(comparison, reference, model, python, output, eos):
                 mlx_float32_top_tokens=fp_probe['top_tokens']))
     (output / 'score-analysis.json').write_text(json.dumps(report, indent=2) + '\n')
     return dict(status=report['status'], probe_count=len(report['probes']), numerical_certificate=False,
+                unsupported_cases=report['unsupported_cases'],
                 float32_agrees_with_cpp=sum(p['mlx_float32_matches_cpp'] for p in report['probes']),
                 head_float32_agrees_with_cpp=sum(p['mlx_head_float32_matches_cpp'] for p in report['probes']),
                 shared_float32_agrees_with_cpp=sum(p['mlx_shared_float32_matches_cpp'] for p in report['probes']),

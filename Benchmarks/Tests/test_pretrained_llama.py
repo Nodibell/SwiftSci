@@ -36,3 +36,21 @@ class PretrainedLlamaTests(unittest.TestCase):
         cases=json.loads(PROMPTS.read_text())['cases']
         self.assertEqual(len(cases),len({c['id'] for c in cases}))
         self.assertTrue(all(c['text'] for c in cases))
+
+    def test_unlisted_checkpoint_inputs_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            payload = b'original'
+            (directory / 'model.safetensors').write_bytes(payload)
+            manifest = dict(artifacts=[dict(path='model.safetensors', bytes=len(payload),
+                                           sha256=hashlib.sha256(payload).hexdigest())])
+            cache = directory / '.cache'
+            cache.mkdir()
+            (cache / 'download-metadata').write_text('local download bookkeeping')
+            verify_checkpoint(directory, manifest)
+            for name in ['model-extra.safetensors', 'generation_config.json']:
+                extra = directory / name
+                extra.write_text('unverified loader input')
+                with self.assertRaisesRegex(ValueError, 'inventory'):
+                    verify_checkpoint(directory, manifest)
+                extra.unlink()

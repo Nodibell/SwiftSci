@@ -27,7 +27,7 @@ snapshot_download(
 PY
 ```
 
-The downloaded pack occupies about 2.48 GB. The integration controller verifies it against the manifest before use. No custom model code is trusted or downloaded for execution. See [MLX-LM's documentation](https://github.com/ml-explore/mlx-lm) for its loader and generation APIs.
+The downloaded pack occupies about 2.48 GB. The integration controller verifies it against the manifest before use. It rejects unlisted checkpoint files, including extra weight shards and generation or tokenizer configuration. Download metadata under `.cache` is excluded from that inventory. No custom model code is trusted or downloaded for execution. See [MLX-LM's documentation](https://github.com/ml-explore/mlx-lm) for its loader and generation APIs.
 
 The optional [llama.cpp comparison](LLAMA-CPP.md) converts these same safetensors to BF16 GGUF, verifies every weight, and compares tokenization and greedy generation against MLX-LM. It runs separately from the SwiftSci inspection below.
 

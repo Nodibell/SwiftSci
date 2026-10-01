@@ -11,6 +11,18 @@ from contracts import read_json, write_json, load_profile, load_workload
 from reporting import summarize
 from runner import source_identity
 
+CONCURRENCY_POLICY = {
+    'classification': 'asymmetric-engine-concurrency',
+    'effective_thread_counts_measured': False,
+    'python_numerical_libraries': 'BLAS/OpenMP thread environment requested at one',
+    'polars': 'thread pool verified at one',
+    'duckdb': 'connection threads configured at one',
+    'swiftsci': 'BLAS environment requested at one; GCD parallelism is not capped by it. '
+                'CSV chunk parsing uses up to eight workers; CSV columns and row gathering may run concurrently.',
+    'interpretation': 'Observed materialized-operation wall time under these engine-specific policies. '
+                      'Not an equal-thread or single-core efficiency comparison.',
+}
+
 RUNS = [
     ('standard', 'swiftsci,pandas,polars,duckdb'),
     ('extended', 'swiftsci,pandas,polars,duckdb'),
@@ -31,11 +43,12 @@ def report(root, output, manifest):
         run=read_json(run_path)
         rows.extend(dict(profile=entry['profile'], **row) for row in summarize(run))
         failures.extend(dict(profile=entry['profile'], case=e['case_id'], engine=e['engine'], batch=e['batch'], error=e.get('failed_result',{}).get('error', e.get('error'))) for e in run['events'] if e['status']!='passed')
+    write_json(output/'concurrency-policy.json', CONCURRENCY_POLICY)
     write_json(output/'measurements.json', rows)
     write_json(output/'failures.json', failures)
     lines=['# Four-engine benchmark comparison', '',
            f"Source commit: `{manifest['source']['commit']}`. Source fingerprint: `{manifest['source']['tree_sha256']}`.", '',
-           'All runs use native arm64 execution and one thread per engine. Each performance case uses three fresh processes, two warmups, and five measured samples per process. Times retain materialized output; correctness validation follows timing. Peak RSS includes the interpreter, input preparation, independent reference buffers, and validation allocations, so it is whole-process memory rather than kernel allocation.', '',
+           'All runs use native arm64 execution. Python numerical-library thread limits are requested at one; Polars and DuckDB use one thread. Swift may use GCD parallelism, including up to eight CSV chunk workers and concurrent column parsing or row gathering. These are asymmetric engine policies, not an equal-thread or single-core comparison. Effective thread counts were not measured. See [concurrency-policy.json](concurrency-policy.json). Each performance case uses three fresh processes, two warmups, and five measured samples per process. Times retain materialized output; correctness validation follows timing. Peak RSS includes the interpreter, input preparation, independent reference buffers, and validation allocations, so it is whole-process memory rather than kernel allocation.', '',
            'These are sequential desktop measurements, not a formal performance baseline. Group and join outputs are canonicalized after timing. Stable sorting and numerical exports retain declared row alignment. DuckDB results are fetched into Arrow tables or NumPy arrays inside timing. Query setup outside timing applies only to already-prepared inputs; CSV, Parquet, and the wine pipeline include ingestion.', '',
            '## Coverage', '',
            '| Profile | Engines | Result | Audit |', '|---|---|---|---|']

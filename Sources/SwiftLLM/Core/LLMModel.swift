@@ -39,7 +39,8 @@ public struct SamplingConfiguration: Sendable, Equatable {
 public struct LLMOptions: Sendable {
     /// Fine-grained sampling configuration (temperature, topK, topP, repetition penalty).
     public var sampling: SamplingConfiguration
-    /// Maximum number of tokens to generate.
+    /// Maximum number of tokens to generate. Zero requests no output.
+    /// TransformerDecoder may stop earlier at its configured context capacity.
     public var maxTokens: Int
 
     /// The temperature parameter.

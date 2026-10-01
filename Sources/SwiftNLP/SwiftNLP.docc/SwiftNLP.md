@@ -46,3 +46,4 @@ let sentimentDF = try df.analyzeSentiment(column: "text")
 - <doc:TextNormalizationAndTokenization>
 - <doc:VectorizationAndEmbeddings>
 - <doc:ChatAPI>
+- <doc:LlamaTokenizer>

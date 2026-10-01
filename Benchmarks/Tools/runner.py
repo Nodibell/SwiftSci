@@ -23,6 +23,12 @@ from contracts import (
 from datasets import load_manifest, cache_path, reference, binary, resolve_workload
 from reporting import validate_worker, summarize
 
+METAL_BUILD_SETTINGS = {
+    "MTL_FAST_MATH": "NO",
+    "MTL_MATH_MODE": "SAFE",
+    "MTL_MATH_FP32_FUNCTIONS": "PRECISE",
+}
+
 THREAD_ENV = {
     "VECLIB_MAXIMUM_THREADS": "1",
     "OPENBLAS_NUM_THREADS": "1",
@@ -97,6 +103,19 @@ def verify_uninstrumented(worker):
     )
 
 
+def metal_build_record(worker):
+    """Fingerprint the precompiled Metal resources beside the executable."""
+    products = worker.parent
+    paths = sorted(set(products.glob("*.metallib")) |
+                   set(products.glob("*.bundle/**/*.metallib")))
+    libraries = {
+        str(path.relative_to(products)): digest(path.read_bytes())
+        for path in paths if path.is_file()
+    }
+    require(libraries, "Metal libraries are missing; rebuild the worker")
+    return dict(build_settings=dict(METAL_BUILD_SETTINGS), libraries=libraries)
+
+
 def build(root, products, packages):
     """Build a manifest-verified tracked snapshot outside cloud-synced source."""
     source = source_identity(root)
@@ -130,6 +149,7 @@ def build(root, products, packages):
         "ENABLE_TESTABILITY=YES",
         "CLANG_ENABLE_CODE_COVERAGE=NO",
     ]
+    args.extend(f"{name}={value}" for name, value in METAL_BUILD_SETTINGS.items())
     log = products.parent / "build.log"
     with log.open("w") as stream:
         subprocess.run(
@@ -150,6 +170,7 @@ def build(root, products, packages):
             command=args,
             binary_sha256=digest(worker.read_bytes()),
             coverage_instrumentation="absent",
+            metal=metal_build_record(worker),
             log=str(log),
             snapshot=str(snapshot),
             environment=environment(),
@@ -179,6 +200,10 @@ def plan(root, profile, engines, swift_worker, python):
                 "Worker has no coverage-instrumentation check; rebuild",
             )
             verify_uninstrumented(worker)
+            require(
+                record.get("metal") == metal_build_record(worker),
+                "Metal build settings or library fingerprints differ; rebuild the worker",
+            )
             require(
                 record["environment"] == environment(),
                 "Build and run toolchains differ; rebuild",

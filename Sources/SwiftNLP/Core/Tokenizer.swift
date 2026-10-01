@@ -18,6 +18,9 @@ public protocol Tokenizer: Sendable {
     /// - Returns: The reconstructed string.
     func decode(tokens: [Int]) -> String
 
+    /// Creates independent state for incremental text generation.
+    func makeStreamDecoder() -> TokenStreamDecoder
+
     /// Splits text into sentence tokens.
     /// - Parameter text: Input text string.
     /// - Returns: Array of sentence strings.
@@ -25,6 +28,11 @@ public protocol Tokenizer: Sendable {
 }
 
 extension Tokenizer {
+    /// Uses the tokenizer's existing per-token decoding unless it supplies a byte decoder.
+    public func makeStreamDecoder() -> TokenStreamDecoder {
+        TokenStreamDecoder(decodeToken: { self.decode(tokens: [$0]) })
+    }
+
     /// Default protocol extension implementation delegating to `SentenceTokenizer`.
     /// - Parameter text: Input text document.
     /// - Returns: Array of sentence strings.

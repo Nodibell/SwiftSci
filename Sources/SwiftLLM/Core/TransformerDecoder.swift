@@ -117,10 +117,10 @@ public struct LLMConfig: Sendable {
     }
 
     /// Llama 3.2-1B configuration with an 8,192-token default context capacity.
-    /// The checkpoint declares 131,072 positions; 8,192 is the native generation
-    /// range validated for this preset, distinct from its factor-32 RoPE scaling.
-    /// Set `maxSeqLen` before model construction to experiment with a larger
-    /// capacity. Full 131,072-token inference is not validated by this preset.
+    /// The checkpoint declares 131,072 positions. The smaller default limits
+    /// context resource demands and is distinct from its factor-32 RoPE scaling.
+    /// Set `maxSeqLen` before model construction to opt into a larger capacity.
+    /// Validate memory use, latency, and model quality for the intended workload.
     public static var llama1B: LLMConfig {
         LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32, numKVHeads: 8,
                   intermediateSize: 8192, maxSeqLen: 8192,

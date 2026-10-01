@@ -114,9 +114,9 @@ Its RoPE configuration separately specifies `original_max_position_embeddings = 
 and a scaling factor of 32. The original training context is a parameter of the
 frequency rule, not the scaled model's context limit.
 
-`LLMConfig.llama1B` retains an 8,192-token default because that is the native
-end-to-end generation range validated here. This is a preset policy, not a hardcoded
-RoPE limit. The existing `maxSeqLen` property exposes a caller-selected capacity:
+`LLMConfig.llama1B` retains its 8,192-token default to limit default context
+resource demands. This is a preset policy, not a hardcoded RoPE limit. Callers can
+opt into a larger capacity through the existing `maxSeqLen` property:
 
 ```swift
 var config = LLMConfig.llama1B
@@ -124,20 +124,22 @@ config.maxSeqLen = 131_072
 // Use this configuration when constructing the decoder for long-context experiments.
 ```
 
-This setting does not establish correctness, memory suitability, or acceptable
-latency at 131,072 tokens. Long-context inference needs separate validation and
-resource measurements before increasing the default. KV-cache storage grows with
+A successful long-context inference check establishes behavior for that checkpoint,
+input, device, and build configuration. It does not establish answer quality over
+long documents or acceptable resource use for another workload. Measure memory,
+latency, and answer quality before choosing a capacity. KV-cache storage grows with
 sequence length; attention work also grows with the prompt. Changing `maxSeqLen`
 does not change the checkpoint's RoPE scaling parameters.
 
 ### Two-Stage KV-Cache Generation (Prefill + Decode)
 Generation executes in two distinct stages:
-1. **Prefill Pass**: Evaluates the entire prompt sequence $[0 ..< N]$ in parallel, writing Key and Value projections into `KVCache`.
+1. **Prefill Pass**: Processes the prompt in sequential chunks, evaluating positions within each chunk in parallel and writing Key and Value projections into `KVCache`.
 2. **Incremental Decode Steps**: Processes only the single newest token $[N+1]$ at each step. The new Query vector performs dot-product attention against all cached Key and Value vectors ($Q_{N+1} \cdot K_{\text{accumulated}}^T$), eliminating redundant $O(N^2)$ prompt recomputation.
 
 Generation processes prompts in chunks of at most 2,048 tokens. Each chunk adds
 to the layer caches before the next chunk starts. MLX's causal-attention mode
-accounts for cached prefix tokens without materializing a square mask. Generation
+accounts for cached prefix tokens. The decoder does not construct a full-prompt
+square mask; MLX chooses the attention implementation for the device. Generation
 normalizes and projects only the final prompt position to vocabulary logits;
 `forward` still returns logits for every supplied position.
 

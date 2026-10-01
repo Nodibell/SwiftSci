@@ -1,7 +1,12 @@
 import Foundation
 
 /// A Byte Pair Encoding (BPE) subword tokenizer.
+///
+/// The vocabulary initializer retains legacy word-ending BPE. Use
+/// `init(llama3TokenizerJSON:)` for checkpoint-defined Llama 3 byte-level BPE.
 public struct BPETokenizer: Tokenizer, Sendable {
+    var llama3: Llama3Encoding?
+
     /// The vocab.
     public let vocab: [String: Int]
     /// The merges.
@@ -36,6 +41,11 @@ public struct BPETokenizer: Tokenizer, Sendable {
     ///   - text: Input textual string to be analyzed or transformed.
     /// - Returns: Array of feature names, column identifiers, or tokens.
     public func tokenize(text: String) -> [String] {
+        if let llama3 {
+            return llama3.pieces(text).flatMap { piece in
+                llama3.specialTokens.contains(piece) ? [piece] : bpe(piece, wordEnding: false)
+            }
+        }
         let words = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
         var result = [String]()
         
@@ -63,8 +73,12 @@ public struct BPETokenizer: Tokenizer, Sendable {
     /// ensuring intact reconstruction of Cyrillic, CJK characters, and compound emojis.
     ///
     /// - Parameter tokens: Sequence of integer token identifiers.
-    /// - Returns: Reconstructed UTF-8 string with whitespace normalization.
+    /// - Returns: Reconstructed UTF-8 text. Legacy mode normalizes word boundaries;
+    ///   Llama 3 mode preserves whitespace and special-token text.
     public func decode(tokens: [Int]) -> String {
+        if llama3 != nil {
+            return String(decoding: tokens.flatMap { llama3Bytes(for: $0) }, as: UTF8.self)
+        }
         let subwords = tokens.compactMap { decoder[$0] }
         let joined = subwords.joined()
         
@@ -94,9 +108,24 @@ public struct BPETokenizer: Tokenizer, Sendable {
         return decoded.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
+    /// Buffers incomplete UTF-8 scalars for Llama byte-level tokenizers.
+    /// Legacy tokenizers retain their existing per-token text decoding.
+    public func makeStreamDecoder() -> TokenStreamDecoder {
+        if llama3 != nil {
+            return TokenStreamDecoder(decodeBytes: { self.llama3Bytes(for: $0) })
+        }
+        return TokenStreamDecoder(decodeToken: { self.decode(tokens: [$0]) })
+    }
+
+    private func llama3Bytes(for id: Int) -> [UInt8] {
+        guard let llama3, let token = decoder[id] else { return [] }
+        if llama3.specialTokens.contains(token) { return Array(token.utf8) }
+        return token.unicodeScalars.compactMap { Self.byteDecoder[Character($0)] }
+    }
+
     // MARK: - Helper BPE Algorithm
     
-    private static let byteEncoder: [UInt8: Character] = Self.makeByteEncoder()
+    static let byteEncoder: [UInt8: Character] = Self.makeByteEncoder()
     private static let byteDecoder: [Character: UInt8] = {
         var rev = [Character: UInt8]()
         for (b, c) in byteEncoder {
@@ -122,12 +151,17 @@ public struct BPETokenizer: Tokenizer, Sendable {
         return mapping
     }
     
-    private func bpe(_ word: String) -> [String] {
+    private func bpe(_ word: String, wordEnding: Bool = true) -> [String] {
         guard !word.isEmpty else { return [] }
         
-        // Split word into UTF-8 bytes and encode via GPT-2 byteEncoder, appending </w> to the last byte
+        // Legacy mode marks word endings; checkpoint mode preserves every byte.
         var chars = word.utf8.map { String(Self.byteEncoder[$0]!) }
-        chars[chars.count - 1] += "</w>"
+        if wordEnding {
+            chars[chars.count - 1] += "</w>"
+        } else {
+            let whole = chars.joined()
+            if vocab[whole] != nil { return [whole] }
+        }
         
         var currentWord = chars
         

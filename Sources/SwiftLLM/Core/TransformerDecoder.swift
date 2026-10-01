@@ -17,6 +17,7 @@ import SwiftNLP
 ///     numLayers: 16,
 ///     hiddenDim: 2048,
 ///     numHeads: 32,
+///     numKVHeads: 8,
 ///     intermediateSize: 8192,
 ///     maxSeqLen: 8192
 /// )
@@ -25,6 +26,8 @@ import SwiftNLP
 public enum PositionalEncodingScheme: Sendable, Equatable {
     /// Rotary Positional Embedding (RoPE) applied to Q and K with configurable base frequency.
     case rope(base: Float = 10_000.0)
+    /// Llama 3.1/3.2 rotary encoding with explicit checkpoint scaling parameters.
+    case llama3RoPE(base: Float = 500_000.0, scaling: Llama3RoPEScaling)
     /// Classical learned additive positional embeddings.
     case learned
 }
@@ -36,45 +39,74 @@ public struct LLMConfig: Sendable {
     public var numLayers: Int
     /// Hidden (embedding) dimensionality.
     public var hiddenDim: Int
-    /// Number of attention heads.
+    /// Number of query attention heads.
     public var numHeads: Int
+    /// Number of key/value heads. `nil` follows `numHeads`, preserving multi-head attention.
+    /// A supplied count must be positive and divide `numHeads` exactly.
+    public var numKVHeads: Int?
     /// Feed-forward network intermediate dimension (SwiGLU gate/up projection size).
     public var intermediateSize: Int
-    /// Maximum supported input sequence length.
+    /// Configured sequence capacity. Generation counts prompt and output tokens together.
     public var maxSeqLen: Int
     /// RMSNorm epsilon for numerical stability (default `1e-5`).
     public var rmsNormEps: Float
     /// Positional encoding scheme (default `.rope(base: 10_000.0)`).
     public var positionalEncoding: PositionalEncodingScheme
+    /// Use the token embedding matrix for output logits instead of a separate head.
+    public var tieWordEmbeddings: Bool
+    /// Token IDs that end generation without being emitted.
+    /// When nonempty, decoded text never acts as a stop signal. An empty set retains
+    /// legacy stopping on empty decoded text or the literal `<unk>`.
+    public var eosTokenIDs: Set<Int>
 
     /// Creates an LLM configuration.
     /// - Parameters:
     ///   - vocabSize: Vocabulary size.
     ///   - numLayers: Number of decoder layers (e.g. 16 for 1B, 32 for 7B).
     ///   - hiddenDim: Model hidden dimension (e.g. 2048 for 1B, 4096 for 7B).
-    ///   - numHeads: Number of attention heads.
+    ///   - numHeads: Number of query attention heads.
+    ///   - numKVHeads: Key/value head count. `nil` uses the current query-head count.
     ///   - intermediateSize: SwiGLU FFN inner projection size (typically `hiddenDim * 4`).
     ///   - maxSeqLen: Maximum token sequence length (default `2048`).
     ///   - rmsNormEps: RMSNorm epsilon (default `1e-5`).
     ///   - positionalEncoding: Positional encoding scheme (default `.rope(base: 10_000.0)`).
+    ///   - tieWordEmbeddings: Share input and output weights. Defaults to `false`.
+    ///   - eosTokenIDs: Checkpoint stop-token IDs. Defaults to an empty set.
     public init(
         vocabSize: Int,
         numLayers: Int,
         hiddenDim: Int,
         numHeads: Int,
+        numKVHeads: Int? = nil,
         intermediateSize: Int? = nil,
         maxSeqLen: Int = 2048,
         rmsNormEps: Float = 1e-5,
-        positionalEncoding: PositionalEncodingScheme = .rope(base: 10_000.0)
+        positionalEncoding: PositionalEncodingScheme = .rope(base: 10_000.0),
+        tieWordEmbeddings: Bool = false,
+        eosTokenIDs: Set<Int> = []
     ) {
         self.vocabSize          = vocabSize
         self.numLayers          = numLayers
         self.hiddenDim          = hiddenDim
         self.numHeads           = numHeads
+        self.numKVHeads         = numKVHeads
         self.intermediateSize   = intermediateSize ?? (hiddenDim * 4)
         self.maxSeqLen          = maxSeqLen
         self.rmsNormEps         = rmsNormEps
         self.positionalEncoding = positionalEncoding
+        self.tieWordEmbeddings = tieWordEmbeddings
+        self.eosTokenIDs = eosTokenIDs
+        _ = validatedKVHeadCount()
+    }
+
+    func validatedKVHeadCount() -> Int {
+        precondition(numHeads > 0 && hiddenDim > 0 && hiddenDim % numHeads == 0,
+                     "hiddenDim must be positive and divisible by a positive numHeads")
+        let count = numKVHeads ?? numHeads
+        precondition(count > 0 && numHeads % count == 0,
+                     "numKVHeads must be positive and divide numHeads")
+        return count
+
     }
 
     // MARK: - Presets
@@ -84,15 +116,21 @@ public struct LLMConfig: Sendable {
         LLMConfig(vocabSize: 1024, numLayers: 2, hiddenDim: 128, numHeads: 4, maxSeqLen: 256, positionalEncoding: .rope(base: 10_000.0))
     }
 
-    /// Approximate Llama 3.2-1B compatible configuration.
+    /// Llama 3.2-1B configuration with an 8,192-token default context capacity.
+    /// The checkpoint declares 131,072 positions. The smaller default limits
+    /// context resource demands and is distinct from its factor-32 RoPE scaling.
+    /// Set `maxSeqLen` before model construction to opt into a larger capacity.
+    /// Validate memory use, latency, and model quality for the intended workload.
     public static var llama1B: LLMConfig {
-        LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32,
-                  intermediateSize: 8192, maxSeqLen: 8192, positionalEncoding: .rope(base: 500_000.0))
+        LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32, numKVHeads: 8,
+                  intermediateSize: 8192, maxSeqLen: 8192,
+                  positionalEncoding: .llama3RoPE(scaling: Llama3RoPEScaling(factor: 32)),
+                  tieWordEmbeddings: true, eosTokenIDs: [128001, 128008, 128009])
     }
 
     /// Approximate Llama 3-8B compatible configuration.
     public static var llama8B: LLMConfig {
-        LLMConfig(vocabSize: 128_256, numLayers: 32, hiddenDim: 4096, numHeads: 32,
+        LLMConfig(vocabSize: 128_256, numLayers: 32, hiddenDim: 4096, numHeads: 32, numKVHeads: 8,
                   intermediateSize: 14336, maxSeqLen: 8192, positionalEncoding: .rope(base: 500_000.0))
     }
 
@@ -154,12 +192,17 @@ public final class TransformerBlock: Module, UnaryLayer {
     @ModuleInfo public var norm2: RMSNorm
     @ModuleInfo public var ffn: SwiGLUFFN
     @ModuleInfo public var rope: RoPEEmbedding?
+    private let numKVHeads: Int
 
     /// Creates a decoder block.
     /// - Parameter config: Full LLM configuration.
     public init(config: LLMConfig) {
+        let kvHeads = config.validatedKVHeadCount()
+        self.numKVHeads = kvHeads
         self.norm1     = RMSNorm(dimensions: config.hiddenDim, eps: config.rmsNormEps)
-        self.attention = MultiHeadAttention(dimensions: config.hiddenDim, numHeads: config.numHeads)
+        self.attention = kvHeads == config.numHeads
+            ? MultiHeadAttention(dimensions: config.hiddenDim, numHeads: config.numHeads)
+            : GroupedQueryAttention(dimensions: config.hiddenDim, numHeads: config.numHeads, numKVHeads: kvHeads)
         self.norm2     = RMSNorm(dimensions: config.hiddenDim, eps: config.rmsNormEps)
         self.ffn       = SwiGLUFFN(config: config)
 
@@ -167,6 +210,9 @@ public final class TransformerBlock: Module, UnaryLayer {
         case .rope(let base):
             let headDim = config.hiddenDim / config.numHeads
             self.rope = RoPEEmbedding(dimensions: headDim, base: base)
+        case .llama3RoPE(let base, let scaling):
+            let headDim = config.hiddenDim / config.numHeads
+            self.rope = RoPEEmbedding(dimensions: headDim, base: base, scaling: scaling)
         case .learned:
             self.rope = nil
         }
@@ -177,8 +223,7 @@ public final class TransformerBlock: Module, UnaryLayer {
     /// - Parameter x: Input `[batch, seq, hiddenDim]`.
     /// - Returns: Output `[batch, seq, hiddenDim]`.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
-        let mask = x.shape[1] > 1 ? MultiHeadAttention.createAdditiveCausalMask(x.shape[1]) : nil
-        return forward(x, mask: mask, cache: nil, offset: 0)
+        forward(x, maskMode: x.shape[1] > 1 ? .causal : .none, cache: nil, offset: 0)
     }
 
     /// Flexible forward pass supporting RoPE position offset and KV-cache accumulation.
@@ -194,6 +239,15 @@ public final class TransformerBlock: Module, UnaryLayer {
         cache: KVCache? = nil,
         offset: Int = 0
     ) -> MLXArray {
+        forward(x, maskMode: mask.map { .array($0) } ?? .none, cache: cache, offset: offset)
+    }
+
+    func forward(
+        _ x: MLXArray,
+        maskMode: MLXFast.ScaledDotProductAttentionMaskMode,
+        cache: KVCache?,
+        offset: Int
+    ) -> MLXArray {
         let xNorm1 = norm1(x)
 
         var q = attention.queryProjection(xNorm1)
@@ -202,8 +256,8 @@ public final class TransformerBlock: Module, UnaryLayer {
 
         let numHeads = attention.numHeads
         q = unflatten(q, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
-        k = unflatten(k, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
-        v = unflatten(v, axis: -1, shape: [numHeads, -1]).transposed(0, 2, 1, 3)
+        k = unflatten(k, axis: -1, shape: [numKVHeads, -1]).transposed(0, 2, 1, 3)
+        v = unflatten(v, axis: -1, shape: [numKVHeads, -1]).transposed(0, 2, 1, 3)
 
         if let rope = self.rope {
             if q.shape[0] > 1 && q.shape[2] == 1 {
@@ -233,13 +287,6 @@ public final class TransformerBlock: Module, UnaryLayer {
         }
 
         let scale = sqrt(1 / Float(q.dim(-1)))
-        let maskMode: MLXFast.ScaledDotProductAttentionMaskMode =
-            if let mask {
-                .array(mask)
-            } else {
-                .none
-            }
-
         var output = MLXFast.scaledDotProductAttention(
             queries: q, keys: finalK, values: finalV, scale: scale, mask: maskMode)
 
@@ -291,7 +338,8 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
     /// Stack of N decoder blocks.
     @ModuleInfo public var layers: [TransformerBlock]
     @ModuleInfo public var finalNorm: RMSNorm
-    @ModuleInfo public var lmHead: Linear
+    /// Independent output projection, or `nil` when logits use the current token embedding.
+    @ModuleInfo public var lmHead: Linear?
 
     // MARK: Configuration
 
@@ -312,6 +360,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
     ///   - config: Model architecture configuration.
     ///   - tokenizer: Tokenizer for text ↔ token-ID conversion.
     public init(config: LLMConfig, tokenizer: any Tokenizer) {
+        _ = config.validatedKVHeadCount()
         self.config    = config
         self.tokenizer = tokenizer
 
@@ -319,7 +368,7 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
         self.posEmbedding = Embedding(embeddingCount: config.maxSeqLen,  dimensions: config.hiddenDim)
         self.layers       = (0..<config.numLayers).map { _ in TransformerBlock(config: config) }
         self.finalNorm    = RMSNorm(dimensions: config.hiddenDim, eps: config.rmsNormEps)
-        self.lmHead       = Linear(config.hiddenDim, config.vocabSize, bias: false)
+        self.lmHead       = config.tieWordEmbeddings ? nil : Linear(config.hiddenDim, config.vocabSize, bias: false)
 
         super.init()
     }
@@ -356,6 +405,10 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
         caches: [KVCache]? = nil,
         offset: Int = 0
     ) -> MLXArray {
+        project(hiddenStates(x, caches: caches, offset: offset))
+    }
+
+    private func hiddenStates(_ x: MLXArray, caches: [KVCache]?, offset: Int) -> MLXArray {
         var input = x
         if input.ndim == 1 {
             input = input.expandedDimensions(axis: 0)
@@ -368,14 +421,37 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             h = h + posEmbedding(positions)
         }
 
-        let mask: MLXArray? = seqLen > 1 ? MultiHeadAttention.createAdditiveCausalMask(seqLen) : nil
+        let maskMode: MLXFast.ScaledDotProductAttentionMaskMode = seqLen > 1 ? .causal : .none
 
         for (idx, layer) in layers.enumerated() {
             let cache = caches?[idx]
-            h = layer.forward(h, mask: mask, cache: cache, offset: offset)
+            h = layer.forward(h, maskMode: maskMode, cache: cache, offset: offset)
         }
 
-        return lmHead(finalNorm(h))
+        return h
+    }
+
+    private func project(_ hidden: MLXArray) -> MLXArray {
+        let h = finalNorm(hidden)
+        if let lmHead { return lmHead(h) }
+        return embedding.asLinear(h)
+    }
+
+    func prefill(_ tokens: [Int], caches: [KVCache], chunkSize: Int = 2048) -> MLXArray? {
+        precondition(!tokens.isEmpty && chunkSize > 0)
+        for start in stride(from: 0, to: tokens.count, by: chunkSize) {
+            if Task.isCancelled { return nil }
+            let end = min(start + chunkSize, tokens.count)
+            let input = MLXArray(Array(tokens[start..<end]), [1, end - start])
+            let h = hiddenStates(input, caches: caches, offset: start)
+            if end == tokens.count {
+                let logits = project(h[0, end - start - 1].reshaped([1, 1, config.hiddenDim]))[0, 0]
+                eval(logits)
+                return logits
+            }
+            eval(caches.flatMap { [$0.keys, $0.values].compactMap { $0 } })
+        }
+        return nil
     }
 
     /// Executes the full N-layer decoder forward pass without KV caching.
@@ -476,7 +552,9 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
 
         // Final norm & LM head
         mapParam(srcKey: "model.norm.weight", dstKey: "finalNorm.weight")
-        mapParam(srcKey: "lm_head.weight", dstKey: "lmHead.weight")
+        if lmHead != nil {
+            mapParam(srcKey: "lm_head.weight", dstKey: "lmHead.weight")
+        }
 
         if !params.isEmpty {
             self.update(parameters: NestedDictionary.unflattened(params))
@@ -487,101 +565,123 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
 
     // MARK: - Generation
 
-    /// Generates tokens and yields them as an `AsyncStream<String>`.
+    /// Generates decoded text without completion metadata.
     ///
-    /// - Parameters:
-    ///   - prompt: Text prompt to start generation.
-    ///   - options: Sampling options (temperature, top-p, max tokens …).
-    /// - Returns: An `AsyncStream<String>` of decoded token strings.
-    /// - Throws: `LLMError` if model weights cannot be parsed, tensor allocations fail, or decoding errors.
+    /// Invalid requests throw before the stream is returned. This legacy stream cannot
+    /// report errors during iteration. Use ``generateDetails(prompt:options:)`` when
+    /// the caller needs the stop reason and token counts.
     public func generate(prompt: String, options: LLMOptions) async throws -> AsyncStream<String> {
-        let tokenizer  = self.tokenizer
-        let maxSeqLen  = self.config.maxSeqLen
-
-        return AsyncStream<String> { continuation in
-            let task = Task {
-                var tokens = tokenizer.encode(text: prompt)
-                if tokens.isEmpty { tokens = [0] }
-                tokens = Array(tokens.suffix(maxSeqLen))
-
-                // Create layer caches for incremental decoding
-                let caches = self.layers.map { _ in KVCache() }
-
-                // 1. Prefill stage
-                let prefillArray = MLXArray(tokens).expandedDimensions(axis: 0)
-                let prefillLogits = self.forward(prefillArray, caches: caches, offset: 0)
-                var lastLogits = prefillLogits[0, prefillLogits.shape[1] - 1]
-                eval(lastLogits)
-
-                // 2. Incremental decode stage
-                for _ in 0..<options.maxTokens {
-                    if Task.isCancelled { break }
-                    let nextToken = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
-                    let decoded = tokenizer.decode(tokens: [nextToken])
-                    if decoded.isEmpty || decoded == "<unk>" { break }
-                    continuation.yield(decoded)
-                    tokens.append(nextToken)
-
-                    if tokens.count >= maxSeqLen { break }
-
-                    let currentOffset = caches.first?.count ?? (tokens.count - 1)
-                    let inputToken = MLXArray([nextToken]).expandedDimensions(axis: 0)
-                    let stepLogits = self.forward(inputToken, caches: caches, offset: currentOffset)
-                    lastLogits = stepLogits[0, 0]
-                    eval(lastLogits)
-                }
-                continuation.finish()
-            }
+        try Task.checkCancellation()
+        let tokens = try generationPrompt(prompt, options: options)
+        return AsyncStream { continuation in
+            let task = generationTask(tokens: tokens, options: options,
+                emit: { event in
+                    if let text = event.chunk { continuation.yield(text) }
+                }, finish: { continuation.finish() })
             continuation.onTermination = { _ in task.cancel() }
         }
     }
 
-    /// Generates tokens as an `AsyncThrowingStream<String, Error>`.
+    /// Generates decoded text, reporting invalid requests through the stream.
     ///
-    /// Identical behaviour to ``generate(prompt:options:)`` but propagates
-    /// errors through the stream.
-    /// - Parameters:
-    ///   - prompt: Input text prompt string for generation.
-    ///   - options: Configuration options controlling execution behavior.
-    /// - Returns: The computed AsyncThrowingStream<String, any Error> result instance.
+    /// This text-only adapter omits completion metadata. Use
+    /// ``generateDetails(prompt:options:)`` to distinguish a stop token from a length limit.
     public func generateStream(prompt: String, options: LLMOptions) -> AsyncThrowingStream<String, any Error> {
-        let tokenizer = self.tokenizer
-        let maxSeqLen = self.config.maxSeqLen
+        generationStream(prompt: prompt, options: options) { $0.chunk }
+    }
 
-        return AsyncThrowingStream<String, any Error> { continuation in
-            let task = Task {
-                var tokens = tokenizer.encode(text: prompt)
-                if tokens.isEmpty { tokens = [0] }
-                tokens = Array(tokens.suffix(maxSeqLen))
+    /// Generates text chunks followed by one completion record on normal termination.
+    ///
+    /// Prompts are never truncated. A prompt exceeding `config.maxSeqLen` throws
+    /// ``GenerationError/promptTooLong(promptTokens:capacity:)``. A prompt at capacity
+    /// produces no output and reports a context limit unless `maxTokens` is zero.
+    /// The output budget is a ceiling; reaching context capacity reports a length stop.
+    /// Zero output budgets complete without inference. Cancelling the consumer stops
+    /// generation but does not guarantee delivery of a final completion record.
+    public func generateDetails(prompt: String, options: LLMOptions) -> AsyncThrowingStream<GenerationEvent, any Error> {
+        generationStream(prompt: prompt, options: options) { $0 }
+    }
 
-                let caches = self.layers.map { _ in KVCache() }
+    private func generationPrompt(_ prompt: String, options: LLMOptions) throws -> [Int] {
+        guard options.maxTokens >= 0 else { throw GenerationError.invalidMaxTokens(options.maxTokens) }
+        guard config.maxSeqLen > 0 else { throw GenerationError.invalidContextLimit(config.maxSeqLen) }
+        var tokens = tokenizer.encode(text: prompt)
+        if tokens.isEmpty { tokens = [0] }
+        guard tokens.count <= config.maxSeqLen else {
+            throw GenerationError.promptTooLong(promptTokens: tokens.count, capacity: config.maxSeqLen)
+        }
+        return tokens
+    }
 
-                // 1. Prefill stage
-                let prefillArray = MLXArray(tokens).expandedDimensions(axis: 0)
-                let prefillLogits = self.forward(prefillArray, caches: caches, offset: 0)
-                var lastLogits = prefillLogits[0, prefillLogits.shape[1] - 1]
-                eval(lastLogits)
-
-                // 2. Incremental decode stage
-                for _ in 0..<options.maxTokens {
-                    if Task.isCancelled { break }
-                    let nextToken = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
-                    let decoded = tokenizer.decode(tokens: [nextToken])
-                    if decoded.isEmpty || decoded == "<unk>" { break }
-                    continuation.yield(decoded)
-                    tokens.append(nextToken)
-
-                    if tokens.count >= maxSeqLen { break }
-
-                    let currentOffset = caches.first?.count ?? (tokens.count - 1)
-                    let inputToken = MLXArray([nextToken]).expandedDimensions(axis: 0)
-                    let stepLogits = self.forward(inputToken, caches: caches, offset: currentOffset)
-                    lastLogits = stepLogits[0, 0]
-                    eval(lastLogits)
-                }
-                continuation.finish()
+    private func generationStream<Element: Sendable>(
+        prompt: String, options: LLMOptions,
+        transform: @escaping @Sendable (GenerationEvent) -> Element?
+    ) -> AsyncThrowingStream<Element, any Error> {
+        AsyncThrowingStream { continuation in
+            do {
+                try Task.checkCancellation()
+                let tokens = try generationPrompt(prompt, options: options)
+                let task = generationTask(tokens: tokens, options: options,
+                    emit: { event in
+                        if let value = transform(event) { continuation.yield(value) }
+                    }, finish: { continuation.finish() })
+                continuation.onTermination = { _ in task.cancel() }
+            } catch {
+                continuation.finish(throwing: error)
             }
-            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func generationTask(
+        tokens promptTokens: [Int], options: LLMOptions,
+        emit: @escaping @Sendable (GenerationEvent) -> Void,
+        finish: @escaping @Sendable () -> Void
+    ) -> Task<Void, Never> {
+        Task {
+            defer { finish() }
+            let remaining = config.maxSeqLen - promptTokens.count
+            let budget = min(options.maxTokens, remaining)
+            var reason: GenerationStopReason = .length(options.maxTokens <= remaining ? .maxTokens : .contextWindow)
+            var generated = 0
+            var textDecoder = tokenizer.makeStreamDecoder()
+
+            if budget > 0 && !Task.isCancelled {
+                var tokens = promptTokens
+                let caches = layers.map { _ in KVCache() }
+                if var lastLogits = prefill(tokens, caches: caches) {
+                    while generated < budget {
+                        if Task.isCancelled { break }
+                        let next = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
+                        if config.eosTokenIDs.contains(next) {
+                            reason = .stop
+                            break
+                        }
+                        let decoded = textDecoder.append(next)
+                        if config.eosTokenIDs.isEmpty, let decoded, decoded.isEmpty || decoded == "<unk>" {
+                            reason = .stop
+                            break
+                        }
+                        generated += 1
+                        tokens.append(next)
+                        if let decoded, !decoded.isEmpty { emit(.chunk(decoded)) }
+                        if generated == budget || Task.isCancelled { break }
+
+                        let offset = caches.first?.count ?? (tokens.count - 1)
+                        let step = forward(MLXArray([next]).expandedDimensions(axis: 0), caches: caches, offset: offset)
+                        lastLogits = step[0, 0]
+                        eval(lastLogits)
+                    }
+                }
+            }
+
+            if Task.isCancelled {
+                reason = .cancelled
+            } else {
+                let text = textDecoder.finish()
+                if !text.isEmpty { emit(.chunk(text)) }
+            }
+            emit(.info(GenerationCompletionInfo(promptTokenCount: promptTokens.count,
+                generationTokenCount: generated, stopReason: reason)))
         }
     }
 }

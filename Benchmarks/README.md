@@ -109,6 +109,12 @@ Model conformance checks declared calculations. It does not establish trained-mo
 
 The builder copies tracked files into a separate directory and builds a Release executable. It verifies source and binary fingerprints and rejects coverage-instrumented executables. The `build-for-testing` action compiles targets without executing the library test suite.
 
+Benchmark builds explicitly set `MTL_FAST_MATH=NO`, `MTL_MATH_MODE=SAFE`, and `MTL_MATH_FP32_FUNCTIONS=PRECISE`. Xcode's default fast-math settings can change rounding in precompiled MLX attention and rotary kernels, which can change greedy token selection. These settings control this Xcode build; they do not change MLX runtime JIT options, explicit `fast::` calls, or builds made by downstream applications.
+
+The worker's `.build.json` records the requested Metal settings and SHA-256 fingerprints of the precompiled Metal libraries beside the executable and in adjacent resource bundles. The resolved run plan retains that record. Run planning rejects missing provenance or added, removed, or changed libraries and requires a rebuild. Existing workers created before this record was added must be rebuilt. Archived run evidence remains unchanged.
+
+For a separate Xcode test or application build, pass the same three settings to `xcodebuild` and inspect its Metal compiler commands. Resource hashes identify the compiled bytes; they do not prove a numerical error bound or guarantee exact agreement across devices and toolchains.
+
 The runner starts a fresh process for each case, engine, and batch. Each process performs its configured warmups and measured samples. Builds and runs use a checkout-level lock. Other applications can still compete for CPU, GPU, and memory resources.
 
 ### Workers and output validation

@@ -55,15 +55,173 @@ High-throughput, on-device causal language model execution on Apple Silicon Unif
 
 ## 1. Core Architectural Components
 
+### Grouped-query attention
+
+`LLMConfig.numHeads` is the query-head count. `numKVHeads` sets the key/value head count. Its default, `nil`, follows the current query-head count and preserves ordinary multi-head attention. Setting it to one selects multi-query attention. Other positive divisors select grouped-query attention.
+
+```swift
+let config = LLMConfig(
+	vocabSize: 128_256,
+	numLayers: 16,
+	hiddenDim: 2048,
+	numHeads: 32,
+	numKVHeads: 8,
+	intermediateSize: 8192
+)
+```
+
+The head dimension is `hiddenDim / numHeads`. Query and output projections retain the hidden width. Key and value projections each have shape `[numKVHeads * headDimension, hiddenDim]`. For the example above, K/V weights are `[512, 2048]` and cached tensors are `[batch, 8, sequence, 64]`.
+
+The cache retains eight KV heads. It does not expand them to 32 query heads. Those cache tensors use one quarter of the elements of the corresponding full-head cache. This describes tensor storage, not total process memory or a measured speedup. MLX's native scaled-dot-product attention consumes the grouped layout directly.
+
+The public `TransformerBlock.attention` property remains a `MultiHeadAttention`. Its direct-call path also handles grouped heads, and existing projection parameter paths remain unchanged. Configuration construction and model construction reject nonpositive head counts and nondivisible head layouts with preconditions.
+
+The `llama1B` and `llama8B` presets now use eight KV heads. Their K/V parameter shapes therefore differ from earlier approximate presets. To retain the old full-head layout, set `numKVHeads` to `nil` before constructing the model. These presets still do not establish full checkpoint compatibility; rotary scaling and tied output embeddings require separate validation.
+
 ### RoPE (Rotary Position Embedding) with Dynamic Offset
 Applies 2D rotation to Query and Key projections based on position index $m$:
 $$Q_{\text{rot}} = \text{RoPE}(Q, m), \quad K_{\text{rot}} = \text{RoPE}(K, m)$$
 During incremental autoregressive decoding, `RoPEEmbedding` dynamically incorporates `positionOffset` (corresponding to the number of prior cached tokens), ensuring correct relative attention geometry across arbitrary context lengths without learned position embeddings.
 
+### Llama wavelength-dependent rotary scaling
+
+Llama 3.1 and 3.2 checkpoints can specify `rope_type: "llama3"`. Their scaling leaves short wavelengths unchanged, slows long wavelengths by the configured factor, and blends the intermediate band. A different base or a uniform position scale cannot express this rule.
+
+```swift
+let encoding = PositionalEncodingScheme.llama3RoPE(
+    base: 500_000,
+    scaling: Llama3RoPEScaling(
+        factor: 32,
+        lowFrequencyFactor: 1,
+        highFrequencyFactor: 4,
+        originalContextLength: 8192
+    )
+)
+```
+
+These values match the Llama 3.2 1B checkpoint. Supply the values from your own checkpoint for other models. `LLMConfig.llama1B` now selects this encoding. The original Llama 3 8B preset retains ordinary RoPE.
+
+`RoPEEmbedding` precomputes one frequency denominator per rotated pair and passes that array to MLX's native rotary kernel. These constants are excluded from model weights. The kernel supports CPU and Apple GPU execution, partial rotary dimensions, both pair layouts, and position offsets. `scale` remains a uniform position multiplier in addition to the optional wavelength scaling.
+
+Existing `.rope(base:)` calls and unscaled `RoPEEmbedding` construction retain their behavior. Exhaustive switches over `PositionalEncodingScheme` must handle the new `.llama3RoPE` case. The Llama 3.2 preset now produces different rotations by design. Its default context capacity remains 8,192 tokens. Matching rotary parameters alone does not establish long-context generation compatibility.
+
+The frequency rule follows [Meta's Llama reference](https://github.com/meta-llama/llama-models/blob/main/models/llama3/model.py) with explicit parameters from the checkpoint. Tests compare rotations with an independent Double calculation, including long offsets. Their error budget accounts for Float32 phase rounding before evaluating sine and cosine.
+
+### Llama 3.2 context capacity
+
+The pinned Llama 3.2 1B checkpoint declares `max_position_embeddings = 131072`.
+Its RoPE configuration separately specifies `original_max_position_embeddings = 8192`
+and a scaling factor of 32. The original training context is a parameter of the
+frequency rule, not the scaled model's context limit.
+
+`LLMConfig.llama1B` retains its 8,192-token default to limit default context
+resource demands. This is a preset policy, not a hardcoded RoPE limit. Callers can
+opt into a larger capacity through the existing `maxSeqLen` property:
+
+```swift
+var config = LLMConfig.llama1B
+config.maxSeqLen = 131_072
+// Use this configuration when constructing the decoder for long-context experiments.
+```
+
+A successful long-context inference check establishes behavior for that checkpoint,
+input, device, and build configuration. It does not establish answer quality over
+long documents or acceptable resource use for another workload. Measure memory,
+latency, and answer quality before choosing a capacity. KV-cache storage grows with
+sequence length; attention work also grows with the prompt. Changing `maxSeqLen`
+does not change the checkpoint's RoPE scaling parameters.
+
 ### Two-Stage KV-Cache Generation (Prefill + Decode)
 Generation executes in two distinct stages:
-1. **Prefill Pass**: Evaluates the entire prompt sequence $[0 ..< N]$ in parallel, writing Key and Value projections into `KVCache`.
+1. **Prefill Pass**: Processes the prompt in sequential chunks, evaluating positions within each chunk in parallel and writing Key and Value projections into `KVCache`.
 2. **Incremental Decode Steps**: Processes only the single newest token $[N+1]$ at each step. The new Query vector performs dot-product attention against all cached Key and Value vectors ($Q_{N+1} \cdot K_{\text{accumulated}}^T$), eliminating redundant $O(N^2)$ prompt recomputation.
+
+Generation processes prompts in chunks of at most 2,048 tokens. Each chunk adds
+to the layer caches before the next chunk starts. MLX's causal-attention mode
+accounts for cached prefix tokens. The decoder does not construct a full-prompt
+square mask; MLX chooses the attention implementation for the device. Generation
+normalizes and projects only the final prompt position to vocabulary logits;
+`forward` still returns logits for every supplied position.
+
+The chunk size bounds temporary prompt activations, not the total context. KV
+storage and attention work still grow with the context length. Cancellation is
+checked between chunks. Different matrix and attention shapes can change floating
+point rounding, so numerical comparisons must record the prefill strategy.
+
+### Ending generation
+
+Set `LLMConfig.eosTokenIDs` to the stop-token IDs from the checkpoint configuration.
+Both `generate(prompt:options:)` and `generateStream(prompt:options:)` stop before
+emitting a sampled stop token. Stop tokens in the input prompt do not end generation.
+
+The Llama 3.2 1B preset uses `[128001, 128008, 128009]`. Custom configurations and
+other presets default to an empty set. When EOS IDs are configured, only those IDs
+signal normal model completion. A token that decodes to empty text still consumes
+one token of the output budget, emits no text chunk, and leaves incomplete UTF-8
+bytes available for later tokens. The literal `<unk>` is ordinary output in this mode.
+Output limits and cancellation remain independent termination conditions.
+
+With an empty EOS set, the decoder retains the legacy stop-on-empty-text or `<unk>`
+behavior for existing custom tokenizers. Those legacy stop tokens are excluded from
+the generated count. Supply checkpoint EOS IDs to avoid relying on decoded text.
+This setting does not implement caller-defined text stop sequences.
+
+### Completion metadata and context limits
+
+Use `generateDetails(prompt:options:)` when the caller needs to know why generation
+ended. It yields `GenerationEvent.chunk` values followed by one `.info` record on
+normal termination. The text-only `generate` and `generateStream` methods use the
+same generation loop and omit this record.
+
+```swift
+for try await event in decoder.generateDetails(
+    prompt: "Hello", options: LLMOptions(maxTokens: 50)
+) {
+    switch event {
+    case .chunk(let text):
+        print(text, terminator: "")
+    case .info(let info):
+        switch info.stopReason {
+        case .stop:
+            print("\nModel reached a stop token or tokenizer stop output.")
+        case .length(.maxTokens):
+            print("\nOutput budget reached.")
+        case .length(.contextWindow):
+            print("\nContext capacity reached; the response may be incomplete.")
+        case .cancelled:
+            print("\nGeneration cancelled.")
+        }
+    }
+}
+```
+
+`config.maxSeqLen` bounds prompt and generated tokens together. SwiftSci preserves
+the supplied prompt. Oversized prompts produce `GenerationError.promptTooLong`.
+A prompt exactly at capacity produces no text and reports `.length(.contextWindow)`.
+The caller owns prompt shortening, summarization and retries.
+
+`maxTokens` is an output ceiling, not a reservation. If the remaining context is
+smaller, generation uses that space and reports the context limit unless it reaches
+a stop token first. A zero budget completes without inference and reports
+`.length(.maxTokens)`. Negative budgets and nonpositive context capacities are
+request errors. When both length bounds coincide, the output budget takes precedence.
+
+`promptTokenCount` counts the input tokens, including the existing token-zero
+fallback for empty input. `generationTokenCount` counts generated tokens excluding
+EOS and any tokenizer output that triggers legacy stopping. With configured EOS
+IDs, empty decoded text still counts as a generated token. A Unicode character can span several
+tokens, so text-chunk counts are not token counts. Buffered UTF-8 text is flushed
+before the completion record on normal termination.
+
+Cancelling the stream cancels its producer. A consumer that has stopped reading
+cannot rely on receiving a final record. Request errors use the throwing channel,
+not a normal stop reason. The legacy `generate` method throws request errors before
+returning its nonthrowing stream; that stream cannot report errors during iteration.
+Use the detailed throwing stream for completion metadata and error handling.
+
+This changes the former oversized-input behavior: generation no longer silently
+drops the beginning of a prompt or emits a token beyond the configured capacity.
+Existing method signatures and the `LLMModel` protocol remain unchanged.
 
 ### SwiGLU Feed-Forward Network
 Replaces legacy ReLU/GELU activations with Swish-Gated Linear Units (Llama-style):
@@ -99,6 +257,25 @@ print("Loaded GGUF Model with \(ggufModel.tensors.count) quantized tensors.")
 ```
 
 ---
+
+### Tied input and output embeddings
+
+Some checkpoints, including Llama 3.2 1B, set `tie_word_embeddings` to `true`. They use the token embedding matrix for both input lookup and output logits, so the checkpoint can omit `lm_head.weight`.
+
+Set `LLMConfig.tieWordEmbeddings` to `true` to select this layout. The `llama1B` preset enables it. Other presets and custom configurations retain the default `false`.
+
+A tied decoder has no independent output module or output-weight parameter. It calls the current embedding's `asLinear` operation after final normalization. Checkpoint reloads, parameter updates, embedding replacement, and quantized embedding replacement therefore affect both uses. Training accumulates input and output contributions into the single embedding parameter.
+
+`loadWeights` requires `model.embed_tokens.weight` in tied mode and does not report a missing `lm_head.weight`. If both keys are supplied, the embedding is authoritative and the separate output tensor is ignored. An output tensor alone does not substitute for missing embeddings. Untied models continue to require `lm_head.weight`.
+
+`TransformerDecoder.lmHead` is now `Linear?`. Callers that access the independent head directly must unwrap it. A `nil` head selects projection through the embedding; it does not disable output logits. This represents the absence of a separate module and avoids keeping an unused vocabulary-sized matrix merely to preserve the old property type.
+
+```swift
+if let independentHead = decoder.lmHead {
+    // Inspect or use the independent projection in an untied model.
+    print(independentHead.shape)
+}
+```
 
 ## 3. End-to-End Decoder Configuration & Two-Stage Inference
 

@@ -51,6 +51,10 @@ public struct ChatTemplate: Sendable, Equatable {
     public enum Style: Sendable, Equatable {
         /// Llama 3 format (`<|start_header_id|>...<|end_header_id|>\n\n...<|eot_id|>`).
         case llama3
+        /// Llama 3.2 Instruct text chats with a caller-supplied date string.
+        /// Includes the checkpoint's dated system header and string tool responses.
+        /// Tool definitions, structured tool calls and multimodal content are unsupported.
+        case llama32Instruct(date: String)
         /// ChatML format (`<|im_start|>role\ncontent<|im_end|>`).
         case chatML
         /// Mistral format (`[INST] ... [/INST]`).
@@ -68,6 +72,13 @@ public struct ChatTemplate: Sendable, Equatable {
 
     /// Preconfigured template using Llama 3 format.
     public static let llama3 = ChatTemplate(style: .llama3)
+    /// Creates the pinned Llama 3.2 Instruct text-chat template.
+    /// - Parameter date: Date text such as `30 Sep 2026`. No clock or locale is consulted.
+    /// - Returns: A template for plain-text messages and string tool responses.
+    public static func llama32Instruct(date: String) -> ChatTemplate {
+        ChatTemplate(style: .llama32Instruct(date: date))
+    }
+
     /// Preconfigured template using ChatML format.
     public static let chatML = ChatTemplate(style: .chatML)
     /// Preconfigured template using Mistral format.
@@ -80,6 +91,9 @@ public struct ChatTemplate: Sendable, Equatable {
     /// - Returns: Formatted prompt string.
     public func render(messages: [ChatMessage], addGenerationPrompt: Bool = true) -> String {
         switch style {
+        case .llama32Instruct(let date):
+            return Self.renderLlama32(messages: messages, date: date, addGenerationPrompt: addGenerationPrompt)
+
         case .llama3:
             var output = ""
             for msg in messages {
@@ -143,4 +157,58 @@ public struct ChatTemplate: Sendable, Equatable {
         let text = render(messages: messages, addGenerationPrompt: addGenerationPrompt)
         return tokenizer.encode(text: text)
     }
+
+    private static func renderLlama32(messages: [ChatMessage], date: String, addGenerationPrompt: Bool) -> String {
+        let hasSystem = messages.first?.role == .system
+        let system = hasSystem ? trimLlamaContent(messages[0].content) : ""
+        var output = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n"
+        output += "Cutting Knowledge Date: December 2023\nToday Date: \(date)\n\n"
+        output += system + "<|eot_id|>"
+        for message in messages.dropFirst(hasSystem ? 1 : 0) {
+            let role = message.role == .tool ? "ipython" : message.role.rawValue
+            let content = message.role == .tool ? quoteLlamaToolResult(message.content) : trimLlamaContent(message.content)
+            output += "<|start_header_id|>\(role)<|end_header_id|>\n\n\(content)<|eot_id|>"
+        }
+        if addGenerationPrompt {
+            output += "<|start_header_id|>assistant<|end_header_id|>\n\n"
+        }
+        return output
+    }
+
+    private static func trimLlamaContent(_ text: String) -> String {
+        // Jinja trim uses Python str.strip, including U+001C...U+001F but not U+200B.
+        func whitespace(_ scalar: Unicode.Scalar) -> Bool {
+            switch scalar.value {
+            case 0x09...0x0D, 0x1C...0x20, 0x85, 0xA0, 0x1680, 0x2000...0x200A,
+                 0x2028, 0x2029, 0x202F, 0x205F, 0x3000: true
+            default: false
+            }
+        }
+        let scalars = text.unicodeScalars
+        var start = scalars.startIndex
+        var end = scalars.endIndex
+        while start < end, whitespace(scalars[start]) { scalars.formIndex(after: &start) }
+        while start < end, whitespace(scalars[scalars.index(before: end)]) { scalars.formIndex(before: &end) }
+        return String(scalars[start..<end])
+    }
+
+    private static func quoteLlamaToolResult(_ text: String) -> String {
+        // Match transformers' tojson filter: Unicode is literal and slashes are not escaped.
+        var result = "\""
+        for scalar in text.unicodeScalars {
+            switch scalar.value {
+            case 0x22: result += "\\\""
+            case 0x5C: result += "\\\\"
+            case 0x08: result += "\\b"
+            case 0x09: result += "\\t"
+            case 0x0A: result += "\\n"
+            case 0x0C: result += "\\f"
+            case 0x0D: result += "\\r"
+            case 0x00...0x1F: result += String(format: "\\u%04x", scalar.value)
+            default: result.unicodeScalars.append(scalar)
+            }
+        }
+        return result + "\""
+    }
+
 }

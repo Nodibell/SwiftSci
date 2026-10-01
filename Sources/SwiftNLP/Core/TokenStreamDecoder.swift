@@ -20,12 +20,15 @@ public struct TokenStreamDecoder: Sendable {
     }
 
     /// Returns available text, or `nil` while waiting for a complete UTF-8 scalar.
+    /// An empty token returns `""`; pending bytes remain available to ``finish()``.
     public mutating func append(_ token: Int) -> String? {
         switch mode {
         case .text(let decode): return decode(token)
         case .bytes(let decode):
+            let tokenBytes = decode(token)
+            guard !tokenBytes.isEmpty else { return "" }
             var bytes = pending
-            bytes.append(contentsOf: decode(token))
+            bytes.append(contentsOf: tokenBytes)
             let end = Self.completePrefixLength(bytes)
             pending = Array(bytes[end...])
             if end == 0 && !pending.isEmpty { return nil }

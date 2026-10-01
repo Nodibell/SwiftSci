@@ -8,6 +8,7 @@ import SwiftNLP
 struct GenerationResultTests {
     private struct FixtureTokenizer: Tokenizer {
         var bytes = false
+        var emptyByteToken = false
         var cancel = false
         func tokenize(text: String) -> [String] { [text] }
         func encode(text: String) -> [Int] { Array(repeating: 0, count: text.count) }
@@ -17,17 +18,20 @@ struct GenerationResultTests {
         }
         func makeStreamDecoder() -> TokenStreamDecoder {
             if bytes {
-                return TokenStreamDecoder(decodeBytes: { [[], [0xe4], [0xb8], [0x96], [0x21], [], [], []][$0] })
+                return TokenStreamDecoder(decodeBytes: {
+                    if emptyByteToken && $0 == 2 { return [] }
+                    return [[], [0xe4], [0xb8], [0x96], [0x21], [], [], []][$0]
+                })
             }
             return TokenStreamDecoder(decodeToken: { self.decode(tokens: [$0]) })
         }
     }
 
     private func model(capacity: Int = 8, stops: Set<Int> = [], bytes: Bool = false,
-                       cancel: Bool = false) -> TransformerDecoder {
+                       cancel: Bool = false, emptyByteToken: Bool = false) -> TransformerDecoder {
         let model = TransformerDecoder(config: LLMConfig(vocabSize: 8, numLayers: 0,
             hiddenDim: 8, numHeads: 1, maxSeqLen: capacity, eosTokenIDs: stops),
-            tokenizer: FixtureTokenizer(bytes: bytes, cancel: cancel))
+            tokenizer: FixtureTokenizer(bytes: bytes, emptyByteToken: emptyByteToken, cancel: cancel))
         var head = Array(repeating: Float(0), count: 64)
         for column in 0..<8 { head[min(column + 1, 7) * 8 + column] = 1 }
         model.update(parameters: NestedDictionary.unflattened([
@@ -102,6 +106,23 @@ struct GenerationResultTests {
         #expect(try info(result).generationTokenCount == maxTokens)
     }
 
+    @Test("An empty byte token stops generation and flushes the incomplete scalar")
+    func emptyByteTokenStops() async throws {
+        let model = model(bytes: true, emptyByteToken: true)
+        let result = try await events(model)
+        let completion = try info(result)
+        #expect(completion.stopReason == .stop)
+        #expect(completion.generationTokenCount == 1)
+        #expect(result.compactMap(\.chunk).joined() == "�")
+        let options = LLMOptions(sampling: .greedy, maxTokens: 5)
+        var plain = ""
+        for await chunk in try await model.generate(prompt: "P", options: options) { plain += chunk }
+        var throwing = ""
+        for try await chunk in model.generateStream(prompt: "P", options: options) { throwing += chunk }
+        #expect(plain == "�")
+        #expect(throwing == plain)
+    }
+
     @Test("Both legacy adapters preserve detailed-stream text")
     func adapters() async throws {
         let model = model(stops: [3])
@@ -121,7 +142,8 @@ struct GenerationResultTests {
         for (capacity, prompt, budget, expected): (Int, String, Int, GenerationError) in [
             (4, "12345", 1, .promptTooLong(promptTokens: 5, capacity: 4)),
             (4, "P", -1, .invalidMaxTokens(-1)),
-            (0, "P", 1, .invalidContextLimit(0))
+            (0, "P", 1, .invalidContextLimit(0)),
+            (-1, "P", 1, .invalidContextLimit(-1))
         ] {
             let model = model(capacity: capacity)
             let options = LLMOptions(sampling: .greedy, maxTokens: budget)

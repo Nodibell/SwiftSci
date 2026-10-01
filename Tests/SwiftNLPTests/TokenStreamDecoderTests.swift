@@ -53,4 +53,13 @@ struct TokenStreamDecoderTests {
         #expect(decoder.append(5) == "�")
         #expect(decoder.finish().isEmpty)
     }
+    @Test("An empty token remains observable while UTF-8 bytes are pending")
+    func emptyTokenWithPendingBytes() {
+        var decoder = TokenStreamDecoder(decodeBytes: { $0 == 1 ? [0xe4] : [] })
+        #expect(decoder.append(1) == nil)
+        #expect(decoder.append(2) == "")
+        #expect(decoder.finish() == "�")
+        #expect(decoder.finish().isEmpty)
+    }
+
 }

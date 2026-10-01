@@ -52,13 +52,15 @@ Metal is required for the reference run; there is no CPU fallback. The controlle
 
 `reference.json` records package versions, cold model-load time, checkpoint-tokenizer outputs, chat-template inputs with the fixed date in `prompts.json`, observed cache dtypes and three greedy generation runs per prompt. The first run per prompt is warmup. Generation stops at EOS or 32 tokens. Token sequences must repeat across runs. A passing smoke result means the reference executed and repeated consistently; it does not establish response quality or numerical agreement with SwiftSci.
 
-`swift.json` records actual parser results, checkpoint/public-model projection shapes and tokenization comparisons. The inspection model uses eight positions to bound the unused learned-position allocation; projection shapes retain the checkpoint's layer widths. The inspector does not install incompatible weights or attempt generation when those checks identify a mismatch.
+`swift.json` records parser results, the complete checkpoint/public-model tensor inventory and shapes, and tokenization and UTF-8 roundtrip comparisons. It requires the supported activation, bias, attention-head, normalization, rotary-scaling, and tied-output settings. It loads weights only after these checks pass; `weight_loading_verified` records successful parameter installation, not evaluated inference. The inspection model uses eight positions to bound the unused learned-position allocation; projection shapes retain the checkpoint's layer widths. The inspector does not install incompatible weights or attempt generation when those checks identify a mismatch.
 
 `integration.json` records checkpoint, prompt, source and binary identities. `blocked` exits with status 1 and retains findings. `failed` indicates a diagnostic execution error. `preflight-passed` still does not mean generation passed: the diagnostic intentionally reports `generation_comparison: not-executed`. Reports must preserve this distinction.
 
 A complete comparison still needs successful public checkpoint loading, matching tokenizer and special-token behavior, correct rotary positions and attention layout, numerical logit checks, generation stopping and cancellation checks, and separately measured preparation, prefill and decoding. Each production defect should be repaired on its own branch with regression coverage; this branch retains the evidence.
 
-## Observed compatibility gaps
+## Historical compatibility gaps
+
+The following findings describe the 2026-09-29 implementation. The current inspector uses grouped-query attention, Llama 3 rotary scaling, tied embeddings, and the checkpoint tokenizer through the public APIs. Re-run it on the source revision being evaluated instead of carrying these historical blockers forward.
 
 The pinned checkpoint run on 2026-09-29 completed all four reference prompts with identical greedy token sequences across three repetitions. SwiftSci parsed 146 BF16 tensors. Native generation remained blocked by these checks:
 
@@ -69,4 +71,16 @@ The pinned checkpoint run on 2026-09-29 completed all four reference prompts wit
 | Tied output embeddings | `tie_word_embeddings` is true and `lm_head.weight` is absent. The public model has a separate output head and its loader expects that key. | Preserve the shared embedding/output semantics and verify complete parameter loading. |
 | Tokenizer parity | All four raw-text cases disagree with the checkpoint tokenizer. Expected/actual token counts are 18/34, 23/42, 18/39 and 19/22. | Checkpoint pre-tokenization, vocabulary/merge behavior, whitespace, Unicode and special tokens. |
 
-The parameter and configuration checks inspect the public [decoder](../../../Sources/SwiftLLM/Core/TransformerDecoder.swift). Token comparisons execute the public [BPETokenizer](../../../Sources/SwiftNLP/Core/BPETokenizer.swift). These are blockers for this checkpoint; they do not invalidate the smaller supported decoder contracts. No production repair or substitute model implementation is included here.
+The parameter and configuration checks inspect the public [decoder](../../../Sources/SwiftLLM/Core/TransformerDecoder.swift). Token comparisons execute the public [BPETokenizer](../../../Sources/SwiftNLP/Core/BPETokenizer.swift). These were blockers for that source revision; they did not invalidate the smaller supported decoder contracts. The inspection remains a diagnostic and does not substitute a separate model implementation.
+
+## Preflight regression controls
+
+The worker controls use tiny synthetic safetensors and a byte-level tokenizer. They require no downloaded model. Both tied and separate output heads must load successfully. Missing or extra tensors, wrong tensor shapes, mismatched token expectations, unsupported tokenizer behavior, and invalid configuration must fail explicitly. No generation is performed. The inspector explicitly uses the CPU and records `inspection_device: cpu`, so the synthetic controls require no GPU. The benchmark conformance workflow runs them after building the worker and retains their evidence.
+
+```sh
+Benchmarks/.venv-standardized/bin/python Benchmarks/Tests/check_pretrained_inspection.py \
+  --swift-worker "$worker" \
+  --output Benchmarks/Runs/preflight-controls-01
+```
+
+Run these controls after rebuilding the worker. They supplement the pinned-checkpoint diagnostic; they do not establish real-model inference accuracy.

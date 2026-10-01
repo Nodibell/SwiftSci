@@ -41,6 +41,11 @@ jobs:
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile smoke
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile certification
           Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py build
+      - name: Check synthetic checkpoint preflight controls
+        run: |
+          Benchmarks/.venv-standardized/bin/python Benchmarks/Tests/check_pretrained_inspection.py \
+            --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
+            --output Benchmarks/Runs/ci-preflight-controls
       - name: Reconcile legacy coverage
         run: Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py inventory
       - name: Check CPU regression policy and retain strict conformance results
@@ -65,6 +70,7 @@ jobs:
           path: |
             Benchmarks/Runs/ci-acceptance/
             Benchmarks/Runs/ci-workflow-controls/
+            Benchmarks/Runs/ci-preflight-controls/
             ~/Library/Caches/SwiftSci/standardized-benchmarks/build.log
           retention-days: 30
           if-no-files-found: warn

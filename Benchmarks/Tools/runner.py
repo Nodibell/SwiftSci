@@ -35,6 +35,7 @@ THREAD_ENV = {
     "OMP_NUM_THREADS": "1",
     "MKL_NUM_THREADS": "1",
     "NUMEXPR_NUM_THREADS": "1",
+    "POLARS_MAX_THREADS": "1",
 }
 
 
@@ -183,8 +184,8 @@ def plan(root, profile, engines, swift_worker, python):
     require(
         len(set(engines)) == len(engines)
         and engines
-        and set(engines) <= {"swiftsci", "pandas", "mlx"},
-        "Supported engines: swiftsci,pandas,mlx",
+        and set(engines) <= {"swiftsci", "pandas", "mlx", "polars", "duckdb"},
+        "Supported engines: swiftsci,pandas,mlx,polars,duckdb",
     )
     engine_records = {}
     for engine in engines:
@@ -220,6 +221,11 @@ def plan(root, profile, engines, swift_worker, python):
                 worker_sha256=digest(worker.read_bytes()),
                 settings=dict(device="fixture-explicit", fallback=False, output="materialized",
                               decoder_initialization="direct-fixed-arrays"))
+        elif engine in ("polars", "duckdb"):
+            version = command([python, "-c", f"import {engine},numpy,pyarrow,sys;print({engine}.__version__,numpy.__version__,pyarrow.__version__,sys.version)"])
+            worker = root / "Benchmarks/Python/tabular_worker.py"
+            engine_records[engine] = dict(command=[python, str(worker), engine], version=version,
+                worker_sha256=digest(worker.read_bytes()), settings=dict(threads=1, output="materialized"))
         else:
             version = command(
                 [
@@ -251,6 +257,11 @@ def plan(root, profile, engines, swift_worker, python):
             require(case['workload']['operation'] in OPERATIONS,
                     'MLX comparison does not support: ' + case['case']['id'])
             check_supported(read_json(root / case['dataset']['fixture']))
+    if set(engines) & {"polars", "duckdb"}:
+        sys.path.insert(0, str(root / "Benchmarks/Python"))
+        from tabular_workloads import OPERATIONS
+        unsupported = [c['case']['id'] for c in cases if c['workload']['operation'] not in OPERATIONS]
+        require(not unsupported, f"Native tabular engines do not support cases: {unsupported}; use an explicit overlap profile")
     contract = dict(
         profile=profile,
         cases=cases,

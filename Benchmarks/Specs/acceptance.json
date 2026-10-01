@@ -130,6 +130,16 @@
       "profile": "neural-shaped-cpu-conformance",
       "tier": "cpu",
       "purpose": "Bounded wider decoder and longer-context full/cached CPU conformance"
+    },
+    {
+      "profile": "tabular-smoke",
+      "tier": "sweep",
+      "purpose": "Explicit native Polars/DuckDB overlap of migration workloads; omitted operations remain in the full migration profile"
+    },
+    {
+      "profile": "tabular-migration",
+      "tier": "sweep",
+      "purpose": "Explicit native Polars/DuckDB overlap of migration workloads; omitted operations remain in the full migration profile"
     }
   ],
   "aliases": {},

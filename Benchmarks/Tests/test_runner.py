@@ -227,3 +227,73 @@ class InstrumentationTests(unittest.TestCase):
         with patch("runner.command", return_value=""):
             with self.assertRaises(ContractError):
                 verify_uninstrumented(Path("worker"))
+
+
+class MetalProvenanceTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.products = Path(self.temp.name)
+        self.worker = self.products / "SwiftSciBenchmarkWorker"
+        self.worker.write_bytes(b"worker")
+        self.library = self.products / "mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib"
+        self.library.parent.mkdir(parents=True)
+        self.library.write_bytes(b"compiled safe math")
+        self.record = dict(
+            binary_sha256=digest(self.worker.read_bytes()),
+            coverage_instrumentation="absent",
+            environment={},
+            source={"tree_sha256": "source"},
+            metal=dict(
+                build_settings={"MTL_FAST_MATH": "NO", "MTL_MATH_MODE": "SAFE",
+                                "MTL_MATH_FP32_FUNCTIONS": "PRECISE"},
+                libraries={str(self.library.relative_to(self.products)):
+                           digest(self.library.read_bytes())},
+            ),
+        )
+
+    def resolve(self):
+        from runner import plan
+
+        write_json(Path(str(self.worker) + ".build.json"), self.record)
+        with (
+            patch("runner.verify_uninstrumented"),
+            patch("runner.environment", return_value={}),
+            patch("runner.source_identity", return_value={"tree_sha256": "source"}),
+        ):
+            return plan(ROOT, {"cases": []}, ["swiftsci"], self.worker, sys.executable)
+
+    def test_missing_or_fast_math_provenance_requires_rebuild(self):
+        original = copy.deepcopy(self.record)
+        for mutation in ["missing", "fast", "missing_libraries"]:
+            with self.subTest(mutation=mutation):
+                self.record = copy.deepcopy(original)
+                if mutation == "missing":
+                    self.record.pop("metal")
+                elif mutation == "fast":
+                    self.record["metal"]["build_settings"]["MTL_FAST_MATH"] = "YES"
+                else:
+                    self.record["metal"].pop("libraries")
+                with self.assertRaisesRegex(ContractError, "Metal.*rebuild"):
+                    self.resolve()
+
+    def test_replaced_removed_or_added_metal_library_requires_rebuild(self):
+        extra = self.products / "other.bundle/Contents/Resources/default.metallib"
+        extra.parent.mkdir(parents=True)
+        for mutation in ["replaced", "removed", "added"]:
+            with self.subTest(mutation=mutation):
+                self.library.write_bytes(b"compiled safe math")
+                if mutation == "replaced":
+                    self.library.write_bytes(b"compiled fast math")
+                elif mutation == "removed":
+                    self.library.unlink()
+                else:
+                    extra.write_bytes(b"new library")
+                with self.assertRaisesRegex(ContractError, "Metal.*rebuild"):
+                    self.resolve()
+                if extra.exists():
+                    extra.unlink()
+
+    def test_matching_metal_artifacts_are_included_in_run_fingerprint(self):
+        result = self.resolve()
+        self.assertEqual(result["engines"]["swiftsci"]["build"]["metal"], self.record["metal"])

@@ -122,6 +122,62 @@ The Llama 3.2 1B preset uses `[128001, 128008, 128009]`. Custom configurations a
 other presets default to an empty set, preserving their existing generation behavior.
 This setting controls token IDs, not text-based stop sequences or UTF-8 streaming.
 
+### Completion metadata and context limits
+
+Use `generateDetails(prompt:options:)` when the caller needs to know why generation
+ended. It yields `GenerationEvent.chunk` values followed by one `.info` record on
+normal termination. The text-only `generate` and `generateStream` methods use the
+same generation loop and omit this record.
+
+```swift
+for try await event in decoder.generateDetails(
+    prompt: "Hello", options: LLMOptions(maxTokens: 50)
+) {
+    switch event {
+    case .chunk(let text):
+        print(text, terminator: "")
+    case .info(let info):
+        switch info.stopReason {
+        case .stop:
+            print("\nModel reached a stop token or tokenizer stop output.")
+        case .length(.maxTokens):
+            print("\nOutput budget reached.")
+        case .length(.contextWindow):
+            print("\nContext capacity reached; the response may be incomplete.")
+        case .cancelled:
+            print("\nGeneration cancelled.")
+        }
+    }
+}
+```
+
+`config.maxSeqLen` bounds prompt and generated tokens together. SwiftSci preserves
+the supplied prompt. Oversized prompts produce `GenerationError.promptTooLong`.
+A prompt exactly at capacity produces no text and reports `.length(.contextWindow)`.
+The caller owns prompt shortening, summarization and retries.
+
+`maxTokens` is an output ceiling, not a reservation. If the remaining context is
+smaller, generation uses that space and reports the context limit unless it reaches
+a stop token first. A zero budget completes without inference and reports
+`.length(.maxTokens)`. Negative budgets and nonpositive context capacities are
+request errors. When both length bounds coincide, the output budget takes precedence.
+
+`promptTokenCount` counts the input tokens, including the existing token-zero
+fallback for empty input. `generationTokenCount` counts generated tokens excluding
+EOS and empty/unknown tokenizer stop outputs. A Unicode character can span several
+tokens, so text-chunk counts are not token counts. Buffered UTF-8 text is flushed
+before the completion record on normal termination.
+
+Cancelling the stream cancels its producer. A consumer that has stopped reading
+cannot rely on receiving a final record. Request errors use the throwing channel,
+not a normal stop reason. The legacy `generate` method throws request errors before
+returning its nonthrowing stream; that stream cannot report errors during iteration.
+Use the detailed throwing stream for completion metadata and error handling.
+
+This changes the former oversized-input behavior: generation no longer silently
+drops the beginning of a prompt or emits a token beyond the configured capacity.
+Existing method signatures and the `LLMModel` protocol remain unchanged.
+
 ### SwiGLU Feed-Forward Network
 Replaces legacy ReLU/GELU activations with Swish-Gated Linear Units (Llama-style):
 

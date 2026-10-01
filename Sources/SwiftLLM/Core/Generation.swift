@@ -10,7 +10,8 @@ public enum GenerationLimit: Sendable, Equatable {
 
 /// The reason a generation operation ended.
 public enum GenerationStopReason: Sendable, Equatable {
-    /// A configured EOS token or the tokenizer's empty/unknown stop output was encountered.
+    /// A configured EOS token was encountered, or, with no EOS IDs configured,
+    /// the legacy tokenizer produced empty text or the literal `<unk>`.
     case stop
     /// Generation reached the indicated bound. When both bounds coincide, `maxTokens` takes precedence.
     case length(GenerationLimit)
@@ -23,7 +24,8 @@ public struct GenerationCompletionInfo: Sendable, Equatable {
     /// Tokens supplied to the model, including the fallback token used for an empty prompt.
     public let promptTokenCount: Int
     /// Generated non-stop tokens, including tokens buffered during UTF-8 decoding.
-    /// EOS and empty/unknown stop tokens are excluded. Text chunks are not token counts.
+    /// EOS tokens are excluded. Empty/unknown tokens are excluded only when they
+    /// trigger legacy stopping with no EOS IDs configured. Text chunks are not token counts.
     public let generationTokenCount: Int
     /// Why generation ended.
     public let stopReason: GenerationStopReason

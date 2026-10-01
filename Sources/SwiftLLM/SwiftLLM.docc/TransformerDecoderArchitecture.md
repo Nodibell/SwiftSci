@@ -103,9 +103,32 @@ These values match the Llama 3.2 1B checkpoint. Supply the values from your own 
 
 `RoPEEmbedding` precomputes one frequency denominator per rotated pair and passes that array to MLX's native rotary kernel. These constants are excluded from model weights. The kernel supports CPU and Apple GPU execution, partial rotary dimensions, both pair layouts, and position offsets. `scale` remains a uniform position multiplier in addition to the optional wavelength scaling.
 
-Existing `.rope(base:)` calls and unscaled `RoPEEmbedding` construction retain their behavior. Exhaustive switches over `PositionalEncodingScheme` must handle the new `.llama3RoPE` case. The Llama 3.2 preset now produces different rotations by design. Its default sequence allocation remains 8192; matching rotary parameters alone does not establish full checkpoint or long-context generation compatibility.
+Existing `.rope(base:)` calls and unscaled `RoPEEmbedding` construction retain their behavior. Exhaustive switches over `PositionalEncodingScheme` must handle the new `.llama3RoPE` case. The Llama 3.2 preset now produces different rotations by design. Its default context capacity remains 8,192 tokens. Matching rotary parameters alone does not establish long-context generation compatibility.
 
 The frequency rule follows [Meta's Llama reference](https://github.com/meta-llama/llama-models/blob/main/models/llama3/model.py) with explicit parameters from the checkpoint. Tests compare rotations with an independent Double calculation, including long offsets. Their error budget accounts for Float32 phase rounding before evaluating sine and cosine.
+
+### Llama 3.2 context capacity
+
+The pinned Llama 3.2 1B checkpoint declares `max_position_embeddings = 131072`.
+Its RoPE configuration separately specifies `original_max_position_embeddings = 8192`
+and a scaling factor of 32. The original training context is a parameter of the
+frequency rule, not the scaled model's context limit.
+
+`LLMConfig.llama1B` retains an 8,192-token default because that is the native
+end-to-end generation range validated here. This is a preset policy, not a hardcoded
+RoPE limit. The existing `maxSeqLen` property exposes a caller-selected capacity:
+
+```swift
+var config = LLMConfig.llama1B
+config.maxSeqLen = 131_072
+// Use this configuration when constructing the decoder for long-context experiments.
+```
+
+This setting does not establish correctness, memory suitability, or acceptable
+latency at 131,072 tokens. Long-context inference needs separate validation and
+resource measurements before increasing the default. KV-cache storage grows with
+sequence length; attention work also grows with the prompt. Changing `maxSeqLen`
+does not change the checkpoint's RoPE scaling parameters.
 
 ### Two-Stage KV-Cache Generation (Prefill + Decode)
 Generation executes in two distinct stages:
@@ -119,8 +142,16 @@ Both `generate(prompt:options:)` and `generateStream(prompt:options:)` stop befo
 emitting a sampled stop token. Stop tokens in the input prompt do not end generation.
 
 The Llama 3.2 1B preset uses `[128001, 128008, 128009]`. Custom configurations and
-other presets default to an empty set, preserving their existing generation behavior.
-This setting controls token IDs, not text-based stop sequences or UTF-8 streaming.
+other presets default to an empty set. When EOS IDs are configured, only those IDs
+signal normal model completion. A token that decodes to empty text still consumes
+one token of the output budget, emits no text chunk, and leaves incomplete UTF-8
+bytes available for later tokens. The literal `<unk>` is ordinary output in this mode.
+Output limits and cancellation remain independent termination conditions.
+
+With an empty EOS set, the decoder retains the legacy stop-on-empty-text or `<unk>`
+behavior for existing custom tokenizers. Those legacy stop tokens are excluded from
+the generated count. Supply checkpoint EOS IDs to avoid relying on decoded text.
+This setting does not implement caller-defined text stop sequences.
 
 ### Completion metadata and context limits
 
@@ -164,7 +195,8 @@ request errors. When both length bounds coincide, the output budget takes preced
 
 `promptTokenCount` counts the input tokens, including the existing token-zero
 fallback for empty input. `generationTokenCount` counts generated tokens excluding
-EOS and empty/unknown tokenizer stop outputs. A Unicode character can span several
+EOS and any tokenizer output that triggers legacy stopping. With configured EOS
+IDs, empty decoded text still counts as a generated token. A Unicode character can span several
 tokens, so text-chunk counts are not token counts. Buffered UTF-8 text is flushed
 before the completion record on normal termination.
 

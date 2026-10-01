@@ -54,7 +54,9 @@ public struct LLMConfig: Sendable {
     public var positionalEncoding: PositionalEncodingScheme
     /// Use the token embedding matrix for output logits instead of a separate head.
     public var tieWordEmbeddings: Bool
-    /// Token IDs that end generation without being emitted. Empty preserves legacy behavior.
+    /// Token IDs that end generation without being emitted.
+    /// When nonempty, decoded text never acts as a stop signal. An empty set retains
+    /// legacy stopping on empty decoded text or the literal `<unk>`.
     public var eosTokenIDs: Set<Int>
 
     /// Creates an LLM configuration.
@@ -114,7 +116,11 @@ public struct LLMConfig: Sendable {
         LLMConfig(vocabSize: 1024, numLayers: 2, hiddenDim: 128, numHeads: 4, maxSeqLen: 256, positionalEncoding: .rope(base: 10_000.0))
     }
 
-    /// Approximate Llama 3.2-1B compatible configuration.
+    /// Llama 3.2-1B configuration with an 8,192-token default context capacity.
+    /// The checkpoint declares 131,072 positions; 8,192 is the native generation
+    /// range validated for this preset, distinct from its factor-32 RoPE scaling.
+    /// Set `maxSeqLen` before model construction to experiment with a larger
+    /// capacity. Full 131,072-token inference is not validated by this preset.
     public static var llama1B: LLMConfig {
         LLMConfig(vocabSize: 128_256, numLayers: 16, hiddenDim: 2048, numHeads: 32, numKVHeads: 8,
                   intermediateSize: 8192, maxSeqLen: 8192,
@@ -628,13 +634,13 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
                         break
                     }
                     let decoded = textDecoder.append(next)
-                    if let decoded, decoded.isEmpty || decoded == "<unk>" {
+                    if config.eosTokenIDs.isEmpty, let decoded, decoded.isEmpty || decoded == "<unk>" {
                         reason = .stop
                         break
                     }
                     generated += 1
                     tokens.append(next)
-                    if let decoded { emit(.chunk(decoded)) }
+                    if let decoded, !decoded.isEmpty { emit(.chunk(decoded)) }
                     if generated == budget || Task.isCancelled { break }
 
                     let offset = caches.first?.count ?? (tokens.count - 1)

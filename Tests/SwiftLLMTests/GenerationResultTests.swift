@@ -10,11 +10,15 @@ struct GenerationResultTests {
         var bytes = false
         var emptyByteToken = false
         var cancel = false
+        var secondTokenText: String? = nil
         func tokenize(text: String) -> [String] { [text] }
         func encode(text: String) -> [Int] { Array(repeating: 0, count: text.count) }
         func decode(tokens: [Int]) -> String {
             if cancel { withUnsafeCurrentTask { $0?.cancel() } }
-            return tokens.map { ["P", "A", "B", "C", "D", "E", "F", "G"][$0] }.joined()
+            return tokens.map { token in
+                if token == 2, let secondTokenText { return secondTokenText }
+                return ["P", "A", "B", "C", "D", "E", "F", "G"][token]
+            }.joined()
         }
         func makeStreamDecoder() -> TokenStreamDecoder {
             if bytes {
@@ -28,10 +32,12 @@ struct GenerationResultTests {
     }
 
     private func model(capacity: Int = 8, stops: Set<Int> = [], bytes: Bool = false,
-                       cancel: Bool = false, emptyByteToken: Bool = false) -> TransformerDecoder {
+                       cancel: Bool = false, emptyByteToken: Bool = false,
+                       secondTokenText: String? = nil) -> TransformerDecoder {
         let model = TransformerDecoder(config: LLMConfig(vocabSize: 8, numLayers: 0,
             hiddenDim: 8, numHeads: 1, maxSeqLen: capacity, eosTokenIDs: stops),
-            tokenizer: FixtureTokenizer(bytes: bytes, emptyByteToken: emptyByteToken, cancel: cancel))
+            tokenizer: FixtureTokenizer(bytes: bytes, emptyByteToken: emptyByteToken, cancel: cancel,
+                                        secondTokenText: secondTokenText))
         var head = Array(repeating: Float(0), count: 64)
         for column in 0..<8 { head[min(column + 1, 7) * 8 + column] = 1 }
         model.update(parameters: NestedDictionary.unflattened([
@@ -121,6 +127,43 @@ struct GenerationResultTests {
         for try await chunk in model.generateStream(prompt: "P", options: options) { throwing += chunk }
         #expect(plain == "�")
         #expect(throwing == plain)
+    }
+
+    @Test("Configured EOS IDs take precedence over empty or unknown decoded text", arguments: ["", "<unk>"])
+    func configuredEOSOwnsStopping(secondTokenText: String) async throws {
+        let model = model(stops: [4], secondTokenText: secondTokenText)
+        let result = try await events(model)
+        let completion = try info(result)
+        let expected = "A" + secondTokenText + "C"
+        #expect(completion.stopReason == .stop)
+        #expect(completion.generationTokenCount == 3)
+        #expect(result.compactMap(\.chunk).joined() == expected)
+        #expect(!result.contains(.chunk("")))
+        let options = LLMOptions(sampling: .greedy, maxTokens: 5)
+        var plain = ""
+        for await chunk in try await model.generate(prompt: "P", options: options) { plain += chunk }
+        var throwing = ""
+        for try await chunk in model.generateStream(prompt: "P", options: options) { throwing += chunk }
+        #expect(plain == expected)
+        #expect(throwing == expected)
+    }
+
+    @Test("An empty byte token consumes budget without stopping when EOS is configured")
+    func configuredEOSEmptyBytes() async throws {
+        let result = try await events(model(stops: [4], bytes: true, emptyByteToken: true), maxTokens: 2)
+        let completion = try info(result)
+        #expect(completion.stopReason == .length(.maxTokens))
+        #expect(completion.generationTokenCount == 2)
+        #expect(result.compactMap(\.chunk).joined() == "�")
+        #expect(!result.contains(.chunk("")))
+    }
+
+    @Test("Legacy configurations retain unknown-text stopping")
+    func legacyUnknownText() async throws {
+        let result = try await events(model(secondTokenText: "<unk>"))
+        #expect(try info(result).stopReason == .stop)
+        #expect(try info(result).generationTokenCount == 1)
+        #expect(result.compactMap(\.chunk).joined() == "A")
     }
 
     @Test("Both legacy adapters preserve detailed-stream text")

@@ -405,6 +405,10 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
         caches: [KVCache]? = nil,
         offset: Int = 0
     ) -> MLXArray {
+        project(hiddenStates(x, caches: caches, offset: offset))
+    }
+
+    private func hiddenStates(_ x: MLXArray, caches: [KVCache]?, offset: Int) -> MLXArray {
         var input = x
         if input.ndim == 1 {
             input = input.expandedDimensions(axis: 0)
@@ -424,9 +428,30 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             h = layer.forward(h, maskMode: maskMode, cache: cache, offset: offset)
         }
 
-        h = finalNorm(h)
+        return h
+    }
+
+    private func project(_ hidden: MLXArray) -> MLXArray {
+        let h = finalNorm(hidden)
         if let lmHead { return lmHead(h) }
         return embedding.asLinear(h)
+    }
+
+    func prefill(_ tokens: [Int], caches: [KVCache], chunkSize: Int = 2048) -> MLXArray? {
+        precondition(!tokens.isEmpty && chunkSize > 0)
+        for start in stride(from: 0, to: tokens.count, by: chunkSize) {
+            if Task.isCancelled { return nil }
+            let end = min(start + chunkSize, tokens.count)
+            let input = MLXArray(Array(tokens[start..<end]), [1, end - start])
+            let h = hiddenStates(input, caches: caches, offset: start)
+            if end == tokens.count {
+                let logits = project(h[0, end - start - 1].reshaped([1, 1, config.hiddenDim]))[0, 0]
+                eval(logits)
+                return logits
+            }
+            eval(caches.flatMap { [$0.keys, $0.values].compactMap { $0 } })
+        }
+        return nil
     }
 
     /// Executes the full N-layer decoder forward pass without KV caching.
@@ -623,31 +648,29 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             if budget > 0 && !Task.isCancelled {
                 var tokens = promptTokens
                 let caches = layers.map { _ in KVCache() }
-                let prefill = forward(MLXArray(tokens).expandedDimensions(axis: 0), caches: caches, offset: 0)
-                var lastLogits = prefill[0, prefill.shape[1] - 1]
-                eval(lastLogits)
+                if var lastLogits = prefill(tokens, caches: caches) {
+                    while generated < budget {
+                        if Task.isCancelled { break }
+                        let next = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
+                        if config.eosTokenIDs.contains(next) {
+                            reason = .stop
+                            break
+                        }
+                        let decoded = textDecoder.append(next)
+                        if config.eosTokenIDs.isEmpty, let decoded, decoded.isEmpty || decoded == "<unk>" {
+                            reason = .stop
+                            break
+                        }
+                        generated += 1
+                        tokens.append(next)
+                        if let decoded, !decoded.isEmpty { emit(.chunk(decoded)) }
+                        if generated == budget || Task.isCancelled { break }
 
-                while generated < budget {
-                    if Task.isCancelled { break }
-                    let next = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
-                    if config.eosTokenIDs.contains(next) {
-                        reason = .stop
-                        break
+                        let offset = caches.first?.count ?? (tokens.count - 1)
+                        let step = forward(MLXArray([next]).expandedDimensions(axis: 0), caches: caches, offset: offset)
+                        lastLogits = step[0, 0]
+                        eval(lastLogits)
                     }
-                    let decoded = textDecoder.append(next)
-                    if config.eosTokenIDs.isEmpty, let decoded, decoded.isEmpty || decoded == "<unk>" {
-                        reason = .stop
-                        break
-                    }
-                    generated += 1
-                    tokens.append(next)
-                    if let decoded, !decoded.isEmpty { emit(.chunk(decoded)) }
-                    if generated == budget || Task.isCancelled { break }
-
-                    let offset = caches.first?.count ?? (tokens.count - 1)
-                    let step = forward(MLXArray([next]).expandedDimensions(axis: 0), caches: caches, offset: offset)
-                    lastLogits = step[0, 0]
-                    eval(lastLogits)
                 }
             }
 

@@ -49,4 +49,43 @@ struct ChunkedPrefillTests {
             }
         }
     }
+    @Test("Bounded prefill preserves final logits and all layer caches", arguments: [false, true])
+    func finalPosition(gpu: Bool) throws {
+        try Device.withDefaultDevice(gpu ? .gpu : .cpu) {
+            for tied in [false, true] {
+                for learned in [false, true] {
+                    let model = model(tied: tied, learned: learned)
+                    let ids = [0,1,2,3,4,5,6]
+                    let fullCaches = model.layers.map { _ in KVCache() }
+                    let expected = model.forward(MLXArray(ids, [1, ids.count]), caches: fullCaches)[0, ids.count-1]
+                    eval(expected)
+                    for size in [1,2,3,7,2048] {
+                        let caches = model.layers.map { _ in KVCache() }
+                        let actual = try #require(model.prefill(ids, caches: caches, chunkSize: size))
+                        #expect(actual.shape == [12])
+                        #expect(abs(actual-expected).max().item(Float.self) < 0.00001)
+                        for (actualCache, expectedCache) in zip(caches, fullCaches) {
+                            #expect(actualCache.count == ids.count)
+                            let keys = try #require(actualCache.keys), values = try #require(actualCache.values)
+                            #expect(abs(keys - expectedCache.keys!).max().item(Float.self) < 0.00001)
+                            #expect(abs(values - expectedCache.values!).max().item(Float.self) < 0.00001)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test("Cancellation before prefill leaves caches untouched")
+    func cancellation() async {
+        let model = model()
+        let task = Task {
+            let caches = model.layers.map { _ in KVCache() }
+            withUnsafeCurrentTask { $0?.cancel() }
+            let result = model.prefill([0,1,2], caches: caches, chunkSize: 1)
+            return result == nil && caches.allSatisfy { $0.count == 0 }
+        }
+        #expect(await task.value)
+    }
+
 }

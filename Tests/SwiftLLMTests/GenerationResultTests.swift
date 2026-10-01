@@ -166,6 +166,24 @@ struct GenerationResultTests {
         #expect(result.compactMap(\.chunk).joined() == "A")
     }
 
+    @Test("Public generation preserves prompts spanning multiple prefill chunks")
+    func multiChunkPrompt() async throws {
+        let model = model(capacity: 2053)
+        let prompt = String(repeating: "P", count: 2050)
+        let result = try await events(model, prompt: prompt, maxTokens: 2)
+        let completion = try info(result)
+        #expect(completion.promptTokenCount == 2050)
+        #expect(completion.generationTokenCount == 2)
+        #expect(completion.stopReason == .length(.maxTokens))
+        #expect(result.compactMap(\.chunk).joined() == "AB")
+        let options = LLMOptions(sampling: .greedy, maxTokens: 2)
+        var plain = ""
+        for await chunk in try await model.generate(prompt: prompt, options: options) { plain += chunk }
+        var throwing = ""
+        for try await chunk in model.generateStream(prompt: prompt, options: options) { throwing += chunk }
+        #expect(plain == "AB" && throwing == plain)
+    }
+
     @Test("Both legacy adapters preserve detailed-stream text")
     func adapters() async throws {
         let model = model(stops: [3])

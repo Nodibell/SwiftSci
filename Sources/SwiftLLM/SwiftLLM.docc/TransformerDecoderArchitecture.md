@@ -135,6 +135,17 @@ Generation executes in two distinct stages:
 1. **Prefill Pass**: Evaluates the entire prompt sequence $[0 ..< N]$ in parallel, writing Key and Value projections into `KVCache`.
 2. **Incremental Decode Steps**: Processes only the single newest token $[N+1]$ at each step. The new Query vector performs dot-product attention against all cached Key and Value vectors ($Q_{N+1} \cdot K_{\text{accumulated}}^T$), eliminating redundant $O(N^2)$ prompt recomputation.
 
+Generation processes prompts in chunks of at most 2,048 tokens. Each chunk adds
+to the layer caches before the next chunk starts. MLX's causal-attention mode
+accounts for cached prefix tokens without materializing a square mask. Generation
+normalizes and projects only the final prompt position to vocabulary logits;
+`forward` still returns logits for every supplied position.
+
+The chunk size bounds temporary prompt activations, not the total context. KV
+storage and attention work still grow with the context length. Cancellation is
+checked between chunks. Different matrix and attention shapes can change floating
+point rounding, so numerical comparisons must record the prefill strategy.
+
 ### Ending generation
 
 Set `LLMConfig.eosTokenIDs` to the stop-token IDs from the checkpoint configuration.

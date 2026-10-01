@@ -62,4 +62,24 @@ struct TokenStreamDecoderTests {
         #expect(decoder.finish().isEmpty)
     }
 
+    private struct TextTokenizer: Tokenizer {
+        func tokenize(text: String) -> [String] { [text] }
+        func encode(text: String) -> [Int] { [0] }
+        func decode(tokens: [Int]) -> String {
+            tokens.map { ["café", "", "<unk>"][$0] }.joined()
+        }
+    }
+
+    @Test("The protocol's default stream decoder preserves custom tokenizer text")
+    func defaultTextDecoder() {
+        let tokenizer: any Tokenizer = TextTokenizer()
+        var stream = tokenizer.makeStreamDecoder()
+        #expect(stream.append(0) == "café")
+        #expect(stream.append(1) == "")
+        #expect(stream.append(2) == "<unk>")
+        #expect(stream.finish().isEmpty)
+        var independent = tokenizer.makeStreamDecoder()
+        #expect(independent.append(0) == "café")
+    }
+
 }

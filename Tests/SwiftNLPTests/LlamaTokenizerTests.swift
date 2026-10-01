@@ -180,4 +180,56 @@ struct LlamaTokenizerTests {
         }
     }
 
+    @Test("Malformed documents identify the unsupported tokenizer component")
+    func malformedDocuments() throws {
+        let mutations: [(String, (inout [String: Any]) -> Void)] = [
+            ("BPE document", { $0.removeValue(forKey: "model") }),
+            ("Llama 3 pre-tokenizer", { $0["pre_tokenizer"] = NSNull() }),
+            ("added token", { root in
+                var tokens = root["added_tokens"] as! [[String: Any]]
+                tokens[0]["content"] = ""
+                root["added_tokens"] = tokens
+            }),
+            ("beginning-of-text token", { root in
+                var tokens = root["added_tokens"] as! [[String: Any]]
+                tokens.removeFirst()
+                root["added_tokens"] = tokens
+            }),
+            ("merge pair", { root in
+                var model = root["model"] as! [String: Any]
+                model["merges"] = [42]
+                root["model"] = model
+            })
+        ]
+        for (component, mutation) in mutations {
+            let data = try changed(mutation)
+            #expect(throws: BPETokenizerConfigurationError.unsupported(component)) {
+                try BPETokenizer(llama3TokenizerJSON: data)
+            }
+        }
+    }
+
+    @Test("Unknown IDs contribute no bytes and do not discard pending Unicode")
+    func missingTokenID() throws {
+        let tokenizer = try BPETokenizer(llama3TokenizerJSON: fixture())
+        #expect(tokenizer.decode(tokens: [256, -1, 9999]) == "hello")
+        var stream = tokenizer.makeStreamDecoder()
+        #expect(stream.append(0xe4) == nil)
+        #expect(stream.append(9999) == "")
+        #expect(stream.append(0xb8) == nil)
+        #expect(stream.append(0x96) == "世")
+        #expect(stream.finish().isEmpty)
+    }
+
+    @Test("Legacy BPE streaming retains per-token decoding without a BOS template")
+    func legacyStream() {
+        let tokenizer = BPETokenizer(vocab: ["hello</w>": 1, "world</w>": 2], merges: [])
+        var stream = tokenizer.makeStreamDecoder()
+        #expect(stream.append(1) == "hello")
+        #expect(stream.append(2) == "world")
+        #expect(stream.append(9999) == "")
+        #expect(stream.finish().isEmpty)
+        #expect(tokenizer.encode(text: "hello", addSpecialTokens: true) == tokenizer.encode(text: "hello"))
+    }
+
 }

@@ -36,7 +36,8 @@ struct Llama32ChatTemplateTests {
 
     @Test("The date is supplied by the caller and existing formatting stays unchanged")
     func explicitDateAndLegacy() {
-        let template = ChatTemplate(style: .llama32Instruct(date: "01 Jan 2025"))
+        let template = ChatTemplate.llama32Instruct(date: "01 Jan 2025")
+        #expect(template == ChatTemplate(style: .llama32Instruct(date: "01 Jan 2025")))
         #expect(template.render(messages: [.user("hello")]).contains("Today Date: 01 Jan 2025\n\n"))
         #expect(ChatTemplate.llama3.render(messages: [.user(" hello ")], addGenerationPrompt: false)
             == "<|start_header_id|>user<|end_header_id|>\n\n hello <|eot_id|>")

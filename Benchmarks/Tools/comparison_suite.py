@@ -10,6 +10,7 @@ import sys
 from contracts import read_json, write_json, load_profile, load_workload
 from reporting import summarize
 from runner import source_identity
+from execution_policy import MODES, PRODUCTION_MODE, policy
 
 CONCURRENCY_POLICY = {
     'classification': 'asymmetric-engine-concurrency',
@@ -43,7 +44,8 @@ def report(root, output, manifest):
         run=read_json(run_path)
         rows.extend(dict(profile=entry['profile'], **row) for row in summarize(run))
         failures.extend(dict(profile=entry['profile'], case=e['case_id'], engine=e['engine'], batch=e['batch'], error=e.get('failed_result',{}).get('error', e.get('error'))) for e in run['events'] if e['status']!='passed')
-    write_json(output/'concurrency-policy.json', CONCURRENCY_POLICY)
+    mode = manifest.get('execution', {}).get('mode', 'legacy-capped')
+    write_json(output/'concurrency-policy.json', manifest.get('execution', CONCURRENCY_POLICY))
     write_json(output/'measurements.json', rows)
     write_json(output/'failures.json', failures)
     lines=['# Four-engine benchmark comparison', '',
@@ -52,6 +54,13 @@ def report(root, output, manifest):
            'These are sequential desktop measurements, not a formal performance baseline. Group and join outputs are canonicalized after timing. Stable sorting and numerical exports retain declared row alignment. DuckDB results are fetched into Arrow tables or NumPy arrays inside timing. Query setup outside timing applies only to already-prepared inputs; CSV, Parquet, and the wine pipeline include ingestion.', '',
            '## Coverage', '',
            '| Profile | Engines | Result | Audit |', '|---|---|---|---|']
+    if mode == PRODUCTION_MODE:
+        lines[4] = ('Execution mode is production-default. Each case uses at least five fresh worker processes per engine, with engine order rotated each round. '
+                    'The controller removes thread overrides before process startup. Engines select their native pool sizes. '
+                    'Worker records contain requested thread settings and available configured pool sizes, not measured active thread counts. '
+                    'Power source and system power settings are captured at each profile boundary. See [concurrency-policy.json](concurrency-policy.json). '
+                    'Timers retain materialized output; validation follows timing. RSS is the whole worker lifetime high-water mark, including setup and validation. '
+                    'A fresh process does not imply a cold filesystem cache. Startup time is excluded from resident-operation timings.')
     for entry in manifest['runs']:
         lines.append(f"| {entry['profile']} | {entry['engines']} | {entry['status']} | {entry.get('audit','not passed')} |")
     full=load_profile(root,'migration');overlap=load_profile(root,'tabular-migration');included={c['id'] for c in overlap['cases']}
@@ -74,10 +83,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--swift-worker',required=True)
     parser.add_argument('--python',default=sys.executable)
+    parser.add_argument('--mode',choices=MODES,default=PRODUCTION_MODE)
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args();root=Path(__file__).resolve().parents[2];output=args.output.resolve()
     output.mkdir(parents=True,exist_ok=False)
-    manifest=dict(started_utc=datetime.now(timezone.utc).isoformat(),source=source_identity(root),runs=[])
+    manifest=dict(started_utc=datetime.now(timezone.utc).isoformat(),source=source_identity(root),execution=policy(args.mode),runs=[])
     for profile,engines in RUNS:
         print('Running',profile,engines,flush=True)
         entry=dict(profile=profile,engines=engines,status='infrastructure-error')
@@ -85,7 +95,7 @@ def main():
             base=[args.python,str(root/'Benchmarks/Tools/bench.py')]
             prepare=subprocess.run(base+['prepare','--profile',profile],cwd=root,stdout=log,stderr=subprocess.STDOUT)
             if prepare.returncode==0:
-                completed=subprocess.run(base+['run','--profile',profile,'--engines',engines,'--swift-worker',args.swift_worker,'--python',args.python,'--output',str(output/profile)],cwd=root,stdout=log,stderr=subprocess.STDOUT)
+                completed=subprocess.run(base+['run','--mode',args.mode,'--profile',profile,'--engines',engines,'--swift-worker',args.swift_worker,'--python',args.python,'--output',str(output/profile)],cwd=root,stdout=log,stderr=subprocess.STDOUT)
                 if (output/profile/'run.json').is_file():entry['status']=read_json(output/profile/'run.json')['status']
                 entry['exit_code']=completed.returncode
                 if completed.returncode==0:

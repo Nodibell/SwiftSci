@@ -267,7 +267,28 @@ Each workload specification declares its timing boundary. CSV measures verified,
 
 Both workers retain the result through the end timestamp, then validate every output element. Sorting must preserve input order for ties. Group results are converted to numeric keys and ordered outside timing so that different native result representations can be compared. Exact workloads require exact numeric values; numerical workloads declare absolute and relative tolerances in `Specs/workloads`.
 
-`peak_rss_bytes` is the whole worker process lifetime high-water mark, including imports, setup and validation. It is not operation allocation or logical dataframe storage. BLAS/OpenMP thread environment variables are set to one; this does not limit Swift task concurrency or every library's internal threads. The Polars and DuckDB adapters use one thread, while Swift CSV parsing and row gathering may use GCD parallelism. Four-engine results therefore describe asymmetric concurrency policies. They do not establish equal-thread or single-core efficiency. The comparison report records this limitation in `concurrency-policy.json`; effective thread counts are not measured.
+`peak_rss_bytes` is the whole worker process lifetime high-water mark, including imports, setup and validation. It is not operation allocation or logical dataframe storage.
+
+### Production execution mode
+
+Use `--mode production-default` with `bench.py run` for measurements under each engine's native scheduling defaults. The complete `comparison_suite.py` driver selects this mode by default. The controller clears documented BLAS, OpenMP, NumExpr, Polars and Rayon thread overrides before launching workers. DuckDB opens a connection without a thread override. Swift retains its normal GCD and Accelerate behavior. Equal access to the machine does not imply equal thread counts.
+
+```sh
+Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run \
+  --mode production-default --profile standard \
+  --engines swiftsci,pandas,polars,duckdb \
+  --swift-worker "$worker" --output Benchmarks/Runs/production-standard
+```
+
+Prepare the profile and build the worker first. This mode raises the profile to at least five independent process rounds and rotates engine order each round. It keeps the profile's warmups, samples, input types, tolerances and output contract. Worker responses record the thread environment and available configured pool sizes. Polars reports its pool size; DuckDB reports the connection's configured threads. Active thread use and Swift's GCD pool size remain unmeasured. Python engine records identify NumPy's linked BLAS and LAPACK backends.
+
+On macOS, the controller requires AC power at startup and records the power source and configured power modes before and after each profile. Run one benchmark job at a time and stop competing builds or model inference. The controller lock prevents another invocation through this checkout; it cannot detect all unrelated workloads. A power change prevents a before/after performance comparison but does not invalidate checked numerical results.
+
+The resolved contract includes the execution mode, engine order and process count. Audit rejects missing worker settings, altered contracts and unexpected scheduling. Compare rejects different modes, power settings, reference backends or configured pool sizes. Summaries retain every process median, the range and standard deviation. These values describe variability, not a statistical significance test.
+
+`legacy-capped` retains the prior requested one-thread limits for short conformance runs. It remains the `bench.py` default so existing CI profiles retain their bounded cost. Swift can still use GCD parallelism in this mode. It is neither an equal-thread nor a single-core experiment. Historical evidence remains readable, but its contract cannot be compared directly with a new production-default run.
+
+This change governs execution of existing workload contracts. It does not add production-sized scientific, training or LLM workflows. Resident-operation timers exclude process startup and retain materialized output. MLX workloads keep their explicit fixture device and materialization rules; selecting this mode does not silently move CPU work to the GPU. Fresh processes do not imply cold filesystem caches. Separate first-use, end-to-end workflow and memory-pressure baselines remain necessary before declaring the full production baseline complete.
 
 The reporter takes the median within each process, then the median of those process medians. It retains all samples, reports the worst measured absolute output error, and does not trim outliers. Each worker explicitly marks durations below one microsecond as unresolved, including zero when the timer cannot distinguish its start and end. Those samples still undergo complete output validation. The reporter preserves their raw durations and suppresses a speedup ratio if either case contains any unresolved sample. This conservative threshold is not a measured clock-resolution guarantee. Smoke, migration-smoke, public-smoke and certification timings are informational.
 

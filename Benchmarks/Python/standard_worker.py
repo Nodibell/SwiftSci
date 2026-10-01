@@ -9,6 +9,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Tools"))
 from contracts import read_json, write_json, require, verified_file, validate_values
+from execution_policy import runtime_record
 from controlled_api_workloads import OPERATIONS as CONTROLLED_API_OPERATIONS, prepare as prepare_controlled, execute as execute_controlled
 from supervised_fixtures import OPERATIONS as SUPERVISED_OPERATIONS
 from supervised_workloads import prepare as prepare_supervised, execute as execute_supervised
@@ -474,6 +475,7 @@ try:
             samples=samples,
             peak_rss_bytes=rss if sys.platform == "darwin" else rss * 1024,
             engine_version=f"pandas {pd.__version__}; numpy {np.__version__}; python {sys.version}",
+            execution=runtime_record(),
         ),
     )
 except Exception as error:

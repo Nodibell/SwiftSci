@@ -40,8 +40,10 @@ class TabularWorkload:
             self.schema = dict(zip(self.names, [{'int':pl.Int64, 'float':pl.Float64, 'str':pl.String, 'bool':pl.Boolean}[t] for t in types]))
         elif engine == 'duckdb':
             import duckdb
-            self.connection = duckdb.connect(':memory:', config={'threads':1})
-            assert self.connection.execute("SELECT current_setting('threads')").fetchone()[0] == 1
+            from execution_policy import LEGACY_MODE, policy
+            mode = request.get('execution_mode', LEGACY_MODE)
+            policy(mode)
+            self.connection = duckdb.connect(':memory:', config={'threads':1} if mode == LEGACY_MODE else {})
             self.schema = dict(zip(self.names, [{'int':'BIGINT','float':'DOUBLE','str':'VARCHAR','bool':'BOOLEAN'}[t] for t in types]))
         else:
             raise ValueError('Unknown engine: ' + engine)

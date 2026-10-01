@@ -13,6 +13,7 @@ sys.path.insert(0,str(ROOT/'Benchmarks/Python'))
 sys.path.insert(0,str(ROOT/'Benchmarks/Tools'))
 from tabular_workloads import TabularWorkload
 from contracts import digest
+from execution_policy import worker_environment, LEGACY_MODE
 
 
 @unittest.skipUnless(all(importlib.util.find_spec(name) for name in ("polars", "duckdb")),
@@ -66,7 +67,7 @@ class TabularWorkersTests(unittest.TestCase):
                         expected=np.array([1,99 if corrupt else 3],dtype='<f8').tobytes();ep=root/'expected.f64';ep.write_bytes(expected)
                         request=dict(schema_version=1,case_key='a'*64,operation='target',dataset_kind='table-v1',input_path=str(input_path),input_sha256=digest(data),input_bytes=len(data),expected_path=str(ep),expected_sha256=digest(expected),rows=2,warmups=0,samples=1,atol=0,rtol=0)
                         rp=root/'request.json';rp.write_text(json.dumps(request));dest=root/'response.json'
-                        result=subprocess.run([sys.executable,str(ROOT/'Benchmarks/Python/tabular_worker.py'),engine,str(rp),str(dest)],env=dict(os.environ,POLARS_MAX_THREADS='1'),capture_output=True,text=True)
+                        result=subprocess.run([sys.executable,str(ROOT/'Benchmarks/Python/tabular_worker.py'),engine,str(rp),str(dest)],env=worker_environment(LEGACY_MODE),capture_output=True,text=True)
                         response=json.loads(dest.read_text())
                         self.assertEqual(result.returncode,1 if corrupt else 0,result.stderr)
                         self.assertEqual(response['status'],'failed' if corrupt else 'passed')

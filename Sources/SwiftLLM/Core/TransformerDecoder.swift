@@ -223,8 +223,7 @@ public final class TransformerBlock: Module, UnaryLayer {
     /// - Parameter x: Input `[batch, seq, hiddenDim]`.
     /// - Returns: Output `[batch, seq, hiddenDim]`.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
-        let mask = x.shape[1] > 1 ? MultiHeadAttention.createAdditiveCausalMask(x.shape[1]).asType(x.dtype) : nil
-        return forward(x, mask: mask, cache: nil, offset: 0)
+        forward(x, maskMode: x.shape[1] > 1 ? .causal : .none, cache: nil, offset: 0)
     }
 
     /// Flexible forward pass supporting RoPE position offset and KV-cache accumulation.
@@ -239,6 +238,15 @@ public final class TransformerBlock: Module, UnaryLayer {
         mask: MLXArray? = nil,
         cache: KVCache? = nil,
         offset: Int = 0
+    ) -> MLXArray {
+        forward(x, maskMode: mask.map { .array($0) } ?? .none, cache: cache, offset: offset)
+    }
+
+    func forward(
+        _ x: MLXArray,
+        maskMode: MLXFast.ScaledDotProductAttentionMaskMode,
+        cache: KVCache?,
+        offset: Int
     ) -> MLXArray {
         let xNorm1 = norm1(x)
 
@@ -279,13 +287,6 @@ public final class TransformerBlock: Module, UnaryLayer {
         }
 
         let scale = sqrt(1 / Float(q.dim(-1)))
-        let maskMode: MLXFast.ScaledDotProductAttentionMaskMode =
-            if let mask {
-                .array(mask)
-            } else {
-                .none
-            }
-
         var output = MLXFast.scaledDotProductAttention(
             queries: q, keys: finalK, values: finalV, scale: scale, mask: maskMode)
 
@@ -416,11 +417,11 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
             h = h + posEmbedding(positions)
         }
 
-        let mask: MLXArray? = seqLen > 1 ? MultiHeadAttention.createAdditiveCausalMask(seqLen).asType(h.dtype) : nil
+        let maskMode: MLXFast.ScaledDotProductAttentionMaskMode = seqLen > 1 ? .causal : .none
 
         for (idx, layer) in layers.enumerated() {
             let cache = caches?[idx]
-            h = layer.forward(h, mask: mask, cache: cache, offset: offset)
+            h = layer.forward(h, maskMode: maskMode, cache: cache, offset: offset)
         }
 
         h = finalNorm(h)

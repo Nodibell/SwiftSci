@@ -217,4 +217,109 @@ public enum ClusteringMetrics {
         vDSP_distancesqD(a, 1, b, 1, &sumSq, count)
         return sumSq
     }
+
+    // MARK: - Standardized Cluster & Anomaly Leaderboard Metrics (G-024)
+
+    /// Evaluates a clustering model's partition across Silhouette, Calinski-Harabasz, and Davies-Bouldin metrics,
+    /// returning a standardized `ClusterLeaderboardMetrics` summary for automated model leaderboard ranking.
+    ///
+    /// > Note: `compositeScore` is a project-defined heuristic combining the normalized Silhouette score
+    /// > with a linear noise penalty: `((sil + 1.0) / 2.0) * (1.0 - noiseRatio)`. Calinski-Harabasz and
+    /// > Davies-Bouldin indices are reported alongside it as complementary diagnostic metrics.
+    ///
+    /// - Parameters:
+    ///   - features: 2D feature matrix `[numSamples][numFeatures]`.
+    ///   - labels: Cluster assignments per sample. Points labeled `-1` (e.g. DBSCAN noise) are properly penalized.
+    /// - Returns: A `ClusterLeaderboardMetrics` record.
+    public static func evaluateClustering(features: [[Double]], labels: [Int]) throws -> ClusterLeaderboardMetrics {
+        let n = features.count
+        guard n > 1 else {
+            return ClusterLeaderboardMetrics(silhouette: 0, calinskiHarabasz: 0, daviesBouldin: 0, noiseRatio: 0, compositeScore: 0)
+        }
+
+        let noiseCount = labels.filter { $0 == -1 }.count
+        let noiseRatio = Double(noiseCount) / Double(n)
+
+        let sil = (try? SilhouetteScore.compute(features: features, labels: labels, ignoreNoise: true)) ?? 0.0
+        let ch = calinskiHarabaszIndex(features: features, labels: labels)
+        let db = daviesBouldinIndex(features: features, labels: labels)
+
+        let composite = max(0.0, min(1.0, ((sil + 1.0) / 2.0) * (1.0 - noiseRatio)))
+
+        return ClusterLeaderboardMetrics(
+            silhouette: sil,
+            calinskiHarabasz: ch,
+            daviesBouldin: db,
+            noiseRatio: noiseRatio,
+            compositeScore: composite
+        )
+    }
+
+    /// Computes the anomaly separation ratio between outliers (label == -1) and inliers (label != -1).
+    ///
+    /// Measures how distinctly separated the anomaly score distributions are, normalized by pooled variance.
+    /// - Parameters:
+    ///   - scores: Array of continuous anomaly scores produced by an outlier model (e.g. IsolationForest).
+    ///   - labels: Binary indicator labels (1 for inliers, -1 for outliers).
+    /// - Returns: Statistical separation score. Higher indicates sharper boundary discrimination.
+    public static func anomalySeparationScore(scores: [Double], labels: [Int]) -> Double {
+        guard scores.count == labels.count, !scores.isEmpty else { return 0.0 }
+
+        var inlierScores: [Double] = []
+        var outlierScores: [Double] = []
+
+        for i in 0..<scores.count {
+            if labels[i] == -1 {
+                outlierScores.append(scores[i])
+            } else {
+                inlierScores.append(scores[i])
+            }
+        }
+
+        guard !outlierScores.isEmpty, !inlierScores.isEmpty else { return 0.0 }
+
+        let meanOut = outlierScores.reduce(0.0, +) / Double(outlierScores.count)
+        let meanIn = inlierScores.reduce(0.0, +) / Double(inlierScores.count)
+
+        var varOut = 0.0
+        for s in outlierScores { varOut += (s - meanOut) * (s - meanOut) }
+        varOut /= Double(outlierScores.count)
+
+        var varIn = 0.0
+        for s in inlierScores { varIn += (s - meanIn) * (s - meanIn) }
+        varIn /= Double(inlierScores.count)
+
+        let pooledStd = sqrt(0.5 * (varOut + varIn) + 1e-12)
+        return abs(meanOut - meanIn) / pooledStd
+    }
 }
+
+/// Comprehensive cluster evaluation metrics package for automated leaderboard ranking.
+public struct ClusterLeaderboardMetrics: Sendable, Codable, Equatable {
+    /// Mean Silhouette Coefficient in [-1.0, 1.0], with noise penalty applied.
+    public let silhouette: Double
+    /// Calinski-Harabasz Variance Ratio Criterion (higher is better).
+    public let calinskiHarabasz: Double
+    /// Davies-Bouldin Index (lower is better).
+    public let daviesBouldin: Double
+    /// Ratio of samples flagged as unclustered noise/outliers in [0.0, 1.0].
+    public let noiseRatio: Double
+    /// Normalized composite score in [0.0, 1.0] for direct leaderboard sorting.
+    public let compositeScore: Double
+
+    /// Creates a new cluster leaderboard metrics instance.
+    public init(
+        silhouette: Double,
+        calinskiHarabasz: Double,
+        daviesBouldin: Double,
+        noiseRatio: Double,
+        compositeScore: Double
+    ) {
+        self.silhouette = silhouette
+        self.calinskiHarabasz = calinskiHarabasz
+        self.daviesBouldin = daviesBouldin
+        self.noiseRatio = noiseRatio
+        self.compositeScore = compositeScore
+    }
+}
+

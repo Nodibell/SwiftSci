@@ -9,20 +9,20 @@ public actor ARIMAModel {
     /// The order.
     public let order: (p: Int, d: Int, q: Int)
     
-    private var arCoefficients: [Double] = []
-    private var maCoefficients: [Double] = []
-    private var intercept: Double = 0.0
+    public private(set) var arCoefficients: [Double] = []
+    public private(set) var maCoefficients: [Double] = []
+    public private(set) var intercept: Double = 0.0
     
-    private var exogCoefficients: [Double] = []
+    public private(set) var exogCoefficients: [Double] = []
     private var regIntercept: Double = 0.0
     private var fittedExog: [[Double]]? = nil
-    private var hasExog = false
+    public private(set) var hasExog = false
     
     private var series: [Double] = []
     private var diffSeries: [Double] = []
-    private var fittedValues: [Double] = []
-    private var residuals: [Double] = []
-    private var isFitted = false
+    public private(set) var fittedValues: [Double] = []
+    public private(set) var residuals: [Double] = []
+    public private(set) var isFitted: Bool = false
     
     /// Creates a new instance.
     /// - Parameters:
@@ -342,7 +342,8 @@ public actor ARIMAModel {
     public func aic() throws -> Double {
         guard isFitted else { throw ForecastError.notFitted }
         let mse = vDSP.sumOfSquares(residuals) / Double(residuals.count)
-        let k = Double(1 + order.p + order.q)
+        // H-07: Include exogenous coefficients in degrees of freedom penalty
+        let k = Double(1 + order.p + order.q + (hasExog ? exogCoefficients.count : 0))
         let n = Double(residuals.count)
         return 2.0 * k + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
     }
@@ -357,7 +358,8 @@ public actor ARIMAModel {
     public func bic() throws -> Double {
         guard isFitted else { throw ForecastError.notFitted }
         let mse = vDSP.sumOfSquares(residuals) / Double(residuals.count)
-        let k = Double(1 + order.p + order.q)
+        // H-07: Include exogenous coefficients in degrees of freedom penalty
+        let k = Double(1 + order.p + order.q + (hasExog ? exogCoefficients.count : 0))
         let n = Double(residuals.count)
         return k * log(n) + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
     }

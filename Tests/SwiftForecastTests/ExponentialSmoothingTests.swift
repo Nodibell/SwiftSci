@@ -125,4 +125,31 @@ struct ExponentialSmoothingTests {
             try await model.fit(series: series)
         }
     }
+
+    @Test("Analytical forecast prediction intervals expand monotonically with horizon (H-06)")
+    func testAnalyticalPredictionIntervals() async throws {
+        let series = [1.0, 2.5, 3.2, 4.8, 5.1, 6.7, 7.3, 8.9]
+        let model = ExponentialSmoothing(method: .double(beta: 0.2), alpha: 0.5)
+        try await model.fit(series: series)
+        
+        let forecast = try await model.forecast(horizon: 5)
+        guard let lower = forecast.lowerBound, let upper = forecast.upperBound else {
+            Issue.record("Prediction intervals missing")
+            return
+        }
+        
+        #expect(lower.count == 5)
+        #expect(upper.count == 5)
+        
+        var prevWidth = 0.0
+        for h in 0..<5 {
+            let width = upper[h] - lower[h]
+            #expect(width > 0.0)
+            if h > 0 {
+                // Interval width must expand strictly monotonically as uncertainty grows with forecast horizon
+                #expect(width > prevWidth)
+            }
+            prevWidth = width
+        }
+    }
 }

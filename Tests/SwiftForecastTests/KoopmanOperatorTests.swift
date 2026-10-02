@@ -178,4 +178,49 @@ struct KoopmanOperatorTests {
             _ = try await koopman.predict(horizon: 0)
         }
     }
+
+    @Test("Koopman RBF center dimension mismatch throws matrixDimensionMismatch (M-10)")
+    func testRBFDimensionMismatch() async throws {
+        // Trajectory of 2D vectors
+        let trajectory = [
+            [1.0, 2.0],
+            [1.5, 2.5],
+            [2.0, 3.0]
+        ]
+        // Centers have 3D vectors instead of 2D
+        let centers = [
+            [1.0, 2.0, 3.0]
+        ]
+        let dict = ObservableDictionary.rbf(centers: centers, gamma: 1.0)
+        let koopman = KoopmanOperator(dictionary: dict)
+        await #expect(throws: ForecastError.self) {
+            try await koopman.fit(trajectory: trajectory)
+        }
+    }
+
+    @Test("Koopman polynomial degree 3 generates complete monomial cross terms (M-11)")
+    func testPolynomialDegree3CrossTerms() {
+        // State x = [x1, x2, x3]
+        let x = [2.0, 3.0, 5.0]
+        let dict = ObservableDictionary.polynomial(degree: 3, includeCrossTerms: true)
+        let features = dict.evaluate(x: x)
+
+        // Features should include:
+        // Linear: 2, 3, 5 (count 3)
+        // Powers p=2: 4, 9, 25 (count 3)
+        // Powers p=3: 8, 27, 125 (count 3)
+        // Degree 2 cross: x1*x2=6, x1*x3=10, x2*x3=15 (count 3)
+        // Degree 3 cross x_i^2 * x_j (count 6):
+        //   x1^2*x2 = 12, x1^2*x3 = 20, x2^2*x1 = 18, x2^2*x3 = 45, x3^2*x1 = 50, x3^2*x2 = 75
+        // Degree 3 triple cross x1*x2*x3 = 30 (count 1)
+        // Total count = 3 + 3 + 3 + 3 + 6 + 1 = 19
+        #expect(features.count == 19)
+        #expect(features.contains(12.0))
+        #expect(features.contains(20.0))
+        #expect(features.contains(18.0))
+        #expect(features.contains(45.0))
+        #expect(features.contains(50.0))
+        #expect(features.contains(75.0))
+        #expect(features.contains(30.0))
+    }
 }

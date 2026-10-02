@@ -43,6 +43,9 @@ public func trainTestSplit(
     trainTargets: [Double],
     testTargets: [Double]
 ) {
+    guard testSize > 0.0 && testSize < 1.0 else {
+        throw PreprocessingError.invalidParameter("testSize must be between 0.0 and 1.0 exclusive, got \(testSize).")
+    }
     guard !features.isEmpty else {
         throw PreprocessingError.emptyInput
     }
@@ -54,11 +57,18 @@ public func trainTestSplit(
             throw PreprocessingError.dimensionMismatch(expected: features.count, got: strat.count)
         }
     }
-    guard testSize > 0.0 && testSize < 1.0 else {
-        throw NSError(domain: "TrainTestSplit", code: 1, userInfo: [NSLocalizedDescriptionKey: "testSize must be between 0.0 and 1.0 exclusive."])
-    }
     
     let totalCount = features.count
+    if totalCount == 1 {
+        // When dataset has only a single observation, splitting is strictly all-or-nothing:
+        // allocated to test if testSize >= 0.5, else allocated to train.
+        if testSize >= 0.5 {
+            return (trainFeatures: [], testFeatures: features, trainTargets: [], testTargets: targets)
+        } else {
+            return (trainFeatures: features, testFeatures: [], trainTargets: targets, testTargets: [])
+        }
+    }
+    
     var trainIndices = [Int]()
     var testIndices = [Int]()
     
@@ -79,15 +89,26 @@ public func trainTestSplit(
                     clsIdxs.shuffle()
                 }
             }
-            let clsTestCount = max(1, Int(round(Double(clsIdxs.count) * testSize)))
-            let clsTrainCount = clsIdxs.count - clsTestCount
-            
-            if clsTrainCount > 0 {
+            if clsIdxs.count == 1 {
+                // G-022: Small-sample resilience for single-observation classes
+                if testSize >= 0.5 {
+                    testIndices.append(contentsOf: clsIdxs)
+                } else {
+                    trainIndices.append(contentsOf: clsIdxs)
+                }
+            } else {
+                let clsTestCount = Swift.max(1, Swift.min(clsIdxs.count - 1, Int(round(Double(clsIdxs.count) * testSize))))
+                let clsTrainCount = clsIdxs.count - clsTestCount
                 trainIndices.append(contentsOf: clsIdxs.prefix(clsTrainCount))
                 testIndices.append(contentsOf: clsIdxs.suffix(clsTestCount))
-            } else {
-                testIndices.append(contentsOf: clsIdxs)
             }
+        }
+        
+        // G-022: Guarantee both train and test have at least one sample when totalCount >= 2
+        if trainIndices.isEmpty && !testIndices.isEmpty {
+            trainIndices.append(testIndices.removeLast())
+        } else if testIndices.isEmpty && !trainIndices.isEmpty {
+            testIndices.append(trainIndices.removeLast())
         }
         
         if shuffle {
@@ -109,12 +130,9 @@ public func trainTestSplit(
             }
         }
         
-        let testCount = Int(Double(totalCount) * testSize)
+        // G-022: Guard against testCount == 0 on small sample sizes (N < 8)
+        let testCount = Swift.max(1, Swift.min(totalCount - 1, Int(round(Double(totalCount) * testSize))))
         let trainCount = totalCount - testCount
-        
-        guard trainCount > 0, testCount > 0 else {
-            throw NSError(domain: "TrainTestSplit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Sample size too small to split with given testSize."])
-        }
         
         trainIndices = Array(indices[0..<trainCount])
         testIndices = Array(indices[trainCount..<totalCount])
@@ -158,12 +176,21 @@ extension DataFrame {
         shuffle: Bool = true,
         seed: Int? = nil
     ) throws -> (train: DataFrame, test: DataFrame) {
+        guard testSize > 0.0 && testSize < 1.0 else {
+            throw PreprocessingError.invalidParameter("testSize must be between 0.0 and 1.0 exclusive, got \(testSize).")
+        }
         let nRows = shape.rows
         guard nRows > 0 else {
-            return (self, self)
+            throw PreprocessingError.emptyInput
         }
-        guard testSize > 0.0 && testSize < 1.0 else {
-            throw NSError(domain: "DataFrame.trainTestSplit", code: 1, userInfo: [NSLocalizedDescriptionKey: "testSize must be between 0.0 and 1.0 exclusive."])
+        if nRows == 1 {
+            // When dataset has only a single observation, splitting is strictly all-or-nothing:
+            // allocated to test if testSize >= 0.5, else allocated to train.
+            if testSize >= 0.5 {
+                return (train: gathered(at: []), test: self)
+            } else {
+                return (train: self, test: gathered(at: []))
+            }
         }
         
         var trainIndices = [Int]()
@@ -191,15 +218,26 @@ extension DataFrame {
                         clsIdxs.shuffle()
                     }
                 }
-                let clsTestCount = max(1, Int(round(Double(clsIdxs.count) * testSize)))
-                let clsTrainCount = clsIdxs.count - clsTestCount
-                
-                if clsTrainCount > 0 {
+                if clsIdxs.count == 1 {
+                    // G-022: Small-sample resilience for single-observation classes
+                    if testSize >= 0.5 {
+                        testIndices.append(contentsOf: clsIdxs)
+                    } else {
+                        trainIndices.append(contentsOf: clsIdxs)
+                    }
+                } else {
+                    let clsTestCount = Swift.max(1, Swift.min(clsIdxs.count - 1, Int(round(Double(clsIdxs.count) * testSize))))
+                    let clsTrainCount = clsIdxs.count - clsTestCount
                     trainIndices.append(contentsOf: clsIdxs.prefix(clsTrainCount))
                     testIndices.append(contentsOf: clsIdxs.suffix(clsTestCount))
-                } else {
-                    testIndices.append(contentsOf: clsIdxs)
                 }
+            }
+            
+            // G-022: Guarantee both train and test have at least one sample when nRows >= 2
+            if trainIndices.isEmpty && !testIndices.isEmpty {
+                trainIndices.append(testIndices.removeLast())
+            } else if testIndices.isEmpty && !trainIndices.isEmpty {
+                testIndices.append(trainIndices.removeLast())
             }
             
             if shuffle {
@@ -221,12 +259,9 @@ extension DataFrame {
                 }
             }
             
-            let testCount = Int(Double(nRows) * testSize)
+            // G-022: Guard against testCount == 0 on small sample sizes (N < 8)
+            let testCount = Swift.max(1, Swift.min(nRows - 1, Int(round(Double(nRows) * testSize))))
             let trainCount = nRows - testCount
-            
-            guard trainCount > 0, testCount > 0 else {
-                throw NSError(domain: "DataFrame.trainTestSplit", code: 2, userInfo: [NSLocalizedDescriptionKey: "DataFrame size too small to split."])
-            }
             
             trainIndices = Array(indices[0..<trainCount])
             testIndices = Array(indices[trainCount..<nRows])

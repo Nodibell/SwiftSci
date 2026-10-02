@@ -134,6 +134,81 @@ extension AgentParameterSchema {
             return .failure(err)
         }
     }
+
+    /// Formats parameter schema documentation for model prompts.
+    public func formattedDocumentation() -> String {
+        guard !properties.isEmpty else { return "None (accepts arbitrary text or empty object)." }
+        var lines: [String] = []
+        for (name, prop) in properties.sorted(by: { $0.key < $1.key }) {
+            let isReq = required.contains(name) ? "required" : "optional"
+            var desc = "    - `\(name)` (\(prop.type), \(isReq)): \(prop.description)"
+            if let enums = prop.enum, !enums.isEmpty {
+                desc += " (Allowed values: [\(enums.map { "'\($0)'" }.joined(separator: ", "))])"
+            }
+            lines.append(desc)
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Smartly parses and validates tool input, handling markdown fences, JSON, key-value syntax, or positional arguments.
+    public func smartParseAndValidate(input: String) -> Result<[String: String], SchemaValidationError> {
+        var clean = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Strip markdown code fences if wrapped in ```json ... ``` or ``` ... ```
+        if clean.hasPrefix("```") {
+            let lines = clean.components(separatedBy: .newlines)
+            let filtered = lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("```") }
+            clean = filtered.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // Attempt 1: Standard JSON parsing
+        if clean.hasPrefix("{") {
+            return parseAndValidate(jsonString: clean)
+        }
+
+        // Attempt 2: Key-value parsing (e.g. "action=summary, columnA=price" or "action: summary, columnA: price")
+        var kvArgs: [String: String] = [:]
+        let pairs = clean.components(separatedBy: CharacterSet(charactersIn: ",\n;"))
+        var parsedPairs = 0
+        for pair in pairs {
+            let parts: [String]
+            if pair.contains("=") {
+                parts = pair.components(separatedBy: "=")
+            } else if pair.contains(":") {
+                parts = pair.components(separatedBy: ":")
+            } else {
+                continue
+            }
+            if parts.count >= 2 {
+                let k = parts[0].trimmingCharacters(in: CharacterSet(charactersIn: "`'\" ").union(.whitespacesAndNewlines))
+                let v = parts.dropFirst().joined(separator: ":").trimmingCharacters(in: CharacterSet(charactersIn: "`'\" ").union(.whitespacesAndNewlines))
+                if let exactKey = properties.keys.first(where: { $0.lowercased() == k.lowercased() }) {
+                    kvArgs[exactKey] = v
+                    parsedPairs += 1
+                }
+            }
+        }
+
+        if parsedPairs > 0, case .success = validate(arguments: kvArgs) {
+            return .success(kvArgs)
+        }
+
+        // Attempt 3: Positional single argument mapping
+        if !clean.isEmpty {
+            if required.count == 1, let reqKey = required.first {
+                var singleArgs: [String: String] = [reqKey: clean]
+                if let actionProp = properties["action"], let enums = actionProp.enum, enums.contains("summary") && reqKey != "action" {
+                    singleArgs["action"] = "summary"
+                }
+                if case .success = validate(arguments: singleArgs) {
+                    return .success(singleArgs)
+                }
+            }
+        }
+
+        // Fall back to standard JSON parsing error
+        return parseAndValidate(jsonString: clean)
+    }
 }
 
 /// Rich structured output produced by an autonomous agent tool invocation.

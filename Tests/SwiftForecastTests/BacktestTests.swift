@@ -210,4 +210,33 @@ struct BacktestTests {
         }
         #expect(res.mase > 0.0)
     }
+
+    @Test("TimeSeriesMetrics validated throwing methods reject length mismatch and empty inputs")
+    func testValidatedTimeSeriesMetrics() {
+        let actual = [1.0, 2.0, 3.0]
+        let forecastGood = [1.1, 1.9, 3.2]
+        let forecastMismatch = [1.1, 1.9]
+
+        // Good inputs compute correct metrics
+        #expect(throws: Never.self) {
+            _ = try TimeSeriesMetrics.evaluateRMSE(actual: actual, forecast: forecastGood)
+            _ = try TimeSeriesMetrics.evaluateMAE(actual: actual, forecast: forecastGood)
+            _ = try TimeSeriesMetrics.evaluateMAPE(actual: actual, forecast: forecastGood)
+            _ = try TimeSeriesMetrics.evaluateSMAPE(actual: actual, forecast: forecastGood)
+            _ = try TimeSeriesMetrics.evaluateMASE(trainingSeries: [1.0, 2.0, 3.0, 4.0], actual: actual, forecast: forecastGood)
+        }
+
+        // Length mismatch throws dimensionMismatch
+        #expect(throws: ForecastError.self) {
+            _ = try TimeSeriesMetrics.evaluateRMSE(actual: actual, forecast: forecastMismatch)
+        }
+        #expect(throws: ForecastError.self) {
+            _ = try TimeSeriesMetrics.evaluateMAE(actual: actual, forecast: forecastMismatch)
+        }
+
+        // Empty input throws emptyTimeSeries
+        #expect(throws: ForecastError.self) {
+            _ = try TimeSeriesMetrics.evaluateRMSE(actual: [], forecast: [])
+        }
+    }
 }

@@ -43,6 +43,9 @@ public func trainTestSplit(
     trainTargets: [Double],
     testTargets: [Double]
 ) {
+    guard testSize > 0.0 && testSize < 1.0 else {
+        throw PreprocessingError.invalidParameter("testSize must be between 0.0 and 1.0 exclusive, got \(testSize).")
+    }
     guard !features.isEmpty else {
         throw PreprocessingError.emptyInput
     }
@@ -54,12 +57,11 @@ public func trainTestSplit(
             throw PreprocessingError.dimensionMismatch(expected: features.count, got: strat.count)
         }
     }
-    guard testSize > 0.0 && testSize < 1.0 else {
-        throw NSError(domain: "TrainTestSplit", code: 1, userInfo: [NSLocalizedDescriptionKey: "testSize must be between 0.0 and 1.0 exclusive."])
-    }
     
     let totalCount = features.count
     if totalCount == 1 {
+        // When dataset has only a single observation, splitting is strictly all-or-nothing:
+        // allocated to test if testSize >= 0.5, else allocated to train.
         if testSize >= 0.5 {
             return (trainFeatures: [], testFeatures: features, trainTargets: [], testTargets: targets)
         } else {
@@ -174,19 +176,21 @@ extension DataFrame {
         shuffle: Bool = true,
         seed: Int? = nil
     ) throws -> (train: DataFrame, test: DataFrame) {
+        guard testSize > 0.0 && testSize < 1.0 else {
+            throw PreprocessingError.invalidParameter("testSize must be between 0.0 and 1.0 exclusive, got \(testSize).")
+        }
         let nRows = shape.rows
         guard nRows > 0 else {
-            return (self, self)
+            throw PreprocessingError.emptyInput
         }
         if nRows == 1 {
+            // When dataset has only a single observation, splitting is strictly all-or-nothing:
+            // allocated to test if testSize >= 0.5, else allocated to train.
             if testSize >= 0.5 {
                 return (train: gathered(at: []), test: self)
             } else {
                 return (train: self, test: gathered(at: []))
             }
-        }
-        guard testSize > 0.0 && testSize < 1.0 else {
-            throw NSError(domain: "DataFrame.trainTestSplit", code: 1, userInfo: [NSLocalizedDescriptionKey: "testSize must be between 0.0 and 1.0 exclusive."])
         }
         
         var trainIndices = [Int]()

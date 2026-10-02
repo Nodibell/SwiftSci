@@ -314,7 +314,7 @@ public enum ObjectDetectionEvaluator {
             recalls.append(r)
         }
 
-        // Continuous precision-envelope all-point interpolation (PASCAL VOC / COCO continuous envelope)
+        // Continuous precision-envelope all-point interpolation
         let ap = computeAreaUnderPRCurve(recalls: recalls, precisions: precisions)
 
         return ClassEvalResult(ap: ap, tp: totalTPCount, fp: totalFPCount, matchedIoUs: matchedIoUs)

@@ -223,6 +223,10 @@ public enum ClusteringMetrics {
     /// Evaluates a clustering model's partition across Silhouette, Calinski-Harabasz, and Davies-Bouldin metrics,
     /// returning a standardized `ClusterLeaderboardMetrics` summary for automated model leaderboard ranking.
     ///
+    /// > Note: `compositeScore` is a project-defined heuristic combining the normalized Silhouette score
+    /// > with a linear noise penalty: `((sil + 1.0) / 2.0) * (1.0 - noiseRatio)`. Calinski-Harabasz and
+    /// > Davies-Bouldin indices are reported alongside it as complementary diagnostic metrics.
+    ///
     /// - Parameters:
     ///   - features: 2D feature matrix `[numSamples][numFeatures]`.
     ///   - labels: Cluster assignments per sample. Points labeled `-1` (e.g. DBSCAN noise) are properly penalized.

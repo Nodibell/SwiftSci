@@ -91,4 +91,48 @@ struct TrainTestSplitTests {
         #expect(test.shape.rows > 0)
         #expect(train.shape.rows + test.shape.rows == 5)
     }
+
+    @Test("trainTestSplit rejects invalid testSize parameters on arrays and DataFrames")
+    func testInvalidTestSizeRejection() throws {
+        // Negative testSize
+        #expect(throws: PreprocessingError.self) {
+            _ = try trainTestSplit([[1.0]], [10.0], testSize: -0.5)
+        }
+        // testSize >= 1.0
+        #expect(throws: PreprocessingError.self) {
+            _ = try trainTestSplit([[1.0]], [10.0], testSize: 1.5)
+        }
+        // testSize == 0.0
+        #expect(throws: PreprocessingError.self) {
+            _ = try trainTestSplit([[1.0], [2.0]], [10.0, 20.0], testSize: 0.0)
+        }
+        // DataFrame testSize validation on N=1
+        let dfSingle = try DataFrame(columns: [TypedColumn<Double>(name: "A", values: [42.0])])
+        #expect(throws: PreprocessingError.self) {
+            _ = try dfSingle.trainTestSplit(testSize: -0.2)
+        }
+        #expect(throws: PreprocessingError.self) {
+            _ = try dfSingle.trainTestSplit(testSize: 2.0)
+        }
+    }
+
+    @Test("trainTestSplit single-observation dataset (N = 1) all-or-nothing partition")
+    func testSingleObservationDataset() throws {
+        let features = [[1.0]]
+        let targets = [10.0]
+
+        // testSize < 0.5 -> allocated to train
+        let trainSplit = try trainTestSplit(features, targets, testSize: 0.2)
+        #expect(trainSplit.trainFeatures.count == 1)
+        #expect(trainSplit.testFeatures.isEmpty)
+        #expect(trainSplit.trainTargets.count == 1)
+        #expect(trainSplit.testTargets.isEmpty)
+
+        // testSize >= 0.5 -> allocated to test
+        let testSplit = try trainTestSplit(features, targets, testSize: 0.7)
+        #expect(testSplit.trainFeatures.isEmpty)
+        #expect(testSplit.testFeatures.count == 1)
+        #expect(testSplit.trainTargets.isEmpty)
+        #expect(testSplit.testTargets.count == 1)
+    }
 }

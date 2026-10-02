@@ -221,4 +221,15 @@ struct AutoARIMATests {
         #expect(preds[0] > preds[1])
         #expect(preds[2] > preds[3])
     }
+
+    @Test("AutoARIMA seasonal rejects exogenous variables with explicit invalidParameter error")
+    func testAutoARIMASeasonalThrowsOnExogenousVariables() async throws {
+        let series = (0..<20).map { Double($0) }
+        let exog = (0..<20).map { [Double($0) * 0.1] }
+        let autoArima = try AutoARIMA(seasonal: true, seasonalPeriod: 4)
+
+        await #expect(throws: ForecastError.self) {
+            _ = try await autoArima.fit(series: series, exog: exog)
+        }
+    }
 }

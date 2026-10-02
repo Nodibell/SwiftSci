@@ -268,6 +268,9 @@ public actor AutoARIMA {
     /// - Throws: `ForecastError` if series is too short or all candidate configurations fail to converge.
     public func fit(series: [Double], exog: [[Double]]? = nil) async throws -> ARIMAResult {
         guard !series.isEmpty else { throw ForecastError.emptyTimeSeries }
+        if seasonal && seasonalPeriod > 1 && exog != nil && !exog!.isEmpty {
+            throw ForecastError.invalidParameter("Seasonal AutoARIMA with exogenous regressors (SARIMAX) is currently unsupported. Omit 'exog' or set 'seasonal: false' for ARIMAX.")
+        }
         self.fittedSeries = series
 
         // Zero-variance guard: if the series is constant, fit trivial ARIMA(0, 0, 0)

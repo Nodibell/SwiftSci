@@ -13,8 +13,10 @@ public enum SilhouetteScore {
     /// - Parameters:
     ///   - features: 2D array of feature values `[numSamples][numFeatures]`.
     ///   - labels: Array of integer cluster assignments for each sample.
-    ///   - ignoreNoise: When `true`, points labeled `-1` (e.g. DBSCAN noise) are excluded from the
-    ///     core silhouette calculation and the resulting score is scaled by `(1 - noiseRatio)`.
+    ///   - ignoreNoise: When `true`, applies a noise-adjusted penalty heuristic where points labeled `-1`
+    ///     (e.g. DBSCAN noise) are excluded from core cohesion/separation calculations and the resulting
+    ///     score is scaled by `(1 - noiseRatio)`. Note that this is a project-defined heuristic rather
+    ///     than standard textbook silhouette.
     /// - Returns: Mean Silhouette Coefficient across all samples, in range `[-1.0, 1.0]`.
     /// - Throws: `ClusterError` if sample count is insufficient or cluster parameters are invalid.
     public static func compute(features: [[Double]], labels: [Int], ignoreNoise: Bool) throws -> Double {

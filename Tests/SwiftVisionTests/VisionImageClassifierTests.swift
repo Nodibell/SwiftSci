@@ -2,8 +2,8 @@ import Testing
 import Foundation
 @testable import SwiftVision
 
-@Suite("Zero-Shot Visual Inference & Dataset Profiling Tests (G-021)")
-struct ZeroShotTests {
+@Suite("Vision Image Classification & Dataset Profiling Tests (G-021)")
+struct VisionImageClassifierTests {
 
     @Test("ImageDataset CoreGraphics bridging, PNG serialization, and round-trip loading")
     func testImageDatasetSerialization() throws {
@@ -44,9 +44,9 @@ struct ZeroShotTests {
         #endif
     }
 
-    @Test("ZeroShotImageClassifier inference on in-memory ImageDataset")
-    func testZeroShotClassification() {
-        let classifier = ZeroShotImageClassifier()
+    @Test("VisionImageClassifier inference on in-memory ImageDataset")
+    func testImageClassification() {
+        let classifier = VisionImageClassifier()
         let width = 32
         let height = 32
         let pixelCount = width * height
@@ -66,9 +66,9 @@ struct ZeroShotTests {
         #expect(abs(totalConfidence - 1.0) < 0.01)
     }
 
-    @Test("ZeroShotImageClassifier feature print extraction and cosine distance")
+    @Test("VisionImageClassifier feature print extraction and cosine distance")
     func testFeaturePrintAndCosineDistance() {
-        let classifier = ZeroShotImageClassifier()
+        let classifier = VisionImageClassifier()
         let width = 32
         let height = 32
         let pixelCount = width * height
@@ -120,7 +120,7 @@ struct ZeroShotTests {
         }
         #endif
 
-        let classifier = ZeroShotImageClassifier()
+        let classifier = VisionImageClassifier()
         let profile = try await classifier.profileFolder(
             at: tempDir,
             maxSampleImages: 10,

@@ -4,9 +4,10 @@ import SwiftStats
 
 /// Seasonal AutoRegressive Integrated Moving Average (SARIMA) time-series forecasting model actor.
 ///
-/// Implements canonical multiplicative SARIMA \((p, d, q) 	imes (P, D, Q)_s\):
-/// \(\phi(B)\Phi(B^s)(1 - B)^d(1 - B^s)^D y_t = 	heta(B)\Theta(B^s)arepsilon_t\)
-/// accounting for multiplicative seasonal-lag cross terms in autoregressive and moving average polynomials.
+/// Implements a multiplicative SARIMA-style model (p, d, q) x (P, D, Q)_s with
+/// conditional least-squares estimation and polynomial cross-term refinement.
+/// Parameter estimation utilizes high-order AR approximation followed by two-stage conditional least-squares
+/// polynomial refinement rather than full state-space exact maximum likelihood estimation.
 public actor SARIMAModel {
     /// The non-seasonal order (p, d, q).
     public let order: (p: Int, d: Int, q: Int)

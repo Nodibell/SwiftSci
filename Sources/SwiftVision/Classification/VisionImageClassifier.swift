@@ -9,26 +9,32 @@ import CoreGraphics
 import ImageIO
 #endif
 
-/// High-level zero-shot image classifier and dataset profiling engine.
+/// High-level image classifier and dataset profiling engine built on Apple Vision framework.
 ///
-/// Provides instant, out-of-the-box visual inference and deep feature embedding extraction
-/// without requiring external weight downloads, network connectivity, or training from scratch.
+/// Provides out-of-the-box visual inference and deep feature embedding extraction
+/// utilizing Apple Vision's built-in neural classification taxonomy (1,300+ hierarchical classes)
+/// and feature print representations (`VNGenerateImageFeaturePrintRequest`).
+///
+/// > Important: This classifier operates on Apple Vision's fixed pre-trained taxonomy.
+/// > When `candidateLabels` are supplied, candidate scores are matched and normalized against
+/// > matching taxonomy observations. For open-vocabulary vision-language classification
+/// > with text prompt embeddings, use ``CLIPProjector``.
 ///
 /// ### Key Capabilities
-/// - **Zero-Shot Classification**: Categorizes arbitrary images against Apple's built-in neural
-///   taxonomy (1,300+ hierarchical classes) or scores user-supplied candidate label lists.
+/// - **Taxonomy Classification**: Categorizes images against Apple's neural taxonomy or scores
+///   matching concepts from user-supplied candidate label lists.
 /// - **Pretrained Backbone Embeddings**: Extracts 768-dimensional visual feature prints from images
 ///   for nearest-neighbor retrieval, clustering, or transfer learning.
 /// - **Automated Dataset Profiling**: Crawls unannotated image directories, extracting resolution
-///   statistics, channel counts, file formats, subfolder classes, and zero-shot sample predictions.
-public struct ZeroShotImageClassifier: Sendable {
+///   statistics, channel counts, file formats, subfolder classes, and sample predictions.
+public struct VisionImageClassifier: Sendable {
 
     /// Set of standard supported image file extensions.
     public static let supportedExtensions: Set<String> = [
         "jpg", "jpeg", "png", "heic", "bmp", "tiff", "tif", "webp", "gif"
     ]
 
-    /// Initializes a new ZeroShotImageClassifier instance.
+    /// Initializes a new VisionImageClassifier instance.
     public init() {}
 
     // MARK: - Classification
@@ -383,7 +389,7 @@ public struct ZeroShotImageClassifier: Sendable {
             ? "none"
             : topDetectedLabels.map { "\($0.identifier) (\(String(format: "%.1f%%", $0.confidence * 100)))" }.joined(separator: ", ")
 
-        let summary = "Image dataset at '\(folderURL.lastPathComponent)': \(allImageURLs.count) image(s) [\(formatStr)]. Resolution: avg \(Int(round(avgW)))x\(Int(round(avgH))) (min \(minW)x\(minH), max \(maxW)x\(maxH)). Categories: \(subfolderStr). Top zero-shot labels: \(topLabelsStr)."
+        let summary = "Image dataset at '\(folderURL.lastPathComponent)': \(allImageURLs.count) image(s) [\(formatStr)]. Resolution: avg \(Int(round(avgW)))x\(Int(round(avgH))) (min \(minW)x\(minH), max \(maxW)x\(maxH)). Categories: \(subfolderStr). Top labels: \(topLabelsStr)."
 
         return ImageFolderProfile(
             folderURL: folderURL,
@@ -514,3 +520,8 @@ public struct ZeroShotImageClassifier: Sendable {
         return (allImageURLs, formatCounts, subfolderClasses)
     }
 }
+
+/// Compatibility typealias for ``VisionImageClassifier``.
+@available(*, deprecated, renamed: "VisionImageClassifier", message: "Use VisionImageClassifier directly.")
+public typealias ZeroShotImageClassifier = VisionImageClassifier
+

@@ -108,4 +108,54 @@ public enum TimeSeriesMetrics {
         let maeVal = mae(actual: actual, forecast: forecast)
         return maeVal / scale
     }
+
+    // MARK: - Validated Throwing Metrics
+
+    /// Validates matching dimensions and non-empty inputs for time-series error metrics.
+    private static func validateInputs(actual: [Double], forecast: [Double]) throws {
+        guard !actual.isEmpty else { throw ForecastError.emptyTimeSeries }
+        guard actual.count == forecast.count else {
+            throw ForecastError.dimensionMismatch(expected: actual.count, got: forecast.count)
+        }
+    }
+
+    /// Evaluates Root Mean Squared Error (RMSE), throwing on empty inputs or length mismatches.
+    public static func evaluateRMSE(actual: [Double], forecast: [Double]) throws -> Double {
+        try validateInputs(actual: actual, forecast: forecast)
+        return rmse(actual: actual, forecast: forecast)
+    }
+
+    /// Evaluates Mean Absolute Error (MAE), throwing on empty inputs or length mismatches.
+    public static func evaluateMAE(actual: [Double], forecast: [Double]) throws -> Double {
+        try validateInputs(actual: actual, forecast: forecast)
+        return mae(actual: actual, forecast: forecast)
+    }
+
+    /// Evaluates Mean Absolute Percentage Error (MAPE), throwing on empty inputs or length mismatches.
+    public static func evaluateMAPE(actual: [Double], forecast: [Double], epsilon: Double = 1e-12) throws -> Double {
+        try validateInputs(actual: actual, forecast: forecast)
+        return mape(actual: actual, forecast: forecast, epsilon: epsilon)
+    }
+
+    /// Evaluates Symmetric Mean Absolute Percentage Error (SMAPE), throwing on empty inputs or length mismatches.
+    public static func evaluateSMAPE(actual: [Double], forecast: [Double], epsilon: Double = 1e-12) throws -> Double {
+        try validateInputs(actual: actual, forecast: forecast)
+        return smape(actual: actual, forecast: forecast, epsilon: epsilon)
+    }
+
+    /// Evaluates Mean Absolute Scaled Error (MASE), throwing on empty inputs or length mismatches.
+    public static func evaluateMASE(
+        trainingSeries: [Double],
+        actual: [Double],
+        forecast: [Double],
+        seasonality: Int = 1
+    ) throws -> Double {
+        guard !trainingSeries.isEmpty else { throw ForecastError.emptyTimeSeries }
+        try validateInputs(actual: actual, forecast: forecast)
+        let scale = naiveInSampleMAE(trainingSeries: trainingSeries, seasonality: seasonality)
+        guard scale > 1e-12 else {
+            throw ForecastError.invalidParameter("Naive in-sample MAE scale is zero (constant training series); MASE is undefined.")
+        }
+        return try evaluateMAE(actual: actual, forecast: forecast) / scale
+    }
 }

@@ -246,4 +246,22 @@ struct DecompositionTests {
             try TimeSeriesDecomposition.adfTest(series: validSeries, maxLag: 0)
         }
     }
+
+    @Test("Classical additive decomposition exact reconstruction: trend + seasonal + residual == original")
+    func testAdditiveDecompositionReconstruction() throws {
+        let period = 4
+        let n = 24
+        let seasons = [3.0, -1.0, 2.0, -4.0]
+        var original: [Double] = []
+        for t in 0..<n {
+            original.append(10.0 + Double(t) * 0.75 + seasons[t % period] + (Double(t % 3) * 0.1))
+        }
+
+        let res = try TimeSeriesDecomposition.decompose(series: original, period: period, model: .additive)
+        let half = period / 2
+        for t in half..<(n - half) {
+            let reconstructed = res.trend[t] + res.seasonal[t] + res.residual[t]
+            #expect(abs(reconstructed - original[t]) < 1e-9)
+        }
+    }
 }

@@ -63,4 +63,20 @@ struct TimeSeriesTransformersTests {
         #expect(abs(res.expandingMean[2] - (base + 4.0)) < 1e-7)
         #expect(abs(res.expandingStd[2] - 2.0) < 1e-6)
     }
+
+    @Test("RollingWindow high-magnitude baseline (1e12) with fluctuations avoids variance cancellation")
+    func testRollingWindowHighMagnitudeFluctuations() throws {
+        let base = 1e12
+        let n = 200
+        let series = (0..<n).map { base + Double($0 % 5) }
+        let window = RollingWindow(windowSize: 10)
+        let res = try window.transform(series: series)
+
+        #expect(res.rollingMean.count == n)
+        #expect(res.rollingStd.count == n)
+        for i in 10..<n {
+            #expect(!res.rollingMean[i].isNaN && res.rollingMean[i].isFinite)
+            #expect(!res.rollingStd[i].isNaN && res.rollingStd[i] >= 0.0)
+        }
+    }
 }

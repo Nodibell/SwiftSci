@@ -246,9 +246,10 @@ public struct CNNFeatureExtractor: Sendable {
 }
 
 /// Errors specific to Computer Vision tasks.
-public enum VisionError: Error, LocalizedError, Equatable {
+public enum VisionError: Error, LocalizedError, Equatable, Sendable {
     case notImplemented(String)
     case invalidInput(String)
+    case dimensionMismatch(String)
 
     /// The error description.
     public var errorDescription: String? {
@@ -257,6 +258,8 @@ public enum VisionError: Error, LocalizedError, Equatable {
             return "Vision feature not implemented: \(msg)"
         case .invalidInput(let msg):
             return "Invalid vision input: \(msg)"
+        case .dimensionMismatch(let msg):
+            return "Vision dimension mismatch: \(msg)"
         }
     }
 }

@@ -83,7 +83,7 @@ struct DetectionTests {
     // MARK: - Object Detection Evaluator & mAP@50 Tests
 
     @Test("ObjectDetectionEvaluator computes 100% mAP@50, precision, and recall on exact match")
-    func testEvaluatorPerfectMatch() {
+    func testEvaluatorPerfectMatch() throws {
         let gtBox1 = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.5, yMax: 0.5, confidence: 1.0, classLabel: "cat")
         let gtBox2 = BoundingBox(xMin: 0.6, yMin: 0.6, xMax: 0.9, yMax: 0.9, confidence: 1.0, classLabel: "dog")
 
@@ -93,7 +93,7 @@ struct DetectionTests {
         let predictions = [[predBox1, predBox2]]
         let groundTruths = [[gtBox1, gtBox2]]
 
-        let metrics = VisionMetrics.evaluateDetection(predictions: predictions, groundTruths: groundTruths, iouThreshold: 0.50)
+        let metrics = try VisionMetrics.evaluateDetection(predictions: predictions, groundTruths: groundTruths, iouThreshold: 0.50)
 
         #expect(abs(metrics.map50 - 1.0) < 1e-4)
         #expect(abs(metrics.precision - 1.0) < 1e-4)
@@ -108,14 +108,14 @@ struct DetectionTests {
     }
 
     @Test("ObjectDetectionEvaluator handles duplicate false-positive detections for the same ground truth")
-    func testEvaluatorDuplicateDetection() {
+    func testEvaluatorDuplicateDetection() throws {
         let gtBox = BoundingBox(xMin: 0.2, yMin: 0.2, xMax: 0.6, yMax: 0.6, confidence: 1.0, classLabel: "car")
 
         // Two predictions for the single ground truth box
         let pred1 = BoundingBox(xMin: 0.2, yMin: 0.2, xMax: 0.6, yMax: 0.6, confidence: 0.9, classLabel: "car")
         let pred2 = BoundingBox(xMin: 0.21, yMin: 0.21, xMax: 0.61, yMax: 0.61, confidence: 0.8, classLabel: "car")
 
-        let metrics = VisionMetrics.evaluateDetection(
+        let metrics = try VisionMetrics.evaluateDetection(
             predictions: [[pred1, pred2]],
             groundTruths: [[gtBox]],
             iouThreshold: 0.50
@@ -129,11 +129,11 @@ struct DetectionTests {
     }
 
     @Test("ObjectDetectionEvaluator returns 0.0 mAP when detections do not overlap ground truth")
-    func testEvaluatorZeroOverlap() {
+    func testEvaluatorZeroOverlap() throws {
         let gt = BoundingBox(xMin: 0.0, yMin: 0.0, xMax: 0.2, yMax: 0.2, confidence: 1.0, classLabel: "person")
         let pred = BoundingBox(xMin: 0.8, yMin: 0.8, xMax: 1.0, yMax: 1.0, confidence: 0.9, classLabel: "person")
 
-        let metrics = ObjectDetectionEvaluator.evaluate(
+        let metrics = try ObjectDetectionEvaluator.evaluate(
             predictions: [[pred]],
             groundTruths: [[gt]],
             iouThreshold: 0.50
@@ -147,11 +147,36 @@ struct DetectionTests {
     }
 
     @Test("ObjectDetectionEvaluator empty inputs yield graceful zero metrics")
-    func testEvaluatorEmptyInputs() {
-        let metrics = ObjectDetectionEvaluator.evaluate(predictions: [], groundTruths: [])
+    func testEvaluatorEmptyInputs() throws {
+        let metrics = try ObjectDetectionEvaluator.evaluate(predictions: [], groundTruths: [])
         #expect(metrics.map50 == 0.0)
         #expect(metrics.totalGroundTruths == 0)
         #expect(metrics.totalDetections == 0)
+    }
+
+    @Test("ObjectDetectionEvaluator throws dimensionMismatch when prediction and ground-truth image counts differ")
+    func testEvaluatorDimensionMismatch() {
+        let box = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.5, yMax: 0.5, confidence: 1.0, classLabel: "cat")
+        #expect(throws: VisionError.self) {
+            _ = try ObjectDetectionEvaluator.evaluate(
+                predictions: [[box], [box]],
+                groundTruths: [[box]]
+            )
+        }
+    }
+
+    @Test("ObjectDetectionEvaluator throws invalidInput when iouThreshold is out of range")
+    func testEvaluatorInvalidIoUThreshold() {
+        let box = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.5, yMax: 0.5, confidence: 1.0, classLabel: "cat")
+        #expect(throws: VisionError.self) {
+            _ = try ObjectDetectionEvaluator.evaluate(predictions: [[box]], groundTruths: [[box]], iouThreshold: -0.1)
+        }
+        #expect(throws: VisionError.self) {
+            _ = try ObjectDetectionEvaluator.evaluate(predictions: [[box]], groundTruths: [[box]], iouThreshold: 0.0)
+        }
+        #expect(throws: VisionError.self) {
+            _ = try ObjectDetectionEvaluator.evaluate(predictions: [[box]], groundTruths: [[box]], iouThreshold: 1.5)
+        }
     }
 
     // MARK: - NeuralObjectDetector Tests
@@ -192,7 +217,7 @@ struct DetectionTests {
     }
 
     @Test("Empirical mAP reference fixture: validates exact VOC/COCO precision envelope, duplicates, and IoU thresholds")
-    func testMAPReferenceFixtureWithEnvelopeAndDuplicates() {
+    func testMAPReferenceFixtureWithEnvelopeAndDuplicates() throws {
         // Ground truth: 5 objects of class "target"
         let gt0 = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 1.0, classLabel: "target")
         let gt1 = BoundingBox(xMin: 0.4, yMin: 0.4, xMax: 0.6, yMax: 0.6, confidence: 1.0, classLabel: "target")
@@ -212,7 +237,7 @@ struct DetectionTests {
         // Det 4: exact match gt2, IoU = 1.0, conf = 0.55 -> TP
         let pred4 = BoundingBox(xMin: 0.7, yMin: 0.7, xMax: 0.9, yMax: 0.9, confidence: 0.55, classLabel: "target")
 
-        let metrics = VisionMetrics.evaluateDetection(
+        let metrics = try VisionMetrics.evaluateDetection(
             predictions: [[pred0, pred1, pred2, pred3, pred4]],
             groundTruths: [[gt0, gt1, gt2, gt3, gt4]],
             iouThreshold: 0.50
@@ -238,7 +263,7 @@ struct DetectionTests {
     }
 
     @Test("Empirical mAP multi-class and edge case evaluation with empty predictions and empty GT")
-    func testMAPMultiClassAndEdgeCases() {
+    func testMAPMultiClassAndEdgeCases() throws {
         // Multi-class evaluation
         let catGT = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 1.0, classLabel: "cat")
         let dogGT = BoundingBox(xMin: 0.5, yMin: 0.5, xMax: 0.7, yMax: 0.7, confidence: 1.0, classLabel: "dog")
@@ -246,7 +271,7 @@ struct DetectionTests {
         // Cat is perfectly detected (AP = 1.0), dog is not detected (AP = 0.0)
         let catPred = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 0.9, classLabel: "cat")
 
-        let metrics = VisionMetrics.evaluateDetection(
+        let metrics = try VisionMetrics.evaluateDetection(
             predictions: [[catPred]],
             groundTruths: [[catGT, dogGT]],
             iouThreshold: 0.50
@@ -257,7 +282,7 @@ struct DetectionTests {
         #expect(abs(metrics.map50 - 0.50) < 1e-4) // (1.0 + 0.0) / 2
 
         // Edge case: Image with ground truths but completely empty predictions
-        let emptyPredMetrics = VisionMetrics.evaluateDetection(
+        let emptyPredMetrics = try VisionMetrics.evaluateDetection(
             predictions: [[]],
             groundTruths: [[catGT]],
             iouThreshold: 0.50
@@ -268,7 +293,7 @@ struct DetectionTests {
         #expect(emptyPredMetrics.totalGroundTruths == 1)
 
         // Edge case: Image with predictions but completely empty ground truths
-        let emptyGTMetrics = VisionMetrics.evaluateDetection(
+        let emptyGTMetrics = try VisionMetrics.evaluateDetection(
             predictions: [[catPred]],
             groundTruths: [[]],
             iouThreshold: 0.50
@@ -278,5 +303,51 @@ struct DetectionTests {
         #expect(emptyGTMetrics.precision == 0.0)
         #expect(emptyGTMetrics.totalDetections == 1)
         #expect(emptyGTMetrics.totalGroundTruths == 0)
+    }
+
+    @Test("Prediction-only classes do not deflate mAP denominator but penalize overall precision as false positives")
+    func testPredictionOnlyClassesDoNotDeflateMAP() throws {
+        // GT contains only "cat" (1 object)
+        let catGT = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 1.0, classLabel: "cat")
+
+        // Model predicts "cat" (matches GT) AND "dog" (spurious prediction, no dog in GT)
+        let catPred = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 0.95, classLabel: "cat")
+        let dogPred = BoundingBox(xMin: 0.6, yMin: 0.6, xMax: 0.8, yMax: 0.8, confidence: 0.85, classLabel: "dog")
+
+        let metrics = try VisionMetrics.evaluateDetection(
+            predictions: [[catPred, dogPred]],
+            groundTruths: [[catGT]],
+            iouThreshold: 0.50
+        )
+
+        // Cat is perfectly detected -> AP = 1.0
+        #expect(metrics.perClassAP50["cat"] == 1.0)
+        // Dog has 0 GT instances -> AP = 0.0
+        #expect(metrics.perClassAP50["dog"] == 0.0)
+
+        // Crucial test: mAP is averaged strictly across GT classes (1 class: cat) -> mAP = 1.0 / 1 = 1.0!
+        // It must NOT be (1.0 + 0.0) / 2 = 0.5!
+        #expect(abs(metrics.map50 - 1.0) < 1e-4)
+
+        // Dog prediction is counted as a False Positive:
+        // TP = 1 (cat), FP = 1 (dog) -> Precision = 1 / 2 = 0.50, Recall = 1 / 1 = 1.0
+        #expect(abs(metrics.precision - 0.50) < 1e-4)
+        #expect(abs(metrics.recall - 1.0) < 1e-4)
+        #expect(metrics.totalDetections == 2)
+        #expect(metrics.totalGroundTruths == 1)
+    }
+
+    @Test("Candidate detections with identical confidence break ties deterministically")
+    func testDeterministicTieBreaking() throws {
+        let gt = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 1.0, classLabel: "cat")
+        // Two candidate predictions with identical confidence (0.80)
+        let p1 = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 0.80, classLabel: "cat") // IoU = 1.0
+        let p2 = BoundingBox(xMin: 0.8, yMin: 0.8, xMax: 0.9, yMax: 0.9, confidence: 0.80, classLabel: "cat") // IoU = 0.0
+
+        let m1 = try ObjectDetectionEvaluator.evaluate(predictions: [[p1, p2]], groundTruths: [[gt]])
+        let m2 = try ObjectDetectionEvaluator.evaluate(predictions: [[p1, p2]], groundTruths: [[gt]])
+
+        #expect(m1.map50 == m2.map50)
+        #expect(m1.precision == m2.precision)
     }
 }

@@ -57,14 +57,27 @@ public enum ObjectDetectionEvaluator {
     /// - Parameters:
     ///   - predictions: Array of predicted bounding boxes per image `[numImages][numBoxes]`.
     ///   - groundTruths: Array of true ground-truth bounding boxes per image `[numImages][numBoxes]`.
-    ///   - iouThreshold: Minimum IoU threshold to classify a detection as True Positive (default: 0.50).
+    ///   - iouThreshold: Minimum IoU threshold to classify a detection as True Positive (default: 0.50, range: (0.0, 1.0]).
+    /// - Throws: `VisionError.dimensionMismatch` if prediction and ground-truth image counts differ, or `VisionError.invalidInput` if iouThreshold is out of bounds.
     /// - Returns: A complete `DetectionMetrics` evaluation summary.
     public static func evaluate(
         predictions: [[BoundingBox]],
         groundTruths: [[BoundingBox]],
         iouThreshold: Double = 0.50
-    ) -> DetectionMetrics {
-        let numImages = min(predictions.count, groundTruths.count)
+    ) throws -> DetectionMetrics {
+        guard predictions.count == groundTruths.count else {
+            throw VisionError.dimensionMismatch(
+                "Prediction image sets count (\(predictions.count)) does not match ground truth image sets count (\(groundTruths.count))."
+            )
+        }
+
+        guard iouThreshold > 0.0 && iouThreshold <= 1.0 else {
+            throw VisionError.invalidInput(
+                "iouThreshold must be strictly positive and at most 1.0 (range: (0.0, 1.0]), received \(iouThreshold)."
+            )
+        }
+
+        let numImages = predictions.count
         guard numImages > 0 else {
             return DetectionMetrics(
                 map50: 0.0, map50_95: 0.0, meanIoU: 0.0, precision: 0.0, recall: 0.0, f1: 0.0,
@@ -73,32 +86,45 @@ public enum ObjectDetectionEvaluator {
             )
         }
 
-        // Collect all unique class labels present in predictions or ground truths
-        var uniqueClasses = Set<String>()
+        // Collect all target ground truth classes (defines the canonical benchmark taxonomy)
+        var gtClasses = Set<String>()
         var totalGT = 0
+        for i in 0..<numImages {
+            totalGT += groundTruths[i].count
+            for box in groundTruths[i] { gtClasses.insert(box.classLabel) }
+        }
+
+        // Collect all predicted classes
+        var allPredClasses = Set<String>()
         var totalPred = 0
         for i in 0..<numImages {
             totalPred += predictions[i].count
-            totalGT += groundTruths[i].count
-            for box in predictions[i] { uniqueClasses.insert(box.classLabel) }
-            for box in groundTruths[i] { uniqueClasses.insert(box.classLabel) }
+            for box in predictions[i] { allPredClasses.insert(box.classLabel) }
         }
 
-        guard !uniqueClasses.isEmpty else {
+        guard totalGT > 0 || totalPred > 0 else {
             return DetectionMetrics(
                 map50: 0.0, map50_95: 0.0, meanIoU: 0.0, precision: 0.0, recall: 0.0, f1: 0.0,
-                perClassAP50: [:], totalGroundTruths: totalGT, totalDetections: totalPred,
-                summary: "No labeled objects detected in dataset."
+                perClassAP50: [:], totalGroundTruths: 0, totalDetections: 0,
+                summary: "No labeled objects or detections in dataset across \(numImages) image(s)."
             )
         }
 
-        // Evaluate AP@50 per class
+        guard !gtClasses.isEmpty else {
+            return DetectionMetrics(
+                map50: 0.0, map50_95: 0.0, meanIoU: 0.0, precision: 0.0, recall: 0.0, f1: 0.0,
+                perClassAP50: [:], totalGroundTruths: 0, totalDetections: totalPred,
+                summary: "No ground-truth target objects in dataset (\(totalPred) false-positive detections across \(numImages) image(s))."
+            )
+        }
+
+        // Evaluate AP@50 per ground-truth target class
         var perClassAP50: [String: Double] = [:]
         var allMatchedIoUs: [Double] = []
         var totalTP50 = 0
         var totalFP50 = 0
 
-        for className in uniqueClasses {
+        for className in gtClasses.sorted() {
             let evalResult = evaluateClassAP(
                 predictions: predictions,
                 groundTruths: groundTruths,
@@ -112,7 +138,20 @@ public enum ObjectDetectionEvaluator {
             allMatchedIoUs.append(contentsOf: evalResult.matchedIoUs)
         }
 
-        let map50 = perClassAP50.values.reduce(0.0, +) / Double(uniqueClasses.count)
+        // Account for prediction-only classes: classes predicted by the model that have zero ground truth instances.
+        // Every detection in a prediction-only class is a False Positive, penalizing overall precision without deflating mAP denominator.
+        let predictionOnlyClasses = allPredClasses.subtracting(gtClasses)
+        for className in predictionOnlyClasses.sorted() {
+            var classPredCount = 0
+            for preds in predictions {
+                classPredCount += preds.filter { $0.classLabel == className }.count
+            }
+            totalFP50 += classPredCount
+            perClassAP50[className] = 0.0
+        }
+
+        // Mean Average Precision is averaged strictly across ground-truth benchmark classes
+        let map50 = perClassAP50.filter { gtClasses.contains($0.key) }.values.reduce(0.0, +) / Double(gtClasses.count)
         let meanIoU = allMatchedIoUs.isEmpty ? 0.0 : allMatchedIoUs.reduce(0.0, +) / Double(allMatchedIoUs.count)
 
         // Precision & Recall at IoU = 0.50
@@ -120,12 +159,12 @@ public enum ObjectDetectionEvaluator {
         let recall = totalGT > 0 ? Double(totalTP50) / Double(totalGT) : 0.0
         let f1 = (precision + recall) > 0 ? (2.0 * precision * recall) / (precision + recall) : 0.0
 
-        // Compute mAP@50:95 across IoU steps 0.50...0.95 (step 0.05)
+        // Compute mAP@50:95 across IoU steps 0.50...0.95 (step 0.05) strictly across ground-truth classes
         var mapSteps: [Double] = []
         let iouSteps = stride(from: 0.50, through: 0.95, by: 0.05)
         for thresh in iouSteps {
             var stepAPs: [Double] = []
-            for className in uniqueClasses {
+            for className in gtClasses.sorted() {
                 let res = evaluateClassAP(
                     predictions: predictions,
                     groundTruths: groundTruths,
@@ -172,9 +211,10 @@ public enum ObjectDetectionEvaluator {
         iouThreshold: Double,
         numImages: Int
     ) -> ClassEvalResult {
-        // Collect all predicted boxes for this class across all images, paired with their imageIndex
+        // Collect all predicted boxes for this class across all images, paired with their imageIndex and detectionIndex
         struct CandidateDetection {
             let imageIndex: Int
+            let originalDetectionIndex: Int
             let box: BoundingBox
         }
 
@@ -191,8 +231,8 @@ public enum ObjectDetectionEvaluator {
             gtPerImage.append([imgGT])
             gtMatched.append([[Bool](repeating: false, count: imgGT.count)])
 
-            for p in predictions[imgIdx] where p.classLabel == className {
-                candidateDetections.append(CandidateDetection(imageIndex: imgIdx, box: p))
+            for (boxIdx, p) in predictions[imgIdx].enumerated() where p.classLabel == className {
+                candidateDetections.append(CandidateDetection(imageIndex: imgIdx, originalDetectionIndex: boxIdx, box: p))
             }
         }
 
@@ -204,8 +244,16 @@ public enum ObjectDetectionEvaluator {
             return ClassEvalResult(ap: 0.0, tp: 0, fp: candidateDetections.count, matchedIoUs: [])
         }
 
-        // Sort detections across entire dataset by confidence descending
-        candidateDetections.sort { $0.box.confidence > $1.box.confidence }
+        // Deterministic sort: confidence descending, then imageIndex ascending, then originalDetectionIndex ascending
+        candidateDetections.sort {
+            if $0.box.confidence != $1.box.confidence {
+                return $0.box.confidence > $1.box.confidence
+            }
+            if $0.imageIndex != $1.imageIndex {
+                return $0.imageIndex < $1.imageIndex
+            }
+            return $0.originalDetectionIndex < $1.originalDetectionIndex
+        }
 
         var tp = [Double](repeating: 0.0, count: candidateDetections.count)
         var fp = [Double](repeating: 0.0, count: candidateDetections.count)
@@ -259,7 +307,7 @@ public enum ObjectDetectionEvaluator {
             recalls.append(r)
         }
 
-        // Standard 101-point / AUC interpolation for Average Precision
+        // Continuous precision-envelope all-point interpolation (PASCAL VOC / COCO continuous envelope)
         let ap = computeAreaUnderPRCurve(recalls: recalls, precisions: precisions)
 
         return ClassEvalResult(ap: ap, tp: totalTPCount, fp: totalFPCount, matchedIoUs: matchedIoUs)
@@ -293,12 +341,13 @@ extension VisionMetrics {
     /// - Parameters:
     ///   - predictions: Predicted bounding boxes per image.
     ///   - groundTruths: True ground truth bounding boxes per image.
+    /// - Throws: `VisionError` if image counts mismatch or parameters are invalid.
     /// - Returns: mAP@50 in range [0.0, 1.0].
     public static func meanAveragePrecision50(
         predictions: [[BoundingBox]],
         groundTruths: [[BoundingBox]]
-    ) -> Double {
-        ObjectDetectionEvaluator.evaluate(predictions: predictions, groundTruths: groundTruths, iouThreshold: 0.50).map50
+    ) throws -> Double {
+        try ObjectDetectionEvaluator.evaluate(predictions: predictions, groundTruths: groundTruths, iouThreshold: 0.50).map50
     }
 
     /// Evaluates object detection predictions and computes a full `DetectionMetrics` report.
@@ -306,12 +355,13 @@ extension VisionMetrics {
     ///   - predictions: Predicted bounding boxes per image.
     ///   - groundTruths: True ground truth bounding boxes per image.
     ///   - iouThreshold: IoU threshold for matching (default 0.50).
+    /// - Throws: `VisionError` if image counts mismatch or parameters are invalid.
     /// - Returns: Detailed detection metrics.
     public static func evaluateDetection(
         predictions: [[BoundingBox]],
         groundTruths: [[BoundingBox]],
         iouThreshold: Double = 0.50
-    ) -> DetectionMetrics {
-        ObjectDetectionEvaluator.evaluate(predictions: predictions, groundTruths: groundTruths, iouThreshold: iouThreshold)
+    ) throws -> DetectionMetrics {
+        try ObjectDetectionEvaluator.evaluate(predictions: predictions, groundTruths: groundTruths, iouThreshold: iouThreshold)
     }
 }

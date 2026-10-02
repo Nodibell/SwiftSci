@@ -106,7 +106,7 @@ public struct NeuralObjectDetector: Sendable {
         dataset: [(imageURL: URL, groundTruth: [BoundingBox])]
     ) async throws -> DetectionMetrics {
         guard !dataset.isEmpty else {
-            return ObjectDetectionEvaluator.evaluate(predictions: [], groundTruths: [])
+            return try ObjectDetectionEvaluator.evaluate(predictions: [], groundTruths: [])
         }
 
         var allPredictions: [[BoundingBox]] = []
@@ -118,7 +118,7 @@ public struct NeuralObjectDetector: Sendable {
             allGroundTruths.append(pair.groundTruth)
         }
 
-        return ObjectDetectionEvaluator.evaluate(
+        return try ObjectDetectionEvaluator.evaluate(
             predictions: allPredictions,
             groundTruths: allGroundTruths,
             iouThreshold: 0.50

@@ -168,21 +168,97 @@ public actor ReActAgent {
         var finalAnswer: String? = nil
 
         let lines = response.components(separatedBy: .newlines)
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.lowercased().hasPrefix("thought:") {
-                let idx = trimmed.index(trimmed.startIndex, offsetBy: 8)
-                thought = String(trimmed[idx...]).trimmingCharacters(in: .whitespaces)
-            } else if trimmed.lowercased().hasPrefix("final answer:") {
-                let idx = trimmed.index(trimmed.startIndex, offsetBy: 13)
-                finalAnswer = String(trimmed[idx...]).trimmingCharacters(in: .whitespaces)
-            } else if trimmed.lowercased().hasPrefix("action:") {
-                let idx = trimmed.index(trimmed.startIndex, offsetBy: 7)
-                action = String(trimmed[idx...]).trimmingCharacters(in: .whitespaces)
-            } else if trimmed.lowercased().hasPrefix("action input:") {
-                let idx = trimmed.index(trimmed.startIndex, offsetBy: 13)
-                actionInput = String(trimmed[idx...]).trimmingCharacters(in: .whitespaces)
+        
+        enum Section {
+            case none, thought, action, actionInput, finalAnswer
+        }
+        var currentSection = Section.none
+        var thoughtLines: [String] = []
+        var actionInputLines: [String] = []
+        var finalAnswerLines: [String] = []
+
+        func normalizeTag(_ line: String) -> (Section, String)? {
+            var clean = line.trimmingCharacters(in: .whitespaces)
+            // Strip leading list numbers / bullets e.g. "1. ", "- "
+            if let regex = try? NSRegularExpression(pattern: "^(?:\\d+\\.|[-*•])\\s*") {
+                let range = NSRange(location: 0, length: clean.utf16.count)
+                clean = regex.stringByReplacingMatches(in: clean, options: [], range: range, withTemplate: "")
             }
+            // Strip leading markdown headers e.g. "### "
+            while clean.hasPrefix("#") {
+                clean = String(clean.dropFirst()).trimmingCharacters(in: .whitespaces)
+            }
+            // Strip leading markdown bolding e.g. "**Thought:**" -> "Thought:**"
+            while clean.hasPrefix("*") || clean.hasPrefix("_") {
+                clean = String(clean.dropFirst()).trimmingCharacters(in: .whitespaces)
+            }
+
+            let lower = clean.lowercased()
+            if lower.hasPrefix("thought") {
+                if let colonIdx = clean.firstIndex(of: ":") {
+                    let rest = String(clean[clean.index(after: colonIdx)...]).trimmingCharacters(in: CharacterSet(charactersIn: "*_ `").union(.whitespaces))
+                    return (.thought, rest)
+                }
+            } else if lower.hasPrefix("final answer") {
+                if let colonIdx = clean.firstIndex(of: ":") {
+                    let rest = String(clean[clean.index(after: colonIdx)...]).trimmingCharacters(in: CharacterSet(charactersIn: "*_ `").union(.whitespaces))
+                    return (.finalAnswer, rest)
+                }
+            } else if lower.hasPrefix("action input") {
+                if let colonIdx = clean.firstIndex(of: ":") {
+                    let rest = String(clean[clean.index(after: colonIdx)...]).trimmingCharacters(in: CharacterSet(charactersIn: "*_ `").union(.whitespaces))
+                    return (.actionInput, rest)
+                }
+            } else if lower.hasPrefix("action") {
+                if let colonIdx = clean.firstIndex(of: ":") {
+                    let rest = String(clean[clean.index(after: colonIdx)...]).trimmingCharacters(in: CharacterSet(charactersIn: "*_ `\"'").union(.whitespaces))
+                    return (.action, rest)
+                }
+            }
+            return nil
+        }
+
+        for line in lines {
+            if let (section, content) = normalizeTag(line) {
+                currentSection = section
+                switch section {
+                case .thought:
+                    if !content.isEmpty { thoughtLines.append(content) }
+                case .action:
+                    action = content.trimmingCharacters(in: CharacterSet(charactersIn: "`'\" ").union(.whitespacesAndNewlines))
+                case .actionInput:
+                    if !content.isEmpty { actionInputLines.append(content) }
+                case .finalAnswer:
+                    if !content.isEmpty { finalAnswerLines.append(content) }
+                case .none:
+                    break
+                }
+            } else {
+                switch currentSection {
+                case .thought:
+                    thoughtLines.append(line)
+                case .actionInput:
+                    actionInputLines.append(line)
+                case .finalAnswer:
+                    finalAnswerLines.append(line)
+                case .action, .none:
+                    break
+                }
+            }
+        }
+
+        thought = thoughtLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !actionInputLines.isEmpty {
+            var rawInput = actionInputLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            if rawInput.hasPrefix("```") {
+                let subLines = rawInput.components(separatedBy: .newlines)
+                let filtered = subLines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("```") }
+                rawInput = filtered.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            actionInput = rawInput
+        }
+        if !finalAnswerLines.isEmpty {
+            finalAnswer = finalAnswerLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         if finalAnswer == nil && action == nil && !response.isEmpty {
@@ -260,8 +336,13 @@ public actor ReActAgent {
                             prompt += pastContext
                         }
                         prompt += "Available Tools:\n"
-                        for (_, tool) in tools {
-                            prompt += "- \(tool.name): \(tool.description)\n"
+                        for (_, tool) in tools.sorted(by: { $0.key < $1.key }) {
+                            prompt += "- Tool: \(tool.name)\n"
+                            prompt += "  Description: \(tool.description)\n"
+                            let doc = tool.parameterSchema.formattedDocumentation()
+                            if !doc.isEmpty && doc != "None (accepts arbitrary text or empty object)." {
+                                prompt += "  Parameters:\n\(doc)\n"
+                            }
                         }
                         prompt += "\nFormat instructions:\nThought: [reasoning]\nAction: [tool name]\nAction Input: [input]\nOr:\nThought: [reasoning]\nFinal Answer: [result]\n\n"
 
@@ -296,7 +377,18 @@ public actor ReActAgent {
                         }
 
                         guard let actName = parsed.action, let actTool = findTool(named: actName) else {
-                            let fallbackStep = AgentStep(thought: parsed.thought, observation: "Error: Tool '\(parsed.action ?? "nil")' not recognized.")
+                            let unknown = parsed.action ?? "nil"
+                            let available = tools.keys.sorted().joined(separator: ", ")
+                            let cleanUnknown = unknown.lowercased().replacingOccurrences(of: "_", with: "").replacingOccurrences(of: "-", with: "")
+                            var hint = ""
+                            if let closest = tools.keys.first(where: {
+                                let c = $0.lowercased().replacingOccurrences(of: "_", with: "").replacingOccurrences(of: "-", with: "")
+                                return c.contains(cleanUnknown) || cleanUnknown.contains(c)
+                            }) {
+                                hint = " Did you mean '\(closest)'?"
+                            }
+                            let errorMsg = "Error: Tool '\(unknown)' not recognized.\(hint) Available tools: [\(available)]."
+                            let fallbackStep = AgentStep(thought: parsed.thought, action: parsed.action, actionInput: parsed.actionInput, observation: errorMsg)
                             trace.append(fallbackStep)
                             continue
                         }
@@ -318,15 +410,29 @@ public actor ReActAgent {
                         let startTime = CFAbsoluteTimeGetCurrent()
                         var obs: String
                         do {
+                            let trimmedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
                             if repeatedCount >= 3 {
                                 obs = "Sentry Warning: Loop detected. You invoked tool '\(actTool.name)' with identical arguments \(repeatedCount) times. Please provide your Final Answer or choose a different strategy."
-                            } else if input.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{") {
-                                switch actTool.parameterSchema.parseAndValidate(jsonString: input) {
+                            } else if trimmedInput.hasPrefix("{") || (!actTool.parameterSchema.properties.isEmpty && (trimmedInput.contains("=") || trimmedInput.contains(":"))) {
+                                switch actTool.parameterSchema.smartParseAndValidate(input: input) {
                                 case .success(let args):
-                                    let out = try await actTool.executeStructured(arguments: args)
+                                    let out = try await executeWithTimeout(timeoutSeconds: toolTimeoutSeconds, toolName: actTool.name) {
+                                        try await actTool.executeStructured(arguments: args)
+                                    }
                                     obs = out.text
                                 case .failure(let schemaErr):
                                     obs = "Error: Malformed tool call: \(schemaErr.localizedDescription). Please correct the parameters and retry."
+                                }
+                            } else if !actTool.parameterSchema.properties.isEmpty {
+                                // Attempt smart parsing for non-JSON input on structured tools
+                                switch actTool.parameterSchema.smartParseAndValidate(input: input) {
+                                case .success(let args):
+                                    let out = try await executeWithTimeout(timeoutSeconds: toolTimeoutSeconds, toolName: actTool.name) {
+                                        try await actTool.executeStructured(arguments: args)
+                                    }
+                                    obs = out.text
+                                case .failure:
+                                    obs = try await executeWithTimeout(tool: actTool, input: input, timeoutSeconds: toolTimeoutSeconds)
                                 }
                             } else {
                                 obs = try await executeWithTimeout(tool: actTool, input: input, timeoutSeconds: toolTimeoutSeconds)
@@ -356,21 +462,25 @@ public actor ReActAgent {
         }
     }
 
-    /// Executes an agent tool with strict structured concurrency timeout protection.
-    private func executeWithTimeout(tool: any AgentTool, input: String, timeoutSeconds: Double) async throws -> String {
+    /// Executes an arbitrary async block with strict structured concurrency timeout protection.
+    private func executeWithTimeout<T: Sendable>(
+        timeoutSeconds: Double,
+        toolName: String,
+        operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
         guard timeoutSeconds > 0 else {
-            return try await tool.execute(input: input)
+            return try await operation()
         }
 
-        return try await withThrowingTaskGroup(of: String.self) { group in
+        return try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask {
-                try await tool.execute(input: input)
+                try await operation()
             }
 
             group.addTask {
                 let nanos = UInt64(timeoutSeconds * 1_000_000_000)
                 try await Task.sleep(nanoseconds: nanos)
-                throw AgentError.toolTimeout(tool: tool.name, seconds: timeoutSeconds)
+                throw AgentError.toolTimeout(tool: toolName, seconds: timeoutSeconds)
             }
 
             let result = try await group.next()!
@@ -379,14 +489,21 @@ public actor ReActAgent {
         }
     }
 
+    /// Executes an agent tool with strict structured concurrency timeout protection.
+    private func executeWithTimeout(tool: any AgentTool, input: String, timeoutSeconds: Double) async throws -> String {
+        try await executeWithTimeout(timeoutSeconds: timeoutSeconds, toolName: tool.name) {
+            try await tool.execute(input: input)
+        }
+    }
+
     /// Resolves tool by exact or fuzzy name matching (case/punctuation-insensitive).
     /// - Parameters:
     ///   - name: The exact or fuzzy name of the tool to locate.
     /// - Returns: The matching `AgentTool` instance, or `nil` if not found.
     public func findTool(named name: String) -> (any AgentTool)? {
-        if let direct = tools[name] { return direct }
-        let clean = name.lowercased()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = name.trimmingCharacters(in: CharacterSet(charactersIn: "`'\" ").union(.whitespacesAndNewlines))
+        if let direct = tools[trimmed] { return direct }
+        let clean = trimmed.lowercased()
             .replacingOccurrences(of: "_", with: "")
             .replacingOccurrences(of: "-", with: "")
             .replacingOccurrences(of: " ", with: "")

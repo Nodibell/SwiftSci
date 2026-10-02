@@ -110,9 +110,6 @@ struct ARIMATests {
         let expected0 = 10.0 + 2.5 * exogForecast[0][0]
         let expected1 = 10.0 + 2.5 * exogForecast[1][0]
         
-        print("DEBUG ARIMAX exogCoefficients: \(result.exogCoefficients)")
-        print("DEBUG ARIMAX predictions: \(result.forecast.predictions)")
-        print("DEBUG ARIMAX expected0: \(expected0), expected1: \(expected1)")
         
         #expect(result.exogCoefficients.count == 1)
         // Exogenous coefficient should be close to 2.5
@@ -122,5 +119,32 @@ struct ARIMATests {
         #expect(result.forecast.predictions.count == 2)
         #expect(abs(result.forecast.predictions[0] - expected0) < 1.0)
         #expect(abs(result.forecast.predictions[1] - expected1) < 1.0)
+    }
+
+    @Test("ARIMA AIC and BIC include exogenous coefficients in penalty (H-07)")
+    func testARIMAAICWithExog() async throws {
+        let n = 20
+        var series = [Double](repeating: 0.0, count: n)
+        var exog = [[Double]](repeating: [0.0], count: n)
+        for i in 0..<n {
+            let x = Double(i)
+            exog[i] = [x]
+            series[i] = 2.0 * x + 5.0
+        }
+
+        let arimaNoExog = try ARIMA(p: 1, d: 0, q: 0)
+        try await arimaNoExog.fit(series: series)
+        let aicNoExog = try await arimaNoExog.aic()
+        let bicNoExog = try await arimaNoExog.bic()
+
+        let arimaWithExog = try ARIMA(p: 1, d: 0, q: 0)
+        try await arimaWithExog.fit(series: series, exog: exog)
+        let aicWithExog = try await arimaWithExog.aic()
+        let bicWithExog = try await arimaWithExog.bic()
+
+        #expect(aicNoExog.isFinite)
+        #expect(bicNoExog.isFinite)
+        #expect(aicWithExog.isFinite)
+        #expect(bicWithExog.isFinite)
     }
 }

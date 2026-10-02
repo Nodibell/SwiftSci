@@ -128,7 +128,17 @@ public actor ExponentialSmoothing {
         var lower = [Double](repeating: 0.0, count: horizon)
         var upper = [Double](repeating: 0.0, count: horizon)
         for h in 0..<horizon {
-            let se = seBase * sqrt(1.0 + 0.08 * Double(h))
+            // H-06: Canonical analytical forecast variance formulas (Hyndman et al., 2008)
+            let H = Double(h + 1)
+            let factor: Double
+            switch method {
+            case .simple:
+                factor = 1.0 + (H - 1.0) * alpha * alpha
+            case .double, .holtWinters:
+                let term = alpha * alpha + alpha * beta * H + (1.0 / 6.0) * beta * beta * H * (2.0 * H - 1.0)
+                factor = 1.0 + (H - 1.0) * term
+            }
+            let se = seBase * sqrt(max(1.0, factor))
             lower[h] = preds[h] - z * se
             upper[h] = preds[h] + z * se
         }

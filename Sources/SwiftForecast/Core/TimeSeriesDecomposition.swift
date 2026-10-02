@@ -41,6 +41,9 @@ public enum TimeSeriesDecomposition {
         if series.contains(where: { $0.isInfinite }) {
             throw ForecastError.containsInfinity
         }
+        if model == .multiplicative && series.contains(where: { $0 <= 0.0 }) {
+            throw ForecastError.invalidInput("Multiplicative decomposition requires all series values to be strictly positive.")
+        }
         
         // 1. Compute Trend via Accelerate 1D FIR Convolution (vDSP_convD)
         var trend = [Double](repeating: Double.nan, count: n)
@@ -66,7 +69,12 @@ public enum TimeSeriesDecomposition {
         if model == .additive {
             vDSP.subtract(series, trend, result: &detrended)
         } else {
-            vDSP.divide(series, trend, result: &detrended)
+            for i in 0..<n {
+                if !trend[i].isNaN {
+                    let denom = abs(trend[i]) < 1e-8 ? (trend[i] >= 0 ? 1e-8 : -1e-8) : trend[i]
+                    detrended[i] = series[i] / denom
+                }
+            }
         }
 
         // 3. Compute Seasonal Component (average detrended for each period position)
@@ -78,7 +86,7 @@ public enum TimeSeriesDecomposition {
             var idx = p
             while idx < n {
                 let v = detrended[idx]
-                if !v.isNaN {
+                if v.isFinite {
                     let y = v - c
                     let t = sum + y
                     c = (t - sum) - y
@@ -99,8 +107,8 @@ public enum TimeSeriesDecomposition {
         if model == .additive {
             vDSP.add(-cycleMean, seasonalCycle, result: &seasonalCycle)
         } else {
-            guard cycleMean > 0 else {
-                throw ForecastError.convergenceFailed(iterations: 0)
+            guard cycleMean > 1e-8 else {
+                throw ForecastError.divisionByZero(context: "multiplicative seasonal cycle mean is non-positive or near zero")
             }
             vDSP.divide(seasonalCycle, cycleMean, result: &seasonalCycle)
         }
@@ -116,9 +124,21 @@ public enum TimeSeriesDecomposition {
         if model == .additive {
             vDSP.subtract(detrended, seasonal, result: &residual)
         } else {
-            var trendSeasonal = [Double](repeating: 0.0, count: n)
-            vDSP.multiply(trend, seasonal, result: &trendSeasonal)
-            vDSP.divide(series, trendSeasonal, result: &residual)
+            for i in 0..<n {
+                if !trend[i].isNaN {
+                    let ts = trend[i] * seasonal[i]
+                    let denom = abs(ts) < 1e-8 ? (ts >= 0 ? 1e-8 : -1e-8) : ts
+                    let val = series[i] / denom
+                    residual[i] = val.isFinite ? val : 1.0
+                }
+            }
+        }
+
+        // Ensure finite residuals on interior points (M-05)
+        for i in 0..<n {
+            if !trend[i].isNaN && !residual[i].isFinite {
+                throw ForecastError.containsInfinity
+            }
         }
         
         return DecompositionResult(
@@ -253,6 +273,15 @@ public enum TimeSeriesDecomposition {
         guard n > maxLag + 2 else {
             throw ForecastError.insufficientLength(minimum: maxLag + 3, got: n)
         }
+        if series.contains(where: { $0.isNaN }) {
+            throw ForecastError.containsNaN
+        }
+        if series.contains(where: { $0.isInfinite }) {
+            throw ForecastError.containsInfinity
+        }
+        guard maxLag >= 1 else {
+            throw ForecastError.invalidParameter("maxLag must be at least 1, got \(maxLag)")
+        }
         
         // 1. Difference the series once: dy = y_t - y_{t-1}
         var dy = [Double](repeating: 0.0, count: n - 1)
@@ -375,25 +404,23 @@ public enum TimeSeriesDecomposition {
         
         let tStat = beta[1] / seBeta1
         
-        // 5. Approximate p-value based on MacKinnon's tables for ADF test with constant
-        // For N=infinity, critical values are: 1%: -3.43, 5%: -2.86, 10%: -2.57
-        // Simple interpolation/logistic function for ADF p-value approximation:
+        // 5. Approximate p-value based on MacKinnon (1994) response surface regression for constant-only ADF
         let pVal: Double
-        if tStat <= -3.43 {
-            pVal = 0.01 * exp((tStat - (-3.43)) * 4.0)
-        } else if tStat <= -2.86 {
-            // Linear interpolation between 1% and 5%
-            pVal = 0.01 + (tStat - (-3.43)) / (-2.86 - (-3.43)) * 0.04
-        } else if tStat <= -2.57 {
-            // Linear interpolation between 5% and 10%
-            pVal = 0.05 + (tStat - (-2.86)) / (-2.57 - (-2.86)) * 0.05
+        if tStat > 2.74 {
+            pVal = 1.0
+        } else if tStat < -18.83 {
+            pVal = 0.0
         } else {
-            // Above 10%, map to [0.1, 1.0] using sigmoid-like curve
-            let diff = tStat - (-2.57)
-            pVal = 0.10 + 0.90 * (1.0 - exp(-diff * 1.5))
+            let z: Double
+            if tStat <= -1.61 {
+                z = 2.1659 + 1.4412 * tStat + 0.038269 * pow(tStat, 2)
+            } else {
+                z = 1.7339 + 0.93202 * tStat - 0.12745 * pow(tStat, 2) - 0.010368 * pow(tStat, 3)
+            }
+            pVal = Swift.max(0.0, Swift.min(1.0, 0.5 * (1.0 + erf(z / sqrt(2.0)))))
         }
         
-        return (tStat, Swift.max(0.0, Swift.min(1.0, pVal)))
+        return (tStat, pVal)
     }
 
     /// Computes moving average using Accelerate 1D FIR Convolution (vDSP_convD).
@@ -435,10 +462,20 @@ public enum TimeSeriesDecomposition {
     ) throws -> DecompositionResult {
         let n = series.count
         guard n >= 8 else { throw ForecastError.insufficientLength(minimum: 8, got: n) }
+        if series.contains(where: { $0.isNaN }) {
+            throw ForecastError.containsNaN
+        }
+        if series.contains(where: { $0.isInfinite }) {
+            throw ForecastError.containsInfinity
+        }
 
         // Pad to power of 2 for optimal FFT
         let log2n = vDSP_Length(ceil(log2(Double(n))))
         let fftSize = 1 << Int(log2n)
+
+        guard topKComponents >= 1 && topKComponents <= fftSize / 2 else {
+            throw ForecastError.invalidParameter("topKComponents must be between 1 and \(fftSize / 2), got \(topKComponents)")
+        }
 
         var realInput = series + [Double](repeating: 0.0, count: fftSize - n)
         var imagInput = [Double](repeating: 0.0, count: fftSize)
@@ -465,7 +502,7 @@ public enum TimeSeriesDecomposition {
             }
         }
 
-        // Reconstruct seasonal signal from top K spectral peaks
+        // Reconstruct seasonal signal from top K spectral peaks with conjugate symmetry (C-04, M-07)
         var seasonalReal = [Double](repeating: 0.0, count: fftSize)
         var seasonalImag = [Double](repeating: 0.0, count: fftSize)
 
@@ -474,10 +511,13 @@ public enum TimeSeriesDecomposition {
 
         seasonalReal.withUnsafeMutableBufferPointer { sRealBuf in
             seasonalImag.withUnsafeMutableBufferPointer { sImagBuf in
-                for i in 0..<(fftSize / 2) {
-                    if topIndices.contains(i) {
-                        sRealBuf[i] = realInput[i]
-                        sImagBuf[i] = imagInput[i]
+                for i in topIndices {
+                    sRealBuf[i] = realInput[i]
+                    sImagBuf[i] = imagInput[i]
+                    let mirrorIdx = fftSize - i
+                    if mirrorIdx < fftSize && mirrorIdx != i {
+                        sRealBuf[mirrorIdx] = realInput[i]
+                        sImagBuf[mirrorIdx] = -imagInput[i]
                     }
                 }
 

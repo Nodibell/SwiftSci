@@ -197,6 +197,90 @@ public struct TreeSHAP: Sendable {
         return explain(trees: flatTrees, instance: instance, numFeatures: instance.count)
     }
 
+    // MARK: - Concurrent Batch TreeSHAP
+
+    /// Computes exact Shapley values concurrently for a batch of input instances across CPU cores.
+    ///
+    /// Evaluates instances in parallel without truncating or slicing the background dataset.
+    /// - Parameters:
+    ///   - trees: Array of trees, where each tree is `[FlatTreeNode]`.
+    ///   - instances: Matrix of feature vectors `[numInstances][numFeatures]`.
+    ///   - numFeatures: Total number of features.
+    /// - Returns: Matrix of exact Shapley values `[numInstances][numFeatures]`.
+    public func explainBatch(
+        trees: [[FlatTreeNode]],
+        instances: [[Double]],
+        numFeatures: Int
+    ) async -> [[Double]] {
+        guard !instances.isEmpty else { return [] }
+        guard !trees.isEmpty else {
+            return [[Double]](repeating: [Double](repeating: 0.0, count: numFeatures), count: instances.count)
+        }
+
+        var results = [[Double]](repeating: [], count: instances.count)
+
+        if instances.count <= 4 {
+            for (idx, instance) in instances.enumerated() {
+                results[idx] = explain(trees: trees, instance: instance, numFeatures: numFeatures)
+            }
+            return results
+        }
+
+        await withTaskGroup(of: (Int, [Double]).self) { group in
+            for (idx, instance) in instances.enumerated() {
+                group.addTask {
+                    let phi = self.explain(trees: trees, instance: instance, numFeatures: numFeatures)
+                    return (idx, phi)
+                }
+            }
+            for await (idx, phi) in group {
+                results[idx] = phi
+            }
+        }
+
+        return results
+    }
+
+    /// Computes TreeSHAP feature attributions concurrently for a batch of instances with a `DecisionTreeClassifier`.
+    public func explainBatch(
+        decisionTree: DecisionTreeClassifier,
+        instances: [[Double]]
+    ) async -> [[Double]] {
+        guard let first = instances.first else { return [] }
+        let nodes = await decisionTree.flatNodes
+        return await explainBatch(trees: [nodes], instances: instances, numFeatures: first.count)
+    }
+
+    /// Computes TreeSHAP feature attributions concurrently for a batch of instances with a `DecisionTreeRegressor`.
+    public func explainBatch(
+        decisionTree: DecisionTreeRegressor,
+        instances: [[Double]]
+    ) async -> [[Double]] {
+        guard let first = instances.first else { return [] }
+        let nodes = await decisionTree.flatNodes
+        return await explainBatch(trees: [nodes], instances: instances, numFeatures: first.count)
+    }
+
+    /// Computes TreeSHAP feature attributions concurrently for a batch of instances with a `RandomForestClassifier`.
+    public func explainBatch(
+        randomForest: RandomForestClassifier,
+        instances: [[Double]]
+    ) async -> [[Double]] {
+        guard let first = instances.first else { return [] }
+        let flatTrees = await randomForest.flatTrees
+        return await explainBatch(trees: flatTrees, instances: instances, numFeatures: first.count)
+    }
+
+    /// Computes TreeSHAP feature attributions concurrently for a batch of instances with a `RandomForestRegressor`.
+    public func explainBatch(
+        randomForest: RandomForestRegressor,
+        instances: [[Double]]
+    ) async -> [[Double]] {
+        guard let first = instances.first else { return [] }
+        let flatTrees = await randomForest.flatTrees
+        return await explainBatch(trees: flatTrees, instances: instances, numFeatures: first.count)
+    }
+
     // MARK: - Blackbox Model Fallback (KernelSHAP Delegation)
 
     /// Explains predictions of any model by calculating Shapley values for each instance against background data via KernelSHAP.

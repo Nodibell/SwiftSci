@@ -32,11 +32,32 @@ public enum ObservableDictionary: Sendable {
                         features.append(pow(x[i], Double(p)))
                     }
                 }
-                // Pairwise cross terms
+                // M-11: Full monomial cross-terms
                 if includeCrossTerms && d > 1 {
+                    // Degree 2 cross terms: x_i * x_j
                     for i in 0..<d {
                         for j in (i + 1)..<d {
                             features.append(x[i] * x[j])
+                        }
+                    }
+                    if degree >= 3 {
+                        // Degree 3 cross terms: x_i^2 * x_j
+                        for i in 0..<d {
+                            for j in 0..<d {
+                                if i != j {
+                                    features.append(x[i] * x[i] * x[j])
+                                }
+                            }
+                        }
+                        // Degree 3 triple cross terms: x_i * x_j * x_k
+                        if d > 2 {
+                            for i in 0..<d {
+                                for j in (i + 1)..<d {
+                                    for k in (j + 1)..<d {
+                                        features.append(x[i] * x[j] * x[k])
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -47,10 +68,12 @@ public enum ObservableDictionary: Sendable {
             var features = x
             for center in centers {
                 var distSq = 0.0
-                let count = min(x.count, center.count)
-                for i in 0..<count {
-                    let diff = x[i] - center[i]
-                    distSq += diff * diff
+                let count = center.count
+                if count == x.count {
+                    for i in 0..<count {
+                        let diff = x[i] - center[i]
+                        distSq += diff * diff
+                    }
                 }
                 features.append(exp(-gamma * distSq))
             }
@@ -163,6 +186,27 @@ public actor KoopmanOperator {
             if state.contains(where: { $0.isNaN }) { throw ForecastError.containsNaN }
             if state.contains(where: { $0.isInfinite }) { throw ForecastError.containsInfinity }
         }
+
+        // M-10: Strict RBF center dimension validation
+        func validateRBFDimension(_ dict: ObservableDictionary, expectedDim: Int) throws {
+            switch dict {
+            case .rbf(let centers, _):
+                for center in centers {
+                    guard center.count == expectedDim else {
+                        throw ForecastError.matrixDimensionMismatch(
+                            expectedRows: expectedDim, expectedCols: 1, gotRows: center.count, gotCols: 1
+                        )
+                    }
+                }
+            case .combined(let children):
+                for child in children {
+                    try validateRBFDimension(child, expectedDim: expectedDim)
+                }
+            default:
+                break
+            }
+        }
+        try validateRBFDimension(dictionary, expectedDim: d)
 
         let numSnapshots = N - 1
         let samplePsi = dictionary.evaluate(x: trajectory[0])

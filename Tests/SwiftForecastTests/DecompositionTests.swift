@@ -165,4 +165,85 @@ struct DecompositionTests {
             try TimeSeriesDecomposition.fftDecompose(series: [1.0, 2.0], topKComponents: 1)
         }
     }
+
+    @Test("FFT Hermitian conjugate symmetry preserves exact harmonic amplitude (C-04, M-07)")
+    func testFFTHermitianConjugateSymmetry() throws {
+        let n = 32
+        let pureSinusoid: [Double] = (0..<n).map { t in
+            sin(2.0 * .pi * Double(t) / 8.0)
+        }
+
+        let result = try TimeSeriesDecomposition.fftDecompose(series: pureSinusoid, topKComponents: 1)
+        
+        #expect(result.seasonal.count == n)
+        // With Hermitian conjugate symmetry, amplitude is strictly 1.0 (not 0.5)
+        for t in 0..<n {
+            let expected = sin(2.0 * .pi * Double(t) / 8.0)
+            #expect(abs(result.seasonal[t] - expected) < 1e-10)
+        }
+    }
+
+    @Test("FFT decomposition parameter validation (M-06)")
+    func testFFTValidation() throws {
+        let series = [Double](repeating: 1.0, count: 16)
+        
+        // topKComponents < 1
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.fftDecompose(series: series, topKComponents: 0)
+        }
+        
+        // topKComponents > fftSize / 2 (for n=16, fftSize=16, max is 8)
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.fftDecompose(series: series, topKComponents: 10)
+        }
+
+        // NaN & Inf validation
+        var nanSeries = series
+        nanSeries[5] = Double.nan
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.fftDecompose(series: nanSeries, topKComponents: 2)
+        }
+        
+        var infSeries = series
+        infSeries[5] = Double.infinity
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.fftDecompose(series: infSeries, topKComponents: 2)
+        }
+    }
+
+    @Test("Multiplicative decomposition strictly positive validation (H-13, M-05)")
+    func testMultiplicativeStrictlyPositive() throws {
+        // Series with zero
+        let zeroSeries = [1.0, 2.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.decompose(series: zeroSeries, period: 2, model: .multiplicative)
+        }
+
+        // Series with negative value
+        let negSeries = [1.0, 2.0, -1.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.decompose(series: negSeries, period: 2, model: .multiplicative)
+        }
+    }
+
+    @Test("ADF test validation and MacKinnon calibration (H-14)")
+    func testADFValidation() throws {
+        let validSeries: [Double] = (0..<20).map { Double($0) }
+        
+        var nanSeries = validSeries
+        nanSeries[3] = Double.nan
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.adfTest(series: nanSeries, maxLag: 1)
+        }
+
+        var infSeries = validSeries
+        infSeries[3] = Double.infinity
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.adfTest(series: infSeries, maxLag: 1)
+        }
+
+        #expect(throws: ForecastError.self) {
+            try TimeSeriesDecomposition.adfTest(series: validSeries, maxLag: 0)
+        }
+    }
 }

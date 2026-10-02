@@ -117,4 +117,24 @@ struct TimeSeriesAnomalyDetectorTests {
         let result = TimeSeriesAnomalyDetector.detectAnomalies(series: series)
         #expect(result.anomalies.allSatisfy { !$0.isAnomaly })
     }
+
+    @Test("SeasonalResidualMADDetector typealias functions identically (M-08)")
+    func testMADDetectorAlias() {
+        var series = [Double](repeating: 2.0, count: 30)
+        series[15] = 200.0
+        let result = SeasonalResidualMADDetector.detectAnomalies(series: series, thresholdZ: 2.5)
+        #expect(result.anomalyIndices.contains(15))
+    }
+
+    @Test("Parameter bounds validation and clamping (M-09)")
+    func testParameterClamping() {
+        let series = [Double](repeating: 2.0, count: 20)
+        // Pass out-of-range ratio and negative threshold; should clamp gracefully without crashing
+        let result = TimeSeriesAnomalyDetector.detectAnomalies(
+            series: series,
+            maxAnomaliesRatio: -0.5,
+            thresholdZ: -2.0
+        )
+        #expect(result.anomalies.count == 20)
+    }
 }

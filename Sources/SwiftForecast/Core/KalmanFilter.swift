@@ -24,16 +24,22 @@ public actor KalmanFilter {
 
     private var x: [Double] = [] // State estimate mean vector (stateSize)
     private var P: [Double] = [] // State estimate covariance (stateSize x stateSize)
+    private var x0: [Double] = [] // Initial state mean vector (stateSize)
+    private var P0: [Double] = [] // Initial state covariance (stateSize x stateSize)
     private var isInitialized = false
 
     /// Creates a new KalmanFilter instance.
     /// - Parameters:
     ///   - stateSize: Dimension of the state vector.
     ///   - observationSize: Dimension of the observation vector.
-    /// - Throws: `ForecastError.invalidAROrder` / `invalidMAOrder` if dimensions <= 0.
+    /// - Throws: `ForecastError.invalidParameter` if dimensions <= 0.
     public init(stateSize: Int, observationSize: Int) throws {
-        guard stateSize > 0 else { throw ForecastError.invalidAROrder(stateSize) }
-        guard observationSize > 0 else { throw ForecastError.invalidMAOrder(observationSize) }
+        guard stateSize > 0 else {
+            throw ForecastError.invalidParameter("KalmanFilter stateSize must be > 0, got \(stateSize)")
+        }
+        guard observationSize > 0 else {
+            throw ForecastError.invalidParameter("KalmanFilter observationSize must be > 0, got \(observationSize)")
+        }
         self.stateSize = stateSize
         self.observationSize = observationSize
     }
@@ -87,8 +93,10 @@ public actor KalmanFilter {
             )
         }
         try validateMatrixDimensions(covariance, expectedRows: stateSize, expectedCols: stateSize)
+        self.x0 = mean
+        self.P0 = flatten(covariance)
         self.x = mean
-        self.P = flatten(covariance)
+        self.P = self.P0
         self.isInitialized = true
     }
 
@@ -114,6 +122,10 @@ public actor KalmanFilter {
         let FT = transposeFlat(F, rows: n, cols: n)
         let HT = transposeFlat(H, rows: m, cols: n)
         let I = identityFlat(n)
+
+        // H-11: Deterministic forward filtering starting from initial conditions
+        self.x = self.x0
+        self.P = self.P0
 
         for z in observations {
             guard z.count == m else {
@@ -188,7 +200,10 @@ public actor KalmanFilter {
         let HT = transposeFlat(H, rows: m, cols: n)
         let I = identityFlat(n)
 
-        // Forward pass
+        // Forward pass starting from initial conditions (H-11)
+        var curX = self.x0
+        var curP = self.P0
+
         var xFilt: [[Double]] = []
         var PFilt: [[Double]] = []
         var xPred: [[Double]] = []
@@ -200,8 +215,16 @@ public actor KalmanFilter {
         PPred.reserveCapacity(nObs)
 
         for z in observations {
-            let xp = matVecMulFlat(F, rows: n, cols: n, vec: x)
-            let FP = matMulFlat(F, rA: n, cA: n, P, rB: n, cB: n)
+            // H-12: Observation dimension validation
+            guard z.count == m else {
+                throw ForecastError.matrixDimensionMismatch(
+                    expectedRows: m, expectedCols: 1,
+                    gotRows: z.count, gotCols: 1
+                )
+            }
+
+            let xp = matVecMulFlat(F, rows: n, cols: n, vec: curX)
+            let FP = matMulFlat(F, rA: n, cA: n, curP, rB: n, cB: n)
             let FPFT = matMulFlat(FP, rA: n, cA: n, FT, rB: n, cB: n)
             let Pp = vecAddFlat(FPFT, Q)
 
@@ -218,7 +241,7 @@ public actor KalmanFilter {
             let K = matMulFlat(PHT, rA: n, cA: m, SInv, rB: m, cB: m)
 
             let Ky = matVecMulFlat(K, rows: n, cols: m, vec: y)
-            self.x = vecAddFlat(xp, Ky)
+            curX = vecAddFlat(xp, Ky)
 
             let KH = matMulFlat(K, rA: n, cA: m, H, rB: m, cB: n)
             let IMinusKH = vecSubFlat(I, KH)
@@ -228,10 +251,10 @@ public actor KalmanFilter {
             let KR = matMulFlat(K, rA: n, cA: m, R, rB: m, cB: m)
             let KT = transposeFlat(K, rows: n, cols: m)
             let term2 = matMulFlat(KR, rA: n, cA: m, KT, rB: m, cB: n)
-            self.P = vecAddFlat(term1, term2)
+            curP = vecAddFlat(term1, term2)
 
-            xFilt.append(self.x)
-            PFilt.append(self.P)
+            xFilt.append(curX)
+            PFilt.append(curP)
         }
 
         // Backward pass

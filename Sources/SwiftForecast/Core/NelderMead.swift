@@ -37,6 +37,14 @@ public struct NelderMead: Sendable {
         let n = initialGuess.count
         guard n > 0 else { return initialGuess }
         
+        // M-01: Validate bounds dimensions if provided
+        if let lb = lowerBounds {
+            guard lb.count == n else { return initialGuess }
+        }
+        if let ub = upperBounds {
+            guard ub.count == n else { return initialGuess }
+        }
+        
         let clamp = { (v: [Double]) -> [Double] in
             var res = v
             for i in 0..<n {
@@ -53,11 +61,36 @@ public struct NelderMead: Sendable {
         let sigma = 0.5   // Shrink
         
         // Construct initial simplex with (n + 1) vertices
-        var simplex: [[Double]] = [clamp(initialGuess)]
+        // M-02: Prevent simplex collapse when initialGuess is on or near bounds
+        let baseVertex = clamp(initialGuess)
+        var simplex: [[Double]] = [baseVertex]
         for i in 0..<n {
-            var vertex = initialGuess
-            let step = abs(vertex[i]) > 1e-4 ? vertex[i] * 0.05 : 0.00025
+            var vertex = baseVertex
+            var step = abs(vertex[i]) > 1e-4 ? vertex[i] * 0.05 : 0.00025
+            
+            // Check if forward step exceeds upper bound
+            if let ub = upperBounds?[i], vertex[i] + step > ub {
+                step = -step
+            }
+            // Check if backward step breaches lower bound
+            if let lb = lowerBounds?[i], vertex[i] + step < lb {
+                if let ub = upperBounds?[i], ub > lb {
+                    step = (ub - lb) * 0.1
+                    vertex[i] = lb
+                } else {
+                    step = 0.0
+                }
+            }
             vertex[i] += step
+            
+            // Enforce distinct vertex from baseVertex
+            if vertex[i] == baseVertex[i] {
+                if let lb = lowerBounds?[i], let ub = upperBounds?[i], ub > lb {
+                    vertex[i] = (baseVertex[i] >= ub - 1e-6) ? ub - (ub - lb) * 0.05 : lb + (ub - lb) * 0.05
+                } else {
+                    vertex[i] = baseVertex[i] + 0.001
+                }
+            }
             simplex.append(clamp(vertex))
         }
         

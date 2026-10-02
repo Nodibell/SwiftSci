@@ -13,9 +13,54 @@ public enum SilhouetteScore {
     /// - Parameters:
     ///   - features: 2D array of feature values `[numSamples][numFeatures]`.
     ///   - labels: Array of integer cluster assignments for each sample.
+    ///   - ignoreNoise: When `true`, points labeled `-1` (e.g. DBSCAN noise) are excluded from the
+    ///     core silhouette calculation and the resulting score is scaled by `(1 - noiseRatio)`.
     /// - Returns: Mean Silhouette Coefficient across all samples, in range `[-1.0, 1.0]`.
-    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Throws: `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    public static func compute(features: [[Double]], labels: [Int], ignoreNoise: Bool) throws -> Double {
+        if !ignoreNoise {
+            return try computeStandard(features: features, labels: labels)
+        }
+
+        let n = features.count
+        guard n > 1 else { return 0.0 }
+        guard n == labels.count else {
+            throw ClusterError.invalidInput("Features count (\(n)) must match labels count (\(labels.count)).")
+        }
+
+        var nonNoiseFeatures: [[Double]] = []
+        var nonNoiseLabels: [Int] = []
+        var noiseCount = 0
+
+        for i in 0..<n {
+            if labels[i] == -1 {
+                noiseCount += 1
+            } else {
+                nonNoiseFeatures.append(features[i])
+                nonNoiseLabels.append(labels[i])
+            }
+        }
+
+        let uniqueClusters = Set(nonNoiseLabels)
+        guard uniqueClusters.count > 1 else {
+            return 0.0
+        }
+
+        let baseSilhouette = try computeStandard(features: nonNoiseFeatures, labels: nonNoiseLabels)
+        let noiseRatio = Double(noiseCount) / Double(n)
+        return baseSilhouette * (1.0 - noiseRatio)
+    }
+
+    /// Computes the mean Silhouette Coefficient for a dataset given feature matrix and cluster labels.
+    /// - Parameters:
+    ///   - features: 2D array of feature values `[numSamples][numFeatures]`.
+    ///   - labels: Array of integer cluster assignments for each sample.
+    /// - Returns: Mean Silhouette Coefficient across all samples, in range `[-1.0, 1.0]`.
     public static func compute(features: [[Double]], labels: [Int]) throws -> Double {
+        try compute(features: features, labels: labels, ignoreNoise: false)
+    }
+
+    private static func computeStandard(features: [[Double]], labels: [Int]) throws -> Double {
         let n = features.count
         guard n > 1 else { return 0.0 }
         guard n == labels.count else {

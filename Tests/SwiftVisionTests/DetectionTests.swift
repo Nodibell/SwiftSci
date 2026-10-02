@@ -216,7 +216,7 @@ struct DetectionTests {
         }
     }
 
-    @Test("Empirical mAP reference fixture: validates exact VOC/COCO precision envelope, duplicates, and IoU thresholds")
+    @Test("Precision-envelope AP reference fixture with duplicate detections and IoU thresholds")
     func testMAPReferenceFixtureWithEnvelopeAndDuplicates() throws {
         // Ground truth: 5 objects of class "target"
         let gt0 = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 1.0, classLabel: "target")
@@ -322,8 +322,9 @@ struct DetectionTests {
 
         // Cat is perfectly detected -> AP = 1.0
         #expect(metrics.perClassAP50["cat"] == 1.0)
-        // Dog has 0 GT instances -> AP = 0.0
-        #expect(metrics.perClassAP50["dog"] == 0.0)
+        // Dog has 0 GT instances -> excluded from perClassAP50, tracked in predictionOnlyClasses
+        #expect(metrics.perClassAP50["dog"] == nil)
+        #expect(metrics.predictionOnlyClasses == ["dog"])
 
         // Crucial test: mAP is averaged strictly across GT classes (1 class: cat) -> mAP = 1.0 / 1 = 1.0!
         // It must NOT be (1.0 + 0.0) / 2 = 0.5!

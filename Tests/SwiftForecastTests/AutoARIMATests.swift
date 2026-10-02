@@ -186,4 +186,39 @@ struct AutoARIMATests {
         #expect(!AutoARIMA.isPolynomialStable(coefficients: [1.5, 0.5]))  // phi1 + phi2 = 2.0 > 1 (unstable)
         #expect(!AutoARIMA.isPolynomialStable(coefficients: [0.5, 1.2]))  // |phi2| = 1.2 > 1 (unstable)
     }
+
+    @Test("AutoARIMA seasonal reference validation: synthetic seasonal process selects SARIMA with period matching seasonal waveform")
+    func testAutoARIMASARIMASyntheticReference() async throws {
+        // Strong seasonal repeating pattern s=4: [12.0, -8.0, 16.0, -10.0] around base 50.0
+        let s = 4
+        let n = 48
+        let pattern = [12.0, -8.0, 16.0, -10.0]
+        var series = [Double](repeating: 0.0, count: n)
+        for t in 0..<n {
+            series[t] = 50.0 + pattern[t % s]
+        }
+
+        let autoArima = try AutoARIMA(
+            maxP: 1, maxD: 0, maxQ: 0,
+            seasonal: true, seasonalPeriod: 4,
+            maxSeasonalP: 1, maxSeasonalD: 0, maxSeasonalQ: 0,
+            criterion: .aic
+        )
+        _ = try await autoArima.fit(series: series)
+        let bestOrder = await autoArima.bestOrder
+        #expect(bestOrder != nil)
+        #expect(bestOrder?.s == 4)
+
+        let fc = try await autoArima.forecast(horizon: 4)
+        let preds = fc.forecast.predictions
+        #expect(preds.count == 4)
+        // Verify forecasted seasonal waveform captures high phases vs low phases:
+        // High phases (steps 0 & 2) significantly exceed baseline (50.0), while low phases (steps 1 & 3) fall well below
+        #expect(preds[0] > 55.0)
+        #expect(preds[2] > 55.0)
+        #expect(preds[1] < 45.0)
+        #expect(preds[3] < 45.0)
+        #expect(preds[0] > preds[1])
+        #expect(preds[2] > preds[3])
+    }
 }

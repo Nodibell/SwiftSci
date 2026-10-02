@@ -99,6 +99,10 @@ public actor AutoARIMA {
     public let criterion: AutoARIMACriterion
 
     /// Maximum number of candidate models evaluated in order search (prevents infinite loops and task starvation).
+    ///
+    /// > Important: Candidate orders are sorted by parsimonious model complexity (\(p+d+q+P+D+Q\)),
+    /// > so `maxCandidates` heuristically truncates the search space to the \(N\) simplest candidate models
+    /// > rather than performing a random subsampling or exhaustive evaluation of the entire grid.
     public let maxCandidates: Int
 
     /// Deprecated backwards-compatible alias for `maxCandidates`.
@@ -139,7 +143,9 @@ public actor AutoARIMA {
     ///   - maxSeasonalP: Maximum seasonal autoregressive order \(P\). Default is `1`.
     ///   - maxSeasonalD: Maximum seasonal differencing order \(D\). Default is `1`.
     ///   - maxSeasonalQ: Maximum seasonal moving average order \(Q\). Default is `1`.
-    ///   - maxCandidates: Maximum number of candidate models evaluated in order search. Default is `100`.
+    ///   - maxCandidates: Maximum number of candidate models evaluated. The candidate grid is
+    ///     ordered by parsimony (\(p+d+q+P+D+Q\)), and this parameter truncates evaluation to the
+    ///     first `maxCandidates` simplest models (heuristic parsimonious truncation). Default is `100`.
     ///   - criterion: Information criterion for scoring (`.aic` or `.bic`). Default is `.aic`.
     /// - Throws: `ForecastError` if configuration bounds or orders are invalid.
     public init(
@@ -244,6 +250,10 @@ public actor AutoARIMA {
     // MARK: - Public Methods
 
     /// Discovers optimal ARIMA/SARIMA order hyperparameters via concurrent AIC/BIC grid evaluation.
+    ///
+    /// > Note: Candidate orders are sorted by parsimonious complexity (\(p+d+q+P+D+Q\)).
+    /// > If `maxCandidates` is set below the total grid size, search evaluates the simplest `maxCandidates`
+    /// > configurations (heuristic parsimonious truncation).
     ///
     /// ## Concurrency Management
     /// Evaluates order candidates concurrently across thread pools via structured `withThrowingTaskGroup`.

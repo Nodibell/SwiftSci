@@ -14,8 +14,10 @@ public struct DetectionMetrics: Sendable, Codable, Equatable {
     public let recall: Double
     /// Overall harmonic mean F1-score at IoU = 0.50.
     public let f1: Double
-    /// Per-class Average Precision scores at IoU = 0.50.
+    /// Per-class Average Precision scores at IoU = 0.50 strictly for evaluated ground-truth target classes.
     public let perClassAP50: [String: Double]
+    /// Labels predicted by candidate detections that do not exist in ground-truth labels (all treated as false positives).
+    public let predictionOnlyClasses: [String]
     /// Total number of ground-truth target bounding boxes across the dataset.
     public let totalGroundTruths: Int
     /// Total number of predicted candidate bounding boxes evaluated.
@@ -32,6 +34,7 @@ public struct DetectionMetrics: Sendable, Codable, Equatable {
         recall: Double,
         f1: Double,
         perClassAP50: [String: Double],
+        predictionOnlyClasses: [String] = [],
         totalGroundTruths: Int,
         totalDetections: Int,
         summary: String
@@ -43,6 +46,7 @@ public struct DetectionMetrics: Sendable, Codable, Equatable {
         self.recall = recall
         self.f1 = f1
         self.perClassAP50 = perClassAP50
+        self.predictionOnlyClasses = predictionOnlyClasses
         self.totalGroundTruths = totalGroundTruths
         self.totalDetections = totalDetections
         self.summary = summary
@@ -81,7 +85,7 @@ public enum ObjectDetectionEvaluator {
         guard numImages > 0 else {
             return DetectionMetrics(
                 map50: 0.0, map50_95: 0.0, meanIoU: 0.0, precision: 0.0, recall: 0.0, f1: 0.0,
-                perClassAP50: [:], totalGroundTruths: 0, totalDetections: 0,
+                perClassAP50: [:], predictionOnlyClasses: [], totalGroundTruths: 0, totalDetections: 0,
                 summary: "Empty dataset: 0 images evaluated."
             )
         }
@@ -105,7 +109,7 @@ public enum ObjectDetectionEvaluator {
         guard totalGT > 0 || totalPred > 0 else {
             return DetectionMetrics(
                 map50: 0.0, map50_95: 0.0, meanIoU: 0.0, precision: 0.0, recall: 0.0, f1: 0.0,
-                perClassAP50: [:], totalGroundTruths: 0, totalDetections: 0,
+                perClassAP50: [:], predictionOnlyClasses: [], totalGroundTruths: 0, totalDetections: 0,
                 summary: "No labeled objects or detections in dataset across \(numImages) image(s)."
             )
         }
@@ -113,7 +117,7 @@ public enum ObjectDetectionEvaluator {
         guard !gtClasses.isEmpty else {
             return DetectionMetrics(
                 map50: 0.0, map50_95: 0.0, meanIoU: 0.0, precision: 0.0, recall: 0.0, f1: 0.0,
-                perClassAP50: [:], totalGroundTruths: 0, totalDetections: totalPred,
+                perClassAP50: [:], predictionOnlyClasses: Array(allPredClasses).sorted(), totalGroundTruths: 0, totalDetections: totalPred,
                 summary: "No ground-truth target objects in dataset (\(totalPred) false-positive detections across \(numImages) image(s))."
             )
         }
@@ -140,18 +144,17 @@ public enum ObjectDetectionEvaluator {
 
         // Account for prediction-only classes: classes predicted by the model that have zero ground truth instances.
         // Every detection in a prediction-only class is a False Positive, penalizing overall precision without deflating mAP denominator.
-        let predictionOnlyClasses = allPredClasses.subtracting(gtClasses)
-        for className in predictionOnlyClasses.sorted() {
+        let predictionOnlyClasses = Array(allPredClasses.subtracting(gtClasses)).sorted()
+        for className in predictionOnlyClasses {
             var classPredCount = 0
             for preds in predictions {
                 classPredCount += preds.filter { $0.classLabel == className }.count
             }
             totalFP50 += classPredCount
-            perClassAP50[className] = 0.0
         }
 
         // Mean Average Precision is averaged strictly across ground-truth benchmark classes
-        let map50 = perClassAP50.filter { gtClasses.contains($0.key) }.values.reduce(0.0, +) / Double(gtClasses.count)
+        let map50 = perClassAP50.values.reduce(0.0, +) / Double(gtClasses.count)
         let meanIoU = allMatchedIoUs.isEmpty ? 0.0 : allMatchedIoUs.reduce(0.0, +) / Double(allMatchedIoUs.count)
 
         // Precision & Recall at IoU = 0.50
@@ -179,7 +182,10 @@ public enum ObjectDetectionEvaluator {
         }
         let map50_95 = mapSteps.isEmpty ? 0.0 : mapSteps.reduce(0.0, +) / Double(mapSteps.count)
 
-        let summary = "Object Detection mAP@50: \(String(format: "%.1f%%", map50 * 100)) | mAP@50:95: \(String(format: "%.1f%%", map50_95 * 100)) | Precision: \(String(format: "%.1f%%", precision * 100)) | Recall: \(String(format: "%.1f%%", recall * 100)) | Mean IoU: \(String(format: "%.3f", meanIoU)) across \(numImages) image(s) (\(totalPred) detections, \(totalGT) ground truths)."
+        var summary = "Object Detection mAP@50: \(String(format: "%.1f%%", map50 * 100)) | mAP@50:95: \(String(format: "%.1f%%", map50_95 * 100)) | Precision: \(String(format: "%.1f%%", precision * 100)) | Recall: \(String(format: "%.1f%%", recall * 100)) | Mean IoU: \(String(format: "%.3f", meanIoU)) across \(numImages) image(s) (\(totalPred) detections, \(totalGT) ground truths)."
+        if !predictionOnlyClasses.isEmpty {
+            summary += " Prediction-only classes: [\(predictionOnlyClasses.joined(separator: ", "))]."
+        }
 
         return DetectionMetrics(
             map50: map50,
@@ -189,6 +195,7 @@ public enum ObjectDetectionEvaluator {
             recall: recall,
             f1: f1,
             perClassAP50: perClassAP50,
+            predictionOnlyClasses: predictionOnlyClasses,
             totalGroundTruths: totalGT,
             totalDetections: totalPred,
             summary: summary

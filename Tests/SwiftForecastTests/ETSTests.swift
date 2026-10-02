@@ -164,4 +164,34 @@ struct ETSTests {
         // At long horizons, linear forecasts strictly exceed damped forecasts
         #expect(linearForecast[19] > dampedForecast[19])
     }
+
+    @Test("ETSModel autoFit reference validation on synthetic additive trend + seasonal process")
+    func testETSAutoFitReferenceAdditiveSeasonal() async throws {
+        let period = 4
+        let seasons = [15.0, -10.0, 25.0, -20.0]
+        var series = [Double]()
+        for t in 0..<32 {
+            let val = 100.0 + Double(t) * 3.0 + seasons[t % period]
+            series.append(val)
+        }
+
+        let model = try await ETSModel.autoFit(series: series, period: period)
+        let chosenSeasonal = await model.seasonalType
+        let chosenTrend = await model.trendType
+
+        // An additive trend + seasonal series should select seasonal and trend components
+        #expect(chosenSeasonal != .none)
+        #expect(chosenTrend != .none)
+
+        // Out-of-sample forecast should preserve seasonal waveform and trend direction
+        let fc = try await model.forecast(steps: 4)
+        #expect(fc.count == 4)
+        // Check directional trend
+        #expect(fc.last! > series.last!)
+        // Check relative peak vs trough:
+        // Since t=32 % 4 == 0: step 0 has season 15.0, step 1 has -10.0, step 2 has 25.0, step 3 has -20.0
+        #expect(fc[2] > fc[0])
+        #expect(fc[0] > fc[1])
+        #expect(fc[1] > fc[3])
+    }
 }

@@ -102,4 +102,20 @@ struct EvaluationHarnessTests {
             _ = try EvaluationHarness.evaluateRegression(yTrue: [1.0, 2.0], yPred: [1.0])
         }
     }
+
+    @Test("evaluateRegression rejects invalid numFeatures parameters")
+    func testRegressionNumFeaturesValidation() {
+        // n = 4, p = 3 -> n not > p + 1 (4 not > 4) -> throws
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateRegression(yTrue: [1.0, 2.0, 3.0, 4.0], yPred: [1.1, 1.9, 3.1, 3.9], numFeatures: 3)
+        }
+        // p <= 0 -> throws
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateRegression(yTrue: [1.0, 2.0, 3.0, 4.0], yPred: [1.1, 1.9, 3.1, 3.9], numFeatures: 0)
+        }
+        // n = 4, p = 1 -> n > p + 1 (4 > 2) -> valid
+        #expect(throws: Never.self) {
+            _ = try EvaluationHarness.evaluateRegression(yTrue: [1.0, 2.0, 3.0, 4.0], yPred: [1.1, 1.9, 3.1, 3.9], numFeatures: 1)
+        }
+    }
 }

@@ -127,12 +127,15 @@ public enum EvaluationError: Error, LocalizedError, Sendable, Equatable {
     case dimensionMismatch(expected: Int, actual: Int)
     /// Floating-point labels cannot be losslessly mapped to discrete class indices.
     case invalidClassificationLabels(String)
+    /// Evaluation parameter is outside valid domain (e.g. numFeatures >= n - 1 for adjusted R^2).
+    case invalidParameter(String)
 
     public var errorDescription: String? {
         switch self {
         case .emptyData(let msg): return "Evaluation data is empty: \(msg)"
         case .dimensionMismatch(let exp, let act): return "Dimension mismatch: ground truth has \(exp) samples, but predictions have \(act)"
         case .invalidClassificationLabels(let msg): return "Invalid classification labels: \(msg)"
+        case .invalidParameter(let msg): return "Invalid evaluation parameter: \(msg)"
         }
     }
 }
@@ -267,6 +270,15 @@ public enum EvaluationHarness {
         }
         guard yTrue.count == yPred.count else {
             throw EvaluationError.dimensionMismatch(expected: yTrue.count, actual: yPred.count)
+        }
+
+        if let p = numFeatures {
+            guard p > 0 else {
+                throw EvaluationError.invalidParameter("numFeatures must be strictly positive, got \(p).")
+            }
+            guard yTrue.count > p + 1 else {
+                throw EvaluationError.invalidParameter("Sample size n (\(yTrue.count)) must be strictly greater than numFeatures + 1 (\(p + 1)) to calculate adjusted R^2.")
+            }
         }
 
         let r2 = Metrics.r2Score(yTrue: yTrue, yPred: yPred)

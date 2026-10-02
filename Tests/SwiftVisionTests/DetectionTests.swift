@@ -190,4 +190,93 @@ struct DetectionTests {
             #expect(!metrics.summary.isEmpty)
         }
     }
+
+    @Test("Empirical mAP reference fixture: validates exact VOC/COCO precision envelope, duplicates, and IoU thresholds")
+    func testMAPReferenceFixtureWithEnvelopeAndDuplicates() {
+        // Ground truth: 5 objects of class "target"
+        let gt0 = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 1.0, classLabel: "target")
+        let gt1 = BoundingBox(xMin: 0.4, yMin: 0.4, xMax: 0.6, yMax: 0.6, confidence: 1.0, classLabel: "target")
+        let gt2 = BoundingBox(xMin: 0.7, yMin: 0.7, xMax: 0.9, yMax: 0.9, confidence: 1.0, classLabel: "target")
+        let gt3 = BoundingBox(xMin: 0.1, yMin: 0.7, xMax: 0.3, yMax: 0.9, confidence: 1.0, classLabel: "target")
+        let gt4 = BoundingBox(xMin: 0.7, yMin: 0.1, xMax: 0.9, yMax: 0.3, confidence: 1.0, classLabel: "target")
+
+        // Predictions:
+        // Det 0: exact match gt0, IoU = 1.0, conf = 0.95 -> TP
+        let pred0 = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 0.95, classLabel: "target")
+        // Det 1: exact match gt1, IoU = 1.0, conf = 0.85 -> TP
+        let pred1 = BoundingBox(xMin: 0.4, yMin: 0.4, xMax: 0.6, yMax: 0.6, confidence: 0.85, classLabel: "target")
+        // Det 2: duplicate match on gt1, IoU = 0.85, conf = 0.75 -> FP (duplicate)
+        let pred2 = BoundingBox(xMin: 0.41, yMin: 0.41, xMax: 0.61, yMax: 0.61, confidence: 0.75, classLabel: "target")
+        // Det 3: false positive, no overlap, conf = 0.65 -> FP (spurious)
+        let pred3 = BoundingBox(xMin: 0.0, yMin: 0.4, xMax: 0.05, yMax: 0.45, confidence: 0.65, classLabel: "target")
+        // Det 4: exact match gt2, IoU = 1.0, conf = 0.55 -> TP
+        let pred4 = BoundingBox(xMin: 0.7, yMin: 0.7, xMax: 0.9, yMax: 0.9, confidence: 0.55, classLabel: "target")
+
+        let metrics = VisionMetrics.evaluateDetection(
+            predictions: [[pred0, pred1, pred2, pred3, pred4]],
+            groundTruths: [[gt0, gt1, gt2, gt3, gt4]],
+            iouThreshold: 0.50
+        )
+
+        #expect(metrics.totalGroundTruths == 5)
+        #expect(metrics.totalDetections == 5)
+        #expect(abs(metrics.precision - 0.60) < 1e-4) // 3 TP / 5 Detections
+        #expect(abs(metrics.recall - 0.60) < 1e-4)    // 3 TP / 5 GT
+        #expect(abs(metrics.f1 - 0.60) < 1e-4)
+
+        // AP analytically calculated:
+        // Rank 1: TP (r=0.2, p=1.0)
+        // Rank 2: TP (r=0.4, p=1.0)
+        // Rank 3: FP (r=0.4, p=2/3)
+        // Rank 4: FP (r=0.4, p=0.5)
+        // Rank 5: TP (r=0.6, p=0.6)
+        // Continuous envelope: (0.2 - 0.0)*1.0 + (0.4 - 0.2)*1.0 + (0.6 - 0.4)*0.6 = 0.2 + 0.2 + 0.12 = 0.52
+        let targetAP = metrics.perClassAP50["target"] ?? 0.0
+        #expect(abs(targetAP - 0.52) < 1e-4)
+        #expect(abs(metrics.map50 - 0.52) < 1e-4)
+        #expect(metrics.map50_95 > 0.0 && metrics.map50_95 <= metrics.map50)
+    }
+
+    @Test("Empirical mAP multi-class and edge case evaluation with empty predictions and empty GT")
+    func testMAPMultiClassAndEdgeCases() {
+        // Multi-class evaluation
+        let catGT = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 1.0, classLabel: "cat")
+        let dogGT = BoundingBox(xMin: 0.5, yMin: 0.5, xMax: 0.7, yMax: 0.7, confidence: 1.0, classLabel: "dog")
+
+        // Cat is perfectly detected (AP = 1.0), dog is not detected (AP = 0.0)
+        let catPred = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.3, yMax: 0.3, confidence: 0.9, classLabel: "cat")
+
+        let metrics = VisionMetrics.evaluateDetection(
+            predictions: [[catPred]],
+            groundTruths: [[catGT, dogGT]],
+            iouThreshold: 0.50
+        )
+
+        #expect(metrics.perClassAP50["cat"] == 1.0)
+        #expect(metrics.perClassAP50["dog"] == 0.0)
+        #expect(abs(metrics.map50 - 0.50) < 1e-4) // (1.0 + 0.0) / 2
+
+        // Edge case: Image with ground truths but completely empty predictions
+        let emptyPredMetrics = VisionMetrics.evaluateDetection(
+            predictions: [[]],
+            groundTruths: [[catGT]],
+            iouThreshold: 0.50
+        )
+        #expect(emptyPredMetrics.map50 == 0.0)
+        #expect(emptyPredMetrics.recall == 0.0)
+        #expect(emptyPredMetrics.totalDetections == 0)
+        #expect(emptyPredMetrics.totalGroundTruths == 1)
+
+        // Edge case: Image with predictions but completely empty ground truths
+        let emptyGTMetrics = VisionMetrics.evaluateDetection(
+            predictions: [[catPred]],
+            groundTruths: [[]],
+            iouThreshold: 0.50
+        )
+        #expect(emptyGTMetrics.map50 == 0.0)
+        #expect(emptyGTMetrics.recall == 0.0)
+        #expect(emptyGTMetrics.precision == 0.0)
+        #expect(emptyGTMetrics.totalDetections == 1)
+        #expect(emptyGTMetrics.totalGroundTruths == 0)
+    }
 }

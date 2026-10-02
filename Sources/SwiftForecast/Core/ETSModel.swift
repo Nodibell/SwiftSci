@@ -259,7 +259,7 @@ public actor ETSModel {
 
             let trendFactor: Double
             if trendType == .damped {
-                let phiSum = (1.0 - pow(phi, Double(h))) / (1.0 - phi)
+                let phiSum = phi * (1.0 - pow(phi, Double(h))) / (1.0 - phi)
                 trendFactor = phiSum * curB
             } else if trendType == .additive {
                 trendFactor = Double(h) * curB

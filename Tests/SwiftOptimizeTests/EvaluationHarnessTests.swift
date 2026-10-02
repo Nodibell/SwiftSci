@@ -7,11 +7,11 @@ import SwiftML
 struct EvaluationHarnessTests {
 
     @Test("evaluateClassification computes complete metrics suite and confusion matrix")
-    func testClassificationEvaluation() {
+    func testClassificationEvaluation() throws {
         let yTrue = [0, 0, 1, 1, 2, 2]
         let yPred = [0, 1, 1, 1, 2, 0]
 
-        let result = EvaluationHarness.evaluateClassification(yTrue: yTrue, yPred: yPred)
+        let result = try EvaluationHarness.evaluateClassification(yTrue: yTrue, yPred: yPred)
 
         #expect(result.classLabels == [0, 1, 2])
         #expect(result.confusionMatrix.count == 3)
@@ -31,22 +31,54 @@ struct EvaluationHarnessTests {
     }
 
     @Test("evaluateClassification with String labels")
-    func testStringClassificationEvaluation() {
+    func testStringClassificationEvaluation() throws {
         let yTrue = ["cat", "cat", "dog", "dog"]
         let yPred = ["cat", "dog", "dog", "dog"]
 
-        let (result, mapping) = EvaluationHarness.evaluateClassification(yTrue: yTrue, yPred: yPred)
+        let (result, mapping) = try EvaluationHarness.evaluateClassification(yTrue: yTrue, yPred: yPred)
         #expect(mapping.count == 2)
         #expect(result.accuracy == 0.75)
         #expect(result.confusionMatrix.count == 2)
     }
 
+    @Test("evaluateClassification with integer-valued Double labels succeeds")
+    func testDoubleClassificationEvaluation() throws {
+        let yTrue = [0.0, 1.0, 2.0, 1.0]
+        let yPred = [0.0, 1.0, 1.0, 1.0]
+
+        let result = try EvaluationHarness.evaluateClassification(yTrue: yTrue, yPred: yPred)
+        #expect(result.accuracy == 0.75)
+    }
+
+    @Test("evaluateClassification rejects non-integer Double labels with EvaluationError")
+    func testDoubleClassificationRejectsContinuousValues() {
+        let yTrue = [0.2, 0.8, 1.5]
+        let yPred = [0.0, 1.0, 1.0]
+
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateClassification(yTrue: yTrue, yPred: yPred)
+        }
+    }
+
+    @Test("evaluateClassification rejects empty data and dimension mismatch")
+    func testClassificationValidationErrors() {
+        // Empty data
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateClassification(yTrue: [Int](), yPred: [Int]())
+        }
+
+        // Mismatched dimensions
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateClassification(yTrue: [0, 1], yPred: [0])
+        }
+    }
+
     @Test("evaluateRegression computes R^2, MSE, RMSE, MAE, and MAPE")
-    func testRegressionEvaluation() {
+    func testRegressionEvaluation() throws {
         let yTrue = [10.0, 20.0, 30.0, 40.0, 50.0]
         let yPred = [11.0, 19.0, 32.0, 39.0, 51.0]
 
-        let result = EvaluationHarness.evaluateRegression(yTrue: yTrue, yPred: yPred, numFeatures: 2)
+        let result = try EvaluationHarness.evaluateRegression(yTrue: yTrue, yPred: yPred, numFeatures: 2)
 
         #expect(result.r2 > 0.95)
         #expect(result.adjustedR2 != nil)
@@ -59,5 +91,15 @@ struct EvaluationHarnessTests {
         let report = result.toEvaluationReport()
         #expect(report.metrics["r2"] == result.r2)
         #expect(report.confusionMatrix == nil)
+    }
+
+    @Test("evaluateRegression rejects empty data and dimension mismatch")
+    func testRegressionValidationErrors() {
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateRegression(yTrue: [], yPred: [])
+        }
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateRegression(yTrue: [1.0, 2.0], yPred: [1.0])
+        }
     }
 }

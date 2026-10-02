@@ -69,6 +69,25 @@ public enum TimeSeriesMetrics {
         return (sum / Double(actual.count)) * 100.0
     }
 
+    /// Computes the in-sample mean absolute error of a 1-step (or s-step seasonal) naive persistence forecast.
+    ///
+    /// This serves as the canonical scaling factor in the denominator of MASE (Hyndman & Koehler, 2006):
+    /// $$\text{scale} = \frac{1}{T - s} \sum_{t=s+1}^T |y_t - y_{t-s}|$$
+    /// - Parameters:
+    ///   - trainingSeries: In-sample observations array.
+    ///   - seasonality: Seasonal lag (default 1).
+    /// - Returns: Mean absolute error of naive benchmark on training set.
+    public static func naiveInSampleMAE(trainingSeries: [Double], seasonality: Int = 1) -> Double {
+        let s = max(1, seasonality)
+        let n = trainingSeries.count
+        guard n > s else { return 0.0 }
+        var naiveSum = 0.0
+        for t in s..<n {
+            naiveSum += abs(trainingSeries[t] - trainingSeries[t - s])
+        }
+        return naiveSum / Double(n - s)
+    }
+
     /// Mean Absolute Scaled Error (MASE) scaled by in-sample 1-step naive seasonal baseline (Hyndman & Koehler, 2006).
     ///
     /// MASE < 1 indicates that the model outperforms the naive baseline on average.
@@ -84,17 +103,9 @@ public enum TimeSeriesMetrics {
         forecast: [Double],
         seasonality: Int = 1
     ) -> Double {
-        let s = max(1, seasonality)
-        let n = trainingSeries.count
-        guard n > s else { return 0.0 }
-        let maeVal = mae(actual: actual, forecast: forecast)
-
-        var naiveSum = 0.0
-        for t in s..<n {
-            naiveSum += abs(trainingSeries[t] - trainingSeries[t - s])
-        }
-        let scale = naiveSum / Double(n - s)
+        let scale = naiveInSampleMAE(trainingSeries: trainingSeries, seasonality: seasonality)
         guard scale > 1e-12 else { return 0.0 }
+        let maeVal = mae(actual: actual, forecast: forecast)
         return maeVal / scale
     }
 }

@@ -119,6 +119,24 @@ public struct RegressionEvaluation: Sendable, Codable, Equatable {
     }
 }
 
+/// Errors encountered during model evaluation in EvaluationHarness (G-019).
+public enum EvaluationError: Error, LocalizedError, Sendable, Equatable {
+    /// Provided ground truth or prediction array is empty.
+    case emptyData(String)
+    /// Count mismatch between ground truth and prediction samples.
+    case dimensionMismatch(expected: Int, actual: Int)
+    /// Floating-point labels cannot be losslessly mapped to discrete class indices.
+    case invalidClassificationLabels(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .emptyData(let msg): return "Evaluation data is empty: \(msg)"
+        case .dimensionMismatch(let exp, let act): return "Dimension mismatch: ground truth has \(exp) samples, but predictions have \(act)"
+        case .invalidClassificationLabels(let msg): return "Invalid classification labels: \(msg)"
+        }
+    }
+}
+
 /// Unified Classifier & Regressor Evaluation Metrics Harness (G-019).
 ///
 /// Computes comprehensive out-of-sample holdout metrics in a single standardized call,
@@ -129,18 +147,14 @@ public enum EvaluationHarness {
     /// - Parameters:
     ///   - yTrue: Ground-truth target labels.
     ///   - yPred: Model predicted labels.
+    /// - Throws: `EvaluationError` if arrays are empty or dimensions mismatch.
     /// - Returns: `ClassificationEvaluation` containing complete performance summary and confusion matrix.
-    public static func evaluateClassification(yTrue: [Int], yPred: [Int]) -> ClassificationEvaluation {
-        guard !yTrue.isEmpty, yTrue.count == yPred.count else {
-            return ClassificationEvaluation(
-                accuracy: 0.0,
-                macroPrecision: 0.0,
-                macroRecall: 0.0,
-                macroF1: 0.0,
-                weightedF1: 0.0,
-                classLabels: [],
-                confusionMatrix: []
-            )
+    public static func evaluateClassification(yTrue: [Int], yPred: [Int]) throws -> ClassificationEvaluation {
+        guard !yTrue.isEmpty else {
+            throw EvaluationError.emptyData("yTrue and yPred must not be empty.")
+        }
+        guard yTrue.count == yPred.count else {
+            throw EvaluationError.dimensionMismatch(expected: yTrue.count, actual: yPred.count)
         }
 
         let report = Metrics.classificationReport(yTrue: yTrue, yPred: yPred)
@@ -183,24 +197,56 @@ public enum EvaluationHarness {
         )
     }
 
-    /// Overload for Double labels (e.g. classification target outputs encoded as Double).
-    public static func evaluateClassification(yTrue: [Double], yPred: [Double]) -> ClassificationEvaluation {
-        evaluateClassification(
+    /// Overload for Double labels, strictly validating that all values represent discrete integer classes.
+    /// - Parameters:
+    ///   - yTrue: Ground-truth target labels.
+    ///   - yPred: Model predicted labels.
+    /// - Throws: `EvaluationError` if arrays are empty, dimensions mismatch, or labels contain non-integer values.
+    /// - Returns: `ClassificationEvaluation` record.
+    public static func evaluateClassification(yTrue: [Double], yPred: [Double]) throws -> ClassificationEvaluation {
+        guard !yTrue.isEmpty else {
+            throw EvaluationError.emptyData("yTrue and yPred must not be empty.")
+        }
+        guard yTrue.count == yPred.count else {
+            throw EvaluationError.dimensionMismatch(expected: yTrue.count, actual: yPred.count)
+        }
+        for v in yTrue {
+            guard v.isFinite && abs(v.rounded() - v) < 1e-7 else {
+                throw EvaluationError.invalidClassificationLabels("Ground-truth label contains non-integer value: \(v). Classification targets must be discrete integer-valued classes.")
+            }
+        }
+        for v in yPred {
+            guard v.isFinite && abs(v.rounded() - v) < 1e-7 else {
+                throw EvaluationError.invalidClassificationLabels("Predicted label contains non-integer value: \(v). Classification targets must be discrete integer-valued classes.")
+            }
+        }
+        return try evaluateClassification(
             yTrue: yTrue.map { Int(round($0)) },
             yPred: yPred.map { Int(round($0)) }
         )
     }
 
     /// Overload for String class labels.
-    public static func evaluateClassification(yTrue: [String], yPred: [String]) -> (
+    /// - Parameters:
+    ///   - yTrue: Ground-truth string class labels.
+    ///   - yPred: Model predicted string class labels.
+    /// - Throws: `EvaluationError` if arrays are empty or dimensions mismatch.
+    /// - Returns: Tuple of `ClassificationEvaluation` and label-to-integer mapping dictionary.
+    public static func evaluateClassification(yTrue: [String], yPred: [String]) throws -> (
         evaluation: ClassificationEvaluation,
         labelMapping: [String: Int]
     ) {
+        guard !yTrue.isEmpty else {
+            throw EvaluationError.emptyData("yTrue and yPred must not be empty.")
+        }
+        guard yTrue.count == yPred.count else {
+            throw EvaluationError.dimensionMismatch(expected: yTrue.count, actual: yPred.count)
+        }
         let uniqueLabels = Array(Set(yTrue + yPred)).sorted()
         let mapping = Dictionary(uniqueKeysWithValues: uniqueLabels.enumerated().map { ($0.element, $0.offset) })
         let intTrue = yTrue.compactMap { mapping[$0] }
         let intPred = yPred.compactMap { mapping[$0] }
-        let eval = evaluateClassification(yTrue: intTrue, yPred: intPred)
+        let eval = try evaluateClassification(yTrue: intTrue, yPred: intPred)
         return (eval, mapping)
     }
 
@@ -209,22 +255,18 @@ public enum EvaluationHarness {
     ///   - yTrue: Ground-truth target continuous values.
     ///   - yPred: Model predicted continuous values.
     ///   - numFeatures: Optional number of predictor features for calculating adjusted R^2.
+    /// - Throws: `EvaluationError` if arrays are empty or dimensions mismatch.
     /// - Returns: `RegressionEvaluation` containing complete regression performance metrics.
     public static func evaluateRegression(
         yTrue: [Double],
         yPred: [Double],
         numFeatures: Int? = nil
-    ) -> RegressionEvaluation {
-        guard !yTrue.isEmpty, yTrue.count == yPred.count else {
-            return RegressionEvaluation(
-                r2: 0.0,
-                adjustedR2: nil,
-                mse: 0.0,
-                rmse: 0.0,
-                mae: 0.0,
-                mape: 0.0,
-                explainedVariance: 0.0
-            )
+    ) throws -> RegressionEvaluation {
+        guard !yTrue.isEmpty else {
+            throw EvaluationError.emptyData("yTrue and yPred must not be empty.")
+        }
+        guard yTrue.count == yPred.count else {
+            throw EvaluationError.dimensionMismatch(expected: yTrue.count, actual: yPred.count)
         }
 
         let r2 = Metrics.r2Score(yTrue: yTrue, yPred: yPred)

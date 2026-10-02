@@ -115,10 +115,53 @@ struct ETSTests {
         let aic = await ets.aic
         let aicc = await ets.aicc
         let bic = await ets.bic
+        let ll = await ets.logLikelihood
 
         #expect(aic.isFinite && !aic.isNaN)
         #expect(aicc.isFinite && !aicc.isNaN)
         #expect(bic.isFinite && !bic.isNaN)
         #expect(aicc >= aic) // AICc correction term is strictly non-negative
+
+        // Verify exact analytical relations: k = 3 (alpha, beta, sigma^2), n = 10
+        let k = 3.0
+        let n = 10.0
+        let expectedAIC = 2.0 * k - 2.0 * ll
+        let expectedAICc = expectedAIC + (2.0 * k * (k + 1.0)) / (n - k - 1.0)
+        let expectedBIC = k * log(n) - 2.0 * ll
+
+        #expect(abs(aic - expectedAIC) < 1e-9)
+        #expect(abs(aicc - expectedAICc) < 1e-9)
+        #expect(abs(bic - expectedBIC) < 1e-9)
+    }
+
+    @Test("ETSModel damped trend mathematically converges towards finite asymptote")
+    func testETSDampedTrendConvergence() async throws {
+        let series: [Double] = (0..<25).map { 10.0 + Double($0) * 2.5 }
+        let linearModel = ETSModel(error: .additive, trend: .additive, seasonal: .none)
+        let dampedModel = ETSModel(error: .additive, trend: .damped, seasonal: .none)
+
+        try await linearModel.fit(series: series)
+        try await dampedModel.fit(series: series)
+
+        let linearForecast = try await linearModel.forecast(steps: 20)
+        let dampedForecast = try await dampedModel.forecast(steps: 20)
+
+        #expect(linearForecast.count == 20)
+        #expect(dampedForecast.count == 20)
+
+        // Linear trend increments are constant: diff(h+1, h) == diff(h, h-1)
+        let linearStep1 = linearForecast[1] - linearForecast[0]
+        let linearStep19 = linearForecast[19] - linearForecast[18]
+        #expect(abs(linearStep1 - linearStep19) < 1e-5)
+
+        // Damped trend increments are strictly decreasing: diff(h+1, h) < diff(h, h-1)
+        for h in 1..<19 {
+            let stepPrev = dampedForecast[h] - dampedForecast[h - 1]
+            let stepNext = dampedForecast[h + 1] - dampedForecast[h]
+            #expect(stepNext < stepPrev)
+        }
+
+        // At long horizons, linear forecasts strictly exceed damped forecasts
+        #expect(linearForecast[19] > dampedForecast[19])
     }
 }

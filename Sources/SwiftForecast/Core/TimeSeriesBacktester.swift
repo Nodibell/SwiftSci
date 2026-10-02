@@ -26,6 +26,31 @@ public struct BacktestFold: Sendable, Codable, Equatable {
     public let mape: Double
     /// Fold Symmetric Mean Absolute Percentage Error.
     public let smape: Double
+    /// Fold Mean Absolute Scaled Error relative to this fold's specific training history (Hyndman & Koehler, 2006).
+    public let mase: Double
+
+    /// Initializes a new BacktestFold instance.
+    public init(
+        originIndex: Int,
+        horizon: Int,
+        actual: [Double],
+        forecast: [Double],
+        rmse: Double,
+        mae: Double,
+        mape: Double,
+        smape: Double,
+        mase: Double = 0.0
+    ) {
+        self.originIndex = originIndex
+        self.horizon = horizon
+        self.actual = actual
+        self.forecast = forecast
+        self.rmse = rmse
+        self.mae = mae
+        self.mape = mape
+        self.smape = smape
+        self.mase = mase
+    }
 }
 
 /// Comprehensive rolling-origin backtest evaluation results (G-020).
@@ -40,7 +65,7 @@ public struct TimeSeriesBacktestResult: Sendable, Codable, Equatable {
     public let mape: Double
     /// Aggregate out-of-sample SMAPE in percent.
     public let smape: Double
-    /// Aggregate out-of-sample MASE against in-sample naive baseline.
+    /// Mean out-of-sample MASE averaged across all evaluated folds.
     public let mase: Double
     /// Flat dictionary of summary evaluation metrics for reporting.
     public let metrics: [String: Double]
@@ -82,6 +107,12 @@ public struct TimeSeriesBacktestResult: Sendable, Codable, Equatable {
 public enum TimeSeriesBacktester {
 
     /// Performs rolling-origin backtesting using a custom model forecast closure.
+    ///
+    /// Anti-leakage guarantees:
+    /// - Each fold `trainSeries` contains observations strictly preceding `origin` ($t < \text{origin}$).
+    /// - The evaluation `actual` segment begins strictly at $\text{origin}$ ($t \ge \text{origin}$).
+    /// - MASE denominator is computed from the fold's own training history, preventing look-ahead leakage.
+    ///
     /// - Parameters:
     ///   - series: Full historical time series observations array.
     ///   - initialWindow: Number of observations in the initial training split.
@@ -137,6 +168,9 @@ public enum TimeSeriesBacktester {
             let foldMape = TimeSeriesMetrics.mape(actual: actual, forecast: predicted)
             let foldSmape = TimeSeriesMetrics.smape(actual: actual, forecast: predicted)
 
+            let foldScale = TimeSeriesMetrics.naiveInSampleMAE(trainingSeries: trainSeries)
+            let foldMase = foldScale > 1e-12 ? (foldMae / foldScale) : (foldMae == 0.0 ? 0.0 : 1.0)
+
             let fold = BacktestFold(
                 originIndex: origin,
                 horizon: horizon,
@@ -145,7 +179,8 @@ public enum TimeSeriesBacktester {
                 rmse: foldRmse,
                 mae: foldMae,
                 mape: foldMape,
-                smape: foldSmape
+                smape: foldSmape,
+                mase: foldMase
             )
             folds.append(fold)
             allActuals.append(contentsOf: actual)
@@ -158,12 +193,10 @@ public enum TimeSeriesBacktester {
         let pooledMae = TimeSeriesMetrics.mae(actual: allActuals, forecast: allForecasts)
         let pooledMape = TimeSeriesMetrics.mape(actual: allActuals, forecast: allForecasts)
         let pooledSmape = TimeSeriesMetrics.smape(actual: allActuals, forecast: allForecasts)
-        let initialTrain = Array(series[0..<initialWindow])
-        let pooledMase = TimeSeriesMetrics.mase(
-            trainingSeries: initialTrain,
-            actual: allActuals,
-            forecast: allForecasts
-        )
+
+        // Mean MASE across folds (canonical Hyndman & Athanasopoulos multi-fold backtesting definition)
+        let validFoldMases = folds.map(\.mase).filter { $0.isFinite }
+        let pooledMase = validFoldMases.isEmpty ? 0.0 : validFoldMases.reduce(0.0, +) / Double(validFoldMases.count)
 
         return TimeSeriesBacktestResult(
             folds: folds,

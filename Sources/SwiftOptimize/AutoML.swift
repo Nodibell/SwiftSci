@@ -1,58 +1,174 @@
 import Foundation
 import SwiftML
 
+// MARK: - Task Type
+
 /// Specifies the machine learning problem domain for an AutoML session.
 public enum AutoMLTaskType: Sendable, Equatable {
-    /// Inferred automatically from target characteristics.
-    ///
-    /// Fallback heuristic: checks if all targets are finite whole numbers (`v == floor(v)`),
-    /// unique class count is at least 2 and at most `min(20, numSamples / 2)`.
-    /// If targets contain non-integer decimal values or have high unique cardinality, defaults to `.regression`.
-    /// If targets are constant (only 1 unique value), throws `SwiftMLError.trainingFailed`.
+    /// Inferred from target values using a conservative rule (see ``AutoML`` documentation).
+    /// Throws ``AutoMLError/ambiguousTaskType(uniqueValues:sampleCount:)`` when the rule
+    /// cannot decide with confidence; pass an explicit task type in that case.
     case auto
-    /// Discrete classification task. Targets must map to discrete class labels.
+    /// Discrete classification. Every target must be a finite whole number.
     case classification
-    /// Continuous regression task.
+    /// Continuous regression.
     case regression
 }
 
-/// AutoML hyperparameter optimization and model search strategy.
+// MARK: - Strategy
+
+/// AutoML search strategy.
+///
+/// Only strategies that are fully implemented are exposed. Hyperparameter search
+/// (grid / random over a typed search space) is intentionally not offered yet;
+/// use ``GridSearchCV`` or ``RandomizedSearchCV`` for tuning a single estimator.
 public enum AutoMLStrategy: Sendable, Equatable {
-    /// Evaluates canonical baseline architectures with default hyperparameters.
+    /// Evaluates a fixed set of baseline architectures with default hyperparameters:
+    /// Logistic/Linear Regression, Decision Tree, Random Forest and MLP.
     case modelSelection
-    /// Systematic discrete grid search over key hyperparameter combinations.
-    case grid
-    /// Randomized sampling of hyperparameter combinations bounded by trial budget.
-    case random(maxTrials: Int = 8)
 }
 
-/// Automated Machine Learning (AutoML) controller providing intelligent model selection,
-/// hyperparameter search, and stratified cross-validation benchmarking under time constraints.
+// MARK: - Errors
+
+/// Errors thrown by ``AutoML``.
+public enum AutoMLError: Error, LocalizedError, Sendable, Equatable {
+    /// Features/targets are empty or their counts differ.
+    case invalidInput(String)
+    /// Fewer samples than cross-validation folds.
+    case insufficientSamples(count: Int, required: Int)
+    /// Target contains a single unique value; nothing can be learned or ranked.
+    case constantTarget
+    /// `.auto` could not confidently decide between classification and regression.
+    case ambiguousTaskType(uniqueValues: Int, sampleCount: Int)
+    /// Explicit `.classification` was requested but a target is not a finite whole number.
+    case nonIntegerClassLabel(Double)
+    /// A class has fewer samples than folds, so stratified CV cannot place it in every fold.
+    case insufficientClassSamples(label: Int, count: Int, required: Int)
+    /// Every candidate failed on at least one fold.
+    case allCandidatesFailed([AutoMLCandidateFailure])
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidInput(let msg):
+            return "Invalid AutoML input: \(msg)"
+        case .insufficientSamples(let count, let required):
+            return "AutoML needs at least \(required) samples for cross-validation, got \(count)."
+        case .constantTarget:
+            return "Target has a single unique value; AutoML cannot train or rank models."
+        case .ambiguousTaskType(let unique, let n):
+            return "Cannot infer task type: \(unique) distinct integer target values across \(n) samples. Pass taskType: .classification or .regression explicitly."
+        case .nonIntegerClassLabel(let v):
+            return "Classification requires whole-number class labels, found \(v)."
+        case .insufficientClassSamples(let label, let count, let required):
+            return "Class \(label) has \(count) sample(s); stratified \(required)-fold cross-validation needs at least \(required)."
+        case .allCandidatesFailed(let failures):
+            let details = failures.map { "\($0.name): \($0.reason)" }.joined(separator: "; ")
+            return "All AutoML candidates failed during cross-validation (\(details))."
+        }
+    }
+}
+
+// MARK: - Leaderboard
+
+/// Cross-validated result for a single candidate model.
+public struct AutoMLLeaderboardEntry: Sendable, Equatable {
+    /// Estimator type name, e.g. `"RandomForestClassifier"`.
+    public let name: String
+    /// Hyperparameters used for this candidate.
+    public let parameters: [String: String]
+    /// Name of the ranking metric: `"macroF1"` (classification) or `"r2"` (regression).
+    public let metricName: String
+    /// Mean of ``foldScores`` — the ranking key (higher is better).
+    public let meanScore: Double
+    /// Population standard deviation of ``foldScores``.
+    public let stdScore: Double
+    /// Ranking metric computed independently on each validation fold.
+    public let foldScores: [Double]
+    /// Wall-clock time spent fitting and predicting across all folds, in seconds.
+    public let fitDuration: TimeInterval
+
+    /// Human-readable label combining name and parameters, e.g. `"RandomForestClassifier (maxDepth: 5, nEstimators: 15)"`.
+    public var displayName: String {
+        guard !parameters.isEmpty else { return name }
+        let params = parameters.keys.sorted().map { "\($0): \(parameters[$0]!)" }.joined(separator: ", ")
+        return "\(name) (\(params))"
+    }
+}
+
+/// A candidate that was excluded from the leaderboard because it failed on at least one fold.
+public struct AutoMLCandidateFailure: Sendable, Equatable {
+    /// Candidate display name.
+    public let name: String
+    /// Error description from the failing fold.
+    public let reason: String
+}
+
+// MARK: - AutoML
+
+/// Automated model selection with stratified cross-validation.
+///
+/// ## Pipeline
+/// 1. Resolve the task type (explicit or `.auto`).
+/// 2. Split with ``StratifiedKFold`` (classification) or shuffled ``KFold`` (regression).
+/// 3. Fit every candidate on every fold; score each fold with ``EvaluationHarness``.
+/// 4. Rank by mean fold score (macro F1 or R²), tie-break by lower std, then candidate order.
+/// 5. Return the winner's pooled out-of-fold ``EvaluationReport``.
+///
+/// ## Task Type Inference (`.auto`)
+/// - Any non-integer or non-finite target → regression.
+/// - Integer targets with at most ``autoClassificationMaxClasses`` distinct values → classification.
+/// - Integer targets with more than `max(autoClassificationMaxClasses, n / 2)` distinct values → regression.
+/// - Otherwise → throws ``AutoMLError/ambiguousTaskType(uniqueValues:sampleCount:)``.
+///
+/// ## Time Budget Semantics
+/// `timeBudgetSeconds` is a **soft** deadline:
+/// - It is checked before each candidate and before each fold.
+/// - A fit already in progress is **not** interrupted (SwiftML estimators do not support mid-fit cancellation).
+/// - The first candidate always runs to completion, so a successful call returns at least one
+///   leaderboard entry. Total wall time can exceed the budget by one candidate-fold fit
+///   (or by one full candidate when the budget expires during the first one).
+/// - Candidates cut off by the deadline are simply not evaluated; they are not reported as failures.
+///
+/// ## Cancellation
+/// Parent `Task` cancellation is honoured at the same checkpoints and throws `CancellationError`.
+///
+/// ## Concurrency & Determinism
+/// Candidates and folds run sequentially inside the actor: deterministic ordering, bounded memory,
+/// and no CPU oversubscription from nested parallel fits. `seed` controls fold shuffling and is
+/// forwarded to stochastic estimators (Random Forest, MLP).
 public actor AutoML {
-    /// Maximum time budget in seconds allocated for training candidate models.
+    /// Maximum number of distinct integer values for `.auto` to classify targets without ambiguity.
+    public static let autoClassificationMaxClasses = 10
+
+    /// Soft time budget in seconds (see *Time Budget Semantics*).
     public private(set) var timeBudgetSeconds: Double
     /// Model search strategy.
     public private(set) var strategy: AutoMLStrategy
-    /// Problem domain (inferred or explicit).
+    /// Requested task type.
     public private(set) var taskType: AutoMLTaskType
-    /// Number of cross-validation folds.
+    /// Number of cross-validation folds (must be ≥ 2).
     public private(set) var nFolds: Int
-    /// Random seed for reproducible fold shuffling.
+    /// Seed for fold shuffling and stochastic estimators.
     public private(set) var seed: Int
-    /// Name of the winning candidate model.
+
+    /// Task type resolved during the last `fit` call.
+    public private(set) var resolvedTaskType: AutoMLTaskType?
+    /// Display name of the winning candidate.
     public private(set) var bestModelName: String?
-    /// Best cross-validation score achieved.
+    /// Mean cross-validation score of the winning candidate.
     public private(set) var bestScore: Double?
-    /// Leaderboard of tested candidates with CV score and execution duration in seconds.
-    public private(set) var leaderboard: [(name: String, cvScore: Double, fitDuration: Double)] = []
+    /// Ranked candidates (best first).
+    public private(set) var leaderboard: [AutoMLLeaderboardEntry] = []
+    /// Candidates excluded from the leaderboard because they failed on a fold.
+    public private(set) var failedCandidates: [AutoMLCandidateFailure] = []
 
     /// Creates a new AutoML controller.
     /// - Parameters:
-    ///   - timeBudgetSeconds: Maximum execution budget in seconds (default: 60.0).
-    ///   - strategy: Search strategy (default: .modelSelection).
-    ///   - taskType: Problem domain (default: .auto).
-    ///   - nFolds: Number of cross-validation folds (default: 3).
-    ///   - seed: Random seed for fold partitioning (default: 42).
+    ///   - timeBudgetSeconds: Soft time budget in seconds (default: 60).
+    ///   - strategy: Search strategy (default: `.modelSelection`).
+    ///   - taskType: Problem domain (default: `.auto`).
+    ///   - nFolds: Number of cross-validation folds, at least 2 (default: 3).
+    ///   - seed: Random seed (default: 42).
     public init(
         timeBudgetSeconds: Double = 60.0,
         strategy: AutoMLStrategy = .modelSelection,
@@ -63,469 +179,254 @@ public actor AutoML {
         self.timeBudgetSeconds = timeBudgetSeconds
         self.strategy = strategy
         self.taskType = taskType
-        self.nFolds = max(2, nFolds)
+        self.nFolds = nFolds
         self.seed = seed
     }
 
-    /// Evaluates candidate model architectures across cross-validation folds using structured concurrency.
-    ///
+    /// Runs model selection with cross-validation.
     /// - Parameters:
-    ///   - features: 2D array of training samples of shape `[numSamples, numFeatures]`.
-    ///   - targets: 1D array of corresponding target labels or continuous values.
-    /// - Returns: An `EvaluationReport` summarizing best performing model and leaderboard metrics.
-    /// - Throws: `SwiftMLError` if inputs are invalid or insufficient for cross-validation.
+    ///   - features: Training samples of shape `[n, p]`.
+    ///   - targets: Class labels (whole numbers) or continuous values, length `n`.
+    /// - Returns: Pooled out-of-fold metrics of the winning candidate plus `cv_score`, `cv_std`
+    ///   and `time_spent_seconds`. Classification reports include the confusion matrix.
+    /// - Throws: ``AutoMLError`` for invalid or ambiguous input, `CancellationError` if the parent task is cancelled.
     public func fit(features: [[Double]], targets: [Double]) async throws -> EvaluationReport {
-        guard !features.isEmpty, features.count == targets.count else {
-            throw SwiftMLError.trainingFailed("Features and targets count mismatch in AutoML")
+        guard nFolds >= 2 else {
+            throw AutoMLError.invalidInput("nFolds must be at least 2, got \(nFolds)")
         }
-
-        let numSamples = features.count
-        guard numSamples >= nFolds else {
-            throw SwiftMLError.trainingFailed("AutoML requires at least \(nFolds) samples for \(nFolds)-fold cross-validation")
+        guard !features.isEmpty, !targets.isEmpty else {
+            throw AutoMLError.invalidInput("features and targets must not be empty")
         }
+        guard features.count == targets.count else {
+            throw AutoMLError.invalidInput("features count (\(features.count)) does not match targets count (\(targets.count))")
+        }
+        guard features.count >= nFolds else {
+            throw AutoMLError.insufficientSamples(count: features.count, required: nFolds)
+        }
+        try Task.checkCancellation()
 
         let startTime = Date()
         let deadline = startTime.addingTimeInterval(timeBudgetSeconds)
-        self.leaderboard.removeAll()
+        leaderboard = []
+        failedCandidates = []
+        bestModelName = nil
+        bestScore = nil
 
-        // 1. Resolve task type
-        let isClassification = try resolveTaskType(features: features, targets: targets)
+        // 1. Task type
+        let isClassification = try resolveTaskType(targets: targets)
+        resolvedTaskType = isClassification ? .classification : .regression
 
-        // 2. Generate cross-validation splits
+        // 2. Folds
         let folds: [Fold]
         if isClassification {
-            // Validate minimum class representation for stratified K-fold
             var classCounts: [Int: Int] = [:]
-            for t in targets {
-                classCounts[Int(round(t)), default: 0] += 1
-            }
-            guard classCounts.keys.count >= 2 else {
-                throw SwiftMLError.trainingFailed("Classification requires at least 2 distinct classes, found \(classCounts.keys.count)")
-            }
-            for (cls, count) in classCounts {
+            for t in targets { classCounts[Int(t.rounded()), default: 0] += 1 }
+            for label in classCounts.keys.sorted() {
+                let count = classCounts[label]!
                 guard count >= nFolds else {
-                    throw SwiftMLError.trainingFailed("Class \(cls) has only \(count) sample(s), but at least \(nFolds) folds are required for stratified cross-validation")
+                    throw AutoMLError.insufficientClassSamples(label: label, count: count, required: nFolds)
                 }
             }
-            let splitter = StratifiedKFold(nSplits: nFolds, shuffle: true, seed: seed)
-            folds = splitter.split(features: features, targets: targets)
+            folds = StratifiedKFold(nSplits: nFolds, shuffle: true, seed: seed)
+                .split(features: features, targets: targets)
         } else {
-            let uniqueTargets = Set(targets)
-            guard uniqueTargets.count >= 2 else {
-                throw SwiftMLError.trainingFailed("Cannot perform AutoML on constant target with only 1 unique value")
-            }
-            let splitter = KFold(nSplits: nFolds, shuffle: true, seed: seed)
-            folds = splitter.split(features: features, targets: targets)
+            folds = KFold(nSplits: nFolds, shuffle: true, seed: seed)
+                .split(features: features, targets: targets)
         }
 
-        guard !folds.isEmpty else {
-            throw SwiftMLError.trainingFailed("Failed to partition dataset into cross-validation folds")
+        // 3. Evaluate candidates
+        let candidates = Self.baselineCandidates(isClassification: isClassification, seed: seed)
+        let metricName = isClassification ? "macroF1" : "r2"
+
+        struct Evaluated {
+            let entry: AutoMLLeaderboardEntry
+            let order: Int
+            let pooledTrue: [Double]
+            let pooledPred: [Double]
         }
+        var evaluated: [Evaluated] = []
+        var failures: [AutoMLCandidateFailure] = []
 
-        // 3. Generate candidate models based on strategy
-        let candidates = generateCandidates(isClassification: isClassification)
-
-        var evaluatedLeaderboard: [(name: String, cvScore: Double, fitDuration: Double)] = []
-        var classReports: [String: ClassificationEvaluation] = [:]
-        var regReports: [String: RegressionEvaluation] = [:]
-
-        // 4. Sequential evaluation with cooperative task cancellation and deadline monitoring
-        for candidate in candidates {
-            // Check deadline and task cancellation
-            if Task.isCancelled || (Date() >= deadline && !evaluatedLeaderboard.isEmpty) {
-                break
-            }
+        candidateLoop: for (order, candidate) in candidates.enumerated() {
+            try Task.checkCancellation()
+            let hasResult = !evaluated.isEmpty
+            if hasResult && Date() >= deadline { break }
 
             let candStart = Date()
-            var allValTrues: [Double] = []
-            var allValPreds: [Double] = []
-            var candidateFailed = false
+            var foldScores: [Double] = []
+            var pooledTrue: [Double] = []
+            var pooledPred: [Double] = []
 
             for fold in folds {
-                if Task.isCancelled || (Date() >= deadline && !evaluatedLeaderboard.isEmpty) {
-                    candidateFailed = true
-                    break
-                }
+                try Task.checkCancellation()
+                if hasResult && Date() >= deadline { break candidateLoop }
 
                 do {
-                    let preds = try await candidate.fitAndPredict(
-                        fold.trainFeatures,
-                        fold.trainTargets,
-                        fold.valFeatures
-                    )
+                    let preds = try await candidate.fitPredict(fold.trainFeatures, fold.trainTargets, fold.valFeatures)
                     guard preds.count == fold.valTargets.count else {
-                        candidateFailed = true
-                        break
+                        throw AutoMLError.invalidInput("predicted \(preds.count) values for \(fold.valTargets.count) validation samples")
                     }
-                    allValTrues.append(contentsOf: fold.valTargets)
-                    allValPreds.append(contentsOf: preds)
+                    let score: Double
+                    if isClassification {
+                        score = try EvaluationHarness.evaluateClassification(
+                            yTrue: fold.valTargets.map { Int($0.rounded()) },
+                            yPred: preds.map { Int($0.rounded()) }
+                        ).macroF1
+                    } else {
+                        score = try EvaluationHarness.evaluateRegression(
+                            yTrue: fold.valTargets, yPred: preds, numFeatures: nil
+                        ).r2
+                    }
+                    guard score.isFinite else {
+                        throw AutoMLError.invalidInput("non-finite \(metricName) on a validation fold")
+                    }
+                    foldScores.append(score)
+                    pooledTrue.append(contentsOf: fold.valTargets)
+                    pooledPred.append(contentsOf: preds)
+                } catch is CancellationError {
+                    throw CancellationError()
                 } catch {
-                    candidateFailed = true
-                    break
+                    failures.append(AutoMLCandidateFailure(name: candidate.displayName, reason: error.localizedDescription))
+                    continue candidateLoop
                 }
             }
 
-            let candDuration = Date().timeIntervalSince(candStart)
-            guard !candidateFailed, !allValTrues.isEmpty else {
-                continue
-            }
-
-            // 5. Compute true metrics strictly via EvaluationHarness
-            if isClassification {
-                do {
-                    let eval = try EvaluationHarness.evaluateClassification(
-                        yTrue: allValTrues.map { Int(round($0)) },
-                        yPred: allValPreds.map { Int(round($0)) }
-                    )
-                    // Primary ranking metric for classification is macro F1
-                    evaluatedLeaderboard.append((candidate.name, eval.macroF1, candDuration))
-                    classReports[candidate.name] = eval
-                } catch {
-                    continue
-                }
-            } else {
-                do {
-                    let eval = try EvaluationHarness.evaluateRegression(
-                        yTrue: allValTrues,
-                        yPred: allValPreds,
-                        numFeatures: features.first?.count
-                    )
-                    // Primary ranking metric for regression is R^2 (or -RMSE if R^2 is non-finite)
-                    let score = eval.r2.isFinite ? eval.r2 : -eval.rmse
-                    evaluatedLeaderboard.append((candidate.name, score, candDuration))
-                    regReports[candidate.name] = eval
-                } catch {
-                    continue
-                }
-            }
+            let mean = foldScores.reduce(0, +) / Double(foldScores.count)
+            let variance = foldScores.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(foldScores.count)
+            let entry = AutoMLLeaderboardEntry(
+                name: candidate.name,
+                parameters: candidate.parameters,
+                metricName: metricName,
+                meanScore: mean,
+                stdScore: sqrt(variance),
+                foldScores: foldScores,
+                fitDuration: Date().timeIntervalSince(candStart)
+            )
+            evaluated.append(Evaluated(entry: entry, order: order, pooledTrue: pooledTrue, pooledPred: pooledPred))
         }
 
-        // 6. Rank leaderboard
-        evaluatedLeaderboard.sort { $0.cvScore > $1.cvScore }
-        self.leaderboard = evaluatedLeaderboard
+        failedCandidates = failures
 
-        guard let winner = evaluatedLeaderboard.first else {
-            throw SwiftMLError.trainingFailed("All AutoML model candidates failed or timed out during cross-validation")
+        // 4. Rank: mean desc, std asc, candidate order asc
+        evaluated.sort { a, b in
+            if a.entry.meanScore != b.entry.meanScore { return a.entry.meanScore > b.entry.meanScore }
+            if a.entry.stdScore != b.entry.stdScore { return a.entry.stdScore < b.entry.stdScore }
+            return a.order < b.order
         }
+        leaderboard = evaluated.map(\.entry)
 
-        self.bestModelName = winner.name
-        self.bestScore = winner.cvScore
+        guard let winner = evaluated.first else {
+            throw AutoMLError.allCandidatesFailed(failures)
+        }
+        bestModelName = winner.entry.displayName
+        bestScore = winner.entry.meanScore
 
-        // 7. Produce final report
-        let timeSpent = Date().timeIntervalSince(startTime)
-        if isClassification, let bestEval = classReports[winner.name] {
-            var metrics = bestEval.metrics
-            metrics["cv_score"] = winner.cvScore
-            metrics["time_spent_seconds"] = timeSpent
-            return EvaluationReport(metrics: metrics, confusionMatrix: bestEval.confusionMatrix)
-        } else if let bestEval = regReports[winner.name] {
-            var metrics = bestEval.metrics
-            metrics["cv_score"] = winner.cvScore
-            metrics["time_spent_seconds"] = timeSpent
-            return EvaluationReport(metrics: metrics, confusionMatrix: nil)
+        // 5. Pooled out-of-fold report for the winner
+        var metrics: [String: Double]
+        var confusionMatrix: [[Int]]? = nil
+        if isClassification {
+            let eval = try EvaluationHarness.evaluateClassification(
+                yTrue: winner.pooledTrue.map { Int($0.rounded()) },
+                yPred: winner.pooledPred.map { Int($0.rounded()) }
+            )
+            metrics = eval.metrics
+            confusionMatrix = eval.confusionMatrix
         } else {
-            throw SwiftMLError.trainingFailed("Evaluation report generation failed for winner: \(winner.name)")
+            metrics = try EvaluationHarness.evaluateRegression(
+                yTrue: winner.pooledTrue, yPred: winner.pooledPred, numFeatures: nil
+            ).metrics
         }
+        metrics["cv_score"] = winner.entry.meanScore
+        metrics["cv_std"] = winner.entry.stdScore
+        metrics["time_spent_seconds"] = Date().timeIntervalSince(startTime)
+        return EvaluationReport(metrics: metrics, confusionMatrix: confusionMatrix)
     }
 
-    // MARK: - Private Helpers
+    // MARK: - Task Type Resolution
 
-    private func resolveTaskType(features: [[Double]], targets: [Double]) throws -> Bool {
-        let numSamples = targets.count
+    private func resolveTaskType(targets: [Double]) throws -> Bool {
+        let isWhole: (Double) -> Bool = { $0.isFinite && abs($0.rounded() - $0) < 1e-7 }
+        let uniqueCount = Set(targets).count
+        guard uniqueCount >= 2 else { throw AutoMLError.constantTarget }
 
-        switch self.taskType {
+        switch taskType {
         case .classification:
-            for t in targets {
-                guard t.isFinite && abs(t.rounded() - t) < 1e-7 else {
-                    throw SwiftMLError.trainingFailed("Classification task specified, but target contains non-integer continuous value: \(t)")
-                }
+            if let bad = targets.first(where: { !isWhole($0) }) {
+                throw AutoMLError.nonIntegerClassLabel(bad)
             }
             return true
-
         case .regression:
             return false
-
         case .auto:
-            let isIntegerValued = targets.allSatisfy { $0.isFinite && abs($0.rounded() - $0) < 1e-7 }
-            let uniqueTargets = Set(targets)
-
-            guard uniqueTargets.count >= 2 else {
-                throw SwiftMLError.trainingFailed("Cannot perform AutoML on constant target with only 1 unique value")
-            }
-
-            // Fallback heuristic: integer targets with bounded cardinality relative to sample size
-            if isIntegerValued && uniqueTargets.count <= max(2, min(20, numSamples / 2)) {
-                return true
-            } else {
-                return false
-            }
+            guard targets.allSatisfy(isWhole) else { return false }
+            let maxClasses = Self.autoClassificationMaxClasses
+            if uniqueCount <= maxClasses { return true }
+            if uniqueCount > max(maxClasses, targets.count / 2) { return false }
+            throw AutoMLError.ambiguousTaskType(uniqueValues: uniqueCount, sampleCount: targets.count)
         }
     }
 
-    private struct ModelCandidate: Sendable {
+    // MARK: - Candidates
+
+    private struct CandidateSpec: Sendable {
         let name: String
-        let fitAndPredict: @Sendable ([[Double]], [Double], [[Double]]) async throws -> [Double]
+        let parameters: [String: String]
+        let fitPredict: @Sendable (_ trainX: [[Double]], _ trainY: [Double], _ testX: [[Double]]) async throws -> [Double]
+
+        var displayName: String {
+            guard !parameters.isEmpty else { return name }
+            let params = parameters.keys.sorted().map { "\($0): \(parameters[$0]!)" }.joined(separator: ", ")
+            return "\(name) (\(params))"
+        }
     }
 
-    private func generateCandidates(isClassification: Bool) -> [ModelCandidate] {
+    private static func baselineCandidates(isClassification: Bool, seed: Int) -> [CandidateSpec] {
         if isClassification {
-            return generateClassificationCandidates()
+            return [
+                CandidateSpec(name: "LogisticRegression", parameters: ["epochs": "200"]) { x, y, tx in
+                    let m = LogisticRegression()
+                    try await m.fit(features: x, targets: y, epochs: 200)
+                    return try await m.predict(features: tx).map(Double.init)
+                },
+                CandidateSpec(name: "DecisionTreeClassifier", parameters: ["maxDepth": "4"]) { x, y, tx in
+                    let m = DecisionTreeClassifier(maxDepth: 4)
+                    try await m.fit(features: x, targets: y)
+                    return try await m.predict(features: tx).map(Double.init)
+                },
+                CandidateSpec(name: "RandomForestClassifier", parameters: ["nEstimators": "15", "maxDepth": "5"]) { x, y, tx in
+                    let m = RandomForestClassifier(nEstimators: 15, maxDepth: 5, randomState: seed)
+                    try await m.fit(features: x, targets: y)
+                    return try await m.predict(features: tx).map(Double.init)
+                },
+                CandidateSpec(name: "MLPClassifier", parameters: ["hiddenLayers": "16-8", "learningRate": "0.05", "maxIter": "50"]) { x, y, tx in
+                    let m = MLPClassifier(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05, seed: seed)
+                    try await m.fit(features: x, targets: y)
+                    return try await m.predict(features: tx).map(Double.init)
+                }
+            ]
         } else {
-            return generateRegressionCandidates()
-        }
-    }
-
-    private func generateClassificationCandidates() -> [ModelCandidate] {
-        switch self.strategy {
-        case .modelSelection:
             return [
-                ModelCandidate(name: "LogisticRegression") { trainX, trainY, testX in
-                    let model = LogisticRegression()
-                    try await model.fit(features: trainX, targets: trainY, epochs: 200)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
+                CandidateSpec(name: "LinearRegression", parameters: [:]) { x, y, tx in
+                    let m = LinearRegression()
+                    try await m.fit(features: x, targets: y)
+                    return try await m.predict(features: tx)
                 },
-                ModelCandidate(name: "DecisionTreeClassifier (maxDepth: 4)") { trainX, trainY, testX in
-                    let model = DecisionTreeClassifier(maxDepth: 4)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
+                CandidateSpec(name: "DecisionTreeRegressor", parameters: ["maxDepth": "4"]) { x, y, tx in
+                    let m = DecisionTreeRegressor(maxDepth: 4)
+                    try await m.fit(features: x, targets: y)
+                    return try await m.predict(features: tx)
                 },
-                ModelCandidate(name: "RandomForestClassifier (n: 15, maxDepth: 5)") { trainX, trainY, testX in
-                    let model = RandomForestClassifier(nEstimators: 15, maxDepth: 5)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
+                CandidateSpec(name: "RandomForestRegressor", parameters: ["nEstimators": "15", "maxDepth": "5"]) { x, y, tx in
+                    let m = RandomForestRegressor(nEstimators: 15, maxDepth: 5, randomState: seed)
+                    try await m.fit(features: x, targets: y)
+                    return try await m.predict(features: tx)
                 },
-                ModelCandidate(name: "MLPClassifier (16->8)") { trainX, trainY, testX in
-                    let model = MLPClassifier(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
+                CandidateSpec(name: "MLPRegressor", parameters: ["hiddenLayers": "16-8", "learningRate": "0.05", "maxIter": "50"]) { x, y, tx in
+                    let m = MLPRegressor(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05, seed: seed)
+                    try await m.fit(features: x, targets: y)
+                    return try await m.predict(features: tx)
                 }
             ]
-
-        case .grid:
-            return [
-                ModelCandidate(name: "LogisticRegression") { trainX, trainY, testX in
-                    let model = LogisticRegression()
-                    try await model.fit(features: trainX, targets: trainY, epochs: 200)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "DecisionTreeClassifier (maxDepth: 3)") { trainX, trainY, testX in
-                    let model = DecisionTreeClassifier(maxDepth: 3)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "DecisionTreeClassifier (maxDepth: 6)") { trainX, trainY, testX in
-                    let model = DecisionTreeClassifier(maxDepth: 6)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "RandomForestClassifier (n: 10, maxDepth: 4)") { trainX, trainY, testX in
-                    let model = RandomForestClassifier(nEstimators: 10, maxDepth: 4)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "RandomForestClassifier (n: 25, maxDepth: 6)") { trainX, trainY, testX in
-                    let model = RandomForestClassifier(nEstimators: 25, maxDepth: 6)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "MLPClassifier (16->8, lr: 0.05)") { trainX, trainY, testX in
-                    let model = MLPClassifier(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "MLPClassifier (32->16, lr: 0.01)") { trainX, trainY, testX in
-                    let model = MLPClassifier(hiddenLayerSizes: [32, 16], maxIter: 50, learningRate: 0.01)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                }
-            ]
-
-        case .random(let maxTrials):
-            let pool: [ModelCandidate] = [
-                ModelCandidate(name: "LogisticRegression") { trainX, trainY, testX in
-                    let model = LogisticRegression()
-                    try await model.fit(features: trainX, targets: trainY, epochs: 200)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "DecisionTreeClassifier (maxDepth: 3)") { trainX, trainY, testX in
-                    let model = DecisionTreeClassifier(maxDepth: 3)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "DecisionTreeClassifier (maxDepth: 5)") { trainX, trainY, testX in
-                    let model = DecisionTreeClassifier(maxDepth: 5)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "RandomForestClassifier (n: 10, maxDepth: 4)") { trainX, trainY, testX in
-                    let model = RandomForestClassifier(nEstimators: 10, maxDepth: 4)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "RandomForestClassifier (n: 20, maxDepth: 5)") { trainX, trainY, testX in
-                    let model = RandomForestClassifier(nEstimators: 20, maxDepth: 5)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "RandomForestClassifier (n: 30, maxDepth: 6)") { trainX, trainY, testX in
-                    let model = RandomForestClassifier(nEstimators: 30, maxDepth: 6)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "MLPClassifier (16, lr: 0.05)") { trainX, trainY, testX in
-                    let model = MLPClassifier(hiddenLayerSizes: [16], maxIter: 40, learningRate: 0.05)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "MLPClassifier (16->8, lr: 0.02)") { trainX, trainY, testX in
-                    let model = MLPClassifier(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.02)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                },
-                ModelCandidate(name: "MLPClassifier (32->16, lr: 0.01)") { trainX, trainY, testX in
-                    let model = MLPClassifier(hiddenLayerSizes: [32, 16], maxIter: 50, learningRate: 0.01)
-                    try await model.fit(features: trainX, targets: trainY)
-                    let preds = try await model.predict(features: testX)
-                    return preds.map { Double($0) }
-                }
-            ]
-            return Array(pool.prefix(max(1, maxTrials)))
-        }
-    }
-
-    private func generateRegressionCandidates() -> [ModelCandidate] {
-        switch self.strategy {
-        case .modelSelection:
-            return [
-                ModelCandidate(name: "LinearRegression") { trainX, trainY, testX in
-                    let model = LinearRegression()
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "DecisionTreeRegressor (maxDepth: 4)") { trainX, trainY, testX in
-                    let model = DecisionTreeRegressor(maxDepth: 4)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "RandomForestRegressor (n: 15, maxDepth: 5)") { trainX, trainY, testX in
-                    let model = RandomForestRegressor(nEstimators: 15, maxDepth: 5)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "MLPRegressor (16->8)") { trainX, trainY, testX in
-                    let model = MLPRegressor(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                }
-            ]
-
-        case .grid:
-            return [
-                ModelCandidate(name: "LinearRegression") { trainX, trainY, testX in
-                    let model = LinearRegression()
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "DecisionTreeRegressor (maxDepth: 3)") { trainX, trainY, testX in
-                    let model = DecisionTreeRegressor(maxDepth: 3)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "DecisionTreeRegressor (maxDepth: 6)") { trainX, trainY, testX in
-                    let model = DecisionTreeRegressor(maxDepth: 6)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "RandomForestRegressor (n: 10, maxDepth: 4)") { trainX, trainY, testX in
-                    let model = RandomForestRegressor(nEstimators: 10, maxDepth: 4)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "RandomForestRegressor (n: 25, maxDepth: 6)") { trainX, trainY, testX in
-                    let model = RandomForestRegressor(nEstimators: 25, maxDepth: 6)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "MLPRegressor (16->8, lr: 0.05)") { trainX, trainY, testX in
-                    let model = MLPRegressor(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "MLPRegressor (32->16, lr: 0.01)") { trainX, trainY, testX in
-                    let model = MLPRegressor(hiddenLayerSizes: [32, 16], maxIter: 50, learningRate: 0.01)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                }
-            ]
-
-        case .random(let maxTrials):
-            let pool: [ModelCandidate] = [
-                ModelCandidate(name: "LinearRegression") { trainX, trainY, testX in
-                    let model = LinearRegression()
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "DecisionTreeRegressor (maxDepth: 3)") { trainX, trainY, testX in
-                    let model = DecisionTreeRegressor(maxDepth: 3)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "DecisionTreeRegressor (maxDepth: 5)") { trainX, trainY, testX in
-                    let model = DecisionTreeRegressor(maxDepth: 5)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "RandomForestRegressor (n: 10, maxDepth: 4)") { trainX, trainY, testX in
-                    let model = RandomForestRegressor(nEstimators: 10, maxDepth: 4)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "RandomForestRegressor (n: 20, maxDepth: 5)") { trainX, trainY, testX in
-                    let model = RandomForestRegressor(nEstimators: 20, maxDepth: 5)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "RandomForestRegressor (n: 30, maxDepth: 6)") { trainX, trainY, testX in
-                    let model = RandomForestRegressor(nEstimators: 30, maxDepth: 6)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "MLPRegressor (16, lr: 0.05)") { trainX, trainY, testX in
-                    let model = MLPRegressor(hiddenLayerSizes: [16], maxIter: 40, learningRate: 0.05)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "MLPRegressor (16->8, lr: 0.02)") { trainX, trainY, testX in
-                    let model = MLPRegressor(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.02)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                },
-                ModelCandidate(name: "MLPRegressor (32->16, lr: 0.01)") { trainX, trainY, testX in
-                    let model = MLPRegressor(hiddenLayerSizes: [32, 16], maxIter: 50, learningRate: 0.01)
-                    try await model.fit(features: trainX, targets: trainY)
-                    return try await model.predict(features: testX)
-                }
-            ]
-            return Array(pool.prefix(max(1, maxTrials)))
         }
     }
 }

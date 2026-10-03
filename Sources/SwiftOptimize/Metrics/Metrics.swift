@@ -128,23 +128,72 @@ public enum Metrics {
         return sumRecall / Double(report.perClass.count)
     }
 
-    /// Matthews Correlation Coefficient (MCC) for binary classification.
+    /// Matthews Correlation Coefficient (MCC) supporting both binary and multiclass classification (Gorodkin's R_K).
+    ///
+    /// Computes the correlation coefficient between observed and predicted classifications.
+    /// Returns 1.0 for perfect agreement, 0.0 for chance-level predictions, and -1.0 for complete disagreement.
+    ///
     /// - Parameters:
-    ///   - yTrue: Ground-truth true target labels or continuous values.
-    ///   - yPred: Predicted target labels or estimated continuous values.
-    /// - Returns: Computed numerical scalar value.
+    ///   - yTrue: Ground-truth target class labels.
+    ///   - yPred: Predicted target class labels.
+    /// - Returns: Computed Matthews Correlation Coefficient in [-1.0, 1.0].
     public static func matthewsCorrelationCoefficient(yTrue: [Int], yPred: [Int]) -> Double {
         guard yTrue.count == yPred.count, !yTrue.isEmpty else { return 0 }
-        var tp = 0.0, tn = 0.0, fp = 0.0, fn = 0.0
-        for (t, p) in zip(yTrue, yPred) {
-            if t == 1 && p == 1 { tp += 1 }
-            else if t == 0 && p == 0 { tn += 1 }
-            else if t == 0 && p == 1 { fp += 1 }
-            else if t == 1 && p == 0 { fn += 1 }
+
+        let uniqueLabels = Array(Set(yTrue + yPred)).sorted()
+        let k = uniqueLabels.count
+        guard k >= 2 else { return 0 }
+
+        var labelToIndex: [Int: Int] = [:]
+        labelToIndex.reserveCapacity(k)
+        for (i, label) in uniqueLabels.enumerated() {
+            labelToIndex[label] = i
         }
-        let num = (tp * tn) - (fp * fn)
-        let den = sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-        return den == 0 ? 0 : num / den
+
+        // Build K x K confusion matrix: C[true][pred]
+        var cMatrix = [[Double]](repeating: [Double](repeating: 0.0, count: k), count: k)
+        for (t, p) in zip(yTrue, yPred) {
+            guard let ti = labelToIndex[t], let pi = labelToIndex[p] else { continue }
+            cMatrix[ti][pi] += 1.0
+        }
+
+        // Total samples (s) and correct predictions trace (c)
+        let s = Double(yTrue.count)
+        var c = 0.0
+        for i in 0..<k {
+            c += cMatrix[i][i]
+        }
+
+        // Row sums t_k and column sums p_k
+        var tSum = [Double](repeating: 0.0, count: k)
+        var pSum = [Double](repeating: 0.0, count: k)
+        for i in 0..<k {
+            for j in 0..<k {
+                tSum[i] += cMatrix[i][j]
+                pSum[j] += cMatrix[i][j]
+            }
+        }
+
+        var sumPt = 0.0
+        var sumP2 = 0.0
+        var sumT2 = 0.0
+        for i in 0..<k {
+            sumPt += pSum[i] * tSum[i]
+            sumP2 += pSum[i] * pSum[i]
+            sumT2 += tSum[i] * tSum[i]
+        }
+
+        let numerator = c * s - sumPt
+        let s2 = s * s
+        let denom1 = s2 - sumP2
+        let denom2 = s2 - sumT2
+
+        guard denom1 > 0, denom2 > 0 else { return 0 }
+        let denominator = sqrt(denom1 * denom2)
+        guard denominator > 0 else { return 0 }
+
+        let mcc = numerator / denominator
+        return max(-1.0, min(1.0, mcc))
     }
 
     /// Cohen's Kappa score for inter-rater agreement.

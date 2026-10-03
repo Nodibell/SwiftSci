@@ -59,11 +59,20 @@ public struct RandomizedSearchCV: Sendable {
         }
 
         public static func < (lhs: GenericResult<Params>, rhs: GenericResult<Params>) -> Bool {
-            lhs.meanScore < rhs.meanScore
+            if lhs.meanScore != rhs.meanScore {
+                return lhs.meanScore < rhs.meanScore
+            }
+            return lhs.stdScore > rhs.stdScore
         }
-        
+
         public static func == (lhs: GenericResult<Params>, rhs: GenericResult<Params>) -> Bool {
-            lhs.meanScore == rhs.meanScore && lhs.stdScore == rhs.stdScore
+            if let lp = lhs.params as? any Equatable, let rp = rhs.params as? any Equatable {
+                func isEqual<T: Equatable>(_ a: T, _ b: any Equatable) -> Bool {
+                    (b as? T) == a
+                }
+                guard isEqual(lp, rp) else { return false }
+            }
+            return lhs.meanScore == rhs.meanScore && lhs.stdScore == rhs.stdScore
         }
     }
 
@@ -202,3 +211,4 @@ public struct RandomizedSearchCV: Sendable {
         return results.first
     }
 }
+

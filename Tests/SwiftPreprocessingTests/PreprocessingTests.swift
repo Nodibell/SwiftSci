@@ -2,9 +2,31 @@ import Testing
 import Foundation
 @testable import SwiftPreprocessing
 import SwiftDataFrame
+//
+//  PreprocessingTests.swift
+//  SwiftPreprocessingTests
+//
+//  Comprehensive test suite for dataset partitioning, stratification, and advanced resampling.
+//
+//  Version Updates & Changelog:
+//  - v3.9+: Introduced stratified splitting for both raw feature matrices (`trainTestSplit`)
+//    and tabular datasets (`DataFrame.trainTestSplit(stratifyColumn:)`).
+//  - v3.9+: Added advanced imbalanced dataset resampling algorithms:
+//    * SMOTE: Synthetic Minority Over-sampling Technique (including DataFrame integration)
+//    * BorderlineSMOTE: Focused synthetic sample generation along decision boundaries
+//    * ADASYN: Adaptive Synthetic sampling based on local minority class density distributions
+//  - Hardening & Small-Sample Resilience (G-022):
+//    * Single-observation class (singleton) handling: safely routes singletons without zero-division
+//      or partition starvation.
+//    * Typed errors: Migrated from legacy NSError to structured `PreprocessingError.invalidParameter`
+//      and `PreprocessingError.emptyInput`.
+//    * Guaranteed non-empty partitions: Enforces non-empty train and test partitions whenever N >= 2.
+//    * Small sample size boundary guards: Protects against `testCount == 0` on small cohorts (N < 8).
+//    * Performance optimizations: Compact column direct transform and scratch buffer recycling.
+//
 
-@Suite("Preprocessing v3.9 Tests - Stratification & Advanced Resampling")
-struct Preprocessingv39Tests {
+@Suite("Preprocessing Tests - Stratification & Advanced Resampling")
+struct PreprocessingTests {
     
     @Test("trainTestSplit with stratify preserves class proportions")
     func testTrainTestSplitStratify() throws {

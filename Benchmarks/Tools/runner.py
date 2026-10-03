@@ -183,8 +183,8 @@ def plan(root, profile, engines, swift_worker, python):
     require(
         len(set(engines)) == len(engines)
         and engines
-        and set(engines) <= {"swiftsci", "pandas"},
-        "Supported engines: swiftsci,pandas",
+        and set(engines) <= {"swiftsci", "pandas", "mlx"},
+        "Supported engines: swiftsci,pandas,mlx",
     )
     engine_records = {}
     for engine in engines:
@@ -213,6 +213,13 @@ def plan(root, profile, engines, swift_worker, python):
                 "Swift worker source is stale; rebuild",
             )
             engine_records[engine] = dict(command=[str(worker)], build=record)
+        elif engine == "mlx":
+            version = command([python, "-c", "import importlib.metadata as m,numpy,pandas,sys;print(m.version('mlx'),m.version('mlx-metal'),numpy.__version__,pandas.__version__,sys.version)"])
+            worker = root / "Benchmarks/Python/mlx_worker.py"
+            engine_records[engine] = dict(command=[python, str(worker)], version=version,
+                worker_sha256=digest(worker.read_bytes()),
+                settings=dict(device="fixture-explicit", fallback=False, output="materialized",
+                              decoder_initialization="direct-fixed-arrays"))
         else:
             version = command(
                 [
@@ -237,6 +244,13 @@ def plan(root, profile, engines, swift_worker, python):
         )
         spec = dict(case=case, dataset=dataset, workload=workload)
         cases.append(dict(**spec, case_key=identity(spec)))
+    if "mlx" in engines:
+        sys.path.insert(0, str(root / "Benchmarks/Python"))
+        from mlx_workloads import OPERATIONS, check_supported
+        for case in cases:
+            require(case['workload']['operation'] in OPERATIONS,
+                    'MLX comparison does not support: ' + case['case']['id'])
+            check_supported(read_json(root / case['dataset']['fixture']))
     contract = dict(
         profile=profile,
         cases=cases,

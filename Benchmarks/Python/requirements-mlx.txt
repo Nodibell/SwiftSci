@@ -1,0 +1,3 @@
+-r requirements-standardized.txt
+mlx==0.31.1
+mlx-metal==0.31.1

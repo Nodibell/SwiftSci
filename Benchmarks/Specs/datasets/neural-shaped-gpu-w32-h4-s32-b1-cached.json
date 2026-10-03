@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/neural-shaped/inputs/neural-shaped-gpu-w32-h4-s32-b1-cached.json",
+  "generator_version": 1,
+  "id": "neural-shaped-gpu-w32-h4-s32-b1-cached",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "decoder-shaped-f32",
+  "reference_basis": "neural-shaped-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/neural-shaped/references/neural-shaped-gpu-w32-h4-s32-b1-cached.json",
+  "reference_sha256": "0648fbd14c4c7dd7038b91a85bd4fef8fc2d02509daa9309f0744d3720dfd1d0",
+  "reference_size_bytes": 15287,
+  "rows": 32,
+  "schema_version": 1,
+  "sha256": "fe7dbb39992b3aed32b9d2a45581fb3cb5fe775cea10a09c647072b3f7e0ceff",
+  "size_bytes": 201458,
+  "source": "Original bounded decoder tensors; see Benchmarks/Fixtures/neural-shaped/README.md",
+  "source_fixture": "Benchmarks/Fixtures/neural-shaped/sources.lock.json",
+  "source_sha256": "1f2d04e41e219d8fd3030237fd4acb17ab1c09b2552eb911beb4d030a6a6dd11",
+  "source_size_bytes": 703,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "fixture": "Benchmarks/Fixtures/neural-shaped/inputs/neural-shaped-cpu-w32-h2-s128-b1-full.json",
+  "generator_version": 1,
+  "id": "neural-shaped-cpu-w32-h2-s128-b1-full",
+  "kind": "numerical-fixture-v1",
+  "license": "MIT, repository LICENSE",
+  "operation": "decoder-shaped-f32",
+  "reference_basis": "neural-shaped-reference-v1",
+  "reference_fixture": "Benchmarks/Fixtures/neural-shaped/references/neural-shaped-cpu-w32-h2-s128-b1-full.json",
+  "reference_sha256": "7685887ca2c260aef1acadbf4f6edd91426dd6603467c6860b297ff161bff4bc",
+  "reference_size_bytes": 59310,
+  "rows": 128,
+  "schema_version": 1,
+  "sha256": "c893b46c0361a346be0672d2c2b5af65202be2d65b7599edfa7969d400d5f528",
+  "size_bytes": 258440,
+  "source": "Original bounded decoder tensors; see Benchmarks/Fixtures/neural-shaped/README.md",
+  "source_fixture": "Benchmarks/Fixtures/neural-shaped/sources.lock.json",
+  "source_sha256": "1f2d04e41e219d8fd3030237fd4acb17ab1c09b2552eb911beb4d030a6a6dd11",
+  "source_size_bytes": 703,
+  "tolerances": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  }
+}

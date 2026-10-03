@@ -118,4 +118,84 @@ struct EvaluationHarnessTests {
             _ = try EvaluationHarness.evaluateRegression(yTrue: [1.0, 2.0, 3.0, 4.0], yPred: [1.1, 1.9, 3.1, 3.9], numFeatures: 1)
         }
     }
+
+    @Test("EvaluationError errorDescription localized formatting")
+    func testEvaluationErrorDescriptions() {
+        let errEmpty = EvaluationError.emptyData("Empty dataset")
+        #expect(errEmpty.errorDescription?.contains("Evaluation data is empty: Empty dataset") == true)
+
+        let errDim = EvaluationError.dimensionMismatch(expected: 10, actual: 5)
+        #expect(errDim.errorDescription?.contains("Dimension mismatch: ground truth has 10 samples, but predictions have 5") == true)
+
+        let errLabels = EvaluationError.invalidClassificationLabels("Non-integer label")
+        #expect(errLabels.errorDescription?.contains("Invalid classification labels: Non-integer label") == true)
+
+        let errParam = EvaluationError.invalidParameter("p <= 0")
+        #expect(errParam.errorDescription?.contains("Invalid evaluation parameter: p <= 0") == true)
+    }
+
+    @Test("ClassificationEvaluation and RegressionEvaluation Codable serialization and custom metrics")
+    func testEvaluationSerializationAndCustomMetrics() throws {
+        let customClassification = ClassificationEvaluation(
+            accuracy: 0.9,
+            macroPrecision: 0.88,
+            macroRecall: 0.89,
+            macroF1: 0.885,
+            weightedF1: 0.89,
+            classLabels: [0, 1],
+            confusionMatrix: [[5, 1], [0, 6]],
+            metrics: ["custom_acc": 0.9]
+        )
+        #expect(customClassification.metrics["custom_acc"] == 0.9)
+        let encodedClass = try JSONEncoder().encode(customClassification)
+        let decodedClass = try JSONDecoder().decode(ClassificationEvaluation.self, from: encodedClass)
+        #expect(decodedClass == customClassification)
+
+        let customRegression = RegressionEvaluation(
+            r2: 0.92,
+            adjustedR2: 0.90,
+            mse: 0.05,
+            rmse: sqrt(0.05),
+            mae: 0.15,
+            mape: 2.5,
+            explainedVariance: 0.93,
+            metrics: ["custom_r2": 0.92]
+        )
+        #expect(customRegression.metrics["custom_r2"] == 0.92)
+        let encodedReg = try JSONEncoder().encode(customRegression)
+        let decodedReg = try JSONDecoder().decode(RegressionEvaluation.self, from: encodedReg)
+        #expect(decodedReg == customRegression)
+    }
+
+    @Test("evaluateClassification Double and String validation branches")
+    func testClassificationValidationBranches() {
+        // Double yPred containing non-integer values
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateClassification(yTrue: [0.0, 1.0], yPred: [0.0, 1.5])
+        }
+
+        // Double empty inputs
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateClassification(yTrue: [Double](), yPred: [Double]())
+        }
+
+        // Double count mismatch
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateClassification(yTrue: [0.0, 1.0], yPred: [0.0])
+        }
+
+        // String empty inputs
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateClassification(yTrue: [String](), yPred: [String]())
+        }
+
+        // String count mismatch
+        #expect(throws: EvaluationError.self) {
+            _ = try EvaluationHarness.evaluateClassification(yTrue: ["a", "b"], yPred: ["a"])
+        }
+
+        // computeConfusionMatrix with empty inputs
+        let emptyMatrix = EvaluationHarness.computeConfusionMatrix(yTrue: [], yPred: [])
+        #expect(emptyMatrix.isEmpty)
+    }
 }

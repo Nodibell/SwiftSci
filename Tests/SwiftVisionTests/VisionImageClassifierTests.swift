@@ -140,4 +140,35 @@ struct VisionImageClassifierTests {
         #expect(profile.summary.contains("dogs"))
         #expect(profile.samplePredictions.count == 3)
     }
+
+    @Test("VisionImageClassifier cosine distance edge cases")
+    func testCosineDistanceEdgeCases() {
+        let classifier = VisionImageClassifier()
+
+        // Empty embeddings
+        #expect(classifier.computeCosineDistance(embeddingA: [], embeddingB: []) == 1.0)
+
+        // Count mismatch
+        #expect(classifier.computeCosineDistance(embeddingA: [1.0], embeddingB: [1.0, 2.0]) == 1.0)
+
+        // Zero-norm embeddings
+        #expect(classifier.computeCosineDistance(embeddingA: [0.0, 0.0], embeddingB: [0.0, 0.0]) == 1.0)
+
+        // Completely opposing unit vectors -> cos = -1.0, dist = 2.0
+        let distOpposite = classifier.computeCosineDistance(embeddingA: [1.0, 0.0], embeddingB: [-1.0, 0.0])
+        #expect(abs(distOpposite - 2.0) < 1e-4)
+
+        // Orthogonal vectors -> cos = 0.0, dist = 1.0
+        let distOrtho = classifier.computeCosineDistance(embeddingA: [1.0, 0.0], embeddingB: [0.0, 1.0])
+        #expect(abs(distOrtho - 1.0) < 1e-4)
+    }
+
+    @Test("VisionImageClassifier profileFolder rejects nonexistent directory")
+    func testProfileFolderNonexistentDirectory() async {
+        let classifier = VisionImageClassifier()
+        let nonExistentURL = URL(fileURLWithPath: "/tmp/non_existent_folder_\(UUID().uuidString)")
+        await #expect(throws: VisionError.self) {
+            _ = try await classifier.profileFolder(at: nonExistentURL)
+        }
+    }
 }

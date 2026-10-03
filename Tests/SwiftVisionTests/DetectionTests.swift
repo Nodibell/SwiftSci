@@ -351,4 +351,62 @@ struct DetectionTests {
         #expect(m1.map50 == m2.map50)
         #expect(m1.precision == m2.precision)
     }
+
+    @Test("BoundingBox and DetectionMetrics Codable serialization and Equatable checks")
+    func testDetectionCodableAndBoundingBoxIoU() throws {
+        let boxA = BoundingBox(xMin: 0.1, yMin: 0.2, xMax: 0.5, yMax: 0.6, confidence: 0.95, classLabel: "car")
+        let boxB = BoundingBox(xMin: 0.1, yMin: 0.2, xMax: 0.5, yMax: 0.6, confidence: 0.95, classLabel: "car")
+        #expect(boxA == boxB)
+
+        let encodedBox = try JSONEncoder().encode(boxA)
+        let decodedBox = try JSONDecoder().decode(BoundingBox.self, from: encodedBox)
+        #expect(decodedBox == boxA)
+
+        // Zero-area boxes yield 0.0 IoU without division by zero
+        let zeroBox1 = BoundingBox(xMin: 0.0, yMin: 0.0, xMax: 0.0, yMax: 0.0, confidence: 1.0, classLabel: "dot")
+        let zeroBox2 = BoundingBox(xMin: 0.0, yMin: 0.0, xMax: 0.0, yMax: 0.0, confidence: 1.0, classLabel: "dot")
+        #expect(zeroBox1.iou(with: zeroBox2) == 0.0)
+
+        let metrics = DetectionMetrics(
+            map50: 0.85,
+            map50_95: 0.65,
+            meanIoU: 0.78,
+            precision: 0.88,
+            recall: 0.82,
+            f1: 0.85,
+            perClassAP50: ["car": 0.85],
+            predictionOnlyClasses: ["pedestrian"],
+            totalGroundTruths: 10,
+            totalDetections: 12,
+            summary: "Test summary"
+        )
+        let encodedMetrics = try JSONEncoder().encode(metrics)
+        let decodedMetrics = try JSONDecoder().decode(DetectionMetrics.self, from: encodedMetrics)
+        #expect(decodedMetrics == metrics)
+    }
+
+    @Test("ObjectDetectionEvaluator empty labels and prediction-only dataset summaries")
+    func testEvaluatorEmptyDatasetVariants() throws {
+        // Multiple images but zero ground truths and zero detections
+        let emptyImagesMetrics = try ObjectDetectionEvaluator.evaluate(
+            predictions: [[], []],
+            groundTruths: [[], []]
+        )
+        #expect(emptyImagesMetrics.map50 == 0.0)
+        #expect(emptyImagesMetrics.totalGroundTruths == 0)
+        #expect(emptyImagesMetrics.totalDetections == 0)
+        #expect(emptyImagesMetrics.summary.contains("No labeled objects or detections in dataset across 2 image(s)"))
+
+        // Images with detections but absolutely no ground truths
+        let pred = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.5, yMax: 0.5, confidence: 0.9, classLabel: "ghost")
+        let noGTMetrics = try ObjectDetectionEvaluator.evaluate(
+            predictions: [[pred], []],
+            groundTruths: [[], []]
+        )
+        #expect(noGTMetrics.map50 == 0.0)
+        #expect(noGTMetrics.totalGroundTruths == 0)
+        #expect(noGTMetrics.totalDetections == 1)
+        #expect(noGTMetrics.predictionOnlyClasses == ["ghost"])
+        #expect(noGTMetrics.summary.contains("No ground-truth target objects in dataset"))
+    }
 }

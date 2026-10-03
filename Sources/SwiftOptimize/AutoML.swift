@@ -112,7 +112,7 @@ public struct AutoMLCandidateFailure: Sendable, Equatable {
 /// 2. Split with ``StratifiedKFold`` (classification) or shuffled ``KFold`` (regression).
 /// 3. Fit every candidate on every fold; score each fold with ``EvaluationHarness``.
 /// 4. Rank by mean fold score (macro F1 or R²), tie-break by lower std, then candidate order.
-/// 5. Return the winner's pooled out-of-fold ``EvaluationReport``.
+/// 5. Return the winner's pooled out-of-fold `EvaluationReport`.
 ///
 /// ## Task Type Inference (`.auto`)
 /// - Any non-integer or non-finite target → regression.
@@ -227,11 +227,31 @@ public actor AutoML {
                     throw AutoMLError.insufficientClassSamples(label: label, count: count, required: nFolds)
                 }
             }
-            folds = StratifiedKFold(nSplits: nFolds, shuffle: true, seed: seed)
-                .split(features: features, targets: targets)
+            do {
+                folds = try StratifiedKFold(nSplits: nFolds, shuffle: true, seed: seed)
+                    .split(features: features, targets: targets)
+            } catch let error as ValidationError {
+                switch error {
+                case .insufficientClassSamples(let label, let count, let req):
+                    throw AutoMLError.insufficientClassSamples(label: label, count: count, required: req)
+                case .insufficientSamples(let count, let req):
+                    throw AutoMLError.insufficientSamples(count: count, required: req)
+                default:
+                    throw AutoMLError.invalidInput(error.localizedDescription)
+                }
+            }
         } else {
-            folds = KFold(nSplits: nFolds, shuffle: true, seed: seed)
-                .split(features: features, targets: targets)
+            do {
+                folds = try KFold(nSplits: nFolds, shuffle: true, seed: seed)
+                    .split(features: features, targets: targets)
+            } catch let error as ValidationError {
+                switch error {
+                case .insufficientSamples(let count, let req):
+                    throw AutoMLError.insufficientSamples(count: count, required: req)
+                default:
+                    throw AutoMLError.invalidInput(error.localizedDescription)
+                }
+            }
         }
 
         // 3. Evaluate candidates

@@ -19,20 +19,23 @@ public struct Fold: Sendable {
 
 /// Splits a dataset into K folds for cross-validation.
 public struct KFold: Sendable {
-    /// The n splits.
+    /// Number of splits.
     public let nSplits: Int
-    /// The shuffle.
+    /// Whether to shuffle samples before splitting.
     public let shuffle: Bool
-    /// The seed.
+    /// Random seed for deterministic shuffling.
     public let seed: Int
 
-    /// Creates a new instance.
+    /// Creates a new KFold cross-validator.
     /// - Parameters:
-    ///   - nSplits: The n splits.
-    ///   - shuffle: The shuffle.
-    ///   - seed: The seed.
-    public init(nSplits: Int = 5, shuffle: Bool = true, seed: Int = 42) {
-        precondition(nSplits >= 2, "KFold requires at least 2 splits")
+    ///   - nSplits: Number of splits (must be at least 2).
+    ///   - shuffle: Whether to shuffle sample indices.
+    ///   - seed: Random seed.
+    /// - Throws: `ValidationError.invalidFoldCount` if `nSplits < 2`.
+    public init(nSplits: Int = 5, shuffle: Bool = true, seed: Int = 42) throws {
+        guard nSplits >= 2 else {
+            throw ValidationError.invalidFoldCount(nSplits)
+        }
         self.nSplits = nSplits
         self.shuffle = shuffle
         self.seed = seed
@@ -42,9 +45,20 @@ public struct KFold: Sendable {
     /// - Parameters:
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.
     ///   - targets: 1D array of ground-truth target values of length `N`.
+    /// - Throws: `ValidationError` if data is empty, mismatched, or samples count < nSplits.
     /// - Returns: The computed [Fold] result instance.
-    public func split(features: [[Double]], targets: [Double]) -> [Fold] {
+    public func split(features: [[Double]], targets: [Double]) throws -> [Fold] {
         let n = features.count
+        guard n > 0 else {
+            throw ValidationError.emptyDataset
+        }
+        guard n == targets.count else {
+            throw ValidationError.dimensionMismatch(features: n, targets: targets.count)
+        }
+        guard n >= nSplits else {
+            throw ValidationError.insufficientSamples(samples: n, required: nSplits)
+        }
+
         var indices = Array(0..<n)
 
         if shuffle {
@@ -83,17 +97,21 @@ public struct KFold: Sendable {
 
 /// Represents cross validation result.
 public struct CrossValidationResult: Sendable {
-    /// The scores.
+    /// The individual fold scores.
     public let scores: [Double]
-    /// The mean.
+    /// The arithmetic mean across fold scores.
     public let mean: Double
-    /// The std.
+    /// The standard deviation across fold scores.
     public let std: Double
 
-    /// Creates a new instance.
+    /// Creates a new cross-validation result instance.
     /// - Parameters:
-    ///   - scores: The scores.
-    public init(scores: [Double]) {
+    ///   - scores: Array of non-empty fold evaluation scores.
+    /// - Throws: `ValidationError.invalidParameter` if scores array is empty.
+    public init(scores: [Double]) throws {
+        guard !scores.isEmpty else {
+            throw ValidationError.invalidParameter("CrossValidationResult requires at least one score")
+        }
         self.scores = scores
         let mean = scores.reduce(0, +) / Double(scores.count)
         let variance = scores.map { pow($0 - mean, 2) }.reduce(0, +) / Double(scores.count)
@@ -115,7 +133,7 @@ public enum CrossValidator {
     ///   - targets: 1D array of ground-truth target values of length `N`.
     ///   - nSplits: Number of cross-validation splitting folds.
     ///   - seed: Random number generator seed for deterministic reproducibility.
-    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Throws: `ValidationError` or `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
     /// - Returns: The computed CrossValidationResult result instance.
     public static func crossValidate(
         classifier: (maxDepth: Int, criterion: SplitCriterion),
@@ -124,7 +142,7 @@ public enum CrossValidator {
         nSplits: Int = 5,
         seed: Int = 42
     ) async throws -> CrossValidationResult {
-        let folds = KFold(nSplits: nSplits, shuffle: true, seed: seed)
+        let folds = try KFold(nSplits: nSplits, shuffle: true, seed: seed)
             .split(features: features, targets: targets)
 
         let scores: [Double] = try await withThrowingTaskGroup(of: Double.self) { group in
@@ -144,7 +162,7 @@ public enum CrossValidator {
             for try await score in group { results.append(score) }
             return results
         }
-        return CrossValidationResult(scores: scores)
+        return try CrossValidationResult(scores: scores)
     }
 
     /// Cross-validates a Decision Tree Regressor using R² score.
@@ -154,7 +172,7 @@ public enum CrossValidator {
     ///   - targets: 1D array of ground-truth target values of length `N`.
     ///   - nSplits: Number of cross-validation splitting folds.
     ///   - seed: Random number generator seed for deterministic reproducibility.
-    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Throws: `ValidationError` or `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
     /// - Returns: The computed CrossValidationResult result instance.
     public static func crossValidateRegressor(
         maxDepth: Int,
@@ -163,7 +181,7 @@ public enum CrossValidator {
         nSplits: Int = 5,
         seed: Int = 42
     ) async throws -> CrossValidationResult {
-        let folds = KFold(nSplits: nSplits, shuffle: true, seed: seed)
+        let folds = try KFold(nSplits: nSplits, shuffle: true, seed: seed)
             .split(features: features, targets: targets)
 
         let scores: [Double] = try await withThrowingTaskGroup(of: Double.self) { group in
@@ -179,7 +197,7 @@ public enum CrossValidator {
             for try await score in group { results.append(score) }
             return results
         }
-        return CrossValidationResult(scores: scores)
+        return try CrossValidationResult(scores: scores)
     }
 
     /// Generic cross-validation for any ClassifierEstimator.
@@ -198,7 +216,7 @@ public enum CrossValidator {
         nSplits: Int = 5,
         seed: Int = 42
     ) async throws -> CrossValidationResult {
-        let folds = KFold(nSplits: nSplits, shuffle: true, seed: seed)
+        let folds = try KFold(nSplits: nSplits, shuffle: true, seed: seed)
             .split(features: features, targets: targets)
 
         let scores: [Double] = try await withThrowingTaskGroup(of: Double.self) { group in
@@ -215,7 +233,7 @@ public enum CrossValidator {
             for try await score in group { results.append(score) }
             return results
         }
-        return CrossValidationResult(scores: scores)
+        return try CrossValidationResult(scores: scores)
     }
 
     /// Generic cross-validation for any RegressorEstimator.
@@ -234,7 +252,7 @@ public enum CrossValidator {
         nSplits: Int = 5,
         seed: Int = 42
     ) async throws -> CrossValidationResult {
-        let folds = KFold(nSplits: nSplits, shuffle: true, seed: seed)
+        let folds = try KFold(nSplits: nSplits, shuffle: true, seed: seed)
             .split(features: features, targets: targets)
 
         let scores: [Double] = try await withThrowingTaskGroup(of: Double.self) { group in
@@ -250,6 +268,6 @@ public enum CrossValidator {
             for try await score in group { results.append(score) }
             return results
         }
-        return CrossValidationResult(scores: scores)
+        return try CrossValidationResult(scores: scores)
     }
 }

@@ -42,25 +42,25 @@ let X = (0..<sampleCount).map { row in
 let y = X.map { row in row.reduce(0.0, +) * 1.5 + 2.0 }
 
 // 2. Configure 5-fold cross-validation with a fixed random seed
-let kfold = KFold(nSplits: 5, shuffle: true, randomSeed: 42)
-let splits = kfold.split(X: X)
+let kfold = try KFold(nSplits: 5, shuffle: true, seed: 42)
+let splits = try kfold.split(features: X, targets: y)
 
 print("Generated \(splits.count) validation folds.")
 
 // 3. Train and evaluate linear regressors across folds
 var mseScores: [Double] = []
 
-for (foldIndex, (trainIndices, valIndices)) in splits.enumerated() {
-    let trainX = trainIndices.map { X[$0] }
-    let trainY = trainIndices.map { y[$0] }
-    let valX = valIndices.map { X[$0] }
-    let valY = valIndices.map { y[$0] }
+for (foldIndex, fold) in splits.enumerated() {
+    let trainX = fold.trainFeatures
+    let trainY = fold.trainTargets
+    let valX = fold.valFeatures
+    let valY = fold.valTargets
     
     let model = LinearRegression(learningRate: 0.01, epochs: 200)
     try await model.fit(features: trainX, targets: trainY)
     
     let predictions = try await model.predict(features: valX)
-    let mse = try RegressionMetrics.meanSquaredError(yTrue: valY, yPred: predictions)
+    let mse = Metrics.meanSquaredError(yTrue: valY, yPred: predictions)
     mseScores.append(mse)
     
     print("Fold \(foldIndex + 1): MSE = \(String(format: "%.4f", mse))")
@@ -82,14 +82,14 @@ import SwiftML
 
 // 1. Dataset with imbalanced binary classes (80% Class 0, 20% Class 1)
 let features = (0..<100).map { i in [Double(i), Double(i * 2)] }
-let labels = (0..<100).map { $0 < 80 ? 0 : 1 }
+let labels = (0..<100).map { $0 < 80 ? 0.0 : 1.0 }
 
 // 2. Initialize Stratified K-Fold
-let stratifiedKF = StratifiedKFold(nSplits: 5, shuffle: true, randomSeed: 123)
-let folds = stratifiedKF.split(X: features, y: labels)
+let stratifiedKF = try StratifiedKFold(nSplits: 5, shuffle: true, seed: 123)
+let folds = try stratifiedKF.split(features: features, targets: labels)
 
-for (idx, (trainIdx, valIdx)) in folds.enumerated() {
-    let valLabels = valIdx.map { labels[$0] }
+for (idx, fold) in folds.enumerated() {
+    let valLabels = fold.valTargets.map { Int($0) }
     let class1Count = valLabels.filter { $0 == 1 }.count
     let class0Count = valLabels.filter { $0 == 0 }.count
     
@@ -109,11 +109,11 @@ import SwiftForecast
 
 let timeSeriesData = (0..<120).map { i in Double(i) * 1.2 + sin(Double(i) * 0.2) }
 
-let tsSplit = TimeSeriesSplit(nSplits: 4, maxTrainSize: nil)
-let temporalFolds = tsSplit.split(dataCount: timeSeriesData.count)
+let tsSplit = try TimeSeriesSplit(nSplits: 4, maxTrainSize: nil)
+let temporalFolds = try tsSplit.split(features: timeSeriesData.map { [$0] }, targets: timeSeriesData)
 
-for (foldIndex, (trainIdx, valIdx)) in temporalFolds.enumerated() {
-    print("Fold \(foldIndex + 1): Train [\(trainIdx.first!)...\(trainIdx.last!)] (\(trainIdx.count) pts) -> Val [\(valIdx.first!)...\(valIdx.last!)] (\(valIdx.count) pts)")
+for (foldIndex, fold) in temporalFolds.enumerated() {
+    print("Fold \(foldIndex + 1): Train \(fold.trainTargets.count) pts -> Val \(fold.valTargets.count) pts")
 }
 ```
 

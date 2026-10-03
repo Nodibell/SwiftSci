@@ -18,8 +18,8 @@ AutoML, Cross-Validation Folds & Hyperparameter Tuning.
 ```swift
 import SwiftOptimize
 
-let skf = StratifiedKFold(nSplits: 5)
-let gridSearch = GridSearchCV(estimator: DecisionTreeClassifier(), paramGrid: grid, cv: 5)
+let skf = try StratifiedKFold(nSplits: 5)
+let grid = GridSearchCV(maxDepthValues: [3, 5], criterionValues: [.gini])
 ```
 
 ## Topics

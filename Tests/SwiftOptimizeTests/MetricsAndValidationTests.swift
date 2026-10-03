@@ -99,11 +99,11 @@ struct MetricsTests {
 struct ValidationTests {
 
     @Test("KFold produces correct number of folds")
-    func testKFoldSplitCount() {
+    func testKFoldSplitCount() throws {
         let features: [[Double]] = (0..<20).map { [Double($0)] }
         let targets: [Double] = (0..<20).map { Double($0 % 2) }
-        let kf = KFold(nSplits: 5)
-        let folds = kf.split(features: features, targets: targets)
+        let kf = try KFold(nSplits: 5)
+        let folds = try kf.split(features: features, targets: targets)
         #expect(folds.count == 5)
         for fold in folds {
             #expect(!fold.trainFeatures.isEmpty)
@@ -112,14 +112,43 @@ struct ValidationTests {
     }
 
     @Test("KFold validation set sizes are approximately equal")
-    func testKFoldValidationSizes() {
+    func testKFoldValidationSizes() throws {
         let n = 25
         let features: [[Double]] = (0..<n).map { [Double($0)] }
         let targets = [Double](repeating: 0, count: n)
-        let folds = KFold(nSplits: 5).split(features: features, targets: targets)
+        let folds = try KFold(nSplits: 5).split(features: features, targets: targets)
         for fold in folds {
             #expect(fold.valFeatures.count == 5)
             #expect(fold.trainFeatures.count == 20)
+        }
+    }
+
+    @Test("KFold throws typed ValidationError on invalid inputs")
+    func testKFoldErrors() {
+        // Invalid splits
+        #expect(throws: ValidationError.self) {
+            _ = try KFold(nSplits: 1)
+        }
+        
+        let validKF = try! KFold(nSplits: 3)
+        // Empty features
+        #expect(throws: ValidationError.self) {
+            _ = try validKF.split(features: [], targets: [])
+        }
+        // Dimension mismatch
+        #expect(throws: ValidationError.self) {
+            _ = try validKF.split(features: [[1.0], [2.0]], targets: [1.0])
+        }
+        // Insufficient samples
+        #expect(throws: ValidationError.self) {
+            _ = try validKF.split(features: [[1.0], [2.0]], targets: [1.0, 2.0])
+        }
+    }
+
+    @Test("CrossValidationResult throws when scores are empty")
+    func testCrossValidationResultThrowsOnEmpty() {
+        #expect(throws: ValidationError.self) {
+            _ = try CrossValidationResult(scores: [])
         }
     }
 

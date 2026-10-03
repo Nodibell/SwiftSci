@@ -172,16 +172,16 @@ internal enum CSVReader {
             return TypedColumn<String>(name: name, values: cells)
         }
 
-        if nonNull.allSatisfy({ Bool.parse(from: $0) != nil }) {
-            return TypedColumn<Bool>(name: name, values: cells.map { $0.flatMap(Bool.parse) })
-        }
-
         if nonNull.allSatisfy({ Int64.parse(from: $0) != nil }) {
             return TypedColumn<Int64>(name: name, values: cells.map { $0.flatMap(Int64.parse) })
         }
 
         if nonNull.allSatisfy({ Double.parse(from: $0) != nil }) {
             return TypedColumn<Double>(name: name, values: cells.map { $0.flatMap(Double.parse) })
+        }
+
+        if nonNull.allSatisfy({ Bool.parse(from: $0) != nil }) {
+            return TypedColumn<Bool>(name: name, values: cells.map { $0.flatMap(Bool.parse) })
         }
 
         if nonNull.allSatisfy({ Date.parse(from: $0) != nil }) {
@@ -319,20 +319,6 @@ internal enum CSVReader {
             return values.column(named: name)
         }
 
-        if isBool {
-            var values = CSVColumnBuilder<Bool>(capacity: dataRowsToRead)
-            for r in 0..<dataRowsToRead {
-                let rowIdx = startRowIdx + r
-                if let offset = records.field(row: rowIdx, column: colIndex) {
-                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-                    values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
-                } else {
-                    values.append(nil)
-                }
-            }
-            return values.column(named: name)
-        }
-
         if isInt64 {
             var values = CSVColumnBuilder<Int64>(capacity: dataRowsToRead)
             for r in 0..<dataRowsToRead {
@@ -352,6 +338,20 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
                     values.append(parseCSVDouble(buffer: buffer, offset: offset, nullMatcher: nullMatcher))
+                } else {
+                    values.append(nil)
+                }
+            }
+            return values.column(named: name)
+        }
+
+        if isBool {
+            var values = CSVColumnBuilder<Bool>(capacity: dataRowsToRead)
+            for r in 0..<dataRowsToRead {
+                let rowIdx = startRowIdx + r
+                if let offset = records.field(row: rowIdx, column: colIndex) {
+                    let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
+                    values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
                 } else {
                     values.append(nil)
                 }

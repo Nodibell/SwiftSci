@@ -132,6 +132,10 @@ extension Date: SupportedType {
         if let d = isoFormatter.date(from: s) { return d }
 
         let formats = [
+            "yyyy-MM-dd HH:mm:ss.SSS",
+            "yyyy/MM/dd HH:mm:ss.SSS",
+            "dd/MM/yyyy HH:mm:ss.SSS",
+            "MM/dd/yyyy HH:mm:ss.SSS",
             "yyyy-MM-dd HH:mm:ss",
             "yyyy-MM-dd HH:mm",
             "yyyy/MM/dd HH:mm:ss",

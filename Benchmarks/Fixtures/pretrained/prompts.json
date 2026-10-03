@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "template_date": "29 Sep 2026",
+  "license": "MIT, repository LICENSE; original validation prompts",
+  "cases": [
+    {"id": "scientific-explanation", "text": "Explain in two sentences why subtracting two nearly equal floating-point numbers can lose precision."},
+    {"id": "structured-observations", "text": "Return JSON with the sensor and temperature fields only. Observation: sensor A17 measured 23.5 degrees Celsius."},
+    {"id": "swift-code", "text": "Write a Swift function that returns the arithmetic mean of a nonempty array of Double values."},
+    {"id": "unicode-whitespace", "text": "Preserve this text exactly:\n\n  ΔT = 2.5 °C\t東京\n"}
+  ]
+}

@@ -2,7 +2,6 @@
 
 import json
 import datetime
-import os
 import platform
 import re
 import shutil
@@ -22,6 +21,7 @@ from contracts import (
 )
 from datasets import load_manifest, cache_path, reference, binary, resolve_workload
 from reporting import validate_worker, summarize
+from execution_policy import LEGACY_MODE, PRODUCTION_MODE, policy, worker_environment, engine_order
 
 METAL_BUILD_SETTINGS = {
     "MTL_FAST_MATH": "NO",
@@ -29,13 +29,6 @@ METAL_BUILD_SETTINGS = {
     "MTL_MATH_FP32_FUNCTIONS": "PRECISE",
 }
 
-THREAD_ENV = {
-    "VECLIB_MAXIMUM_THREADS": "1",
-    "OPENBLAS_NUM_THREADS": "1",
-    "OMP_NUM_THREADS": "1",
-    "MKL_NUM_THREADS": "1",
-    "NUMEXPR_NUM_THREADS": "1",
-}
 
 
 def command(args):
@@ -74,7 +67,6 @@ def environment():
         host=platform.node(),
         machine=platform.machine(),
         python=sys.version,
-        threads=THREAD_ENV,
     )
     if sys.platform == "darwin":
         result.update(
@@ -85,6 +77,14 @@ def environment():
             xcode=command(["xcodebuild", "-version"]),
         )
     return result
+
+
+def power_state():
+    if sys.platform != "darwin":
+        return dict(source="unavailable", settings="unavailable")
+    battery = command(["pmset", "-g", "batt"])
+    return dict(source="AC" if "AC Power" in battery else "battery",
+                settings=command(["pmset", "-g", "custom"]))
 
 
 def verify_uninstrumented(worker):
@@ -179,12 +179,17 @@ def build(root, products, packages):
     return worker
 
 
-def plan(root, profile, engines, swift_worker, python):
+def plan(root, profile, engines, swift_worker, python, mode=LEGACY_MODE):
+    execution = policy(mode)
+    profile = dict(profile)
+    if mode == PRODUCTION_MODE:
+        profile["batches"] = max(profile["batches"], execution["minimum_process_rounds"])
+
     require(
         len(set(engines)) == len(engines)
         and engines
-        and set(engines) <= {"swiftsci", "pandas"},
-        "Supported engines: swiftsci,pandas",
+        and set(engines) <= {"swiftsci", "pandas", "mlx", "polars", "duckdb"},
+        "Supported engines: swiftsci,pandas,mlx,polars,duckdb",
     )
     engine_records = {}
     for engine in engines:
@@ -213,6 +218,18 @@ def plan(root, profile, engines, swift_worker, python):
                 "Swift worker source is stale; rebuild",
             )
             engine_records[engine] = dict(command=[str(worker)], build=record)
+        elif engine == "mlx":
+            version = command([python, "-c", "import importlib.metadata as m,numpy,pandas,sys;print(m.version('mlx'),m.version('mlx-metal'),numpy.__version__,pandas.__version__,sys.version)"])
+            worker = root / "Benchmarks/Python/mlx_worker.py"
+            engine_records[engine] = dict(command=[python, str(worker)], version=version,
+                worker_sha256=digest(worker.read_bytes()),
+                settings=dict(device="fixture-explicit", fallback=False, output="materialized",
+                              decoder_initialization="direct-fixed-arrays"))
+        elif engine in ("polars", "duckdb"):
+            version = command([python, "-c", f"import {engine},numpy,pyarrow,sys;print({engine}.__version__,numpy.__version__,pyarrow.__version__,sys.version)"])
+            worker = root / "Benchmarks/Python/tabular_worker.py"
+            engine_records[engine] = dict(command=[python, str(worker), engine], version=version,
+                worker_sha256=digest(worker.read_bytes()), settings=dict(threads=execution["duckdb_threads"] if engine == "duckdb" else (1 if mode == LEGACY_MODE else "engine-default"), output="materialized"))
         else:
             version = command(
                 [
@@ -228,6 +245,12 @@ def plan(root, profile, engines, swift_worker, python):
                     (root / "Benchmarks/Python/standard_worker.py").read_bytes()
                 ),
             )
+    for engine, record in engine_records.items():
+        if engine != "swiftsci":
+            probe = "import sys,json;sys.path.insert(0,sys.argv[1]);from execution_policy import numerical_backend;print(json.dumps(numerical_backend()))"
+            record["numerical_backend"] = json.loads(subprocess.check_output(
+                [python, "-c", probe, str(root / "Benchmarks/Tools")], text=True,
+                env=worker_environment(mode)))
     cases = []
     for case in profile["cases"]:
         dataset = load_manifest(root, case["dataset"])
@@ -237,10 +260,23 @@ def plan(root, profile, engines, swift_worker, python):
         )
         spec = dict(case=case, dataset=dataset, workload=workload)
         cases.append(dict(**spec, case_key=identity(spec)))
+    if "mlx" in engines:
+        sys.path.insert(0, str(root / "Benchmarks/Python"))
+        from mlx_workloads import OPERATIONS, check_supported
+        for case in cases:
+            require(case['workload']['operation'] in OPERATIONS,
+                    'MLX comparison does not support: ' + case['case']['id'])
+            check_supported(read_json(root / case['dataset']['fixture']))
+    if set(engines) & {"polars", "duckdb"}:
+        sys.path.insert(0, str(root / "Benchmarks/Python"))
+        from tabular_workloads import OPERATIONS
+        unsupported = [c['case']['id'] for c in cases if c['workload']['operation'] not in OPERATIONS]
+        require(not unsupported, f"Native tabular engines do not support cases: {unsupported}; use an explicit overlap profile")
     contract = dict(
+        execution=execution,
+        engine_order=list(engines),
         profile=profile,
         cases=cases,
-        threads=THREAD_ENV,
         measurement="materialized-output-alive-v5",
         oracle_sha256=identity(
             {
@@ -254,6 +290,9 @@ def plan(root, profile, engines, swift_worker, python):
         profile=profile,
         cases=cases,
         engines=engine_records,
+        engine_order=list(engines),
+        contract=contract,
+        execution=execution,
         contract_hash=identity(contract),
         environment=environment(),
         source=source_identity(root),
@@ -307,6 +346,10 @@ def validate_parquet_artifacts(response_path, request, expected):
 
 
 def run(root, resolved, destination, purpose="benchmark"):
+    mode = resolved.get("execution", policy(LEGACY_MODE))["mode"]
+    power = power_state()
+    if mode == PRODUCTION_MODE and sys.platform == "darwin":
+        require(power["source"] == "AC", "Connect AC power before a production-default run")
     destination = Path(destination).resolve()
     destination.mkdir(parents=True, exist_ok=False)
     run = dict(
@@ -316,11 +359,12 @@ def run(root, resolved, destination, purpose="benchmark"):
         status="running",
         started_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         plan=resolved,
+        power_start=power,
         events=[],
     )
     write_json(destination / "run.json", run)
     profile = resolved["profile"]
-    engines = list(resolved["engines"])
+    engines = resolved.get("engine_order", list(resolved["engines"]))
     for case in resolved["cases"]:
         dataset = case["dataset"]
         workload = case["workload"]
@@ -329,11 +373,13 @@ def run(root, resolved, destination, purpose="benchmark"):
         expected_path = destination / (case["case"]["id"] + ".expected.f64")
         expected_path.write_bytes(expected)
         for batch in range(profile["batches"]):
-            for engine in engines if batch % 2 == 0 else list(reversed(engines)):
+            for engine in engine_order(engines, batch):
                 token = f"{case['case']['id']}-{engine}-{batch}"
                 request = dict(
                     schema_version=1,
                     case_key=case["case_key"],
+                    execution_mode=resolved.get("execution", policy(LEGACY_MODE))["mode"],
+                    engine=engine,
                     operation=workload["operation"],
                     dataset_kind=dataset["kind"],
                     input_path=str(cache_path(root, dataset)),
@@ -364,7 +410,7 @@ def run(root, resolved, destination, purpose="benchmark"):
                         completed = subprocess.run(
                             resolved["engines"][engine]["command"]
                             + [str(request_path), str(response_path)],
-                            env=dict(os.environ, **THREAD_ENV),
+                            env=worker_environment(request["execution_mode"]),
                             stdout=log,
                             stderr=subprocess.STDOUT,
                             timeout=profile["timeout_seconds"],
@@ -395,6 +441,8 @@ def run(root, resolved, destination, purpose="benchmark"):
     run["status"] = (
         "passed" if all(e["status"] == "passed" for e in run["events"]) else "failed"
     )
+    run["power_end"] = power_state()
+    run["power_unchanged"] = run["power_start"] == run["power_end"]
     run["finished_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     run["summary"] = summarize(run)
     write_json(destination / "run.json", run)

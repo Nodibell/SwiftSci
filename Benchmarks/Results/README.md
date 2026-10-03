@@ -4,6 +4,10 @@ Selected evidence belongs here with its raw records, source identity and a READM
 
 Use the [standardized runner](../README.md) for new comparisons and conformance records. Existing files remain historical evidence under their original measurement rules. They do not acquire certification when a workload migrates.
 
+## Production-default baseline
+
+The [October 1, 2026 baseline](../Baselines/ProductionDefault-20261001/README.md) compares SwiftSci with pandas/NumPy, Polars and DuckDB using native threading defaults. It retains 10,300 samples, resolved experiment metadata and an export verifier. Treat it as an initial desktop measurement, not a CI performance threshold. CPU regression policy passed with four known Python conformance failures retained.
+
 ## Compare standardized runs
 
 Build, run and audit each revision as described in the runner guide, then compare compatible run directories:

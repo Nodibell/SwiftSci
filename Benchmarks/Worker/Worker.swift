@@ -15,6 +15,10 @@ import SwiftStats
     case text(String)
   }
   static func main() async {
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--llama-inspect" {
+      exit(inspectLlama(requestURL: URL(fileURLWithPath: CommandLine.arguments[2]),
+                        responseURL: URL(fileURLWithPath: CommandLine.arguments[3])))
+    }
     if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--workflow-reload" {
       let status = await reloadWorkflow(requestURL: URL(fileURLWithPath: CommandLine.arguments[2]),
         responseURL: URL(fileURLWithPath: CommandLine.arguments[3]))

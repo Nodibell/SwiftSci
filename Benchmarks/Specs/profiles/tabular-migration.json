@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "tabular-migration",
+  "warmups": 2,
+  "samples": 5,
+  "batches": 3,
+  "timeout_seconds": 180,
+  "cases": [
+    {
+      "id": "medium-group-sum-mean",
+      "dataset": "medium",
+      "workload": "group-sum-mean-v1"
+    },
+    {
+      "id": "medium-row-sum",
+      "dataset": "medium",
+      "workload": "row-sum-v1"
+    },
+    {
+      "id": "medium-inner-join",
+      "dataset": "medium",
+      "workload": "inner-join-v1"
+    },
+    {
+      "id": "medium-pearson",
+      "dataset": "medium",
+      "workload": "pearson-v1"
+    },
+    {
+      "id": "medium-spearman",
+      "dataset": "medium",
+      "workload": "spearman-v1"
+    },
+    {
+      "id": "mixed-medium-csv-read",
+      "dataset": "mixed-medium",
+      "workload": "csv-read-v1"
+    },
+    {
+      "id": "mixed-medium-filter",
+      "dataset": "mixed-medium",
+      "workload": "filter-v1"
+    },
+    {
+      "id": "mixed-medium-group-sum-mean",
+      "dataset": "mixed-medium",
+      "workload": "group-sum-mean-v1"
+    },
+    {
+      "id": "mixed-medium-sort",
+      "dataset": "mixed-medium",
+      "workload": "sort-v1"
+    },
+    {
+      "id": "mixed-medium-flat-matrix",
+      "dataset": "mixed-medium",
+      "workload": "flat-matrix-v1"
+    },
+    {
+      "id": "mixed-medium-row-sum",
+      "dataset": "mixed-medium",
+      "workload": "row-sum-v1"
+    },
+    {
+      "id": "mixed-medium-inner-join",
+      "dataset": "mixed-medium",
+      "workload": "inner-join-v1"
+    },
+    {
+      "id": "mixed-medium-parquet-write",
+      "dataset": "mixed-medium",
+      "workload": "parquet-write-v1"
+    },
+    {
+      "id": "mixed-medium-standard-scale",
+      "dataset": "mixed-medium",
+      "workload": "standard-scale-v1"
+    },
+    {
+      "id": "mixed-medium-minmax-scale",
+      "dataset": "mixed-medium",
+      "workload": "minmax-scale-v1"
+    },
+    {
+      "id": "parquet-medium-read",
+      "dataset": "parquet-medium",
+      "workload": "parquet-read-v1"
+    },
+    {
+      "id": "large-mean",
+      "dataset": "large",
+      "workload": "mean-v1"
+    },
+    {
+      "id": "large-variance",
+      "dataset": "large",
+      "workload": "variance-v1"
+    },
+    {
+      "id": "large-stddev",
+      "dataset": "large",
+      "workload": "stddev-v1"
+    }
+  ]
+}

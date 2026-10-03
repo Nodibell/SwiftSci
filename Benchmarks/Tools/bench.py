@@ -11,6 +11,7 @@ import uuid
 from contracts import ContractError, digest, load_profile, read_json, require
 from datasets import load_manifest, prepare
 from runner import build, plan, run
+from execution_policy import MODES, LEGACY_MODE
 from reporting import comparison, summarize, audit
 from inventory import INVENTORY_PATH, discover, reconcile
 
@@ -26,6 +27,8 @@ def main():
         )
         if name != "prepare":
             p.add_argument("--engines", default="swiftsci")
+            p.add_argument("--mode", choices=MODES, default=LEGACY_MODE,
+                           help="production-default uses native engine defaults and at least five process rounds")
             p.add_argument("--swift-worker")
             p.add_argument("--python", default=sys.executable)
             p.add_argument("--output", type=Path)
@@ -117,7 +120,7 @@ def main():
                 print(prepare(root, load_manifest(root, name)))
             return 0
         resolved = plan(
-            root, profile, args.engines.split(","), args.swift_worker, args.python
+            root, profile, args.engines.split(","), args.swift_worker, args.python, args.mode
         )
         result = run(
             root,

@@ -81,6 +81,8 @@ def inspect_run(directory, profile, source, engines, root):
             input_bytes=dataset['size_bytes'], expected_path=str(expected_path), expected_sha256=digest(expected_bytes),
             rows=dataset['rows'], warmups=profile['warmups'], samples=profile['samples'],
             atol=workload['atol'], rtol=workload['rtol'])
+        if 'execution' in run['plan']:
+            expected_request.update(execution_mode=run['plan']['execution']['mode'], engine=key[1])
         if dataset['kind'] == 'nist-univariate-v1': expected_request['input_skip_rows'] = dataset['data_start_line'] - 1
         require(request == expected_request, 'Request contract differs')
         response_path = directory / (token + '.response.json')
@@ -97,7 +99,7 @@ def inspect_run(directory, profile, source, engines, root):
                 require(event.get('error') == f'Worker exited 1; see {token}.log',
                         'Unexpected worker exit or timeout')
                 response = read_json(response_path)
-                fields(response, ['schema_version','case_key','status','samples','peak_rss_bytes','engine_version','error'])
+                fields(response, ['schema_version','case_key','status','samples','peak_rss_bytes','engine_version','error'], ['execution'])
                 require(response['schema_version'] == 1 and response['samples'] == [] and
                         type(response['peak_rss_bytes']) is int and response['peak_rss_bytes'] >= 0 and
                         isinstance(response['engine_version'],str) and response['engine_version'], 'Invalid failed response fields')

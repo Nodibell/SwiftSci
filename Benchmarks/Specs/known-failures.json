@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "tier": "cpu",
-  "coverage_sha256": "db229f4bde15699260b873fd8063a20b61c3bd1d8f3e7f2f1b583018f09ebccc",
+  "coverage_sha256": "60d84c8076cdc5325f283e1651fdbbed3eaf8409963feb47feb9096829a5e258",
   "entries": [
     {
       "profile": "numerical-binary64",

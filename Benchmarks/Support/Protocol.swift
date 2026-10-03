@@ -48,7 +48,27 @@ package struct BenchmarkSample: Codable, Sendable {
   }
 }
 
+package struct BenchmarkExecution: Encodable, Sendable {
+  let mode: String
+  let thread_environment: [String: String]
+  let configured_pool_sizes: [String: Int] = [:]
+  let active_threads_measured = false
+
+  init() {
+    let environment = ProcessInfo.processInfo.environment
+    mode = environment["SWIFTSCI_BENCHMARK_MODE"] ?? "legacy-capped"
+    thread_environment = environment.filter {
+      $0.key.hasPrefix("OMP_") || $0.key.hasPrefix("MKL_")
+        || $0.key.hasPrefix("OPENBLAS_") || $0.key.hasPrefix("VECLIB_")
+        || $0.key.hasPrefix("NUMEXPR_") || $0.key == "POLARS_MAX_THREADS"
+        || $0.key == "POLARS_ASYNC_THREAD_COUNT" || $0.key == "RAYON_NUM_THREADS"
+        || $0.key == "GOTO_NUM_THREADS" || $0.key == "BLIS_NUM_THREADS"
+    }
+  }
+}
+
 package struct BenchmarkResponse: Encodable, Sendable {
+  let execution = BenchmarkExecution()
   package let schema_version = 1
   package let case_key: String
   package let status: String

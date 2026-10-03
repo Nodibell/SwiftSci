@@ -9,6 +9,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Tools"))
 from contracts import read_json, write_json, require, verified_file, validate_values
+from execution_policy import runtime_record
 from controlled_api_workloads import OPERATIONS as CONTROLLED_API_OPERATIONS, prepare as prepare_controlled, execute as execute_controlled
 from supervised_fixtures import OPERATIONS as SUPERVISED_OPERATIONS
 from supervised_workloads import prepare as prepare_supervised, execute as execute_supervised
@@ -70,7 +71,7 @@ try:
             controlled_input = prepare_sweep(numerical)
         elif op == "vision-letterbox-cpu":
             controlled_input = prepare_vision(numerical)
-        elif op == "decoder-fixed-f32":
+        elif op in ("decoder-fixed-f32", "decoder-shaped-f32"):
             controlled_input = prepare_neural(numerical)
         elif op == "dataframe-semantics":
             controlled_input = prepare_dataframe(numerical)
@@ -156,7 +157,7 @@ try:
             return execute_sweep(controlled_input)
         if op == "vision-letterbox-cpu":
             return execute_vision(controlled_input)
-        if op == "decoder-fixed-f32":
+        if op in ("decoder-fixed-f32", "decoder-shaped-f32"):
             return execute_neural(controlled_input)
         if op == "dataframe-semantics":
             return execute_dataframe(controlled_input)
@@ -474,6 +475,7 @@ try:
             samples=samples,
             peak_rss_bytes=rss if sys.platform == "darwin" else rss * 1024,
             engine_version=f"pandas {pd.__version__}; numpy {np.__version__}; python {sys.version}",
+            execution=runtime_record(),
         ),
     )
 except Exception as error:

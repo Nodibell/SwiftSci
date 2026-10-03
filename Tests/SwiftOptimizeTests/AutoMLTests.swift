@@ -3,252 +3,248 @@ import Foundation
 import SwiftML
 @testable import SwiftOptimize
 
-@Suite("AutoML Pipeline & Strategy Tests")
+@Suite("AutoML Model Selection Pipeline Tests")
 struct AutoMLTests {
 
-    @Test("AutoML classification with Stratified K-Fold and real EvaluationHarness metrics")
-    func testAutoMLClassification() async throws {
-        let automl = AutoML(timeBudgetSeconds: 15.0, strategy: .modelSelection)
+    // MARK: - Fixtures
 
-        // Generate synthetic classification data
+    private static func separableBinary(n: Int = 24) -> ([[Double]], [Double]) {
         var X: [[Double]] = []
         var y: [Double] = []
-
-        for i in 0..<20 {
+        for i in 0..<n {
             if i % 2 == 0 {
-                X.append([1.0, 2.0 + Double(i) * 0.1])
-                y.append(0.0)
+                X.append([1.0 + Double(i) * 0.01, 2.0 + Double(i) * 0.1]); y.append(0)
             } else {
-                X.append([10.0, 20.0 + Double(i) * 0.1])
-                y.append(1.0)
+                X.append([10.0 + Double(i) * 0.01, 20.0 + Double(i) * 0.1]); y.append(1)
             }
         }
+        return (X, y)
+    }
 
+    private static func linearRegression(n: Int = 18) -> ([[Double]], [Double]) {
+        let X = (0..<n).map { [Double($0), Double($0) * 2.0] }
+        let y = (0..<n).map { Double($0) * 3.5 + 1.2 }
+        return (X, y)
+    }
+
+    // MARK: - Core behaviour
+
+    @Test("Classification: per-fold macroF1 leaderboard, pooled report with confusion matrix")
+    func classification() async throws {
+        let (X, y) = Self.separableBinary()
+        let automl = AutoML(timeBudgetSeconds: 30, nFolds: 3)
         let report = try await automl.fit(features: X, targets: y)
-        let bestName = await automl.bestModelName
-        let bestScore = await automl.bestScore
-        #expect(bestName != nil && !bestName!.isEmpty)
-        #expect(bestScore != nil && bestScore! > 0.5)
 
-        // Verify genuine EvaluationHarness metrics and confusion matrix
-        #expect(report.metrics["cv_score"] != nil)
+        let leaderboard = await automl.leaderboard
+        #expect(leaderboard.count == 4)
+        #expect(await automl.resolvedTaskType == .classification)
+        for entry in leaderboard {
+            #expect(entry.metricName == "macroF1")
+            #expect(entry.foldScores.count == 3)
+            let mean = entry.foldScores.reduce(0, +) / 3
+            #expect(abs(entry.meanScore - mean) < 1e-12)
+            #expect(entry.stdScore >= 0)
+            #expect(entry.fitDuration >= 0)
+        }
+        // Ranked best-first
+        for (a, b) in zip(leaderboard, leaderboard.dropFirst()) {
+            #expect(a.meanScore >= b.meanScore)
+        }
+
+        #expect(report.metrics["cv_score"] == leaderboard[0].meanScore)
+        #expect(report.metrics["cv_std"] == leaderboard[0].stdScore)
         #expect(report.metrics["accuracy"] != nil)
         #expect(report.metrics["macroF1"] != nil)
         #expect(report.metrics["weightedF1"] != nil)
-        #expect(report.confusionMatrix != nil)
         #expect(report.confusionMatrix?.count == 2)
-
-        let leaderboard = await automl.leaderboard
-        #expect(!leaderboard.isEmpty)
-        for entry in leaderboard {
-            #expect(!entry.name.isEmpty)
-            #expect(entry.cvScore >= 0.0)
-            #expect(entry.fitDuration >= 0.0)
-        }
+        #expect(await automl.bestModelName == leaderboard[0].displayName)
+        #expect(await automl.bestScore == leaderboard[0].meanScore)
     }
 
-    @Test("AutoML regression with genuine R^2, RMSE, and MAE from EvaluationHarness")
-    func testAutoMLRegression() async throws {
-        let automl = AutoML(timeBudgetSeconds: 15.0, strategy: .modelSelection)
-
+    @Test("Imbalanced classification ranks by macroF1 and pooled report covers all samples")
+    func imbalancedClassification() async throws {
+        // 27 majority vs 6 minority samples — minority still ≥ nFolds for stratification
         var X: [[Double]] = []
         var y: [Double] = []
+        for i in 0..<27 { X.append([Double(i % 5), 1.0]); y.append(0) }
+        for i in 0..<6 { X.append([Double(i % 5) + 20.0, 9.0]); y.append(1) }
 
-        for i in 0..<15 {
-            let val = Double(i)
-            X.append([val, val * 2.0])
-            y.append(val * 3.5 + 1.2) // Linear continuous target
-        }
-
+        let automl = AutoML(timeBudgetSeconds: 30, nFolds: 3)
         let report = try await automl.fit(features: X, targets: y)
-        let bestName = await automl.bestModelName
-        #expect(bestName != nil && !bestName!.isEmpty)
-        #expect(report.metrics["cv_score"] != nil)
+        let leaderboard = await automl.leaderboard
+        #expect(leaderboard.allSatisfy { $0.metricName == "macroF1" })
+        let cm = try #require(report.confusionMatrix)
+        #expect(cm.flatMap { $0 }.reduce(0, +) == 33)
+    }
+
+    @Test("Regression: R² ranking, RMSE/MAE in report, no confusion matrix")
+    func regression() async throws {
+        let (X, y) = Self.linearRegression()
+        let automl = AutoML(timeBudgetSeconds: 30)
+        let report = try await automl.fit(features: X, targets: y)
+
+        #expect(await automl.resolvedTaskType == .regression)
+        let leaderboard = await automl.leaderboard
+        #expect(!leaderboard.isEmpty)
+        #expect(leaderboard.allSatisfy { $0.metricName == "r2" && $0.foldScores.count == 3 })
         #expect(report.metrics["r2"] != nil)
         #expect(report.metrics["rmse"] != nil)
         #expect(report.metrics["mae"] != nil)
         #expect(report.confusionMatrix == nil)
-
-        let leaderboard = await automl.leaderboard
-        #expect(!leaderboard.isEmpty)
     }
 
-    @Test("AutoML input validation and dimension mismatch errors")
-    func testAutoMLErrors() async {
-        let automl = AutoML(nFolds: 3)
-        await #expect(throws: SwiftMLError.self) {
-            _ = try await automl.fit(features: [], targets: [])
-        }
-        await #expect(throws: SwiftMLError.self) {
-            _ = try await automl.fit(features: [[1.0]], targets: [1.0]) // less than nFolds samples
-        }
-        await #expect(throws: SwiftMLError.self) {
-            _ = try await automl.fit(features: [[1.0], [2.0], [3.0]], targets: [1.0, 2.0]) // mismatch
-        }
-        await #expect(throws: SwiftMLError.self) {
-            // Dimension mismatch: 3 feature rows, 2 target elements
-            _ = try await automl.fit(features: [[1.0], [2.0], [3.0]], targets: [1.0, 2.0])
-        }
-    }
-
-    @Test("AutoML zero-variance continuous target regression fallback")
-    func testAutoMLZeroVarianceTargetRegression() async throws {
-        let automl = AutoML(timeBudgetSeconds: 15.0)
-
-        // Non-integer values to trigger regression branch with zero total variance
-        let X: [[Double]] = [[1.0, 2.0], [2.0, 3.0], [3.0, 4.0], [4.0, 5.0], [5.0, 6.0], [6.0, 7.0]]
-        let y: [Double] = [2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
-
+    @Test("Wide data (n ≤ p + 1) regression does not fail on adjusted R²")
+    func wideDataRegression() async throws {
+        let n = 12, p = 20
+        let X = (0..<n).map { i in (0..<p).map { j in Double(i * p + j).truncatingRemainder(dividingBy: 7) + Double(i) } }
+        let y = (0..<n).map { Double($0) * 1.7 + 0.3 }
+        let automl = AutoML(timeBudgetSeconds: 30, taskType: .regression)
         let report = try await automl.fit(features: X, targets: y)
-        let bestName = await automl.bestModelName
-        #expect(bestName != nil && !bestName!.isEmpty)
-        #expect(report.metrics["cv_score"] != nil)
         #expect(report.metrics["r2"] != nil)
-
-        let leaderboard = await automl.leaderboard
-        #expect(!leaderboard.isEmpty)
-        for entry in leaderboard {
-            // In zero-variance cases, score is -MSE (<= 0.0)
-            #expect(entry.cvScore <= 0.0)
-        }
+        #expect(!(await automl.leaderboard).isEmpty)
     }
 
-    @Test("AutoML time budget expiration breaks candidate loop early")
-    func testAutoMLTimeBudgetCutoff() async throws {
-        // Very tight time budget in seconds
-        let automl = AutoML(timeBudgetSeconds: 0.000001)
-
-        var X: [[Double]] = []
-        var y: [Double] = []
-        for i in 0..<12 {
-            X.append([Double(i), Double(i * 2)])
-            y.append(Double(i % 2))
-        }
-
-        let report = try await automl.fit(features: X, targets: y)
-        #expect(report.metrics["cv_score"] != nil)
-
-        let leaderboard = await automl.leaderboard
-        #expect(!leaderboard.isEmpty)
-        // With an immediate budget cutoff, not all candidates are evaluated
-        #expect(leaderboard.count < 4)
+    @Test("Same seed yields identical leaderboard")
+    func determinism() async throws {
+        let (X, y) = Self.separableBinary(n: 30)
+        let a = AutoML(timeBudgetSeconds: 60, seed: 7)
+        let b = AutoML(timeBudgetSeconds: 60, seed: 7)
+        _ = try await a.fit(features: X, targets: y)
+        _ = try await b.fit(features: X, targets: y)
+        let la = await a.leaderboard
+        let lb = await b.leaderboard
+        #expect(la.map(\.displayName) == lb.map(\.displayName))
+        #expect(la.map(\.foldScores) == lb.map(\.foldScores))
     }
 
-    @Test("AutoML strategy configurations and property accessors")
-    func testAutoMLStrategyAndProperties() async {
-        let strategies: [AutoMLStrategy] = [.grid, .random, .bayesian, .hyperband]
-        for strategy in strategies {
-            let automl = AutoML(timeBudgetSeconds: 42.0, strategy: strategy)
-            let budget = await automl.timeBudgetSeconds
-            let strat = await automl.strategy
-            #expect(budget == 42.0)
-            switch (strat, strategy) {
-            case (.grid, .grid), (.random, .random), (.bayesian, .bayesian), (.hyperband, .hyperband):
-                #expect(true)
-            default:
-                #expect(Bool(false), "Strategy mismatch")
-            }
-        }
+    // MARK: - Task type resolution
+
+    @Test(".auto infers classification for few integer classes")
+    func autoClassification() async throws {
+        let (X, y) = Self.separableBinary()
+        let automl = AutoML(timeBudgetSeconds: 30)
+        _ = try await automl.fit(features: X, targets: y)
+        #expect(await automl.resolvedTaskType == .classification)
     }
 
-    @Test("AutoML rejects constant target with single unique value")
-    func testAutoMLConstantTargetRejection() async {
-        let automl = AutoML(timeBudgetSeconds: 5.0)
-        let X = [[1.0], [2.0], [3.0], [4.0], [5.0], [6.0]]
-        let y = [3.0, 3.0, 3.0, 3.0, 3.0, 3.0]
+    @Test(".auto infers regression for high-cardinality integer targets")
+    func autoRegressionHighCardinality() async throws {
+        let n = 15
+        let X = (0..<n).map { [Double($0)] }
+        let y = (0..<n).map { Double($0 * 3 + 1) } // 15 unique > max(10, 7)
+        let automl = AutoML(timeBudgetSeconds: 30)
+        _ = try await automl.fit(features: X, targets: y)
+        #expect(await automl.resolvedTaskType == .regression)
+    }
 
-        await #expect(throws: SwiftMLError.self) {
+    @Test(".auto throws ambiguousTaskType for mid-cardinality integer targets")
+    func autoAmbiguous() async {
+        // 12 distinct values, n = 36 → 10 < 12 ≤ 18
+        let X = (0..<36).map { [Double($0)] }
+        let y = (0..<36).map { Double($0 % 12) }
+        let automl = AutoML()
+        await #expect(throws: AutoMLError.ambiguousTaskType(uniqueValues: 12, sampleCount: 36)) {
             _ = try await automl.fit(features: X, targets: y)
         }
     }
 
-    @Test("AutoML stratified validation requires each class to have at least nFolds samples")
-    func testAutoMLStratifiedValidationSampleCheck() async {
-        let automl = AutoML(nFolds: 3)
-        // Class 0 has 5 samples, but Class 1 only has 2 samples (< 3 folds)
-        let X = [[1.0], [2.0], [3.0], [4.0], [5.0], [6.0], [7.0]]
-        let y = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0]
-
-        await #expect(throws: SwiftMLError.self) {
+    @Test("Explicit .classification rejects fractional labels")
+    func explicitClassificationRejectsFractional() async {
+        let X = (0..<6).map { [Double($0)] }
+        let y = [0.0, 1.0, 0.0, 1.0, 0.5, 1.0]
+        let automl = AutoML(taskType: .classification)
+        await #expect(throws: AutoMLError.nonIntegerClassLabel(0.5)) {
             _ = try await automl.fit(features: X, targets: y)
         }
     }
 
-    @Test("AutoML explicit taskType handling")
-    func testAutoMLExplicitTaskType() async throws {
-        // Explicit .classification with fractional targets should fail
-        let automlClass = AutoML(taskType: .classification)
-        let X = [[1.0], [2.0], [3.0], [4.0], [5.0], [6.0]]
-        let yCont = [0.2, 0.8, 1.5, 2.1, 0.4, 1.8]
-        await #expect(throws: SwiftMLError.self) {
-            _ = try await automlClass.fit(features: X, targets: yCont)
-        }
-
-        // Explicit .regression on integer targets should succeed as regression
-        let automlReg = AutoML(timeBudgetSeconds: 15.0, taskType: .regression)
-        let yInt = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-        let report = try await automlReg.fit(features: X, targets: yInt)
-        #expect(report.metrics["r2"] != nil)
+    @Test("Explicit .regression on integer targets runs regression")
+    func explicitRegression() async throws {
+        let X = (0..<9).map { [Double($0)] }
+        let y = [1.0, 2, 3, 1, 2, 3, 1, 2, 3]
+        let automl = AutoML(timeBudgetSeconds: 30, taskType: .regression)
+        let report = try await automl.fit(features: X, targets: y)
+        #expect(await automl.resolvedTaskType == .regression)
         #expect(report.confusionMatrix == nil)
     }
 
-    @Test("AutoML time budget cutoff stops candidate evaluation early")
-    func testAutoMLTimeBudgetCutoff() async throws {
-        // Budget enough for initial model, but cuts off remaining candidates from 7-candidate grid
-        let automl = AutoML(timeBudgetSeconds: 0.05, strategy: .grid)
+    // MARK: - Validation
 
-        var X: [[Double]] = []
-        var y: [Double] = []
-        for i in 0..<12 {
-            X.append([Double(i), Double(i * 2)])
-            y.append(Double(i % 2))
+    @Test("Constant target throws constantTarget")
+    func constantTarget() async {
+        let X = (0..<6).map { [Double($0)] }
+        let automl = AutoML()
+        await #expect(throws: AutoMLError.constantTarget) {
+            _ = try await automl.fit(features: X, targets: Array(repeating: 2.5, count: 6))
         }
-
-        let report = try await automl.fit(features: X, targets: y)
-        #expect(report.metrics["cv_score"] != nil)
-
-        let leaderboard = await automl.leaderboard
-        #expect(!leaderboard.isEmpty)
-        #expect(leaderboard.count < 7)
     }
 
-    @Test("AutoML grid strategy evaluates discrete hyperparameter candidates")
-    func testAutoMLGridStrategy() async throws {
-        let automl = AutoML(timeBudgetSeconds: 20.0, strategy: .grid)
-
-        var X: [[Double]] = []
-        var y: [Double] = []
-        for i in 0..<15 {
-            let val = Double(i)
-            X.append([val, val * 1.5])
-            y.append(val * 2.0 + 1.0)
+    @Test("Class with fewer samples than folds throws insufficientClassSamples")
+    func insufficientClassSamples() async {
+        let X = (0..<7).map { [Double($0)] }
+        let y = [0.0, 0, 0, 0, 0, 1, 1]
+        let automl = AutoML(nFolds: 3)
+        await #expect(throws: AutoMLError.insufficientClassSamples(label: 1, count: 2, required: 3)) {
+            _ = try await automl.fit(features: X, targets: y)
         }
-
-        let report = try await automl.fit(features: X, targets: y)
-        #expect(report.metrics["r2"] != nil)
-
-        let leaderboard = await automl.leaderboard
-        #expect(!leaderboard.isEmpty)
-        let modelNames = leaderboard.map { $0.name }
-        #expect(modelNames.contains(where: { $0.contains("maxDepth") }))
     }
 
-    @Test("AutoML random search strategy limits trials to maxTrials")
-    func testAutoMLRandomStrategy() async throws {
-        let automl = AutoML(timeBudgetSeconds: 20.0, strategy: .random(maxTrials: 3))
-
-        var X: [[Double]] = []
-        var y: [Double] = []
-        for i in 0..<12 {
-            X.append([Double(i), Double(i * 2)])
-            y.append(Double(i % 2))
+    @Test("Empty, mismatched, too-small inputs and invalid nFolds throw")
+    func inputValidation() async {
+        let automl = AutoML(nFolds: 3)
+        await #expect(throws: AutoMLError.self) { _ = try await automl.fit(features: [], targets: []) }
+        await #expect(throws: AutoMLError.self) {
+            _ = try await automl.fit(features: [[1], [2], [3]], targets: [1, 2])
         }
+        await #expect(throws: AutoMLError.insufficientSamples(count: 2, required: 3)) {
+            _ = try await automl.fit(features: [[1], [2]], targets: [0, 1])
+        }
+        let badFolds = AutoML(nFolds: 1)
+        await #expect(throws: AutoMLError.self) {
+            _ = try await badFolds.fit(features: [[1], [2], [3]], targets: [0, 1, 0])
+        }
+    }
 
+    @Test("AutoMLError provides descriptions for every case")
+    func errorDescriptions() {
+        let errors: [AutoMLError] = [
+            .invalidInput("x"), .insufficientSamples(count: 1, required: 3), .constantTarget,
+            .ambiguousTaskType(uniqueValues: 12, sampleCount: 36), .nonIntegerClassLabel(0.5),
+            .insufficientClassSamples(label: 1, count: 2, required: 3),
+            .allCandidatesFailed([AutoMLCandidateFailure(name: "M", reason: "r")])
+        ]
+        for e in errors { #expect(!(e.errorDescription ?? "").isEmpty) }
+    }
+
+    // MARK: - Budget & cancellation
+
+    @Test("Zero time budget evaluates exactly one candidate")
+    func zeroTimeBudget() async throws {
+        let (X, y) = Self.separableBinary()
+        let automl = AutoML(timeBudgetSeconds: 0)
         let report = try await automl.fit(features: X, targets: y)
+        #expect(await automl.leaderboard.count == 1)
+        #expect(await automl.failedCandidates.isEmpty)
         #expect(report.metrics["cv_score"] != nil)
+    }
 
-        let leaderboard = await automl.leaderboard
-        #expect(!leaderboard.isEmpty)
-        #expect(leaderboard.count <= 3)
+    @Test("Cancelled parent task throws CancellationError")
+    func cancellation() async {
+        let (X, y) = Self.separableBinary()
+        let automl = AutoML(timeBudgetSeconds: 30)
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await automl.fit(features: X, targets: y)
+        }
+        await #expect(throws: CancellationError.self) { _ = try await task.value }
+    }
+
+    @Test("Display name sorts parameters deterministically")
+    func displayName() {
+        let entry = AutoMLLeaderboardEntry(
+            name: "RandomForestClassifier", parameters: ["nEstimators": "15", "maxDepth": "5"],
+            metricName: "macroF1", meanScore: 1, stdScore: 0, foldScores: [1], fitDuration: 0
+        )
+        #expect(entry.displayName == "RandomForestClassifier (maxDepth: 5, nEstimators: 15)")
     }
 }

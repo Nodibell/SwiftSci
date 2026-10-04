@@ -13,6 +13,9 @@ internal enum CSVWriter {
         for row in 0..<df.shape.rows {
             let fields = df.columns.map { col -> String in
                 guard let val = col.value(at: row) else { return "" }
+                if let d = val as? Date {
+                    return escape(d.formattedDateOrDateTimeString, delimiter: delimiter)
+                }
                 return escape("\(val)", delimiter: delimiter)
             }
             lines.append(fields.joined(separator: String(delimiter)))

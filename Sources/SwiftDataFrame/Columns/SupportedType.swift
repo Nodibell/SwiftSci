@@ -111,7 +111,12 @@ extension Date: SupportedType {
 
     private static let _posixLocale = Locale(identifier: "en_US_POSIX")
     private static let _gmtTimeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
-    private static let _gregorianCalendar = Calendar(identifier: .gregorian)
+    private static let _gregorianCalendar: Calendar = {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = _gmtTimeZone
+        cal.locale = _posixLocale
+        return cal
+    }()
 
     private static func createFormatters(_ fmts: [String]) -> [DateFormatter] {
         return fmts.map { fmt in
@@ -175,7 +180,7 @@ extension Date: SupportedType {
         "dd-MM-yyyy",
         "dd.MM.yyyy HH:mm:ss.SSS",
         "dd.MM.yyyy HH:mm:ss",
-        "dd.MM.yyyy HH:mm",
+        "dd.MM.yyyy HH:mm:ss",
         "dd.MM.yyyy"
     ])
 
@@ -215,18 +220,6 @@ extension Date: SupportedType {
         "yy/MM/dd"
     ])
 
-    nonisolated(unsafe) private static let isoFormatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
-    nonisolated(unsafe) private static let isoStandardFormatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
-
     nonisolated(unsafe) private static let isoFullDateFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withFullDate, .withDashSeparatorInDate]
@@ -243,6 +236,16 @@ extension Date: SupportedType {
     }
 
     /// Try to parse this type from a raw string.
+    ///
+    /// The parser evaluates strings in deterministic order:
+    /// 1. ISO 8601 (with 'T' or space separator, supporting fractional seconds .SSS / .SSSSSS and UTC/offsets).
+    /// 2. Strict standard date-only (`yyyy-MM-dd`).
+    /// 3. Known delimiter-based datetime and date formats (`yyyy/MM/dd`, `yyyy.MM.dd`).
+    /// 4. Year-last formats (`MM/dd/yyyy`, `dd/MM/yyyy`).
+    ///    - Note: For ambiguous date representations (such as `01/03/2024`), the parser adheres
+    ///      to the standard `MM/dd/yyyy` (month-first / US-convention) precedence by default
+    ///      unless disambiguated by day values > 12 (e.g. `25/03/2024`).
+    /// 5. Two-digit year formats with automatic century normalization (< 70 -> 2000s, >= 70 -> 1900s).
     public static func parse(from string: String) -> Date? {
         let cleaned = cleanDateString(string)
         guard !cleaned.isEmpty && cleaned != "—" && cleaned != "null" && cleaned != "NA" && cleaned != "NaN" else {
@@ -256,7 +259,7 @@ extension Date: SupportedType {
                 comp.year = intVal
                 comp.month = 1
                 comp.day = 1
-                return Calendar(identifier: .gregorian).date(from: comp)
+                return _gregorianCalendar.date(from: comp)
             }
             return nil
         }
@@ -264,17 +267,27 @@ extension Date: SupportedType {
             return nil
         }
 
-        // Try ISO8601 internet datetime first if ISO "T" is present
-        if cleaned.contains("T") {
-            if let d = isoFormatter.date(from: cleaned) ?? isoStandardFormatter.date(from: cleaned) {
-                return normalizeYearIfNeeded(d)
+        // Try modern ISO8601 parser first (fast path supporting sub-second timestamps with nanosecond/microsecond accuracy)
+        if cleaned.contains("T") || (cleaned.contains(" ") && cleaned.contains(":")) {
+            var isoCandidate = cleaned
+            if !isoCandidate.contains("T") && isoCandidate.contains(" ") {
+                isoCandidate = isoCandidate.replacingOccurrences(of: " ", with: "T")
+            }
+            if !isoCandidate.hasSuffix("Z") && !isoCandidate.contains("+") {
+                let parts = isoCandidate.split(separator: "T")
+                if parts.count == 2 && !parts[1].contains("-") {
+                    isoCandidate += "Z"
+                }
+            }
+            if let d = try? Date(isoCandidate, strategy: .iso8601) {
+                return d
             }
         }
 
         // Fast path for strict date-only (yyyy-MM-dd)
         if cleaned.count == 10 && !cleaned.contains(" ") && !cleaned.contains(":") {
             if let d = isoFullDateFormatter.date(from: cleaned) {
-                return normalizeYearIfNeeded(d)
+                return d
             }
         }
 
@@ -291,6 +304,9 @@ extension Date: SupportedType {
                 formattersToTry = yearFirst4Formatters + yearLast4Formatters + yearLast2MonthFirstFormatters + yearLast2DayFirstFormatters + yearFirst2Formatters
             } else if t2Len == 4 {
                 formattersToTry = yearLast4Formatters + yearFirst4Formatters + yearLast2MonthFirstFormatters + yearLast2DayFirstFormatters + yearFirst2Formatters
+            } else if t0Len == 2 && t2Len == 2 && datePart.contains("-") {
+                // Dash-separated 2-digit tokens like "20-12-30" follow ISO (yy-MM-dd) convention
+                formattersToTry = yearFirst2Formatters + yearLast2DayFirstFormatters + yearLast2MonthFirstFormatters + yearLast4Formatters
             } else if t2Len == 2 || t2Len == 1 {
                 if let v0 = Int(sepTokens[0]), v0 > 12 {
                     formattersToTry = yearLast2DayFirstFormatters + yearLast2MonthFirstFormatters + yearFirst2Formatters + yearLast4Formatters
@@ -299,8 +315,6 @@ extension Date: SupportedType {
                 } else {
                     formattersToTry = yearLast2MonthFirstFormatters + yearLast2DayFirstFormatters + yearFirst2Formatters + yearLast4Formatters
                 }
-            } else if t0Len == 2 {
-                formattersToTry = yearFirst2Formatters + yearLast2MonthFirstFormatters + yearLast2DayFirstFormatters + yearLast4Formatters + yearFirst4Formatters
             } else {
                 formattersToTry = yearLast2MonthFirstFormatters + yearLast2DayFirstFormatters + yearLast4Formatters + yearFirst4Formatters + yearFirst2Formatters
             }
@@ -310,12 +324,11 @@ extension Date: SupportedType {
 
         for df in formattersToTry {
             if let d = df.date(from: cleaned) {
-                return normalizeYearIfNeeded(d)
+                return d
             }
         }
         return nil
     }
-
 
     /// Checks if a string can be parsed as a Date.
     public static func isDateString(_ string: String) -> Bool {
@@ -331,57 +344,48 @@ extension Date: SupportedType {
         return false
     }
 
-    /// Normalizes 2-digit years (< 70 -> 2000s, >= 70 -> 1900s).
-    private static func normalizeYearIfNeeded(_ date: Date) -> Date {
-        let year = _gregorianCalendar.component(.year, from: date)
-        if year < 100 {
-            let fullYear = year < 70 ? 2000 + year : 1900 + year
-            var comp = _gregorianCalendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
-            comp.year = fullYear
-            if let adjusted = _gregorianCalendar.date(from: comp) {
-                return adjusted
-            }
-        }
-        return date
-    }
-
     /// Checks if this Date has a non-zero time component in GMT/UTC.
     public var hasTimeComponent: Bool {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
-        let comps = cal.dateComponents([.hour, .minute, .second, .nanosecond], from: self)
+        let comps = Self._gregorianCalendar.dateComponents([.hour, .minute, .second, .nanosecond], from: self)
         return (comps.hour ?? 0) != 0 || (comps.minute ?? 0) != 0 || (comps.second ?? 0) != 0 || (comps.nanosecond ?? 0) != 0
     }
 
-    /// Formats as "yyyy-MM-dd HH:mm:ss" if time is present, otherwise "yyyy-MM-dd".
+    /// Formats as "yyyy-MM-dd HH:mm:ss" (or with fractional seconds .SSS / .SSSSSS if present)
+    /// if time is present, otherwise "yyyy-MM-dd".
     public var formattedDateOrDateTimeString: String {
-        let fmt = DateFormatter()
-        fmt.locale = Self._posixLocale
-        fmt.timeZone = Self._gmtTimeZone
-        if hasTimeComponent {
-            fmt.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        } else {
-            fmt.dateFormat = "yyyy-MM-dd"
-        }
-        return fmt.string(from: self)
+        hasTimeComponent ? formattedDateTimeString : formattedDateString
     }
 
     /// Formats strictly as "yyyy-MM-dd".
     public var formattedDateString: String {
-        let fmt = DateFormatter()
-        fmt.locale = Self._posixLocale
-        fmt.timeZone = Self._gmtTimeZone
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt.string(from: self)
+        let comps = Self._gregorianCalendar.dateComponents([.year, .month, .day], from: self)
+        let y = comps.year ?? 0
+        let m = comps.month ?? 0
+        let d = comps.day ?? 0
+        return String(format: "%04d-%02d-%02d", y, m, d)
     }
 
-    /// Formats strictly as "yyyy-MM-dd HH:mm:ss".
+    /// Formats strictly as "yyyy-MM-dd HH:mm:ss" or with fractional seconds (.SSS / .SSSSSS) if present.
     public var formattedDateTimeString: String {
-        let fmt = DateFormatter()
-        fmt.locale = Self._posixLocale
-        fmt.timeZone = Self._gmtTimeZone
-        fmt.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        return fmt.string(from: self)
+        let comps = Self._gregorianCalendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: self)
+        let y = comps.year ?? 0
+        let m = comps.month ?? 0
+        let d = comps.day ?? 0
+        let h = comps.hour ?? 0
+        let min = comps.minute ?? 0
+        let s = comps.second ?? 0
+        let nanos = comps.nanosecond ?? 0
+
+        if nanos > 0 {
+            let ms = Int((Double(nanos) / 1_000_000.0).rounded())
+            if abs(Double(nanos) - Double(ms) * 1_000_000.0) < 1000 && ms > 0 && ms < 1000 {
+                return String(format: "%04d-%02d-%02d %02d:%02d:%02d.%03d", y, m, d, h, min, s, ms)
+            } else {
+                let us = Int((Double(nanos) / 1000.0).rounded())
+                return String(format: "%04d-%02d-%02d %02d:%02d:%02d.%06d", y, m, d, h, min, s, us)
+            }
+        }
+        return String(format: "%04d-%02d-%02d %02d:%02d:%02d", y, m, d, h, min, s)
     }
 
     /// Convert to Double for numeric operations. Returns nil for non-numeric types.

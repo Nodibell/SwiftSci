@@ -52,15 +52,17 @@ internal enum ArrowTableBridge {
                 columns.append(TypedColumn(name: name, values: copyValues(chunked)))
 
             case .date32:
-                let chunked: ChunkedArray<Date32> = arrowCol.data()
+                let chunked: ChunkedArray<Date> = arrowCol.data()
                 var vals = [Date?]()
                 vals.reserveCapacity(count)
-                for i in 0..<UInt(count) {
-                    if let days = chunked[i] {
-                        let sec = Double(days) * 86400.0
-                        vals.append(Date(timeIntervalSince1970: sec))
-                    } else {
-                        vals.append(nil)
+                for chunk in chunked.arrays {
+                    // Arrow 21.0.0's date accessor reads unsigned days and can overflow.
+                    // Use its signed accessor until apache/arrow-swift#194 is released.
+                    let days = try FixedArray<Int32>(chunk.arrowData)
+                    for index in 0..<chunk.length {
+                        vals.append(days[index].map {
+                            Date(timeIntervalSince1970: Double($0) * 86_400)
+                        })
                     }
                 }
                 columns.append(TypedColumn<Date>(name: name, values: vals))

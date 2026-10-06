@@ -47,7 +47,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/ml-explore/mlx-swift.git",
-            exact: "0.31.6"
+            exact: "0.32.3"
         ),
         .package(
             url: "https://github.com/swiftlang/swift-docc-plugin",
@@ -487,4 +487,3 @@ let package = Package(
         ),
     ]
 )
-

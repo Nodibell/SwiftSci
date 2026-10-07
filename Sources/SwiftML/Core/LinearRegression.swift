@@ -4,6 +4,26 @@ import Accelerate
 import MLX
 import SwiftPreprocessing
 
+private protocol RegressionFeatures {
+    var count: Int { get }
+    var width: Int { get }
+    subscript(_ row: Int, _ column: Int) -> Double { get }
+}
+
+private struct RegressionRows: RegressionFeatures {
+    let values: [[Double]]
+    var count: Int { values.count }
+    var width: Int { values.first?.count ?? 0 }
+    subscript(_ row: Int, _ column: Int) -> Double { values[row][column] }
+}
+
+private struct RegressionColumns: RegressionFeatures {
+    let batch: PreparedNumericBatch
+    var count: Int { batch.rowCount }
+    var width: Int { batch.columnCount }
+    subscript(_ row: Int, _ column: Int) -> Double { batch.columns[column].values[row] }
+}
+
 private struct OLSAccumulator {
     private(set) var high: Double
     private(set) var low = 0.0
@@ -40,6 +60,7 @@ public actor LinearRegression: RegressorEstimator {
     
     private var cpuWeights: [Double]?
     private var cpuBias: Double?
+    private var preparedFeatureNames: [String]?
     
     /// Creates a new instance.
     /// - Parameters:
@@ -91,36 +112,59 @@ public actor LinearRegression: RegressorEstimator {
         learningRate lr: Float = 0.01,
         epochs: Int = 1000
     ) async throws {
-        guard !features.isEmpty, !targets.isEmpty else {
-            throw SwiftMLError.emptyInput
+        guard !features.isEmpty, !targets.isEmpty else { throw SwiftMLError.emptyInput }
+        let width = features[0].count
+        guard features.count == targets.count,
+              features.allSatisfy({ $0.count == width && $0.allSatisfy(\.isFinite) }),
+              targets.allSatisfy(\.isFinite) else { throw SwiftMLError.invalidParameter("Invalid regression shape or nonfinite input") }
+        try await fitValidated(features: RegressionRows(values: features), targets: targets, learningRate: lr, epochs: epochs)
+        preparedFeatureNames = nil
+    }
+
+    /// Fits compact columns without constructing nested rows. CPU refinement and fallback
+    /// use the same numerical implementation as the row-array interface.
+    public func fit(features: PreparedNumericBatch, targets: [Double]) async throws {
+        guard features.rowCount > 0, features.columnCount > 0 else { throw SwiftMLError.emptyInput }
+        try features.requireFinite()
+        guard Set(features.columnNames).count == features.columnCount,
+              features.rowCount == targets.count, targets.allSatisfy(\.isFinite) else {
+            throw SwiftMLError.invalidParameter("Prepared regression requires unique names and aligned finite targets")
         }
-        
-        let numSamples = features.count
-        let numFeatures = features[0].count
-        
-        let device = await HardwareRouter.shared.resolveDevice(
-            for: "LinearRegression",
-            sampleCount: numSamples,
-            featureCount: numFeatures,
-            requestedDevice: requestedDevice
-        )
-        self.resolvedDevice = device
-        
+        try await fitValidated(features: RegressionColumns(batch: features), targets: targets, learningRate: 0.01, epochs: 1000)
+        preparedFeatureNames = features.columnNames
+    }
+
+    private func fitValidated<F: RegressionFeatures>(features: F, targets: [Double], learningRate: Float, epochs: Int) async throws {
+        let numSamples = features.count, numFeatures = features.width
+        guard numSamples <= Int32.max, numFeatures < Int32.max,
+              !numSamples.multipliedReportingOverflow(by: numFeatures + 1).overflow else {
+            throw SwiftMLError.invalidParameter("Regression dimensions exceed the solver capacity")
+        }
+        let device = await HardwareRouter.shared.resolveDevice(for: "LinearRegression", sampleCount: numSamples,
+            featureCount: numFeatures, requestedDevice: requestedDevice)
+        resolvedDevice = device
         switch device {
         case .cpu:
-            try fitCPU(features: features, targets: targets, learningRate: Double(lr), epochs: epochs)
+            try fitCPU(features: features, targets: targets, learningRate: Double(learningRate), epochs: epochs)
         case .gpu, .ane, .auto:
             try Device.withDefaultDevice(.gpu) {
-                let X = MLXArray(features.flatMap { $0.map { Float($0) } }).reshaped([numSamples, numFeatures])
-                let y = MLXArray(targets.map { Float($0) })
-                try fitGPU(X: X, y: y, learningRate: lr, epochs: epochs)
+                if numFeatures == 0 {
+                    let X = MLXArray([Float]()).reshaped([numSamples, 0])
+                    let y = MLXArray(targets.map { Float($0) })
+                    try fitGPU(X: X, y: y, learningRate: learningRate, epochs: epochs)
+                    return
+                }
+                try ScopedGPURead.withMatrix(rows:numSamples,columns:numFeatures,value: { features[$0,$1] }) { X in
+                    let y = MLXArray(targets.map { Float($0) })
+                    try fitGPU(X: X, y: y, learningRate: learningRate, epochs: epochs)
+                }
             }
         }
     }
-    
+
     // MARK: - CPU Backend (LAPACK OLS & Fallback GD)
     
-    private func fitCPU(features: [[Double]], targets: [Double], learningRate lr: Double, epochs: Int) throws {
+    private func fitCPU<F: RegressionFeatures>(features: F, targets: [Double], learningRate lr: Double, epochs: Int) throws {
         do {
             try fitCPUAnalytical(features: features, targets: targets)
         } catch {
@@ -129,9 +173,9 @@ public actor LinearRegression: RegressorEstimator {
     }
 
     /// Analytical OLS linear regression solver using LAPACK dgels_.
-    private func fitCPUAnalytical(features: [[Double]], targets: [Double]) throws {
+    private func fitCPUAnalytical<F: RegressionFeatures>(features: F, targets: [Double]) throws {
         let numSamples = features.count
-        let numFeatures = features[0].count
+        let numFeatures = features.width
         let cols = numFeatures + 1
         let rows = numSamples
 
@@ -150,7 +194,7 @@ public actor LinearRegression: RegressorEstimator {
         var AColMajor = [Double](repeating: 0.0, count: rows * cols)
         for row in 0..<rows {
             for col in 0..<numFeatures {
-                AColMajor[col * rows + row] = features[row][col]
+                AColMajor[col * rows + row] = features[row,col]
             }
             AColMajor[numFeatures * rows + row] = 1.0
         }
@@ -179,18 +223,18 @@ public actor LinearRegression: RegressorEstimator {
 
         var solution = Array(bVec.prefix(cols))
         let columnScales = (0..<cols).map { column in
-            column == numFeatures ? 1.0 : features.reduce(0.0) { max($0, abs($1[column])) }
+            column == numFeatures ? 1.0 : (0..<rows).reduce(0.0) { max($0, abs(features[$1,column])) }
         }
         func gradient(at parameters: [Double]) -> [Double] {
             var sums = Array(repeating: OLSAccumulator(), count: cols)
             for row in 0..<rows {
                 var residual = OLSAccumulator(targets[row])
                 for column in 0..<numFeatures {
-                    residual.addProduct(-features[row][column], parameters[column])
+                    residual.addProduct(-features[row,column], parameters[column])
                 }
                 residual.add(-parameters[numFeatures])
                 for column in 0..<cols {
-                    let value = column == numFeatures ? 1.0 : features[row][column]
+                    let value = column == numFeatures ? 1.0 : features[row,column]
                     sums[column].addProduct(value, residual.high)
                     sums[column].addProduct(value, residual.low)
                 }
@@ -250,8 +294,17 @@ public actor LinearRegression: RegressorEstimator {
     ///   - epochs: Total number of optimization training epochs.
     /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fitCPUGradientDescent(features: [[Double]], targets: [Double], learningRate lr: Double = 0.01, epochs: Int = 1000) throws {
+        guard let width = features.first?.count else { throw SwiftMLError.emptyInput }
+        guard features.count == targets.count, features.allSatisfy({ $0.count == width && $0.allSatisfy(\.isFinite) }), targets.allSatisfy(\.isFinite) else {
+            throw SwiftMLError.invalidParameter("Invalid regression shape or nonfinite input")
+        }
+        try fitCPUGradientDescent(features: RegressionRows(values: features), targets: targets, learningRate: lr, epochs: epochs)
+        preparedFeatureNames = nil
+    }
+
+    private func fitCPUGradientDescent<F: RegressionFeatures>(features: F, targets: [Double], learningRate lr: Double, epochs: Int) throws {
         let numSamples = features.count
-        let numFeatures = features[0].count
+        let numFeatures = features.width
         
         var w = [Double](repeating: 0.0, count: numFeatures)
         var b = 0.0
@@ -261,7 +314,7 @@ public actor LinearRegression: RegressorEstimator {
             for i in 0..<numSamples {
                 var sum = 0.0
                 for j in 0..<numFeatures {
-                    sum += features[i][j] * w[j]
+                    sum += features[i,j] * w[j]
                 }
                 predictions[i] = sum + b
             }
@@ -273,7 +326,7 @@ public actor LinearRegression: RegressorEstimator {
                 let diff = predictions[i] - targets[i]
                 gradB += diff
                 for j in 0..<numFeatures {
-                    gradW[j] += diff * features[i][j]
+                    gradW[j] += diff * features[i,j]
                 }
             }
             
@@ -336,6 +389,7 @@ public actor LinearRegression: RegressorEstimator {
         let gradFn = valueAndGrad(lossFn, argumentNumbers: [0, 1])
         
         for _ in 0..<epochs {
+            try Task.checkCancellation()
             let (_, grads) = gradFn([w, b])
             w = w - lr * grads[0]
             b = b - lr * grads[1]
@@ -364,30 +418,42 @@ public actor LinearRegression: RegressorEstimator {
     /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     /// - Returns: Array of predicted continuous targets for input observations.
     public func predict(features: [[Double]]) throws -> [Double] {
-        guard !features.isEmpty else {
-            return []
+        guard !features.isEmpty else { return [] }
+        let width = features[0].count
+        guard features.allSatisfy({ $0.count == width }) else {
+            throw SwiftMLError.invalidParameter("Invalid prediction shape")
         }
-        
-        if resolvedDevice == .cpu, let w = cpuWeights, let b = cpuBias {
-            let numFeatures = w.count
-            return features.map { row in
+        return try predictValidated(features: RegressionRows(values: features))
+    }
+
+    /// Predicts directly from compact columns, preserving the existing arithmetic order.
+    public func predict(features: PreparedNumericBatch) async throws -> [Double] {
+        if let preparedFeatureNames, preparedFeatureNames != features.columnNames {
+            throw SwiftMLError.invalidParameter("Prediction feature names or order differ from training")
+        }
+        try features.requireFinite()
+        guard features.rowCount > 0 else { return [] }
+        return try predictValidated(features: RegressionColumns(batch: features))
+    }
+
+    private func predictValidated<F: RegressionFeatures>(features: F) throws -> [Double] {
+        guard let w = cpuWeights, let b = cpuBias else { throw SwiftMLError.modelNotFitted }
+        guard features.width == w.count else { throw SwiftMLError.dimensionMismatch(expected: w.count, got: features.width) }
+        if resolvedDevice == .cpu {
+            return (0..<features.count).map { row in
                 var sum = 0.0
-                for j in 0..<numFeatures {
-                    sum += row[j] * w[j]
-                }
+                for j in w.indices { sum += features[row,j] * w[j] }
                 return sum + b
             }
         }
-        
-        let numSamples = features.count
-        let numFeatures = features[0].count
-        
-        let X = MLXArray(features.flatMap { $0.map { Float($0) } }).reshaped([numSamples, numFeatures])
-        let preds = try predict(X: X)
-        
-        return preds.asArray(Float.self).map { Double($0) }
+        if features.width == 0 {
+            return try predict(X: MLXArray([Float]()).reshaped([features.count, 0])).asArray(Float.self).map { Double($0) }
+        }
+        return try ScopedGPURead.withMatrix(rows:features.count,columns:features.width,value: { features[$0,$1] }) { X in
+            try predict(X: X).asArray(Float.self).map { Double($0) }
+        }
     }
-    
+
     /// Predicts targets for the given feature matrix X (MLX interface).
     /// - Parameters:
     ///   - X: 2D MLXArray or matrix representing input feature observations.

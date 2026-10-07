@@ -1,4 +1,5 @@
 import Foundation
+import SwiftPreprocessing
 @_exported import SwiftDataFrame
 
 /// Standardized output structure for model predictions.
@@ -167,6 +168,12 @@ extension ClassifierEstimator {
 
 /// Protocol representing a supervised regressor estimator.
 public protocol RegressorEstimator: Sendable {
+    /// Fits prepared columns. The default converts once for legacy estimators.
+    func fit(features: PreparedNumericBatch, targets: [Double]) async throws
+
+    /// Predicts from prepared columns. The default supports existing estimators.
+    func predict(features: PreparedNumericBatch) async throws -> [Double]
+
     /// Fits the regressor model on the provided features and targets.
     func fit(features: [[Double]], targets: [Double]) async throws
 
@@ -179,5 +186,52 @@ extension RegressorEstimator {
     public func predict(instance: [Double]) async throws -> Double {
         let preds = try await predict(features: [instance])
         return preds.first ?? 0.0
+    }
+}
+
+
+extension RegressorEstimator {
+    /// Compatibility implementation for estimators accepting nested row arrays.
+    public func fit(features: PreparedNumericBatch, targets: [Double]) async throws {
+        try features.requireFinite()
+        guard features.rowCount == targets.count, targets.allSatisfy(\.isFinite) else {
+            throw SwiftMLError.invalidParameter("Regression targets must be finite and match the feature rows")
+        }
+        try await fit(features: features.rowValues(), targets: targets)
+    }
+
+    /// Compatibility implementation for estimators accepting nested row arrays.
+    public func predict(features: PreparedNumericBatch) async throws -> [Double] {
+        try features.requireFinite()
+        return try await predict(features: features.rowValues())
+    }
+
+    /// Fits features and targets selected together from one prepared snapshot.
+    public func fit(_ data: PreparedSupervisedBatch) async throws {
+        try await fit(features: data.features, targets: data.targets)
+    }
+}
+
+extension RegressorEstimator {
+    /// Fits prepared inputs after acquiring a caller-supplied whole-operation estimate.
+    /// Include retained inputs, transformer/solver workspace, possible copies and model outputs.
+    public func fit(features: PreparedNumericBatch, targets: [Double],
+                    budget: MemoryBudget, estimate: MemoryEstimate) async throws {
+        try await budget.withReservation(estimate) {
+            try await self.fit(features: features, targets: targets)
+        }
+    }
+
+    /// Predicts prepared inputs under an explicit shared reservation budget.
+    /// Returned predictions persist beyond the reservation and need accounting by their owner.
+    public func predict(features: PreparedNumericBatch, budget: MemoryBudget,
+                        estimate: MemoryEstimate) async throws -> [Double] {
+        try await budget.withReservation(estimate) { try await self.predict(features: features) }
+    }
+
+    /// Fits jointly selected features and targets under an explicit reservation budget.
+    public func fit(_ data: PreparedSupervisedBatch, budget: MemoryBudget,
+                    estimate: MemoryEstimate) async throws {
+        try await fit(features: data.features, targets: data.targets, budget: budget, estimate: estimate)
     }
 }

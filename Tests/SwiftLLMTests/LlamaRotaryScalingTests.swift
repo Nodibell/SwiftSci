@@ -7,6 +7,27 @@ import SwiftNLP
 
 @Suite("Llama rotary scaling", .serialized)
 struct LlamaRotaryScalingTests {
+    @Test("Scaled frequency constants do not depend on the initialization device", arguments: [64, 128])
+    func initializationDeviceParity(dimensions: Int) {
+        for base: Float in [10_000, 500_000] {
+            for scaling in [Llama3RoPEScaling(factor: 1), Llama3RoPEScaling(factor: 8),
+                            Llama3RoPEScaling(factor: 32),
+                            Llama3RoPEScaling(factor: 4, lowFrequencyFactor: 2,
+                                highFrequencyFactor: 8, originalContextLength: 4096)] {
+                let cpu = Device.withDefaultDevice(.cpu) {
+                    scaling.frequencyDenominators(dimensions: dimensions, base: base).asArray(Float.self)
+                }
+                let gpu = Device.withDefaultDevice(.gpu) {
+                    scaling.frequencyDenominators(dimensions: dimensions, base: base).asArray(Float.self)
+                }
+                #expect(cpu.count == dimensions / 2)
+                #expect(cpu.allSatisfy { $0.isFinite && $0 > 0 })
+                #expect(cpu.map(\.bitPattern) == gpu.map(\.bitPattern),
+                    "dimensions=\(dimensions), base=\(base), scaling=\(scaling)")
+            }
+        }
+    }
+
     @Test("Transition-band frequencies match the checkpoint reference", arguments: [false, true])
     func transitionFrequencies(gpu: Bool) {
         Device.withDefaultDevice(gpu ? .gpu : .cpu) {

@@ -47,6 +47,7 @@ public struct LLMConfig: Sendable {
     /// Feed-forward network intermediate dimension (SwiGLU gate/up projection size).
     public var intermediateSize: Int
     /// Configured sequence capacity. Generation counts prompt and output tokens together.
+    /// Generation rejects nonpositive limits with `GenerationError.invalidContextLimit`.
     public var maxSeqLen: Int
     /// RMSNorm epsilon for numerical stability (default `1e-5`).
     public var rmsNormEps: Float
@@ -365,7 +366,8 @@ public final class TransformerDecoder: Module, LLMModel, @unchecked Sendable {
         self.tokenizer = tokenizer
 
         self.embedding    = Embedding(embeddingCount: config.vocabSize,  dimensions: config.hiddenDim)
-        self.posEmbedding = Embedding(embeddingCount: config.maxSeqLen,  dimensions: config.hiddenDim)
+        // Keep invalid limits in config for typed generation errors, without allocating an invalid tensor.
+        self.posEmbedding = Embedding(embeddingCount: max(0, config.maxSeqLen), dimensions: config.hiddenDim)
         self.layers       = (0..<config.numLayers).map { _ in TransformerBlock(config: config) }
         self.finalNorm    = RMSNorm(dimensions: config.hiddenDim, eps: config.rmsNormEps)
         self.lmHead       = config.tieWordEmbeddings ? nil : Linear(config.hiddenDim, config.vocabSize, bias: false)

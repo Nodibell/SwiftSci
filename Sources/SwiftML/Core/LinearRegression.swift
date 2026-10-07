@@ -115,8 +115,9 @@ public actor LinearRegression: RegressorEstimator {
         guard !features.isEmpty, !targets.isEmpty else { throw SwiftMLError.emptyInput }
         let width = features[0].count
         guard features.count == targets.count,
-              features.allSatisfy({ $0.count == width && $0.allSatisfy(\.isFinite) }),
-              targets.allSatisfy(\.isFinite) else { throw SwiftMLError.invalidParameter("Invalid regression shape or nonfinite input") }
+              features.allSatisfy({ $0.count == width }) else {
+            throw SwiftMLError.invalidParameter("Invalid regression shape")
+        }
         try await fitValidated(features: RegressionRows(values: features), targets: targets, learningRate: lr, epochs: epochs)
         preparedFeatureNames = nil
     }
@@ -295,8 +296,9 @@ public actor LinearRegression: RegressorEstimator {
     /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fitCPUGradientDescent(features: [[Double]], targets: [Double], learningRate lr: Double = 0.01, epochs: Int = 1000) throws {
         guard let width = features.first?.count else { throw SwiftMLError.emptyInput }
-        guard features.count == targets.count, features.allSatisfy({ $0.count == width && $0.allSatisfy(\.isFinite) }), targets.allSatisfy(\.isFinite) else {
-            throw SwiftMLError.invalidParameter("Invalid regression shape or nonfinite input")
+        guard features.count == targets.count,
+              features.allSatisfy({ $0.count == width }) else {
+            throw SwiftMLError.invalidParameter("Invalid regression shape")
         }
         try fitCPUGradientDescent(features: RegressionRows(values: features), targets: targets, learningRate: lr, epochs: epochs)
         preparedFeatureNames = nil

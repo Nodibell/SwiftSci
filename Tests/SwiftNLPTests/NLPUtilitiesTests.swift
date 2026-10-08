@@ -2,8 +2,8 @@ import Testing
 import Foundation
 @testable import SwiftNLP
 
-@Suite("SwiftNLP v1.6 Utilities Tests")
-struct NLPv16Tests {
+@Suite("SwiftNLP Utilities Tests")
+struct NLPUtilitiesTests {
     @Test("StopWords and TextNormalizer NLP utilities")
     func testNLPUtilities() {
         let tokens = ["The", "quick", "brown", "fox", "and", "the", "lazy", "dog"]

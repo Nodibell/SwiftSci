@@ -3,8 +3,8 @@ import Foundation
 @testable import SwiftNLP
 import SwiftDataFrame
 
-@Suite("SwiftNLP 2.5.0 Feature Suite")
-struct NLPv24Tests {
+@Suite("SwiftNLP Linguistic & Tagging Tests")
+struct NLPLinguisticsTests {
 
     @Test("Tokenizers - Word, Sentence, and Regex")
     func testTokenizers() {

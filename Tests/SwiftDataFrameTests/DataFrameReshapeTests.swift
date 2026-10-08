@@ -2,8 +2,8 @@ import Testing
 import Foundation
 @testable import SwiftDataFrame
 
-@Suite("DataFrame v1.5 Features & Optimizations")
-struct DataFramev15Tests {
+@Suite("DataFrame Join & Reshape Tests")
+struct DataFrameReshapeTests {
     @Test("DataFrame join inner, left, right, outer")
     func testDataFrameJoin() throws {
         let df1 = try DataFrame(columns: [

@@ -2,8 +2,8 @@ import Testing
 import Foundation
 @testable import SwiftML
 
-@Suite("SwiftML v1.6 Utilities Tests")
-struct MLv16Tests {
+@Suite("SwiftML Utilities Tests")
+struct MLUtilitiesTests {
     @Test("DatasetUtilities makeClusters and makeCircles")
     func testSyntheticDatasets() {
         let clusters = DatasetUtilities.makeClusters(nSamples: 60, centers: 3)

@@ -21,11 +21,12 @@ struct TiledScalerCompatibilityTests {
             } }
             let batch = try PreparedNumericBatch(columnNames: names, columns: columns)
             let expected = try scaler.transform(batch.rowValues())
-            let actual = try scaler.transform(batch)
-            #expect(actual.columnNames == names && actual.rowCount == rows)
-            for c in 0..<width {
-                #expect(actual.nullCount(inColumn: c) == 0)
-                #expect((0..<rows).allSatisfy { actual[$0,c]!.bitPattern == expected[$0][c].bitPattern })
+            for actual in [try scaler.transform(batch), try scaler.transform(consuming: batch)] {
+                #expect(actual.columnNames == names && actual.rowCount == rows)
+                for c in 0..<width {
+                    #expect(actual.nullCount(inColumn: c) == 0)
+                    #expect((0..<rows).allSatisfy { actual[$0,c]!.bitPattern == expected[$0][c].bitPattern })
+                }
             }
         }
         #expect(scaler.mean == originalMean && scaler.std == originalStd)
@@ -56,16 +57,20 @@ struct TiledScalerCompatibilityTests {
         try scaler.fit([[1, 2, 0], [3, 2, 0], [5, 2, 0]])
         let expected = try scaler.transform(rows)
         let actual = try scaler.transform(snapshot)
+        let consumed = try scaler.transform(consuming: snapshot)
         try source.updateColumn(at: 0, rows: [1], values: [999])
-        #expect(actual.originalRowIndices == selection)
-        for c in 0..<3 {
-            #expect(actual.nullCount(inColumn: c) == 0)
-            #expect((0..<actual.rowCount).allSatisfy { r in
-                let value = actual[r,c]!, reference = expected[r][c]
-                return value.bitPattern == reference.bitPattern || (value.isNaN && reference.isNaN)
-            })
+        for actual in [actual, consumed] {
+            #expect(actual.originalRowIndices == selection)
+            for c in 0..<3 {
+                #expect(actual.nullCount(inColumn: c) == 0)
+                #expect((0..<actual.rowCount).allSatisfy { r in
+                    let value = actual[r,c]!, reference = expected[r][c]
+                    return value.bitPattern == reference.bitPattern || (value.isNaN && reference.isNaN)
+                })
+            }
         }
         #expect(snapshot[5999,0] == 1)
+        #expect(snapshot[6000,0] == nil && snapshot.nullCount(inColumn: 0) == 2)
     }
 
     @Test func concurrentTransformsKeepIndependentOutputs() async throws {
@@ -76,9 +81,10 @@ struct TiledScalerCompatibilityTests {
         let scaler = fitting
         let expected = try scaler.transform(batch.rowValues()).map { $0.map(\.bitPattern) }
         try await withThrowingTaskGroup(of: Bool.self) { group in
-            for _ in 0..<4 {
+            for index in 0..<4 {
                 group.addTask {
-                    let actual = try scaler.transform(batch)
+                    let actual = try index.isMultiple(of: 2)
+                        ? scaler.transform(batch) : scaler.transform(consuming: batch)
                     return actual.rowValues().map { $0.map(\.bitPattern) } == expected
                 }
             }

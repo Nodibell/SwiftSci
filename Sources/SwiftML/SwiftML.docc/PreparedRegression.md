@@ -106,3 +106,55 @@ let predictions = try await budget.withReservation(jobEstimate) {
 This example expects input scaled using training-only parameters. Each job owns its model. Account separately for predictions or models retained after a reservation ends. Apply stream isolation to CPU jobs that also create MLX compatibility arrays.
 
 Measure MLX's active and cached memory separately from reserved bytes and process RSS. MLX can retain reusable buffers after jobs finish. Increasing admission capacity can increase contention as well as memory use; compare limits on the intended mix of jobs. The CPU and GPU routes use different solvers and precision, so their timings do not establish an interchangeable-device speed ranking.
+
+## Transfer input ownership when it is no longer needed
+
+The existing `fit(features:targets:)` and `predict(features:)` methods preserve the caller's prepared input. When the caller is finished with that input, the consuming overloads allow preprocessing to reuse uniquely owned column buffers:
+
+```swift
+let trainingFeatures = try trainingFrame.prepareNumericBatch(["x", "y"])
+try await pipeline.fit(consuming: consume trainingFeatures, targets: targets)
+
+let predictionFeatures = try heldOutFrame.prepareNumericBatch(["x", "y"])
+let predictions = try await pipeline.predict(consuming: consume predictionFeatures)
+```
+
+Shared arrays, batches and matrices retain their original values through copy-on-write. Passing `consume` does not guarantee reuse if another owner still holds the same storage. Names, row alignment, finite-value validation and failed-fit behavior follow the existing prepared API. Fit calls and configuration changes must remain serialized.
+
+Regression pipelines transfer completed intermediates through `PreprocessingTransformer.transform(consuming:)`. Existing conformers receive a default that calls their prepared transform. A nested preprocessing `Pipeline` uses native prepared composition only when every step declares `supportsNativePreparedBatches`. That property defaults to false so legacy pipelines can expand and reduce intermediate feature counts through their original row-array path. `StandardScaler`, `MinMaxScaler`, and `Imputer` opt in. Custom transformers can opt in when their prepared fitting and transformation methods support composition, and can implement the consuming method when they can reuse input storage safely.
+
+## Fill missing values before the prepared regression boundary
+
+Prepared `RegressionPipeline` inputs must be finite before its transformers run. Use a separate preprocessing `Pipeline` to fill missing entries and numeric NaNs first. Fit it only on training data, then reuse its fitted statistics for held-out data.
+
+```swift
+var preprocessing = Pipeline(steps: [Imputer(strategy: .mean), MinMaxScaler()])
+try preprocessing.fit(trainingBatch)
+let cleanTraining = try preprocessing.transform(consuming: consume trainingBatch)
+let cleanHeldOut = try preprocessing.transform(consuming: consume heldOutBatch)
+```
+
+The imputer and scaler operate on compact columns and can reuse uniquely owned buffers. Shared inputs remain snapshots. Pass the cleaned batches to the existing prepared regression APIs. A fill strategy can still produce nonfinite values, such as an explicit NaN constant or a mean involving infinities; the regression boundary continues to reject those values.
+
+## GPU conversion and completion
+
+Prepared numerical columns contain Double values. The CPU regression path keeps
+Double arithmetic. GPU regression converts features and parameters to Float32;
+returning predictions as Double does not recover precision lost in that conversion.
+Finite Double validation does not guarantee a finite Float32 representation. Values
+outside the Float32 range can become infinity, and small magnitudes can underflow.
+Select the CPU path when that conversion does not meet the application's numerical
+requirements. This contribution preserves the existing conversion policy.
+
+The GPU path packs prepared columns into contiguous row-major storage in bounded
+16-by-16 tiles. This is a packing choice, not an automatic CPU/GPU dispatch threshold.
+The importer uses shared storage for eligible page-aligned extents and a copying
+fallback for other extents. Unified memory does not guarantee a zero-copy import.
+
+Scoped prediction retains its input through evaluation and completion of the
+current GPU stream, including when its synchronous operation throws. The completion
+barrier protects storage lifetime; it does not interrupt a submitted GPU command.
+Public prediction does not promise immediate cancellation of that work. Budget
+admission checks cancellation while waiting, and callers must keep reservations for
+submitted work until completion. Models and results that outlive a call need separate
+accounting, as described above.

@@ -435,6 +435,15 @@ public actor LinearRegression: RegressorEstimator {
         }
         try features.requireFinite()
         guard features.rowCount > 0 else { return [] }
+        if resolvedDevice == .gpu && features.columnCount > 0 {
+            guard let weights = cpuWeights, cpuBias != nil else { throw SwiftMLError.modelNotFitted }
+            guard features.columnCount == weights.count else {
+                throw SwiftMLError.dimensionMismatch(expected: weights.count, got: features.columnCount)
+            }
+            return try ScopedGPURead.withMatrix(batch: features) { input in
+                try predict(X: input).asArray(Float.self).map { Double($0) }
+            }
+        }
         return try predictValidated(features: RegressionColumns(batch: features))
     }
 

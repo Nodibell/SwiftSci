@@ -2,6 +2,9 @@ import Foundation
 
 /// Imputer fills missing values (represented by `Double.nan`) using a specified strategy.
 public struct Imputer: PreprocessingTransformer, Sendable {
+    /// Fits and transforms compact columns directly in prepared pipelines.
+    public var supportsNativePreparedBatches: Bool { true }
+
     /// Represents strategy.
     public enum Strategy: Sendable, Equatable {
         case mean
@@ -50,47 +53,7 @@ public struct Imputer: PreprocessingTransformer, Sendable {
                 }
             }
             
-            if colValues.isEmpty {
-                // Fallback for column with only missing values
-                switch strategy {
-                case .constant(let val):
-                    computedStats[col] = val
-                default:
-                    computedStats[col] = 0.0
-                }
-                continue
-            }
-            
-            switch strategy {
-            case .mean:
-                computedStats[col] = colValues.reduce(0.0, +) / Double(colValues.count)
-            case .median:
-                colValues.sort()
-                let mid = colValues.count / 2
-                if colValues.count % 2 == 0 {
-                    computedStats[col] = (colValues[mid - 1] + colValues[mid]) / 2.0
-                } else {
-                    computedStats[col] = colValues[mid]
-                }
-            case .mostFrequent:
-                var counts = [Double: Int]()
-                for val in colValues {
-                    counts[val, default: 0] += 1
-                }
-                var bestVal = colValues[0]
-                var maxCount = 0
-                for (val, count) in counts {
-                    if count > maxCount {
-                        maxCount = count
-                        bestVal = val
-                    } else if count == maxCount {
-                        bestVal = min(bestVal, val)
-                    }
-                }
-                computedStats[col] = bestVal
-            case .constant(let val):
-                computedStats[col] = val
-            }
+            computedStats[col] = fittedStatistic(colValues)
         }
         
         self.statistics = computedStats
@@ -126,4 +89,83 @@ public struct Imputer: PreprocessingTransformer, Sendable {
         
         return transformed
     }
+    /// Fits column statistics without materializing nested row arrays.
+    /// Missing entries and numeric NaNs are excluded, matching the row API.
+    public mutating func fit(_ data: PreparedNumericBatch) throws {
+        guard data.rowCount > 0, data.columnCount > 0 else {
+            throw PreprocessingError.emptyInput
+        }
+        statistics = data.columns.map { fittedStatistic($0.values.filter { !$0.isNaN }) }
+    }
+
+    /// Fills missing entries and numeric NaNs while preserving the input snapshot.
+    public func transform(_ data: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        try transform(consuming: data)
+    }
+
+    /// Reuses uniquely owned columns when filling missing entries and NaNs.
+    /// Shared columns detach only if they need replacement. Clean columns retain
+    /// their storage. Output entries are numeric values, including NaN when the
+    /// fitted statistic is NaN. Names and original row indices are preserved.
+    public func transform(consuming data: consuming PreparedNumericBatch) throws -> PreparedNumericBatch {
+        guard let statistics else { throw PreprocessingError.fitNotCalled }
+        guard data.rowCount > 0 else {
+            return data.replacingNumericColumns(Array(repeating: [], count: data.columnCount))
+        }
+        guard data.columnCount == statistics.count else {
+            throw PreprocessingError.dimensionMismatch(expected: statistics.count, got: data.columnCount)
+        }
+        var output = consume data
+        for column in output.columns.indices {
+            if let first = output.columns[column].values.firstIndex(where: { $0.isNaN }) {
+                let replacement = statistics[column]
+                output.columns[column].values.withUnsafeMutableBufferPointer { values in
+                    for row in first..<values.count where values[row].isNaN {
+                        values[row] = replacement
+                    }
+                }
+            }
+            output.columns[column].validity = nil
+            output.columns[column].nullCount = 0
+        }
+        return output
+    }
+
+    /// Fits and transforms prepared columns while preserving their order.
+    public mutating func fitTransform(_ data: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        try fit(data)
+        return try transform(data)
+    }
+
+    private func fittedStatistic(_ values: [Double]) -> Double {
+        if values.isEmpty {
+            if case .constant(let value) = strategy { return value }
+            return 0
+        }
+        switch strategy {
+        case .mean:
+            return values.reduce(0.0, +) / Double(values.count)
+        case .median:
+            var sorted = values
+            sorted.sort()
+            let mid = sorted.count / 2
+            return sorted.count % 2 == 0 ? (sorted[mid - 1] + sorted[mid]) / 2.0 : sorted[mid]
+        case .mostFrequent:
+            var counts = [Double: Int]()
+            for value in values { counts[value, default: 0] += 1 }
+            var best = values[0], maxCount = 0
+            for (value, count) in counts {
+                if count > maxCount {
+                    maxCount = count
+                    best = value
+                } else if count == maxCount {
+                    best = min(best, value)
+                }
+            }
+            return best
+        case .constant(let value):
+            return value
+        }
+    }
+
 }

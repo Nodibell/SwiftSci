@@ -115,6 +115,12 @@ public final class RegressionPipeline: RegressorEstimator, @unchecked Sendable {
     /// Fits prepared features through protocol dispatch. StandardScaler and LinearRegression
     /// keep compact columns; other conformers may use their compatibility defaults.
     public func fit(features: PreparedNumericBatch, targets: [Double]) async throws {
+        try await fit(consuming: features, targets: targets)
+    }
+
+    /// Fits prepared features while allowing transformers to reuse uniquely
+    /// owned input columns. Shared inputs retain their snapshot values.
+    public func fit(consuming features: consuming PreparedNumericBatch, targets: [Double]) async throws {
         guard features.rowCount > 0, features.columnCount > 0 else { throw SwiftMLError.emptyInput }
         guard Set(features.columnNames).count == features.columnCount,
               features.rowCount == targets.count, targets.allSatisfy(\.isFinite) else {
@@ -122,29 +128,37 @@ public final class RegressionPipeline: RegressorEstimator, @unchecked Sendable {
         }
         try features.requireFinite()
         needsSuccessfulFit = true
-        var current = features
+        let featureNames = features.columnNames
+        var current = consume features
         for i in transformers.indices {
             try transformers[i].fit(current)
-            current = try transformers[i].transform(current)
+            current = try transformers[i].transform(consuming: consume current)
         }
         try await estimator.fit(features: current, targets: targets)
-        fittedFeatureNames = features.columnNames
+        fittedFeatureNames = featureNames
         needsSuccessfulFit = false
     }
 
     /// Predicts prepared features in the same named order used during prepared fitting.
     /// A pipeline fitted through unnamed row arrays accepts the caller's column order.
     public func predict(features: PreparedNumericBatch) async throws -> [Double] {
+        try await predict(consuming: features)
+    }
+
+    /// Predicts from prepared input whose unique storage can be reused during
+    /// preprocessing. Fitting and configuration changes must remain serialized.
+    public func predict(consuming features: consuming PreparedNumericBatch) async throws -> [Double] {
         guard !needsSuccessfulFit else { throw SwiftMLError.modelNotFitted }
         if let fittedFeatureNames, fittedFeatureNames != features.columnNames {
             throw SwiftMLError.invalidParameter("Prediction feature names or order differ from training")
         }
         try features.requireFinite()
-        var current = features
-        for transformer in transformers { current = try transformer.transform(current) }
+        let rowCount = features.rowCount
+        var current = consume features
+        for transformer in transformers { current = try transformer.transform(consuming: consume current) }
         let prediction = try await estimator.predict(features: current)
-        guard prediction.count == features.rowCount else {
-            throw SwiftMLError.dimensionMismatch(expected: features.rowCount, got: prediction.count)
+        guard prediction.count == rowCount else {
+            throw SwiftMLError.dimensionMismatch(expected: rowCount, got: prediction.count)
         }
         return prediction
     }

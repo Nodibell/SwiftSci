@@ -120,6 +120,16 @@
       "profile": "persisted-workflow",
       "tier": "cpu",
       "purpose": "Training-only public regression pipeline and fresh-process Core ML/native reload diagnostics"
+    },
+    {
+      "profile": "neural-shaped-conformance",
+      "tier": "apple",
+      "purpose": "Bounded wider decoder and longer-context full/cached CPU and Metal conformance"
+    },
+    {
+      "profile": "neural-shaped-cpu-conformance",
+      "tier": "cpu",
+      "purpose": "Bounded wider decoder and longer-context full/cached CPU conformance"
     }
   ],
   "aliases": {},

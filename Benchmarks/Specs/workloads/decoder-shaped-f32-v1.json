@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "decoder-shaped-f32-v1",
+  "operation": "decoder-shaped-f32",
+  "scope": "operation",
+  "output": "Actual batch, sequence and vocabulary dimensions followed by complete row-major logits; cached execution adds chunk count and observed cache lengths",
+  "atol": 2e-05,
+  "rtol": 2e-05,
+  "semantics": "Bounded configurable one-layer Float32 decoder. Fixed complete parameters, learned or rotary positions, full sequence or prefix then single-token cache steps. Every cache step reports observed length. Complete logits use a pinned independent 80-digit scalar reference. Input decoding outside timing; fresh model/tensor/cache construction, complete weight verification, forward execution, synchronization and output extraction inside timing. Swift and Python MLX select the requested device; the pandas engine remains CPU NumPy. End-to-end diagnostic timing, not steady-state throughput. Swift public model initialization and Python fixed-array initialization differ. No pretrained, quantized, tokenizer, generation or multi-token cached continuation claim."
+}

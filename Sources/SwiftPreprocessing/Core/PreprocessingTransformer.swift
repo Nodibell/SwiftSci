@@ -9,6 +9,12 @@ public protocol PreprocessingTransformer: Sendable {
     /// Transforms the dataset based on fitted parameters.
     func transform(_ data: [[Double]]) throws -> [[Double]]
     
+    /// Fits prepared columns. Existing conformers use the row-array compatibility default.
+    mutating func fit(_ data: PreparedNumericBatch) throws
+
+    /// Transforms prepared columns while preserving row count and feature names.
+    func transform(_ data: PreparedNumericBatch) throws -> PreparedNumericBatch
+
     /// Fits to data, then transforms it.
     mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]]
 }
@@ -22,5 +28,17 @@ extension PreprocessingTransformer {
     public mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
         try fit(data)
         return try transform(data)
+    }
+}
+
+
+extension PreprocessingTransformer {
+    /// Compatibility path for transformers without a compact-column implementation.
+    public mutating func fit(_ data: PreparedNumericBatch) throws { try fit(data.rowValues()) }
+
+    /// Compatibility path for shape-preserving legacy transformers.
+    /// Feature-changing transformers must implement their own prepared overload.
+    public func transform(_ data: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        try data.replacingRows(transform(data.rowValues()))
     }
 }

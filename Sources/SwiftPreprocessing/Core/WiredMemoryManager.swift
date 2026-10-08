@@ -1,8 +1,12 @@
 import Foundation
 
-/// Actor-based manager that controls concurrent allocations and tasks in Apple Silicon Unified Memory.
+/// Legacy task-count limiter retained for source compatibility.
+///
+/// Use `MemoryBudget` for estimated-byte admission. For MLX wired-memory limits,
+/// use `MLX.WiredMemoryManager`. Neither is a drop-in task-count replacement.
+@available(*, deprecated, message: "Legacy task-count limiter. Use MemoryBudget for byte admission or MLX.WiredMemoryManager for MLX wired limits; their policies differ.")
 public actor WiredMemoryManager {
-    /// Global shared memory manager with a default limit scaling with active processor count.
+    /// Shared legacy limiter with a task-count limit derived from active processor count.
     public static let shared = WiredMemoryManager(maxConcurrentTasks: max(2, ProcessInfo.processInfo.activeProcessorCount))
     
     private let maxConcurrentTasks: Int
@@ -19,8 +23,7 @@ public actor WiredMemoryManager {
     /// Acquires a ticket to run a memory-intensive GPU/CPU calculation.
     /// If the concurrency limit is reached, this method suspends asynchronously until a ticket is released.
     /// Supports Swift task cancellation.
-    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
-    /// - Returns: The computed WiredMemoryTicket result instance.
+    /// - Throws: `CancellationError` if acquisition is cancelled before a ticket is granted.
     public func acquireTicket() async throws -> WiredMemoryTicket {
         try Task.checkCancellation()
         
@@ -48,9 +51,8 @@ public actor WiredMemoryManager {
     /// Scoped helper that executes an operation within an acquired memory ticket,
     /// ensuring the ticket is always cleaned up and cache is cleared.
     /// - Parameters:
-    ///   - operation: Arithmetic or aggregation operation to apply.
-    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
-    /// - Returns: The computed T) async throws -> T result instance.
+    ///   - operation: Work that completes before the ticket is released.
+    /// - Throws: An acquisition error or an error from the operation.
     public func withTicket<T: Sendable>(_ operation: () async throws -> T) async throws -> T {
         let ticket = try await acquireTicket()
         let result: T
@@ -67,9 +69,8 @@ public actor WiredMemoryManager {
     /// Scoped helper that executes an operation with direct access to an acquired memory ticket,
     /// ensuring the ticket is always cleaned up and cache is cleared upon completion.
     /// - Parameters:
-    ///   - operation: Arithmetic or aggregation operation to apply.
-    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
-    /// - Returns: The computed T) async throws -> T result instance.
+    ///   - operation: Work that completes before the ticket is released.
+    /// - Throws: An acquisition error or an error from the operation.
     public func withTicket<T: Sendable>(_ operation: (WiredMemoryTicket) async throws -> T) async throws -> T {
         let ticket = try await acquireTicket()
         let result: T
@@ -104,7 +105,6 @@ public actor WiredMemoryManager {
     }
     
     /// Gets the current number of active concurrent tasks.
-    /// - Returns: Computed count, index position, or integer metric.
     public func activeTasks() -> Int {
         return activeTasksCount
     }

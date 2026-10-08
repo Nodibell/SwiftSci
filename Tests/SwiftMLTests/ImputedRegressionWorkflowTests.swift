@@ -5,12 +5,17 @@ import SwiftPreprocessing
 @Suite("Training-only prepared imputation and regression")
 struct ImputedRegressionWorkflowTests {
     private func training() throws -> PreparedNumericBatch {
-        var batch = try PreparedNumericBatch(columnNames: ["a","b","c"], columns: (0..<3).map { c in
-            let half = (0..<64).map { r -> Double in
-                c > 0 && r % 11 == 0 ? .nan : Double((r * (c * 2 + 3)) % 17 - 8)
+        let columns: [[Double]] = (0..<3).map { columnIndex -> [Double] in
+            let half: [Double] = (0..<64).map { rowIndex -> Double in
+                if columnIndex > 0 && rowIndex % 11 == 0 { return .nan }
+                let factor: Int = columnIndex * 2 + 3
+                let value: Int = (rowIndex * factor) % 17 - 8
+                return Double(value)
             }
-            return half + half.map { -$0 }
-        })
+            let mirrored: [Double] = half.map { value -> Double in -value }
+            return half + mirrored
+        }
+        var batch = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns: columns)
         try batch.updateColumn(at: 1, rows: [0,64], values: [nil,nil])
         return batch
     }
@@ -28,7 +33,7 @@ struct ImputedRegressionWorkflowTests {
         var reference: [Double]?
         for owned in [false,true] {
             let rawTraining = try training()
-            let trainingRows = rawTraining.rowValues().map { $0.map(\.bitPattern) }
+            let trainingRows: [[UInt64]] = rawTraining.rowValues().map { $0.map(\Double.bitPattern) }
             var preprocessing = Pipeline(steps: [Imputer(), MinMaxScaler(range: (-2,3))])
             try preprocessing.fit(rawTraining)
             let cleanTraining = try preprocessing.transform(rawTraining)
@@ -36,14 +41,26 @@ struct ImputedRegressionWorkflowTests {
             let regression = RegressionPipeline(estimator: model)
             try await regression.fit(consuming: consume cleanTraining, targets: truth(rawTraining))
             let parameters = await model.getWeightsAndBias()
-            var heldOut = try PreparedNumericBatch(columnNames: ["a","b","c"], columns: [
-                (0..<129).map { Double($0 % 13 + 20) },
-                (0..<129).map { $0 % 7 == 0 ? .nan : Double($0 % 17 - 30) },
-                (0..<129).map { $0 % 11 == 0 ? .nan : Double($0 % 19 + 40) }
-            ])
+            let firstColumn: [Double] = (0..<129).map { rowIndex -> Double in
+                let value: Int = rowIndex % 13 + 20
+                return Double(value)
+            }
+            let secondColumn: [Double] = (0..<129).map { rowIndex -> Double in
+                if rowIndex % 7 == 0 { return .nan }
+                let value: Int = rowIndex % 17 - 30
+                return Double(value)
+            }
+            let thirdColumn: [Double] = (0..<129).map { rowIndex -> Double in
+                if rowIndex % 11 == 0 { return .nan }
+                let value: Int = rowIndex % 19 + 40
+                return Double(value)
+            }
+            let heldOutColumns: [[Double]] = [consume firstColumn, consume secondColumn, consume thirdColumn]
+            var heldOut = try PreparedNumericBatch(
+                columnNames: ["a", "b", "c"], columns: consume heldOutColumns)
             try heldOut.updateColumn(at: 2, rows: [3,17,128], values: [nil,nil,nil])
             let expected = truth(heldOut)
-            let original = heldOut.rowValues().map { $0.map(\.bitPattern) }
+            let original: [[UInt64]] = heldOut.rowValues().map { $0.map(\Double.bitPattern) }
             let retained: PreparedNumericBatch?
             let cleaned: PreparedNumericBatch
             if owned {

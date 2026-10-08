@@ -18,8 +18,13 @@ private struct LegacyOffset: PreprocessingTransformer {
 @Suite("Consuming prepared pipeline")
 struct ConsumingPipelineTests {
     private func fixture() throws -> PreparedNumericBatch {
-        try PreparedNumericBatch(columnNames: ["a", "b"], columns:
-            [(0..<65).map(Double.init), (0..<65).map { Double(($0 * 7) % 19) }])
+        let first: [Double] = (0..<65).map(Double.init)
+        let second: [Double] = (0..<65).map { rowIndex -> Double in
+            let value: Int = (rowIndex * 7) % 19
+            return Double(value)
+        }
+        let columns: [[Double]] = [first, second]
+        return try PreparedNumericBatch(columnNames: ["a", "b"], columns: columns)
     }
     private func addresses(_ batch: PreparedNumericBatch) -> [UInt] {
         batch.columns.map { $0.values.withUnsafeBufferPointer { UInt(bitPattern: $0.baseAddress!) } }

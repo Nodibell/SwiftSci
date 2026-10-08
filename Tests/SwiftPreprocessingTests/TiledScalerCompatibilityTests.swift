@@ -7,8 +7,12 @@ struct TiledScalerCompatibilityTests {
     @Test(arguments: [1, 3, 8, 31, 64, 129, 511, 512, 513, 2047, 2048, 2049])
     func exactValuesAcrossSizes(width: Int) throws {
         let names = (0..<width).map { "x\($0)" }
-        let training = (0..<19).map { r in
-            (0..<width).map { c in width > 1 && c == width - 1 ? 7.0 : Double((r * 17 + c * 13) % 101) / 7 - 9 }
+        let training: [[Double]] = (0..<19).map { rowIndex -> [Double] in
+            (0..<width).map { columnIndex -> Double in
+                if width > 1 && columnIndex == width - 1 { return 7.0 }
+                let numerator: Int = (rowIndex * 17 + columnIndex * 13) % 101
+                return Double(numerator) / 7.0 - 9.0
+            }
         }
         var scaler = StandardScaler()
         try scaler.fit(training)
@@ -16,9 +20,13 @@ struct TiledScalerCompatibilityTests {
         let edges = [max(1, 2048 / width), max(1, 8192 / width)]
         let counts = Set([0, 1, 3, 8, 31, 32, 33, 63, 127, 257] + edges.flatMap { [max(0, $0-1), $0, $0+1, 2*$0+3] })
         for rows in counts.sorted() {
-            let columns = (0..<width).map { c in (0..<rows).map { r in
-                width > 1 && c == width - 1 ? 7.0 : Double((r * 19 + c * 11) % 113) / 13 - 4
-            } }
+            let columns: [[Double]] = (0..<width).map { columnIndex -> [Double] in
+                (0..<rows).map { rowIndex -> Double in
+                    if width > 1 && columnIndex == width - 1 { return 7.0 }
+                    let numerator: Int = (rowIndex * 19 + columnIndex * 11) % 113
+                    return Double(numerator) / 13.0 - 4.0
+                }
+            }
             let batch = try PreparedNumericBatch(columnNames: names, columns: columns)
             let expected = try scaler.transform(batch.rowValues())
             for actual in [try scaler.transform(batch), try scaler.transform(consuming: batch)] {
@@ -33,7 +41,10 @@ struct TiledScalerCompatibilityTests {
     }
 
     @Test func singleColumnPreparedFitKeepsRowRounding() throws {
-        let values = (0..<8).map { Double(($0 * 17) % 101) / 7 - 9 }
+        let values: [Double] = (0..<8).map { rowIndex -> Double in
+            let numerator: Int = (rowIndex * 17) % 101
+            return Double(numerator) / 7.0 - 9.0
+        }
         let batch = try PreparedNumericBatch(columnNames: ["x"], columns: [values])
         var scaler = StandardScaler()
         try scaler.fit(batch)
@@ -74,8 +85,13 @@ struct TiledScalerCompatibilityTests {
     }
 
     @Test func concurrentTransformsKeepIndependentOutputs() async throws {
-        let batch = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns:
-            (0..<3).map { c in (0..<9001).map { Double(($0 * 7 + c * 3) % 97) } })
+        let columns: [[Double]] = (0..<3).map { columnIndex -> [Double] in
+            (0..<9001).map { rowIndex -> Double in
+                let value: Int = (rowIndex * 7 + columnIndex * 3) % 97
+                return Double(value)
+            }
+        }
+        let batch = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns: consume columns)
         var fitting = StandardScaler()
         try fitting.fit(batch)
         let scaler = fitting

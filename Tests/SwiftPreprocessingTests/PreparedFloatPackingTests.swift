@@ -10,10 +10,12 @@ struct PreparedFloatPackingTests {
         let extremes: [Double] = [0, -0.0, .leastNonzeroMagnitude,
             Double(Float.greatestFiniteMagnitude), .greatestFiniteMagnitude]
         for (rows, columns) in shapes {
-            let source = (0..<columns).map { column in
+            let source: [[Double]] = (0..<columns).map { column -> [Double] in
                 (0..<rows).map { row -> Double in
-                    let index = row * columns + column
-                    return index < extremes.count ? extremes[index] : Double(index % 997 - 498) / 127
+                    let index: Int = row * columns + column
+                    if index < extremes.count { return extremes[index] }
+                    let numerator: Int = index % 997 - 498
+                    return Double(numerator) / 127.0
                 }
             }
             let batch = try PreparedNumericBatch(columnNames: (0..<columns).map { "x\($0)" }, columns: source)

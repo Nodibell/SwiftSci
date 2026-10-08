@@ -16,101 +16,53 @@ internal enum ArrowTableBridge {
             switch dtype {
             case .int32:
                 let chunked: ChunkedArray<Int32> = arrowCol.data()
-                var vals = [Int32?]()
-                vals.reserveCapacity(count)
-                for i in 0..<UInt(count) {
-                    let v = chunked[i]
-                    if v == nil && nullStrategy == .zero {
-                        vals.append(0)
-                    } else {
-                        vals.append(v)
-                    }
-                }
-                columns.append(TypedColumn<Int32>(name: name, values: vals))
-                
+                columns.append(TypedColumn(name: name, values: copyValues(
+                    chunked, replacingNullWith: nullStrategy == .zero ? 0 : nil)))
+
             case .int64:
                 let chunked: ChunkedArray<Int64> = arrowCol.data()
-                var vals = [Int64?]()
-                vals.reserveCapacity(count)
-                for i in 0..<UInt(count) {
-                    let v = chunked[i]
-                    if v == nil && nullStrategy == .zero {
-                        vals.append(0)
-                    } else {
-                        vals.append(v)
-                    }
-                }
-                columns.append(TypedColumn<Int64>(name: name, values: vals))
-                
+                columns.append(TypedColumn(name: name, values: copyValues(
+                    chunked, replacingNullWith: nullStrategy == .zero ? 0 : nil)))
+
             case .float32:
                 let chunked: ChunkedArray<Float> = arrowCol.data()
-                var vals = [Float?]()
-                vals.reserveCapacity(count)
-                for i in 0..<UInt(count) {
-                    let v = chunked[i]
-                    if v == nil {
-                        switch nullStrategy {
-                        case .preserve: vals.append(nil)
-                        case .nan:      vals.append(Float.nan)
-                        case .zero:     vals.append(0.0)
-                        }
-                    } else {
-                        vals.append(v)
-                    }
+                let replacement: Float? = switch nullStrategy {
+                case .preserve: nil
+                case .zero: 0
+                case .nan: .nan
                 }
-                columns.append(TypedColumn<Float>(name: name, values: vals))
-                
+                columns.append(TypedColumn(name: name, values: copyValues(chunked, replacingNullWith: replacement)))
+
             case .float64:
                 let chunked: ChunkedArray<Double> = arrowCol.data()
-                var vals = [Double?]()
-                vals.reserveCapacity(count)
-                for i in 0..<UInt(count) {
-                    let v = chunked[i]
-                    if v == nil {
-                        switch nullStrategy {
-                        case .preserve: vals.append(nil)
-                        case .nan:      vals.append(Double.nan)
-                        case .zero:     vals.append(0.0)
-                        }
-                    } else {
-                        vals.append(v)
-                    }
+                let replacement: Double? = switch nullStrategy {
+                case .preserve: nil
+                case .zero: 0
+                case .nan: .nan
                 }
-                columns.append(TypedColumn<Double>(name: name, values: vals))
-                
+                columns.append(TypedColumn(name: name, values: copyValues(chunked, replacingNullWith: replacement)))
+
             case .boolean:
                 let chunked: ChunkedArray<Bool> = arrowCol.data()
-                var vals = [Bool?]()
-                vals.reserveCapacity(count)
-                for i in 0..<UInt(count) {
-                    let v = chunked[i]
-                    if v == nil && nullStrategy == .zero {
-                        vals.append(false)
-                    } else {
-                        vals.append(v)
-                    }
-                }
-                columns.append(TypedColumn<Bool>(name: name, values: vals))
-                
+                columns.append(TypedColumn(name: name, values: copyValues(
+                    chunked, replacingNullWith: nullStrategy == .zero ? false : nil)))
+
             case .utf8:
                 let chunked: ChunkedArray<String> = arrowCol.data()
-                var vals = [String?]()
-                vals.reserveCapacity(count)
-                for i in 0..<UInt(count) {
-                    vals.append(chunked[i])
-                }
-                columns.append(TypedColumn<String>(name: name, values: vals))
-                
+                columns.append(TypedColumn(name: name, values: copyValues(chunked)))
+
             case .date32:
-                let chunked: ChunkedArray<Date32> = arrowCol.data()
+                let chunked: ChunkedArray<Date> = arrowCol.data()
                 var vals = [Date?]()
                 vals.reserveCapacity(count)
-                for i in 0..<UInt(count) {
-                    if let days = chunked[i] {
-                        let sec = Double(days) * 86400.0
-                        vals.append(Date(timeIntervalSince1970: sec))
-                    } else {
-                        vals.append(nil)
+                for chunk in chunked.arrays {
+                    // Arrow 21.0.0's date accessor reads unsigned days and can overflow.
+                    // Use its signed accessor until apache/arrow-swift#194 is released.
+                    let days = try FixedArray<Int32>(chunk.arrowData)
+                    for index in 0..<chunk.length {
+                        vals.append(days[index].map {
+                            Date(timeIntervalSince1970: Double($0) * 86_400)
+                        })
                     }
                 }
                 columns.append(TypedColumn<Date>(name: name, values: vals))
@@ -118,6 +70,19 @@ internal enum ArrowTableBridge {
         }
         
         return try DataFrame(columns: columns)
+    }
+
+    private static func copyValues<T>(_ chunked: ChunkedArray<T>, replacingNullWith replacement: T? = nil) -> [T?] {
+        var values: [T?] = []
+        values.reserveCapacity(Int(chunked.length))
+        // Visit each chunk once. Global row subscripts search the chunks again
+        // for every value and cannot traverse empty chunks in Arrow 21.0.0.
+        for chunk in chunked.arrays {
+            for index in 0..<chunk.length {
+                values.append(chunk[index] ?? replacement)
+            }
+        }
+        return values
     }
 
     /// Converts a `DataFrame` into an Apache Arrow `RecordBatch`.

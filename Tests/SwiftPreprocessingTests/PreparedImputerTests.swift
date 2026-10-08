@@ -23,8 +23,14 @@ struct PreparedImputerTests {
         var pipeline = Pipeline(steps: [Pipeline(steps: [Imputer(), MinMaxScaler()])])
         try pipeline.fit(fixture())
         #expect(pipeline.supportsNativePreparedBatches)
-        let input = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns:
-            (0..<3).map { c in (0..<65).map { r in r % 7 == 0 ? Double.nan : Double(r + c * 17) } })
+        let columns: [[Double]] = (0..<3).map { columnIndex -> [Double] in
+            (0..<65).map { rowIndex -> Double in
+                if rowIndex % 7 == 0 { return .nan }
+                let value: Int = rowIndex + columnIndex * 17
+                return Double(value)
+            }
+        }
+        let input = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns: consume columns)
         let expected = try pipeline.transform(input.rowValues())
         let before = addresses(input)
         let output = try pipeline.transform(consuming: consume input)

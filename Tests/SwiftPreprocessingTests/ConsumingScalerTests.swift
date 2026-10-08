@@ -5,8 +5,7 @@ import SwiftPreprocessing
 @Suite("Consuming prepared scaler")
 struct ConsumingScalerTests {
     private func fixture(rows: Int, width: Int) throws -> PreparedNumericBatch {
-        try PreparedNumericBatch(columnNames: (0..<width).map { "x\($0)" }, columns:
-            (0..<width).map { c in (0..<rows).map { Double(($0 * 19 + c * 11) % 113) / 13 - 4 } })
+        try makeConsumingScalerFixture(rows: rows, width: width)
     }
 
     private func addresses(_ batch: PreparedNumericBatch) -> [UInt] {

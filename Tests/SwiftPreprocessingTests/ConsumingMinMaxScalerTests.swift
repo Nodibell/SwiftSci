@@ -6,8 +6,7 @@ import SwiftPreprocessing
 @Suite("Consuming prepared MinMax scaler")
 struct ConsumingMinMaxScalerTests {
     private func fixture(rows: Int, width: Int) throws -> PreparedNumericBatch {
-        try PreparedNumericBatch(columnNames: (0..<width).map { "x\($0)" }, columns:
-            (0..<width).map { c in (0..<rows).map { Double(($0 * 19 + c * 11) % 113) / 13 - 4 } })
+        try makeConsumingScalerFixture(rows: rows, width: width)
     }
 
     private func addresses(_ batch: PreparedNumericBatch) -> [UInt] {
@@ -106,8 +105,14 @@ struct ConsumingMinMaxScalerTests {
             var scaler = MinMaxScaler(range: range)
             try scaler.fit([[0, 0, 0, 0, 7], [1e-12.nextDown, 1e-12, 1e-12.nextUp, 3, 7]])
             let values: [Double] = [-0.0, 0, .leastNonzeroMagnitude, -.leastNormalMagnitude, 1e-12, -1e100, 1e100, .greatestFiniteMagnitude, .infinity, -.infinity, .nan]
-            let input = try PreparedNumericBatch(columnNames: ["a", "b", "c", "d", "e"],
-                columns: (0..<5).map { c in (0..<rows).map { values[($0 + c) % values.count] } })
+            let columns: [[Double]] = (0..<5).map { columnIndex -> [Double] in
+                (0..<rows).map { rowIndex -> Double in
+                    let index: Int = (rowIndex + columnIndex) % values.count
+                    return values[index]
+                }
+            }
+            let input = try PreparedNumericBatch(
+                columnNames: ["a", "b", "c", "d", "e"], columns: consume columns)
             let expected = allocatingReference(input, scaler: scaler)
             let actual = try scaler.transform(consuming: consume input)
             for c in 0..<5 {
@@ -155,8 +160,13 @@ struct ConsumingMinMaxScalerTests {
     }
 
     @Test func concurrentTransformsKeepIndependentOutputs() async throws {
-        let batch = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns:
-            (0..<3).map { c in (0..<9001).map { Double(($0 * 7 + c * 3) % 97) } })
+        let columns: [[Double]] = (0..<3).map { columnIndex -> [Double] in
+            (0..<9001).map { rowIndex -> Double in
+                let value: Int = (rowIndex * 7 + columnIndex * 3) % 97
+                return Double(value)
+            }
+        }
+        let batch = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns: consume columns)
         var fitting = MinMaxScaler(range: (-2, 3))
         try fitting.fit(batch)
         let scaler = fitting

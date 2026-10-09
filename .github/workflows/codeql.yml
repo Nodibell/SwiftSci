@@ -47,7 +47,8 @@ jobs:
         if: matrix.language == 'swift'
         env:
           MACOSX_DEPLOYMENT_TARGET: "14.0"
-        run: swift build
+        # Analyze the Apple-silicon implementation regardless of the tracer process architecture.
+        run: swift build --arch arm64
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

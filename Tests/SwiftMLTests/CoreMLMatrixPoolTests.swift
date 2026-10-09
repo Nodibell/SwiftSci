@@ -8,10 +8,16 @@ import SwiftPreprocessing
 struct CoreMLMatrixPoolTests {
     @Test(arguments: [true, false]) func concurrentPredictionsPreserveOwnedResults(float32: Bool) async throws {
         try await withCompiledCoreML(coreMLReLUArtifact(shape: [513, 7], float32: float32)) { url in
-            let names = (0..<7).map { "x\($0)" }
-            let columns = (0..<7).map { c in (0..<513).map { r in Double((r + c) % 17 - 8) / 4 } }
+            let names: [String] = (0..<7).map { "x\($0)" }
+            let columns: [[Double]] = (0..<7).map { column -> [Double] in
+                (0..<513).map { row -> Double in
+                    let numerator: Int = (row + column) % 17 - 8
+                    return Double(numerator) / 4.0
+                }
+            }
+            let selection: [Int] = (0..<513).map { 512 - $0 / 2 }
             let input = try PreparedNumericBatch(columnNames: Array(names.reversed()), columns: Array(columns.reversed()))
-                .selectingRows((0..<513).map { 512 - $0 / 2 })
+                .selectingRows(selection)
             let serial = try CoreMLPredictor(compiledModelURL: url, inputColumns: names,
                 outputName: "result", computeUnits: .cpuOnly, inputLayout: .matrix)
             let expected = try await serial.predict(input, budget: MemoryBudget(limit: 1_048_576), workspaceBytes: 128)

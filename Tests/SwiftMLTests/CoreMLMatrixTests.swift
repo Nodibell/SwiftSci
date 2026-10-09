@@ -28,7 +28,9 @@ struct CoreMLMatrixTests {
             let again = try await predictor.predict(raw, budget: budget, workspaceBytes: 128)
             #expect(again.values.columnValues(at: 1) == [7, 0, 9])
             #expect(output.values.columnValues(at: 1) == [9, 7, 9])
-            #expect(raw[0, 1] == 1.25)
+            let originalValue: Double? = raw[0, 1]
+            let expectedOriginal: Double = 1.25
+            #expect(originalValue == expectedOriginal)
         }
     }
 

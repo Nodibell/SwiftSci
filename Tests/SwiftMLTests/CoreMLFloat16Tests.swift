@@ -36,7 +36,8 @@ struct CoreMLFloat16Tests {
             let output = try await predictor.predict(input, budget: budget, workspaceBytes: 128)
             #expect(output.values.originalRowIndices == [2, 0, 2])
             #expect(output.values.columnNames == ["result[0]", "result[1]"])
-            #expect(output.values.columnValues(at: 0) == [0, Double(Float16(1.1)), 0])
+            let expectedColumn: [Double?] = [0, Double(Float16(1.1)), 0]
+            #expect(output.values.columnValues(at: 0) == expectedColumn)
             #expect(output.values.columnValues(at: 1) == [9, 7, 9])
             #expect(output.inputPackingBytes == 12)
             #expect(output.outputCopyBytes == 48)
@@ -45,7 +46,7 @@ struct CoreMLFloat16Tests {
             var changed = input
             try changed.updateColumn(at: 1, rows: [0], values: [3.5])
             _ = try await predictor.predict(changed, budget: budget, workspaceBytes: 128)
-            #expect(output.values.columnValues(at: 0) == [0, Double(Float16(1.1)), 0])
+            #expect(output.values.columnValues(at: 0) == expectedColumn)
         }
     }
 
@@ -115,7 +116,9 @@ struct CoreMLFloat16Tests {
             }
             #expect(await budget.reservedBytes == 0)
             #expect(retained.values.columnValues(at: 0) == [Double(Float16(1.1)), 0, 3])
-            await #expect(throws: SwiftMLError.self) { try await escaped.predict(input) }
+            await #expect(throws: SwiftMLError.self) { () async throws -> CoreMLPrediction in
+                try await escaped.predict(input)
+            }
         }
     }
 }

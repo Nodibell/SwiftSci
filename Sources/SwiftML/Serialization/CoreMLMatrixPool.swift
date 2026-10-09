@@ -126,9 +126,12 @@ public actor CoreMLMatrixPool {
         }
     }
 
-    package func inputContractForTrial() throws -> CoreMLTrialInputContract {
+    /// Captures immutable input metadata without retaining this pool or its model.
+    /// Use the returned value in caller tasks for concurrent fitted preprocessing.
+    /// Capturing after pool closure throws; an existing preparation value remains usable.
+    public func inputPreparation() throws -> CoreMLMatrixInputPreparation {
         guard !closed, let session else { throw SwiftMLError.invalidParameter("Core ML matrix pool is closed") }
-        return CoreMLTrialInputContract(schema: session.inputArray!, names: session.inputColumns)
+        return CoreMLMatrixInputPreparation(schema: session.inputArray!, names: session.inputColumns)
     }
 
     // Experimental package-only boundary for the fused preprocessing benchmark.

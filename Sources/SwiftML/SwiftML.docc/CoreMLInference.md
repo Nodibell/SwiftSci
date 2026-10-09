@@ -235,3 +235,7 @@ numeric conversion and does not share mutable Core ML input arrays between reque
 `inputPackingBytes` includes this copy. Float16 rounding and overflow rules are the same
 as the ordinary path. Preparation costs time and retains additional memory, so use measured
 reuse counts for the workload rather than assuming it improves every request.
+
+## Fitted preprocessing
+
+Use <doc:FittedMatrixPreparation> to apply training-fitted imputation and standard scaling directly to private model-input storage. Existing `prepare` and `predict` calls remain available for already transformed batches.

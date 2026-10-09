@@ -1,6 +1,6 @@
 # Fused preprocessing trial
 
-This experiment asks whether fitted imputation, standard scaling, and row-major packing benefit from sharing a bounded pass over compact columns. A package-only fitted plan shares the fused implementation between the benchmark worker and the Core ML trial. Package-only adapters compare copied and directly filled model inputs. No public preprocessing API is added.
+This experiment asks whether fitted imputation, standard scaling, and row-major packing benefit from sharing a bounded pass over compact columns. `StandardPreprocessingPlan` shares the fused implementation between the benchmark worker and the supported Core ML preparation path. A package-only copied adapter remains as a comparison reference. The direct mode calls the public API documented in [Fitted matrix preparation](../../Sources/SwiftML/SwiftML.docc/FittedMatrixPreparation.md).
 
 The trial starts at Core ML PR #65 head `62c3d7e61146db1b5fc36b39c7d4e424f0e38572`. Its native prepared-data baseline imports the preprocessing implementation and related tests from CPU/GPU PR #63 head `9d7bc22363aef7e94ef910b36d109113e6c5bb21`. That avoids comparing fusion against the older row-array adapter. The import is a separate commit so the experimental changes remain identifiable.
 
@@ -12,7 +12,7 @@ The trial starts at Core ML PR #65 head `62c3d7e61146db1b5fc36b39c7d4e424f0e3857
 
 All paths fit the existing public imputer and scaler on training data. Held-out transformation uses those fitted parameters. They use the same row-width vDSP addition and array-backed division. The experiment does not replace division with multiplication by a reciprocal or introduce another precision policy.
 
-Input storage remains shared and immutable. Output allocation is included in timing; fitting, fixture creation, and output verification are excluded. The final result is a flat array in input row order. The caller retains column names and original row indices with its input. There is no new transport or ownership object in this trial.
+Input storage remains shared and immutable. Output allocation is included in timing; fitting, fixture creation, and output verification are excluded. The final result is a flat array in input row order. The caller retains column names and original row indices with its input. The array-only cases do not include model-input admission or prediction. The Core ML workflow below measures those costs.
 
 ## Validation and bounds
 
@@ -65,7 +65,7 @@ The model directory must contain `models-1024/program16.mlpackage` and `models-8
 
 ## Direct storage and unique ownership experiment
 
-The direct mode uses an immutable `CoreMLTrialInputContract` containing shape, type, and column names. The contract holds no model or pool reference. Caller tasks reserve input capacity, allocate private storage, and apply the fitted `TrialFusedPreprocessingPlan` directly to it. This avoids the temporary Float16 array and its copy while preserving finite-value checks and row identity. Preparation runs outside the pool actor, so it does not serialize concurrent preprocessing. Each prediction still copies the prepared values into an exclusive pool slot.
+The direct mode uses an immutable `CoreMLMatrixInputPreparation` containing shape, type, and column names. The contract holds no model or pool reference. Caller tasks reserve input and workspace capacity together, allocate private storage, and apply the fitted `StandardPreprocessingPlan` directly to it. Preparation releases the workspace allowance before returning the retained input owner. This avoids the temporary Float16 array and its copy while preserving finite-value checks and row identity. Preparation runs outside the pool actor, so it does not serialize concurrent preprocessing. Each prediction still copies the prepared values into an exclusive pool slot.
 
 The one-caller runs also include `native-owned`. Before timing, the worker constructs genuinely unique columns, then consumes them through the native imputer and scaler. A test verifies that this path reuses the same column addresses. Shared paths retain their source snapshot. Both ownership modes exclude fixture creation, and both use the same single-caller dispatch structure.
 

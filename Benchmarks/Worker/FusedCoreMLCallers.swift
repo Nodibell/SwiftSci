@@ -4,7 +4,7 @@ import SwiftML
 import SwiftPreprocessing
 
 func measureFusionCallers(mode: String, plan: FusedPreprocessingPlan, inputs: [PreparedNumericBatch],
-    pool: CoreMLMatrixPool, budget: MemoryBudget, contract: CoreMLTrialInputContract) async throws -> (Double, [FusionPrediction]) {
+    pool: CoreMLMatrixPool, budget: MemoryBudget, contract: CoreMLMatrixInputPreparation) async throws -> (Double, [FusionPrediction]) {
     if mode == "native-owned" {
         // Give the consuming path genuinely unique column buffers. Fixture creation
         // is outside timing, just as shared fixture creation is for the other modes.

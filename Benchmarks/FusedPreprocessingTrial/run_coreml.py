@@ -80,7 +80,7 @@ def main():
     lines += ['', 'All recorded predictions matched the native path exactly within each compute policy, including row identity. All pool owners and reservations drained.', '',
               f'Thermal states: {thermals}. Maximum sampled process residency: {rss:.1f} MiB. These samples are not peak-allocation measurements.', '',
               'The neural policy permits Core ML to use CPU and Neural Engine; it does not prove exclusive Neural Engine execution. Float16 model accuracy remains the separately qualified model property.', '',
-              'The copied packed paths include an additional owned copy. Direct fusion fills reserved model-typed storage outside the pool actor and avoids that intermediate array and copy. Every path still copies prepared storage into an exclusive prediction slot. Native uses the existing public preparation API. These are package-only experiments, not a public API proposal or a dispatch threshold.', '',
+              'The copied packed paths include an additional owned copy. Direct fusion fills reserved model-typed storage outside the pool actor and avoids that intermediate array and copy. Every path still copies prepared storage into an exclusive prediction slot. Native uses the existing public preparation API. Direct fusion uses the supported fitted preparation API. Copied fusion is a package-only comparison reference. These measurements do not establish an automatic dispatch threshold.', '',
               f"Source head: `{fingerprint['head']}`. See fingerprint.json and individual results for provenance, timings, and cleanup evidence."]
     (args.output / 'report.md').write_text('\n'.join(lines) + '\n')
     print('\n'.join(lines))

@@ -52,11 +52,11 @@ struct FusionPrediction: Sendable {
 
 func fusionPredict(mode: String, caller: Int, plan: FusedPreprocessingPlan,
     input: consuming PreparedNumericBatch, pool: CoreMLMatrixPool, budget: MemoryBudget,
-    contract: CoreMLTrialInputContract) async throws -> FusionPrediction {
+    contract: CoreMLMatrixInputPreparation) async throws -> FusionPrediction {
     let start = ContinuousClock.now
     let prepared: CoreMLPreparedMatrix
     if mode == "fused-direct" {
-        prepared = try await contract.prepareFused(input, plan: plan, budget: budget)
+        prepared = try await contract.prepare(input, preprocessing: plan, budget: budget)
     } else if mode == "native-owned" {
         let imputed = try plan.imputer.transform(consuming: consume input)
         let scaled = try plan.scaler.transform(consuming: consume imputed)
@@ -125,7 +125,7 @@ func measureFusionCoreML(_ q: FusionCoreMLRequest) async throws -> FusionCoreMLR
     let measured = try await CoreMLMatrixPool.withPool(compiledModelURL: compiled, inputColumns: fixture.names,
         outputName: "result", computeUnits: q.policy == "cpu" ? .cpuOnly : .cpuAndNeuralEngine,
         budget: poolBudget, configuration: config) { pool in
-        let contract = try await pool.inputContractForTrial()
+        let contract = try await pool.inputPreparation()
         var hashes = [String]()
         for (caller, input) in inputs.enumerated() {
             let reference = try await fusionPredict(mode: "native", caller: caller, plan: plan, input: input, pool: pool, budget: inputBudget, contract: contract)

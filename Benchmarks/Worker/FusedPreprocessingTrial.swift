@@ -1,7 +1,7 @@
 import SwiftDataFrame
 import SwiftPreprocessing
 
-typealias FusedPreprocessingPlan = TrialFusedPreprocessingPlan
+typealias FusedPreprocessingPlan = StandardPreprocessingPlan
 
 func fusedTrialFixture(rows: Int, width: Int, missing: Bool, offset: Int = 0) throws -> PreparedNumericBatch {
     var columns = [[Double]]()

@@ -15,4 +15,3 @@ def execute(command, log, timeout):
             process.wait()
         if code:
             raise RuntimeError(f'Exit {code}: {log}')
-

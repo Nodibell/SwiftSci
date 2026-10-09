@@ -44,8 +44,8 @@ public actor CoreMLMatrixPool {
     private var idle: [CoreMLMatrixBuffers]
     private let slots: MemoryBudget
     private let requestBytes: Int
-    private var closed = false
-    private var pending = 0
+    private(set) var closed = false
+    private(set) var pending = 0
     private var closeWaiters: [CheckedContinuation<Void, Never>] = []
 
     private init(session: sending CoreMLPredictionSession, buffers: [CoreMLMatrixBuffers],
@@ -139,6 +139,18 @@ public actor CoreMLMatrixPool {
         guard required <= requestBytes else {
             throw MemoryAdmissionError.exceedsLimit(required: required, limit: requestBytes)
         }
+        return try await withSlot { pool, buffer in
+            let output = try await pool.execute(input, buffer: buffer)
+            pool.completedPredictions += 1
+            if output.backingMatched { pool.outputBackingIdentityMatches += 1 }
+            return output.prediction
+        }
+    }
+
+    // A slot remains exclusively owned until its operation completes, including cancellation.
+    func withSlot<Result: Sendable>(operation: @Sendable (isolated CoreMLMatrixPool, CoreMLMatrixBuffers)
+        async throws -> Result) async throws -> Result {
+        guard !closed else { throw SwiftMLError.invalidParameter("Core ML matrix pool is closed") }
         pending += 1
         var token: MemoryReservation?
         var buffer: CoreMLMatrixBuffers?
@@ -148,11 +160,9 @@ public actor CoreMLMatrixPool {
                 throw SwiftMLError.invalidParameter("Core ML matrix pool is closed")
             }
             buffer = available
-            let output = try await execute(input, buffer: available)
-            completedPredictions += 1
-            if output.backingMatched { outputBackingIdentityMatches += 1 }
+            let result = try await operation(self, available)
             await finish(buffer: buffer, token: token)
-            return output.prediction
+            return result
         } catch {
             await finish(buffer: buffer, token: token)
             throw error

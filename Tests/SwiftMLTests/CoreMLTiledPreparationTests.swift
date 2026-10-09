@@ -8,8 +8,14 @@ struct CoreMLTiledPreparationTests {
     @Test func partialFinalTilePreservesResultsRowsAndAdmission() async throws {
         let width = 64
         let rowCount = 83
-        let trainingColumns = (0..<width).map { column in
-            [Double(column), Double(column + 1), Double(column + 3)]
+        var trainingColumns: [[Double]] = []
+        trainingColumns.reserveCapacity(width)
+        for column in 0..<width {
+            let first: Double = Double(column)
+            let second: Double = Double(column + 1)
+            let third: Double = Double(column + 3)
+            let values: [Double] = [first, second, third]
+            trainingColumns.append(values)
         }
         let names = (0..<width).map { "x\($0)" }
         let training = try PreparedNumericBatch(columnNames: names, columns: trainingColumns)

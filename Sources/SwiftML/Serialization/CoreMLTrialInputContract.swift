@@ -24,7 +24,7 @@ package struct CoreMLTrialInputContract: Sendable {
             try Task.checkCancellation()
             let storage = try CoreMLMatrixStorage(schema)
             try storage.array.withUnsafeMutableBufferPointer(ofType: Float16.self) { buffer, _ in
-                try plan.fill(source, into: buffer, tiled: true)
+                try plan.fillFloat16(source, into: buffer)
                 guard buffer.allSatisfy(\.isFinite) else {
                     throw SwiftMLError.invalidParameter("Fused input overflows Float16 or contains nonfinite values")
                 }

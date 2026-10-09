@@ -67,8 +67,8 @@ func fusionPredict(mode: String, caller: Int, plan: FusedPreprocessingPlan,
         prepared = try await pool.prepare(scaled, budget: budget)
     } else {
         let values: [Float16]
-        if mode == "staged-packed" { values = try plan.staged(input, as: Float16.self) }
-        else { values = try plan.fused(input, as: Float16.self, tiled: true) }
+        if mode == "staged-packed" { values = try plan.stagedFloat16(input) }
+        else { values = try plan.fusedFloat16(input) }
         prepared = try await pool.preparePackedForTrial(values, source: input, budget: budget)
     }
     let preparation = elapsedSeconds(since: start)
@@ -109,8 +109,8 @@ func measureFusionCoreML(_ q: FusionCoreMLRequest) async throws -> FusionCoreMLR
     // Verify packed values before model loading or timing. The model's own Float16
     // error is independent of whether preprocessing was staged or fused.
     for input in inputs {
-        guard fusedTrialEqual(try plan.staged(input, as: Float16.self),
-                              try plan.fused(input, as: Float16.self, tiled: true)) else {
+        guard fusedTrialEqual(try plan.stagedFloat16(input),
+                              try plan.fusedFloat16(input)) else {
             throw BenchmarkFailure("Real-data packed inputs differ")
         }
     }

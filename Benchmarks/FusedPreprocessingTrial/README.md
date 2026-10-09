@@ -72,3 +72,7 @@ The one-caller runs also include `native-owned`. Before timing, the worker const
 The direct and copied fused paths use the same package implementation, fitted values, and vDSP operations. The report presents copied-to-direct ratios separately from native-to-fused results. It also compares direct fusion with the consuming native reference. Those comparisons determine whether removing a copy helps after the native path can already reuse its storage.
 
 Tests cover exact prediction equivalence with missing inputs, concurrent owners, row identity, Float16 overflow rejection, and final reservation release after failure or cancellation. Float16 buffer access remains guarded for macOS 15 and later. The library's deployment minimum is unchanged.
+
+## Specialization at module boundaries
+
+The measured Float16 and Float32 paths call concrete package entry points so the compiler can specialize conversion and array access inside the module. Generic implementations remain available for cross-checking numeric behavior across dtypes. The arithmetic implementation is shared. Check specialization and numeric equivalence when adding another model dtype before using its timings to choose an interface.

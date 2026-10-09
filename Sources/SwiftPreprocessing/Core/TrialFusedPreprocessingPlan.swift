@@ -32,6 +32,29 @@ package struct TrialFusedPreprocessingPlan: Sendable {
         guard !overflow else { throw SwiftMLError.invalidParameter("Packed element count overflow") }
     }
 
+    // Concrete entry points let this module specialize conversion and array access
+    // before callers cross the module boundary. Generic methods retain dtype-wide validation coverage.
+    package func stagedFloat32(_ input: PreparedNumericBatch) throws -> [Float] {
+        try staged(input, as: Float.self)
+    }
+
+    package func fusedFloat32(_ input: PreparedNumericBatch, tiled: Bool) throws -> [Float] {
+        try fused(input, as: Float.self, tiled: tiled)
+    }
+
+    package func stagedFloat16(_ input: PreparedNumericBatch) throws -> [Float16] {
+        try staged(input, as: Float16.self)
+    }
+
+    package func fusedFloat16(_ input: PreparedNumericBatch) throws -> [Float16] {
+        try fused(input, as: Float16.self, tiled: true)
+    }
+
+    package func fillFloat16(_ input: PreparedNumericBatch,
+                            into output: UnsafeMutableBufferPointer<Float16>) throws {
+        try fill(input, into: output, tiled: true)
+    }
+
     package func staged<T: BinaryFloatingPoint>(_ input: PreparedNumericBatch, as: T.Type) throws -> [T] {
         try validate(input)
         let imputed = try imputer.transform(input)
@@ -101,4 +124,3 @@ package struct TrialFusedPreprocessingPlan: Sendable {
         }
     }
 }
-

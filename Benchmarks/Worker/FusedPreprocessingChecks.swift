@@ -13,6 +13,21 @@ private func checkFused<T: BinaryFloatingPoint>(_ plan: FusedPreprocessingPlan,
             throw BenchmarkFailure("Fusion differs: \(input.rowCount)x\(input.columnCount), \(type), tiled=\(tiled)")
         }
     }
+    if T.self == Float16.self {
+        let halfExpected: [Float16] = expected.map { Float16($0) }
+        guard fusedTrialEqual(halfExpected, try plan.stagedFloat16(input)),
+              fusedTrialEqual(halfExpected, try plan.fusedFloat16(input)) else {
+            throw BenchmarkFailure("Concrete Float16 bridge differs from generic reference")
+        }
+    }
+    if T.self == Float.self {
+        let floatExpected: [Float] = expected.map { Float($0) }
+        guard fusedTrialEqual(floatExpected, try plan.stagedFloat32(input)),
+              fusedTrialEqual(floatExpected, try plan.fusedFloat32(input, tiled: false)),
+              fusedTrialEqual(floatExpected, try plan.fusedFloat32(input, tiled: true)) else {
+            throw BenchmarkFailure("Concrete Float32 bridge differs from generic reference")
+        }
+    }
     let after = input.rowValues()
     guard zip(before, after).allSatisfy({ fusedTrialEqual($0, $1) }) else {
         throw BenchmarkFailure("Fusion mutated its input snapshot")

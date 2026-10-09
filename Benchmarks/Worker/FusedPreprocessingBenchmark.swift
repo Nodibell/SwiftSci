@@ -31,9 +31,9 @@ func benchmarkFusedPreprocessing(output: URL) -> Int32 {
                 let plan = try FusedPreprocessingPlan(training: training)
                 let input = try fusedTrialFixture(rows: rows, width: width, missing: missing, offset: 119)
                 do {
-                    let reference = try plan.staged(input, as: Float.self)
+                    let reference = try plan.stagedFloat32(input)
                     for tiled in [false, true] {
-                        guard fusedTrialEqual(reference, try plan.fused(input, as: Float.self, tiled: tiled)) else {
+                        guard fusedTrialEqual(reference, try plan.fusedFloat32(input, tiled: tiled)) else {
                             throw BenchmarkFailure("Benchmark shape failed output equivalence")
                         }
                     }
@@ -45,8 +45,8 @@ func benchmarkFusedPreprocessing(output: URL) -> Int32 {
                         let mode = modes[(index + rotation) % modes.count]
                         let start = ContinuousClock.now
                         let values: [Float]
-                        if mode == "staged" { values = try plan.staged(input, as: Float.self) }
-                        else { values = try plan.fused(input, as: Float.self, tiled: mode == "fused-tile") }
+                        if mode == "staged" { values = try plan.stagedFloat32(input) }
+                        else { values = try plan.fusedFloat32(input, tiled: mode == "fused-tile") }
                         let seconds = elapsedSeconds(since: start)
                         let checksum = values.reduce(0.0) { $0 + Double($1) }
                         if iteration >= 0 {

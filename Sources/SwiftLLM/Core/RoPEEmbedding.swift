@@ -33,14 +33,17 @@ public struct Llama3RoPEScaling: Sendable, Equatable {
     }
 
     func frequencyDenominators(dimensions: Int, base: Float) -> MLXArray {
-        let powers = MLXArray(stride(from: 0, to: dimensions, by: 2)).asType(.float32) / Float(dimensions)
-        let original = MLX.pow(MLXArray(base), powers)
-        // Round pi to Float32 as in the checkpoint reference implementation.
-        let wavelength = original * (2 * Float(Double.pi))
-        let blend = clip(
-            (Float(originalContextLength) / wavelength - lowFrequencyFactor) /
-                (highFrequencyFactor - lowFrequencyFactor), min: 0, max: 1)
-        return original / (blend + (1 - blend) / factor)
+        // Cache CPU-derived constants so GPU power rounding cannot shift long-position phases.
+        Device.withDefaultDevice(.cpu) {
+            let powers = MLXArray(stride(from: 0, to: dimensions, by: 2)).asType(.float32) / Float(dimensions)
+            let original = MLX.pow(MLXArray(base), powers)
+            // Round pi to Float32 as in the checkpoint reference implementation.
+            let wavelength = original * (2 * Float(Double.pi))
+            let blend = clip(
+                (Float(originalContextLength) / wavelength - lowFrequencyFactor) /
+                    (highFrequencyFactor - lowFrequencyFactor), min: 0, max: 1)
+            return original / (blend + (1 - blend) / factor)
+        }
     }
 }
 

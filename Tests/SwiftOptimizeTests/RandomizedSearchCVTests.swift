@@ -53,4 +53,24 @@ struct RandomizedSearchCVTests {
         #expect(results.count == 2)
         #expect(results[0].meanScore >= results[1].meanScore)
     }
+
+    @Test("GenericResult checks params equality and tie-breaks by stdScore")
+    func testGenericResultEqualityAndComparison() {
+        let r1 = RandomizedSearchCV.GenericResult(params: "configA", meanScore: 0.85, stdScore: 0.05)
+        let r2 = RandomizedSearchCV.GenericResult(params: "configA", meanScore: 0.85, stdScore: 0.05)
+        let r3 = RandomizedSearchCV.GenericResult(params: "configB", meanScore: 0.85, stdScore: 0.05)
+        let r4 = RandomizedSearchCV.GenericResult(params: "configA", meanScore: 0.85, stdScore: 0.02) // lower std is better
+
+        // Same params, same scores -> equal
+        #expect(r1 == r2)
+        // Different params, same scores -> not equal
+        #expect(r1 != r3)
+        // Same params, different std -> not equal
+        #expect(r1 != r4)
+
+        // Lower stdScore means better (higher in sorting):
+        // r1.stdScore = 0.05, r4.stdScore = 0.02 -> r1 < r4 (r4 is better)
+        #expect(r1 < r4)
+    }
 }
+

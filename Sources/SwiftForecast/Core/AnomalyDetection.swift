@@ -66,14 +66,17 @@ public struct AnomalyDetectionResult: Sendable {
     }
 }
 
-/// Seasonal Extreme Studentized Deviate (S-ESD) & Residual-based Time Series Anomaly Detector.
+/// Seasonal Residual MAD-normalised robust Z-score Time Series Anomaly Detector.
+///
+/// Evaluates temporal time series anomalies by decomposing seasonal baseline dynamics
+/// and analyzing residual deviations scaled by the Median Absolute Deviation (MAD).
 public enum TimeSeriesAnomalyDetector {
-    /// Detects temporal anomalies in a time series using Seasonal-ESD / STL residual analysis.
+    /// Detects temporal anomalies in a time series using Seasonal Residual MAD analysis.
     /// - Parameters:
     ///   - series: Input temporal series.
     ///   - period: Seasonal period (optional; auto-estimated if nil).
-    ///   - maxAnomaliesRatio: Maximum fraction of points to flag as anomalies (default: 0.10).
-    ///   - thresholdZ: Robust Z-score threshold (default: 3.0 for ~99.7% confidence).
+    ///   - maxAnomaliesRatio: Maximum fraction of points to flag as anomalies (in (0, 0.5], default: 0.10).
+    ///   - thresholdZ: Robust Z-score threshold (> 0, default: 3.0 for ~99.7% confidence).
     /// - Returns: AnomalyDetectionResult with flagged anomalies and test statistics.
     public static func detectAnomalies(
         series: [Double],
@@ -81,10 +84,14 @@ public enum TimeSeriesAnomalyDetector {
         maxAnomaliesRatio: Double = 0.10,
         thresholdZ: Double = 3.0
     ) -> AnomalyDetectionResult {
+        // M-09: Parameter validation and clamping
+        let clampedRatio = Swift.max(0.001, Swift.min(0.5, maxAnomaliesRatio))
+        let clampedThreshold = Swift.max(0.001, thresholdZ)
+
         let n = series.count
         guard n >= 4 else {
             let pts = series.enumerated().map { TimeSeriesAnomaly(index: $0.offset, value: $0.element, expectedValue: $0.element, score: 0.0, isAnomaly: false) }
-            return AnomalyDetectionResult(anomalies: pts, threshold: thresholdZ)
+            return AnomalyDetectionResult(anomalies: pts, threshold: clampedThreshold)
         }
 
         let p: Int = {
@@ -133,9 +140,9 @@ public enum TimeSeriesAnomalyDetector {
         }
 
         // 4. Determine anomalies respecting maxAnomaliesRatio
-        let maxAnomalies = max(1, Int(Double(n) * maxAnomaliesRatio))
+        let maxAnomalies = max(1, Int(Double(n) * clampedRatio))
         let sortedCandidateIndices = (0..<n)
-            .filter { scores[$0] >= thresholdZ }
+            .filter { scores[$0] >= clampedThreshold }
             .sorted { scores[$0] > scores[$1] }
         let flaggedSet = Set(sortedCandidateIndices.prefix(maxAnomalies))
 
@@ -152,7 +159,7 @@ public enum TimeSeriesAnomalyDetector {
             ))
         }
 
-        return AnomalyDetectionResult(anomalies: anomalies, threshold: thresholdZ)
+        return AnomalyDetectionResult(anomalies: anomalies, threshold: clampedThreshold)
     }
 
     private static func median(_ values: [Double]) -> Double? {
@@ -166,3 +173,8 @@ public enum TimeSeriesAnomalyDetector {
         }
     }
 }
+
+
+// MARK: - M-08 Architectural Typealias
+/// Canonical mathematical alias reflecting Seasonal Residual MAD anomaly detection.
+public typealias SeasonalResidualMADDetector = TimeSeriesAnomalyDetector

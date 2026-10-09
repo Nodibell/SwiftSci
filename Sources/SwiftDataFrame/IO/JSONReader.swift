@@ -53,6 +53,9 @@ internal enum JSONReader {
     }
 
     private static func jsonValueToString(_ value: Any) -> String? {
+        if CFGetTypeID(value as CFTypeRef) == CFBooleanGetTypeID() {
+            return (value as! Bool) ? "true" : "false"
+        }
         switch value {
         case is NSNull:           return nil
         case let n as NSNumber:   return n.stringValue

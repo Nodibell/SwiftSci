@@ -201,7 +201,14 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// Converts column values into an array of string representations.
     /// - Returns: Array of string values with `"null"` for missing values.
     public func toStrings() -> [String] {
-        values.map { v in
+        if let dateCol = self as? TypedColumn<Date> {
+            let hasAnyTime = dateCol.values.contains { ($0)?.hasTimeComponent == true }
+            return dateCol.values.map { v in
+                guard let v else { return "null" }
+                return hasAnyTime ? v.formattedDateTimeString : v.formattedDateOrDateTimeString
+            }
+        }
+        return values.map { v in
             guard let v else { return "null" }
             return "\(v)"
         }

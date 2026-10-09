@@ -65,19 +65,29 @@ public final class RollingWindow: Sendable {
         var means = [Double](repeating: 0.0, count: series.count)
         var stds = [Double](repeating: 0.0, count: series.count)
         
+        // M-03: O(N) running accumulator with offset shift to prevent catastrophic cancellation
+        let c = series[0]
+        var runningSum = 0.0
+        var runningSumSq = 0.0
+        
         for i in 0..<series.count {
-            let start = max(0, i - windowSize + 1)
-            let window = Array(series[start...i])
-            let count = Double(window.count)
-            let mean = try Stats.mean(window)
-            means[i] = mean
-
-
-
+            let yIn = series[i] - c
+            runningSum += yIn
+            runningSumSq += yIn * yIn
             
-            if count > 1 {
-                let variance = window.reduce(0.0) { $0 + ($1 - mean) * ($1 - mean) } / (count - 1.0)
-                stds[i] = sqrt(max(0.0, variance))
+            if i >= windowSize {
+                let yOut = series[i - windowSize] - c
+                runningSum -= yOut
+                runningSumSq -= yOut * yOut
+            }
+            
+            let count = Double(min(i + 1, windowSize))
+            let meanY = runningSum / count
+            means[i] = c + meanY
+            
+            if count > 1.0 {
+                let varUnbiased = (runningSumSq - (runningSum * runningSum) / count) / (count - 1.0)
+                stds[i] = sqrt(max(0.0, varUnbiased))
             } else {
                 stds[i] = 0.0
             }
@@ -111,21 +121,23 @@ public final class ExpandingWindow: Sendable {
         var means = [Double](repeating: 0.0, count: series.count)
         var stds = [Double](repeating: 0.0, count: series.count)
 
-        var sum = 0.0
-        var sumSq = 0.0
+        // M-04: Numerically stable one-pass Welford algorithm
+        var count = 0
+        var mean = 0.0
+        var M2 = 0.0
 
         for i in 0..<series.count {
             let val = series[i]
-            sum += val
-            sumSq += val * val
-            let count = Double(i + 1)
+            count += 1
+            let delta = val - mean
+            mean += delta / Double(count)
+            let delta2 = val - mean
+            M2 += delta * delta2
 
-            if (i + 1) >= minPeriods {
-                let mean = sum / count
+            if count >= minPeriods {
                 means[i] = mean
-
                 if count > 1 {
-                    let varUnbiased = (sumSq - (sum * sum) / count) / (count - 1.0)
+                    let varUnbiased = M2 / Double(count - 1)
                     stds[i] = sqrt(max(0.0, varUnbiased))
                 } else {
                     stds[i] = 0.0
@@ -135,7 +147,7 @@ public final class ExpandingWindow: Sendable {
                 stds[i] = Double.nan
             }
         }
-
+        
         return (expandingMean: means, expandingStd: stds)
     }
 }

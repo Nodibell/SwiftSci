@@ -19,7 +19,7 @@ mlx-lm==0.31.2
 mlx-metal==0.31.1
 numpy==2.5.3
 packaging==26.3
-protobuf==7.36.2
+protobuf==5.29.6
 Pygments==2.21.0
 PyYAML==6.0.3
 regex==2026.9.29
@@ -29,6 +29,6 @@ sentencepiece==0.2.2
 shellingham==1.5.4
 tokenizers==0.23.2
 tqdm==4.70.1
-transformers==5.17.0
+transformers==5.10.1
 typer==0.27.2
 typing_extensions==4.16.0

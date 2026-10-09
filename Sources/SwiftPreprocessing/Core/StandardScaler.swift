@@ -170,6 +170,43 @@ extension StandardScaler {
         guard batch.columnCount == means.count else {
             throw PreprocessingError.dimensionMismatch(expected: means.count, got: batch.columnCount)
         }
+        // Bound the row tile to 16 KiB. Preserve row-width vDSP calls and their
+        // rounding while gathering and writing contiguous column segments.
+        // Amortize traversal setup over at least 32 rows and four rows per tile.
+        let width = batch.columnCount
+        let tileElements = 2048
+        if batch.rowCount >= 32, width > 0, width <= tileElements / 4 {
+            let capacity = min(batch.rowCount, tileElements / width)
+            var tile = [Double](repeating: 0, count: capacity * width)
+            var shifted = [Double](repeating: 0, count: width)
+            var normalizedRow = shifted
+            let negativeMeans = means.map { -$0 }
+            var columns = (0..<width).map { _ in [Double](repeating: 0, count: batch.rowCount) }
+            tile.withUnsafeMutableBufferPointer { buffer in
+                for start in stride(from: 0, to: batch.rowCount, by: capacity) {
+                    let count = min(capacity, batch.rowCount - start)
+                    for c in 0..<width {
+                        batch.columns[c].values.withUnsafeBufferPointer { input in
+                            for r in 0..<count { buffer[r * width + c] = input[start + r] }
+                        }
+                    }
+                    for r in 0..<count {
+                        let row = buffer.baseAddress!.advanced(by: r * width)
+                        vDSP_vaddD(row, 1, negativeMeans, 1, &shifted, 1, vDSP_Length(width))
+                        // Keep the array-backed destination: tile row alignment can
+                        // change vDSP division rounding, even at width one.
+                        vDSP_vdivD(deviations, 1, shifted, 1, &normalizedRow, 1, vDSP_Length(width))
+                        for c in 0..<width { row[c] = normalizedRow[c] }
+                    }
+                    for c in 0..<width {
+                        columns[c].withUnsafeMutableBufferPointer { output in
+                            for r in 0..<count { output[start + r] = buffer[r * width + c] }
+                        }
+                    }
+                }
+            }
+            return batch.replacingNumericColumns(columns)
+        }
         var columns = (0..<batch.columnCount).map { _ in [Double](repeating: 0, count: batch.rowCount) }
         var row = [Double](repeating: 0, count: batch.columnCount)
         var shifted = row, output = row

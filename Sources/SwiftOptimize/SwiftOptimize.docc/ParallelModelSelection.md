@@ -26,9 +26,9 @@ Cross-validation and multi-class classification workflows are embarrassingly par
          Cross-Validation Average Leaderboard
 ```
 
-### Cooperative Cancellation & Bounded Budgets
+### AutoML Budgets & Cancellation
 
-When training under a time budget (such as `AutoML(timeBudgetSeconds:)`), tasks run inside a managed scope. If the time budget expires or a fatal error occurs in a critical pipeline step, child tasks cooperatively respect task cancellation without leaking threads or memory.
+`AutoML` deliberately evaluates candidates and folds **sequentially** inside its actor, which keeps ordering deterministic and avoids oversubscribing CPU cores with nested parallel fits. Its `timeBudgetSeconds` is a soft deadline checked before each candidate and fold; a fit already in progress is not interrupted. Parent task cancellation is honoured at the same checkpoints and throws `CancellationError`.
 
 ### Deterministic Class Ordering
 
@@ -40,10 +40,11 @@ In `OneVsRestClassifier`, binary classification estimators are dispatched concur
 import SwiftOptimize
 import SwiftML
 
-// 1. Concurrent AutoML search across DecisionTree, RandomForest, and MLP
+// 1. AutoML model selection across Logistic Regression, Decision Tree, Random Forest, and MLP
 let automl = AutoML(timeBudgetSeconds: 30.0)
 let report = try await automl.fit(features: X, targets: y)
-print("Winning Model: \(report.bestModel)")
+print("Winning Model: \(await automl.bestModelName ?? "-")")
+print("CV score: \(report.metrics["cv_score"]!)")
 
 // 2. Parallel One-Vs-Rest classification
 let ovr = OneVsRestClassifier(numClasses: 5)
@@ -56,4 +57,7 @@ let predictions = try await ovr.predict(features: X_test)
 ### Optimization & Search
 - ``AutoML``
 - ``AutoMLStrategy``
+- ``AutoMLTaskType``
+- ``AutoMLLeaderboardEntry``
+- ``AutoMLError``
 - ``CrossValidationResult``

@@ -134,4 +134,102 @@ struct KalmanFilterTests {
         #expect(states[0].covariance.count == 2)
         #expect(!states[0].mean[0].isNaN && !states[0].mean[1].isNaN)
     }
+
+    @Test("Kalman Filter smooth state isolation without manual reset (H-11)")
+    func testKFSmoothStateIsolation() async throws {
+        var observations: [[Double]] = []
+        for t in 0..<15 {
+            observations.append([10.0 + Double(t) * 0.2 + sin(Double(t))])
+        }
+
+        let kf1 = try await KalmanFilter.oneDimensional(processNoise: 0.05, measurementNoise: 0.5)
+        try await kf1.setInitialState(mean: [10.0, 0.2], covariance: [[1.0, 0.0], [0.0, 1.0]])
+        
+        // Fresh smooth run
+        let smoothFresh = try await kf1.smooth(observations: observations)
+
+        // Now run filter() followed immediately by smooth() on same instance
+        let kf2 = try await KalmanFilter.oneDimensional(processNoise: 0.05, measurementNoise: 0.5)
+        try await kf2.setInitialState(mean: [10.0, 0.2], covariance: [[1.0, 0.0], [0.0, 1.0]])
+        _ = try await kf2.filter(observations: observations)
+        let smoothAfterFilter = try await kf2.smooth(observations: observations)
+
+        #expect(smoothFresh.count == smoothAfterFilter.count)
+        for i in 0..<smoothFresh.count {
+            #expect(abs(smoothFresh[i].mean[0] - smoothAfterFilter[i].mean[0]) < 1e-9)
+            #expect(abs(smoothFresh[i].covariance[0][0] - smoothAfterFilter[i].covariance[0][0]) < 1e-9)
+        }
+    }
+
+    @Test("Kalman Filter smooth observation dimension validation (H-12)")
+    func testKFSmoothDimensionMismatch() async throws {
+        let kf = try await KalmanFilter.oneDimensional(processNoise: 0.01, measurementNoise: 0.1)
+        try await kf.setInitialState(mean: [0.0, 0.0], covariance: [[1.0, 0.0], [0.0, 1.0]])
+        
+        let invalidObs: [[Double]] = [
+            [10.0],
+            [10.0, 20.0], // Wrong dimension (2 instead of 1)
+            [10.0]
+        ]
+        
+        await #expect(throws: ForecastError.self) {
+            try await kf.smooth(observations: invalidObs)
+        }
+    }
+
+    @Test("Kalman Filter init validation (L-03)")
+    func testKFInitValidation() throws {
+        #expect(throws: ForecastError.self) {
+            try KalmanFilter(stateSize: 0, observationSize: 1)
+        }
+        #expect(throws: ForecastError.self) {
+            try KalmanFilter(stateSize: 2, observationSize: 0)
+        }
+    }
+
+    @Test("Nelder-Mead optimization on boundary initial guess (M-01, M-02)")
+    func testNelderMeadBoundaryRobustness() {
+        let optimizer = NelderMead(maxIterations: 500, tolerance: 1e-6)
+        
+        // Objective: f(x, y) = (x - 0.7)^2 + (y - 0.3)^2
+        let objective: ([Double]) -> Double = { v in
+            let dx = v[0] - 0.7
+            let dy = v[1] - 0.3
+            return dx * dx + dy * dy
+        }
+        
+        // Initial guess exactly on the lower bounds
+        let lb = [0.0, 0.0]
+        let ub = [1.0, 1.0]
+        let guessAtLowerBound = [0.0, 0.0]
+        
+        let result1 = optimizer.minimize(
+            objective: objective,
+            initialGuess: guessAtLowerBound,
+            lowerBounds: lb,
+            upperBounds: ub
+        )
+        #expect(abs(result1[0] - 0.7) < 0.01)
+        #expect(abs(result1[1] - 0.3) < 0.01)
+        
+        // Initial guess exactly on the upper bounds
+        let guessAtUpperBound = [1.0, 1.0]
+        let result2 = optimizer.minimize(
+            objective: objective,
+            initialGuess: guessAtUpperBound,
+            lowerBounds: lb,
+            upperBounds: ub
+        )
+        #expect(abs(result2[0] - 0.7) < 0.01)
+        #expect(abs(result2[1] - 0.3) < 0.01)
+
+        // Bounds dimension mismatch (M-01) should gracefully return initialGuess
+        let mismatchedBounds = optimizer.minimize(
+            objective: objective,
+            initialGuess: [0.5, 0.5],
+            lowerBounds: [0.0], // Only 1 bound for 2D guess
+            upperBounds: ub
+        )
+        #expect(mismatchedBounds == [0.5, 0.5])
+    }
 }

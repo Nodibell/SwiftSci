@@ -75,10 +75,12 @@ public struct ForecastResult: Sendable {
     }
 }
 
-/// ARIMA-specific result.
+/// ARIMA/SARIMA-specific result.
 public struct ARIMAResult: Sendable {
-    /// The order.
+    /// The non-seasonal order (p, d, q).
     public let order: (p: Int, d: Int, q: Int)
+    /// The seasonal order (P, D, Q, s), or nil if non-seasonal.
+    public let seasonalOrder: (P: Int, D: Int, Q: Int, s: Int)?
     /// The ar coefficients.
     public let arCoefficients: [Double]
     /// The ma coefficients.
@@ -90,9 +92,10 @@ public struct ARIMAResult: Sendable {
     /// The forecast.
     public let forecast: ForecastResult
     
-    /// Creates a new instance of ARIMAForecastResult.
+    /// Creates a new instance of ARIMAResult.
     /// - Parameters:
     ///   - order: ARIMA (p, d, q) order tuple.
+    ///   - seasonalOrder: Optional SARIMA (P, D, Q, s) seasonal order tuple.
     ///   - arCoefficients: Fitted Autoregressive (AR) coefficients.
     ///   - maCoefficients: Fitted Moving Average (MA) coefficients.
     ///   - intercept: Model intercept parameter.
@@ -100,6 +103,7 @@ public struct ARIMAResult: Sendable {
     ///   - forecast: Forecast result containing predictions and confidence intervals.
     public init(
         order: (p: Int, d: Int, q: Int),
+        seasonalOrder: (P: Int, D: Int, Q: Int, s: Int)? = nil,
         arCoefficients: [Double],
         maCoefficients: [Double],
         intercept: Double,
@@ -107,6 +111,7 @@ public struct ARIMAResult: Sendable {
         forecast: ForecastResult
     ) {
         self.order = order
+        self.seasonalOrder = seasonalOrder
         self.arCoefficients = arCoefficients
         self.maCoefficients = maCoefficients
         self.intercept = intercept

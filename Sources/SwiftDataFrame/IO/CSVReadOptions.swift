@@ -15,6 +15,12 @@ public struct CSVReadOptions: Sendable {
     /// Type overrides for specific columns by name.
     public var columnTypeOverrides: [String: ColumnDType] = [:]
 
+    /// Type overrides for specific columns by name (alias for columnTypeOverrides).
+    public var columnTypes: [String: ColumnDType] {
+        get { columnTypeOverrides }
+        set { columnTypeOverrides = newValue }
+    }
+
     /// Creates a new instance.
     public init() {}
     /// A public declaration.

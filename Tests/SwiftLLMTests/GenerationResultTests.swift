@@ -204,23 +204,27 @@ struct GenerationResultTests {
             (4, "12345", 1, .promptTooLong(promptTokens: 5, capacity: 4)),
             (4, "P", -1, .invalidMaxTokens(-1)),
             (0, "P", 1, .invalidContextLimit(0)),
-            (-1, "P", 1, .invalidContextLimit(-1))
+            (-1, "P", 1, .invalidContextLimit(-1)),
+            (Int.min, "P", 1, .invalidContextLimit(Int.min))
         ] {
             let model = model(capacity: capacity)
+            #expect(model.config.maxSeqLen == capacity)
+            var emitted = 0
             let options = LLMOptions(sampling: .greedy, maxTokens: budget)
             do {
                 switch api {
                 case 0:
-                    for await _ in try await model.generate(prompt: prompt, options: options) {}
+                    for await _ in try await model.generate(prompt: prompt, options: options) { emitted += 1 }
                 case 1:
-                    for try await _ in model.generateStream(prompt: prompt, options: options) {}
+                    for try await _ in model.generateStream(prompt: prompt, options: options) { emitted += 1 }
                 default:
-                    for try await _ in model.generateDetails(prompt: prompt, options: options) {}
+                    for try await _ in model.generateDetails(prompt: prompt, options: options) { emitted += 1 }
                 }
                 Issue.record("Expected request error \(expected)")
             } catch {
                 #expect(error as? GenerationError == expected)
             }
+            #expect(emitted == 0)
         }
     }
 

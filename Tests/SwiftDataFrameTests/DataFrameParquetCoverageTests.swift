@@ -2,9 +2,8 @@ import Testing
 import Foundation
 @testable import SwiftDataFrame
 
-@Suite("SwiftDataFrame Release 3.5.0 Coverage Tests")
-struct DataFrameRelease35CoverageTests {
-
+@Suite("DataFrame Parquet & Generic Column Coverage Tests")
+struct DataFrameParquetCoverageTests {
     // Custom AnyColumn struct to exercise ParquetWriter generic fallback path
     struct CustomGenericColumn: AnyColumn, @unchecked Sendable {
         let name: String
@@ -222,3 +221,5 @@ struct DataFrameRelease35CoverageTests {
         #expect(schema["non_existent"] == nil)
     }
 }
+
+typealias DataFrameRelease35CoverageTests = DataFrameParquetCoverageTests

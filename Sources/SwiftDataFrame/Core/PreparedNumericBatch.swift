@@ -6,7 +6,7 @@ public struct PreparedNumericBatch: Sendable {
     public let rowCount: Int
     public var columnCount: Int { columns.count }
     package var columns: [CompactNumericColumn]
-    private let sourceRows: [Int]?
+    fileprivate let sourceRows: [Int]?
 
     /// Row positions in the dataframe at preparation time, including repeated selections.
     public var originalRowIndices: [Int] { sourceRows ?? Array(0..<rowCount) }
@@ -239,5 +239,61 @@ public struct PreparedNumericMatrix: Sendable {
     public subscript(row: Int, column: Int) -> Double {
         precondition(row >= 0 && row < rowCount && column >= 0 && column < columnCount)
         return values[order == .rowMajor ? row * columnCount + column : column * rowCount + row]
+    }
+}
+
+
+extension PreparedNumericBatch {
+    /// Materializes the row-array representation required by legacy consumers.
+    /// Missing values become NaN, matching matrix extraction.
+    public func rowValues() -> [[Double]] {
+        (0..<rowCount).map { row in columns.map { $0.values[row] } }
+    }
+
+    package func requireFinite() throws {
+        guard columns.allSatisfy({ $0.nullCount == 0 && $0.values.allSatisfy(\.isFinite) }) else {
+            throw SwiftMLError.invalidParameter("Regression input contains missing or nonfinite values")
+        }
+    }
+
+    package func replacingRows(_ rows: [[Double]]) throws -> PreparedNumericBatch {
+        guard rows.count == rowCount, rows.allSatisfy({ $0.count == columnCount }) else {
+            throw SwiftMLError.invalidParameter("Prepared transformer must preserve row count and feature schema")
+        }
+        return replacingNumericColumns((0..<columnCount).map { c in rows.map { $0[c] } })
+    }
+}
+
+/// Features and a target column sharing one row selection and snapshot.
+/// Select or reorder this value before splitting features from targets.
+public struct PreparedSupervisedBatch: Sendable {
+    private let batch: PreparedNumericBatch
+    private let targetIndex: Int
+
+    /// Builds a supervised view without copying column values.
+    /// Column names must be unique and include at least one feature and one target.
+    public init(_ batch: PreparedNumericBatch, targetColumn: String) throws {
+        guard batch.columnCount > 1, Set(batch.columnNames).count == batch.columnCount,
+              let index = batch.columnNames.firstIndex(of: targetColumn) else {
+            throw SwiftMLError.invalidParameter("Supervised batch requires unique feature and target names")
+        }
+        self.batch = batch
+        targetIndex = index
+    }
+
+    /// Feature columns in their original order, excluding the target.
+    public var features: PreparedNumericBatch {
+        let indices = batch.columns.indices.filter { $0 != targetIndex }
+        return PreparedNumericBatch(columnNames: indices.map { batch.columnNames[$0] },
+            columns: indices.map { batch.columns[$0] }, rowCount: batch.rowCount,
+            sourceRows: batch.sourceRows)
+    }
+
+    /// Target values in the same order as the feature rows. Missing values become NaN.
+    public var targets: [Double] { batch.columns[targetIndex].values }
+
+    /// Selects all feature and target columns together, preserving duplicate rows.
+    public func selectingRows(_ indices: [Int]) throws -> PreparedSupervisedBatch {
+        try PreparedSupervisedBatch(batch.selectingRows(indices), targetColumn: batch.columnNames[targetIndex])
     }
 }

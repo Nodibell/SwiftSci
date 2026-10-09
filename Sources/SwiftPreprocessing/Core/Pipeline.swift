@@ -10,6 +10,9 @@ import Foundation
 /// ## Thread Safety
 /// Conforms to `Sendable` and `PreprocessingTransformer`. All step transformations operate on value-isolated state.
 public struct Pipeline: PreprocessingTransformer, Sendable {
+    /// Legacy steps keep the original whole-pipeline row-array conversion.
+    public var supportsNativePreparedBatches: Bool { steps.allSatisfy { $0.supportsNativePreparedBatches } }
+
     /// The steps.
     public var steps: [any PreprocessingTransformer]
     
@@ -44,5 +47,47 @@ public struct Pipeline: PreprocessingTransformer, Sendable {
         }
         return current
     }
+
+    /// Fits compact steps when every step opts in to prepared composition.
+    /// Otherwise, preserves whole-pipeline row-array conversion for legacy steps.
+    /// Each native intermediate can be consumed by the following step.
+    public mutating func fit(_ data: PreparedNumericBatch) throws {
+        guard supportsNativePreparedBatches else {
+            try fit(data.rowValues())
+            return
+        }
+        var current = data
+        for i in steps.indices {
+            try steps[i].fit(current)
+            current = try steps[i].transform(consuming: consume current)
+        }
+    }
+
+    /// Transforms prepared columns while preserving the caller's input snapshot.
+    public func transform(_ data: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        try transform(consuming: data)
+    }
+
+    /// Transfers each intermediate to the next step. Unique storage may be
+    /// reused by consuming transformers; legacy transformers keep their defaults.
+    public func transform(consuming data: consuming PreparedNumericBatch) throws -> PreparedNumericBatch {
+        guard supportsNativePreparedBatches else {
+            return try data.replacingRows(transform(data.rowValues()))
+        }
+        var current = consume data
+        if steps.isEmpty {
+            // The legacy row adapter produces numeric NaNs for missing inputs,
+            // even when there are no steps. Keep that result without copying values.
+            for c in current.columns.indices {
+                current.columns[c].validity = nil
+                current.columns[c].nullCount = 0
+            }
+        }
+        for step in steps {
+            current = try step.transform(consuming: consume current)
+        }
+        return current
+    }
+
 }
 

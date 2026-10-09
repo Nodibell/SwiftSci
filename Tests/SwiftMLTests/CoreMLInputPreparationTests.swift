@@ -5,8 +5,16 @@ import SwiftPreprocessing
 
 @Suite("Fitted Core ML input preparation", .serialized)
 struct CoreMLInputPreparationTests {
+    @Test(arguments: [4, 8]) func directMatchesStagedAndDrainsConcurrentOwners(bytes: Int) async throws {
+        try await checkDirectPreparation(bytes: bytes)
+    }
+
     @available(macOS 15, *)
-    @Test(arguments: [2, 4, 8]) func directMatchesStagedAndDrainsConcurrentOwners(bytes: Int) async throws {
+    @Test func float16MatchesStagedAndDrainsConcurrentOwners() async throws {
+        try await checkDirectPreparation(bytes: 2)
+    }
+
+    private func checkDirectPreparation(bytes: Int) async throws {
         try await withPreparedMatrixModel(bytes) { url in
             let input = try PreparedNumericBatch(columnNames: ["x", "y"], columns: [[1, 2, .nan], [4, 5, 6]])
                 .selectingRows([2, 0, 2])

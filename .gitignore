@@ -23,3 +23,6 @@ documentation-analysis.txt
 # Standardized benchmark working runs
 Benchmarks/Runs/
 Benchmarks/.venv-standardized/
+
+# Optional pretrained comparison environment
+Benchmarks/.venv-llm/

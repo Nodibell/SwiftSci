@@ -105,9 +105,11 @@ extension String: SupportedType {
     public var doubleValue: Double? { Double(self) }
 }
 
-extension Date: SupportedType {
+extension Date: SupportedType {}
+
+public extension Date {
     /// The column d type.
-    public static var columnDType: ColumnDType { .date32 }
+    static var columnDType: ColumnDType { .date32 }
 
     private static let _posixLocale = Locale(identifier: "en_US_POSIX")
     private static let _gmtTimeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
@@ -227,7 +229,7 @@ extension Date: SupportedType {
     }()
 
     /// Trims whitespace, newlines, and enclosing quotes.
-    public static func cleanDateString(_ string: String) -> String {
+    static func cleanDateString(_ string: String) -> String {
         var s = string.trimmingCharacters(in: .whitespacesAndNewlines)
         if (s.hasPrefix("\"") && s.hasSuffix("\"")) || (s.hasPrefix("'") && s.hasSuffix("'")) {
             s = String(s.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -246,7 +248,7 @@ extension Date: SupportedType {
     ///      to the standard `MM/dd/yyyy` (month-first / US-convention) precedence by default
     ///      unless disambiguated by day values > 12 (e.g. `25/03/2024`).
     /// 5. Two-digit year formats with automatic century normalization (< 70 -> 2000s, >= 70 -> 1900s).
-    public static func parse(from string: String) -> Date? {
+    static func parse(from string: String) -> Date? {
         let cleaned = cleanDateString(string)
         guard !cleaned.isEmpty && cleaned != "—" && cleaned != "null" && cleaned != "NA" && cleaned != "NaN" else {
             return nil
@@ -331,12 +333,12 @@ extension Date: SupportedType {
     }
 
     /// Checks if a string can be parsed as a Date.
-    public static func isDateString(_ string: String) -> Bool {
+    static func isDateString(_ string: String) -> Bool {
         parse(from: string) != nil
     }
 
     /// Checks whether the string representation contains an hour/minute indicator.
-    public static func stringHasTime(_ string: String) -> Bool {
+    static func stringHasTime(_ string: String) -> Bool {
         let cleaned = cleanDateString(string)
         if cleaned.contains(":") { return true }
         if cleaned.contains("T") && cleaned.count > 10 { return true }
@@ -345,19 +347,19 @@ extension Date: SupportedType {
     }
 
     /// Checks if this Date has a non-zero time component in GMT/UTC.
-    public var hasTimeComponent: Bool {
+    var hasTimeComponent: Bool {
         let comps = Self._gregorianCalendar.dateComponents([.hour, .minute, .second, .nanosecond], from: self)
         return (comps.hour ?? 0) != 0 || (comps.minute ?? 0) != 0 || (comps.second ?? 0) != 0 || (comps.nanosecond ?? 0) != 0
     }
 
     /// Formats as "yyyy-MM-dd HH:mm:ss" (or with fractional seconds .SSS / .SSSSSS if present)
     /// if time is present, otherwise "yyyy-MM-dd".
-    public var formattedDateOrDateTimeString: String {
+    var formattedDateOrDateTimeString: String {
         hasTimeComponent ? formattedDateTimeString : formattedDateString
     }
 
     /// Formats strictly as "yyyy-MM-dd".
-    public var formattedDateString: String {
+    var formattedDateString: String {
         let comps = Self._gregorianCalendar.dateComponents([.year, .month, .day], from: self)
         let y = comps.year ?? 0
         let m = comps.month ?? 0
@@ -366,7 +368,7 @@ extension Date: SupportedType {
     }
 
     /// Formats strictly as "yyyy-MM-dd HH:mm:ss" or with fractional seconds (.SSS / .SSSSSS) if present.
-    public var formattedDateTimeString: String {
+    var formattedDateTimeString: String {
         let comps = Self._gregorianCalendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: self)
         let y = comps.year ?? 0
         let m = comps.month ?? 0
@@ -389,5 +391,5 @@ extension Date: SupportedType {
     }
 
     /// Convert to Double for numeric operations. Returns nil for non-numeric types.
-    public var doubleValue: Double? { nil }
+    var doubleValue: Double? { nil }
 }

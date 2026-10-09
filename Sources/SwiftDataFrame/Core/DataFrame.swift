@@ -537,6 +537,24 @@ public struct DataFrame: Sendable {
         return try withColumn(name, column: newCol)
     }
 
+    /// Casts a column to the specified `ColumnDType`.
+    /// - Parameters:
+    ///   - name: Name of the column to cast.
+    ///   - dtype: Target `ColumnDType`.
+    /// - Throws: `SwiftMLError` if column is not found or cast fails.
+    /// - Returns: A new `DataFrame` with the casted column.
+    public func cast(column name: String, to dtype: ColumnDType) throws -> DataFrame {
+        switch dtype {
+        case .int32:   return try castColumn(name, to: Int32.self)
+        case .int64:   return try castColumn(name, to: Int64.self)
+        case .float32: return try castColumn(name, to: Float.self)
+        case .float64: return try castColumn(name, to: Double.self)
+        case .boolean: return try castColumn(name, to: Bool.self)
+        case .utf8:    return try castColumn(name, to: String.self)
+        case .date32:  return try castColumn(name, to: Date.self)
+        }
+    }
+
     /// Returns a new DataFrame sorted by the given column.
     /// - Parameters:
     ///   - column: Target column identifier.

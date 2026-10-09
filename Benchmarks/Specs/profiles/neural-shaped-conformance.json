@@ -1,0 +1,70 @@
+{
+  "batches": 1,
+  "cases": [
+    {
+      "dataset": "neural-shaped-cpu-w16-h2-s8-b2-full",
+      "id": "neural-shaped-cpu-w16-h2-s8-b2-full",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-cpu-w16-h2-s8-b2-cached",
+      "id": "neural-shaped-cpu-w16-h2-s8-b2-cached",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-gpu-w16-h2-s8-b2-full",
+      "id": "neural-shaped-gpu-w16-h2-s8-b2-full",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-gpu-w16-h2-s8-b2-cached",
+      "id": "neural-shaped-gpu-w16-h2-s8-b2-cached",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-cpu-w32-h4-s32-b1-full",
+      "id": "neural-shaped-cpu-w32-h4-s32-b1-full",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-cpu-w32-h4-s32-b1-cached",
+      "id": "neural-shaped-cpu-w32-h4-s32-b1-cached",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-gpu-w32-h4-s32-b1-full",
+      "id": "neural-shaped-gpu-w32-h4-s32-b1-full",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-gpu-w32-h4-s32-b1-cached",
+      "id": "neural-shaped-gpu-w32-h4-s32-b1-cached",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-cpu-w32-h2-s128-b1-full",
+      "id": "neural-shaped-cpu-w32-h2-s128-b1-full",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-cpu-w32-h2-s128-b1-cached",
+      "id": "neural-shaped-cpu-w32-h2-s128-b1-cached",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-gpu-w32-h2-s128-b1-full",
+      "id": "neural-shaped-gpu-w32-h2-s128-b1-full",
+      "workload": "decoder-shaped-f32-v1"
+    },
+    {
+      "dataset": "neural-shaped-gpu-w32-h2-s128-b1-cached",
+      "id": "neural-shaped-gpu-w32-h2-s128-b1-cached",
+      "workload": "decoder-shaped-f32-v1"
+    }
+  ],
+  "id": "neural-shaped-conformance",
+  "samples": 3,
+  "schema_version": 1,
+  "timeout_seconds": 120,
+  "warmups": 1
+}

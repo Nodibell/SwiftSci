@@ -203,6 +203,10 @@ Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py report Benchm
 
 Choose a new output directory for every run. Existing evidence is never overwritten. Rebuild after changing sources or after another Xcode command replaces the worker in the same derived-data directory. A binary checksum mismatch requires a rebuild; do not edit the build record. The builder copies Git-tracked files, including staged additions and their working contents, into a separate cache directory. Stage new source files before building. This excludes untracked cloud-sync duplicate files without changing the checkout. Xcode uses the package-level Release `build-for-testing` action with `-enableCodeCoverage NO` and dependencies pinned in `Package.resolved`. This compiles the targets without running the test suite. The generated Swift package scheme can ignore coverage settings during a plain `build` action. The builder and run planner inspect the actual Mach-O binary and reject LLVM profiling or coverage sections. A compiler setting alone is not proof that instrumentation is absent. It permits package plugins for this invocation only.
 
+## Optional Python MLX comparison
+
+The `mlx` engine executes the fixed decoder and dataframe-to-tensor contracts on the fixture-selected CPU or Metal GPU. [Run MLX comparisons](MLX-COMPARISONS.md) describes installation, supported cases, synchronization, and interpretation. Independent high-precision answers remain the correctness reference. Python MLX is an additional implementation, not an independent oracle for the MLX backend shared with Swift.
+
 ## Profiles and supported operations
 
 | Profile | Table rows | Warmups / measured samples per process | Independent processes per case and engine |
@@ -305,6 +309,8 @@ The `dataframe-conformance` profile contains 24 bounded cases for exact integer 
 ## Fixed neural inference
 
 The `neural-conformance` profile checks fixed Float32 decoder logits on explicitly selected MLX CPU and GPU paths. `neural-cpu-conformance` contains its CPU subset. The separate `neural-loader-conformance` profile checks complete parameter replacement through the public loader and retains failures. See the [fixed decoder contract](Fixtures/neural/README.md) for independent references, cache rules, device requirements and limits. The NumPy comparator runs on CPU; these diagnostic timings do not support matched-backend speed claims.
+
+The [bounded decoder shape pack](Fixtures/neural-shaped/README.md) adds widths 16 and 32 and contexts through 128 tokens. Use `neural-shaped-conformance` for CPU and Metal or `neural-shaped-cpu-conformance` for CI. All complete logits use independent scalar references; cached runs also check cumulative cache lengths.
 
 ## Complete suite acceptance
 

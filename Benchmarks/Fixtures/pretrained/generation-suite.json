@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "license": "MIT, repository LICENSE; original generated sensor records",
+  "record_counts": [16, 128, 512],
+  "max_prompt_tokens": 16384,
+  "max_new_tokens": 256,
+  "repetitions": 3,
+  "prefill_step_size": 2048,
+  "batches": [
+    {"id": "short-four", "cases": ["scientific-explanation", "structured-observations", "swift-code", "unicode-whitespace"]},
+    {"id": "mixed-two", "cases": ["scientific-explanation", "sensor-records-128"]},
+    {"id": "long-two", "cases": ["sensor-records-16", "sensor-records-512"]}
+  ]
+}

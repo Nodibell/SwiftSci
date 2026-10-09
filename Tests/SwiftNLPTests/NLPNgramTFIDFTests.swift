@@ -2,8 +2,8 @@ import Testing
 import Foundation
 @testable import SwiftNLP
 
-@Suite("SwiftNLP v3.9 Tests: N-Grams, Sublinear TF, MaxDF & TextCleaner")
-struct NLPv39Tests {
+@Suite("SwiftNLP N-Grams & TF-IDF Tests")
+struct NLPNgramTFIDFTests {
     
     @Test("TFIDFVectorizer extracts unigrams and bigrams when ngramRange is 1...2")
     func testNgramRange() throws {

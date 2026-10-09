@@ -126,6 +126,11 @@ public actor CoreMLMatrixPool {
         }
     }
 
+    package func inputContractForTrial() throws -> CoreMLTrialInputContract {
+        guard !closed, let session else { throw SwiftMLError.invalidParameter("Core ML matrix pool is closed") }
+        return CoreMLTrialInputContract(schema: session.inputArray!, names: session.inputColumns)
+    }
+
     // Experimental package-only boundary for the fused preprocessing benchmark.
     // The source provides row identity; packed values must already follow model column order.
     package func preparePackedForTrial(_ values: [Float16], source: PreparedNumericBatch,

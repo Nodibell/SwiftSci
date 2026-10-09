@@ -1,7 +1,7 @@
 import CoreML
 import Foundation
 
-struct ArrayFeature {
+struct ArrayFeature: Sendable {
     let name: String
     let shape: [Int]
     let dataType: MLMultiArrayDataType

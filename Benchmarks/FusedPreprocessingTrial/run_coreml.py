@@ -59,18 +59,28 @@ def main():
     lines = ['# Covertype fused preprocessing and Core ML', '',
              'Frozen 54 → 512 → 512 → 7 model with Float16 transport. Swift imputation and scaling fit the original 11,340 training rows. Inputs are from the recorded held-out selection.', '',
              'Each cell is a median of five interleaved samples after warmup. Wall time includes preprocessing, packing, prediction, owned output, and input reservation cleanup. Model loading and fitting are excluded.', '',
-             '| Rows | Policy | Callers / slots | Native ms | Staged packed ms | Fused packed ms | Native / fused |',
-             '| ---: | :--- | :--- | ---: | ---: | ---: | ---: |']
+             '| Rows | Policy | Callers / slots | Native ms | Staged packed ms | Fused copied ms | Fused direct ms | Copied / direct |',
+             '| ---: | :--- | :--- | ---: | ---: | ---: | ---: | ---: |']
     for record in records:
         medians = {mode: statistics.median(s['wallSeconds'] for s in record['samples'] if s['mode'] == mode) * 1000
-                   for mode in ['native', 'staged-packed', 'fused-packed']}
-        lines.append(f"| {record['rows']} | {record['policy']} | {record['callers']} / {record['slots']} | {medians['native']:.3f} | {medians['staged-packed']:.3f} | {medians['fused-packed']:.3f} | {medians['native']/medians['fused-packed']:.2f}x |")
+                   for mode in ['native', 'staged-packed', 'fused-packed', 'fused-direct']}
+        lines.append(f"| {record['rows']} | {record['policy']} | {record['callers']} / {record['slots']} | {medians['native']:.3f} | {medians['staged-packed']:.3f} | {medians['fused-packed']:.3f} | {medians['fused-direct']:.3f} | {medians['fused-packed']/medians['fused-direct']:.2f}x |")
+    lines += ['', '## Uniquely owned input', '',
+              'The consuming reference receives fresh, unique column buffers before timing. Fixture copying is excluded. This is a one-caller comparison; shared-input results above retain their source snapshots.', '',
+              '| Rows | Policy | Consuming native ms | Direct fused ms | Consuming / fused |',
+              '| ---: | :--- | ---: | ---: | ---: |']
+    for record in records:
+        if record['callers'] != 1:
+            continue
+        owned = statistics.median(s['wallSeconds'] for s in record['samples'] if s['mode'] == 'native-owned') * 1000
+        direct = statistics.median(s['wallSeconds'] for s in record['samples'] if s['mode'] == 'fused-direct') * 1000
+        lines.append(f"| {record['rows']} | {record['policy']} | {owned:.3f} | {direct:.3f} | {owned/direct:.2f}x |")
     thermals = sorted({s['thermalState'] for r in records for s in r['samples']})
     rss = max(s['residentBytes'] for r in records for s in r['samples']) / (1024 * 1024)
     lines += ['', 'All recorded predictions matched the native path exactly within each compute policy, including row identity. All pool owners and reservations drained.', '',
               f'Thermal states: {thermals}. Maximum sampled process residency: {rss:.1f} MiB. These samples are not peak-allocation measurements.', '',
               'The neural policy permits Core ML to use CPU and Neural Engine; it does not prove exclusive Neural Engine execution. Float16 model accuracy remains the separately qualified model property.', '',
-              'Both packed paths include an additional owned copy through a package-only trial adapter. Native uses the existing public prepare/predict workflow. This is an experiment, not a public API proposal or an automatic dispatch threshold.', '',
+              'The copied packed paths include an additional owned copy. Direct fusion fills reserved model-typed storage outside the pool actor and avoids that intermediate array and copy. Every path still copies prepared storage into an exclusive prediction slot. Native uses the existing public preparation API. These are package-only experiments, not a public API proposal or a dispatch threshold.', '',
               f"Source head: `{fingerprint['head']}`. See fingerprint.json and individual results for provenance, timings, and cleanup evidence."]
     (args.output / 'report.md').write_text('\n'.join(lines) + '\n')
     print('\n'.join(lines))

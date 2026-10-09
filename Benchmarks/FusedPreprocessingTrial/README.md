@@ -1,6 +1,6 @@
 # Fused preprocessing trial
 
-This experiment asks whether fitted imputation, standard scaling, and row-major packing benefit from sharing a bounded pass over compact columns. The fused implementation lives in the benchmark worker. A package-only packed-input adapter supports the Core ML trial. No public preprocessing API is added.
+This experiment asks whether fitted imputation, standard scaling, and row-major packing benefit from sharing a bounded pass over compact columns. A package-only fitted plan shares the fused implementation between the benchmark worker and the Core ML trial. Package-only adapters compare copied and directly filled model inputs. No public preprocessing API is added.
 
 The trial starts at Core ML PR #65 head `62c3d7e61146db1b5fc36b39c7d4e424f0e38572`. Its native prepared-data baseline imports the preprocessing implementation and related tests from CPU/GPU PR #63 head `9d7bc22363aef7e94ef910b36d109113e6c5bb21`. That avoids comparing fusion against the older row-array adapter. The import is a separate commit so the experimental changes remain identifiable.
 
@@ -32,13 +32,13 @@ python3 Benchmarks/FusedPreprocessingTrial/run.py \
 
 The runner saves raw timings, executable and source fingerprints, a worker log, and a Markdown comparison. Keep machine-specific results outside the contribution branch.
 
-A speedup here supports further integration testing. It does not establish an inference speedup, Neural Engine placement, cache utilization, physical memory savings, or a production dispatch threshold. The Core ML extension below measures real held-out data and bounded concurrent callers. Uniquely owned inputs, other datasets and model shapes, and direct filling of model-owned storage remain separate experiments.
+A speedup here supports further integration testing. It does not establish an inference speedup, Neural Engine placement, cache utilization, physical memory savings, or a production dispatch threshold. The Core ML extension below measures real held-out data and bounded concurrent callers. The direct-storage extension also covers uniquely owned inputs. Other datasets, model shapes, and model types remain separate experiments.
 
 ## Covertype and Core ML workflow
 
 `prepare_covertype.py` verifies the recorded source and held-out selection hashes, then extracts the original 11,340 training rows and 8,192 held-out rows. It does not retrain the frozen 54 → 512 → 512 → 7 classifier. The worker fits Swift imputation and standard scaling on the training partition only.
 
-`run_coreml.py` compares three paths through the existing matrix pool:
+`run_coreml.py` compares the following staged and copied paths through the existing matrix pool:
 
 - Native prepared imputation and consuming scaling, followed by the public pool preparation API.
 - Staged preprocessing and packing, followed by the package-only packed-input adapter.
@@ -62,3 +62,13 @@ python3 Benchmarks/FusedPreprocessingTrial/run_coreml.py \
 ```
 
 The model directory must contain `models-1024/program16.mlpackage` and `models-8192/program16.mlpackage` for the recorded width-512 classifier. `--smoke` runs only the 1,024-row CPU case with one caller. The report separates wall time from preparation and prediction samples. Prediction equivalence under a compute policy does not establish equivalence to Double arithmetic or certify placement on the Neural Engine.
+
+## Direct storage and unique ownership experiment
+
+The direct mode uses an immutable `CoreMLTrialInputContract` containing shape, type, and column names. The contract holds no model or pool reference. Caller tasks reserve input capacity, allocate private storage, and apply the fitted `TrialFusedPreprocessingPlan` directly to it. This avoids the temporary Float16 array and its copy while preserving finite-value checks and row identity. Preparation runs outside the pool actor, so it does not serialize concurrent preprocessing. Each prediction still copies the prepared values into an exclusive pool slot.
+
+The one-caller runs also include `native-owned`. Before timing, the worker constructs genuinely unique columns, then consumes them through the native imputer and scaler. A test verifies that this path reuses the same column addresses. Shared paths retain their source snapshot. Both ownership modes exclude fixture creation, and both use the same single-caller dispatch structure.
+
+The direct and copied fused paths use the same package implementation, fitted values, and vDSP operations. The report presents copied-to-direct ratios separately from native-to-fused results. It also compares direct fusion with the consuming native reference. Those comparisons determine whether removing a copy helps after the native path can already reuse its storage.
+
+Tests cover exact prediction equivalence with missing inputs, concurrent owners, row identity, Float16 overflow rejection, and final reservation release after failure or cancellation. Float16 buffer access remains guarded for macOS 15 and later. The library's deployment minimum is unchanged.

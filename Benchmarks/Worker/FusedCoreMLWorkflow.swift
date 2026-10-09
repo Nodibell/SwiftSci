@@ -50,11 +50,18 @@ struct FusionPrediction: Sendable {
     let caller: Int
 }
 
-private func fusionPredict(mode: String, caller: Int, plan: FusedPreprocessingPlan,
-    input: PreparedNumericBatch, pool: CoreMLMatrixPool, budget: MemoryBudget) async throws -> FusionPrediction {
+func fusionPredict(mode: String, caller: Int, plan: FusedPreprocessingPlan,
+    input: consuming PreparedNumericBatch, pool: CoreMLMatrixPool, budget: MemoryBudget,
+    contract: CoreMLTrialInputContract) async throws -> FusionPrediction {
     let start = ContinuousClock.now
     let prepared: CoreMLPreparedMatrix
-    if mode == "native" {
+    if mode == "fused-direct" {
+        prepared = try await contract.prepareFused(input, plan: plan, budget: budget)
+    } else if mode == "native-owned" {
+        let imputed = try plan.imputer.transform(consuming: consume input)
+        let scaled = try plan.scaler.transform(consuming: consume imputed)
+        prepared = try await pool.prepare(scaled, budget: budget)
+    } else if mode == "native" {
         let imputed = try plan.imputer.transform(input)
         let scaled = try plan.scaler.transform(consuming: consume imputed)
         prepared = try await pool.prepare(scaled, budget: budget)
@@ -71,7 +78,7 @@ private func fusionPredict(mode: String, caller: Int, plan: FusedPreprocessingPl
         prediction: elapsedSeconds(since: predictionStart), caller: caller)
 }
 
-private func awaitFusionRelease(_ budget: MemoryBudget) async throws {
+func awaitFusionRelease(_ budget: MemoryBudget) async throws {
     let deadline = ContinuousClock.now.advanced(by: .seconds(5))
     while await budget.reservedBytes != 0 {
         guard ContinuousClock.now < deadline else { throw BenchmarkFailure("Fusion input reservation did not drain") }
@@ -118,31 +125,21 @@ func measureFusionCoreML(_ q: FusionCoreMLRequest) async throws -> FusionCoreMLR
     let measured = try await CoreMLMatrixPool.withPool(compiledModelURL: compiled, inputColumns: fixture.names,
         outputName: "result", computeUnits: q.policy == "cpu" ? .cpuOnly : .cpuAndNeuralEngine,
         budget: poolBudget, configuration: config) { pool in
+        let contract = try await pool.inputContractForTrial()
         var hashes = [String]()
         for (caller, input) in inputs.enumerated() {
-            let reference = try await fusionPredict(mode: "native", caller: caller, plan: plan, input: input, pool: pool, budget: inputBudget)
+            let reference = try await fusionPredict(mode: "native", caller: caller, plan: plan, input: input, pool: pool, budget: inputBudget, contract: contract)
             hashes.append(try coreMLResultHash(reference.output.values))
         }
         try await awaitFusionRelease(inputBudget)
         var samples = [FusionCoreMLSample]()
-        let modes = ["native", "staged-packed", "fused-packed"]
+        let modes = ["native", "staged-packed", "fused-packed", "fused-direct"]
+            + (q.callers == 1 ? ["native-owned"] : [])
         for iteration in -1..<5 {
             for index in 0..<modes.count {
                 let mode = modes[(index + iteration + 1) % modes.count]
-                let start = ContinuousClock.now
-                let outputs = try await withThrowingTaskGroup(of: FusionPrediction.self) { group in
-                    for caller in 0..<q.callers {
-                        group.addTask {
-                            try await fusionPredict(mode: mode, caller: caller, plan: plan,
-                                input: inputs[caller], pool: pool, budget: inputBudget)
-                        }
-                    }
-                    var results = [FusionPrediction]()
-                    for try await result in group { results.append(result) }
-                    return results.sorted { $0.caller < $1.caller }
-                }
-                try await awaitFusionRelease(inputBudget)
-                let wall = elapsedSeconds(since: start)
+                let (wall, outputs) = try await measureFusionCallers(mode: mode, plan: plan, inputs: inputs,
+                    pool: pool, budget: inputBudget, contract: contract)
                 guard outputs.count == q.callers else { throw BenchmarkFailure("Missing fusion caller result") }
                 for result in outputs {
                     guard result.output.values.originalRowIndices == inputs[result.caller].originalRowIndices,

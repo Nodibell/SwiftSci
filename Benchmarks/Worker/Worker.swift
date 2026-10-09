@@ -15,6 +15,9 @@ import SwiftStats
     case text(String)
   }
   static func main() async {
+    if CommandLine.arguments.count == 3 && CommandLine.arguments[1] == "--fused-preprocessing-trial" {
+      exit(benchmarkFusedPreprocessing(output: URL(fileURLWithPath: CommandLine.arguments[2])))
+    }
     if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--llama-inspect" {
       exit(inspectLlama(requestURL: URL(fileURLWithPath: CommandLine.arguments[2]),
                         responseURL: URL(fileURLWithPath: CommandLine.arguments[3])))

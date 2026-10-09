@@ -15,6 +15,10 @@ import SwiftStats
     case text(String)
   }
   static func main() async {
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--fused-coreml-workflow" {
+      exit(await fusedCoreMLWorkflow(request: URL(fileURLWithPath: CommandLine.arguments[2]),
+                                    output: URL(fileURLWithPath: CommandLine.arguments[3])))
+    }
     if CommandLine.arguments.count == 3 && CommandLine.arguments[1] == "--fused-preprocessing-trial" {
       exit(benchmarkFusedPreprocessing(output: URL(fileURLWithPath: CommandLine.arguments[2])))
     }

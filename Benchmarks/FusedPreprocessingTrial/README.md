@@ -1,6 +1,6 @@
 # Fused preprocessing trial
 
-This experiment asks whether fitted imputation, standard scaling, and row-major packing benefit from sharing a bounded pass over compact columns. It is confined to the benchmark worker and does not add a public preprocessing API.
+This experiment asks whether fitted imputation, standard scaling, and row-major packing benefit from sharing a bounded pass over compact columns. The fused implementation lives in the benchmark worker. A package-only packed-input adapter supports the Core ML trial. No public preprocessing API is added.
 
 The trial starts at Core ML PR #65 head `62c3d7e61146db1b5fc36b39c7d4e424f0e38572`. Its native prepared-data baseline imports the preprocessing implementation and related tests from CPU/GPU PR #63 head `9d7bc22363aef7e94ef910b36d109113e6c5bb21`. That avoids comparing fusion against the older row-array adapter. The import is a separate commit so the experimental changes remain identifiable.
 
@@ -32,4 +32,33 @@ python3 Benchmarks/FusedPreprocessingTrial/run.py \
 
 The runner saves raw timings, executable and source fingerprints, a worker log, and a Markdown comparison. Keep machine-specific results outside the contribution branch.
 
-A speedup here supports further integration testing. It does not establish an inference speedup, Neural Engine placement, cache utilization, physical memory savings, or a production dispatch threshold. Next validation must include the existing prepared Core ML workflow, real held-out data, uniquely owned input, and bounded concurrent callers.
+A speedup here supports further integration testing. It does not establish an inference speedup, Neural Engine placement, cache utilization, physical memory savings, or a production dispatch threshold. The Core ML extension below measures real held-out data and bounded concurrent callers. Uniquely owned inputs, other datasets and model shapes, and direct filling of model-owned storage remain separate experiments.
+
+## Covertype and Core ML workflow
+
+`prepare_covertype.py` verifies the recorded source and held-out selection hashes, then extracts the original 11,340 training rows and 8,192 held-out rows. It does not retrain the frozen 54 → 512 → 512 → 7 classifier. The worker fits Swift imputation and standard scaling on the training partition only.
+
+`run_coreml.py` compares three paths through the existing matrix pool:
+
+- Native prepared imputation and consuming scaling, followed by the public pool preparation API.
+- Staged preprocessing and packing, followed by the package-only packed-input adapter.
+- Fused preprocessing and packing, followed by the same trial adapter.
+
+The trial adapter accepts finite Float16 arrays in the exact model shape and column order. It reserves storage before allocating, copies the values into private storage, and preserves the source batch's row identity. Changing the caller's array cannot change retained input. Both packed paths pay this extra copy, so the experiment can distinguish fusion from differences in preparation APIs. The adapter is experimental and is not a proposed public API.
+
+The runner starts a separate bounded process for each combination of 1,024 or 8,192 rows, CPU-only or CPU-and-Neural-Engine policy, and one or four callers. Four callers share two prediction slots. Each process has a four-minute timeout. The worker checks sampled residency against 1 GiB, verifies every prediction against the native path under the same policy, and requires all owners and reservations to drain. Sampled residency is not a peak-memory limit. Input arrays and returned predictions remain caller-owned outside the pool's reservation.
+
+```sh
+python3 Benchmarks/FusedPreprocessingTrial/prepare_covertype.py \
+  --existing /absolute/path/to/recorded-covertype-run \
+  --output /absolute/path/to/new-raw-covertype.json
+
+python3 Benchmarks/FusedPreprocessingTrial/run_coreml.py \
+  --worker /absolute/path/to/SwiftSciBenchmarkWorker \
+  --prepared /absolute/path/to/recorded-covertype-run/prepared \
+  --models /absolute/path/to/recorded-program-models \
+  --raw /absolute/path/to/new-raw-covertype.json \
+  --output /absolute/path/to/new-workflow-results
+```
+
+The model directory must contain `models-1024/program16.mlpackage` and `models-8192/program16.mlpackage` for the recorded width-512 classifier. `--smoke` runs only the 1,024-row CPU case with one caller. The report separates wall time from preparation and prediction samples. Prediction equivalence under a compute policy does not establish equivalence to Double arithmetic or certify placement on the Neural Engine.

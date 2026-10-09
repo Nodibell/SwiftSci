@@ -5,7 +5,7 @@ import SwiftDataFrame
 import SwiftPreprocessing
 
 // Experimental worker implementation. No public preprocessing API is changed.
-struct FusedPreprocessingPlan {
+struct FusedPreprocessingPlan: Sendable {
     let imputer: Imputer
     let scaler: StandardScaler
     let names: [String]

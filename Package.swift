@@ -154,6 +154,7 @@ let package = Package(
             name: "SwiftMLTests",
             dependencies: ["SwiftML"],
             path: "Tests/SwiftMLTests",
+            resources: [.copy("Fixtures/CoreMLFloat16")],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),

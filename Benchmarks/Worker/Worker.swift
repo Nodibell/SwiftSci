@@ -19,6 +19,21 @@ import SwiftStats
       exit(inspectLlama(requestURL: URL(fileURLWithPath: CommandLine.arguments[2]),
                         responseURL: URL(fileURLWithPath: CommandLine.arguments[3])))
     }
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--coreml-prepared-workflow" {
+      let status = await preparedCoreMLWorkflow(request: URL(fileURLWithPath: CommandLine.arguments[2]),
+        output: URL(fileURLWithPath: CommandLine.arguments[3]))
+      exit(status)
+    }
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--coreml-concurrency" {
+      let status = await stressCoreML(request: URL(fileURLWithPath: CommandLine.arguments[2]),
+        output: URL(fileURLWithPath: CommandLine.arguments[3]))
+      exit(status)
+    }
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--coreml-qualification" {
+      let status = await qualifyCoreML(mode: CommandLine.arguments[2],
+        output: URL(fileURLWithPath: CommandLine.arguments[3]))
+      exit(status)
+    }
     if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--workflow-reload" {
       let status = await reloadWorkflow(requestURL: URL(fileURLWithPath: CommandLine.arguments[2]),
         responseURL: URL(fileURLWithPath: CommandLine.arguments[3]))

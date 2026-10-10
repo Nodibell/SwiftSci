@@ -1,3 +1,4 @@
+import SwiftDataFrame
 import Testing
 import Darwin
 import Metal
@@ -52,6 +53,28 @@ struct ScopedGPUReadTests {
                         #expect(!fail)
                         #expect(actual == (0..<count).map { Float($0) * 3 })
                     } catch Failure.afterSubmission { #expect(fail) }
+                }
+            }
+        }
+    }
+
+    @Test func preparedMatricesPreserveValuesAndCompleteOnError() throws {
+        enum Failure: Error { case afterSubmission }
+        for (rows, columns) in [(1, 1), (63, 64), (64, 64), (65, 64), (65, 17), (4097, 65)] {
+            let values = (0..<columns).map { column in (0..<rows).map { row in Double(row * columns + column) / 8 } }
+            let batch = try PreparedNumericBatch(columnNames: (0..<columns).map { "x\($0)" }, columns: values)
+            let expected = (0..<rows).flatMap { row in (0..<columns).map { Float(values[$0][row]) * 2 } }
+            do {
+                let actual = try ScopedGPURead.withMatrix(batch: batch) { input in
+                    #expect(input.shape == [rows, columns])
+                    return multiply(input, Float(2), stream: .gpu).asArray(Float.self)
+                }
+                #expect(actual == expected)
+                #expect(throws: Failure.afterSubmission) {
+                    try ScopedGPURead.withMatrix(batch: batch) { input in
+                        asyncEval(multiply(input, Float(2), stream: .gpu))
+                        throw Failure.afterSubmission
+                    }
                 }
             }
         }

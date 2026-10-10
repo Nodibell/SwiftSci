@@ -7,8 +7,12 @@ struct TiledScalerCompatibilityTests {
     @Test(arguments: [1, 3, 8, 31, 64, 129, 511, 512, 513, 2047, 2048, 2049])
     func exactValuesAcrossSizes(width: Int) throws {
         let names = (0..<width).map { "x\($0)" }
-        let training = (0..<19).map { r in
-            (0..<width).map { c in width > 1 && c == width - 1 ? 7.0 : Double((r * 17 + c * 13) % 101) / 7 - 9 }
+        let training: [[Double]] = (0..<19).map { rowIndex -> [Double] in
+            (0..<width).map { columnIndex -> Double in
+                if width > 1 && columnIndex == width - 1 { return 7.0 }
+                let numerator: Int = (rowIndex * 17 + columnIndex * 13) % 101
+                return Double(numerator) / 7.0 - 9.0
+            }
         }
         var scaler = StandardScaler()
         try scaler.fit(training)
@@ -16,23 +20,31 @@ struct TiledScalerCompatibilityTests {
         let edges = [max(1, 2048 / width), max(1, 8192 / width)]
         let counts = Set([0, 1, 3, 8, 31, 32, 33, 63, 127, 257] + edges.flatMap { [max(0, $0-1), $0, $0+1, 2*$0+3] })
         for rows in counts.sorted() {
-            let columns = (0..<width).map { c in (0..<rows).map { r in
-                width > 1 && c == width - 1 ? 7.0 : Double((r * 19 + c * 11) % 113) / 13 - 4
-            } }
+            let columns: [[Double]] = (0..<width).map { columnIndex -> [Double] in
+                (0..<rows).map { rowIndex -> Double in
+                    if width > 1 && columnIndex == width - 1 { return 7.0 }
+                    let numerator: Int = (rowIndex * 19 + columnIndex * 11) % 113
+                    return Double(numerator) / 13.0 - 4.0
+                }
+            }
             let batch = try PreparedNumericBatch(columnNames: names, columns: columns)
             let expected = try scaler.transform(batch.rowValues())
-            let actual = try scaler.transform(batch)
-            #expect(actual.columnNames == names && actual.rowCount == rows)
-            for c in 0..<width {
-                #expect(actual.nullCount(inColumn: c) == 0)
-                #expect((0..<rows).allSatisfy { actual[$0,c]!.bitPattern == expected[$0][c].bitPattern })
+            for actual in [try scaler.transform(batch), try scaler.transform(consuming: batch)] {
+                #expect(actual.columnNames == names && actual.rowCount == rows)
+                for c in 0..<width {
+                    #expect(actual.nullCount(inColumn: c) == 0)
+                    #expect((0..<rows).allSatisfy { actual[$0,c]!.bitPattern == expected[$0][c].bitPattern })
+                }
             }
         }
         #expect(scaler.mean == originalMean && scaler.std == originalStd)
     }
 
     @Test func singleColumnPreparedFitKeepsRowRounding() throws {
-        let values = (0..<8).map { Double(($0 * 17) % 101) / 7 - 9 }
+        let values: [Double] = (0..<8).map { rowIndex -> Double in
+            let numerator: Int = (rowIndex * 17) % 101
+            return Double(numerator) / 7.0 - 9.0
+        }
         let batch = try PreparedNumericBatch(columnNames: ["x"], columns: [values])
         var scaler = StandardScaler()
         try scaler.fit(batch)
@@ -56,29 +68,39 @@ struct TiledScalerCompatibilityTests {
         try scaler.fit([[1, 2, 0], [3, 2, 0], [5, 2, 0]])
         let expected = try scaler.transform(rows)
         let actual = try scaler.transform(snapshot)
+        let consumed = try scaler.transform(consuming: snapshot)
         try source.updateColumn(at: 0, rows: [1], values: [999])
-        #expect(actual.originalRowIndices == selection)
-        for c in 0..<3 {
-            #expect(actual.nullCount(inColumn: c) == 0)
-            #expect((0..<actual.rowCount).allSatisfy { r in
-                let value = actual[r,c]!, reference = expected[r][c]
-                return value.bitPattern == reference.bitPattern || (value.isNaN && reference.isNaN)
-            })
+        for actual in [actual, consumed] {
+            #expect(actual.originalRowIndices == selection)
+            for c in 0..<3 {
+                #expect(actual.nullCount(inColumn: c) == 0)
+                #expect((0..<actual.rowCount).allSatisfy { r in
+                    let value = actual[r,c]!, reference = expected[r][c]
+                    return value.bitPattern == reference.bitPattern || (value.isNaN && reference.isNaN)
+                })
+            }
         }
         #expect(snapshot[5999,0] == 1)
+        #expect(snapshot[6000,0] == nil && snapshot.nullCount(inColumn: 0) == 2)
     }
 
     @Test func concurrentTransformsKeepIndependentOutputs() async throws {
-        let batch = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns:
-            (0..<3).map { c in (0..<9001).map { Double(($0 * 7 + c * 3) % 97) } })
+        let columns: [[Double]] = (0..<3).map { columnIndex -> [Double] in
+            (0..<9001).map { rowIndex -> Double in
+                let value: Int = (rowIndex * 7 + columnIndex * 3) % 97
+                return Double(value)
+            }
+        }
+        let batch = try PreparedNumericBatch(columnNames: ["a", "b", "c"], columns: consume columns)
         var fitting = StandardScaler()
         try fitting.fit(batch)
         let scaler = fitting
         let expected = try scaler.transform(batch.rowValues()).map { $0.map(\.bitPattern) }
         try await withThrowingTaskGroup(of: Bool.self) { group in
-            for _ in 0..<4 {
+            for index in 0..<4 {
                 group.addTask {
-                    let actual = try scaler.transform(batch)
+                    let actual = try index.isMultiple(of: 2)
+                        ? scaler.transform(batch) : scaler.transform(consuming: batch)
                     return actual.rowValues().map { $0.map(\.bitPattern) } == expected
                 }
             }

@@ -24,6 +24,9 @@ import Accelerate
 /// `fit` and `transform` are individually thread-safe. Do **not** call
 /// `fit` concurrently from multiple threads.
 public struct MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
+    /// Uses native compact-column fitting and transformation in pipelines.
+    public var supportsNativePreparedBatches: Bool { true }
+
     /// Per-column minimum values from `fit`.
     public private(set) var dataMin: [Double]?
     /// Per-column maximum values from `fit`.
@@ -156,9 +159,18 @@ extension MinMaxScaler {
         lock.unlock()
     }
 
-    /// Transforms compact columns. As in the existing matrix API, missing inputs
-    /// participate as NaN and every output is a numeric value, including NaN.
+    /// Transforms compact columns while preserving the input snapshot.
+    /// Missing inputs participate as NaN and every output is a numeric value.
     public func transform(_ batch: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        try transform(consuming: batch)
+    }
+
+    /// Transforms a batch, reusing its column storage when uniquely owned.
+    /// Pass `consume batch` when the caller no longer needs the input. Shared
+    /// arrays detach through copy-on-write, preserving other batch and matrix
+    /// snapshots. Column names and original row indices are preserved. Missing
+    /// inputs become numeric NaNs, matching the nonconsuming transform.
+    public func transform(consuming batch: consuming PreparedNumericBatch) throws -> PreparedNumericBatch {
         lock.lock()
         let minima = dataMin, maxima = dataMax
         lock.unlock()
@@ -167,23 +179,24 @@ extension MinMaxScaler {
         guard batch.columnCount == minima.count else {
             throw PreprocessingError.dimensionMismatch(expected: minima.count, got: batch.columnCount)
         }
-        var columns = [[Double]]()
-        columns.reserveCapacity(batch.columnCount)
-        let count = vDSP_Length(batch.rowCount)
-        var shifted = [Double](repeating: 0, count: batch.rowCount)
-        var scaled = [Double](repeating: 0, count: batch.rowCount)
-        for index in 0..<batch.columnCount {
-            var output = [Double](repeating: 0, count: batch.rowCount)
+        var output = consume batch
+        let count = vDSP_Length(output.rowCount)
+        for index in 0..<output.columnCount {
             var negativeMinimum = -minima[index]
             let span = maxima[index] - minima[index]
             var scale = span < 1e-12 ? 0 : (range.max - range.min) / span
             var offset = range.min
-            vDSP_vsaddD(batch.columns[index].values, 1, &negativeMinimum, &shifted, 1, count)
-            vDSP_vsmulD(shifted, 1, &scale, &scaled, 1, count)
-            vDSP_vsaddD(scaled, 1, &offset, &output, 1, count)
-            columns.append(output)
+            output.columns[index].values.withUnsafeMutableBufferPointer { values in
+                let base = values.baseAddress!
+                // Keep the existing three operations and their rounding boundaries.
+                vDSP_vsaddD(base, 1, &negativeMinimum, base, 1, count)
+                vDSP_vsmulD(base, 1, &scale, base, 1, count)
+                vDSP_vsaddD(base, 1, &offset, base, 1, count)
+            }
+            output.columns[index].validity = nil
+            output.columns[index].nullCount = 0
         }
-        return batch.replacingNumericColumns(columns)
+        return output
     }
 
     /// Fits and transforms a prepared batch, retaining its column order.

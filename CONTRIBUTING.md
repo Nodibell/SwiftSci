@@ -30,6 +30,18 @@ Please review and adhere to our [Code of Conduct](CODE_OF_CONDUCT.md) in all com
 - **Documentation:** Every public API method, struct, enum, and class must be documented using Swift DocC comments (`///`).
 - **Tests:** Add unit tests under `Tests/<Target>Tests` for every new algorithm or feature.
 
+### Swift type checking in tests
+
+Keep generated numeric fixtures in small, explicitly typed expressions. Give nested
+collection closures concrete return types, bind arithmetic to typed intermediate
+values, and build arrays before passing them to overloaded initializers. Reuse a
+typed fixture helper when tests need the same data. Do not reduce fixture sizes or
+change numeric precision to work around a compiler diagnostic.
+
+Compile test targets as part of local validation. `swift build` does not compile
+them, and `swift test --skip` still compiles skipped suites. A successful build on
+a newer Swift compiler does not establish compatibility with the CI compiler.
+
 ## Architectural & Concurrency Design Criteria
 
 To maintain consistency before freezing the SwiftSci 3.0 API, all new types must adhere to these architectural criteria:

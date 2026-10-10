@@ -30,6 +30,9 @@ import Accelerate
 /// `fit` and `transform` are individually thread-safe. Do **not** call `fit`
 /// concurrently from multiple threads.
 public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
+    /// Uses native compact-column fitting and transformation in pipelines.
+    public var supportsNativePreparedBatches: Bool { true }
+
     /// Per-column means computed during `fit`.
     public private(set) var mean: [Double]?
     /// Per-column standard deviations computed during `fit`.
@@ -159,9 +162,19 @@ extension StandardScaler {
         lock.unlock()
     }
 
-    /// Transforms compact columns. As in the existing matrix API, missing inputs
-    /// participate as NaN and every output is a numeric value, including NaN.
+    /// Transforms compact columns while preserving the input snapshot.
+    /// Missing inputs participate as NaN and every output is a numeric value.
     public func transform(_ batch: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        try transform(consuming: batch)
+    }
+
+    /// Transforms a batch, reusing its column storage when uniquely owned.
+    /// Pass `consume batch` when the caller no longer needs the input. Shared
+    /// arrays detach through copy-on-write, preserving other batch and matrix
+    /// snapshots. Reuse depends on ownership and is not guaranteed for aliases.
+    /// Column names and original row indices are preserved. Missing inputs
+    /// become numeric NaNs, matching the nonconsuming transform.
+    public func transform(consuming batch: consuming PreparedNumericBatch) throws -> PreparedNumericBatch {
         lock.lock()
         let means = mean, deviations = std
         lock.unlock()
@@ -170,56 +183,44 @@ extension StandardScaler {
         guard batch.columnCount == means.count else {
             throw PreprocessingError.dimensionMismatch(expected: means.count, got: batch.columnCount)
         }
-        // Bound the row tile to 16 KiB. Preserve row-width vDSP calls and their
-        // rounding while gathering and writing contiguous column segments.
-        // Amortize traversal setup over at least 32 rows and four rows per tile.
-        let width = batch.columnCount
-        let tileElements = 2048
-        if batch.rowCount >= 32, width > 0, width <= tileElements / 4 {
-            let capacity = min(batch.rowCount, tileElements / width)
-            var tile = [Double](repeating: 0, count: capacity * width)
-            var shifted = [Double](repeating: 0, count: width)
-            var normalizedRow = shifted
-            let negativeMeans = means.map { -$0 }
-            var columns = (0..<width).map { _ in [Double](repeating: 0, count: batch.rowCount) }
-            tile.withUnsafeMutableBufferPointer { buffer in
-                for start in stride(from: 0, to: batch.rowCount, by: capacity) {
-                    let count = min(capacity, batch.rowCount - start)
-                    for c in 0..<width {
-                        batch.columns[c].values.withUnsafeBufferPointer { input in
-                            for r in 0..<count { buffer[r * width + c] = input[start + r] }
-                        }
+        var output = consume batch
+        let width = output.columnCount
+        guard width > 0 else { return output }
+        // Bound tiled traversal to 16 KiB; short or wide batches use one row. Both
+        // paths keep row-width vDSP arithmetic to preserve existing rounding.
+        let capacity = output.rowCount >= 32 && width <= 512 ? min(output.rowCount, 2048 / width) : 1
+        var tile = [Double](repeating: 0, count: capacity * width)
+        var shifted = [Double](repeating: 0, count: width)
+        var normalizedRow = shifted
+        let negativeMeans = means.map { -$0 }
+        tile.withUnsafeMutableBufferPointer { buffer in
+            for start in stride(from: 0, to: output.rowCount, by: capacity) {
+                let count = min(capacity, output.rowCount - start)
+                for c in 0..<width {
+                    output.columns[c].values.withUnsafeBufferPointer { input in
+                        for r in 0..<count { buffer[r * width + c] = input[start + r] }
                     }
-                    for r in 0..<count {
-                        let row = buffer.baseAddress!.advanced(by: r * width)
-                        vDSP_vaddD(row, 1, negativeMeans, 1, &shifted, 1, vDSP_Length(width))
-                        // Keep the array-backed destination: tile row alignment can
-                        // change vDSP division rounding, even at width one.
-                        vDSP_vdivD(deviations, 1, shifted, 1, &normalizedRow, 1, vDSP_Length(width))
-                        for c in 0..<width { row[c] = normalizedRow[c] }
-                    }
-                    for c in 0..<width {
-                        columns[c].withUnsafeMutableBufferPointer { output in
-                            for r in 0..<count { output[start + r] = buffer[r * width + c] }
-                        }
+                }
+                for r in 0..<count {
+                    let row = buffer.baseAddress!.advanced(by: r * width)
+                    vDSP_vaddD(row, 1, negativeMeans, 1, &shifted, 1, vDSP_Length(width))
+                    // Array-backed output preserves vDSP division rounding;
+                    // writing into differently aligned tile rows can change it.
+                    vDSP_vdivD(deviations, 1, shifted, 1, &normalizedRow, 1, vDSP_Length(width))
+                    for c in 0..<width { row[c] = normalizedRow[c] }
+                }
+                for c in 0..<width {
+                    output.columns[c].values.withUnsafeMutableBufferPointer { values in
+                        for r in 0..<count { values[start + r] = buffer[r * width + c] }
                     }
                 }
             }
-            return batch.replacingNumericColumns(columns)
         }
-        var columns = (0..<batch.columnCount).map { _ in [Double](repeating: 0, count: batch.rowCount) }
-        var row = [Double](repeating: 0, count: batch.columnCount)
-        var shifted = row, output = row
-        let negativeMeans = means.map { -$0 }
-        // vDSP division rounding can depend on vector length and stride. Reuse a
-        // bounded row workspace to preserve the existing API's exact operation.
-        for r in 0..<batch.rowCount {
-            for c in 0..<batch.columnCount { row[c] = batch.columns[c].values[r] }
-            vDSP_vaddD(row, 1, negativeMeans, 1, &shifted, 1, vDSP_Length(batch.columnCount))
-            vDSP_vdivD(deviations, 1, shifted, 1, &output, 1, vDSP_Length(batch.columnCount))
-            for c in 0..<batch.columnCount { columns[c][r] = output[c] }
+        for c in 0..<width {
+            output.columns[c].validity = nil
+            output.columns[c].nullCount = 0
         }
-        return batch.replacingNumericColumns(columns)
+        return output
     }
 
     /// Fits and transforms a prepared batch, retaining its column order.

@@ -35,6 +35,7 @@ try await rf.writeCoreML(to: exportURL, featureNames: ["f1", "f2"], outputName: 
 - <doc:SupervisedClassifiers>
 - <doc:SupervisedRegressors>
 - <doc:PreparedRegression>
+- <doc:CoreMLInference>
 - <doc:EnsembleLearning>
 - <doc:HistogramGradientBoosting>
 - <doc:EarlyStoppingCallbacks>

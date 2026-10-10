@@ -1,0 +1,9 @@
+{
+  "coremltools": "9.0",
+  "numpy": "2.0.2",
+  "operation": "elementwise ReLU",
+  "files": {
+    "matrix.mlmodel": "ec1b032e31f2dd0a436a6f4da0454c655ddcb42da11933d3244c4e36320ab5e6",
+    "vector.mlmodel": "2db1e5dd8fc1bb0790bb89b5db3a7581c9500e38d603f2330d97db3da9514e4f"
+  }
+}

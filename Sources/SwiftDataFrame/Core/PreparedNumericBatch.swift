@@ -105,8 +105,8 @@ public struct PreparedNumericBatch: Sendable {
         columns[column].update(at: rows, with: values)
     }
 
-    package func replacingNumericColumns(_ values: [[Double]]) -> PreparedNumericBatch {
-        PreparedNumericBatch(columnNames: columnNames, columns: values.map(CompactNumericColumn.init), rowCount: rowCount, sourceRows: sourceRows)
+    package func replacingNumericColumns(_ values: [[Double]], columnNames: [String]? = nil) -> PreparedNumericBatch {
+        PreparedNumericBatch(columnNames: columnNames ?? self.columnNames, columns: values.map(CompactNumericColumn.init), rowCount: rowCount, sourceRows: sourceRows)
     }
 
     package func replacingColumns(in frame: DataFrame) throws -> DataFrame {

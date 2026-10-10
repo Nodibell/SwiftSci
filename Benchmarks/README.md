@@ -207,6 +207,14 @@ Choose a new output directory for every run. Existing evidence is never overwrit
 
 The `mlx` engine executes the fixed decoder and dataframe-to-tensor contracts on the fixture-selected CPU or Metal GPU. [Run MLX comparisons](MLX-COMPARISONS.md) describes installation, supported cases, synchronization, and interpretation. Independent high-precision answers remain the correctness reference. Python MLX is an additional implementation, not an independent oracle for the MLX backend shared with Swift.
 
+## Optional comparison engines
+
+Polars and DuckDB use the same dataset, workload, materialized-output, and evidence contracts as the Swift and Python workers. Install [requirements-comparison.txt](Python/requirements-comparison.txt) to enable them. The standard environment remains sufficient for Swift/Python qualification.
+
+[Compare SwiftSci with Polars and DuckDB](COMPARISON-ENGINES.md) describes setup, the complete comparison command, supported overlap, and measurement limits. Use `--engines swiftsci,pandas,polars,duckdb` with compatible profiles. Unsupported operations fail during planning; the runner does not silently drop them.
+
+The `tabular-smoke` and `tabular-migration` profiles select the 19 supported migration cases. The full `migration` profile retains all 36 cases for Swift/Python. Benchmark conformance CI installs the comparison dependencies and validates both new workers against tabular, public-data, and NIST smoke cases. Larger performance comparisons remain local runs.
+
 ## Profiles and supported operations
 
 | Profile | Table rows | Warmups / measured samples per process | Independent processes per case and engine |
@@ -225,7 +233,7 @@ The `mlx` engine executes the fixed decoder and dataframe-to-tensor contracts on
 | `model-conformance` | Two PCA and one multinomial Naive Bayes fixture | 0 / 1 | 1 |
 | `controlled-conformance` | Ten fixed inference, clustering, Kalman, search and explanation fixtures | 1 / 2 | 1 |
 
-The first three profiles each contain 11 table workloads and three NIST checks. Both adapters support CSV read, numeric filtering, stable sorting, grouped sum, matrix export, target-vector export, standard scaling, min-max scaling, mean, sample variance and sample standard deviation. The `pandas` adapter uses pandas for dataframe work and NumPy for numerical work.
+The first three profiles each contain 11 table workloads and three NIST checks. All four adapters support CSV read, numeric filtering, stable sorting, grouped sum, matrix export, target-vector export, standard scaling, min-max scaling, mean, sample variance and sample standard deviation. The `pandas` adapter uses pandas for dataframe work and NumPy for numerical work.
 
 The table generator has fixed integer formulas, exact quarter fractions, fixed column order and line endings. Each size has a committed SHA-256 and byte count. `prepare` fails if an existing cached file is corrupt. It never silently replaces bad data. The nine unchanged NIST univariate fixtures cover varied scales and numerical difficulty. Mean and standard deviation use published answers; variance references are derived from those standard deviations. See [NIST coverage and tolerances](Fixtures/nist/README.md).
 
@@ -259,7 +267,28 @@ Each workload specification declares its timing boundary. CSV measures verified,
 
 Both workers retain the result through the end timestamp, then validate every output element. Sorting must preserve input order for ties. Group results are converted to numeric keys and ordered outside timing so that different native result representations can be compared. Exact workloads require exact numeric values; numerical workloads declare absolute and relative tolerances in `Specs/workloads`.
 
-`peak_rss_bytes` is the whole worker process lifetime high-water mark, including imports, setup and validation. It is not operation allocation or logical dataframe storage. BLAS/OpenMP thread environment variables are set to one; this does not limit Swift task concurrency or every library's internal threads.
+`peak_rss_bytes` is the whole worker process lifetime high-water mark, including imports, setup and validation. It is not operation allocation or logical dataframe storage.
+
+### Production execution mode
+
+Use `--mode production-default` with `bench.py run` for measurements under each engine's native scheduling defaults. The complete `comparison_suite.py` driver selects this mode by default. The controller clears documented BLAS, OpenMP, NumExpr, Polars and Rayon thread overrides before launching workers. DuckDB opens a connection without a thread override. Swift retains its normal GCD and Accelerate behavior. Equal access to the machine does not imply equal thread counts.
+
+```sh
+Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run \
+  --mode production-default --profile standard \
+  --engines swiftsci,pandas,polars,duckdb \
+  --swift-worker "$worker" --output Benchmarks/Runs/production-standard
+```
+
+Prepare the profile and build the worker first. This mode raises the profile to at least five independent process rounds and rotates engine order each round. It keeps the profile's warmups, samples, input types, tolerances and output contract. Worker responses record the thread environment and available configured pool sizes. Polars reports its pool size; DuckDB reports the connection's configured threads. Active thread use and Swift's GCD pool size remain unmeasured. Python engine records identify NumPy's linked BLAS and LAPACK backends.
+
+On macOS, the controller requires AC power at startup and records the power source and configured power modes before and after each profile. Run one benchmark job at a time and stop competing builds or model inference. The controller lock prevents another invocation through this checkout; it cannot detect all unrelated workloads. A power change prevents a before/after performance comparison but does not invalidate checked numerical results.
+
+The resolved contract includes the execution mode, engine order and process count. Audit rejects missing worker settings, altered contracts and unexpected scheduling. Compare rejects different modes, power settings, reference backends or configured pool sizes. Summaries retain every process median, the range and standard deviation. These values describe variability, not a statistical significance test.
+
+`legacy-capped` retains the prior requested one-thread limits for short conformance runs. It remains the `bench.py` default so existing CI profiles retain their bounded cost. Swift can still use GCD parallelism in this mode. It is neither an equal-thread nor a single-core experiment. Historical evidence remains readable, but its contract cannot be compared directly with a new production-default run.
+
+This change governs execution of existing workload contracts. It does not add production-sized scientific, training or LLM workflows. Resident-operation timers exclude process startup and retain materialized output. MLX workloads keep their explicit fixture device and materialization rules; selecting this mode does not silently move CPU work to the GPU. Fresh processes do not imply cold filesystem caches. Separate first-use, end-to-end workflow and memory-pressure baselines remain necessary before declaring the full production baseline complete.
 
 The reporter takes the median within each process, then the median of those process medians. It retains all samples, reports the worst measured absolute output error, and does not trim outliers. Each worker explicitly marks durations below one microsecond as unresolved, including zero when the timer cannot distinguish its start and end. Those samples still undergo complete output validation. The reporter preserves their raw durations and suppresses a speedup ratio if either case contains any unresolved sample. This conservative threshold is not a measured clock-resolution guarantee. Smoke, migration-smoke, public-smoke and certification timings are informational.
 

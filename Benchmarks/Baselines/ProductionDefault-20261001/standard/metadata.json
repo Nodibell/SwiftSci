@@ -1,0 +1,2200 @@
+{
+  "finished_utc": "2026-10-01T18:14:57.879295+00:00",
+  "id": "standard",
+  "plan": {
+    "cases": [
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-csv-read",
+          "workload": "csv-read-v1"
+        },
+        "case_key": "60083b8693fe3defd2da5915ea0d5536d56dbd13826aaa3959004b2e9cdf64c3",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 0,
+          "id": "csv-read-v1",
+          "operation": "csv-read",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "ingestion",
+          "semantics": "row-major id,group,x,y; force full materialization; warm filesystem cache"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-filter",
+          "workload": "filter-v1"
+        },
+        "case_key": "41a4973ca25208d1371c59dd48b9fa86c0552f71db3b9a215e9f7079c62860ce",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 0,
+          "id": "filter-v1",
+          "operation": "filter",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "x > 0; preserve input order; export id,group,x,y outside timing"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-sort",
+          "workload": "sort-v1"
+        },
+        "case_key": "813e52a6f955a322326a2e2ebdc27f3f56497bc372f4daf62c1b5fa7ef1a6024",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 0,
+          "id": "sort-v1",
+          "operation": "sort",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "x ascending; stable ties preserve id/input order; export id,group,x,y outside timing"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-group-sum",
+          "workload": "group-sum-v1"
+        },
+        "case_key": "de5e14d7ba9bb75a5a518a087986169f3a63b24b0026a73b46577b044c84b0fa",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 0,
+          "id": "group-sum-v1",
+          "operation": "group-sum",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "group by integer group; sum x; canonicalize group order outside timing"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-flat-matrix",
+          "workload": "flat-matrix-v1"
+        },
+        "case_key": "12d11ca0a7ef7af35cf4b23558b2c40d555e4981b6503ce94ed65f44d56059d2",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 0,
+          "id": "flat-matrix-v1",
+          "operation": "flat-matrix",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "export x,y as row-major float64"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-target",
+          "workload": "target-v1"
+        },
+        "case_key": "bb9d59fb5fd90c1f5448bf684fa00830c51393f5fc7e3f2571d8ce1dc4026834",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 0,
+          "id": "target-v1",
+          "operation": "target",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "export x as float64 vector"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-standard-scale",
+          "workload": "standard-scale-v1"
+        },
+        "case_key": "e1feab265333abbf6e457cb9fef4bc6713e1d85ed433e9b1ac314570fee8d71f",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 1e-12,
+          "id": "standard-scale-v1",
+          "operation": "standard-scale",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 1e-12,
+          "schema_version": 1,
+          "scope": "fit-transform-export",
+          "semantics": "population standard deviation; near-zero scale becomes one; x,y row-major output"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-minmax-scale",
+          "workload": "minmax-scale-v1"
+        },
+        "case_key": "54e74143d3615a77a552dbada7c2e281cbe9f0328791b2462452498e50efdde8",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 1e-12,
+          "id": "minmax-scale-v1",
+          "operation": "minmax-scale",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 1e-12,
+          "schema_version": 1,
+          "scope": "fit-transform-export",
+          "semantics": "range [0,1]; zero-span column becomes zero; x,y row-major output"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-mean",
+          "workload": "mean-v1"
+        },
+        "case_key": "ac0271073134f4773d6bc38d015f8acfe9bceb46b72660b513283ab644eb13f2",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 1e-08,
+          "id": "mean-v1",
+          "operation": "mean",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "arithmetic mean; finite float64 inputs"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-variance",
+          "workload": "variance-v1"
+        },
+        "case_key": "1d593dd6d2e999cdbe64b65396e139122f4a98a5d2551987cb0290fdfe96be30",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 1e-08,
+          "id": "variance-v1",
+          "operation": "variance",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "sample variance; ddof=1; finite float64 inputs"
+        }
+      },
+      {
+        "case": {
+          "dataset": "medium",
+          "id": "medium-stddev",
+          "workload": "stddev-v1"
+        },
+        "case_key": "5f6a90e8de2d22f0057033f93b91cee946ae4dbb50f18980881dc916cb0e1f68",
+        "dataset": {
+          "generator_version": 1,
+          "groups": 101,
+          "id": "medium",
+          "kind": "table-v1",
+          "license": "Same as SwiftSci",
+          "rows": 100000,
+          "schema_version": 1,
+          "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+          "size_bytes": 2181600,
+          "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+        },
+        "workload": {
+          "atol": 1e-08,
+          "id": "stddev-v1",
+          "operation": "stddev",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 0,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "sample standard deviation; ddof=1; finite float64 inputs"
+        }
+      },
+      {
+        "case": {
+          "dataset": "nist-numacc4",
+          "id": "nist-mean",
+          "workload": "mean-v1"
+        },
+        "case_key": "2e0af78ac2ba1719030055bcf780a655e0cc8e51cffd7f14f3979065ec8eac2b",
+        "dataset": {
+          "certified": {
+            "mean": 10000000.2,
+            "stddev": 0.1,
+            "variance": 0.01
+          },
+          "data_start_line": 61,
+          "fixture": "Benchmarks/Fixtures/nist/NumAcc4.dat",
+          "generator_version": 1,
+          "id": "nist-numacc4",
+          "kind": "nist-univariate-v1",
+          "license": "NIST US government reference data; attribution retained in source header",
+          "rows": 1001,
+          "schema_version": 1,
+          "sha256": "ca310dc767f5130f980f8280bbe69e26ba414a4d85a89fc11b6c767b828e5fe4",
+          "size_bytes": 15765,
+          "source": "https://www.itl.nist.gov/div898/strd/univ/data/NumAcc4.dat",
+          "tolerances": {
+            "mean": {
+              "atol": 3.725290298461914e-09,
+              "rtol": 1e-14
+            },
+            "stddev": {
+              "atol": 3.725290298461914e-09,
+              "rtol": 1e-12
+            },
+            "variance": {
+              "atol": 7.450580735701707e-10,
+              "rtol": 2e-12
+            }
+          }
+        },
+        "workload": {
+          "atol": 3.725290298461914e-09,
+          "id": "mean-v1",
+          "operation": "mean",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 1e-14,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "arithmetic mean; finite float64 inputs"
+        }
+      },
+      {
+        "case": {
+          "dataset": "nist-numacc4",
+          "id": "nist-variance",
+          "workload": "variance-v1"
+        },
+        "case_key": "b6023d4196c1a7e1e56b4ff0fba608cede2a20cfd9af45c603dfcfe666baa925",
+        "dataset": {
+          "certified": {
+            "mean": 10000000.2,
+            "stddev": 0.1,
+            "variance": 0.01
+          },
+          "data_start_line": 61,
+          "fixture": "Benchmarks/Fixtures/nist/NumAcc4.dat",
+          "generator_version": 1,
+          "id": "nist-numacc4",
+          "kind": "nist-univariate-v1",
+          "license": "NIST US government reference data; attribution retained in source header",
+          "rows": 1001,
+          "schema_version": 1,
+          "sha256": "ca310dc767f5130f980f8280bbe69e26ba414a4d85a89fc11b6c767b828e5fe4",
+          "size_bytes": 15765,
+          "source": "https://www.itl.nist.gov/div898/strd/univ/data/NumAcc4.dat",
+          "tolerances": {
+            "mean": {
+              "atol": 3.725290298461914e-09,
+              "rtol": 1e-14
+            },
+            "stddev": {
+              "atol": 3.725290298461914e-09,
+              "rtol": 1e-12
+            },
+            "variance": {
+              "atol": 7.450580735701707e-10,
+              "rtol": 2e-12
+            }
+          }
+        },
+        "workload": {
+          "atol": 7.450580735701707e-10,
+          "id": "variance-v1",
+          "operation": "variance",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 2e-12,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "sample variance; ddof=1; finite float64 inputs"
+        }
+      },
+      {
+        "case": {
+          "dataset": "nist-numacc4",
+          "id": "nist-stddev",
+          "workload": "stddev-v1"
+        },
+        "case_key": "08c845a665d1bf28b21128a330a9c30b6234b37f39947d0e7c29d12ae82391d1",
+        "dataset": {
+          "certified": {
+            "mean": 10000000.2,
+            "stddev": 0.1,
+            "variance": 0.01
+          },
+          "data_start_line": 61,
+          "fixture": "Benchmarks/Fixtures/nist/NumAcc4.dat",
+          "generator_version": 1,
+          "id": "nist-numacc4",
+          "kind": "nist-univariate-v1",
+          "license": "NIST US government reference data; attribution retained in source header",
+          "rows": 1001,
+          "schema_version": 1,
+          "sha256": "ca310dc767f5130f980f8280bbe69e26ba414a4d85a89fc11b6c767b828e5fe4",
+          "size_bytes": 15765,
+          "source": "https://www.itl.nist.gov/div898/strd/univ/data/NumAcc4.dat",
+          "tolerances": {
+            "mean": {
+              "atol": 3.725290298461914e-09,
+              "rtol": 1e-14
+            },
+            "stddev": {
+              "atol": 3.725290298461914e-09,
+              "rtol": 1e-12
+            },
+            "variance": {
+              "atol": 7.450580735701707e-10,
+              "rtol": 2e-12
+            }
+          }
+        },
+        "workload": {
+          "atol": 3.725290298461914e-09,
+          "id": "stddev-v1",
+          "operation": "stddev",
+          "output": "finite little-endian float64 sequence; column order declared in semantics",
+          "rtol": 1e-12,
+          "schema_version": 1,
+          "scope": "operation",
+          "semantics": "sample standard deviation; ddof=1; finite float64 inputs"
+        }
+      }
+    ],
+    "contract": {
+      "cases": [
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-csv-read",
+            "workload": "csv-read-v1"
+          },
+          "case_key": "60083b8693fe3defd2da5915ea0d5536d56dbd13826aaa3959004b2e9cdf64c3",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 0,
+            "id": "csv-read-v1",
+            "operation": "csv-read",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "ingestion",
+            "semantics": "row-major id,group,x,y; force full materialization; warm filesystem cache"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-filter",
+            "workload": "filter-v1"
+          },
+          "case_key": "41a4973ca25208d1371c59dd48b9fa86c0552f71db3b9a215e9f7079c62860ce",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 0,
+            "id": "filter-v1",
+            "operation": "filter",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "x > 0; preserve input order; export id,group,x,y outside timing"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-sort",
+            "workload": "sort-v1"
+          },
+          "case_key": "813e52a6f955a322326a2e2ebdc27f3f56497bc372f4daf62c1b5fa7ef1a6024",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 0,
+            "id": "sort-v1",
+            "operation": "sort",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "x ascending; stable ties preserve id/input order; export id,group,x,y outside timing"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-group-sum",
+            "workload": "group-sum-v1"
+          },
+          "case_key": "de5e14d7ba9bb75a5a518a087986169f3a63b24b0026a73b46577b044c84b0fa",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 0,
+            "id": "group-sum-v1",
+            "operation": "group-sum",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "group by integer group; sum x; canonicalize group order outside timing"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-flat-matrix",
+            "workload": "flat-matrix-v1"
+          },
+          "case_key": "12d11ca0a7ef7af35cf4b23558b2c40d555e4981b6503ce94ed65f44d56059d2",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 0,
+            "id": "flat-matrix-v1",
+            "operation": "flat-matrix",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "export x,y as row-major float64"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-target",
+            "workload": "target-v1"
+          },
+          "case_key": "bb9d59fb5fd90c1f5448bf684fa00830c51393f5fc7e3f2571d8ce1dc4026834",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 0,
+            "id": "target-v1",
+            "operation": "target",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "export x as float64 vector"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-standard-scale",
+            "workload": "standard-scale-v1"
+          },
+          "case_key": "e1feab265333abbf6e457cb9fef4bc6713e1d85ed433e9b1ac314570fee8d71f",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 1e-12,
+            "id": "standard-scale-v1",
+            "operation": "standard-scale",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 1e-12,
+            "schema_version": 1,
+            "scope": "fit-transform-export",
+            "semantics": "population standard deviation; near-zero scale becomes one; x,y row-major output"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-minmax-scale",
+            "workload": "minmax-scale-v1"
+          },
+          "case_key": "54e74143d3615a77a552dbada7c2e281cbe9f0328791b2462452498e50efdde8",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 1e-12,
+            "id": "minmax-scale-v1",
+            "operation": "minmax-scale",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 1e-12,
+            "schema_version": 1,
+            "scope": "fit-transform-export",
+            "semantics": "range [0,1]; zero-span column becomes zero; x,y row-major output"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-mean",
+            "workload": "mean-v1"
+          },
+          "case_key": "ac0271073134f4773d6bc38d015f8acfe9bceb46b72660b513283ab644eb13f2",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 1e-08,
+            "id": "mean-v1",
+            "operation": "mean",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "arithmetic mean; finite float64 inputs"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-variance",
+            "workload": "variance-v1"
+          },
+          "case_key": "1d593dd6d2e999cdbe64b65396e139122f4a98a5d2551987cb0290fdfe96be30",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 1e-08,
+            "id": "variance-v1",
+            "operation": "variance",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "sample variance; ddof=1; finite float64 inputs"
+          }
+        },
+        {
+          "case": {
+            "dataset": "medium",
+            "id": "medium-stddev",
+            "workload": "stddev-v1"
+          },
+          "case_key": "5f6a90e8de2d22f0057033f93b91cee946ae4dbb50f18980881dc916cb0e1f68",
+          "dataset": {
+            "generator_version": 1,
+            "groups": 101,
+            "id": "medium",
+            "kind": "table-v1",
+            "license": "Same as SwiftSci",
+            "rows": 100000,
+            "schema_version": 1,
+            "sha256": "b30f86fad7bfb97fd048ab9928ae6db260e962e001ba70dc144c49599b03eea9",
+            "size_bytes": 2181600,
+            "source": "SwiftSci deterministic table-v1 formula; id,group,x,y; UTF-8 LF CSV"
+          },
+          "workload": {
+            "atol": 1e-08,
+            "id": "stddev-v1",
+            "operation": "stddev",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 0,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "sample standard deviation; ddof=1; finite float64 inputs"
+          }
+        },
+        {
+          "case": {
+            "dataset": "nist-numacc4",
+            "id": "nist-mean",
+            "workload": "mean-v1"
+          },
+          "case_key": "2e0af78ac2ba1719030055bcf780a655e0cc8e51cffd7f14f3979065ec8eac2b",
+          "dataset": {
+            "certified": {
+              "mean": 10000000.2,
+              "stddev": 0.1,
+              "variance": 0.01
+            },
+            "data_start_line": 61,
+            "fixture": "Benchmarks/Fixtures/nist/NumAcc4.dat",
+            "generator_version": 1,
+            "id": "nist-numacc4",
+            "kind": "nist-univariate-v1",
+            "license": "NIST US government reference data; attribution retained in source header",
+            "rows": 1001,
+            "schema_version": 1,
+            "sha256": "ca310dc767f5130f980f8280bbe69e26ba414a4d85a89fc11b6c767b828e5fe4",
+            "size_bytes": 15765,
+            "source": "https://www.itl.nist.gov/div898/strd/univ/data/NumAcc4.dat",
+            "tolerances": {
+              "mean": {
+                "atol": 3.725290298461914e-09,
+                "rtol": 1e-14
+              },
+              "stddev": {
+                "atol": 3.725290298461914e-09,
+                "rtol": 1e-12
+              },
+              "variance": {
+                "atol": 7.450580735701707e-10,
+                "rtol": 2e-12
+              }
+            }
+          },
+          "workload": {
+            "atol": 3.725290298461914e-09,
+            "id": "mean-v1",
+            "operation": "mean",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 1e-14,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "arithmetic mean; finite float64 inputs"
+          }
+        },
+        {
+          "case": {
+            "dataset": "nist-numacc4",
+            "id": "nist-variance",
+            "workload": "variance-v1"
+          },
+          "case_key": "b6023d4196c1a7e1e56b4ff0fba608cede2a20cfd9af45c603dfcfe666baa925",
+          "dataset": {
+            "certified": {
+              "mean": 10000000.2,
+              "stddev": 0.1,
+              "variance": 0.01
+            },
+            "data_start_line": 61,
+            "fixture": "Benchmarks/Fixtures/nist/NumAcc4.dat",
+            "generator_version": 1,
+            "id": "nist-numacc4",
+            "kind": "nist-univariate-v1",
+            "license": "NIST US government reference data; attribution retained in source header",
+            "rows": 1001,
+            "schema_version": 1,
+            "sha256": "ca310dc767f5130f980f8280bbe69e26ba414a4d85a89fc11b6c767b828e5fe4",
+            "size_bytes": 15765,
+            "source": "https://www.itl.nist.gov/div898/strd/univ/data/NumAcc4.dat",
+            "tolerances": {
+              "mean": {
+                "atol": 3.725290298461914e-09,
+                "rtol": 1e-14
+              },
+              "stddev": {
+                "atol": 3.725290298461914e-09,
+                "rtol": 1e-12
+              },
+              "variance": {
+                "atol": 7.450580735701707e-10,
+                "rtol": 2e-12
+              }
+            }
+          },
+          "workload": {
+            "atol": 7.450580735701707e-10,
+            "id": "variance-v1",
+            "operation": "variance",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 2e-12,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "sample variance; ddof=1; finite float64 inputs"
+          }
+        },
+        {
+          "case": {
+            "dataset": "nist-numacc4",
+            "id": "nist-stddev",
+            "workload": "stddev-v1"
+          },
+          "case_key": "08c845a665d1bf28b21128a330a9c30b6234b37f39947d0e7c29d12ae82391d1",
+          "dataset": {
+            "certified": {
+              "mean": 10000000.2,
+              "stddev": 0.1,
+              "variance": 0.01
+            },
+            "data_start_line": 61,
+            "fixture": "Benchmarks/Fixtures/nist/NumAcc4.dat",
+            "generator_version": 1,
+            "id": "nist-numacc4",
+            "kind": "nist-univariate-v1",
+            "license": "NIST US government reference data; attribution retained in source header",
+            "rows": 1001,
+            "schema_version": 1,
+            "sha256": "ca310dc767f5130f980f8280bbe69e26ba414a4d85a89fc11b6c767b828e5fe4",
+            "size_bytes": 15765,
+            "source": "https://www.itl.nist.gov/div898/strd/univ/data/NumAcc4.dat",
+            "tolerances": {
+              "mean": {
+                "atol": 3.725290298461914e-09,
+                "rtol": 1e-14
+              },
+              "stddev": {
+                "atol": 3.725290298461914e-09,
+                "rtol": 1e-12
+              },
+              "variance": {
+                "atol": 7.450580735701707e-10,
+                "rtol": 2e-12
+              }
+            }
+          },
+          "workload": {
+            "atol": 3.725290298461914e-09,
+            "id": "stddev-v1",
+            "operation": "stddev",
+            "output": "finite little-endian float64 sequence; column order declared in semantics",
+            "rtol": 1e-12,
+            "schema_version": 1,
+            "scope": "operation",
+            "semantics": "sample standard deviation; ddof=1; finite float64 inputs"
+          }
+        }
+      ],
+      "engine_order": [
+        "swiftsci",
+        "pandas",
+        "polars",
+        "duckdb"
+      ],
+      "execution": {
+        "active_threads_measured": false,
+        "cleared_environment": [
+          "BLIS_NUM_THREADS",
+          "GOTO_NUM_THREADS",
+          "MKL_DOMAIN_NUM_THREADS",
+          "MKL_DYNAMIC",
+          "MKL_NUM_THREADS",
+          "NUMEXPR_MAX_THREADS",
+          "NUMEXPR_NUM_THREADS",
+          "OMP_DYNAMIC",
+          "OMP_MAX_ACTIVE_LEVELS",
+          "OMP_NUM_THREADS",
+          "OMP_PLACES",
+          "OMP_PROC_BIND",
+          "OMP_THREAD_LIMIT",
+          "OPENBLAS_DEFAULT_NUM_THREADS",
+          "OPENBLAS_NUM_THREADS",
+          "POLARS_ASYNC_THREAD_COUNT",
+          "POLARS_MAX_THREADS",
+          "RAYON_NUM_THREADS",
+          "VECLIB_MAXIMUM_THREADS",
+          "VECLIB_NUM_THREADS"
+        ],
+        "cleared_prefixes": [
+          "OMP_",
+          "MKL_",
+          "OPENBLAS_",
+          "VECLIB_",
+          "NUMEXPR_"
+        ],
+        "duckdb_threads": "engine-default",
+        "minimum_process_rounds": 5,
+        "mode": "production-default",
+        "order": "rotating-engines-v1",
+        "schema_version": 1,
+        "thread_environment": {}
+      },
+      "measurement": "materialized-output-alive-v5",
+      "oracle_sha256": "74a166c8047b6c0ad80e55053190017edd45707a3e20022d73a15bcb4a1047fd",
+      "profile": {
+        "batches": 5,
+        "cases": [
+          {
+            "dataset": "medium",
+            "id": "medium-csv-read",
+            "workload": "csv-read-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-filter",
+            "workload": "filter-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-sort",
+            "workload": "sort-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-group-sum",
+            "workload": "group-sum-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-flat-matrix",
+            "workload": "flat-matrix-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-target",
+            "workload": "target-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-standard-scale",
+            "workload": "standard-scale-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-minmax-scale",
+            "workload": "minmax-scale-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-mean",
+            "workload": "mean-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-variance",
+            "workload": "variance-v1"
+          },
+          {
+            "dataset": "medium",
+            "id": "medium-stddev",
+            "workload": "stddev-v1"
+          },
+          {
+            "dataset": "nist-numacc4",
+            "id": "nist-mean",
+            "workload": "mean-v1"
+          },
+          {
+            "dataset": "nist-numacc4",
+            "id": "nist-variance",
+            "workload": "variance-v1"
+          },
+          {
+            "dataset": "nist-numacc4",
+            "id": "nist-stddev",
+            "workload": "stddev-v1"
+          }
+        ],
+        "id": "standard",
+        "samples": 5,
+        "schema_version": 1,
+        "timeout_seconds": 300,
+        "warmups": 2
+      }
+    },
+    "contract_hash": "6e3ad980b6112609b897dc3c68699ce81746650a21d3ab47b26e56f710438254",
+    "engine_order": [
+      "swiftsci",
+      "pandas",
+      "polars",
+      "duckdb"
+    ],
+    "engines": {
+      "duckdb": {
+        "command": [
+          "<home>/Documents/src/SwiftSci/Benchmarks/.venv-standardized/bin/python",
+          "<home>/Documents/src/SwiftSci/Benchmarks/Python/tabular_worker.py",
+          "duckdb"
+        ],
+        "numerical_backend": {
+          "blas": {
+            "name": "accelerate",
+            "openblas configuration": "unknown",
+            "version": "unknown"
+          },
+          "lapack": {
+            "name": "accelerate",
+            "openblas configuration": "unknown",
+            "version": "unknown"
+          }
+        },
+        "settings": {
+          "output": "materialized",
+          "threads": "engine-default"
+        },
+        "version": "1.5.6 2.5.3 25.0.1 3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+        "worker_sha256": "3a1904e79050c9792c07554cc4824d336a57ce2c4a76e019380effbcbe84b572"
+      },
+      "pandas": {
+        "command": [
+          "<home>/Documents/src/SwiftSci/Benchmarks/.venv-standardized/bin/python",
+          "<home>/Documents/src/SwiftSci/Benchmarks/Python/standard_worker.py"
+        ],
+        "numerical_backend": {
+          "blas": {
+            "name": "accelerate",
+            "openblas configuration": "unknown",
+            "version": "unknown"
+          },
+          "lapack": {
+            "name": "accelerate",
+            "openblas configuration": "unknown",
+            "version": "unknown"
+          }
+        },
+        "version": "3.0.6 2.5.3 1.18.1 25.0.1 3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+        "worker_sha256": "42ee4b0fddd8f5dbc2b20a3d055d7eaca1716616d511dcc58d4401a6c415803a"
+      },
+      "polars": {
+        "command": [
+          "<home>/Documents/src/SwiftSci/Benchmarks/.venv-standardized/bin/python",
+          "<home>/Documents/src/SwiftSci/Benchmarks/Python/tabular_worker.py",
+          "polars"
+        ],
+        "numerical_backend": {
+          "blas": {
+            "name": "accelerate",
+            "openblas configuration": "unknown",
+            "version": "unknown"
+          },
+          "lapack": {
+            "name": "accelerate",
+            "openblas configuration": "unknown",
+            "version": "unknown"
+          }
+        },
+        "settings": {
+          "output": "materialized",
+          "threads": "engine-default"
+        },
+        "version": "1.44.2 2.5.3 25.0.1 3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+        "worker_sha256": "3a1904e79050c9792c07554cc4824d336a57ce2c4a76e019380effbcbe84b572"
+      },
+      "swiftsci": {
+        "build": {
+          "binary_sha256": "bebf60eb8a73f9f61093d8042815e4f85a5fde8feec08ce25781a3100ff00edd",
+          "command": [
+            "xcodebuild",
+            "build-for-testing",
+            "-scheme",
+            "SwiftSci-Package",
+            "-configuration",
+            "Release",
+            "-destination",
+            "platform=macOS,arch=arm64",
+            "-derivedDataPath",
+            "<home>/Library/Caches/SwiftSci/production-default-20261001/derived",
+            "-clonedSourcePackagesDirPath",
+            "<home>/Library/Caches/SwiftSci/xcode-packages",
+            "-onlyUsePackageVersionsFromResolvedFile",
+            "-skipPackagePluginValidation",
+            "-enableCodeCoverage",
+            "NO",
+            "SWIFT_ENABLE_CODE_COVERAGE=NO",
+            "ENABLE_TESTABILITY=YES",
+            "CLANG_ENABLE_CODE_COVERAGE=NO",
+            "MTL_FAST_MATH=NO",
+            "MTL_MATH_MODE=SAFE",
+            "MTL_MATH_FP32_FUNCTIONS=PRECISE"
+          ],
+          "coverage_instrumentation": "absent",
+          "environment": {
+            "chip": "Apple M4 Max",
+            "host": "<host>",
+            "machine": "arm64",
+            "memory_bytes": "137438953472",
+            "os_build": "26A428",
+            "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+            "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+            "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+            "xcode": "Xcode 27.0\nBuild version 27A266a"
+          },
+          "log": "<home>/Library/Caches/SwiftSci/production-default-20261001/build.log",
+          "metal": {
+            "build_settings": {
+              "MTL_FAST_MATH": "NO",
+              "MTL_MATH_FP32_FUNCTIONS": "PRECISE",
+              "MTL_MATH_MODE": "SAFE"
+            },
+            "libraries": {
+              "SwiftSci_SwiftLLM.bundle/Contents/Resources/default.metallib": "8133b914efcb1ef257eb851a52e9e49ac22f160900582b50fccc901dd27aac33",
+              "mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib": "b17a6b405ecc17258c505d222d8206a6bb007b76877651715a2dbe1c156eae14"
+            }
+          },
+          "schema_version": 1,
+          "snapshot": "<home>/Library/Caches/SwiftSci/production-default-20261001/source-arsspcmz",
+          "source": {
+            "commit": "f5192c9075afe426c7c59475e6386a1a23d6fcd2",
+            "files": {
+              "Benchmarks/Python/accuracy_benchmarks.py": "01eca1a890389ed8b7146ba2de28332abd11c4006f7136cb35621edb8916cc77",
+              "Benchmarks/Python/api_workloads.py": "63ee92a3772ad9289bbdb69cdd5b777c92b6a23d256fd5913fc36653a226dacf",
+              "Benchmarks/Python/benchmarks.py": "51c2909af6eff2405ee5ccfcc31f64ea7227e94a8e677d7d3f6b9562d6a26e47",
+              "Benchmarks/Python/boundary_workloads.py": "04f7f00d79ab41af86f099b594bbafa85b3fafac2e5b45bcc850cb9804bc90eb",
+              "Benchmarks/Python/classification_workloads.py": "3d798fb08b1d38f02b7c247bf7b67320692e743d39db53a22da72553c4f75cb3",
+              "Benchmarks/Python/compare.py": "b11cbbe5957f956aebd2201c1b24ad311a687e479c019214fb06a6a3abb4549f",
+              "Benchmarks/Python/controlled_api_workloads.py": "6cefe6d5267f03388882357cfc5d3fa148b51865a8cd0035792e37e0e31a7cf4",
+              "Benchmarks/Python/dataframe_semantic_workloads.py": "b60a11d47565b118e799d29ee224304b3bc11d9de8a21f94391f9090f7d6c9bf",
+              "Benchmarks/Python/llama_generation_worker.py": "2fe21537a07716fb1ae8326f2c76b65611ebffff95ca5b58ac2fd3e13dd99025",
+              "Benchmarks/Python/llama_precision.py": "3da89b9c20c6ab14a4107862e923586f3756417c615f03815f964026012f5e81",
+              "Benchmarks/Python/llama_precision_timing_worker.py": "0f05e44e5b3aa2f473ef1f0a0b55e8d4cc1927e796bc4487b31aad4fcaf834f1",
+              "Benchmarks/Python/llama_reference_worker.py": "1d2c55fcf86436f1dfdac1b154e58574a149ee88ff7ef024869f1ea60f117553",
+              "Benchmarks/Python/llama_score_worker.py": "8f01876176067df855715e6e713e5fee5b370cde63edb89cd5108bddff075cb5",
+              "Benchmarks/Python/mlx_boundary_workloads.py": "898ebf2c8fae1d52a54aa4d2a3a66404f216f897c16697a3c0688633f15b6a29",
+              "Benchmarks/Python/mlx_neural_workloads.py": "70521bbdb7c01fa58096456c6c0ec194aa80fab4481f165b9ebf035dda56c70e",
+              "Benchmarks/Python/mlx_worker.py": "a7a7482afeacf3c37ef2b03dade2b4b449b2bbcb927133a444e45e6306f01c45",
+              "Benchmarks/Python/mlx_workloads.py": "4e7d6adc57595566e5b3ee02d5393493147068e1d6777d8f6ffbc085d72752e6",
+              "Benchmarks/Python/neural_workloads.py": "62684900c73df7115881b0912d8348958501f23c4a858ac95379ec95486648ba",
+              "Benchmarks/Python/public_workflows.py": "f06c27cd0e030e10f3c236041588e7e346f29bfa3ee56ffc8d60e69fed016699",
+              "Benchmarks/Python/requirements-comparison.txt": "e4fe4376077848ad541db1ae689aacd966a8ad94ad2ebb3f7b33c3eb4fa07d77",
+              "Benchmarks/Python/requirements-gguf.txt": "4118014947720d1f66de76348bc1b3fa348fc6c94a419df213e6f23f9e9a5581",
+              "Benchmarks/Python/requirements-llm.txt": "3acfd7844dfc9ee96edfa0e356e15e2e75ca88a00d7e65f2ea84e27cf0e5f5df",
+              "Benchmarks/Python/requirements-mlx.txt": "76d127556532446c56770ecab94e29a4d4c6536d54d10d029f59ab3ee2636e2a",
+              "Benchmarks/Python/requirements-standardized.txt": "fc9a7924fc71f890e004d6a60173d171c9577a550a575abe7f15502af357512c",
+              "Benchmarks/Python/requirements.txt": "40dd335cd2ca265e4764d22a0b4c3547399ba61c64505c255f9745e64ffdf6d9",
+              "Benchmarks/Python/search_workloads.py": "fd1d908e7fa211d5ac6e8a39e84fb0b6b64421401c99f37878d7fb10f61a44e7",
+              "Benchmarks/Python/standard_worker.py": "42ee4b0fddd8f5dbc2b20a3d055d7eaca1716616d511dcc58d4401a6c415803a",
+              "Benchmarks/Python/supervised_workloads.py": "0f0e1472b585b84625faffb748bf64a66ce916e286fd11adddbb27d2a5c608a2",
+              "Benchmarks/Python/tabular_worker.py": "3a1904e79050c9792c07554cc4824d336a57ce2c4a76e019380effbcbe84b572",
+              "Benchmarks/Python/tabular_workloads.py": "0d7cdfae2321a7014c12a0075316c352c889579508a3637c7ccf76b6093b268c",
+              "Benchmarks/Python/vision_workloads.py": "2227e1f45ab0012a1a223c418f53706ae73ed673a1d911df7426ab1ffa99e936",
+              "Benchmarks/Support/Protocol.swift": "d111976bbec73e71cbfb6b4f360c828b0b9b21f8b0421462d278c61414f478d5",
+              "Benchmarks/Tools/acceptance.py": "e268df013531e49ef49244d66ce366719906484c081f60ea5549156a789f43d5",
+              "Benchmarks/Tools/bench.py": "778b5577efc671faf4e9bb2ef16c390e7b8a54d16182fc0ee712750e7c8d0fb1",
+              "Benchmarks/Tools/boundary_cases.py": "55a36023cbf821bafa10c97d95709d62f87b404a9ff4da950e6fe52e88810a12",
+              "Benchmarks/Tools/boundary_fixtures.py": "cc0fe57aeb6c2ca7bc16438d0033bce632851ef7f1f7a3c53f4920e589af3e0e",
+              "Benchmarks/Tools/boundary_reference.py": "6e81f078385cb02bbf3dc4cd0848075b1bb4b584a331366fb9cca7f235cac008",
+              "Benchmarks/Tools/boundary_sweep.py": "b9bccc1ac0b90fa155bbfce41b9d935d938b8a1c20287c014d6a45fbea6fb86c",
+              "Benchmarks/Tools/build_controlled_model_fixtures.py": "67786cb58e6d5b6b0349da9bd8307489a1447e8bf841c37a13ff70da560b3f24",
+              "Benchmarks/Tools/build_controlled_search_fixtures.py": "b34cc01a536d5abf4c2735b448d450cb4d1bb50f9017647a95ab51bfbafd8d66",
+              "Benchmarks/Tools/build_exact_model_fixtures.py": "1b14a071d4d52e71248558c018e407d29094fb3d75337832474cac65bdc86067",
+              "Benchmarks/Tools/build_nist_model_fixtures.py": "f9aecd7452ab1e52fe883de8586dddb7f443dedb643fb8ac37ce3031da12b093",
+              "Benchmarks/Tools/build_supervised_fixtures.py": "3b17225f08f6aed8f7fd36e12b2aa88223b732167516b9fdc8e22ce6dd940ef3",
+              "Benchmarks/Tools/build_workflow_fixtures.py": "4e1192770d90bcf963b2a266f5bf5ab7d30fea2d77d2f18d0a641d86da986e24",
+              "Benchmarks/Tools/classification_reference.py": "f0fe47d79cf64e93da378f84fd38e28f235e0f19ef7436e6a9d1ef1fed44acf7",
+              "Benchmarks/Tools/comparison_suite.py": "5e8e45e0fcde1ef3b4d6de45872f3e6ab0c3eb090fbb3668b168357804d893ea",
+              "Benchmarks/Tools/contracts.py": "112b532870a8bdbd57b4c827149dc2fb74fca852cca9b4c7cb84846fb9c83be4",
+              "Benchmarks/Tools/controlled_fixtures.py": "4d8b7c2eab94e9fb294228db79b4d41e599d9be5704379b7de1d2f0005d56c10",
+              "Benchmarks/Tools/dataframe_fixtures.py": "f4605381657b3f6e3051f3d83e1fe295a5baa92ce08a62da00afdcb33b4abcf1",
+              "Benchmarks/Tools/datasets.py": "e073236811475a25d5ed7c85c8961bb3d3404f1200db996ad5ee24c888b714e0",
+              "Benchmarks/Tools/execution_policy.py": "d143b0e2c5116e140dd745592388270744bf328dee15f5909cc6570668b16fe0",
+              "Benchmarks/Tools/inventory.py": "ad2353d58a3980fc1550ce64a8655d3a8e2d2d77074790537e4f03bdbd8b2004",
+              "Benchmarks/Tools/llama_cpp_compare.py": "c8842161131e6856f72c310e38443dcea3deb294cd69ffc7be835f4d2c2d0c1d",
+              "Benchmarks/Tools/llama_generation_benchmark.py": "58ff44c945505a2670f9e2a0ad0b2369f7051857e04849f779784e1c96d88584",
+              "Benchmarks/Tools/llama_generation_cases.py": "96829560d4f6a16a2f2edaf39af07bab1aa4aa82194b252edbb8b93f7f3ca56e",
+              "Benchmarks/Tools/llama_precision_benchmark.py": "f70306104b0a044af8b8de7f12811d5e403e2d7a619405ab249db08cf69f6b47",
+              "Benchmarks/Tools/llama_score_analysis.py": "59b31d58e870e3a98482e9594dc6e1f18aa2aed6263b31e40ae82f602c9d7a7c",
+              "Benchmarks/Tools/neural_fixtures.py": "7a1970d1987fed0351a4f4e7e187fd6dc628d433a0018fcddc6f5e56ee1a879b",
+              "Benchmarks/Tools/neural_reference.py": "18982dd4e8ed626e338cf856e4c9b16ed96f7f8b96371ed058872f7574585551",
+              "Benchmarks/Tools/neural_shaped_reference.py": "4f640068281cba6f6492ea10823e058b9331e7e65e16880a3707e38c4fdc0bb1",
+              "Benchmarks/Tools/neural_shapes.py": "5d5b65f305e4cfe30281c1c100efcfb5d404bf981f2b89cca34831656a70ed7c",
+              "Benchmarks/Tools/numerical_fixtures.py": "779228b204ec8b5ac6329d300bec9f55bedb1877d0b9fc4b386eb08ec7eec44d",
+              "Benchmarks/Tools/numerical_reference.py": "97b67752cddf32799cc04af8054c5ef0869e8ac1d63d4a06fc9217d27a3cb2be",
+              "Benchmarks/Tools/pretrained_llama.py": "09704183cfa30ed16fa168520150612bddc9ac57c5ca1366226869c1babcb7d4",
+              "Benchmarks/Tools/public_datasets.py": "48de289350d6d6369789e43b4ca9765c19fdd562c33702249ee6d0f3bec3f134",
+              "Benchmarks/Tools/regression_policy.py": "5d22fffb00cd914ff365524d9a06752af80c5adb688afd6f52ec06ff07e55597",
+              "Benchmarks/Tools/reporting.py": "056b06cf90a59272026add8d6ffd65bf5c284c4e881ddde02b79574bbc03f6d6",
+              "Benchmarks/Tools/runner.py": "f5721dc02fd7b9a83adcb2fd2f1c01e5eb21f4fd3869ec27d7c27352d2dd1b60",
+              "Benchmarks/Tools/supervised_fixtures.py": "ec3672b5a43d18089df1c578333e4a4047d4d3975c0d1e19b6733446596cccb9",
+              "Benchmarks/Tools/sweeps.py": "d41bcd1b25f9d29a39d2e63114e15579f73bf6c609d21e8be8083566dbf2ec62",
+              "Benchmarks/Tools/verify_llama_gguf.py": "57c966432936cd34a2d102937b99458b7ede608933f9d55c6209768410f2d4fe",
+              "Benchmarks/Tools/vision_fixtures.py": "8ea9e782ed15a62eae4e1c3712cb8452e5c6285c67d644954f04979ca54fe2ba",
+              "Benchmarks/Tools/vision_reference.py": "226f9be8e22037fc5f490c3f0b91a506b56986e6a6b2e7b30a7d604ae5c199a3",
+              "Benchmarks/Tools/workflow_fixtures.py": "69e86cd0fc0dbb07e4a960a6b7a5435cf05ed028cda792279aac4bfb92514ca7",
+              "Benchmarks/Tools/workflow_reference.py": "a388ce1ce950d59a7ee033de16e1045dc71233d9b138e9e04cb5b66be8883cfa",
+              "Benchmarks/Worker/APIWorkloads.swift": "50a3a60e0d5421fbd1015b479350fb02caea8862c279b1b36bf5ebc6f4af8827",
+              "Benchmarks/Worker/BoundarySweepWorkloads.swift": "5e928512fc7945113b873cdc81bc7a7c1f9b8241f4502b417ee350ba773b8469",
+              "Benchmarks/Worker/BoundaryWorkloads.swift": "9cf60eb45d653c98dcf3b4d9bad62ab437f91f1348bdd473e766a87bf4427439",
+              "Benchmarks/Worker/ControlledAPIWorkloads.swift": "8238136bf44e1e26b5fd4ba2d7d89f52b83684d41f841ee531a18b147491f43b",
+              "Benchmarks/Worker/CoreWorkloads.swift": "fdc6801ec26e88f9476bc82ab25039684950aba681ae98721ba3d4de999ed041",
+              "Benchmarks/Worker/DataFrameSemanticWorkloads.swift": "9b2b0adb0c539f0b73e9085bbd2d9858ea6acf1c8815af544c56a37b4dd82db1",
+              "Benchmarks/Worker/NeuralWorkloads.swift": "ca8d6816fcf06cebc486d6344c5e04350cd28eff48d310855b432cc8b6fd42c5",
+              "Benchmarks/Worker/NumericalWorkloads.swift": "9dbc844b118833671e53c1f185b4f61e01e28c38c92a1011131102a43e0446af",
+              "Benchmarks/Worker/PretrainedInspection.swift": "46de0cb7e9d637e2d121468f59aa1626d51b8310e11f80bea339250bd086f52c",
+              "Benchmarks/Worker/PublicWorkflows.swift": "4bad0118d57d46da2cc5a4470fb0e941786471a90056e593a8b1b1ac09a9689b",
+              "Benchmarks/Worker/PublicWorkloads.swift": "31ad7df6e6caf3db9da4770f866b897d3dac9429f42a78116931aab65c978295",
+              "Benchmarks/Worker/SearchExplainWorkloads.swift": "f28d3004eaf607b2d41766afedb33260d606b7109208453c9f3cb8207f5b0a42",
+              "Benchmarks/Worker/SupervisedWorkloads.swift": "7174d2ad30c62e1d045dbad44d57d83a0adac6034264525cb21078ef3edab9a4",
+              "Benchmarks/Worker/SwiftClassifierWorkloads.swift": "a73f3552837c55710c63eb680dc486db221a8a9099f0710590c8d3bd6f586a28",
+              "Benchmarks/Worker/VisionWorkloads.swift": "fc5229f40342bd7a8f35f3841b19150db53d9dd5b8f23e5699306e915fd8d8ab",
+              "Benchmarks/Worker/Worker.swift": "ebad25f0c7ebb8b1904e682662fda741deede3d81fc57129b5e802c5012b11a7",
+              "Package.resolved": "85921adcc9eb8ca1c6c9314550534389c21c9c50ecffc52a920460d1ad1df54a",
+              "Package.swift": "550f84e6940854e0db38eb09e8b3623932e31d7f3e63999680a637a94444557f",
+              "Sources/SwiftAgent/AgentDialogueController.swift": "a4241a32d934f2b82214d626a092906365a4e9996a60a7382c3299a2465d0a43",
+              "Sources/SwiftAgent/AgentMemory.swift": "d1c1a979bd2dd4aa4a9371abe0f83bb25eb7dc1811a81354d60cb3bb07f32671",
+              "Sources/SwiftAgent/AgentStreamEvent.swift": "11403e82bf7cd0c0b70d44f596d2ac99576af0cb07ff8191ce3ca40ab2e4908c",
+              "Sources/SwiftAgent/AgentToolV2.swift": "78f43c81e1c453882d2c8559e5f4c8279a7527ffa1dd4c5da42a2392817df4c8",
+              "Sources/SwiftAgent/MultiAgentOrchestrator.swift": "251fd890ec96352c83abe8cdc0fe1d66c9aeaa2cc9fd862f550fd7c70f7d0acb",
+              "Sources/SwiftAgent/ReActAgent.swift": "49b8fa50e248c622c90690de8ede7902974783012de14bbb2a73670dcaffc1ea",
+              "Sources/SwiftAgent/SwiftAgent.docc/AgenticReplAndRAG.md": "0557ec794385c1b7b48edfbd5007363e98cfcb8afb1cd75556b8f07a3dcd6d76",
+              "Sources/SwiftAgent/SwiftAgent.docc/AutonomousDataAnalyst.md": "ce321fb27dbe9ead60753b40f77f20ca1142faaf47bf105c0b4c543814e994bd",
+              "Sources/SwiftAgent/SwiftAgent.docc/DataLineageAudit.md": "f4e8e4a21a6a4fcb5ebfe6b2019d6b92f6cdb89258cd794d8de5d204c6c72153",
+              "Sources/SwiftAgent/SwiftAgent.docc/MultiAgentCollaboration.md": "19bd9990e21a27d275737fa0c1b65ef14c2ce251dbc1db1927798fd01b5e7ff0",
+              "Sources/SwiftAgent/SwiftAgent.docc/RAGAndContextAugmentation.md": "86ecd078e38a86fb1e49b331b7f2dc6019186ce6262a8f5e62c42c8c36d22ad6",
+              "Sources/SwiftAgent/SwiftAgent.docc/SwiftAgent.md": "6e3227a6e9e26c30406f57d4ac6956804a291ad83532d55d9590566c2b4ff312",
+              "Sources/SwiftAgent/SwiftAgentEvaluator.swift": "8efc31f9ae504370767c471979ac9437eb679c9051014282c3a7fac504ef8811",
+              "Sources/SwiftAgent/SwiftSciToolbox.swift": "04b8a635b7663507270a71620b1811e08bbb4ade0561c56036615a9baae3cd9c",
+              "Sources/SwiftCluster/Core/ClusteringMetrics.swift": "1bf296db22b7eaa3f8413832895d4332da5bc6dbf6b584fb81bbb3ff5dc73871",
+              "Sources/SwiftCluster/Core/DBSCAN.swift": "a4dab3e7772993248349ceb83b0b98123666b9af51bc31c672304811ae648e0f",
+              "Sources/SwiftCluster/Core/DataFrame+Cluster.swift": "4ecfb54c7e60960e61d0b08ff8f1c75064277ffed4318db24f01dd4fdb1ae4be",
+              "Sources/SwiftCluster/Core/KDTree.swift": "6db9e17a86cc286e0d26645348e6ba1943439d8cb62cc3e2cc2dffcae342f9a5",
+              "Sources/SwiftCluster/Core/KMeans.swift": "a7632d2c12b2a5dd94bc4ead7d92fc0cdfa7c795bf0dcaffdb337fef7d009d6f",
+              "Sources/SwiftCluster/Core/OutlierDetection.swift": "0ea503ee9d1ba8776a6afed9741802bcc3a222fdf26021684bd56b15f365b750",
+              "Sources/SwiftCluster/Core/PCA.swift": "d79e2b78a8622e4cc8e3afb94d851f12950c92d2c28202c70ee6cebeb2faf3b5",
+              "Sources/SwiftCluster/Core/SilhouetteScore.swift": "f284157073cdfda0746e73b449df0ae325ed7ff973cf40a789e35394bd8ab794",
+              "Sources/SwiftCluster/Core/VectorStore.swift": "c602ce57ebc00e366f446dfd49bdef1b2e6140a025d305768e599efcc847175a",
+              "Sources/SwiftCluster/Decomposition/RandomizedSVD.swift": "05b5f3d6e784f801a7c9672eaac6853a0a9329caa07f3c00f4b87598859243dc",
+              "Sources/SwiftCluster/Decomposition/TSNE.swift": "533d281db714e4a6ee53ab77c1b38642bec0008d826ff719a5d9f0b68e6da4dd",
+              "Sources/SwiftCluster/Indexing/HNSWIndex.swift": "520560047bc7a7bbd37c19a9fd9e80b33c13ddf554aee09701459afc23b4594c",
+              "Sources/SwiftCluster/SwiftCluster.docc/ClusteringAndOutliers.md": "ad04b7b76083e18742a9967a3c2f1de864c3427e754e202af95e731151dd6f0c",
+              "Sources/SwiftCluster/SwiftCluster.docc/DimensionalityReduction.md": "d9f3c351b2cf1c3569c2f0b191f3ab4f6560d838b7654e0d0c5f091326c4edcc",
+              "Sources/SwiftCluster/SwiftCluster.docc/HNSWVectorSearch.md": "0570c6e4ad328eec717fe3fddcee5e4d06e0b5e0f4de1e7790f52e7fda88a250",
+              "Sources/SwiftCluster/SwiftCluster.docc/SwiftCluster.md": "2bdc8169703f91205c8ef077127b3535a0147fb88752b9e239a4af92c245b9ad",
+              "Sources/SwiftCluster/SwiftCluster.docc/VectorStoreAndRAG.md": "bb006514ba59a1f0b2e6a0a450717c2b602ec75f63cd0387f79f9154e62266e1",
+              "Sources/SwiftDataFrame/Columns/AnyColumn.swift": "31f5d99ebeafc5b4bf9a0716310988ff12ab938108a51533a50712f91fa9b680",
+              "Sources/SwiftDataFrame/Columns/ColumnDType.swift": "84278b6d87fcc81834b9853596ec25d769141f5d9a80b7d116bdcb077239280b",
+              "Sources/SwiftDataFrame/Columns/SupportedType.swift": "43a08f9d84a5dd433d4cb63dfc5b6004f3f2073cb829f9a541da848c441addd6",
+              "Sources/SwiftDataFrame/Columns/TypedColumn.swift": "710ec05c009294c11c3aa3971dbff6fd8e83e6abeb702db896523e381cf22d7f",
+              "Sources/SwiftDataFrame/Core/ChunkedDataFrame.swift": "1fc20892f0074a480dbb43491c360e0b1d4f69e2466d9f17ae50a780ca842a80",
+              "Sources/SwiftDataFrame/Core/DataFrame+Arrow.swift": "9c4f188d7053a4212e8cf54157728dd266fc53becfa961fd9c4f483a7e2d89bd",
+              "Sources/SwiftDataFrame/Core/DataFrame+FastFilter.swift": "71f51a6bb887752218ecd2a18216ec58d7fbe6e8989793e13a48710e36699a55",
+              "Sources/SwiftDataFrame/Core/DataFrame+Join.swift": "2f8dc1060c6ee821ae325cb8cfd07a190742d84ffd06ba5c89e72216cb375405",
+              "Sources/SwiftDataFrame/Core/DataFrame+Matrix.swift": "1d3daad8ca3e7e83d8a1e1cd740b3cc1f4ebce0a5f2d5e442ae33350b1efd0d6",
+              "Sources/SwiftDataFrame/Core/DataFrame+Modality.swift": "2b78dc843410c32b1cadf88fc06669fb0a777713d0b7ebe1f9536536221c0c11",
+              "Sources/SwiftDataFrame/Core/DataFrame+Pivot.swift": "fa5ea217bd151916cd38c49cd951a87fcc9923e03f4855a5660da2aa06954c04",
+              "Sources/SwiftDataFrame/Core/DataFrame+SIMDJoin.swift": "ccb4bbb2ba928ff5df9d96cca5bf0616db8f62496d0849edd6925734f55bc3e2",
+              "Sources/SwiftDataFrame/Core/DataFrame.swift": "3d05dbcd4f8957344b74b9d4401237f51b3783810b97f7b02a9d7ffc90f5e81a",
+              "Sources/SwiftDataFrame/Core/DataFrameRow.swift": "26aadcea05d472d957f46bdab958b5bb4a1e1cea32e4fd29a19356fb860003fc",
+              "Sources/SwiftDataFrame/Core/GroupedDataFrame.swift": "9252d0c0c54e219f34d0e74cc96a6a199700d5133277aaa69692ad8abcf83f82",
+              "Sources/SwiftDataFrame/Core/PreparedNumericBatch.swift": "c0f664763db923ef3b7219b3b130e994a84383586041008af4126c636b6048d8",
+              "Sources/SwiftDataFrame/Core/Schema.swift": "b0015ef584a361a39fca909abe5601fdd5ff421dbfbe748f50aac17126b32502",
+              "Sources/SwiftDataFrame/DataFrame2.0/DataFrameVersion.swift": "c1bf4ec08db92eff436f1bb0843f53f7c660ff732e9cc63af2746867cc875745",
+              "Sources/SwiftDataFrame/Errors/SwiftMLError.swift": "a9335d2db8d551e65dc43b1d8657939ebc6cf00c4c4a06f201e7ca7119715f62",
+              "Sources/SwiftDataFrame/IO/CSVColumnBuilder.swift": "5fd0ff9b9a6b76b4f9eda051000665948f61856c9d22f09e40bf3ff12f442cf3",
+              "Sources/SwiftDataFrame/IO/CSVNullMatcher.swift": "9ed4d315ae70f5efbcdcd332eb5976d10361bdf75a5e471cabbb2ff067383d59",
+              "Sources/SwiftDataFrame/IO/CSVReadOptions.swift": "467be999c8dae2544be3d930fb8eea47d8417bfe0faf9ac6a07d7181b426cfbb",
+              "Sources/SwiftDataFrame/IO/CSVReader.swift": "252476ac28a04276659f402318d4c69777c8c28958f23e17697a37c76ccfc9d8",
+              "Sources/SwiftDataFrame/IO/CSVRecordIndex.swift": "98a0e275c1cdf4230eafac4eb8017412c9d0c8c527db7c1442531e195b87e8f0",
+              "Sources/SwiftDataFrame/IO/CSVWriter.swift": "4fa85626eb8c9e5f94e607731679a7d487671b84bce14d82d1ac0d02c6aba46e",
+              "Sources/SwiftDataFrame/IO/FeatherReader.swift": "40387db1d0b1de8a291579840867c888da8fda24985dba11e165273ec0283598",
+              "Sources/SwiftDataFrame/IO/FeatherWriter.swift": "48ffdd67939c5a7c6a3aa25659a193c8e01cb457c115aba0fb29b4a276721468",
+              "Sources/SwiftDataFrame/IO/JSONReader.swift": "892dec5233fcc0f1cae0c08f84420b6ee68f686d44e4e8f36347954db8363033",
+              "Sources/SwiftDataFrame/IO/MemoryMappedReader.swift": "f8d6a7005578a37a6516428af49df522350d5a158222118755412477a8e14d8c",
+              "Sources/SwiftDataFrame/IO/NPYReader.swift": "51619c80c4d866fdff687f4e8d4afd55bd7582e1ac813f731910f0493c6cd968",
+              "Sources/SwiftDataFrame/IO/NPZReader.swift": "d61aa130caa44be0ee5e95497fbd28c6b616d340a15f71bf3e65c4a2394486c3",
+              "Sources/SwiftDataFrame/IO/ParquetReader.swift": "3b1d3755a321e044df3df7ff59f8b58f041fa3f2351c7a43dfccaad50604a9cc",
+              "Sources/SwiftDataFrame/IO/ParquetWriter.swift": "57bf060e2f2c04ed0084946467b346febbf54d9aee0a9c95aa77177cb64c4711",
+              "Sources/SwiftDataFrame/IO/SnappyDecompressor.swift": "fb1e587f994e219cf50b699010027b40f8dc10a76d63b9b73dcd4750dd49bf6a",
+              "Sources/SwiftDataFrame/IO/SystemsCSVParser.swift": "a6df16dc7ed4668a57f8bc040fec04673fd78e6c3d6d075d6d42c8922f74bfd1",
+              "Sources/SwiftDataFrame/IO/ThriftCompactProtocol.swift": "4069e69d27fe110c32e478e2b7136398139e948b93fd65da38811c1e0af207b1",
+              "Sources/SwiftDataFrame/IO/VectorizedByteParsers.swift": "3c433db442cdccc253e8a9ad581da87cb5a025b7489c8ffea7c66fad26dcc34c",
+              "Sources/SwiftDataFrame/Internal/ArrowDataBuffer.swift": "5a0000fabac24172bd45ba0a8b247bedd49793085a637df77fa96ca75d02169e",
+              "Sources/SwiftDataFrame/Internal/ArrowTableBridge.swift": "b9d839152ea7354e85edb218eb4ab1140e844fb338bf91e6b9ee5c1fccaca481",
+              "Sources/SwiftDataFrame/Internal/DataBuffer.swift": "145c6ba37ea904634681de04760e5a6249bbc0738b95f53234deb0e777963319",
+              "Sources/SwiftDataFrame/Lazy/LazyDataFrame.swift": "0f3ac509ef8c9d4161a73907cb844f39d521ba286f66afb0c49f08a2df2fa4c1",
+              "Sources/SwiftDataFrame/Lazy/QueryPlan.swift": "9e173ccce600cf2f038cad6bafe33180da4d30ccf67714d16d6e0568a8a5b492",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/AggregationsAndGroupBy.md": "065165919649328934269ee88ee06821dbdd91d57971070bfc62e678012196b5",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/ArrowAndFeatherIntegration.md": "b479b6d07f4f46e1338e2ef0cb6d11a3c72732b97298ccb13c54089776e5bf60",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/CheckedIntegerSums.md": "0066e8ba91d927fb49a56007cd4277de31c90aa8eb47e610d9faea9829494a53",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/DataCleaningAndReshaping.md": "5538442f933bb2bdca3d54cf06b8f85c03e6bb93799af279ee0bf134f313a35f",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/GettingStarted.md": "2b0dc06acc199d3507bd0763909f79c4302050cedc7e42fd3ca27e71aeb51f61",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/GroupKeySemantics.md": "4129fb972f17fce74d235f5bae037eb1cf2710b0e6fb19a1644ba4605cadc334",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/MachineLearningWorkflow.md": "b48869527effff8802528d2a93e82eea494ccc4311cf5615be18d13174447610",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/NumericFiltering.md": "17721cee291acecfa3f0ea4b06c4c806274c0d11d964752e63cd05d39518fa6c",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/RollingWindowsAndTimeSeries.md": "4e93760821e4c722542b4c08a958402e529ee9f1724cd7eb19e1fe66844ee1d8",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/SwiftSci.md": "5fa4859f3551068ddd24fc008b30f7dd1b8f67b3a6ad3f80d8c3f3aade38507d",
+              "Sources/SwiftDataFrame/SwiftDataFrame.docc/TimeSeriesForecasting.md": "813dc0597d44ce11a2acaee518ee7a3348bb961255b964ee7389d38688a9ca40",
+              "Sources/SwiftDatabase/DatabaseConnection.swift": "13cd5201a5d9b264de22fa09348199675441275ff2f47e41db62aabf400b012c",
+              "Sources/SwiftDatabase/SwiftDatabase.docc/DatabaseConnectors.md": "26cbb20a992884fadf2fe418dcb06433ae9e9e048097b2071264610b52d3b4a2",
+              "Sources/SwiftDatabase/SwiftDatabase.docc/HighThroughputIngestion.md": "9a9f7a42f5fa8ad091c67aa35352326daf1cae625cef3a812e3fd8c2085797f0",
+              "Sources/SwiftDatabase/SwiftDatabase.docc/SecurityAndPerformance.md": "7f0c0ac62cefa174eb304cf55101bc160e5b724d916245d239b7753b65c32125",
+              "Sources/SwiftDatabase/SwiftDatabase.docc/SwiftDatabase.md": "310bf86acb7933909d1279beeea36f2d52b272f06a853ff68c1546ffbb9781ec",
+              "Sources/SwiftDatabase/SwiftDatabase.docc/TypeSystem.md": "a250b7a93bbf7409443919069581c199ce0b5668b3fcd8ad5d6e28f2d59c758a",
+              "Sources/SwiftExplain/Core/KernelSHAP.swift": "aa9c331c720311c1fb0a3faa97b13f884fb2e2c875521d52f49a43ca439b32f7",
+              "Sources/SwiftExplain/Core/LIME.swift": "4a491cc2630c9ca07285b9666a17e8e19be531b44ea8b0bc8dbce2021abd89cf",
+              "Sources/SwiftExplain/Core/TreeSHAP.swift": "1ee5242d9998cd12efba00832bb6679c2a1cf76205242078dc35027d308c5f58",
+              "Sources/SwiftExplain/SwiftExplain.docc/KernelSHAPTheory.md": "c7c8956d21a35098918887922a947211382f4c5d3cff32fe926c53ec2f7c0ee9",
+              "Sources/SwiftExplain/SwiftExplain.docc/ModelInterpretability.md": "4c2522334bd52005e2c1598aa26cac41a6ac155a1a0032cf12fcdac923b148dc",
+              "Sources/SwiftExplain/SwiftExplain.docc/PermutationFeatureImportance.md": "68241bd7b48cfad5c36965ede158845db10c1ba131ec1feb862632e9b88f7458",
+              "Sources/SwiftExplain/SwiftExplain.docc/ShapleyAttributions.md": "f71eba50c4d3da28dcd50956600a0eb27125a965235d6c9e3cd018890ce5f42c",
+              "Sources/SwiftExplain/SwiftExplain.docc/SwiftExplain.md": "d4d9cebadc8e487dc0b0aa4146e062a80faad74bda38062ac3be6c2fae3738f3",
+              "Sources/SwiftForecast/Core/ARIMA.swift": "d0b0829ec99f8dcf8645e061090c69b5efc0598b8947af75968243f2719eea55",
+              "Sources/SwiftForecast/Core/AnomalyDetection.swift": "198c1dc8c8c712c7669d7999347d518769517c97d5ae98a0a348e17d4b7a758d",
+              "Sources/SwiftForecast/Core/AutoARIMA.swift": "5d4bc2e8b132244c063e4fc0c2535bb2f8145a650efc8c4fdd27308414e3aaa1",
+              "Sources/SwiftForecast/Core/ETSModel.swift": "2766261eec48268354cfc756f2ad7beba5f5cb82e344bdc41cfc0027b7f6ab1a",
+              "Sources/SwiftForecast/Core/ExponentialSmoothing.swift": "b46357c1921f011e6ee48eaf3e6a081fce14960b138132b4ed28585f72fa6fbe",
+              "Sources/SwiftForecast/Core/GARCHModel.swift": "4b3721464513cd09186f960c3875ca448807b22a5ddab0aa8b0590e2a4c5ff99",
+              "Sources/SwiftForecast/Core/KalmanFilter.swift": "6a6fabc5cc2341441eaed8c35663ee4ca7e1c919409fb64e920033156a851715",
+              "Sources/SwiftForecast/Core/KoopmanOperator.swift": "810d92bb019e7c7c6856adfb1131fa471044aee990f5f88063ee5fbb0eb6db53",
+              "Sources/SwiftForecast/Core/LAPACK+Wrapper.swift": "7dff5f6b1c14f251c7a4ed0a1b5bbdf4bb9a3072ee5b353d4510c11fda2f0211",
+              "Sources/SwiftForecast/Core/NelderMead.swift": "212f5ab501ae5f6431594748a1b596c12944745c8595dfef77a2ffadf8af0fcd",
+              "Sources/SwiftForecast/Core/PiecewiseTrendDecomposition.swift": "818babe1273de61bb08de8dc12b3f631f1a0a3bf202148249256389a84f7e4c3",
+              "Sources/SwiftForecast/Core/SARIMAModel.swift": "df6b6a22709d2df5983d58bc0a376bb25397d2619008ad07e1ae8e1409835916",
+              "Sources/SwiftForecast/Core/TimeSeriesDecomposition.swift": "c2fd745c7d5309890ea8e6d4ed12651d35c909f8416e8869e3a31930dcdfd4fa",
+              "Sources/SwiftForecast/Core/TimeSeriesTransformers.swift": "1a541c20acdd3e73cacb1dd6ece9cb4ad43e85f47221e37fbeaff4bd1f759995",
+              "Sources/SwiftForecast/Results/ForecastResults.swift": "352d06cd825d947116749fa439a8ebfd122bfb2677431579044500fafcd047d6",
+              "Sources/SwiftForecast/SwiftForecast.docc/ArimaAndSarima.md": "4f14b6de50faf740323d4d45da7bd9d3d8af660e749355550ca51f1365c8b117",
+              "Sources/SwiftForecast/SwiftForecast.docc/AutoARIMAParallel.md": "579800ab85715f3acd6f050c5a6a6aefc196611e9c2d716e2f6d04ac8f5fe17f",
+              "Sources/SwiftForecast/SwiftForecast.docc/KoopmanOperator.md": "802c1e76cf12ea648c1d0af9178a01cc9b094bd16119ea898d8c89d2357a7349",
+              "Sources/SwiftForecast/SwiftForecast.docc/SmoothingAndDecomposition.md": "a7255a0bc5a6391c3ceae51aada615d95b6d2a89fdf9cf706e3eed7b5bcd8290",
+              "Sources/SwiftForecast/SwiftForecast.docc/SwiftForecast.md": "d80a5bd64cbf53f30fbc2ead53c53796492d30087cea201d5c77585d846531fc",
+              "Sources/SwiftForecast/SwiftForecast.swift": "0beeeaa8b0e96c5be6b9ca7fa53e2eed01122fc8c9506b71f3e4c02cf340d7bd",
+              "Sources/SwiftLLM/Core/GGUFParser.swift": "96d147273c36c46dc366ec85ffdb0593f922d28b650f467c1490250e46896a4e",
+              "Sources/SwiftLLM/Core/Generation.swift": "6a58194fb137bb3338c40c7b74c1cd566197508eac2faf73c8202404c14e1062",
+              "Sources/SwiftLLM/Core/GroupedQueryAttention.swift": "2723cb0947545729d32c69fd87fe7a6f4562771e260e42c560e6b2adaf2612e0",
+              "Sources/SwiftLLM/Core/JSONGrammarDecoder.swift": "9a94260766c92fa62f48fe84f469d1206e3622bf8acc7f4700039a219528b3c2",
+              "Sources/SwiftLLM/Core/KVCache.swift": "aaa171b74d1b24d01778f9ef8a97257ea9c10c8635e4265569d1c042353a32e0",
+              "Sources/SwiftLLM/Core/LLMModel.swift": "5f73bdcc00153379b918a6434742680c4a642ad37b4617bd9a81970c023615de",
+              "Sources/SwiftLLM/Core/PagedKVCache.swift": "b5ae13cab0b2573498c088d4c5048371352240f8d32142a6b4735517576c3348",
+              "Sources/SwiftLLM/Core/QuantizedLinear.swift": "51d3d54d09a579c1ecd879512b126167e904c1d2c4c5518dbe893a76fbf35e46",
+              "Sources/SwiftLLM/Core/QuantizedTensor.swift": "9e69d8536d802f8b820d1ec5bdff905ead7545d05b6c35a0d624bbebcafd9ccc",
+              "Sources/SwiftLLM/Core/RoPEEmbedding.swift": "c14cf2a59cf630967c79ed44d5b47d595d2d8cdbf1cb16afe804b7b9a1d3d39b",
+              "Sources/SwiftLLM/Core/SafeTensorsParser.swift": "100db5e4eef26aef04f21646e7c85dfa660f1d149df7991a41b342e5e49ff753",
+              "Sources/SwiftLLM/Core/Sampler.swift": "a7c8b6c3553d58042482ba2e9a3330bd1a61e2b29eaff5ab544a59cd388a8c30",
+              "Sources/SwiftLLM/Core/TransformerDecoder.swift": "e40b229793afa70dda9080c2ab54f1901d209b21d754df2ed1dfb2430d303f95",
+              "Sources/SwiftLLM/Kernels/QuantizedGEMM.metal": "1c258e9db0ecb779541117967ece38af149f51f22359b33dc8649e1a8eea4fee",
+              "Sources/SwiftLLM/SwiftLLM.docc/MetalShadersQuantization.md": "e5c1b0911c2cd269f1a182a37eb3a720532d31914cac8a446848b6862c397e9c",
+              "Sources/SwiftLLM/SwiftLLM.docc/SamplingAndDecodingStrategies.md": "11d3a04b4ff87d3a77c0cd264013c0efcff18b43a404b12aeb76576b049b979c",
+              "Sources/SwiftLLM/SwiftLLM.docc/SwiftLLM.md": "f113e4b9bdaf64a148ab22f993fb78effa72cb1f5a918c480c86bca83a6605b6",
+              "Sources/SwiftLLM/SwiftLLM.docc/TransformerDecoderArchitecture.md": "0a5dd7f3e7c3f1c27c1e21f86eb739ff6795f1ea442a32731bb41754d993270f",
+              "Sources/SwiftLLM/SwiftLLM.docc/TransformerDecoderInference.md": "4237fc175fe61ec5328addefa2ced2ee2d098e04ce706808007257f4527f4076",
+              "Sources/SwiftLLM/SwiftLLM.docc/WeightParsingAndSampling.md": "5c850d0b75274f0fdb4b9ba91a21755dc1b3ac5f70286cd4210638cb9dcff59a",
+              "Sources/SwiftML/Calibration/ProbabilityCalibration.swift": "6374ed12df41dfe99797566fbae5e7f571940944ac69a5c9ea347579afc56a83",
+              "Sources/SwiftML/Core/CalibratedClassifier.swift": "b3cd45790560263751e7c186afd06f5fcdf3bac00e1559c8934df6dbd186b90d",
+              "Sources/SwiftML/Core/DataFrame+ML.swift": "f4c5122d526981f56041d0961ea8e38de38b255dabd3a59840a8311363d8cc31",
+              "Sources/SwiftML/Core/DatasetUtilities.swift": "75a1ae62269519867c27b66f06fc2c1da450cdb0921ed729ada8ff83cd95d716",
+              "Sources/SwiftML/Core/DecisionTree.swift": "62a0d0c9f9ed844bf8639ef333914825615690f661add5e346c653b52e9e00c7",
+              "Sources/SwiftML/Core/EarlyStopping.swift": "dbcb87b59380f21fb8777d9b718b79c1fb5d2c252268ee6a714f4a943b609632",
+              "Sources/SwiftML/Core/EstimatorPipeline.swift": "ae716beae4fe7df16500c46849237928ae619675309fd0b431fb88adf5a2a46a",
+              "Sources/SwiftML/Core/EstimatorProtocols.swift": "7bdd91c1446fc3ac1affb5fd52ce7c66b14fd982edccb617ef1d2d74d22d1a5c",
+              "Sources/SwiftML/Core/GradientBoosting.swift": "e1e2e8cfd8ff3c4cc7b793c73d9213fb1b5ed873519e237ed44ffd101a66a89d",
+              "Sources/SwiftML/Core/HistGradientBoosting.swift": "0684284bbfdb2cd65d74d0208cd943ab374af5e11bf75d45bc159cc6d7e6c4d9",
+              "Sources/SwiftML/Core/LinearRegression.swift": "ddc6394187406f22d730efb4d060fb818399d8a8d398a0656398191a88f3d0f6",
+              "Sources/SwiftML/Core/LinearSVC.swift": "9e6927b0bdfe14d1caaca8483128460ec1bd6dd3ad8085cd26745d2d95d25d29",
+              "Sources/SwiftML/Core/LinearSVCOneVsRest.swift": "84b11a8fc3718a4089f07e3bbf93abaf976eb95c6275751872c4a6077c236a5a",
+              "Sources/SwiftML/Core/LogisticRegression.swift": "0344e4038afb0d79775ecde669041cca00d8ed9676b86e5b59881cfc6aa375ce",
+              "Sources/SwiftML/Core/MLP.swift": "7a2e213168d2b142bc8f8648f394fe3deac45ae43d306a857c9c61e37cdfcedc",
+              "Sources/SwiftML/Core/ModelPersistence.swift": "f98a353351c44ea3a306068420fff8328f81f11d881f29f6ad1b7a58b92c1d1e",
+              "Sources/SwiftML/Core/Numerics.swift": "fc3f120e64cb1bcef4685880a5dd1e0af5102e78e4705ff5981abb449abac8e6",
+              "Sources/SwiftML/Core/OneVsRestClassifier.swift": "e0e8c9e52fc7b785ebc2508ba3b11794356d195cb41e69d27b31dfa888181309",
+              "Sources/SwiftML/Core/RandomForest.swift": "ba5a8df8fa92105e257837532525337ef64c4071f28646d1f7c59f3c64535afb",
+              "Sources/SwiftML/Losses/Losses.swift": "eacc57b6a10ba6853894c9464c686ad5212947ee1da0c756be23f5280ae032bd",
+              "Sources/SwiftML/MultiOutput/MultiLabelClassifier.swift": "50d1bd20bb1bb4c5db9fb82240d2a6ea6064b5314debe302fa496b39ddb85ceb",
+              "Sources/SwiftML/MultiOutput/MultiOutputRegressor.swift": "1c77cfc6bc6fbc09c49d0f7c3a2044f670f00203bcefbb72a3f6bf3162198392",
+              "Sources/SwiftML/Serialization/CoreMLExportable.swift": "1e9cb0ea144f817002948def43fd1bf2a0da64264589267a9ef2d25600f9e767",
+              "Sources/SwiftML/Serialization/CoreMLExporter.swift": "ee98113f4c8e803920da0593d7688694597f38fb4e951a4a35f3906f59daf133",
+              "Sources/SwiftML/Serialization/CoreMLProtobuf.swift": "587c2976ab5f16eb0ebe06c5afce826918711186f360b647502abce2f2916847",
+              "Sources/SwiftML/Serialization/ONNXExporter.swift": "4d3844e98981d730165de561cf15ec840ceaed783b22894506da938a4c181c9c",
+              "Sources/SwiftML/Serialization/ProtobufWriter.swift": "e811cf118aaa36d973454c03439a04e7c24b4f80f704dc778e37e92cba7b804f",
+              "Sources/SwiftML/SwiftML.docc/EarlyStoppingCallbacks.md": "c33f681e9a3f2f39ed9c09f8f75c2c7de9e4f087d2990e6c0a808ab4a7ab50b4",
+              "Sources/SwiftML/SwiftML.docc/EnsembleLearning.md": "35b00401bd803b718b314212db4c8cd7e10fa3853c375f077f0c968924eef6c1",
+              "Sources/SwiftML/SwiftML.docc/HistogramGradientBoosting.md": "f2417175b86ec8b394e7d6e14bf62c4b6cc68de7b68599fa2f0638ec1af8c35f",
+              "Sources/SwiftML/SwiftML.docc/MLOpsExport.md": "eb98f7a6ecab0aaa20ac473a24ddad7945f95cb1086ae42b3c46e4841e0f9bf7",
+              "Sources/SwiftML/SwiftML.docc/NeuralNetworkArchitectures.md": "e2ccc7f44de58babf7c3a9dafae16b453780218158dd419837610acae010b09c",
+              "Sources/SwiftML/SwiftML.docc/ReproducibilityAndPRNG.md": "934a5f0e273c12b0764be2b3de7c4136aa8f2c9840faa2c064d8f8a6ca86c4d8",
+              "Sources/SwiftML/SwiftML.docc/SupervisedClassifiers.md": "9351e397f3e6926cd4752828d978ed27cabd6a697bd1dee3015c9c078455dc71",
+              "Sources/SwiftML/SwiftML.docc/SupervisedRegressors.md": "c6b5cf7b9a9ac0f09ea46b6ff215cdfa7a54c69be6d4907322e0a02fc229d6cc",
+              "Sources/SwiftML/SwiftML.docc/SwiftML.md": "1196f12fc9ff589db752dc73b3e0fcb092425fde2ba67f1d082402102982cb0a",
+              "Sources/SwiftNLP/Classification/ComplementNaiveBayes.swift": "8dcf00c7efc650cadbf7b4fe5fdcd96adbe4565842ce0c9afb78a5061ef502e1",
+              "Sources/SwiftNLP/Classification/ComplementNaiveBayesClassifier.swift": "6055155aaefc54ca30a67558e09170a5fbc387876a139e0cadf98f13c05a871c",
+              "Sources/SwiftNLP/Classification/MultinomialNaiveBayes.swift": "c83305922b90b07f9a2bdda899a6c5c879b9b072d830e8f143d1ca6cd81002be",
+              "Sources/SwiftNLP/Classification/NaiveBayesClassifier.swift": "8ac4e4d88c38ef972c38c21886169f0a525cc99ca09c661ca59bb0247624a34b",
+              "Sources/SwiftNLP/Core/AppleLanguageDetector.swift": "37623c98eee746746e3242e7bb617bf0cbdebb8e88c47ead7bbda8f35ae64948",
+              "Sources/SwiftNLP/Core/AppleLemmaTagger.swift": "5e2ef9220cf4fcf174621b708f4160dea7fc0d88dd3b432fab3e2c889da6c495",
+              "Sources/SwiftNLP/Core/AppleNLEmbedding.swift": "ab75629955f07355a8c8b0c097d33a7df8cadee0f0b87cbb936a2ef5ecf4f34d",
+              "Sources/SwiftNLP/Core/AppleNamedEntityRecognizer.swift": "2ab4095f707d1f7293c4c467f223d28b43cc4d00e120d22454a641ac259ebb03",
+              "Sources/SwiftNLP/Core/AppleWordTokenizer.swift": "79ad4d451df11e3f16de08149142208dc8d0053aaaa334797c38c3860673e493",
+              "Sources/SwiftNLP/Core/BPETokenizer.swift": "2e6d68110901aeca7de6536cbb3417b49190e1e31dd80260f6e435821eb5541e",
+              "Sources/SwiftNLP/Core/ChatTemplate.swift": "e4e5385ba3b01536dcbb00e659732c8c4524998cccad7caeb48060afa876aaff",
+              "Sources/SwiftNLP/Core/CountVectorizer.swift": "08ecfec8f5c4653845d5491dc0be8b629978efee757ccf9851b795f6cc75cc57",
+              "Sources/SwiftNLP/Core/DataFrame+NLP.swift": "7772e97a4145dab201ff3f22c094e9911c4ea345e0b263fade224af290bca405",
+              "Sources/SwiftNLP/Core/HashingVectorizer.swift": "d73d9b0921aac7fec46fbbaa363c2baba76bac71dde0f99d8e147e2a971a1f8b",
+              "Sources/SwiftNLP/Core/Llama3Encoding.swift": "f750309b05aa4a2c24f62e613ca12b54382a507c6bb66811b4a07b0b825e9293",
+              "Sources/SwiftNLP/Core/LocalEmbeddingEngine.swift": "22906fe71c7364f9e9dee049d22532838d4b63983e4b8d0dbccc5d27d06ed32d",
+              "Sources/SwiftNLP/Core/NGramTokenizer.swift": "0463fbc35d057b3f10965581afa481051866b383e16e12f28dd50b0b2210b4c3",
+              "Sources/SwiftNLP/Core/POSTagger.swift": "da4f3af60bf34bab18ceb6d38b23e0eb260fbcf63252dacf18a6761c05bbaee1",
+              "Sources/SwiftNLP/Core/PorterStemmer.swift": "4ff11c77ef8373545047ace83ba7e59ae8ae003a8894cac5345391cd22ecec8b",
+              "Sources/SwiftNLP/Core/RegexTokenizer.swift": "568e26de381c4990830dcc2583d633e8d2abb812991b9dcbdcb3a4e64b030c3f",
+              "Sources/SwiftNLP/Core/SentenceTokenizer.swift": "4c9f9f09bfe1d07e6d72a761bba8e9576fa88b8dabb79d2a3c6e3436fcb922ec",
+              "Sources/SwiftNLP/Core/TFIDFVectorizer.swift": "9edd7d3f532f3e64459fe9ff44a50f69d394c66ade1ea4ead35639b97112efbb",
+              "Sources/SwiftNLP/Core/TextCleaner.swift": "d64cd77815f530b318a2578394e1997b0cb55611de2f15df5dfc2ea576c8580d",
+              "Sources/SwiftNLP/Core/TokenStreamDecoder.swift": "0342b93752dc286ee161a26842d2bdf357ded8926c224a17ac0a334c478ae298",
+              "Sources/SwiftNLP/Core/Tokenizer.swift": "6d67f23f3e8dbe9f62a56bcf517c5783185a0bffb7766c6a2a4bf38e5c776052",
+              "Sources/SwiftNLP/Core/WordEmbeddings.swift": "ffa46c2c46e8a5db2a8181f54cd47b849b952f5f265bbf2a17a4804bb793ab7e",
+              "Sources/SwiftNLP/Errors/NLPError.swift": "322f8c015cbefa100a31ce8727ac8f5478e8b69a47290c39732be81f6a682852",
+              "Sources/SwiftNLP/Extensions/SwiftCluster+NLP.swift": "52103b2830564c6055108e9cbb4d71f9281979faf7fe54c1531b572f6bfc9f82",
+              "Sources/SwiftNLP/Extensions/SwiftExplain+NLP.swift": "8d0758d13880e944810a7ef08303aeef3cbe561f26f3c30471688f1b6ae8b9c3",
+              "Sources/SwiftNLP/Extensions/SwiftLLM+NLP.swift": "327a62d81062010f72fce13c76add65da1b180fa78c3ccf50f7f54f068f7eb13",
+              "Sources/SwiftNLP/Extensions/SwiftML+NLP.swift": "95effa6d3e002467daa529dccc5152ed164516d3e775c2d426e6f20012239360",
+              "Sources/SwiftNLP/Metrics/ColumnTextProfile.swift": "4ea915c131eeb943a832fc5ff5276af92c3d5c570dc68028e5d75fd388c4c3e9",
+              "Sources/SwiftNLP/Metrics/CorpusLexicalProfiler.swift": "ceae931469476b7a0e48a4f9066eece9031defa00071bb48f89613103211ec94",
+              "Sources/SwiftNLP/Models/NamedEntity.swift": "b9fd975927fbdf3f041843ec5d581d99e5ba94768c317287b43338de6c181347",
+              "Sources/SwiftNLP/Sentiment/NLSentimentAnalyzer.swift": "3dc951d5106fb9e3cdf8f47e6bb8b4166b3f5c9cdd4d36fb6f2018e7398d833c",
+              "Sources/SwiftNLP/Sentiment/SentimentScore.swift": "681e238151b59f3012a5277edc2ce9ca5a479eeedaf020f686129b1f6e1a3312",
+              "Sources/SwiftNLP/Sentiment/VADERLexicon.swift": "240df38b2fa4bf31bf9871117b7b8f4a62d02be88b3d6d5dc87f90f2d8e6c6fd",
+              "Sources/SwiftNLP/Sentiment/VADERSentimentAnalyzer.swift": "424304d90ff2db0911920ba167725783344841ebdc94cf7ad612dc5c39e34776",
+              "Sources/SwiftNLP/StopWords.swift": "f199b35991d900a33e495fe525f8cc55ca743567a0892a3a8dfc57fa7c86fef0",
+              "Sources/SwiftNLP/SwiftNLP.docc/ChatAPI.md": "2cc5c28bad42d7a4e521e97946e38e141ce008e2616dab6e50136d53ff20645d",
+              "Sources/SwiftNLP/SwiftNLP.docc/DenseLocalEmbeddings.md": "56f365a9ba89937721d65a01cf33562e8bf717a722c1e88256b6556d5776225d",
+              "Sources/SwiftNLP/SwiftNLP.docc/LlamaTokenizer.md": "3f173c2b8a03d7e9f5f0580a18e49f402ce51181a256a4b17c06fe66abd96386",
+              "Sources/SwiftNLP/SwiftNLP.docc/SwiftNLP.md": "9646144a0d03245e5080bffcac35b66f64e109311386339b0fd96bcc1a9e1f33",
+              "Sources/SwiftNLP/SwiftNLP.docc/TextNormalizationAndTokenization.md": "f1d110876cd18e40d307850c69c317e1efc04950d952870b18df7ccfe50884cd",
+              "Sources/SwiftNLP/SwiftNLP.docc/VectorizationAndEmbeddings.md": "5684de9dc99fe68bc4375c8588b259a729d374d864d245645f1b086448ff8fc2",
+              "Sources/SwiftNLP/SwiftNLP.docc/WordNetAndLexicalGraphs.md": "65134070da5218beba6b9a457691bd46298650c1f302a9b16fc2d0087ad23571",
+              "Sources/SwiftNLP/TextNormalizer.swift": "0b9ccb915336b6862b72426e7067be207f7bd83c55671100a59852c59ad85b9b",
+              "Sources/SwiftNLP/WordNet/WordNet.swift": "23550b1f73e1d4292f27b493687616f82baba87190f55c2b9780a01e02a64aac",
+              "Sources/SwiftOptimize/AutoML.swift": "ffdbdc79e2d693cffbd3fe97d17bfc0e0e5416b539bbb8697cde340e11a7977a",
+              "Sources/SwiftOptimize/Metrics/Metrics.swift": "61c1fd4cbce0cd50bff46f6dfe074e87f7e4217da34aad607ce18cb38ad434a9",
+              "Sources/SwiftOptimize/Search/GridSearchCV.swift": "84a40d1ea3c4aeeb538d869a7c7bec71900a99f99aa406783953228a6a4f77c4",
+              "Sources/SwiftOptimize/Search/RandomizedSearchCV.swift": "708eb58428e3b07d4097bcaaa0897531d176b148f29e3a6e0505f61b20728550",
+              "Sources/SwiftOptimize/SwiftOptimize.docc/CrossValidationFolds.md": "e55f6a81b8c930caf4c6068e42992c24ff49d789a7d900dda1618c33d5a7378b",
+              "Sources/SwiftOptimize/SwiftOptimize.docc/HyperparameterGridAndRandomSearch.md": "801ef07881a59644dc2438db00833a21aa78de787fbb3bef20766ec00aed10b2",
+              "Sources/SwiftOptimize/SwiftOptimize.docc/HyperparameterTuning.md": "69527b70a2564c83494c29cec86f017fc2d3f396cf8e2e681d686095db50e64c",
+              "Sources/SwiftOptimize/SwiftOptimize.docc/ParallelModelSelection.md": "5dd4c3ded8e9a2fee5eac704b93bfc624e6f5947e3ebe474f424e850b1c8dadd",
+              "Sources/SwiftOptimize/SwiftOptimize.docc/SwiftOptimize.md": "3ff88b34e246adfdb7a691828828bfe43850efa1a9d5771aa25e69d01877a275",
+              "Sources/SwiftOptimize/Validation/KFold.swift": "1d1dcb9ad9bc8a12c5816135711701c351e6de68184b7553a101e797d2bc9776",
+              "Sources/SwiftOptimize/Validation/TargetLeakageDetector.swift": "ca9889fa77081fed876ba70f1a34cde2159e92a41da11442f667a896912c4e4f",
+              "Sources/SwiftOptimize/Validation/ValidationFolds.swift": "bad1116dce45d2f28c2080cc424626389c18915c8d9f0cd6973599e28646519f",
+              "Sources/SwiftPreprocessing/Core/ColumnTransformer.swift": "6c8909975369cb4dbde19763cc6369d62ed589cbcb01a48fe9e940a7b4b2c8bc",
+              "Sources/SwiftPreprocessing/Core/DataFrame+Preprocessing.swift": "7286025f40af1f2b7b87b34f02dfd80d2b848cfbf7c4ce7342f8a5ac556d2b8f",
+              "Sources/SwiftPreprocessing/Core/ExecutionDevice.swift": "0d5b5ed4e0f19424963dc77b083b4edf14b8becab6edf9c189669537a54d3363",
+              "Sources/SwiftPreprocessing/Core/FeatureEngineering.swift": "138d99021ecde0b3523e00268fd8bfe4558f0f1265a3dda9ef7962c349fb3918",
+              "Sources/SwiftPreprocessing/Core/FeatureSelection.swift": "9785ec83dc52bd7be5c1ed7d57187d45fbb8b5236d2046a76b8a6e5fd37e232f",
+              "Sources/SwiftPreprocessing/Core/FrequencyEncoder.swift": "ca17a2743ad1b589dd96e01f8e43b5696b73f4c89bfb9a51450d8fb985c062ae",
+              "Sources/SwiftPreprocessing/Core/HardwareRouter.swift": "a624d776fc1b802fb098690cf3bba08484e2f47af9c254d3bcfb5ac9a1c93802",
+              "Sources/SwiftPreprocessing/Core/ImbalancedLearning.swift": "fd33b1488cd570b450d6d17090e2c9149a88a1faf37bed86cd4e21c6d2d92d89",
+              "Sources/SwiftPreprocessing/Core/Imputer.swift": "704a8a000263247048263a2235dc4c90dec03c125d4c3927be18e67e02167932",
+              "Sources/SwiftPreprocessing/Core/KBinsDiscretizer.swift": "7e3a8ecce86d763ea0f821a7aee4ed08529aacb7c9489cf8b4bc71242f32e522",
+              "Sources/SwiftPreprocessing/Core/KNNImputer.swift": "d0fa821a266504d3fe10dcaf44ebb2edb81e258b8cc6648224ca7500f866502c",
+              "Sources/SwiftPreprocessing/Core/LabelEncoder.swift": "4c740fcdc8c761bd15258ad4e2636dc129e621dd0252cd7a9cc4350c7c74dc88",
+              "Sources/SwiftPreprocessing/Core/MinMaxScaler.swift": "445a7d3badf74fa13eeed1bbf0eeea3aee3301ed06e9c36b0581f9dc7d1ac5fb",
+              "Sources/SwiftPreprocessing/Core/MissingValueIndicator.swift": "4cba8755b47ce6b7eb62bec253acd4752588e50ece9bad72466b7e244bbdccc9",
+              "Sources/SwiftPreprocessing/Core/Normalizer.swift": "b56e9cef38b1e4773b40ed28bd9fb98eed6672fb3a5808396d67ba379c959e44",
+              "Sources/SwiftPreprocessing/Core/OneHotEncoder.swift": "76d051193ee12841217cf26b63bbad56d68ffd1db1db49c609863a4cf20100bd",
+              "Sources/SwiftPreprocessing/Core/OrdinalEncoder.swift": "5fe54c526c80327d585172a5bab9a201affade2dcd701f4e2fabe8104a1f0bb9",
+              "Sources/SwiftPreprocessing/Core/Pipeline.swift": "8c43d7d59f5aa9eef59fabe040ca1e6aa964225b168d4cc25fad3af1eecfe444",
+              "Sources/SwiftPreprocessing/Core/PolynomialFeatures.swift": "f91f5f7492929d8a7a28d046c4867ef879172ca3566e9bad45dffa88ad1d92be",
+              "Sources/SwiftPreprocessing/Core/PowerTransformer.swift": "bc96ea5b64e5bb9ec9a1b570817ceaf68b0f9c5e4bdc59bbc4cfb227a35bc761",
+              "Sources/SwiftPreprocessing/Core/PreprocessingTransformer.swift": "d5dbcb6f2f11bfa7ff2a95049e9323f12359f1f7a31a258f479cb813697d7157",
+              "Sources/SwiftPreprocessing/Core/RobustScaler.swift": "2a2e46883b0e4430f3299be6c9b6653d80448f3e172d3e4bfda482270bf52346",
+              "Sources/SwiftPreprocessing/Core/SeededRandom.swift": "13ff74199708126791a7b4a937646dc8b0a9cdaade18302e032da20ef6fbfe4b",
+              "Sources/SwiftPreprocessing/Core/SparseMatrix.swift": "9356dd7e1683a431ed58347c1ec037a259bb839a7c7220091f485ac9a4f861bd",
+              "Sources/SwiftPreprocessing/Core/StandardScaler.swift": "d7b18555d196bfc91a4d67ac5e06dc3aa5f6708e62e6534a56f601686bb77f37",
+              "Sources/SwiftPreprocessing/Core/StratifiedKFold.swift": "5ee39968f7c99850cfdbae57014ae04e884dc1f854f0cc6231ad353ec73166d8",
+              "Sources/SwiftPreprocessing/Core/TargetEncoder.swift": "d5b2964f98c7266acaac2e08aa6858dc8908ace56d651186f75071c134dd5f80",
+              "Sources/SwiftPreprocessing/Core/TrainTestSplit.swift": "181e8c19a48dac1078e34bc4dcf0b0f52c15621853de6b5f18279128114cb52d",
+              "Sources/SwiftPreprocessing/Core/WiredMemoryManager.swift": "20d8b870bd788d997a598ba6f0671a1ce09065589060ac692c31e8513c831606",
+              "Sources/SwiftPreprocessing/Core/WiredMemoryTicket.swift": "d738d4c77af17fa6e553d558625248365ee4d4cd0209062d3f510c14dc74b14b",
+              "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/CategoricalEncodersAndImputers.md": "5d852ff3ddc8256865a034912b42cde5c5dda618bd34941e645b596d2ee6b841",
+              "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/EncodersAndImputers.md": "6282180603e09517289c9376a3ded6878a7d3650c912223c5352b81e4418c52e",
+              "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/FeatureScaling.md": "11924b4312f9f9bdd7822fd83d1741c0e9fa29842f2591946d3608e419a64245",
+              "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/HardwareRouterAndMemory.md": "ac979ac506c199b4d0cd3fa13e836fc127e9fbae102b19d30d55fd8566428092",
+              "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/SparseDataStructures.md": "2e3584bb1b45a35818e01adf1ddeb8c667fc51e5e009f95e09ecaa6e0020f301",
+              "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/SwiftPreprocessing.md": "9990691f98333413cb4c8d24ef1039090f143c3906b35395e12ce58fec162f3b",
+              "Sources/SwiftSciCLI/SwiftSciCLI.swift": "ad0b0130f6631385db9bef84367c9d1b80aa1ca00a8e214a1965d1d9eaec5e48",
+              "Sources/SwiftStats/Core/CenteredMoments.swift": "6de81481cdf1ece15580c57da719655f7e7fbd533a360769380ed7f81a8ad3e4",
+              "Sources/SwiftStats/Core/CompensatedDotProduct.swift": "85bb471dd811ac4ad451b71e5717e571ebb8e32648b6d8aaa627c485ff3e47be",
+              "Sources/SwiftStats/Core/DotProductAccuracy.swift": "b998691c57c819d5816603e27c01db7b4f339dc99ba59fc93e64f50eb49871cc",
+              "Sources/SwiftStats/Core/ExactDotProduct.swift": "2c0a5ad5e2958db226a8816d54aaada9581d15c4258b605f1a0ec8a65a13e47a",
+              "Sources/SwiftStats/Core/Stats+Correlation.swift": "0019292105eef75198642325b8da91b4a68bb242e80e59b9424d786eeb804c50",
+              "Sources/SwiftStats/Core/Stats+DecimalANOVA.swift": "de1d249a90ab532178db84aa3e130f4dcd3c08a3335e73f3a3c32a7be818716b",
+              "Sources/SwiftStats/Core/Stats+Descriptive.swift": "4832c1ae8bf3a9906d8e0a73f52ef1709c332c65d252361f5f8a24de8e5c963d",
+              "Sources/SwiftStats/Core/Stats+HypothesisTesting.swift": "93bdbbd1e478e5add520cdb3d69d48c75577bff837c42b7a77eecfa73bcc23ef",
+              "Sources/SwiftStats/Core/Stats+LinearAlgebra.swift": "9cdd789d5eb1135e3cab72cb15b7bd5f5bab79144752fb8777eeba71a8c13341",
+              "Sources/SwiftStats/Drift/DataDrift.swift": "6c9be4bcc6b7f69b33c851b9e2af9191269a8ebcac866d6a42e2ae4d19d47a12",
+              "Sources/SwiftStats/Extensions/DataFrame+Stats.swift": "27df9cfdd231b147ae6bd97767c50300cb304d18ff29ace6735b7dd1f065b2b4",
+              "Sources/SwiftStats/Results/StatResults.swift": "3d31355890d3319790eb0d3764241b347a4dc123e9a5dee95bee622f4c792f18",
+              "Sources/SwiftStats/Stats.swift": "6e3d0941f469c887a6a1faba1ccb116dce879291d5331c8b994eb8b5bcb704b4",
+              "Sources/SwiftStats/Survival/SurvivalAnalysis.swift": "50bcf3e6b2a5b49ec61616c24dc09a64979ffdb27f03c525e4574574766b275b",
+              "Sources/SwiftStats/SwiftStats.docc/ChoosingDotProductAccuracy.md": "030f9f482abd60a05b7a4c5b1f61b5b998468c2da4b149dbb47c98b57057774c",
+              "Sources/SwiftStats/SwiftStats.docc/DecimalANOVA.md": "56eea7f51486a2e47f60dd90f08261a27f22ad60f1af232abe33d0e164832669",
+              "Sources/SwiftStats/SwiftStats.docc/DescriptiveStatistics.md": "8cef3c5bd61d390450871503c68c2d9f0a046fdd69c0e3039e0ffd9b40787c82",
+              "Sources/SwiftStats/SwiftStats.docc/HypothesisTesting.md": "37a8e41af41fb036f5f50503bd65c864aa4ef2d74f86dec328027ab760dc37e3",
+              "Sources/SwiftStats/SwiftStats.docc/SwiftStats.md": "d1b2efaa3b6b2527147f497231c1c23d59cdf154a0b623c77fa881892bd7f739",
+              "Sources/SwiftVision/CLIP/CLIPProjector.swift": "35566f26a97a0a11bfa2de859f5063e2c9263df2ee9e8d6deff8617574daeedd",
+              "Sources/SwiftVision/ImageDataset.swift": "e04bc6125b97c0f1922594e97f9637cad0bce1d2e82491f97d41fa7ef1904452",
+              "Sources/SwiftVision/SwiftVision.docc/ImageDatasetsAndSegmentation.md": "24ad47f312567cd65c9f87a2185f5b599b917f9fff3f2de0f2769ac859342b1a",
+              "Sources/SwiftVision/SwiftVision.docc/ObjectDetectionOptimizations.md": "443ae9a79ea068229cf7ee01a6c4b752cb6cb760b5646df354680f70b91c6dc2",
+              "Sources/SwiftVision/SwiftVision.docc/RealTimeYOLOInference.md": "bfb7e79ce68ae7a2a6d01b14295a74ceb3a338f5aa851d4c26d1e5dfeabdae88",
+              "Sources/SwiftVision/SwiftVision.docc/SwiftVision.md": "17b701165c217df67a7f9f3c4399833d950210a5009167b2e40ebba0c26e4615",
+              "Sources/SwiftVision/SwiftVision.docc/UNetSegmentationArchitecture.md": "046b739c8f52fbfd3c2310ebc58968538e3bbccd6c22aae2701bd176bce8304e",
+              "Sources/SwiftVision/SwiftVision.docc/YOLOv8ObjectDetection.md": "d68e1e8e44f848ef8cd449b735fcb50d3e3b61322c066e467740d0e4dbeba17c",
+              "Sources/SwiftVision/UNet/UNetArchitecture.swift": "fc70a4eb08d50569e48cd738c4fdfd21e9491180901bbba989022efa28526673",
+              "Sources/SwiftVision/YOLO/NonMaximumSuppression.swift": "3316c129209330fe020f6e448018be0b5db5e3f44dd7c5cde55f666ead1b6fbe",
+              "Sources/SwiftVision/YOLO/ONNXWeightReader.swift": "642d455e0807701e5f882ef37940d861d17c367142e04f9f97548c06962ed729",
+              "Sources/SwiftVision/YOLO/YOLOBackbone.swift": "9be8f6994aabba9912be4b01798d8abac17c7acfb70c9a21818d92d2575ee534",
+              "Sources/SwiftVision/YOLO/YOLOHead.swift": "2b4245d5b31247f97bbe7ae63dd69cbe5e1a673277434832aa0fa4a70d796587",
+              "Sources/SwiftVision/YOLO/YOLONeck.swift": "7456408926d97868b1e442bc493ec9e591f50aee17df682cc81f6010d1d13958",
+              "Sources/SwiftVision/YOLO/YOLOPreprocessor.swift": "c6e2cc5093e4059163a31e8241f7e104246cb3f98854ccf155d24f05897107ba",
+              "Sources/SwiftVision/YOLO/YOLOSegHead.swift": "fb451a80722421ae8ea5787c1d4899bbd8e05e5072402df94091363b33b2f2ce",
+              "Sources/SwiftVision/YOLO/YOLOWeightLoader.swift": "d7894d6ac0bbb771db663bf23da91fad9aefb0b57d9b6bafc8335afba28d6f79",
+              "Sources/SwiftVisualization/Native/SwiftSciChartView.swift": "23d550206c266098c0f62d06ae2c6f15c7e427b0b2e48b80447d90b6c6521df3",
+              "Sources/SwiftVisualization/SwiftVisualization.docc/ChartExporters.md": "ace54c5a727bb3e9f38f665f237cd3a166b40f7bcfbd4777a053cead64ecf5e7",
+              "Sources/SwiftVisualization/SwiftVisualization.docc/SwiftVisualization.md": "fafdf73eb9deb1e49e70fdfc9d066726b4e3a98b0e38656767e2218cf9835687",
+              "Sources/SwiftVisualization/SwiftVisualization.swift": "fbe36cb2c44af507772ef5e8a984f4674074d71b224856f3c2f2794ef6c72cec"
+            },
+            "tree_sha256": "43eb2dcd02252e033f3e6472fb55cb7a1891fb03b19491e7c270a552abc5e6cc"
+          }
+        },
+        "command": [
+          "<home>/Library/Caches/SwiftSci/production-default-20261001/derived/Build/Products/Release/SwiftSciBenchmarkWorker"
+        ]
+      }
+    },
+    "environment": {
+      "chip": "Apple M4 Max",
+      "host": "<host>",
+      "machine": "arm64",
+      "memory_bytes": "137438953472",
+      "os_build": "26A428",
+      "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+      "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+      "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+      "xcode": "Xcode 27.0\nBuild version 27A266a"
+    },
+    "execution": {
+      "active_threads_measured": false,
+      "cleared_environment": [
+        "BLIS_NUM_THREADS",
+        "GOTO_NUM_THREADS",
+        "MKL_DOMAIN_NUM_THREADS",
+        "MKL_DYNAMIC",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_MAX_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "OMP_DYNAMIC",
+        "OMP_MAX_ACTIVE_LEVELS",
+        "OMP_NUM_THREADS",
+        "OMP_PLACES",
+        "OMP_PROC_BIND",
+        "OMP_THREAD_LIMIT",
+        "OPENBLAS_DEFAULT_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "POLARS_ASYNC_THREAD_COUNT",
+        "POLARS_MAX_THREADS",
+        "RAYON_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+        "VECLIB_NUM_THREADS"
+      ],
+      "cleared_prefixes": [
+        "OMP_",
+        "MKL_",
+        "OPENBLAS_",
+        "VECLIB_",
+        "NUMEXPR_"
+      ],
+      "duckdb_threads": "engine-default",
+      "minimum_process_rounds": 5,
+      "mode": "production-default",
+      "order": "rotating-engines-v1",
+      "schema_version": 1,
+      "thread_environment": {}
+    },
+    "profile": {
+      "batches": 5,
+      "cases": [
+        {
+          "dataset": "medium",
+          "id": "medium-csv-read",
+          "workload": "csv-read-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-filter",
+          "workload": "filter-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-sort",
+          "workload": "sort-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-group-sum",
+          "workload": "group-sum-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-flat-matrix",
+          "workload": "flat-matrix-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-target",
+          "workload": "target-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-standard-scale",
+          "workload": "standard-scale-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-minmax-scale",
+          "workload": "minmax-scale-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-mean",
+          "workload": "mean-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-variance",
+          "workload": "variance-v1"
+        },
+        {
+          "dataset": "medium",
+          "id": "medium-stddev",
+          "workload": "stddev-v1"
+        },
+        {
+          "dataset": "nist-numacc4",
+          "id": "nist-mean",
+          "workload": "mean-v1"
+        },
+        {
+          "dataset": "nist-numacc4",
+          "id": "nist-variance",
+          "workload": "variance-v1"
+        },
+        {
+          "dataset": "nist-numacc4",
+          "id": "nist-stddev",
+          "workload": "stddev-v1"
+        }
+      ],
+      "id": "standard",
+      "samples": 5,
+      "schema_version": 1,
+      "timeout_seconds": 300,
+      "warmups": 2
+    },
+    "schema_version": 1,
+    "source": {
+      "commit": "980884dd4c755e19ff0def721ab8b2db3c6343bf",
+      "files": {
+        "Benchmarks/Python/accuracy_benchmarks.py": "01eca1a890389ed8b7146ba2de28332abd11c4006f7136cb35621edb8916cc77",
+        "Benchmarks/Python/api_workloads.py": "63ee92a3772ad9289bbdb69cdd5b777c92b6a23d256fd5913fc36653a226dacf",
+        "Benchmarks/Python/benchmarks.py": "51c2909af6eff2405ee5ccfcc31f64ea7227e94a8e677d7d3f6b9562d6a26e47",
+        "Benchmarks/Python/boundary_workloads.py": "04f7f00d79ab41af86f099b594bbafa85b3fafac2e5b45bcc850cb9804bc90eb",
+        "Benchmarks/Python/classification_workloads.py": "3d798fb08b1d38f02b7c247bf7b67320692e743d39db53a22da72553c4f75cb3",
+        "Benchmarks/Python/compare.py": "b11cbbe5957f956aebd2201c1b24ad311a687e479c019214fb06a6a3abb4549f",
+        "Benchmarks/Python/controlled_api_workloads.py": "6cefe6d5267f03388882357cfc5d3fa148b51865a8cd0035792e37e0e31a7cf4",
+        "Benchmarks/Python/dataframe_semantic_workloads.py": "b60a11d47565b118e799d29ee224304b3bc11d9de8a21f94391f9090f7d6c9bf",
+        "Benchmarks/Python/llama_generation_worker.py": "2fe21537a07716fb1ae8326f2c76b65611ebffff95ca5b58ac2fd3e13dd99025",
+        "Benchmarks/Python/llama_precision.py": "3da89b9c20c6ab14a4107862e923586f3756417c615f03815f964026012f5e81",
+        "Benchmarks/Python/llama_precision_timing_worker.py": "0f05e44e5b3aa2f473ef1f0a0b55e8d4cc1927e796bc4487b31aad4fcaf834f1",
+        "Benchmarks/Python/llama_reference_worker.py": "1d2c55fcf86436f1dfdac1b154e58574a149ee88ff7ef024869f1ea60f117553",
+        "Benchmarks/Python/llama_score_worker.py": "8f01876176067df855715e6e713e5fee5b370cde63edb89cd5108bddff075cb5",
+        "Benchmarks/Python/mlx_boundary_workloads.py": "898ebf2c8fae1d52a54aa4d2a3a66404f216f897c16697a3c0688633f15b6a29",
+        "Benchmarks/Python/mlx_neural_workloads.py": "70521bbdb7c01fa58096456c6c0ec194aa80fab4481f165b9ebf035dda56c70e",
+        "Benchmarks/Python/mlx_worker.py": "a7a7482afeacf3c37ef2b03dade2b4b449b2bbcb927133a444e45e6306f01c45",
+        "Benchmarks/Python/mlx_workloads.py": "4e7d6adc57595566e5b3ee02d5393493147068e1d6777d8f6ffbc085d72752e6",
+        "Benchmarks/Python/neural_workloads.py": "62684900c73df7115881b0912d8348958501f23c4a858ac95379ec95486648ba",
+        "Benchmarks/Python/public_workflows.py": "f06c27cd0e030e10f3c236041588e7e346f29bfa3ee56ffc8d60e69fed016699",
+        "Benchmarks/Python/requirements-comparison.txt": "e4fe4376077848ad541db1ae689aacd966a8ad94ad2ebb3f7b33c3eb4fa07d77",
+        "Benchmarks/Python/requirements-gguf.txt": "4118014947720d1f66de76348bc1b3fa348fc6c94a419df213e6f23f9e9a5581",
+        "Benchmarks/Python/requirements-llm.txt": "3acfd7844dfc9ee96edfa0e356e15e2e75ca88a00d7e65f2ea84e27cf0e5f5df",
+        "Benchmarks/Python/requirements-mlx.txt": "76d127556532446c56770ecab94e29a4d4c6536d54d10d029f59ab3ee2636e2a",
+        "Benchmarks/Python/requirements-standardized.txt": "fc9a7924fc71f890e004d6a60173d171c9577a550a575abe7f15502af357512c",
+        "Benchmarks/Python/requirements.txt": "40dd335cd2ca265e4764d22a0b4c3547399ba61c64505c255f9745e64ffdf6d9",
+        "Benchmarks/Python/search_workloads.py": "fd1d908e7fa211d5ac6e8a39e84fb0b6b64421401c99f37878d7fb10f61a44e7",
+        "Benchmarks/Python/standard_worker.py": "42ee4b0fddd8f5dbc2b20a3d055d7eaca1716616d511dcc58d4401a6c415803a",
+        "Benchmarks/Python/supervised_workloads.py": "0f0e1472b585b84625faffb748bf64a66ce916e286fd11adddbb27d2a5c608a2",
+        "Benchmarks/Python/tabular_worker.py": "3a1904e79050c9792c07554cc4824d336a57ce2c4a76e019380effbcbe84b572",
+        "Benchmarks/Python/tabular_workloads.py": "0d7cdfae2321a7014c12a0075316c352c889579508a3637c7ccf76b6093b268c",
+        "Benchmarks/Python/vision_workloads.py": "2227e1f45ab0012a1a223c418f53706ae73ed673a1d911df7426ab1ffa99e936",
+        "Benchmarks/Support/Protocol.swift": "d111976bbec73e71cbfb6b4f360c828b0b9b21f8b0421462d278c61414f478d5",
+        "Benchmarks/Tools/acceptance.py": "e268df013531e49ef49244d66ce366719906484c081f60ea5549156a789f43d5",
+        "Benchmarks/Tools/bench.py": "778b5577efc671faf4e9bb2ef16c390e7b8a54d16182fc0ee712750e7c8d0fb1",
+        "Benchmarks/Tools/boundary_cases.py": "55a36023cbf821bafa10c97d95709d62f87b404a9ff4da950e6fe52e88810a12",
+        "Benchmarks/Tools/boundary_fixtures.py": "cc0fe57aeb6c2ca7bc16438d0033bce632851ef7f1f7a3c53f4920e589af3e0e",
+        "Benchmarks/Tools/boundary_reference.py": "6e81f078385cb02bbf3dc4cd0848075b1bb4b584a331366fb9cca7f235cac008",
+        "Benchmarks/Tools/boundary_sweep.py": "b9bccc1ac0b90fa155bbfce41b9d935d938b8a1c20287c014d6a45fbea6fb86c",
+        "Benchmarks/Tools/build_controlled_model_fixtures.py": "67786cb58e6d5b6b0349da9bd8307489a1447e8bf841c37a13ff70da560b3f24",
+        "Benchmarks/Tools/build_controlled_search_fixtures.py": "b34cc01a536d5abf4c2735b448d450cb4d1bb50f9017647a95ab51bfbafd8d66",
+        "Benchmarks/Tools/build_exact_model_fixtures.py": "1b14a071d4d52e71248558c018e407d29094fb3d75337832474cac65bdc86067",
+        "Benchmarks/Tools/build_nist_model_fixtures.py": "f9aecd7452ab1e52fe883de8586dddb7f443dedb643fb8ac37ce3031da12b093",
+        "Benchmarks/Tools/build_supervised_fixtures.py": "3b17225f08f6aed8f7fd36e12b2aa88223b732167516b9fdc8e22ce6dd940ef3",
+        "Benchmarks/Tools/build_workflow_fixtures.py": "4e1192770d90bcf963b2a266f5bf5ab7d30fea2d77d2f18d0a641d86da986e24",
+        "Benchmarks/Tools/classification_reference.py": "f0fe47d79cf64e93da378f84fd38e28f235e0f19ef7436e6a9d1ef1fed44acf7",
+        "Benchmarks/Tools/comparison_suite.py": "5e8e45e0fcde1ef3b4d6de45872f3e6ab0c3eb090fbb3668b168357804d893ea",
+        "Benchmarks/Tools/contracts.py": "112b532870a8bdbd57b4c827149dc2fb74fca852cca9b4c7cb84846fb9c83be4",
+        "Benchmarks/Tools/controlled_fixtures.py": "4d8b7c2eab94e9fb294228db79b4d41e599d9be5704379b7de1d2f0005d56c10",
+        "Benchmarks/Tools/dataframe_fixtures.py": "f4605381657b3f6e3051f3d83e1fe295a5baa92ce08a62da00afdcb33b4abcf1",
+        "Benchmarks/Tools/datasets.py": "e073236811475a25d5ed7c85c8961bb3d3404f1200db996ad5ee24c888b714e0",
+        "Benchmarks/Tools/execution_policy.py": "d143b0e2c5116e140dd745592388270744bf328dee15f5909cc6570668b16fe0",
+        "Benchmarks/Tools/inventory.py": "ad2353d58a3980fc1550ce64a8655d3a8e2d2d77074790537e4f03bdbd8b2004",
+        "Benchmarks/Tools/llama_cpp_compare.py": "c8842161131e6856f72c310e38443dcea3deb294cd69ffc7be835f4d2c2d0c1d",
+        "Benchmarks/Tools/llama_generation_benchmark.py": "58ff44c945505a2670f9e2a0ad0b2369f7051857e04849f779784e1c96d88584",
+        "Benchmarks/Tools/llama_generation_cases.py": "96829560d4f6a16a2f2edaf39af07bab1aa4aa82194b252edbb8b93f7f3ca56e",
+        "Benchmarks/Tools/llama_precision_benchmark.py": "f70306104b0a044af8b8de7f12811d5e403e2d7a619405ab249db08cf69f6b47",
+        "Benchmarks/Tools/llama_score_analysis.py": "59b31d58e870e3a98482e9594dc6e1f18aa2aed6263b31e40ae82f602c9d7a7c",
+        "Benchmarks/Tools/neural_fixtures.py": "7a1970d1987fed0351a4f4e7e187fd6dc628d433a0018fcddc6f5e56ee1a879b",
+        "Benchmarks/Tools/neural_reference.py": "18982dd4e8ed626e338cf856e4c9b16ed96f7f8b96371ed058872f7574585551",
+        "Benchmarks/Tools/neural_shaped_reference.py": "4f640068281cba6f6492ea10823e058b9331e7e65e16880a3707e38c4fdc0bb1",
+        "Benchmarks/Tools/neural_shapes.py": "5d5b65f305e4cfe30281c1c100efcfb5d404bf981f2b89cca34831656a70ed7c",
+        "Benchmarks/Tools/numerical_fixtures.py": "779228b204ec8b5ac6329d300bec9f55bedb1877d0b9fc4b386eb08ec7eec44d",
+        "Benchmarks/Tools/numerical_reference.py": "97b67752cddf32799cc04af8054c5ef0869e8ac1d63d4a06fc9217d27a3cb2be",
+        "Benchmarks/Tools/pretrained_llama.py": "09704183cfa30ed16fa168520150612bddc9ac57c5ca1366226869c1babcb7d4",
+        "Benchmarks/Tools/public_datasets.py": "48de289350d6d6369789e43b4ca9765c19fdd562c33702249ee6d0f3bec3f134",
+        "Benchmarks/Tools/regression_policy.py": "5d22fffb00cd914ff365524d9a06752af80c5adb688afd6f52ec06ff07e55597",
+        "Benchmarks/Tools/reporting.py": "056b06cf90a59272026add8d6ffd65bf5c284c4e881ddde02b79574bbc03f6d6",
+        "Benchmarks/Tools/runner.py": "f5721dc02fd7b9a83adcb2fd2f1c01e5eb21f4fd3869ec27d7c27352d2dd1b60",
+        "Benchmarks/Tools/supervised_fixtures.py": "ec3672b5a43d18089df1c578333e4a4047d4d3975c0d1e19b6733446596cccb9",
+        "Benchmarks/Tools/sweeps.py": "d41bcd1b25f9d29a39d2e63114e15579f73bf6c609d21e8be8083566dbf2ec62",
+        "Benchmarks/Tools/verify_llama_gguf.py": "57c966432936cd34a2d102937b99458b7ede608933f9d55c6209768410f2d4fe",
+        "Benchmarks/Tools/vision_fixtures.py": "8ea9e782ed15a62eae4e1c3712cb8452e5c6285c67d644954f04979ca54fe2ba",
+        "Benchmarks/Tools/vision_reference.py": "226f9be8e22037fc5f490c3f0b91a506b56986e6a6b2e7b30a7d604ae5c199a3",
+        "Benchmarks/Tools/workflow_fixtures.py": "69e86cd0fc0dbb07e4a960a6b7a5435cf05ed028cda792279aac4bfb92514ca7",
+        "Benchmarks/Tools/workflow_reference.py": "a388ce1ce950d59a7ee033de16e1045dc71233d9b138e9e04cb5b66be8883cfa",
+        "Benchmarks/Worker/APIWorkloads.swift": "50a3a60e0d5421fbd1015b479350fb02caea8862c279b1b36bf5ebc6f4af8827",
+        "Benchmarks/Worker/BoundarySweepWorkloads.swift": "5e928512fc7945113b873cdc81bc7a7c1f9b8241f4502b417ee350ba773b8469",
+        "Benchmarks/Worker/BoundaryWorkloads.swift": "9cf60eb45d653c98dcf3b4d9bad62ab437f91f1348bdd473e766a87bf4427439",
+        "Benchmarks/Worker/ControlledAPIWorkloads.swift": "8238136bf44e1e26b5fd4ba2d7d89f52b83684d41f841ee531a18b147491f43b",
+        "Benchmarks/Worker/CoreWorkloads.swift": "fdc6801ec26e88f9476bc82ab25039684950aba681ae98721ba3d4de999ed041",
+        "Benchmarks/Worker/DataFrameSemanticWorkloads.swift": "9b2b0adb0c539f0b73e9085bbd2d9858ea6acf1c8815af544c56a37b4dd82db1",
+        "Benchmarks/Worker/NeuralWorkloads.swift": "ca8d6816fcf06cebc486d6344c5e04350cd28eff48d310855b432cc8b6fd42c5",
+        "Benchmarks/Worker/NumericalWorkloads.swift": "9dbc844b118833671e53c1f185b4f61e01e28c38c92a1011131102a43e0446af",
+        "Benchmarks/Worker/PretrainedInspection.swift": "46de0cb7e9d637e2d121468f59aa1626d51b8310e11f80bea339250bd086f52c",
+        "Benchmarks/Worker/PublicWorkflows.swift": "4bad0118d57d46da2cc5a4470fb0e941786471a90056e593a8b1b1ac09a9689b",
+        "Benchmarks/Worker/PublicWorkloads.swift": "31ad7df6e6caf3db9da4770f866b897d3dac9429f42a78116931aab65c978295",
+        "Benchmarks/Worker/SearchExplainWorkloads.swift": "f28d3004eaf607b2d41766afedb33260d606b7109208453c9f3cb8207f5b0a42",
+        "Benchmarks/Worker/SupervisedWorkloads.swift": "7174d2ad30c62e1d045dbad44d57d83a0adac6034264525cb21078ef3edab9a4",
+        "Benchmarks/Worker/SwiftClassifierWorkloads.swift": "a73f3552837c55710c63eb680dc486db221a8a9099f0710590c8d3bd6f586a28",
+        "Benchmarks/Worker/VisionWorkloads.swift": "fc5229f40342bd7a8f35f3841b19150db53d9dd5b8f23e5699306e915fd8d8ab",
+        "Benchmarks/Worker/Worker.swift": "ebad25f0c7ebb8b1904e682662fda741deede3d81fc57129b5e802c5012b11a7",
+        "Package.resolved": "85921adcc9eb8ca1c6c9314550534389c21c9c50ecffc52a920460d1ad1df54a",
+        "Package.swift": "550f84e6940854e0db38eb09e8b3623932e31d7f3e63999680a637a94444557f",
+        "Sources/SwiftAgent/AgentDialogueController.swift": "a4241a32d934f2b82214d626a092906365a4e9996a60a7382c3299a2465d0a43",
+        "Sources/SwiftAgent/AgentMemory.swift": "d1c1a979bd2dd4aa4a9371abe0f83bb25eb7dc1811a81354d60cb3bb07f32671",
+        "Sources/SwiftAgent/AgentStreamEvent.swift": "11403e82bf7cd0c0b70d44f596d2ac99576af0cb07ff8191ce3ca40ab2e4908c",
+        "Sources/SwiftAgent/AgentToolV2.swift": "78f43c81e1c453882d2c8559e5f4c8279a7527ffa1dd4c5da42a2392817df4c8",
+        "Sources/SwiftAgent/MultiAgentOrchestrator.swift": "251fd890ec96352c83abe8cdc0fe1d66c9aeaa2cc9fd862f550fd7c70f7d0acb",
+        "Sources/SwiftAgent/ReActAgent.swift": "49b8fa50e248c622c90690de8ede7902974783012de14bbb2a73670dcaffc1ea",
+        "Sources/SwiftAgent/SwiftAgent.docc/AgenticReplAndRAG.md": "0557ec794385c1b7b48edfbd5007363e98cfcb8afb1cd75556b8f07a3dcd6d76",
+        "Sources/SwiftAgent/SwiftAgent.docc/AutonomousDataAnalyst.md": "ce321fb27dbe9ead60753b40f77f20ca1142faaf47bf105c0b4c543814e994bd",
+        "Sources/SwiftAgent/SwiftAgent.docc/DataLineageAudit.md": "f4e8e4a21a6a4fcb5ebfe6b2019d6b92f6cdb89258cd794d8de5d204c6c72153",
+        "Sources/SwiftAgent/SwiftAgent.docc/MultiAgentCollaboration.md": "19bd9990e21a27d275737fa0c1b65ef14c2ce251dbc1db1927798fd01b5e7ff0",
+        "Sources/SwiftAgent/SwiftAgent.docc/RAGAndContextAugmentation.md": "86ecd078e38a86fb1e49b331b7f2dc6019186ce6262a8f5e62c42c8c36d22ad6",
+        "Sources/SwiftAgent/SwiftAgent.docc/SwiftAgent.md": "6e3227a6e9e26c30406f57d4ac6956804a291ad83532d55d9590566c2b4ff312",
+        "Sources/SwiftAgent/SwiftAgentEvaluator.swift": "8efc31f9ae504370767c471979ac9437eb679c9051014282c3a7fac504ef8811",
+        "Sources/SwiftAgent/SwiftSciToolbox.swift": "04b8a635b7663507270a71620b1811e08bbb4ade0561c56036615a9baae3cd9c",
+        "Sources/SwiftCluster/Core/ClusteringMetrics.swift": "1bf296db22b7eaa3f8413832895d4332da5bc6dbf6b584fb81bbb3ff5dc73871",
+        "Sources/SwiftCluster/Core/DBSCAN.swift": "a4dab3e7772993248349ceb83b0b98123666b9af51bc31c672304811ae648e0f",
+        "Sources/SwiftCluster/Core/DataFrame+Cluster.swift": "4ecfb54c7e60960e61d0b08ff8f1c75064277ffed4318db24f01dd4fdb1ae4be",
+        "Sources/SwiftCluster/Core/KDTree.swift": "6db9e17a86cc286e0d26645348e6ba1943439d8cb62cc3e2cc2dffcae342f9a5",
+        "Sources/SwiftCluster/Core/KMeans.swift": "a7632d2c12b2a5dd94bc4ead7d92fc0cdfa7c795bf0dcaffdb337fef7d009d6f",
+        "Sources/SwiftCluster/Core/OutlierDetection.swift": "0ea503ee9d1ba8776a6afed9741802bcc3a222fdf26021684bd56b15f365b750",
+        "Sources/SwiftCluster/Core/PCA.swift": "d79e2b78a8622e4cc8e3afb94d851f12950c92d2c28202c70ee6cebeb2faf3b5",
+        "Sources/SwiftCluster/Core/SilhouetteScore.swift": "f284157073cdfda0746e73b449df0ae325ed7ff973cf40a789e35394bd8ab794",
+        "Sources/SwiftCluster/Core/VectorStore.swift": "c602ce57ebc00e366f446dfd49bdef1b2e6140a025d305768e599efcc847175a",
+        "Sources/SwiftCluster/Decomposition/RandomizedSVD.swift": "05b5f3d6e784f801a7c9672eaac6853a0a9329caa07f3c00f4b87598859243dc",
+        "Sources/SwiftCluster/Decomposition/TSNE.swift": "533d281db714e4a6ee53ab77c1b38642bec0008d826ff719a5d9f0b68e6da4dd",
+        "Sources/SwiftCluster/Indexing/HNSWIndex.swift": "520560047bc7a7bbd37c19a9fd9e80b33c13ddf554aee09701459afc23b4594c",
+        "Sources/SwiftCluster/SwiftCluster.docc/ClusteringAndOutliers.md": "ad04b7b76083e18742a9967a3c2f1de864c3427e754e202af95e731151dd6f0c",
+        "Sources/SwiftCluster/SwiftCluster.docc/DimensionalityReduction.md": "d9f3c351b2cf1c3569c2f0b191f3ab4f6560d838b7654e0d0c5f091326c4edcc",
+        "Sources/SwiftCluster/SwiftCluster.docc/HNSWVectorSearch.md": "0570c6e4ad328eec717fe3fddcee5e4d06e0b5e0f4de1e7790f52e7fda88a250",
+        "Sources/SwiftCluster/SwiftCluster.docc/SwiftCluster.md": "2bdc8169703f91205c8ef077127b3535a0147fb88752b9e239a4af92c245b9ad",
+        "Sources/SwiftCluster/SwiftCluster.docc/VectorStoreAndRAG.md": "bb006514ba59a1f0b2e6a0a450717c2b602ec75f63cd0387f79f9154e62266e1",
+        "Sources/SwiftDataFrame/Columns/AnyColumn.swift": "31f5d99ebeafc5b4bf9a0716310988ff12ab938108a51533a50712f91fa9b680",
+        "Sources/SwiftDataFrame/Columns/ColumnDType.swift": "84278b6d87fcc81834b9853596ec25d769141f5d9a80b7d116bdcb077239280b",
+        "Sources/SwiftDataFrame/Columns/SupportedType.swift": "43a08f9d84a5dd433d4cb63dfc5b6004f3f2073cb829f9a541da848c441addd6",
+        "Sources/SwiftDataFrame/Columns/TypedColumn.swift": "710ec05c009294c11c3aa3971dbff6fd8e83e6abeb702db896523e381cf22d7f",
+        "Sources/SwiftDataFrame/Core/ChunkedDataFrame.swift": "1fc20892f0074a480dbb43491c360e0b1d4f69e2466d9f17ae50a780ca842a80",
+        "Sources/SwiftDataFrame/Core/DataFrame+Arrow.swift": "9c4f188d7053a4212e8cf54157728dd266fc53becfa961fd9c4f483a7e2d89bd",
+        "Sources/SwiftDataFrame/Core/DataFrame+FastFilter.swift": "71f51a6bb887752218ecd2a18216ec58d7fbe6e8989793e13a48710e36699a55",
+        "Sources/SwiftDataFrame/Core/DataFrame+Join.swift": "2f8dc1060c6ee821ae325cb8cfd07a190742d84ffd06ba5c89e72216cb375405",
+        "Sources/SwiftDataFrame/Core/DataFrame+Matrix.swift": "1d3daad8ca3e7e83d8a1e1cd740b3cc1f4ebce0a5f2d5e442ae33350b1efd0d6",
+        "Sources/SwiftDataFrame/Core/DataFrame+Modality.swift": "2b78dc843410c32b1cadf88fc06669fb0a777713d0b7ebe1f9536536221c0c11",
+        "Sources/SwiftDataFrame/Core/DataFrame+Pivot.swift": "fa5ea217bd151916cd38c49cd951a87fcc9923e03f4855a5660da2aa06954c04",
+        "Sources/SwiftDataFrame/Core/DataFrame+SIMDJoin.swift": "ccb4bbb2ba928ff5df9d96cca5bf0616db8f62496d0849edd6925734f55bc3e2",
+        "Sources/SwiftDataFrame/Core/DataFrame.swift": "3d05dbcd4f8957344b74b9d4401237f51b3783810b97f7b02a9d7ffc90f5e81a",
+        "Sources/SwiftDataFrame/Core/DataFrameRow.swift": "26aadcea05d472d957f46bdab958b5bb4a1e1cea32e4fd29a19356fb860003fc",
+        "Sources/SwiftDataFrame/Core/GroupedDataFrame.swift": "9252d0c0c54e219f34d0e74cc96a6a199700d5133277aaa69692ad8abcf83f82",
+        "Sources/SwiftDataFrame/Core/PreparedNumericBatch.swift": "c0f664763db923ef3b7219b3b130e994a84383586041008af4126c636b6048d8",
+        "Sources/SwiftDataFrame/Core/Schema.swift": "b0015ef584a361a39fca909abe5601fdd5ff421dbfbe748f50aac17126b32502",
+        "Sources/SwiftDataFrame/DataFrame2.0/DataFrameVersion.swift": "c1bf4ec08db92eff436f1bb0843f53f7c660ff732e9cc63af2746867cc875745",
+        "Sources/SwiftDataFrame/Errors/SwiftMLError.swift": "a9335d2db8d551e65dc43b1d8657939ebc6cf00c4c4a06f201e7ca7119715f62",
+        "Sources/SwiftDataFrame/IO/CSVColumnBuilder.swift": "5fd0ff9b9a6b76b4f9eda051000665948f61856c9d22f09e40bf3ff12f442cf3",
+        "Sources/SwiftDataFrame/IO/CSVNullMatcher.swift": "9ed4d315ae70f5efbcdcd332eb5976d10361bdf75a5e471cabbb2ff067383d59",
+        "Sources/SwiftDataFrame/IO/CSVReadOptions.swift": "467be999c8dae2544be3d930fb8eea47d8417bfe0faf9ac6a07d7181b426cfbb",
+        "Sources/SwiftDataFrame/IO/CSVReader.swift": "252476ac28a04276659f402318d4c69777c8c28958f23e17697a37c76ccfc9d8",
+        "Sources/SwiftDataFrame/IO/CSVRecordIndex.swift": "98a0e275c1cdf4230eafac4eb8017412c9d0c8c527db7c1442531e195b87e8f0",
+        "Sources/SwiftDataFrame/IO/CSVWriter.swift": "4fa85626eb8c9e5f94e607731679a7d487671b84bce14d82d1ac0d02c6aba46e",
+        "Sources/SwiftDataFrame/IO/FeatherReader.swift": "40387db1d0b1de8a291579840867c888da8fda24985dba11e165273ec0283598",
+        "Sources/SwiftDataFrame/IO/FeatherWriter.swift": "48ffdd67939c5a7c6a3aa25659a193c8e01cb457c115aba0fb29b4a276721468",
+        "Sources/SwiftDataFrame/IO/JSONReader.swift": "892dec5233fcc0f1cae0c08f84420b6ee68f686d44e4e8f36347954db8363033",
+        "Sources/SwiftDataFrame/IO/MemoryMappedReader.swift": "f8d6a7005578a37a6516428af49df522350d5a158222118755412477a8e14d8c",
+        "Sources/SwiftDataFrame/IO/NPYReader.swift": "51619c80c4d866fdff687f4e8d4afd55bd7582e1ac813f731910f0493c6cd968",
+        "Sources/SwiftDataFrame/IO/NPZReader.swift": "d61aa130caa44be0ee5e95497fbd28c6b616d340a15f71bf3e65c4a2394486c3",
+        "Sources/SwiftDataFrame/IO/ParquetReader.swift": "3b1d3755a321e044df3df7ff59f8b58f041fa3f2351c7a43dfccaad50604a9cc",
+        "Sources/SwiftDataFrame/IO/ParquetWriter.swift": "57bf060e2f2c04ed0084946467b346febbf54d9aee0a9c95aa77177cb64c4711",
+        "Sources/SwiftDataFrame/IO/SnappyDecompressor.swift": "fb1e587f994e219cf50b699010027b40f8dc10a76d63b9b73dcd4750dd49bf6a",
+        "Sources/SwiftDataFrame/IO/SystemsCSVParser.swift": "a6df16dc7ed4668a57f8bc040fec04673fd78e6c3d6d075d6d42c8922f74bfd1",
+        "Sources/SwiftDataFrame/IO/ThriftCompactProtocol.swift": "4069e69d27fe110c32e478e2b7136398139e948b93fd65da38811c1e0af207b1",
+        "Sources/SwiftDataFrame/IO/VectorizedByteParsers.swift": "3c433db442cdccc253e8a9ad581da87cb5a025b7489c8ffea7c66fad26dcc34c",
+        "Sources/SwiftDataFrame/Internal/ArrowDataBuffer.swift": "5a0000fabac24172bd45ba0a8b247bedd49793085a637df77fa96ca75d02169e",
+        "Sources/SwiftDataFrame/Internal/ArrowTableBridge.swift": "b9d839152ea7354e85edb218eb4ab1140e844fb338bf91e6b9ee5c1fccaca481",
+        "Sources/SwiftDataFrame/Internal/DataBuffer.swift": "145c6ba37ea904634681de04760e5a6249bbc0738b95f53234deb0e777963319",
+        "Sources/SwiftDataFrame/Lazy/LazyDataFrame.swift": "0f3ac509ef8c9d4161a73907cb844f39d521ba286f66afb0c49f08a2df2fa4c1",
+        "Sources/SwiftDataFrame/Lazy/QueryPlan.swift": "9e173ccce600cf2f038cad6bafe33180da4d30ccf67714d16d6e0568a8a5b492",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/AggregationsAndGroupBy.md": "065165919649328934269ee88ee06821dbdd91d57971070bfc62e678012196b5",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/ArrowAndFeatherIntegration.md": "b479b6d07f4f46e1338e2ef0cb6d11a3c72732b97298ccb13c54089776e5bf60",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/CheckedIntegerSums.md": "0066e8ba91d927fb49a56007cd4277de31c90aa8eb47e610d9faea9829494a53",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/DataCleaningAndReshaping.md": "5538442f933bb2bdca3d54cf06b8f85c03e6bb93799af279ee0bf134f313a35f",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/GettingStarted.md": "2b0dc06acc199d3507bd0763909f79c4302050cedc7e42fd3ca27e71aeb51f61",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/GroupKeySemantics.md": "4129fb972f17fce74d235f5bae037eb1cf2710b0e6fb19a1644ba4605cadc334",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/MachineLearningWorkflow.md": "b48869527effff8802528d2a93e82eea494ccc4311cf5615be18d13174447610",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/NumericFiltering.md": "17721cee291acecfa3f0ea4b06c4c806274c0d11d964752e63cd05d39518fa6c",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/RollingWindowsAndTimeSeries.md": "4e93760821e4c722542b4c08a958402e529ee9f1724cd7eb19e1fe66844ee1d8",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/SwiftSci.md": "5fa4859f3551068ddd24fc008b30f7dd1b8f67b3a6ad3f80d8c3f3aade38507d",
+        "Sources/SwiftDataFrame/SwiftDataFrame.docc/TimeSeriesForecasting.md": "813dc0597d44ce11a2acaee518ee7a3348bb961255b964ee7389d38688a9ca40",
+        "Sources/SwiftDatabase/DatabaseConnection.swift": "13cd5201a5d9b264de22fa09348199675441275ff2f47e41db62aabf400b012c",
+        "Sources/SwiftDatabase/SwiftDatabase.docc/DatabaseConnectors.md": "26cbb20a992884fadf2fe418dcb06433ae9e9e048097b2071264610b52d3b4a2",
+        "Sources/SwiftDatabase/SwiftDatabase.docc/HighThroughputIngestion.md": "9a9f7a42f5fa8ad091c67aa35352326daf1cae625cef3a812e3fd8c2085797f0",
+        "Sources/SwiftDatabase/SwiftDatabase.docc/SecurityAndPerformance.md": "7f0c0ac62cefa174eb304cf55101bc160e5b724d916245d239b7753b65c32125",
+        "Sources/SwiftDatabase/SwiftDatabase.docc/SwiftDatabase.md": "310bf86acb7933909d1279beeea36f2d52b272f06a853ff68c1546ffbb9781ec",
+        "Sources/SwiftDatabase/SwiftDatabase.docc/TypeSystem.md": "a250b7a93bbf7409443919069581c199ce0b5668b3fcd8ad5d6e28f2d59c758a",
+        "Sources/SwiftExplain/Core/KernelSHAP.swift": "aa9c331c720311c1fb0a3faa97b13f884fb2e2c875521d52f49a43ca439b32f7",
+        "Sources/SwiftExplain/Core/LIME.swift": "4a491cc2630c9ca07285b9666a17e8e19be531b44ea8b0bc8dbce2021abd89cf",
+        "Sources/SwiftExplain/Core/TreeSHAP.swift": "1ee5242d9998cd12efba00832bb6679c2a1cf76205242078dc35027d308c5f58",
+        "Sources/SwiftExplain/SwiftExplain.docc/KernelSHAPTheory.md": "c7c8956d21a35098918887922a947211382f4c5d3cff32fe926c53ec2f7c0ee9",
+        "Sources/SwiftExplain/SwiftExplain.docc/ModelInterpretability.md": "4c2522334bd52005e2c1598aa26cac41a6ac155a1a0032cf12fcdac923b148dc",
+        "Sources/SwiftExplain/SwiftExplain.docc/PermutationFeatureImportance.md": "68241bd7b48cfad5c36965ede158845db10c1ba131ec1feb862632e9b88f7458",
+        "Sources/SwiftExplain/SwiftExplain.docc/ShapleyAttributions.md": "f71eba50c4d3da28dcd50956600a0eb27125a965235d6c9e3cd018890ce5f42c",
+        "Sources/SwiftExplain/SwiftExplain.docc/SwiftExplain.md": "d4d9cebadc8e487dc0b0aa4146e062a80faad74bda38062ac3be6c2fae3738f3",
+        "Sources/SwiftForecast/Core/ARIMA.swift": "d0b0829ec99f8dcf8645e061090c69b5efc0598b8947af75968243f2719eea55",
+        "Sources/SwiftForecast/Core/AnomalyDetection.swift": "198c1dc8c8c712c7669d7999347d518769517c97d5ae98a0a348e17d4b7a758d",
+        "Sources/SwiftForecast/Core/AutoARIMA.swift": "5d4bc2e8b132244c063e4fc0c2535bb2f8145a650efc8c4fdd27308414e3aaa1",
+        "Sources/SwiftForecast/Core/ETSModel.swift": "2766261eec48268354cfc756f2ad7beba5f5cb82e344bdc41cfc0027b7f6ab1a",
+        "Sources/SwiftForecast/Core/ExponentialSmoothing.swift": "b46357c1921f011e6ee48eaf3e6a081fce14960b138132b4ed28585f72fa6fbe",
+        "Sources/SwiftForecast/Core/GARCHModel.swift": "4b3721464513cd09186f960c3875ca448807b22a5ddab0aa8b0590e2a4c5ff99",
+        "Sources/SwiftForecast/Core/KalmanFilter.swift": "6a6fabc5cc2341441eaed8c35663ee4ca7e1c919409fb64e920033156a851715",
+        "Sources/SwiftForecast/Core/KoopmanOperator.swift": "810d92bb019e7c7c6856adfb1131fa471044aee990f5f88063ee5fbb0eb6db53",
+        "Sources/SwiftForecast/Core/LAPACK+Wrapper.swift": "7dff5f6b1c14f251c7a4ed0a1b5bbdf4bb9a3072ee5b353d4510c11fda2f0211",
+        "Sources/SwiftForecast/Core/NelderMead.swift": "212f5ab501ae5f6431594748a1b596c12944745c8595dfef77a2ffadf8af0fcd",
+        "Sources/SwiftForecast/Core/PiecewiseTrendDecomposition.swift": "818babe1273de61bb08de8dc12b3f631f1a0a3bf202148249256389a84f7e4c3",
+        "Sources/SwiftForecast/Core/SARIMAModel.swift": "df6b6a22709d2df5983d58bc0a376bb25397d2619008ad07e1ae8e1409835916",
+        "Sources/SwiftForecast/Core/TimeSeriesDecomposition.swift": "c2fd745c7d5309890ea8e6d4ed12651d35c909f8416e8869e3a31930dcdfd4fa",
+        "Sources/SwiftForecast/Core/TimeSeriesTransformers.swift": "1a541c20acdd3e73cacb1dd6ece9cb4ad43e85f47221e37fbeaff4bd1f759995",
+        "Sources/SwiftForecast/Results/ForecastResults.swift": "352d06cd825d947116749fa439a8ebfd122bfb2677431579044500fafcd047d6",
+        "Sources/SwiftForecast/SwiftForecast.docc/ArimaAndSarima.md": "4f14b6de50faf740323d4d45da7bd9d3d8af660e749355550ca51f1365c8b117",
+        "Sources/SwiftForecast/SwiftForecast.docc/AutoARIMAParallel.md": "579800ab85715f3acd6f050c5a6a6aefc196611e9c2d716e2f6d04ac8f5fe17f",
+        "Sources/SwiftForecast/SwiftForecast.docc/KoopmanOperator.md": "802c1e76cf12ea648c1d0af9178a01cc9b094bd16119ea898d8c89d2357a7349",
+        "Sources/SwiftForecast/SwiftForecast.docc/SmoothingAndDecomposition.md": "a7255a0bc5a6391c3ceae51aada615d95b6d2a89fdf9cf706e3eed7b5bcd8290",
+        "Sources/SwiftForecast/SwiftForecast.docc/SwiftForecast.md": "d80a5bd64cbf53f30fbc2ead53c53796492d30087cea201d5c77585d846531fc",
+        "Sources/SwiftForecast/SwiftForecast.swift": "0beeeaa8b0e96c5be6b9ca7fa53e2eed01122fc8c9506b71f3e4c02cf340d7bd",
+        "Sources/SwiftLLM/Core/GGUFParser.swift": "96d147273c36c46dc366ec85ffdb0593f922d28b650f467c1490250e46896a4e",
+        "Sources/SwiftLLM/Core/Generation.swift": "6a58194fb137bb3338c40c7b74c1cd566197508eac2faf73c8202404c14e1062",
+        "Sources/SwiftLLM/Core/GroupedQueryAttention.swift": "2723cb0947545729d32c69fd87fe7a6f4562771e260e42c560e6b2adaf2612e0",
+        "Sources/SwiftLLM/Core/JSONGrammarDecoder.swift": "9a94260766c92fa62f48fe84f469d1206e3622bf8acc7f4700039a219528b3c2",
+        "Sources/SwiftLLM/Core/KVCache.swift": "aaa171b74d1b24d01778f9ef8a97257ea9c10c8635e4265569d1c042353a32e0",
+        "Sources/SwiftLLM/Core/LLMModel.swift": "5f73bdcc00153379b918a6434742680c4a642ad37b4617bd9a81970c023615de",
+        "Sources/SwiftLLM/Core/PagedKVCache.swift": "b5ae13cab0b2573498c088d4c5048371352240f8d32142a6b4735517576c3348",
+        "Sources/SwiftLLM/Core/QuantizedLinear.swift": "51d3d54d09a579c1ecd879512b126167e904c1d2c4c5518dbe893a76fbf35e46",
+        "Sources/SwiftLLM/Core/QuantizedTensor.swift": "9e69d8536d802f8b820d1ec5bdff905ead7545d05b6c35a0d624bbebcafd9ccc",
+        "Sources/SwiftLLM/Core/RoPEEmbedding.swift": "c14cf2a59cf630967c79ed44d5b47d595d2d8cdbf1cb16afe804b7b9a1d3d39b",
+        "Sources/SwiftLLM/Core/SafeTensorsParser.swift": "100db5e4eef26aef04f21646e7c85dfa660f1d149df7991a41b342e5e49ff753",
+        "Sources/SwiftLLM/Core/Sampler.swift": "a7c8b6c3553d58042482ba2e9a3330bd1a61e2b29eaff5ab544a59cd388a8c30",
+        "Sources/SwiftLLM/Core/TransformerDecoder.swift": "e40b229793afa70dda9080c2ab54f1901d209b21d754df2ed1dfb2430d303f95",
+        "Sources/SwiftLLM/Kernels/QuantizedGEMM.metal": "1c258e9db0ecb779541117967ece38af149f51f22359b33dc8649e1a8eea4fee",
+        "Sources/SwiftLLM/SwiftLLM.docc/MetalShadersQuantization.md": "e5c1b0911c2cd269f1a182a37eb3a720532d31914cac8a446848b6862c397e9c",
+        "Sources/SwiftLLM/SwiftLLM.docc/SamplingAndDecodingStrategies.md": "11d3a04b4ff87d3a77c0cd264013c0efcff18b43a404b12aeb76576b049b979c",
+        "Sources/SwiftLLM/SwiftLLM.docc/SwiftLLM.md": "f113e4b9bdaf64a148ab22f993fb78effa72cb1f5a918c480c86bca83a6605b6",
+        "Sources/SwiftLLM/SwiftLLM.docc/TransformerDecoderArchitecture.md": "0a5dd7f3e7c3f1c27c1e21f86eb739ff6795f1ea442a32731bb41754d993270f",
+        "Sources/SwiftLLM/SwiftLLM.docc/TransformerDecoderInference.md": "4237fc175fe61ec5328addefa2ced2ee2d098e04ce706808007257f4527f4076",
+        "Sources/SwiftLLM/SwiftLLM.docc/WeightParsingAndSampling.md": "5c850d0b75274f0fdb4b9ba91a21755dc1b3ac5f70286cd4210638cb9dcff59a",
+        "Sources/SwiftML/Calibration/ProbabilityCalibration.swift": "6374ed12df41dfe99797566fbae5e7f571940944ac69a5c9ea347579afc56a83",
+        "Sources/SwiftML/Core/CalibratedClassifier.swift": "b3cd45790560263751e7c186afd06f5fcdf3bac00e1559c8934df6dbd186b90d",
+        "Sources/SwiftML/Core/DataFrame+ML.swift": "f4c5122d526981f56041d0961ea8e38de38b255dabd3a59840a8311363d8cc31",
+        "Sources/SwiftML/Core/DatasetUtilities.swift": "75a1ae62269519867c27b66f06fc2c1da450cdb0921ed729ada8ff83cd95d716",
+        "Sources/SwiftML/Core/DecisionTree.swift": "62a0d0c9f9ed844bf8639ef333914825615690f661add5e346c653b52e9e00c7",
+        "Sources/SwiftML/Core/EarlyStopping.swift": "dbcb87b59380f21fb8777d9b718b79c1fb5d2c252268ee6a714f4a943b609632",
+        "Sources/SwiftML/Core/EstimatorPipeline.swift": "ae716beae4fe7df16500c46849237928ae619675309fd0b431fb88adf5a2a46a",
+        "Sources/SwiftML/Core/EstimatorProtocols.swift": "7bdd91c1446fc3ac1affb5fd52ce7c66b14fd982edccb617ef1d2d74d22d1a5c",
+        "Sources/SwiftML/Core/GradientBoosting.swift": "e1e2e8cfd8ff3c4cc7b793c73d9213fb1b5ed873519e237ed44ffd101a66a89d",
+        "Sources/SwiftML/Core/HistGradientBoosting.swift": "0684284bbfdb2cd65d74d0208cd943ab374af5e11bf75d45bc159cc6d7e6c4d9",
+        "Sources/SwiftML/Core/LinearRegression.swift": "ddc6394187406f22d730efb4d060fb818399d8a8d398a0656398191a88f3d0f6",
+        "Sources/SwiftML/Core/LinearSVC.swift": "9e6927b0bdfe14d1caaca8483128460ec1bd6dd3ad8085cd26745d2d95d25d29",
+        "Sources/SwiftML/Core/LinearSVCOneVsRest.swift": "84b11a8fc3718a4089f07e3bbf93abaf976eb95c6275751872c4a6077c236a5a",
+        "Sources/SwiftML/Core/LogisticRegression.swift": "0344e4038afb0d79775ecde669041cca00d8ed9676b86e5b59881cfc6aa375ce",
+        "Sources/SwiftML/Core/MLP.swift": "7a2e213168d2b142bc8f8648f394fe3deac45ae43d306a857c9c61e37cdfcedc",
+        "Sources/SwiftML/Core/ModelPersistence.swift": "f98a353351c44ea3a306068420fff8328f81f11d881f29f6ad1b7a58b92c1d1e",
+        "Sources/SwiftML/Core/Numerics.swift": "fc3f120e64cb1bcef4685880a5dd1e0af5102e78e4705ff5981abb449abac8e6",
+        "Sources/SwiftML/Core/OneVsRestClassifier.swift": "e0e8c9e52fc7b785ebc2508ba3b11794356d195cb41e69d27b31dfa888181309",
+        "Sources/SwiftML/Core/RandomForest.swift": "ba5a8df8fa92105e257837532525337ef64c4071f28646d1f7c59f3c64535afb",
+        "Sources/SwiftML/Losses/Losses.swift": "eacc57b6a10ba6853894c9464c686ad5212947ee1da0c756be23f5280ae032bd",
+        "Sources/SwiftML/MultiOutput/MultiLabelClassifier.swift": "50d1bd20bb1bb4c5db9fb82240d2a6ea6064b5314debe302fa496b39ddb85ceb",
+        "Sources/SwiftML/MultiOutput/MultiOutputRegressor.swift": "1c77cfc6bc6fbc09c49d0f7c3a2044f670f00203bcefbb72a3f6bf3162198392",
+        "Sources/SwiftML/Serialization/CoreMLExportable.swift": "1e9cb0ea144f817002948def43fd1bf2a0da64264589267a9ef2d25600f9e767",
+        "Sources/SwiftML/Serialization/CoreMLExporter.swift": "ee98113f4c8e803920da0593d7688694597f38fb4e951a4a35f3906f59daf133",
+        "Sources/SwiftML/Serialization/CoreMLProtobuf.swift": "587c2976ab5f16eb0ebe06c5afce826918711186f360b647502abce2f2916847",
+        "Sources/SwiftML/Serialization/ONNXExporter.swift": "4d3844e98981d730165de561cf15ec840ceaed783b22894506da938a4c181c9c",
+        "Sources/SwiftML/Serialization/ProtobufWriter.swift": "e811cf118aaa36d973454c03439a04e7c24b4f80f704dc778e37e92cba7b804f",
+        "Sources/SwiftML/SwiftML.docc/EarlyStoppingCallbacks.md": "c33f681e9a3f2f39ed9c09f8f75c2c7de9e4f087d2990e6c0a808ab4a7ab50b4",
+        "Sources/SwiftML/SwiftML.docc/EnsembleLearning.md": "35b00401bd803b718b314212db4c8cd7e10fa3853c375f077f0c968924eef6c1",
+        "Sources/SwiftML/SwiftML.docc/HistogramGradientBoosting.md": "f2417175b86ec8b394e7d6e14bf62c4b6cc68de7b68599fa2f0638ec1af8c35f",
+        "Sources/SwiftML/SwiftML.docc/MLOpsExport.md": "eb98f7a6ecab0aaa20ac473a24ddad7945f95cb1086ae42b3c46e4841e0f9bf7",
+        "Sources/SwiftML/SwiftML.docc/NeuralNetworkArchitectures.md": "e2ccc7f44de58babf7c3a9dafae16b453780218158dd419837610acae010b09c",
+        "Sources/SwiftML/SwiftML.docc/ReproducibilityAndPRNG.md": "934a5f0e273c12b0764be2b3de7c4136aa8f2c9840faa2c064d8f8a6ca86c4d8",
+        "Sources/SwiftML/SwiftML.docc/SupervisedClassifiers.md": "9351e397f3e6926cd4752828d978ed27cabd6a697bd1dee3015c9c078455dc71",
+        "Sources/SwiftML/SwiftML.docc/SupervisedRegressors.md": "c6b5cf7b9a9ac0f09ea46b6ff215cdfa7a54c69be6d4907322e0a02fc229d6cc",
+        "Sources/SwiftML/SwiftML.docc/SwiftML.md": "1196f12fc9ff589db752dc73b3e0fcb092425fde2ba67f1d082402102982cb0a",
+        "Sources/SwiftNLP/Classification/ComplementNaiveBayes.swift": "8dcf00c7efc650cadbf7b4fe5fdcd96adbe4565842ce0c9afb78a5061ef502e1",
+        "Sources/SwiftNLP/Classification/ComplementNaiveBayesClassifier.swift": "6055155aaefc54ca30a67558e09170a5fbc387876a139e0cadf98f13c05a871c",
+        "Sources/SwiftNLP/Classification/MultinomialNaiveBayes.swift": "c83305922b90b07f9a2bdda899a6c5c879b9b072d830e8f143d1ca6cd81002be",
+        "Sources/SwiftNLP/Classification/NaiveBayesClassifier.swift": "8ac4e4d88c38ef972c38c21886169f0a525cc99ca09c661ca59bb0247624a34b",
+        "Sources/SwiftNLP/Core/AppleLanguageDetector.swift": "37623c98eee746746e3242e7bb617bf0cbdebb8e88c47ead7bbda8f35ae64948",
+        "Sources/SwiftNLP/Core/AppleLemmaTagger.swift": "5e2ef9220cf4fcf174621b708f4160dea7fc0d88dd3b432fab3e2c889da6c495",
+        "Sources/SwiftNLP/Core/AppleNLEmbedding.swift": "ab75629955f07355a8c8b0c097d33a7df8cadee0f0b87cbb936a2ef5ecf4f34d",
+        "Sources/SwiftNLP/Core/AppleNamedEntityRecognizer.swift": "2ab4095f707d1f7293c4c467f223d28b43cc4d00e120d22454a641ac259ebb03",
+        "Sources/SwiftNLP/Core/AppleWordTokenizer.swift": "79ad4d451df11e3f16de08149142208dc8d0053aaaa334797c38c3860673e493",
+        "Sources/SwiftNLP/Core/BPETokenizer.swift": "2e6d68110901aeca7de6536cbb3417b49190e1e31dd80260f6e435821eb5541e",
+        "Sources/SwiftNLP/Core/ChatTemplate.swift": "e4e5385ba3b01536dcbb00e659732c8c4524998cccad7caeb48060afa876aaff",
+        "Sources/SwiftNLP/Core/CountVectorizer.swift": "08ecfec8f5c4653845d5491dc0be8b629978efee757ccf9851b795f6cc75cc57",
+        "Sources/SwiftNLP/Core/DataFrame+NLP.swift": "7772e97a4145dab201ff3f22c094e9911c4ea345e0b263fade224af290bca405",
+        "Sources/SwiftNLP/Core/HashingVectorizer.swift": "d73d9b0921aac7fec46fbbaa363c2baba76bac71dde0f99d8e147e2a971a1f8b",
+        "Sources/SwiftNLP/Core/Llama3Encoding.swift": "f750309b05aa4a2c24f62e613ca12b54382a507c6bb66811b4a07b0b825e9293",
+        "Sources/SwiftNLP/Core/LocalEmbeddingEngine.swift": "22906fe71c7364f9e9dee049d22532838d4b63983e4b8d0dbccc5d27d06ed32d",
+        "Sources/SwiftNLP/Core/NGramTokenizer.swift": "0463fbc35d057b3f10965581afa481051866b383e16e12f28dd50b0b2210b4c3",
+        "Sources/SwiftNLP/Core/POSTagger.swift": "da4f3af60bf34bab18ceb6d38b23e0eb260fbcf63252dacf18a6761c05bbaee1",
+        "Sources/SwiftNLP/Core/PorterStemmer.swift": "4ff11c77ef8373545047ace83ba7e59ae8ae003a8894cac5345391cd22ecec8b",
+        "Sources/SwiftNLP/Core/RegexTokenizer.swift": "568e26de381c4990830dcc2583d633e8d2abb812991b9dcbdcb3a4e64b030c3f",
+        "Sources/SwiftNLP/Core/SentenceTokenizer.swift": "4c9f9f09bfe1d07e6d72a761bba8e9576fa88b8dabb79d2a3c6e3436fcb922ec",
+        "Sources/SwiftNLP/Core/TFIDFVectorizer.swift": "9edd7d3f532f3e64459fe9ff44a50f69d394c66ade1ea4ead35639b97112efbb",
+        "Sources/SwiftNLP/Core/TextCleaner.swift": "d64cd77815f530b318a2578394e1997b0cb55611de2f15df5dfc2ea576c8580d",
+        "Sources/SwiftNLP/Core/TokenStreamDecoder.swift": "0342b93752dc286ee161a26842d2bdf357ded8926c224a17ac0a334c478ae298",
+        "Sources/SwiftNLP/Core/Tokenizer.swift": "6d67f23f3e8dbe9f62a56bcf517c5783185a0bffb7766c6a2a4bf38e5c776052",
+        "Sources/SwiftNLP/Core/WordEmbeddings.swift": "ffa46c2c46e8a5db2a8181f54cd47b849b952f5f265bbf2a17a4804bb793ab7e",
+        "Sources/SwiftNLP/Errors/NLPError.swift": "322f8c015cbefa100a31ce8727ac8f5478e8b69a47290c39732be81f6a682852",
+        "Sources/SwiftNLP/Extensions/SwiftCluster+NLP.swift": "52103b2830564c6055108e9cbb4d71f9281979faf7fe54c1531b572f6bfc9f82",
+        "Sources/SwiftNLP/Extensions/SwiftExplain+NLP.swift": "8d0758d13880e944810a7ef08303aeef3cbe561f26f3c30471688f1b6ae8b9c3",
+        "Sources/SwiftNLP/Extensions/SwiftLLM+NLP.swift": "327a62d81062010f72fce13c76add65da1b180fa78c3ccf50f7f54f068f7eb13",
+        "Sources/SwiftNLP/Extensions/SwiftML+NLP.swift": "95effa6d3e002467daa529dccc5152ed164516d3e775c2d426e6f20012239360",
+        "Sources/SwiftNLP/Metrics/ColumnTextProfile.swift": "4ea915c131eeb943a832fc5ff5276af92c3d5c570dc68028e5d75fd388c4c3e9",
+        "Sources/SwiftNLP/Metrics/CorpusLexicalProfiler.swift": "ceae931469476b7a0e48a4f9066eece9031defa00071bb48f89613103211ec94",
+        "Sources/SwiftNLP/Models/NamedEntity.swift": "b9fd975927fbdf3f041843ec5d581d99e5ba94768c317287b43338de6c181347",
+        "Sources/SwiftNLP/Sentiment/NLSentimentAnalyzer.swift": "3dc951d5106fb9e3cdf8f47e6bb8b4166b3f5c9cdd4d36fb6f2018e7398d833c",
+        "Sources/SwiftNLP/Sentiment/SentimentScore.swift": "681e238151b59f3012a5277edc2ce9ca5a479eeedaf020f686129b1f6e1a3312",
+        "Sources/SwiftNLP/Sentiment/VADERLexicon.swift": "240df38b2fa4bf31bf9871117b7b8f4a62d02be88b3d6d5dc87f90f2d8e6c6fd",
+        "Sources/SwiftNLP/Sentiment/VADERSentimentAnalyzer.swift": "424304d90ff2db0911920ba167725783344841ebdc94cf7ad612dc5c39e34776",
+        "Sources/SwiftNLP/StopWords.swift": "f199b35991d900a33e495fe525f8cc55ca743567a0892a3a8dfc57fa7c86fef0",
+        "Sources/SwiftNLP/SwiftNLP.docc/ChatAPI.md": "2cc5c28bad42d7a4e521e97946e38e141ce008e2616dab6e50136d53ff20645d",
+        "Sources/SwiftNLP/SwiftNLP.docc/DenseLocalEmbeddings.md": "56f365a9ba89937721d65a01cf33562e8bf717a722c1e88256b6556d5776225d",
+        "Sources/SwiftNLP/SwiftNLP.docc/LlamaTokenizer.md": "3f173c2b8a03d7e9f5f0580a18e49f402ce51181a256a4b17c06fe66abd96386",
+        "Sources/SwiftNLP/SwiftNLP.docc/SwiftNLP.md": "9646144a0d03245e5080bffcac35b66f64e109311386339b0fd96bcc1a9e1f33",
+        "Sources/SwiftNLP/SwiftNLP.docc/TextNormalizationAndTokenization.md": "f1d110876cd18e40d307850c69c317e1efc04950d952870b18df7ccfe50884cd",
+        "Sources/SwiftNLP/SwiftNLP.docc/VectorizationAndEmbeddings.md": "5684de9dc99fe68bc4375c8588b259a729d374d864d245645f1b086448ff8fc2",
+        "Sources/SwiftNLP/SwiftNLP.docc/WordNetAndLexicalGraphs.md": "65134070da5218beba6b9a457691bd46298650c1f302a9b16fc2d0087ad23571",
+        "Sources/SwiftNLP/TextNormalizer.swift": "0b9ccb915336b6862b72426e7067be207f7bd83c55671100a59852c59ad85b9b",
+        "Sources/SwiftNLP/WordNet/WordNet.swift": "23550b1f73e1d4292f27b493687616f82baba87190f55c2b9780a01e02a64aac",
+        "Sources/SwiftOptimize/AutoML.swift": "ffdbdc79e2d693cffbd3fe97d17bfc0e0e5416b539bbb8697cde340e11a7977a",
+        "Sources/SwiftOptimize/Metrics/Metrics.swift": "61c1fd4cbce0cd50bff46f6dfe074e87f7e4217da34aad607ce18cb38ad434a9",
+        "Sources/SwiftOptimize/Search/GridSearchCV.swift": "84a40d1ea3c4aeeb538d869a7c7bec71900a99f99aa406783953228a6a4f77c4",
+        "Sources/SwiftOptimize/Search/RandomizedSearchCV.swift": "708eb58428e3b07d4097bcaaa0897531d176b148f29e3a6e0505f61b20728550",
+        "Sources/SwiftOptimize/SwiftOptimize.docc/CrossValidationFolds.md": "e55f6a81b8c930caf4c6068e42992c24ff49d789a7d900dda1618c33d5a7378b",
+        "Sources/SwiftOptimize/SwiftOptimize.docc/HyperparameterGridAndRandomSearch.md": "801ef07881a59644dc2438db00833a21aa78de787fbb3bef20766ec00aed10b2",
+        "Sources/SwiftOptimize/SwiftOptimize.docc/HyperparameterTuning.md": "69527b70a2564c83494c29cec86f017fc2d3f396cf8e2e681d686095db50e64c",
+        "Sources/SwiftOptimize/SwiftOptimize.docc/ParallelModelSelection.md": "5dd4c3ded8e9a2fee5eac704b93bfc624e6f5947e3ebe474f424e850b1c8dadd",
+        "Sources/SwiftOptimize/SwiftOptimize.docc/SwiftOptimize.md": "3ff88b34e246adfdb7a691828828bfe43850efa1a9d5771aa25e69d01877a275",
+        "Sources/SwiftOptimize/Validation/KFold.swift": "1d1dcb9ad9bc8a12c5816135711701c351e6de68184b7553a101e797d2bc9776",
+        "Sources/SwiftOptimize/Validation/TargetLeakageDetector.swift": "ca9889fa77081fed876ba70f1a34cde2159e92a41da11442f667a896912c4e4f",
+        "Sources/SwiftOptimize/Validation/ValidationFolds.swift": "bad1116dce45d2f28c2080cc424626389c18915c8d9f0cd6973599e28646519f",
+        "Sources/SwiftPreprocessing/Core/ColumnTransformer.swift": "6c8909975369cb4dbde19763cc6369d62ed589cbcb01a48fe9e940a7b4b2c8bc",
+        "Sources/SwiftPreprocessing/Core/DataFrame+Preprocessing.swift": "7286025f40af1f2b7b87b34f02dfd80d2b848cfbf7c4ce7342f8a5ac556d2b8f",
+        "Sources/SwiftPreprocessing/Core/ExecutionDevice.swift": "0d5b5ed4e0f19424963dc77b083b4edf14b8becab6edf9c189669537a54d3363",
+        "Sources/SwiftPreprocessing/Core/FeatureEngineering.swift": "138d99021ecde0b3523e00268fd8bfe4558f0f1265a3dda9ef7962c349fb3918",
+        "Sources/SwiftPreprocessing/Core/FeatureSelection.swift": "9785ec83dc52bd7be5c1ed7d57187d45fbb8b5236d2046a76b8a6e5fd37e232f",
+        "Sources/SwiftPreprocessing/Core/FrequencyEncoder.swift": "ca17a2743ad1b589dd96e01f8e43b5696b73f4c89bfb9a51450d8fb985c062ae",
+        "Sources/SwiftPreprocessing/Core/HardwareRouter.swift": "a624d776fc1b802fb098690cf3bba08484e2f47af9c254d3bcfb5ac9a1c93802",
+        "Sources/SwiftPreprocessing/Core/ImbalancedLearning.swift": "fd33b1488cd570b450d6d17090e2c9149a88a1faf37bed86cd4e21c6d2d92d89",
+        "Sources/SwiftPreprocessing/Core/Imputer.swift": "704a8a000263247048263a2235dc4c90dec03c125d4c3927be18e67e02167932",
+        "Sources/SwiftPreprocessing/Core/KBinsDiscretizer.swift": "7e3a8ecce86d763ea0f821a7aee4ed08529aacb7c9489cf8b4bc71242f32e522",
+        "Sources/SwiftPreprocessing/Core/KNNImputer.swift": "d0fa821a266504d3fe10dcaf44ebb2edb81e258b8cc6648224ca7500f866502c",
+        "Sources/SwiftPreprocessing/Core/LabelEncoder.swift": "4c740fcdc8c761bd15258ad4e2636dc129e621dd0252cd7a9cc4350c7c74dc88",
+        "Sources/SwiftPreprocessing/Core/MinMaxScaler.swift": "445a7d3badf74fa13eeed1bbf0eeea3aee3301ed06e9c36b0581f9dc7d1ac5fb",
+        "Sources/SwiftPreprocessing/Core/MissingValueIndicator.swift": "4cba8755b47ce6b7eb62bec253acd4752588e50ece9bad72466b7e244bbdccc9",
+        "Sources/SwiftPreprocessing/Core/Normalizer.swift": "b56e9cef38b1e4773b40ed28bd9fb98eed6672fb3a5808396d67ba379c959e44",
+        "Sources/SwiftPreprocessing/Core/OneHotEncoder.swift": "76d051193ee12841217cf26b63bbad56d68ffd1db1db49c609863a4cf20100bd",
+        "Sources/SwiftPreprocessing/Core/OrdinalEncoder.swift": "5fe54c526c80327d585172a5bab9a201affade2dcd701f4e2fabe8104a1f0bb9",
+        "Sources/SwiftPreprocessing/Core/Pipeline.swift": "8c43d7d59f5aa9eef59fabe040ca1e6aa964225b168d4cc25fad3af1eecfe444",
+        "Sources/SwiftPreprocessing/Core/PolynomialFeatures.swift": "f91f5f7492929d8a7a28d046c4867ef879172ca3566e9bad45dffa88ad1d92be",
+        "Sources/SwiftPreprocessing/Core/PowerTransformer.swift": "bc96ea5b64e5bb9ec9a1b570817ceaf68b0f9c5e4bdc59bbc4cfb227a35bc761",
+        "Sources/SwiftPreprocessing/Core/PreprocessingTransformer.swift": "d5dbcb6f2f11bfa7ff2a95049e9323f12359f1f7a31a258f479cb813697d7157",
+        "Sources/SwiftPreprocessing/Core/RobustScaler.swift": "2a2e46883b0e4430f3299be6c9b6653d80448f3e172d3e4bfda482270bf52346",
+        "Sources/SwiftPreprocessing/Core/SeededRandom.swift": "13ff74199708126791a7b4a937646dc8b0a9cdaade18302e032da20ef6fbfe4b",
+        "Sources/SwiftPreprocessing/Core/SparseMatrix.swift": "9356dd7e1683a431ed58347c1ec037a259bb839a7c7220091f485ac9a4f861bd",
+        "Sources/SwiftPreprocessing/Core/StandardScaler.swift": "d7b18555d196bfc91a4d67ac5e06dc3aa5f6708e62e6534a56f601686bb77f37",
+        "Sources/SwiftPreprocessing/Core/StratifiedKFold.swift": "5ee39968f7c99850cfdbae57014ae04e884dc1f854f0cc6231ad353ec73166d8",
+        "Sources/SwiftPreprocessing/Core/TargetEncoder.swift": "d5b2964f98c7266acaac2e08aa6858dc8908ace56d651186f75071c134dd5f80",
+        "Sources/SwiftPreprocessing/Core/TrainTestSplit.swift": "181e8c19a48dac1078e34bc4dcf0b0f52c15621853de6b5f18279128114cb52d",
+        "Sources/SwiftPreprocessing/Core/WiredMemoryManager.swift": "20d8b870bd788d997a598ba6f0671a1ce09065589060ac692c31e8513c831606",
+        "Sources/SwiftPreprocessing/Core/WiredMemoryTicket.swift": "d738d4c77af17fa6e553d558625248365ee4d4cd0209062d3f510c14dc74b14b",
+        "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/CategoricalEncodersAndImputers.md": "5d852ff3ddc8256865a034912b42cde5c5dda618bd34941e645b596d2ee6b841",
+        "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/EncodersAndImputers.md": "6282180603e09517289c9376a3ded6878a7d3650c912223c5352b81e4418c52e",
+        "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/FeatureScaling.md": "11924b4312f9f9bdd7822fd83d1741c0e9fa29842f2591946d3608e419a64245",
+        "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/HardwareRouterAndMemory.md": "ac979ac506c199b4d0cd3fa13e836fc127e9fbae102b19d30d55fd8566428092",
+        "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/SparseDataStructures.md": "2e3584bb1b45a35818e01adf1ddeb8c667fc51e5e009f95e09ecaa6e0020f301",
+        "Sources/SwiftPreprocessing/SwiftPreprocessing.docc/SwiftPreprocessing.md": "9990691f98333413cb4c8d24ef1039090f143c3906b35395e12ce58fec162f3b",
+        "Sources/SwiftSciCLI/SwiftSciCLI.swift": "ad0b0130f6631385db9bef84367c9d1b80aa1ca00a8e214a1965d1d9eaec5e48",
+        "Sources/SwiftStats/Core/CenteredMoments.swift": "6de81481cdf1ece15580c57da719655f7e7fbd533a360769380ed7f81a8ad3e4",
+        "Sources/SwiftStats/Core/CompensatedDotProduct.swift": "85bb471dd811ac4ad451b71e5717e571ebb8e32648b6d8aaa627c485ff3e47be",
+        "Sources/SwiftStats/Core/DotProductAccuracy.swift": "b998691c57c819d5816603e27c01db7b4f339dc99ba59fc93e64f50eb49871cc",
+        "Sources/SwiftStats/Core/ExactDotProduct.swift": "2c0a5ad5e2958db226a8816d54aaada9581d15c4258b605f1a0ec8a65a13e47a",
+        "Sources/SwiftStats/Core/Stats+Correlation.swift": "0019292105eef75198642325b8da91b4a68bb242e80e59b9424d786eeb804c50",
+        "Sources/SwiftStats/Core/Stats+DecimalANOVA.swift": "de1d249a90ab532178db84aa3e130f4dcd3c08a3335e73f3a3c32a7be818716b",
+        "Sources/SwiftStats/Core/Stats+Descriptive.swift": "4832c1ae8bf3a9906d8e0a73f52ef1709c332c65d252361f5f8a24de8e5c963d",
+        "Sources/SwiftStats/Core/Stats+HypothesisTesting.swift": "93bdbbd1e478e5add520cdb3d69d48c75577bff837c42b7a77eecfa73bcc23ef",
+        "Sources/SwiftStats/Core/Stats+LinearAlgebra.swift": "9cdd789d5eb1135e3cab72cb15b7bd5f5bab79144752fb8777eeba71a8c13341",
+        "Sources/SwiftStats/Drift/DataDrift.swift": "6c9be4bcc6b7f69b33c851b9e2af9191269a8ebcac866d6a42e2ae4d19d47a12",
+        "Sources/SwiftStats/Extensions/DataFrame+Stats.swift": "27df9cfdd231b147ae6bd97767c50300cb304d18ff29ace6735b7dd1f065b2b4",
+        "Sources/SwiftStats/Results/StatResults.swift": "3d31355890d3319790eb0d3764241b347a4dc123e9a5dee95bee622f4c792f18",
+        "Sources/SwiftStats/Stats.swift": "6e3d0941f469c887a6a1faba1ccb116dce879291d5331c8b994eb8b5bcb704b4",
+        "Sources/SwiftStats/Survival/SurvivalAnalysis.swift": "50bcf3e6b2a5b49ec61616c24dc09a64979ffdb27f03c525e4574574766b275b",
+        "Sources/SwiftStats/SwiftStats.docc/ChoosingDotProductAccuracy.md": "030f9f482abd60a05b7a4c5b1f61b5b998468c2da4b149dbb47c98b57057774c",
+        "Sources/SwiftStats/SwiftStats.docc/DecimalANOVA.md": "56eea7f51486a2e47f60dd90f08261a27f22ad60f1af232abe33d0e164832669",
+        "Sources/SwiftStats/SwiftStats.docc/DescriptiveStatistics.md": "8cef3c5bd61d390450871503c68c2d9f0a046fdd69c0e3039e0ffd9b40787c82",
+        "Sources/SwiftStats/SwiftStats.docc/HypothesisTesting.md": "37a8e41af41fb036f5f50503bd65c864aa4ef2d74f86dec328027ab760dc37e3",
+        "Sources/SwiftStats/SwiftStats.docc/SwiftStats.md": "d1b2efaa3b6b2527147f497231c1c23d59cdf154a0b623c77fa881892bd7f739",
+        "Sources/SwiftVision/CLIP/CLIPProjector.swift": "35566f26a97a0a11bfa2de859f5063e2c9263df2ee9e8d6deff8617574daeedd",
+        "Sources/SwiftVision/ImageDataset.swift": "e04bc6125b97c0f1922594e97f9637cad0bce1d2e82491f97d41fa7ef1904452",
+        "Sources/SwiftVision/SwiftVision.docc/ImageDatasetsAndSegmentation.md": "24ad47f312567cd65c9f87a2185f5b599b917f9fff3f2de0f2769ac859342b1a",
+        "Sources/SwiftVision/SwiftVision.docc/ObjectDetectionOptimizations.md": "443ae9a79ea068229cf7ee01a6c4b752cb6cb760b5646df354680f70b91c6dc2",
+        "Sources/SwiftVision/SwiftVision.docc/RealTimeYOLOInference.md": "bfb7e79ce68ae7a2a6d01b14295a74ceb3a338f5aa851d4c26d1e5dfeabdae88",
+        "Sources/SwiftVision/SwiftVision.docc/SwiftVision.md": "17b701165c217df67a7f9f3c4399833d950210a5009167b2e40ebba0c26e4615",
+        "Sources/SwiftVision/SwiftVision.docc/UNetSegmentationArchitecture.md": "046b739c8f52fbfd3c2310ebc58968538e3bbccd6c22aae2701bd176bce8304e",
+        "Sources/SwiftVision/SwiftVision.docc/YOLOv8ObjectDetection.md": "d68e1e8e44f848ef8cd449b735fcb50d3e3b61322c066e467740d0e4dbeba17c",
+        "Sources/SwiftVision/UNet/UNetArchitecture.swift": "fc70a4eb08d50569e48cd738c4fdfd21e9491180901bbba989022efa28526673",
+        "Sources/SwiftVision/YOLO/NonMaximumSuppression.swift": "3316c129209330fe020f6e448018be0b5db5e3f44dd7c5cde55f666ead1b6fbe",
+        "Sources/SwiftVision/YOLO/ONNXWeightReader.swift": "642d455e0807701e5f882ef37940d861d17c367142e04f9f97548c06962ed729",
+        "Sources/SwiftVision/YOLO/YOLOBackbone.swift": "9be8f6994aabba9912be4b01798d8abac17c7acfb70c9a21818d92d2575ee534",
+        "Sources/SwiftVision/YOLO/YOLOHead.swift": "2b4245d5b31247f97bbe7ae63dd69cbe5e1a673277434832aa0fa4a70d796587",
+        "Sources/SwiftVision/YOLO/YOLONeck.swift": "7456408926d97868b1e442bc493ec9e591f50aee17df682cc81f6010d1d13958",
+        "Sources/SwiftVision/YOLO/YOLOPreprocessor.swift": "c6e2cc5093e4059163a31e8241f7e104246cb3f98854ccf155d24f05897107ba",
+        "Sources/SwiftVision/YOLO/YOLOSegHead.swift": "fb451a80722421ae8ea5787c1d4899bbd8e05e5072402df94091363b33b2f2ce",
+        "Sources/SwiftVision/YOLO/YOLOWeightLoader.swift": "d7894d6ac0bbb771db663bf23da91fad9aefb0b57d9b6bafc8335afba28d6f79",
+        "Sources/SwiftVisualization/Native/SwiftSciChartView.swift": "23d550206c266098c0f62d06ae2c6f15c7e427b0b2e48b80447d90b6c6521df3",
+        "Sources/SwiftVisualization/SwiftVisualization.docc/ChartExporters.md": "ace54c5a727bb3e9f38f665f237cd3a166b40f7bcfbd4777a053cead64ecf5e7",
+        "Sources/SwiftVisualization/SwiftVisualization.docc/SwiftVisualization.md": "fafdf73eb9deb1e49e70fdfc9d066726b4e3a98b0e38656767e2218cf9835687",
+        "Sources/SwiftVisualization/SwiftVisualization.swift": "fbe36cb2c44af507772ef5e8a984f4674074d71b224856f3c2f2794ef6c72cec"
+      },
+      "tree_sha256": "43eb2dcd02252e033f3e6472fb55cb7a1891fb03b19491e7c270a552abc5e6cc"
+    }
+  },
+  "power_end": {
+    "settings": "Battery Power:\n Sleep On Power Button 1\n powermode            0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             0\n hibernatefile        /var/vm/sleepimage\n displaysleep         2\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           1\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n powermode            0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             0\n hibernatefile        /var/vm/sleepimage\n displaysleep         30\n womp                 1\n networkoversleep     0\n sleep                0\n tcpkeepalive         1\n disksleep            10",
+    "source": "AC"
+  },
+  "power_start": {
+    "settings": "Battery Power:\n Sleep On Power Button 1\n powermode            0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             0\n hibernatefile        /var/vm/sleepimage\n displaysleep         2\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           1\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n powermode            0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             0\n hibernatefile        /var/vm/sleepimage\n displaysleep         30\n womp                 1\n networkoversleep     0\n sleep                0\n tcpkeepalive         1\n disksleep            10",
+    "source": "AC"
+  },
+  "power_unchanged": true,
+  "purpose": "run",
+  "schema_version": 1,
+  "started_utc": "2026-10-01T18:10:35.312917+00:00",
+  "status": "passed"
+}

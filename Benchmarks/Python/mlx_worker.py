@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'Tools'))
 from contracts import read_json, write_json, verified_file, validate_values
 from numerical_fixtures import validate_input
 from mlx_workloads import MLXWorkload
+from execution_policy import runtime_record
 
 
 def main():
@@ -38,7 +39,7 @@ def main():
             del output, actual
         rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         response = dict(schema_version=1, case_key=request['case_key'], status='passed', samples=samples,
-                        peak_rss_bytes=rss if sys.platform == 'darwin' else rss * 1024, engine_version=version)
+                        peak_rss_bytes=rss if sys.platform == 'darwin' else rss * 1024, engine_version=version, execution=runtime_record())
     except Exception as error:
         response = dict(schema_version=1, case_key=request['case_key'], status='failed', samples=[],
                         peak_rss_bytes=0, engine_version=version, error=str(error))

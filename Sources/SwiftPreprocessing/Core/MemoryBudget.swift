@@ -92,6 +92,15 @@ public actor MemoryBudget {
             drain()
         }
     }
+    fileprivate func reduce(_ id: UUID, to bytes: Int) throws {
+        guard let previous = active[id], bytes <= previous else {
+            throw MemoryAdmissionError.invalidCapacity
+        }
+        active[id] = bytes
+        reserved -= previous - bytes
+        drain()
+    }
+
     fileprivate func release(_ id: UUID) {
         guard let bytes = active.removeValue(forKey: id) else { return }
         reserved -= bytes
@@ -121,6 +130,10 @@ public final class MemoryReservation: Sendable {
     private let budget: MemoryBudget
     private let id: UUID
     fileprivate init(budget: MemoryBudget, id: UUID) { self.budget = budget; self.id = id }
+    // Drop completed workspace from a whole-operation reservation while retaining output.
+    package func reduce(to estimate: MemoryEstimate) async throws {
+        try await budget.reduce(id, to: estimate.bytes)
+    }
     /// Releases this reservation once. Repeated calls are harmless.
     public func finish() async { await budget.release(id) }
     deinit {

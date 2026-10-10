@@ -126,6 +126,43 @@ public actor CoreMLMatrixPool {
         }
     }
 
+    /// Captures immutable input metadata without retaining this pool or its model.
+    /// Use the returned value in caller tasks for concurrent fitted preprocessing.
+    /// Capturing after pool closure throws; an existing preparation value remains usable.
+    public func inputPreparation() throws -> CoreMLMatrixInputPreparation {
+        guard !closed, let session else { throw SwiftMLError.invalidParameter("Core ML matrix pool is closed") }
+        return CoreMLMatrixInputPreparation(schema: session.inputArray!, names: session.inputColumns)
+    }
+
+    // Experimental package-only boundary for the fused preprocessing benchmark.
+    // The source provides row identity; packed values must already follow model column order.
+    package func preparePackedForTrial(_ values: [Float16], source: PreparedNumericBatch,
+                                      budget: MemoryBudget) async throws -> CoreMLPreparedMatrix {
+        guard !closed, session != nil else {
+            throw SwiftMLError.invalidParameter("Core ML matrix pool is closed")
+        }
+        try session!.validateRequest(source, maximumBatchSize: 1)
+        let schema = session!.inputArray!
+        guard schema.dataType == .float16, source.columnNames == session!.inputColumns,
+              values.count == (try coreMLByteCount(schema.shape[0], schema.width)),
+              values.allSatisfy(\.isFinite) else {
+            throw SwiftMLError.invalidParameter("Packed trial input requires finite Float16 values in the exact model shape and column order")
+        }
+        let allowance = try CoreMLPreparedMatrix.allowance(schema: schema, names: session!.inputColumns)
+        let reservation = try await budget.acquire(allowance)
+        do {
+            try Task.checkCancellation()
+            guard !closed, let session else {
+                throw SwiftMLError.invalidParameter("Core ML matrix pool is closed")
+            }
+            return try CoreMLPreparedMatrix(trialPacked: values, input: source, session: session,
+                reservation: reservation, allowance: allowance)
+        } catch {
+            await reservation.finish()
+            throw error
+        }
+    }
+
     /// Reuses a converted input matching this pool's shape, element type, and column order.
     /// Each request copies its bytes into an exclusive slot without repeating numeric conversion.
     public func predict(_ input: CoreMLPreparedMatrix) async throws -> CoreMLPrediction {

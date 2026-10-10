@@ -27,11 +27,27 @@ public final class CoreMLPreparedMatrix: @unchecked Sendable {
             coreMLByteCount(schema.shape[0], MemoryLayout<Int>.stride, 2), namesBytes, 65_536] + strings)
     }
 
-    init(input: PreparedNumericBatch, indices: [Int], session: CoreMLPredictionSession,
+    convenience init(input: PreparedNumericBatch, indices: [Int], session: CoreMLPredictionSession,
          reservation: MemoryReservation, allowance: MemoryEstimate) throws {
         let schema = session.inputArray!
         let storage = try CoreMLMatrixStorage(schema)
         try session.packMatrix(input, indices: indices, into: storage.array)
+        try self.init(storage: storage, input: input, schema: session.inputArray!, names: session.inputColumns, reservation: reservation, allowance: allowance)
+    }
+
+    // Trial input has been shape/type/finite checked by the pool. Copying prevents
+    // caller aliases from mutating retained storage across asynchronous predictions.
+    convenience init(trialPacked values: [Float16], input: PreparedNumericBatch,
+        session: CoreMLPredictionSession, reservation: MemoryReservation, allowance: MemoryEstimate) throws {
+        let storage = try CoreMLMatrixStorage(session.inputArray!)
+        values.withUnsafeBytes { bytes in
+            _ = memcpy(storage.array.dataPointer, bytes.baseAddress!, bytes.count)
+        }
+        try self.init(storage: storage, input: input, schema: session.inputArray!, names: session.inputColumns, reservation: reservation, allowance: allowance)
+    }
+
+    init(storage: CoreMLMatrixStorage, input: PreparedNumericBatch, schema: ArrayFeature, names: [String],
+                 reservation: MemoryReservation, allowance: MemoryEstimate) throws {
         try Task.checkCancellation()
         let rows = input.originalRowIndices
         let ownedRows = rows.withUnsafeBufferPointer { source in
@@ -47,7 +63,7 @@ public final class CoreMLPreparedMatrix: @unchecked Sendable {
         self.storage = storage
         sourceRows = ownedRows
         rowCount = input.rowCount
-        columnNames = session.inputColumns
+        columnNames = names
         payloadByteCount = try coreMLByteCount(rowCount, schema.width, schema.elementBytes)
         reservedBytes = allowance.bytes
         self.reservation = reservation

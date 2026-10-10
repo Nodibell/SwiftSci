@@ -28,3 +28,7 @@ let X_scaled = try scaler.fitTransform(X)
 - <doc:FeatureScaling>
 - <doc:EncodersAndImputers>
 - <doc:SparseDataStructures>
+
+### Fitted model preparation
+
+- ``StandardPreprocessingPlan`` fits imputation and standard scaling once on training rows. SwiftML uses the immutable plan to prepare model-typed input directly.

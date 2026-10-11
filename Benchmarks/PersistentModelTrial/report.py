@@ -18,6 +18,8 @@ def validate(record, batches):
     require(len(samples) == len(expected) and actual == expected, 'Incomplete comparison matrix')
     require(len(record['cancellation']) == 2, 'Missing active cancellations')
     require({s['quantum'] for s in record['cancellation']} == {8, 32}, 'Missing cancellation quantum')
+    require(all(s['variant'] == 'persistent' and s['sample']['mode'] == 'cancel-active'
+                for s in record['cancellation']), 'Invalid active cancellation evidence')
     reference = None
     for outer in samples + record['cancellation']:
         s = outer['sample']

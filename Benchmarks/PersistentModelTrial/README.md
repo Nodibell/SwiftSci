@@ -17,7 +17,7 @@ The smoke test uses 32 total batches. The full comparison uses 256 batches for e
 
 The persistent strategy divides its allowance before model loading. A private 49 MiB partition covers the model pool and context. The remaining 64, 128, or 192 MiB forms the shared work queue. Every numeric request and inference window requires 64 MiB.
 
-The private model partition has two known reservations: one for context and one for the pool. Their sum fits exactly, and neither waits for work capacity. All computing callers acquire only the work partition. The constructor rejects a partition that cannot admit the largest request. This structure prevents model owners from exhausting the capacity needed for their own next work request in this single-model experiment.
+The lifetime partition admits one aggregate reservation for context and the pool. The pool uses a private subdivision of that admitted capacity, so it never reacquires the lifetime or work budget during loading. All computing callers acquire only the work partition. The constructor rejects a partition that cannot admit the largest request. This structure prevents model owners from exhausting the capacity needed for their own next work request in this single-model experiment.
 
 The model remains charged until all peers finish and the pool closes. No task borrows unused model capacity. Fixed source fixtures remain outside these operation reservations and inside sampled process residency. These estimates do not enforce an allocator or RSS limit.
 

@@ -9,7 +9,7 @@ public actor CoreMLBatchSession {
     private let configuration: CoreMLBatchPipeline.Configuration
     private let workBudget: MemoryBudget
     private var running = false
-    private var closed = false
+    private(set) var closed = false
     private var closeWaiters: [CheckedContinuation<Void, Never>] = []
 
     init(pool: CoreMLMatrixPool, preprocessing: StandardPreprocessingPlan,

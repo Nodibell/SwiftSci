@@ -6,7 +6,12 @@ import SwiftPreprocessing
 
 private actor BatchSessionTask {
     var task: Task<Void, any Error>?
-    func install(_ value: Task<Void, any Error>) { task = value }
+    var session: CoreMLBatchSession?
+    var completed = false
+    func install(_ value: Task<Void, any Error>, session: CoreMLBatchSession) {
+        task = value; self.session = session
+    }
+    func finish() { completed = true }
 }
 
 @Suite("Retained session shutdown", .serialized)
@@ -18,25 +23,32 @@ struct CoreMLBatchSessionShutdownTests {
         let work = try MemoryBudget(limit: config.windowBytes)
         let gate = PipelineGate()
         let holder = BatchSessionTask()
-        let scopeLeaving = PipelineGate()
         try await withPreparedMatrixModel(4) { url in
             let scope = Task {
-                try await CoreMLBatchPipeline.withSession(compiledModelURL: url,
-                    inputColumns: plan.columnNames, outputName: "result", computeUnits: .cpuOnly,
-                    preprocessing: plan, lifetimeBudget: lifetime, workBudget: work,
-                    configuration: config) { session in
-                    let task = Task { try await session.run(load: { $0.sequence == 0 ? source : nil },
-                        consume: { _, _ in await gate.wait(); try Task.checkCancellation() }) }
-                    await holder.install(task)
-                    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
-                    while !(await gate.entered), ContinuousClock.now < deadline { await Task.yield() }
-                    #expect(await gate.entered)
-                    if cancel { task.cancel() }
-                    await scopeLeaving.release()
-                    throw PipelineTestFailure.source
-                }
+                do {
+                    try await CoreMLBatchPipeline.withSession(compiledModelURL: url,
+                        inputColumns: plan.columnNames, outputName: "result", computeUnits: .cpuOnly,
+                        preprocessing: plan, lifetimeBudget: lifetime, workBudget: work,
+                        configuration: config) { session in
+                        let task = Task { try await session.run(load: { $0.sequence == 0 ? source : nil },
+                            consume: { _, _ in await gate.wait(); try Task.checkCancellation() }) }
+                        await holder.install(task, session: session)
+                        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+                        while !(await gate.entered), ContinuousClock.now < deadline { await Task.yield() }
+                        #expect(await gate.entered)
+                        if cancel { task.cancel() }
+                        throw PipelineTestFailure.source
+                    }
+                } catch { await holder.finish(); throw error }
             }
-            await scopeLeaving.wait()
+            let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+            while ContinuousClock.now < deadline {
+                if let session = await holder.session, await session.closed { break }
+                await Task.yield()
+            }
+            let session = await holder.session
+            #expect(await session?.closed == true)
+            #expect(!(await holder.completed))
             #expect(await lifetime.reservedBytes == lifetime.limit)
             #expect(await work.reservedBytes == work.limit)
             await gate.release()

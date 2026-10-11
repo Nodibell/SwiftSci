@@ -12,9 +12,8 @@ struct PersistentTrialScope: Sendable {
     let totalBytes: Int
 
     init(configuration: CoreMLBatchPipeline.Configuration, totalBytes: Int) throws {
-        let required = try configuration.requiredBytes
-        windowBytes = configuration.maximumInFlightBatches * configuration.batchBytes
-        retainedBytes = required - windowBytes
+        windowBytes = try configuration.windowBytes
+        retainedBytes = try configuration.sessionBytes
         let minimum = try MemoryEstimate(capacities: [retainedBytes, max(windowBytes, mixedSmallQuota)]).bytes
         guard totalBytes >= minimum else {
             throw MemoryAdmissionError.exceedsLimit(required: minimum, limit: totalBytes)

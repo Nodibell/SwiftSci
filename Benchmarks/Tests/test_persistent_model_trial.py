@@ -50,6 +50,8 @@ class PersistentModelReportTests(unittest.TestCase):
             lambda r: r['samples'][0]['sample']['lanes'][0].update(completed=31),
             lambda r: r['samples'][1]['sample']['lanes'][2].update(hashes=['changed']),
             lambda r: r['cancellation'][0]['sample']['lanes'][2].update(cancelled=False),
+            lambda r: r.update(cancellation=[sample('persistent', q, 'tight', 0) for q in (8,32)]),
+            lambda r: r['cancellation'][0].update(variant='reload'),
             lambda r: r['queuedCancellation'].update(cpuCompleted=0),
         ]
         for mutate in mutations:

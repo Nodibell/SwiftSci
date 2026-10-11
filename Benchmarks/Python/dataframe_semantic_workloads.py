@@ -3,7 +3,7 @@
 Object columns preserve Python None separately from present NaN and keep Int64
 values exact. These small diagnostic workloads include construction and encoding;
 they do not measure pandas' optimized numeric-column throughput. Empty gather
-and filter results deliberately discard columns to match Swift API compatibility.
+and filter results preserve the source column names, order, and types.
 """
 
 import operator
@@ -152,6 +152,4 @@ def execute(prepared):
         return words
     else:
         raise ValueError(f"Unsupported dataframe semantic action: {action}")
-    if action in ("gather", "filter") and result.empty:
-        return encode_frames([source, []])
     return encode_frames([source, _records(result, types)])

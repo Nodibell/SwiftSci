@@ -10,7 +10,7 @@ Run `python3 Benchmarks/Fixtures/dataframe/generate.py` to regenerate the inputs
 - Missing cells fail ordinary filter predicates, including inequality. Present NaN follows IEEE comparison rules. `isNotNull` includes NaN.
 - Sorting preserves ties and places missing cells last in both directions. NaN sorting is excluded because the API has no deterministic NaN ordering contract.
 - Group keys compare each component independently. Null differs from literal `null` and `__null__`; separators do not concatenate keys. Groups follow first appearance. Output keys are String columns. Row counts include all rows; selected aggregate counts include present NaN but exclude missing cells.
-- Empty gathers and filters produce a schema-less frame under the existing API contract.
+- Empty gathers and filters preserve column names, order, and types. Retained columns have zero values and zero null counts.
 - Functional replacement leaves the source, selected source column and retained built-in TypedColumn unchanged. This does not establish deep ownership for custom reference-type AnyColumn implementations.
 - Nested and flat matrix exports preserve requested column order, including repeated columns. Flat exports use row-major order. Numeric and Bool nulls become NaN. Int64 conversion to Double follows binary64 rounding. A non-square case detects transposition. Empty feature selection preserves the source row count and has zero columns.
 
@@ -28,6 +28,6 @@ Ordinary actions return the original and resulting frames. Replacement also retu
 
 ## Pandas comparison
 
-The pandas adapter uses object columns to retain None separately from NaN and preserve exact Python integers. Group keys use nullable String and Int64 columns with `dropna=False` and `sort=False`. Explicit validity masks enforce the declared null predicate rules. Empty selections normalize to SwiftDataFrame's schema-less result, and group keys normalize to its String outputs.
+The pandas adapter uses object columns to retain None separately from NaN and preserve exact Python integers. Group keys use nullable String and Int64 columns with `dropna=False` and `sort=False`. Explicit validity masks enforce the declared null predicate rules. Empty selections preserve schema in both libraries. Group keys normalize to SwiftDataFrame's String outputs.
 
 These conversions make the comparison an API compatibility check. They are not a benchmark of pandas defaults. Frame construction, operations and encoding are timed together; small fixture timings must not be used as a performance baseline.

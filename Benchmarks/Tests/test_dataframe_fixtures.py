@@ -29,6 +29,23 @@ class DataframeFixtures(unittest.TestCase):
         nan = encode_frames([[{'name': 'f', 'type': 'float64', 'values': [math.nan]}]])
         self.assertNotEqual(nil, nan)
 
+    def test_empty_selection_reference_preserves_schema(self):
+        for slug in ('gather-empty', 'filter-empty'):
+            with self.subTest(case=slug):
+                payload = self.payload(slug)
+                source = decoded_columns(payload)
+                empty = [dict(column, values=[]) for column in source]
+                self.assertEqual(expected_values(payload), encode_frames([source, empty]))
+                self.assertNotEqual(expected_values(payload), encode_frames([source, []]))
+
+    def test_empty_selection_pandas_preserves_schema(self):
+        for slug in ('gather-empty', 'filter-empty'):
+            with self.subTest(case=slug):
+                payload = self.payload(slug)
+                source = decoded_columns(payload)
+                empty = [dict(column, values=[]) for column in source]
+                self.assertEqual(execute(prepare(payload)), encode_frames([source, empty]))
+
     def test_hand_checked_filter_rows(self):
         expected = {'eq': [3, 4], 'ne': [1, 2, 5, 6], 'lt': [2], 'le': [2, 3, 4],
                     'gt': [5, 6], 'ge': [3, 4, 5, 6], 'isnull': [0], 'isnotnull': [1, 2, 3, 4, 5, 6]}

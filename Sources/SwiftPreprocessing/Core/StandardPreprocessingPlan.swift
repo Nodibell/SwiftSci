@@ -51,17 +51,27 @@ public struct StandardPreprocessingPlan: Sendable {
     }
 
     package func workspaceAllowance(for input: PreparedNumericBatch) throws -> MemoryEstimate {
-        let width = input.columnCount
-        let elements = try MemoryEstimate(capacities: [tileRows(input, tiled: true) * width, width, width]).bytes
+        try workspaceAllowance(rowCount: input.rowCount)
+    }
+
+    package func workspaceAllowance(rowCount: Int) throws -> MemoryEstimate {
+        let width = columnNames.count
+        let rows = tileRows(rowCount: rowCount, width: width, tiled: true)
+        let (tileElements, tileOverflow) = rows.multipliedReportingOverflow(by: width)
+        guard !tileOverflow else { throw MemoryAdmissionError.invalidCapacity }
+        let elements = try MemoryEstimate(capacities: [tileElements, width, width]).bytes
         let (bytes, overflow) = elements.multipliedReportingOverflow(by: MemoryLayout<Double>.stride)
         guard !overflow else { throw MemoryAdmissionError.invalidCapacity }
         return try MemoryEstimate(capacities: [bytes, 4096])
     }
 
     private func tileRows(_ input: PreparedNumericBatch, tiled: Bool) -> Int {
-        let width = input.columnCount
-        return tiled && input.rowCount >= 32 && width <= 512
-            ? min(input.rowCount, 2048 / width) : 1
+        tileRows(rowCount: input.rowCount, width: input.columnCount, tiled: tiled)
+    }
+
+    private func tileRows(rowCount: Int, width: Int, tiled: Bool) -> Int {
+        return tiled && rowCount >= 32 && width > 0 && width <= 512
+            ? min(rowCount, 2048 / width) : 1
     }
 
     package func fillFloat16(_ input: PreparedNumericBatch,

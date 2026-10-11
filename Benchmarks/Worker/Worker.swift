@@ -15,6 +15,18 @@ import SwiftStats
     case text(String)
   }
   static func main() async {
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--bounded-source-lifetime" {
+      exit(await boundedSourceLifetime(request: URL(fileURLWithPath: CommandLine.arguments[2]),
+                                       output: URL(fileURLWithPath: CommandLine.arguments[3])))
+    }
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--bounded-coreml-shutdown" {
+      exit(await boundedCoreMLShutdown(request: URL(fileURLWithPath: CommandLine.arguments[2]),
+                                      output: URL(fileURLWithPath: CommandLine.arguments[3])))
+    }
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--bounded-coreml-workflow" {
+      exit(await boundedCoreMLWorkflow(request: URL(fileURLWithPath: CommandLine.arguments[2]),
+                                      output: URL(fileURLWithPath: CommandLine.arguments[3])))
+    }
     if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--fused-coreml-workflow" {
       exit(await fusedCoreMLWorkflow(request: URL(fileURLWithPath: CommandLine.arguments[2]),
                                     output: URL(fileURLWithPath: CommandLine.arguments[3])))

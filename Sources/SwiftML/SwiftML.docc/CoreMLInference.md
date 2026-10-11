@@ -239,3 +239,7 @@ reuse counts for the workload rather than assuming it improves every request.
 ## Fitted preprocessing
 
 Use <doc:FittedMatrixPreparation> to apply training-fitted imputation and standard scaling directly to private model-input storage. Existing `prepare` and `predict` calls remain available for already transformed batches.
+
+## Bounded sources and consumers
+
+Use <doc:BoundedInference> when admission must cover source loading through ordered result consumption. `CoreMLBatchPipeline` reuses the matrix pool and fitted preparation while limiting the number of loaded but unconsumed batches.

@@ -89,6 +89,14 @@ public final class CoreMLPreparedMatrix: @unchecked Sendable {
             rowCount: rowCount, sourceRows: sourceRows)
     }
 
+    // Only the bounded pipeline calls this on an owner it creates privately and never exposes.
+    // Prediction has returned and copied its output before this awaited teardown.
+    func finishPipelineOwnership() async {
+        storage = nil
+        sourceRows = nil
+        await reservation.finish()
+    }
+
     deinit {
         storage = nil
         sourceRows = nil

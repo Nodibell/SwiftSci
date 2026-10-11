@@ -15,6 +15,10 @@ import SwiftStats
     case text(String)
   }
   static func main() async {
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--persistent-model-trial" {
+      exit(await persistentModelTrial(request: URL(fileURLWithPath: CommandLine.arguments[2]),
+                                     output: URL(fileURLWithPath: CommandLine.arguments[3])))
+    }
     if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--mixed-workload-trial" {
       exit(await mixedWorkloadTrial(request: URL(fileURLWithPath: CommandLine.arguments[2]),
                                     output: URL(fileURLWithPath: CommandLine.arguments[3])))

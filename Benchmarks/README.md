@@ -175,6 +175,8 @@ Build snapshots, build records, logs, and products live under `~/Library/Caches/
 
 [Mixed-workload qualification](MixedWorkloads/README.md) compares CPU preprocessing, MLX GPU regression, and Core ML inference under shared admission. It records workload-specific progress, cancellation, throughput, and memory evidence. It does not certify a scheduling policy or physical device placement.
 
+[Persistent model admission trial](PersistentModelTrial/README.md) compares retaining a model across short work admissions with repeated pool creation and whole-run reservations. It measures the throughput and peer-latency tradeoff under fixed memory partitions. This is a single-model experiment, not a supported scheduling API.
+
 [Results/](Results/) preserves historical measurements. [Specs/legacy-inventory.json](Specs/legacy-inventory.json) records which historical workloads have standardized replacements and which remain research. The research implementations in [Swift/](Swift/), [CSVAcceleration/](CSVAcceleration/), and legacy [Python/](Python/) scripts have different measurement contracts.
 
 Kiraa is an unofficial research reference with known bugs. It is neither an independent correctness oracle nor a supported standardized engine. Trained-model quality, unmatched algorithms, long-context inference, and physical zero-copy claims remain outside the current conformance scope.

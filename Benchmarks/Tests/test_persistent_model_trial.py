@@ -60,7 +60,7 @@ class PersistentModelReportTests(unittest.TestCase):
     def test_report_includes_tradeoffs(self):
         text = report.render([(dict(rows=1024, policy='neural', batches=32), valid_record())])
         self.assertIn('cannot lend unused model capacity', text)
-        self.assertIn('not a production API', text)
+        self.assertIn('does not validate a general multi-model scheduler', text)
         self.assertIn('Admission waits exclude startup', text)
 
 

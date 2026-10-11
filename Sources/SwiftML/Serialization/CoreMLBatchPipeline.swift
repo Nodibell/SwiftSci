@@ -80,15 +80,8 @@ public enum CoreMLBatchPipeline {
             try await CoreMLMatrixPool.withPool(compiledModelURL: compiledModelURL,
                 inputColumns: inputColumns, outputName: outputName, computeUnits: computeUnits,
                 budget: poolBudget, configuration: configuration.pool) { pool in
-                let preparation = try await pool.inputPreparation()
-                let prepared = try CoreMLPreparedMatrix.allowance(schema: preparation.schema, names: inputColumns)
-                let workspace = try preprocessing.workspaceAllowance(rowCount: preparation.rowCount)
-                let preparationBytes = try MemoryEstimate(capacities: [prepared.bytes, workspace.bytes]).bytes
-                let sourceMinimum = try coreMLByteCount(preparation.rowCount, inputColumns.count, 8)
-                try requireBatchCapacity(sourceBytes: sourceMinimum, preparationBytes: preparationBytes,
-                    configuration: configuration)
-                try await runWindow(pool: pool, preparation: preparation, plan: preprocessing,
-                    preparationBytes: preparationBytes, configuration: configuration, load: load, consume: consume)
+                try await runPrepared(pool: pool, preprocessing: preprocessing,
+                    configuration: configuration, load: load, consume: consume)
             }
         }
     }

@@ -21,7 +21,7 @@ The private model partition has two known reservations: one for context and one 
 
 The model remains charged until all peers finish and the pool closes. No task borrows unused model capacity. Fixed source fixtures remain outside these operation reservations and inside sampled process residency. These estimates do not enforce an allocator or RSS limit.
 
-A package-only entry point, `CoreMLBatchPipeline.runPersistentTrial`, calls the existing rolling batch scheduler. The experiment changes neither public API behavior nor numerical operations. The trial caller owns partition accounting. Do not use this adapter as a supported public API or infer a general multi-model scheduling contract.
+The retained strategy uses `CoreMLBatchPipeline.withSession` and `CoreMLBatchSession.run`, which reuse the rolling batch scheduler. The existing whole-run API and numerical operations remain unchanged. The historical prototype is preserved on `codex/persistent-model-admission-trial`. This comparison still qualifies one model, not a general multi-model scheduling contract.
 
 ## Run the comparison
 
@@ -37,7 +37,7 @@ python3 Benchmarks/PersistentModelTrial/run.py \
 
 Add `--smoke` for one small configuration. Reuse the [frozen Covertype artifacts](../BoundedInference/README.md). The controller starts one bounded process at a time with a six-minute timeout. The worker rejects sampled RSS at or above 1 GiB.
 
-Each configuration warms every strategy and allowance once, then records three rotated samples. Timing includes model loading, preprocessing, prediction, result checking, and shutdown. Persistent model setup precedes peer launch. It is included in total elapsed time and peer completion times, but excluded from workspace-acquisition waiting. The report shows both waiting and first completion to preserve this distinction.
+Each configuration warms every strategy and allowance once, then records three rotated samples. Timing includes model loading, preprocessing, prediction, result checking, and shutdown. Persistent model setup precedes peer launch. It is included in total elapsed time and peer completion times, but excluded from workspace-acquisition waiting. For the retained variant, admission timing ends at the first loader callback and includes metadata validation. Numeric-peer wait measurements still measure budget acquisition directly. The report shows both waiting and first completion to preserve this distinction.
 
 Run the report controls with:
 

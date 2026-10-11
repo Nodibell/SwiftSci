@@ -1,14 +1,12 @@
 import SwiftPreprocessing
 
 extension CoreMLBatchPipeline {
-    // Experiment-only entry point. The caller holds the pool lifetime reservation and
-    // the complete batch-window allowance in separate, pre-sized budget partitions.
-    package static func runPersistentTrial(pool: CoreMLMatrixPool, preprocessing: StandardPreprocessingPlan,
+    static func runPrepared(pool: CoreMLMatrixPool, preprocessing: StandardPreprocessingPlan,
         configuration: Configuration, load: @Sendable (Request) async throws -> PreparedNumericBatch?,
         consume: @Sendable (Int, CoreMLPrediction) async throws -> Void) async throws {
         let preparation = try await pool.inputPreparation()
         guard preprocessing.columnNames == preparation.columnNames else {
-            throw SwiftMLError.invalidParameter("Persistent trial columns differ from fitted plan")
+            throw SwiftMLError.invalidParameter("Pipeline columns differ from fitted plan")
         }
         let prepared = try CoreMLPreparedMatrix.allowance(schema: preparation.schema, names: preparation.columnNames)
         let workspace = try preprocessing.workspaceAllowance(rowCount: preparation.rowCount)

@@ -25,19 +25,12 @@ struct PersistentTrialScope: Sendable {
     }
 
     func withModel<T: Sendable>(_ q: MixedWorkloadRequest, fixture: MixedWorkloadFixture,
-        operation: @Sendable (CoreMLMatrixPool) async throws -> T) async throws -> T {
-        // This private partition has exactly two known reservations; neither waits for work capacity.
-        try await retained.withReservation(MemoryEstimate(capacities: [fixture.configuration.retainedBytes])) {
-            try await CoreMLMatrixPool.withPool(compiledModelURL: fixture.model,
-                inputColumns: fixture.plan.columnNames, outputName: "result",
-                computeUnits: q.policy == "cpu" ? .cpuOnly : .cpuAndNeuralEngine,
-                budget: retained, configuration: fixture.configuration.pool) { pool in
-                guard await retained.reservedBytes == retainedBytes else {
-                    throw BenchmarkFailure("Retained partition not fully accounted")
-                }
-                return try await operation(pool)
-            }
-        }
+        operation: @Sendable (CoreMLBatchSession) async throws -> T) async throws -> T {
+        try await CoreMLBatchPipeline.withSession(compiledModelURL: fixture.model,
+            inputColumns: fixture.plan.columnNames, outputName: "result",
+            computeUnits: q.policy == "cpu" ? .cpuOnly : .cpuAndNeuralEngine,
+            preprocessing: fixture.plan, lifetimeBudget: retained, workBudget: work,
+            configuration: fixture.configuration, operation: operation)
     }
 
     func verifyDrained() async throws {

@@ -72,7 +72,7 @@ struct GatherWorkTests {
         #expect(frame[column: "missing"]?.nullCount == count)
     }
 
-    @Test("Empty row selections return the existing empty-frame result")
+    @Test("Empty row selections preserve schema without retaining values")
     func emptySelection() throws {
         let frame = try DataFrame(columns: [
             TypedColumn<Float>(name: "score", values: [Float?](repeating: 1, count: count)),
@@ -81,7 +81,11 @@ struct GatherWorkTests {
         ])
         let result = frame.gathered(at: [])
         #expect(result.rowCount == 0)
-        #expect(result.columnNames.isEmpty)
+        #expect(result.columnNames == frame.columnNames)
+        #expect(result.columns.map(\.dtype) == frame.columns.map(\.dtype))
+        for column in result.columns {
+            #expect(column.count == 0 && column.nullCount == 0)
+        }
         #expect(frame.rowCount == count)
         #expect(frame[column: "identifier"]?.nullCount == count)
         let empty = DataFrame.empty.gathered(at: [])

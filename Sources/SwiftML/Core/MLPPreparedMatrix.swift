@@ -20,14 +20,14 @@ func mlpMatrixRow(_ matrix: PreparedNumericMatrix, row: Int) -> [Double] {
 
 func mlpPredictRow(_ values: [Double], layers: [LayerWeights], activate: (Double) -> Double) -> [Double] {
     var current = values
-    for (index, layer) in layers.enumerated() {
-        var next = layer.b
+    for index in layers.indices {
+        var next = layers[index].b
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-            1, Int32(layer.outDim), Int32(layer.inDim), 1,
-            current, Int32(layer.inDim), layer.W, Int32(layer.outDim),
-            1, &next, Int32(layer.outDim))
+            1, Int32(layers[index].outDim), Int32(layers[index].inDim), 1,
+            current, Int32(layers[index].inDim), layers[index].W, Int32(layers[index].outDim),
+            1, &next, Int32(layers[index].outDim))
         if index < layers.count - 1 {
-            for column in 0..<layer.outDim { next[column] = activate(next[column]) }
+            for column in 0..<layers[index].outDim { next[column] = activate(next[column]) }
         }
         current = next
     }

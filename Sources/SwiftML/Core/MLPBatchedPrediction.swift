@@ -14,6 +14,7 @@ func mlpBatchedPrediction<Result>(
     let width = layers.reduce(0) { max($0, max($1.inDim, $1.outDim)) }
     guard width > 0, width <= 512, let firstLayer = layers.first,
           let lastLayer = layers.last else { return nil }
+    guard firstLayer.inDim > 0 else { throw SwiftMLError.emptyInput }
     for row in features where row.count != firstLayer.inDim {
         throw SwiftMLError.dimensionMismatch(expected: firstLayer.inDim, got: row.count)
     }

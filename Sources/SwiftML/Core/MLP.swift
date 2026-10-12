@@ -158,7 +158,7 @@ public actor MLPClassifier: ClassifierEstimator {
         validationTargets: [Double]? = nil,
         earlyStopping: EarlyStopping? = nil
     ) async throws {
-        guard !features.isEmpty, !targets.isEmpty else {
+        guard !features.isEmpty, !features[0].isEmpty, !targets.isEmpty else {
             throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
@@ -534,7 +534,7 @@ public actor MLPRegressor: RegressorEstimator {
         validationTargets: [Double]? = nil,
         earlyStopping: EarlyStopping? = nil
     ) async throws {
-        guard !features.isEmpty, !targets.isEmpty else {
+        guard !features.isEmpty, !features[0].isEmpty, !targets.isEmpty else {
             throw SwiftMLError.emptyInput
         }
         let numSamples = features.count

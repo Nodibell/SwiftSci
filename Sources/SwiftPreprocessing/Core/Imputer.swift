@@ -121,7 +121,7 @@ public struct Imputer: PreprocessingTransformer, Sendable {
                 let replacement = statistics[column]
                 output.columns[column].values.withUnsafeMutableBufferPointer { values in
                     imputeMissing(values, start: first, stride: 1,
-                                  count: values.count - first, replacement: replacement)
+                                  count: values.count - first) { _ in replacement }
                 }
             }
             output.columns[column].validity = nil

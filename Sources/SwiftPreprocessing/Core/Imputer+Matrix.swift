@@ -23,10 +23,14 @@ extension Imputer {
         var output = consume matrix
         let rows = output.rowCount, width = output.columnCount, order = output.order
         output.withMutableValues { values in
-            for column in 0..<width {
-                let start = order == .rowMajor ? column : column * rows
-                let stride = order == .rowMajor ? width : 1
-                imputeMissing(values, start: start, stride: stride, count: rows, replacement: statistics[column])
+            if order == .rowMajor {
+                for row in 0..<rows {
+                    imputeMissing(values, start: row * width, stride: 1, count: width) { statistics[$0] }
+                }
+            } else {
+                for column in 0..<width {
+                    imputeMissing(values, start: column * rows, stride: 1, count: rows) { _ in statistics[column] }
+                }
             }
         }
         return output
@@ -34,9 +38,9 @@ extension Imputer {
 }
 
 func imputeMissing(_ values: UnsafeMutableBufferPointer<Double>, start: Int,
-                   stride: Int, count: Int, replacement: Double) {
+                   stride: Int, count: Int, replacement: (Int) -> Double) {
     for row in 0..<count {
         let index = start + row * stride
-        if values[index].isNaN { values[index] = replacement }
+        if values[index].isNaN { values[index] = replacement(row) }
     }
 }

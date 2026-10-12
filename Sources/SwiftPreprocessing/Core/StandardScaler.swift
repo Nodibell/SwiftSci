@@ -101,14 +101,7 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
     /// - Returns: Standardized matrix, same shape as `data`.
     /// - Throws: `PreprocessingError.fitNotCalled` if `fit` was not called first.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
-        lock.lock()
-        let mean = self.mean
-        let std  = self.std
-        lock.unlock()
-
-        guard let mean, let std else {
-            throw PreprocessingError.fitNotCalled
-        }
+        let (mean, std) = try fittedParameters()
         guard !data.isEmpty else { return [] }
 
         let cols = mean.count
@@ -121,8 +114,10 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
                 throw PreprocessingError.dimensionMismatch(expected: cols, got: row.count)
             }
             // vDSP: (row - mean) / std  element-wise
-            vDSP_vaddD(row, 1, negMean, 1, &shifted, 1, vDSP_Length(cols))
-            vDSP_vdivD(std, 1, shifted, 1, &transformed[r], 1, vDSP_Length(cols))
+            row.withUnsafeBufferPointer { input in
+                standardizeRow(input.baseAddress!, negativeMeans: negMean, deviations: std,
+                               shifted: &shifted, output: &transformed[r])
+            }
         }
 
         return transformed
@@ -175,10 +170,7 @@ extension StandardScaler {
     /// Column names and original row indices are preserved. Missing inputs
     /// become numeric NaNs, matching the nonconsuming transform.
     public func transform(consuming batch: consuming PreparedNumericBatch) throws -> PreparedNumericBatch {
-        lock.lock()
-        let means = mean, deviations = std
-        lock.unlock()
-        guard let means, let deviations else { throw PreprocessingError.fitNotCalled }
+        let (means, deviations) = try fittedParameters()
         guard batch.rowCount > 0 else { return batch.replacingNumericColumns(Array(repeating: [], count: batch.columnCount)) }
         guard batch.columnCount == means.count else {
             throw PreprocessingError.dimensionMismatch(expected: means.count, got: batch.columnCount)
@@ -203,10 +195,8 @@ extension StandardScaler {
                 }
                 for r in 0..<count {
                     let row = buffer.baseAddress!.advanced(by: r * width)
-                    vDSP_vaddD(row, 1, negativeMeans, 1, &shifted, 1, vDSP_Length(width))
-                    // Array-backed output preserves vDSP division rounding;
-                    // writing into differently aligned tile rows can change it.
-                    vDSP_vdivD(deviations, 1, shifted, 1, &normalizedRow, 1, vDSP_Length(width))
+                    standardizeRow(row, negativeMeans: negativeMeans, deviations: deviations,
+                                   shifted: &shifted, output: &normalizedRow)
                     for c in 0..<width { row[c] = normalizedRow[c] }
                 }
                 for c in 0..<width {
@@ -221,6 +211,14 @@ extension StandardScaler {
             output.columns[c].nullCount = 0
         }
         return output
+    }
+
+    func fittedParameters() throws -> (means: [Double], deviations: [Double]) {
+        lock.lock()
+        let means = mean, deviations = std
+        lock.unlock()
+        guard let means, let deviations else { throw PreprocessingError.fitNotCalled }
+        return (means, deviations)
     }
 
     /// Fits and transforms a prepared batch, retaining its column order.

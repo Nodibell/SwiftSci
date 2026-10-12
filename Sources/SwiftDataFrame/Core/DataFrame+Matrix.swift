@@ -49,6 +49,49 @@ extension DataFrame {
         return PreparedNumericBatch(columnNames: columns, columns: selected.map { $0.compact() }, rowCount: shape.rows)
     }
 
+    /// Extracts an owned contiguous Double matrix without intermediate compact columns.
+    ///
+    /// Accepts Double, Int64 and Bool columns in the supplied order, including duplicates.
+    /// Int64 conversion follows Double precision. The result remains a snapshot if the
+    /// dataframe changes. Use `prepareNumericBatch(_:)` when column-based preprocessing
+    /// is needed before packing a matrix.
+    ///
+    /// - Parameters:
+    ///   - columns: Feature names in output order.
+    ///   - rows: Original dataframe row positions. Nil selects all rows; an empty array
+    ///     selects none. Order and duplicate positions are preserved.
+    ///   - order: Storage layout requested by the consumer. Defaults to row-major.
+    ///   - missing: Converts nil to NaN by default. Rejecting nil still permits valid NaNs.
+    /// - Throws: `SwiftMLError` for missing or unsupported columns, invalid row positions,
+    ///   a matrix size overflow, or selected nil values when `missing` is `.reject`.
+    /// - Returns: A matrix retaining the selected names and original row positions.
+    public func prepareNumericMatrix(_ columns: [String], rows: [Int]? = nil,
+                                     order: NumericMatrixOrder = .rowMajor,
+                                     missing: NumericMissingValuePolicy = .nan) throws -> PreparedNumericMatrix {
+        let selected = try featureColumns(columns)
+        let sourceCount = rowCount
+        if let rows, !rows.allSatisfy({ $0 >= 0 && $0 < sourceCount }) {
+            throw SwiftMLError.invalidParameter("Row selection contains an out-of-bounds index")
+        }
+        let count = rows?.count ?? sourceCount
+        let (elements, overflow) = count.multipliedReportingOverflow(by: selected.count)
+        guard !overflow else { throw SwiftMLError.invalidParameter("Matrix element count overflows Int") }
+        var values = [Double](repeating: 0, count: elements)
+        for (column, source) in selected.enumerated() {
+            let offset = order == .rowMajor ? column : column * count
+            let stride = order == .rowMajor ? selected.count : 1
+            if let rows {
+                try source.writeSelected(to: &values, offset: offset, stride: stride,
+                                         rows: rows, missing: missing, name: columns[column])
+            } else {
+                try source.writeSelected(to: &values, offset: offset, stride: stride,
+                                         rows: 0..<sourceCount, missing: missing, name: columns[column])
+            }
+        }
+        return PreparedNumericMatrix(values: values, columnNames: columns, rowCount: count,
+                                     order: order, sourceRows: rows)
+    }
+
     private func featureColumns(_ names: [String]) throws -> [FeatureColumn] {
         // Preserve missing-name precedence even when an earlier column has an unsupported type.
         for name in names where self[column: name] == nil {
@@ -85,6 +128,31 @@ private enum FeatureColumn {
             for row in 0..<count { output[row * stride + offset] = values[row].map(Double.init) ?? .nan }
         case .boolean(let values):
             for row in 0..<count { output[row * stride + offset] = values[row].map { $0 ? 1.0 : 0.0 } ?? .nan }
+        }
+    }
+
+    func writeSelected<Rows: Collection>(to output: inout [Double], offset: Int, stride: Int,
+                                        rows: Rows, missing: NumericMissingValuePolicy, name: String) throws
+    where Rows.Element == Int {
+        switch self {
+        case .double(let values):
+            try write(values, transform: { $0 })
+        case .integer(let values):
+            try write(values, transform: Double.init)
+        case .boolean(let values):
+            try write(values, transform: { $0 ? 1 : 0 })
+        }
+
+        func write<T>(_ source: [T?], transform: (T) -> Double) throws {
+            for (destination, row) in rows.enumerated() {
+                if let value = source[row] {
+                    output[destination * stride + offset] = transform(value)
+                } else if missing == .reject {
+                    throw SwiftMLError.invalidParameter("Column \(name) contains missing values")
+                } else {
+                    output[destination * stride + offset] = .nan
+                }
+            }
         }
     }
 

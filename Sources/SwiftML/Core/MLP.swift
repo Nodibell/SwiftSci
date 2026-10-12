@@ -158,7 +158,7 @@ public actor MLPClassifier: ClassifierEstimator {
         validationTargets: [Double]? = nil,
         earlyStopping: EarlyStopping? = nil
     ) async throws {
-        guard !features.isEmpty, !targets.isEmpty else {
+        guard !features.isEmpty, !features[0].isEmpty, !targets.isEmpty else {
             throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
@@ -398,6 +398,11 @@ public actor MLPClassifier: ClassifierEstimator {
         }
         guard !features.isEmpty else { return [] }
 
+        if features.count >= mlpPredictionBatchRows,
+           let batched = try mlpBatchedPrediction(features: features, layers: layers,
+            activate: { applyActivation($0, activation: activation) },
+            finish: { mlpProbabilities($0, classCount: classes.count) }) { return batched }
+
         var results = [[Double]]()
         results.reserveCapacity(features.count)
 
@@ -423,15 +428,7 @@ public actor MLPClassifier: ClassifierEstimator {
                 curr = next
             }
 
-            if classes.count <= 2 {
-                let p1 = sigmoid(curr[0])
-                results.append([1.0 - p1, p1])
-            } else {
-                let maxLogit = curr.max() ?? 0.0
-                let exps = curr.map { exp($0 - maxLogit) }
-                let sumExp = exps.reduce(0.0, +)
-                results.append(exps.map { $0 / sumExp })
-            }
+            results.append(mlpProbabilities(curr, classCount: classes.count))
         }
 
         return results
@@ -537,7 +534,7 @@ public actor MLPRegressor: RegressorEstimator {
         validationTargets: [Double]? = nil,
         earlyStopping: EarlyStopping? = nil
     ) async throws {
-        guard !features.isEmpty, !targets.isEmpty else {
+        guard !features.isEmpty, !features[0].isEmpty, !targets.isEmpty else {
             throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
@@ -728,6 +725,11 @@ public actor MLPRegressor: RegressorEstimator {
         }
         guard !features.isEmpty else { return [] }
 
+        if features.count >= mlpPredictionBatchRows,
+           let batched = try mlpBatchedPrediction(features: features, layers: layers,
+            activate: { applyActivation($0, activation: activation) },
+            finish: { $0[0] }) { return batched }
+
         var results = [Double]()
         results.reserveCapacity(features.count)
 
@@ -777,4 +779,16 @@ private func applyActivationDeriv(_ x: Double, activation: ActivationFunction) -
         let t = tanh(x)
         return 1.0 - t * t
     }
+}
+
+private func mlpProbabilities<Values: Collection>(_ logits: Values, classCount: Int) -> [Double]
+where Values.Element == Double {
+    if classCount <= 2 {
+        let p1 = sigmoid(logits.first!)
+        return [1.0 - p1, p1]
+    }
+    let maxLogit = logits.max() ?? 0.0
+    let exps = logits.map { exp($0 - maxLogit) }
+    let sumExp = exps.reduce(0.0, +)
+    return exps.map { $0 / sumExp }
 }

@@ -12,26 +12,67 @@ func mlpBatchedPrediction<Result>(
 ) throws -> [Result]? {
     guard features.count >= mlpPredictionBatchRows else { return nil }
     let width = layers.reduce(0) { max($0, max($1.inDim, $1.outDim)) }
-    guard width > 0, width <= 512, let firstLayer = layers.first,
-          let lastLayer = layers.last else { return nil }
+    guard width > 0, width <= 512, let firstLayer = layers.first else { return nil }
     guard firstLayer.inDim > 0 else { throw SwiftMLError.emptyInput }
     for row in features where row.count != firstLayer.inDim {
         throw SwiftMLError.dimensionMismatch(expected: firstLayer.inDim, got: row.count)
     }
+    return mlpBatchedPrediction(rowCount: features.count, width: width, layers: layers,
+        fill: { start, count, buffer, stride in
+            for row in 0..<count {
+                features[start + row].withUnsafeBufferPointer { source in
+                    (buffer.baseAddress! + row * stride).update(from: source.baseAddress!, count: firstLayer.inDim)
+                }
+            }
+        }, activate: activate, finish: finish)
+}
+
+func mlpBatchedPrediction<Result>(
+    matrix: PreparedNumericMatrix, layers: [LayerWeights],
+    activate: (Double) -> Double,
+    finish: (UnsafeBufferPointer<Double>) -> Result
+) -> [Result]? {
+    guard matrix.rowCount >= mlpPredictionBatchRows else { return nil }
+    let width = layers.reduce(0) { max($0, max($1.inDim, $1.outDim)) }
+    guard width > 0, width <= 512, !layers.isEmpty else { return nil }
+    return matrix.values.withUnsafeBufferPointer { source in
+        mlpBatchedPrediction(rowCount: matrix.rowCount, width: width, layers: layers,
+            fill: { start, count, buffer, stride in
+                switch matrix.order {
+                case .rowMajor:
+                    for row in 0..<count {
+                        (buffer.baseAddress! + row * stride).update(
+                            from: source.baseAddress! + (start + row) * matrix.columnCount,
+                            count: matrix.columnCount)
+                    }
+                case .columnMajor:
+                    for column in 0..<matrix.columnCount {
+                        for row in 0..<count {
+                            buffer[row * stride + column] = source[column * matrix.rowCount + start + row]
+                        }
+                    }
+                }
+            }, activate: activate, finish: finish)
+    }
+}
+
+private func mlpBatchedPrediction<Result>(
+    rowCount: Int, width: Int, layers: [LayerWeights],
+    fill: (Int, Int, UnsafeMutableBufferPointer<Double>, Int) -> Void,
+    activate: (Double) -> Double,
+    finish: (UnsafeBufferPointer<Double>) -> Result
+) -> [Result] {
+    let lastLayer = layers.last!
     let batchRows = mlpPredictionBatchRows
     var first = [Double](repeating: 0, count: batchRows * width)
     var second = [Double](repeating: 0, count: batchRows * width)
     var results: [Result] = []
-    results.reserveCapacity(features.count)
+    results.reserveCapacity(rowCount)
     first.withUnsafeMutableBufferPointer { a in
         second.withUnsafeMutableBufferPointer { b in
-            for start in stride(from: 0, to: features.count, by: batchRows) {
-                let count = min(batchRows, features.count - start)
-                for row in 0..<count {
-                    features[start + row].withUnsafeBufferPointer { source in
-                        (a.baseAddress! + row * width).update(from: source.baseAddress!, count: firstLayer.inDim)
-                    }
-                }
+            for start in stride(from: 0, to: rowCount, by: batchRows) {
+                let count = min(batchRows, rowCount - start)
+                fill(start, count, a, width)
                 var input = a.baseAddress!, output = b.baseAddress!
                 for (index, layer) in layers.enumerated() {
                     for row in 0..<count {

@@ -218,7 +218,7 @@ public enum NumericMissingValuePolicy: Sendable {
 /// A contiguous Double matrix with value ownership and original row positions.
 /// Swift copy-on-write preserves this matrix if its source batch is later mutated.
 public struct PreparedNumericMatrix: Sendable {
-    public let values: [Double]
+    public private(set) var values: [Double]
     public let columnNames: [String]
     public let rowCount: Int
     public var columnCount: Int { columnNames.count }
@@ -233,6 +233,12 @@ public struct PreparedNumericMatrix: Sendable {
         self.rowCount = rowCount
         self.order = order
         self.sourceRows = sourceRows
+    }
+
+    /// Mutates only element values. The buffer must not escape this scoped borrow.
+    /// Swift array copy-on-write preserves any shared matrix or values snapshots.
+    package mutating func withMutableValues(_ body: (UnsafeMutableBufferPointer<Double>) -> Void) {
+        values.withUnsafeMutableBufferPointer { body($0) }
     }
 
     /// Reads an element in either layout. Indices must be in bounds.

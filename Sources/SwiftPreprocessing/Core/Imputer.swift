@@ -120,9 +120,8 @@ public struct Imputer: PreprocessingTransformer, Sendable {
             if let first = output.columns[column].values.firstIndex(where: { $0.isNaN }) {
                 let replacement = statistics[column]
                 output.columns[column].values.withUnsafeMutableBufferPointer { values in
-                    for row in first..<values.count where values[row].isNaN {
-                        values[row] = replacement
-                    }
+                    imputeMissing(values, start: first, stride: 1,
+                                  count: values.count - first) { _ in replacement }
                 }
             }
             output.columns[column].validity = nil

@@ -9,7 +9,13 @@ public struct SeedableRandomNumberGenerator: RandomNumberGenerator {
     /// - Parameters:
     ///   - seed: The seed.
     public init(seed: Int) {
-        self.state = seed == 0 ? 123456789 : UInt64(abs(seed))
+        if seed == 0 {
+            self.state = 123456789
+        } else if seed == Int.min {
+            self.state = UInt64(Int.max) + 1
+        } else {
+            self.state = UInt64(abs(seed))
+        }
     }
     
     /// Next.
@@ -24,7 +30,7 @@ public struct SeedableRandomNumberGenerator: RandomNumberGenerator {
 /// - Parameters:
 ///   - features: 2D array of input feature vectors of shape `[N, P]`.
 ///   - targets: 1D array of ground-truth target values of length `N`.
-///   - testSize: Proportion or absolute count of dataset allocated to test split.
+///   - testSize: Proportion of dataset allocated to test split (must be between 0.0 and 1.0 exclusive).
 ///   - stratify: Optional array of class labels for stratified sampling. If provided, class ratios are preserved in train and test splits.
 ///   - shuffle: Whether to shuffle observations prior to splitting or processing.
 ///   - seed: Random number generator seed for deterministic reproducibility.
@@ -80,7 +86,9 @@ public func trainTestSplit(
             classIndices[c, default: []].append(i)
         }
         
-        for (_, indices) in classIndices {
+        let sortedClasses = classIndices.keys.sorted()
+        for c in sortedClasses {
+            guard let indices = classIndices[c] else { continue }
             var clsIdxs = indices
             if shuffle {
                 if rng != nil {

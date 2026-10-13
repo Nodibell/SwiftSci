@@ -14,7 +14,7 @@ struct OneHotEncoderTests {
             ["female", "US"]
         ]
         
-        encoder.fit(data)
+        try encoder.fit(data)
         
         #expect(encoder.categories.count == 2)
         #expect(encoder.categories[0] == ["female", "male"])
@@ -40,7 +40,7 @@ struct OneHotEncoderTests {
             try encoder.transform([["male"]])
         }
         
-        encoder.fit([["male", "US"], ["female", "Europe"]])
+        try encoder.fit([["male", "US"], ["female", "Europe"]])
         
         // Dimension mismatch
         #expect(throws: PreprocessingError.self) {
@@ -51,12 +51,17 @@ struct OneHotEncoderTests {
         #expect(throws: PreprocessingError.self) {
             try encoder.transform([["male", "Asia"]])
         }
+
+        // Ragged rows during fit throw dimensionMismatch
+        #expect(throws: PreprocessingError.self) {
+            try encoder.fit([["male", "US"], ["female"]])
+        }
     }
 
     @Test("OneHotEncoder handleUnknown: .ignore encodes unseen categories as all zeros")
     func testOneHotEncoderHandleUnknownIgnore() throws {
         let encoder = OneHotEncoder(handleUnknown: .ignore)
-        encoder.fit([["male", "US"], ["female", "Europe"]])
+        try encoder.fit([["male", "US"], ["female", "Europe"]])
         // categories[0]: ["female", "male"] (count: 2)
         // categories[1]: ["Europe", "US"] (count: 2)
 

@@ -49,11 +49,19 @@ public struct TargetEncoder: PreprocessingTransformer, Sendable {
         self.isFitted = true
     }
     
-    /// Fits on 2D string matrix (first column used) and 1D target (PreprocessingTransformer protocol).
+    /// Fits on 2D matrix (first column is feature, last column is target) (PreprocessingTransformer protocol).
     /// - Parameters:
-    ///   - data: Raw input data array or matrix for transformation.
-    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    ///   - data: Raw input data matrix of at least 2 columns `[rows, cols >= 2]`.
+    /// - Throws: `PreprocessingError.emptyInput`, `dimensionMismatch`, or `invalidInput` if columns < 2.
     public mutating func fit(_ data: [[Double]]) throws {
+        guard !data.isEmpty, !data[0].isEmpty else { throw PreprocessingError.emptyInput }
+        let numCols = data[0].count
+        guard numCols >= 2 else {
+            throw PreprocessingError.invalidInput("TargetEncoder requires at least 2 columns: feature and target")
+        }
+        for row in data where row.count != numCols {
+            throw PreprocessingError.dimensionMismatch(expected: numCols, got: row.count)
+        }
         let categories = data.map { String($0.first ?? 0.0) }
         let defaultTarget = data.map { $0.last ?? 0.0 }
         try fit(categories: categories, target: defaultTarget)
@@ -72,24 +80,81 @@ public struct TargetEncoder: PreprocessingTransformer, Sendable {
     
     /// Transforms 2D feature matrix into 2D single-column target-encoded matrix (PreprocessingTransformer protocol).
     /// - Parameters:
-    ///   - data: Raw input data array or matrix for transformation.
-    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
-    /// - Returns: 2D numerical matrix of shape `[N, P]`.
+    ///   - data: Raw input data matrix `[rows, cols]`.
+    /// - Throws: `PreprocessingError` if un-fitted or ragged.
+    /// - Returns: 2D numerical matrix of shape `[N, 1]`.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
+        guard isFitted else { throw PreprocessingError.fittingRequired }
+        guard !data.isEmpty, !data[0].isEmpty else { throw PreprocessingError.emptyInput }
+        let numCols = data[0].count
+        for row in data where row.count != numCols {
+            throw PreprocessingError.dimensionMismatch(expected: numCols, got: row.count)
+        }
         let categories = data.map { String($0.first ?? 0.0) }
         let encoded = try transform(categories: categories)
         return encoded.map { [$0] }
     }
     
-    /// Fits and transforms categorical string array in one step.
+    /// Fits and transforms categorical string array in one step with Out-Of-Fold (OOF) target leakage protection.
+    ///
+    /// When `cv > 1`, encodes training observations using out-of-fold category target statistics,
+    /// preventing target leakage into training features (Scikit-Learn parity).
+    /// Final statistics across the entire dataset are preserved for subsequent `transform(categories:)` calls on validation/test data.
     /// - Parameters:
     ///   - categories: Discrete category levels or categorical column names.
     ///   - target: Target column name or output variable identifier.
+    ///   - cv: Number of cross-validation folds for out-of-fold encoding (defaults to 5; pass `<= 1` to disable OOF).
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: Array of computed numeric values.
-    public mutating func fitTransform(categories: [String], target: [Double]) throws -> [Double] {
+    public mutating func fitTransform(categories: [String], target: [Double], cv: Int = 5) throws -> [Double] {
+        guard !categories.isEmpty else { throw PreprocessingError.emptyInput }
+        guard categories.count == target.count else {
+            throw PreprocessingError.dimensionMismatch(expected: categories.count, got: target.count)
+        }
+
+        // Fit full dataset statistics for subsequent validation/test transform calls
         try fit(categories: categories, target: target)
-        return try transform(categories: categories)
+
+        guard cv > 1 && categories.count >= cv else {
+            return try transform(categories: categories)
+        }
+
+        // Out-of-fold encoding for training data
+        let n = categories.count
+        var oofEncoded = [Double](repeating: 0.0, count: n)
+
+        for fold in 0..<cv {
+            var foldCounts = [String: Int]()
+            var foldSums = [String: Double]()
+            var foldTotalCount = 0
+            var foldTotalSum = 0.0
+
+            for i in 0..<n {
+                if i % cv != fold {
+                    let cat = categories[i]
+                    let y = target[i]
+                    foldCounts[cat, default: 0] += 1
+                    foldSums[cat, default: 0.0] += y
+                    foldTotalCount += 1
+                    foldTotalSum += y
+                }
+            }
+
+            let foldGlobalMean = foldTotalCount > 0 ? (foldTotalSum / Double(foldTotalCount)) : globalMean
+
+            for i in 0..<n where i % cv == fold {
+                let cat = categories[i]
+                if let count = foldCounts[cat], count > 0 {
+                    let catMean = foldSums[cat]! / Double(count)
+                    let smoothed = (Double(count) * catMean + smoothing * foldGlobalMean) / (Double(count) + smoothing)
+                    oofEncoded[i] = smoothed
+                } else {
+                    oofEncoded[i] = foldGlobalMean
+                }
+            }
+        }
+
+        return oofEncoded
     }
 
 }

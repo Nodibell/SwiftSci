@@ -1,6 +1,7 @@
 import Foundation
 import Accelerate
 import SwiftPreprocessing
+import SwiftDataFrame
 
 /// Activation functions supported by Multi-Layer Perceptrons.
 public enum ActivationFunction: String, Sendable, Codable {
@@ -387,6 +388,39 @@ public actor MLPClassifier: ClassifierEstimator {
         }
     }
 
+    /// Predicts labels from a prepared matrix in either storage order.
+    /// Columns must follow the positional feature order used during fitting.
+    /// Uses the same CPU Double-precision calculation as row-array prediction.
+    public func predict(features: PreparedNumericMatrix) async throws -> [Int] {
+        let probabilities = try await predictProbability(features: features)
+        guard let classes = classes else { return [] }
+        if classes.count <= 2 {
+            return probabilities.map { $0[1] >= 0.5 ? Int(classes.last ?? 1) : Int(classes.first ?? 0) }
+        }
+        return probabilities.map { Int(classes[$0.argmax()]) }
+    }
+
+    /// Predicts class probabilities without materializing a complete row-array input.
+    /// Columns are positional; names do not reorder the model's features.
+    /// Empty input returns an empty result after the fitted-model check.
+    /// Throws if the model is not fitted or a nonempty matrix has the wrong width.
+    public func predictProbability(features: PreparedNumericMatrix) async throws -> [[Double]] {
+        guard let layers = layers, let classes = classes else { throw SwiftMLError.modelNotFitted }
+        guard features.rowCount > 0 else { return [] }
+        try mlpValidateMatrix(features, layers: layers)
+        if let batched = mlpBatchedPrediction(matrix: features, layers: layers,
+            activate: { applyActivation($0, activation: activation) },
+            finish: { mlpProbabilities($0, classCount: classes.count) }) { return batched }
+        var results: [[Double]] = []
+        results.reserveCapacity(features.rowCount)
+        for row in 0..<features.rowCount {
+            let logits = mlpPredictRow(mlpMatrixRow(features, row: row), layers: layers,
+                activate: { applyActivation($0, activation: activation) })
+            results.append(mlpProbabilities(logits, classCount: classes.count))
+        }
+        return results
+    }
+
     /// Predict probability.
     /// - Parameters:
     ///   - features: The features.
@@ -407,27 +441,8 @@ public actor MLPClassifier: ClassifierEstimator {
         results.reserveCapacity(features.count)
 
         for x in features {
-            var curr = x
-            for l in 0..<layers.count {
-                var next = layers[l].b
-                cblas_dgemm(
-                    CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                    1, Int32(layers[l].outDim), Int32(layers[l].inDim),
-                    1.0,
-                    curr, Int32(layers[l].inDim),
-                    layers[l].W, Int32(layers[l].outDim),
-                    1.0,
-                    &next, Int32(layers[l].outDim)
-                )
-
-                if l != layers.count - 1 {
-                    for j in 0..<layers[l].outDim {
-                        next[j] = applyActivation(next[j], activation: activation)
-                    }
-                }
-                curr = next
-            }
-
+            let curr = mlpPredictRow(x, layers: layers,
+                activate: { applyActivation($0, activation: activation) })
             results.append(mlpProbabilities(curr, classCount: classes.count))
         }
 
@@ -714,6 +729,26 @@ public actor MLPRegressor: RegressorEstimator {
         self.layers = layers
     }
 
+    /// Predicts from a prepared matrix in either storage order using CPU Double precision.
+    /// Columns must follow the positional feature order used during fitting; names do not reorder them.
+    /// Empty input returns an empty result after the fitted-model check.
+    /// Throws if the model is not fitted or a nonempty matrix has the wrong width.
+    public func predict(features: PreparedNumericMatrix) async throws -> [Double] {
+        guard let layers = layers else { throw SwiftMLError.modelNotFitted }
+        guard features.rowCount > 0 else { return [] }
+        try mlpValidateMatrix(features, layers: layers)
+        if let batched = mlpBatchedPrediction(matrix: features, layers: layers,
+            activate: { applyActivation($0, activation: activation) }, finish: { $0[0] }) { return batched }
+        var results: [Double] = []
+        results.reserveCapacity(features.rowCount)
+        for row in 0..<features.rowCount {
+            let prediction = mlpPredictRow(mlpMatrixRow(features, row: row), layers: layers,
+                activate: { applyActivation($0, activation: activation) })
+            results.append(prediction[0])
+        }
+        return results
+    }
+
     /// Predict.
     /// - Parameters:
     ///   - features: The features.
@@ -734,26 +769,8 @@ public actor MLPRegressor: RegressorEstimator {
         results.reserveCapacity(features.count)
 
         for x in features {
-            var curr = x
-            for l in 0..<layers.count {
-                var next = layers[l].b
-                cblas_dgemm(
-                    CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                    1, Int32(layers[l].outDim), Int32(layers[l].inDim),
-                    1.0,
-                    curr, Int32(layers[l].inDim),
-                    layers[l].W, Int32(layers[l].outDim),
-                    1.0,
-                    &next, Int32(layers[l].outDim)
-                )
-
-                if l != layers.count - 1 {
-                    for j in 0..<layers[l].outDim {
-                        next[j] = applyActivation(next[j], activation: activation)
-                    }
-                }
-                curr = next
-            }
+            let curr = mlpPredictRow(x, layers: layers,
+                activate: { applyActivation($0, activation: activation) })
             results.append(curr[0])
         }
 

@@ -226,7 +226,7 @@ public struct PreparedNumericMatrix: Sendable {
     private let sourceRows: [Int]?
     public var originalRowIndices: [Int] { sourceRows ?? Array(0..<rowCount) }
 
-    fileprivate init(values: [Double], columnNames: [String], rowCount: Int,
+    init(values: [Double], columnNames: [String], rowCount: Int,
                      order: NumericMatrixOrder, sourceRows: [Int]?) {
         self.values = values
         self.columnNames = columnNames

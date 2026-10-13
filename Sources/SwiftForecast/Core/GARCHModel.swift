@@ -39,6 +39,8 @@ public actor GARCHModel {
     public func fit(series: [Double]) throws {
         let n = series.count
         guard n > 0 else { throw ForecastError.emptyTimeSeries }
+        guard !series.contains(where: { $0.isNaN }) else { throw ForecastError.containsNaN }
+        guard !series.contains(where: { $0.isInfinite }) else { throw ForecastError.containsInfinity }
         let minLen = order.p + order.q + 4
         guard n >= minLen else {
             throw ForecastError.insufficientLength(minimum: minLen, got: n)
@@ -150,7 +152,7 @@ public actor GARCHModel {
     /// - Returns: Array of computed numeric values.
     public func forecastVolatility(steps: Int) throws -> [Double] {
         guard isFitted else { throw ForecastError.notFitted }
-        guard steps > 0 else { return [] }
+        guard steps > 0 else { throw ForecastError.invalidHorizon(steps) }
         
         let n = residuals.count
         var sig2 = [Double](repeating: initialVar, count: n)

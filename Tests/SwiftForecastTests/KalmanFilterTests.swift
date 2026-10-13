@@ -233,3 +233,45 @@ struct KalmanFilterTests {
         #expect(mismatchedBounds == [0.5, 0.5])
     }
 }
+
+// MARK: - Matrix Finiteness & Covariance Validation
+
+extension KalmanFilterTests {
+
+    @Test("KalmanFilter rejects non-finite matrices, asymmetric covariance, and negative variance")
+    func testKalmanCovarianceValidation() async throws {
+        let kf = try KalmanFilter(stateSize: 2, observationSize: 1)
+
+        // Asymmetric covariance
+        await #expect(throws: ForecastError.self) {
+            try await kf.setProcessNoise([
+                [1.0, 2.0],
+                [0.0, 1.0]
+            ])
+        }
+
+        // Negative diagonal variance
+        await #expect(throws: ForecastError.self) {
+            try await kf.setProcessNoise([
+                [-1.0, 0.0],
+                [0.0, 1.0]
+            ])
+        }
+
+        // NaN in transition matrix
+        await #expect(throws: ForecastError.self) {
+            try await kf.setTransitionMatrix([
+                [1.0, Double.nan],
+                [0.0, 1.0]
+            ])
+        }
+
+        // One-dimensional factory rejects negative / non-finite noise
+        await #expect(throws: ForecastError.self) {
+            _ = try await KalmanFilter.oneDimensional(processNoise: -0.1, measurementNoise: 1.0)
+        }
+        await #expect(throws: ForecastError.self) {
+            _ = try await KalmanFilter.oneDimensional(processNoise: 0.1, measurementNoise: Double.infinity)
+        }
+    }
+}

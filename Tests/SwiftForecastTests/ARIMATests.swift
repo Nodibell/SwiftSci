@@ -148,3 +148,20 @@ struct ARIMATests {
         #expect(bicWithExog.isFinite)
     }
 }
+
+// MARK: - Exogenous Input Validation
+
+extension ARIMATests {
+
+    @Test("ARIMA forecast rejects an empty exogenous matrix instead of crashing")
+    func testARIMAEmptyExogRejected() async throws {
+        let series = (0..<20).map { Double($0) + Double.random(in: -0.1...0.1) }
+        let exogTrain = (0..<20).map { [Double($0) * 0.5] }
+        let arima = try ARIMAModel(p: 1, d: 0, q: 0)
+        try await arima.fit(series: series, exog: exogTrain)
+
+        await #expect(throws: ForecastError.self) {
+            _ = try await arima.forecast(horizon: 3, exog: [])
+        }
+    }
+}

@@ -224,3 +224,34 @@ struct KoopmanOperatorTests {
         #expect(features.contains(30.0))
     }
 }
+
+// MARK: - Polynomial Basis Completeness & Validation
+
+extension KoopmanOperatorTests {
+
+    @Test("Polynomial dictionary of degree 4 generates all higher-order cross-terms")
+    func testPolynomialDegree4CrossTerms() {
+        let dict = ObservableDictionary.polynomial(degree: 4, includeCrossTerms: true)
+        let features = dict.evaluate(x: [2.0, 3.0])
+
+        // x1^3*x2 = 24, x1^2*x2^2 = 36, x1*x2^3 = 54
+        #expect(features.contains(24.0))
+        #expect(features.contains(36.0))
+        #expect(features.contains(54.0))
+    }
+
+    @Test("KoopmanOperator validates dictionary parameters and predict input finiteness")
+    func testKoopmanDictionaryAndStateValidation() async throws {
+        let invalidRBF = ObservableDictionary.rbf(centers: [[1.0, 2.0]], gamma: -0.5)
+        let koopman = KoopmanOperator(dictionary: invalidRBF)
+        await #expect(throws: ForecastError.self) {
+            try await koopman.fit(trajectory: [[1.0, 2.0], [2.0, 3.0]])
+        }
+
+        let validKoopman = KoopmanOperator(dictionary: .identity)
+        try await validKoopman.fit(trajectory: [[1.0, 2.0], [2.0, 3.0]])
+        await #expect(throws: ForecastError.self) {
+            _ = try await validKoopman.predict(from: [Double.nan, 2.0], horizon: 2)
+        }
+    }
+}

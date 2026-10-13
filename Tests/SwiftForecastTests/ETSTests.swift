@@ -195,3 +195,28 @@ struct ETSTests {
         #expect(fc[1] > fc[3])
     }
 }
+
+// MARK: - Parameter Optimization & Innovation Metrics
+
+extension ETSTests {
+
+    @Test("ETSModel optimizes parameters and separates innovations from residuals")
+    func testETSOptimizationAndInnovations() async throws {
+        let series = [10.0, 15.0, 22.0, 31.0, 42.0, 55.0, 70.0, 87.0]
+        let ets = ETSModel(error: .multiplicative, trend: .additive, seasonal: .none, alpha: 0.3, beta: 0.1)
+
+        try await ets.fit(series: series, optimizeParameters: true)
+        let fittedAlpha = await ets.alpha
+        let residuals = await ets.residuals
+        let innovations = await ets.innovations
+        let sse = await ets.sse
+
+        #expect(fittedAlpha > 0.0 && fittedAlpha < 1.0)
+        #expect(residuals.count == series.count)
+        #expect(innovations.count == series.count)
+
+        // Multiplicative error: residual = y - mu, innovation = (y - mu) / mu; sse = sum(innovation^2)
+        let computedSSE = innovations.reduce(0.0) { $0 + $1 * $1 }
+        #expect(abs(sse - computedSSE) < 1e-6)
+    }
+}

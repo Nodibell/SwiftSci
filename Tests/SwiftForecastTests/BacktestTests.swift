@@ -240,3 +240,105 @@ struct BacktestTests {
         }
     }
 }
+
+// MARK: - Input & Forecast Contract Validation
+
+extension BacktestTests {
+
+    @Test("Backtester throws dimensionMismatch when fitAndForecast returns wrong count")
+    func testBacktesterForecastCountMismatch() async {
+        let series = (0..<30).map { Double($0) }
+        await #expect(throws: ForecastError.self) {
+            _ = try await TimeSeriesBacktester.backtest(
+                series: series,
+                initialWindow: 10,
+                horizon: 5,
+                stepSize: 5,
+                mode: .expanding
+            ) { _, horizon in
+                // Return 4 items instead of requested 5
+                return Array(repeating: 1.0, count: horizon - 1)
+            }
+        }
+    }
+
+    @Test("Backtester rejects series containing NaN or Infinity")
+    func testBacktesterRejectsNonFiniteSeries() async {
+        var nanSeries = (0..<20).map { Double($0) }
+        nanSeries[5] = Double.nan
+        await #expect(throws: ForecastError.self) {
+            _ = try await TimeSeriesBacktester.backtest(
+                series: nanSeries,
+                initialWindow: 10,
+                horizon: 3
+            ) { train, h in Array(repeating: train.last!, count: h) }
+        }
+
+        var infSeries = (0..<20).map { Double($0) }
+        infSeries[8] = Double.infinity
+        await #expect(throws: ForecastError.self) {
+            _ = try await TimeSeriesBacktester.backtest(
+                series: infSeries,
+                initialWindow: 10,
+                horizon: 3
+            ) { train, h in Array(repeating: train.last!, count: h) }
+        }
+    }
+
+    @Test("Backtester rejects sliding window size < 2")
+    func testBacktesterSlidingWindowValidation() async {
+        let series = (0..<25).map { Double($0) }
+        await #expect(throws: ForecastError.self) {
+            _ = try await TimeSeriesBacktester.backtest(
+                series: series,
+                initialWindow: 5,
+                horizon: 2,
+                mode: .sliding(windowSize: 1)
+            ) { train, h in Array(repeating: train.last!, count: h) }
+        }
+
+        await #expect(throws: ForecastError.self) {
+            _ = try await TimeSeriesBacktester.backtest(
+                series: series,
+                initialWindow: 5,
+                horizon: 2,
+                mode: .sliding(windowSize: 0)
+            ) { train, h in Array(repeating: train.last!, count: h) }
+        }
+    }
+
+    @Test("TimeSeriesMetrics throwing evaluators reject non-finite and mismatched inputs")
+    func testMetricsThrowingValidation() {
+        let actual = [1.0, 2.0, 3.0]
+        let nanForecast = [1.0, Double.nan, 3.0]
+        let shortForecast = [1.0, 2.0]
+
+        #expect(throws: ForecastError.self) {
+            _ = try TimeSeriesMetrics.evaluateRMSE(actual: actual, forecast: nanForecast)
+        }
+        #expect(throws: ForecastError.self) {
+            _ = try TimeSeriesMetrics.evaluateMAE(actual: actual, forecast: shortForecast)
+        }
+    }
+
+    @Test("TimeSeriesMetrics.mase returns NaN on zero naive scale with non-zero error")
+    func testMASEZeroScaleHandling() {
+        let constantTraining = [5.0, 5.0, 5.0, 5.0, 5.0]
+        let actual = [5.0, 5.0]
+
+        let maseVal = TimeSeriesMetrics.mase(
+            trainingSeries: constantTraining,
+            actual: actual,
+            forecast: [6.0, 7.0]
+        )
+        #expect(maseVal.isNaN)
+
+        // A perfect forecast on a constant training series has zero MASE.
+        let perfectMase = TimeSeriesMetrics.mase(
+            trainingSeries: constantTraining,
+            actual: actual,
+            forecast: [5.0, 5.0]
+        )
+        #expect(perfectMase == 0.0)
+    }
+}

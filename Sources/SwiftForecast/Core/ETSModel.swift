@@ -25,17 +25,25 @@ public actor ETSModel {
     /// Seasonal period length (number of observations per full cycle).
     public let period: Int
 
-    private var alpha: Double = 0.3
-    private var beta: Double = 0.1
-    private var gamma: Double = 0.1
-    private var phi: Double = 0.98
+    /// Estimated level smoothing parameter alpha in (0, 1).
+    public private(set) var alpha: Double
+    /// Estimated trend smoothing parameter beta in (0, 1).
+    public private(set) var beta: Double
+    /// Estimated seasonal smoothing parameter gamma in (0, 1).
+    public private(set) var gamma: Double
+    /// Estimated damping parameter phi in (0, 1).
+    public private(set) var phi: Double
 
     private var fittedSeries: [Double] = []
     public private(set) var lastLevel: Double = 0.0
     public private(set) var lastTrend: Double = 0.0
     public private(set) var seasonalComponents: [Double] = []
     public private(set) var fittedValues: [Double] = []
+    /// In-sample forecast residuals: e_t = y_t - mu_t.
     public private(set) var residuals: [Double] = []
+    /// Normalized state-space innovations: eps_t = (y_t - mu_t) / mu_t for multiplicative, e_t for additive.
+    public private(set) var innovations: [Double] = []
+    /// Sum of squared innovations sum(eps_t^2) utilized in state-space Gaussian likelihood.
     public private(set) var sse: Double = 0.0
     public private(set) var logLikelihood: Double = 0.0
     public private(set) var aic: Double = 0.0
@@ -49,23 +57,36 @@ public actor ETSModel {
     ///   - trend: Trend component variant (`.none`, `.additive`, or `.damped`). Defaults to `.additive`.
     ///   - seasonal: Seasonal cycle variant (`.none`, `.additive`, or `.multiplicative`). Defaults to `.none`.
     ///   - period: Number of periods per seasonal cycle. Defaults to 1.
+    ///   - alpha: Initial smoothing parameter for level. Defaults to 0.3.
+    ///   - beta: Initial smoothing parameter for trend. Defaults to 0.1.
+    ///   - gamma: Initial smoothing parameter for seasonality. Defaults to 0.1.
+    ///   - phi: Initial damping coefficient. Defaults to 0.98.
     public init(
         error: ErrorType = .additive,
         trend: TrendType = .additive,
         seasonal: SeasonalType = .none,
-        period: Int = 1
+        period: Int = 1,
+        alpha: Double = 0.3,
+        beta: Double = 0.1,
+        gamma: Double = 0.1,
+        phi: Double = 0.98
     ) {
         self.errorType = error
         self.trendType = trend
         self.seasonalType = seasonal
         self.period = max(1, period)
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.phi = phi
     }
 
     /// Fits the ETS model to the time series data using recursive state-space filtering.
     /// - Parameters:
     ///   - series: 1D temporal time-series observations array.
+    ///   - optimizeParameters: When true, optimizes smoothing parameters via Nelder-Mead simplex search.
     /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs/Infs, or positive domain violated.
-    public func fit(series: [Double]) async throws {
+    public func fit(series: [Double], optimizeParameters: Bool = true) async throws {
         guard !series.isEmpty else {
             throw ForecastError.emptyTimeSeries
         }
@@ -86,12 +107,150 @@ public actor ETSModel {
         }
 
         self.fittedSeries = series
+
+        // Optimize smoothing parameters if enabled
+        if optimizeParameters {
+            var initialGuess: [Double] = [self.alpha]
+            var lowerBounds: [Double] = [0.001]
+            var upperBounds: [Double] = [0.99]
+
+            if trendType != .none {
+                initialGuess.append(self.beta)
+                lowerBounds.append(0.0001)
+                upperBounds.append(0.99)
+            }
+            if seasonalType != .none {
+                initialGuess.append(self.gamma)
+                lowerBounds.append(0.0001)
+                upperBounds.append(0.99)
+            }
+            if trendType == .damped {
+                initialGuess.append(self.phi)
+                lowerBounds.append(0.8)
+                upperBounds.append(0.99)
+            }
+
+            let opt = NelderMead(maxIterations: 80, tolerance: 1e-4)
+            let bestParams = opt.minimize(
+                objective: { params in
+                    var idx = 0
+                    let a = params[idx]
+                    idx += 1
+                    let b = self.trendType != .none ? params[idx] : self.beta
+                    if self.trendType != .none { idx += 1 }
+                    let g = self.seasonalType != .none ? params[idx] : self.gamma
+                    if self.seasonalType != .none { idx += 1 }
+                    let p = self.trendType == .damped ? params[idx] : self.phi
+
+                    guard let filtered = try? self.filterTrajectory(
+                        series: series,
+                        alphaVal: a,
+                        betaVal: b,
+                        gammaVal: g,
+                        phiVal: p
+                    ) else {
+                        return Double.infinity
+                    }
+                    return filtered.totalSSE
+                },
+                initialGuess: initialGuess,
+                lowerBounds: lowerBounds,
+                upperBounds: upperBounds
+            )
+
+            var idx = 0
+            self.alpha = bestParams[idx]
+            idx += 1
+            if self.trendType != .none {
+                self.beta = bestParams[idx]
+                idx += 1
+            }
+            if self.seasonalType != .none {
+                self.gamma = bestParams[idx]
+                idx += 1
+            }
+            if self.trendType == .damped {
+                self.phi = bestParams[idx]
+            }
+        }
+
+        let filtered = try filterTrajectory(
+            series: series,
+            alphaVal: self.alpha,
+            betaVal: self.beta,
+            gammaVal: self.gamma,
+            phiVal: self.phi
+        )
+
+        self.lastLevel = filtered.lastL
+        self.lastTrend = filtered.lastB
+        self.seasonalComponents = filtered.seasonal
+        self.fittedValues = filtered.fitted
+        self.residuals = filtered.residuals
+        self.innovations = filtered.innovations
+        self.sse = filtered.totalSSE
+
+        // Free parameters in state space estimation (smoothing parameters + residual variance)
+        var k = 1 // alpha
+        if trendType != .none {
+            k += (trendType == .damped ? 2 : 1) // beta (+ phi if damped)
+        }
+        if seasonalType != .none {
+            k += 1 // gamma
+        }
+        k += 1 // sigma^2
+
+        let n = series.count
+        let nDouble = Double(n)
+        let kDouble = Double(k)
+        let sigma2 = max(1e-12, filtered.totalSSE / nDouble)
+
+        let ll: Double
+        if errorType == .additive {
+            ll = -0.5 * nDouble * (log(2.0 * Double.pi) + log(sigma2) + 1.0)
+        } else {
+            ll = -0.5 * nDouble * (log(2.0 * Double.pi) + log(sigma2) + 1.0) - filtered.logMuSum
+        }
+
+        self.logLikelihood = ll
+        self.aic = 2.0 * kDouble - 2.0 * ll
+        let denomAICc = max(1.0, nDouble - kDouble - 1.0)
+        self.aicc = self.aic + (2.0 * kDouble * (kDouble + 1.0)) / denomAICc
+        self.bic = kDouble * log(nDouble) - 2.0 * ll
+        self.isFitted = true
+    }
+
+    private func filterTrajectory(
+        series: [Double],
+        alphaVal: Double,
+        betaVal: Double,
+        gammaVal: Double,
+        phiVal: Double
+    ) throws -> (
+        totalSSE: Double,
+        logMuSum: Double,
+        lastL: Double,
+        lastB: Double,
+        seasonal: [Double],
+        fitted: [Double],
+        residuals: [Double],
+        innovations: [Double]
+    ) {
         let n = series.count
 
         // Initialize Level and Trend
         var l = series[0]
-        var b = (series[min(n - 1, 3)] - series[0]) / 3.0
-        if trendType == .none { b = 0.0 }
+        var b = 0.0
+        if trendType != .none {
+            if period > 1 && n >= 2 * period {
+                let mean1 = series[0..<period].reduce(0.0, +) / Double(period)
+                let mean2 = series[period..<(2 * period)].reduce(0.0, +) / Double(period)
+                b = (mean2 - mean1) / Double(period)
+            } else {
+                let denom = Double(max(1, min(n - 1, 3)))
+                b = (series[min(n - 1, 3)] - series[0]) / denom
+            }
+        }
 
         // Initialize Seasonal Components
         var s = [Double](repeating: 1.0, count: period)
@@ -104,10 +263,10 @@ public actor ETSModel {
 
         var inSampleFitted = [Double](repeating: 0.0, count: n)
         var inSampleResiduals = [Double](repeating: 0.0, count: n)
+        var inSampleInnovations = [Double](repeating: 0.0, count: n)
         var totalSSE = 0.0
         var logMuSum = 0.0
 
-        // Forward state update filtering
         for t in 0..<n {
             let y = series[t]
             let sIdx = t % period
@@ -116,15 +275,13 @@ public actor ETSModel {
             let prevL = l
             let prevB = b
 
-            // Trend component preceding observation t
             let trendComp: Double
             switch trendType {
             case .none: trendComp = 0.0
             case .additive: trendComp = prevB
-            case .damped: trendComp = phi * prevB
+            case .damped: trendComp = phiVal * prevB
             }
 
-            // Expected point prediction mu_t
             let mu: Double
             switch seasonalType {
             case .none:
@@ -136,104 +293,74 @@ public actor ETSModel {
             }
 
             inSampleFitted[t] = mu
+            inSampleResiduals[t] = y - mu
 
-            // Error computation and state updates according to errorType
             switch errorType {
             case .additive:
                 let e = y - mu
-                inSampleResiduals[t] = e
+                inSampleInnovations[t] = e
                 totalSSE += e * e
 
-                // Level update: l_t = l_{t-1} + trendComp + alpha * e_t
-                l = prevL + trendComp + alpha * e
+                l = prevL + trendComp + alphaVal * e
 
-                // Trend update
                 switch trendType {
                 case .none:
                     b = 0.0
                 case .additive:
-                    b = prevB + beta * e
+                    b = prevB + betaVal * e
                 case .damped:
-                    b = phi * prevB + beta * e
+                    b = phiVal * prevB + betaVal * e
                 }
 
-                // Seasonal update
                 switch seasonalType {
                 case .none:
                     break
                 case .additive:
-                    s[sIdx] = sVal + gamma * e
+                    s[sIdx] = sVal + gammaVal * e
                 case .multiplicative:
                     let denom = max(1e-6, abs(prevL + trendComp))
-                    s[sIdx] = max(1e-6, sVal + gamma * (e / denom))
+                    s[sIdx] = max(1e-6, sVal + gammaVal * (e / denom))
                 }
 
             case .multiplicative:
                 let safeMu = max(1e-8, mu)
                 let eps = (y - safeMu) / safeMu
-                inSampleResiduals[t] = y - safeMu
+                inSampleInnovations[t] = eps
                 totalSSE += eps * eps
                 logMuSum += log(safeMu)
 
-                // Level update: l_t = (l_{t-1} + trendComp) * (1 + alpha * eps_t)
-                l = (prevL + trendComp) * (1.0 + alpha * eps)
+                l = (prevL + trendComp) * (1.0 + alphaVal * eps)
 
-                // Trend update
                 switch trendType {
                 case .none:
                     b = 0.0
                 case .additive:
-                    b = prevB + beta * (prevL + trendComp) * eps
+                    b = prevB + betaVal * (prevL + trendComp) * eps
                 case .damped:
-                    b = phi * prevB + beta * (prevL + trendComp) * eps
+                    b = phiVal * prevB + betaVal * (prevL + trendComp) * eps
                 }
 
-                // Seasonal update
                 switch seasonalType {
                 case .none:
                     break
                 case .additive:
-                    s[sIdx] = sVal + gamma * safeMu * eps
+                    s[sIdx] = sVal + gammaVal * safeMu * eps
                 case .multiplicative:
-                    s[sIdx] = max(1e-6, sVal * (1.0 + gamma * eps))
+                    s[sIdx] = max(1e-6, sVal * (1.0 + gammaVal * eps))
                 }
             }
         }
 
-        self.lastLevel = l
-        self.lastTrend = b
-        self.seasonalComponents = s
-        self.fittedValues = inSampleFitted
-        self.residuals = inSampleResiduals
-        self.sse = totalSSE
-
-        // Free parameters in state space estimation (smoothing parameters + residual variance)
-        var k = 1 // alpha
-        if trendType != .none {
-            k += (trendType == .damped ? 2 : 1) // beta (+ phi if damped)
-        }
-        if seasonalType != .none {
-            k += 1 // gamma
-        }
-        k += 1 // sigma^2
-
-        let nDouble = Double(n)
-        let kDouble = Double(k)
-        let sigma2 = max(1e-12, totalSSE / nDouble)
-
-        let ll: Double
-        if errorType == .additive {
-            ll = -0.5 * nDouble * (log(2.0 * Double.pi) + log(sigma2) + 1.0)
-        } else {
-            ll = -0.5 * nDouble * (log(2.0 * Double.pi) + log(sigma2) + 1.0) - logMuSum
-        }
-
-        self.logLikelihood = ll
-        self.aic = 2.0 * kDouble - 2.0 * ll
-        let denomAICc = max(1.0, nDouble - kDouble - 1.0)
-        self.aicc = self.aic + (2.0 * kDouble * (kDouble + 1.0)) / denomAICc
-        self.bic = kDouble * log(nDouble) - 2.0 * ll
-        self.isFitted = true
+        return (
+            totalSSE: totalSSE,
+            logMuSum: logMuSum,
+            lastL: l,
+            lastB: b,
+            seasonal: s,
+            fitted: inSampleFitted,
+            residuals: inSampleResiduals,
+            innovations: inSampleInnovations
+        )
     }
 
     /// Generates future forecasts for `steps` ahead.

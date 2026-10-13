@@ -265,3 +265,19 @@ struct DecompositionTests {
         }
     }
 }
+
+// MARK: - Multiplicative Residual Validation
+
+extension DecompositionTests {
+
+    @Test("Multiplicative decomposition throws on non-positive series instead of substituting 1.0")
+    func testMultiplicativeNonPositiveSeriesThrows() {
+        #expect(throws: ForecastError.self) {
+            _ = try TimeSeriesDecomposition.decompose(
+                series: [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+                period: 2,
+                model: .multiplicative
+            )
+        }
+    }
+}

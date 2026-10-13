@@ -80,3 +80,30 @@ struct TimeSeriesTransformersTests {
         }
     }
 }
+
+// MARK: - Validating Initializers
+
+extension TimeSeriesTransformersTests {
+
+    @Test("Validating initializers throw on invalid parameters")
+    func testValidatingInitializers() {
+        #expect(throws: ForecastError.self) {
+            _ = try LagTransformer(validatingLags: [0, -1, 2])
+        }
+        #expect(throws: ForecastError.self) {
+            _ = try LagTransformer(validatingLags: [])
+        }
+        #expect(throws: ForecastError.self) {
+            _ = try RollingWindow(validatingWindowSize: 0)
+        }
+        #expect(throws: ForecastError.self) {
+            _ = try ExpandingWindow(validatingMinPeriods: -1)
+        }
+
+        #expect(throws: Never.self) {
+            _ = try LagTransformer(validatingLags: [1, 2, 3])
+            _ = try RollingWindow(validatingWindowSize: 5)
+            _ = try ExpandingWindow(validatingMinPeriods: 2)
+        }
+    }
+}

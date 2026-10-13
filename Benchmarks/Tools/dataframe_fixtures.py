@@ -147,7 +147,7 @@ def expected_values(payload):
     action, p = payload['action'], payload['parameters']
 
     def gather(indices):
-        return [dict(c, values=[c['values'][i] for i in indices]) for c in source] if indices else []
+        return [dict(c, values=[c['values'][i] for i in indices]) for c in source]
 
     if action == 'gather':
         result = gather(p['indices'])

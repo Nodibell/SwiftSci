@@ -30,5 +30,6 @@ let loadedDF = try ParquetReader.read(from: parquetData)
 
 ### Core Guides
 - <doc:GettingStarted>
+- <doc:EmptyRowSelections>
 - <doc:MachineLearningWorkflow>
 - <doc:TimeSeriesForecasting>

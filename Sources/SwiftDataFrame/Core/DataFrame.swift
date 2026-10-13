@@ -13,7 +13,7 @@ public struct DataFrame: Sendable {
 
     // MARK: – Static helpers
 
-    /// The empty.
+    /// A dataframe with no rows and no columns.
     public static let empty = DataFrame(_columns: [:], _columnOrder: [])
 
     private init(_columns: [String: any AnyColumn], _columnOrder: [String]) {
@@ -304,7 +304,7 @@ public struct DataFrame: Sendable {
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func sample(n: Int, seed: UInt64? = nil, ordered: Bool = false) -> DataFrame {
         let total = shape.rows
-        guard n > 0 && total > 0 else { return DataFrame.empty }
+        guard n > 0 && total > 0 else { return gathered(at: []) }
         let actualN = Swift.min(n, total)
 
         var rng = SeededRNG(seed: seed ?? UInt64(Date().timeIntervalSince1970 * 1000))
@@ -354,7 +354,7 @@ public struct DataFrame: Sendable {
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func filterRows(by predicate: (Int) -> Bool) -> DataFrame {
         let rows = shape.rows
-        guard rows > 0 else { return DataFrame.empty }
+        guard rows > 0 else { return self }
         var passingIndices = [Int]()
         passingIndices.reserveCapacity(rows)
         for i in 0..<rows {
@@ -373,7 +373,7 @@ public struct DataFrame: Sendable {
     ///   - predicate: Filtering boolean closure applied to elements.
     /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
     public func filter(_ predicate: (DataFrameRow) -> Bool) -> DataFrame {
-        guard shape.rows > 0 else { return DataFrame.empty }
+        guard shape.rows > 0 else { return self }
         let map = _columns
         let names = columnNames
         var mask = [Bool](repeating: false, count: shape.rows)
@@ -653,18 +653,19 @@ public struct DataFrame: Sendable {
 
     private func slice(from start: Int, count n: Int) -> DataFrame {
         let total  = shape.rows
-        guard total > 0, n > 0 else { return DataFrame.empty }
+        guard total > 0, n > 0 else { return gathered(at: []) }
         let upper  = Swift.min(start + n, total)
         let indices = Array(start..<upper)
         return gathered(at: indices)
     }
 
     /// Gathers rows at specified row indices (supports concurrent parallel gather for large datasets).
+    /// Preserves column names, order, and types, including when the selection is empty.
     /// - Parameter indices: Array of row indices to include in the resulting DataFrame.
     /// - Returns: A new `DataFrame` containing the gathered rows in the given index order.
     public func gathered(at indices: [Int]) -> DataFrame {
-        guard !indices.isEmpty else { return DataFrame.empty }
         let sourceColumns = columns
+        guard !sourceColumns.isEmpty else { return self }
         let numCols = sourceColumns.count
         let rowBytes = sourceColumns.reduce(0) { bytes, column in
             switch column.dtype {
@@ -711,7 +712,6 @@ public struct DataFrame: Sendable {
         for (i, keep) in mask.enumerated() where keep {
             indices.append(i)
         }
-        guard !indices.isEmpty else { return DataFrame.empty }
         return gathered(at: indices)
     }
 

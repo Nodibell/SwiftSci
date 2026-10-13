@@ -1,6 +1,7 @@
 import Testing
-import SwiftStats
+@testable import SwiftStats
 import SwiftDataFrame
+import Accelerate
 
 @Suite("Descriptive Statistics")
 struct DescriptiveStatsTests {
@@ -336,4 +337,57 @@ struct DataFrameStatsTests {
         #expect(abs((aCorrB ?? 0.0) - 1.0) < 1e-10)
     }
 }
+
+@Suite("Descriptive & Hypothesis Test Robustness")
+struct StatsRobustnessTests {
+
+    @Test("Student's t-test confidence interval uses pooled standard error")
+    func testStudentTTestCIPooledSE() throws {
+        let s1 = [10.0, 11.0, 12.0, 10.5, 11.5]
+        let s2 = [14.0, 15.0, 16.0, 14.5, 15.5]
+        let studentResult = try Stats.tTest(sample1: s1, sample2: s2, equalVariances: true)
+
+        let n1 = Double(s1.count)
+        let n2 = Double(s2.count)
+        let var1 = try Stats.variance(s1, ddof: 1)
+        let var2 = try Stats.variance(s2, ddof: 1)
+        let sp2 = ((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2)
+        let pooledSE = (sp2 * (1/n1 + 1/n2)).squareRoot()
+        let expectedMargin = Stats.criticalT(df: n1 + n2 - 2, alpha: 0.05) * pooledSE
+
+        let meanDiff = vDSP.mean(s1) - vDSP.mean(s2)
+        let actualMargin = meanDiff - studentResult.confidenceInterval.lower
+        #expect(abs(actualMargin - expectedMargin) < 1e-12)
+    }
+
+    @Test("Median computation does not overflow on large Double and Float values")
+    func testMedianNoOverflow() throws {
+        let largeDouble = Double.greatestFiniteMagnitude * 0.8
+        let doubleMedian = try Stats.median([largeDouble, largeDouble])
+        #expect(doubleMedian == largeDouble)
+
+        let largeFloat = Float.greatestFiniteMagnitude * 0.8
+        let floatMedian = try Stats.median([largeFloat, largeFloat])
+        #expect(floatMedian == largeFloat)
+    }
+
+    @Test("Percentile interpolation does not overflow on opposite signed extreme values")
+    func testPercentileNoOverflow() throws {
+        let minVal = -Double.greatestFiniteMagnitude * 0.8
+        let maxVal = Double.greatestFiniteMagnitude * 0.8
+        let p50 = try Stats.percentile([minVal, maxVal], q: 0.5)
+        #expect(abs(p50) < 1e-10)
+    }
+
+    @Test("Mean rejects infinite values when checkNaN is enabled")
+    func testMeanRejectsInfinities() throws {
+        #expect(throws: StatsError.self) {
+            try Stats.mean([1.0, Double.infinity], checkNaN: true)
+        }
+        #expect(throws: StatsError.self) {
+            try Stats.mean([Float(1.0), Float.infinity], checkNaN: true)
+        }
+    }
+}
+
 

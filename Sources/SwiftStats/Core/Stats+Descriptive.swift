@@ -14,18 +14,26 @@ extension Stats {
     public static func mean(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
         let result = vDSP.mean(values)
-        if checkNaN && result.isNaN { try requireNoNaN(values) }
+        if checkNaN && (result.isNaN || result.isInfinite) {
+            try requireNoNaN(values)
+        }
         return result
     }
 
     /// Float overload.
     /// - Parameters:
     ///   - values: Numeric values array to be evaluated.
+    ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
     /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
     /// - Returns: The computed arithmetic mean value.
-    public static func mean(_ values: [Float]) throws -> Float {
+    public static func mean(_ values: [Float], checkNaN: Bool = true) throws -> Float {
         guard !values.isEmpty else { throw StatsError.emptyInput }
-        return vDSP.mean(values)
+        let result = vDSP.mean(values)
+        if checkNaN && (result.isNaN || result.isInfinite) {
+            if values.contains(where: { $0.isNaN }) { throw StatsError.containsNaN }
+            if values.contains(where: { $0.isInfinite }) { throw StatsError.containsInfinity }
+        }
+        return result
     }
 
     /// Sample or population variance using two passes over values relative to an observed origin.
@@ -136,7 +144,7 @@ extension Stats {
         if n % 2 == 1 {
             return copy[n / 2]
         } else {
-            return (copy[n / 2 - 1] + copy[n / 2]) / 2.0
+            return copy[n / 2 - 1] * 0.5 + copy[n / 2] * 0.5
         }
     }
 
@@ -153,7 +161,7 @@ extension Stats {
         if n % 2 == 1 {
             return copy[n / 2]
         } else {
-            return (copy[n / 2 - 1] + copy[n / 2]) / 2.0
+            return copy[n / 2 - 1] * 0.5 + copy[n / 2] * 0.5
         }
     }
 
@@ -187,7 +195,7 @@ extension Stats {
         let lo     = Int(idx)
         let hi     = Swift.min(lo + 1, sorted.count - 1)
         let frac   = idx - Double(lo)
-        return sorted[lo] + frac * (sorted[hi] - sorted[lo])
+        return (1.0 - frac) * sorted[lo] + frac * sorted[hi]
     }
 
     /// Multiple percentiles at once.
@@ -314,7 +322,10 @@ extension Stats {
     }
 
     internal static func requireNoNaN(_ values: [Double]) throws {
-        if values.contains(where: { $0.isNaN }) { throw StatsError.containsNaN }
+        for v in values {
+            if v.isNaN { throw StatsError.containsNaN }
+            if v.isInfinite { throw StatsError.containsInfinity }
+        }
     }
 
     internal static func requireSameSize(_ a: [Double], _ b: [Double]) throws {

@@ -65,19 +65,20 @@ extension Stats {
 
         let t: Double
         let df: Double
+        let se: Double
 
         if equalVariances {
             // Student's t (pooled variance)
             let sp2 = ((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2)
             guard sp2 > 0 else { throw StatsError.divisionByZero(context: "pooled tTest") }
-            let se = (sp2 * (1/n1 + 1/n2)).squareRoot()
+            se = (sp2 * (1/n1 + 1/n2)).squareRoot()
             t  = (x1 - x2) / se
             df = n1 + n2 - 2
         } else {
             // Welch's t-test
             let se1 = var1 / n1
             let se2 = var2 / n2
-            let se  = (se1 + se2).squareRoot()
+            se = (se1 + se2).squareRoot()
             guard se > 0 else { throw StatsError.divisionByZero(context: "Welch tTest") }
             t  = (x1 - x2) / se
             // Welch-Satterthwaite degrees of freedom
@@ -85,7 +86,7 @@ extension Stats {
         }
 
         let pValue = 2.0 * tDistributionCDF(-abs(t), df: df)
-        let margin = criticalT(df: df, alpha: 0.05) * ((var1/n1 + var2/n2).squareRoot())
+        let margin = criticalT(df: df, alpha: 0.05) * se
         let d      = (x1 - x2) / (try pooledSD(sample1, sample2))
 
         return TTestResult(

@@ -129,4 +129,73 @@ final class SIMDJoinTests: XCTestCase {
         let leftEmpty = try emptyDF.joinSIMD(df1, on: "id", how: .left)
         XCTAssertEqual(leftEmpty.rowCount, 0)
     }
+
+    func testSIMDHashJoin100kPerformance() throws {
+        let n = 100_000
+        let leftIds = TypedColumn<Int64>(name: "id", values: (0..<n).map { Int64($0) })
+        let leftVals = TypedColumn<Double>(name: "val", values: (0..<n).map { Double($0) * 1.5 })
+        let left = try DataFrame(columns: [leftIds, leftVals])
+
+        let rightIds = TypedColumn<Int64>(name: "id", values: (0..<n).map { Int64($0) })
+        let rightWeights = TypedColumn<Double>(name: "weight", values: (0..<n).map { Double($0) * 0.05 })
+        let right = try DataFrame(columns: [rightIds, rightWeights])
+
+        let start = DispatchTime.now()
+        let joined = try left.joinSIMD(right, on: "id", how: .inner)
+        let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000.0
+
+        print("--> 100k Hash Join completed in \(String(format: "%.3f", elapsed)) ms")
+        XCTAssertEqual(joined.rowCount, n)
+        XCTAssertEqual(joined.columns.count, 3)
+    }
+
+    func testSIMDJoinManyToManyDuplicates() throws {
+        // Left has key "A" twice
+        let left = try DataFrame(columns: [
+            TypedColumn<String>(name: "key", values: ["A", "A", "B"]),
+            TypedColumn<Int64>(name: "l_val", values: [1, 2, 3])
+        ])
+
+        // Right has key "A" 3 times
+        let right = try DataFrame(columns: [
+            TypedColumn<String>(name: "key", values: ["A", "A", "A", "C"]),
+            TypedColumn<Int64>(name: "r_val", values: [10, 20, 30, 40])
+        ])
+
+        let joined = try left.joinSIMD(right, on: "key", how: .inner)
+
+        // Cartesian product: 2 left × 3 right = 6 rows for "A"
+        XCTAssertEqual(joined.rowCount, 6)
+        let lVals = (joined[column: "l_val"] as? TypedColumn<Int64>)?.values ?? []
+        let rVals = (joined[column: "r_val"] as? TypedColumn<Int64>)?.values ?? []
+
+        XCTAssertEqual(lVals, [1, 1, 1, 2, 2, 2])
+        XCTAssertEqual(rVals, [10, 20, 30, 10, 20, 30])
+    }
+
+    func testSIMDJoinMissingNullKeys() throws {
+        let left = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [1, nil, 2]),
+            TypedColumn<String>(name: "name", values: ["A", "NullLeft", "B"])
+        ])
+
+        let right = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [1, nil, 3]),
+            TypedColumn<Double>(name: "score", values: [10.0, 99.0, 30.0])
+        ])
+
+        // Inner join: NULL != NULL, so only id=1 matches
+        let inner = try left.joinSIMD(right, on: "id", how: .inner)
+        XCTAssertEqual(inner.rowCount, 1)
+        let innerIds = (inner[column: "id"] as? TypedColumn<Int64>)?.values
+        XCTAssertEqual(innerIds, [1])
+
+        // Left join: id=1 matches, nil and 2 do not match right (3 rows total)
+        let leftJoined = try left.joinSIMD(right, on: "id", how: .left)
+        XCTAssertEqual(leftJoined.rowCount, 3)
+
+        // Outer join: 1 matches, nil left, 2 left, nil right, 3 right (5 rows total)
+        let outer = try left.joinSIMD(right, on: "id", how: .outer)
+        XCTAssertEqual(outer.rowCount, 5)
+    }
 }

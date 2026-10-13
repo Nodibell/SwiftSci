@@ -23,40 +23,56 @@ extension DataFrame {
         }
 
         let numRows = shape.rows
-        var uniqueIndices = [String]()
-        var indexMap = [String: Int]()
+        var uniqueIndices = [Any?]()
+        var indexMap = [AnyHashable?: Int]()
         var uniqueColumns = [String]()
-        var columnMap = [String: Int]()
+        var columnMap = [AnyHashable?: Int]()
 
         for r in 0..<numRows {
-            let iVal = idxCol.value(at: r).map { "\($0)" } ?? "null"
-            let pVal = pCol.value(at: r).map { "\($0)" } ?? "null"
+            let rawIdx = idxCol.value(at: r)
+            let iKey: AnyHashable? = rawIdx.flatMap { ($0 as? AnyHashable) ?? AnyHashable(String(describing: $0)) }
 
-            if indexMap[iVal] == nil {
-                indexMap[iVal] = uniqueIndices.count
-                uniqueIndices.append(iVal)
+            if indexMap[iKey] == nil {
+                indexMap[iKey] = uniqueIndices.count
+                uniqueIndices.append(rawIdx)
             }
-            if columnMap[pVal] == nil {
-                columnMap[pVal] = uniqueColumns.count
-                uniqueColumns.append(pVal)
+
+            let rawPCol = pCol.value(at: r)
+            let pKey: AnyHashable? = rawPCol.flatMap { ($0 as? AnyHashable) ?? AnyHashable(String(describing: $0)) }
+
+            if columnMap[pKey] == nil {
+                let colName: String
+                if let raw = rawPCol {
+                    colName = String(describing: raw)
+                } else {
+                    colName = "null"
+                }
+                columnMap[pKey] = uniqueColumns.count
+                uniqueColumns.append(colName)
             }
+        }
+
+        if uniqueColumns.contains(indexCol) {
+            throw SwiftMLError.invalidParameter("Pivoted column value creates a column name identical to the index column '\(indexCol)'")
         }
 
         // Group values per (rowIdx, colIdx)
         var cellValues = Array(repeating: Array(repeating: [Double](), count: uniqueColumns.count), count: uniqueIndices.count)
 
         for r in 0..<numRows {
-            let iVal = idxCol.value(at: r).map { "\($0)" } ?? "null"
-            let pVal = pCol.value(at: r).map { "\($0)" } ?? "null"
+            let rawIdx = idxCol.value(at: r)
+            let iKey: AnyHashable? = rawIdx.flatMap { ($0 as? AnyHashable) ?? AnyHashable(String(describing: $0)) }
+            let rawPCol = pCol.value(at: r)
+            let pKey: AnyHashable? = rawPCol.flatMap { ($0 as? AnyHashable) ?? AnyHashable(String(describing: $0)) }
 
-            if let rowIdx = indexMap[iVal], let colIdx = columnMap[pVal],
+            if let rowIdx = indexMap[iKey], let colIdx = columnMap[pKey],
                let val = vCol.value(at: r).flatMap({ toDouble($0) }) {
                 cellValues[rowIdx][colIdx].append(val)
             }
         }
 
         var resultCols = [any AnyColumn]()
-        resultCols.append(TypedColumn<String>(name: indexCol, values: uniqueIndices.map { Optional($0) }))
+        resultCols.append(makeColumn(name: indexCol, dtype: idxCol.dtype, rawValues: uniqueIndices))
 
         for (cIdx, colName) in uniqueColumns.enumerated() {
             var colVals = [Double?]()
@@ -103,6 +119,25 @@ extension DataFrame {
             if _columns[id] == nil { throw SwiftMLError.columnNotFound(id) }
         }
 
+        // Validate duplicates and column name collisions
+        guard Set(idVars).count == idVars.count else {
+            throw SwiftMLError.invalidParameter("Melt 'idVars' contains duplicate column names")
+        }
+        if !valueVars.isEmpty {
+            guard Set(valueVars).count == valueVars.count else {
+                throw SwiftMLError.invalidParameter("Melt 'valueVars' contains duplicate column names")
+            }
+        }
+        guard !idVars.contains(varName) else {
+            throw SwiftMLError.invalidParameter("Melt 'varName' ('\(varName)') collides with idVars")
+        }
+        guard !idVars.contains(valueName) else {
+            throw SwiftMLError.invalidParameter("Melt 'valueName' ('\(valueName)') collides with idVars")
+        }
+        guard varName != valueName else {
+            throw SwiftMLError.invalidParameter("Melt 'varName' and 'valueName' cannot be identical ('\(varName)')")
+        }
+
         let targetValueVars: [String]
         if valueVars.isEmpty {
             targetValueVars = columnNames.filter { !idVars.contains($0) }
@@ -113,8 +148,17 @@ extension DataFrame {
             }
         }
 
+        let common = Set(idVars).intersection(Set(targetValueVars))
+        guard common.isEmpty else {
+            throw SwiftMLError.invalidParameter("Column(s) '\(common.joined(separator: ", "))' cannot be present in both idVars and valueVars")
+        }
+
         let numRows = shape.rows
-        let totalMeltRows = numRows * targetValueVars.count
+        // Integer multiplication overflow protection
+        let (totalMeltRows, overflow) = numRows.multipliedReportingOverflow(by: targetValueVars.count)
+        guard !overflow else {
+            throw SwiftMLError.invalidParameter("Melt row count overflows Int")
+        }
         guard totalMeltRows > 0 else { return DataFrame.empty }
 
         var resultCols = [any AnyColumn]()
@@ -142,20 +186,54 @@ extension DataFrame {
         }
         resultCols.append(TypedColumn<String>(name: varName, values: varValues))
 
-        // Build value column
+        // Target columns common dtype resolution
+        let targetColumns = targetValueVars.compactMap { _columns[$0] }
+        let commonDType = resolveCommonDType(targetColumns.map(\.dtype))
+
         var valueValues = [Any?]()
         valueValues.reserveCapacity(totalMeltRows)
-        for v in targetValueVars {
-            guard let col = _columns[v] else { continue }
+        for col in targetColumns {
             for r in 0..<numRows {
-                valueValues.append(col.value(at: r))
+                let raw = col.value(at: r)
+                valueValues.append(castRawValue(raw, from: col.dtype, to: commonDType))
             }
         }
 
-        let valueDType = _columns[targetValueVars[0]]?.dtype ?? .utf8
-        resultCols.append(makeColumn(name: valueName, dtype: valueDType, rawValues: valueValues))
+        resultCols.append(makeColumn(name: valueName, dtype: commonDType, rawValues: valueValues))
 
         return try DataFrame(columns: resultCols)
+    }
+}
+
+private func resolveCommonDType(_ dtypes: [ColumnDType]) -> ColumnDType {
+    guard let first = dtypes.first else { return .utf8 }
+    if dtypes.allSatisfy({ $0 == first }) { return first }
+
+    let allInteger = dtypes.allSatisfy { $0 == .int64 || $0 == .int32 }
+    if allInteger { return .int64 }
+
+    let allNumeric = dtypes.allSatisfy { $0 == .int64 || $0 == .int32 || $0 == .float64 || $0 == .float32 }
+    if allNumeric { return .float64 }
+
+    return .utf8
+}
+
+private func castRawValue(_ val: Any?, from source: ColumnDType, to target: ColumnDType) -> Any? {
+    guard let val = val else { return nil }
+    switch target {
+    case source:
+        return val
+    case .float64:
+        return toDouble(val)
+    case .int64:
+        if let i = val as? Int64 { return i }
+        if let i = val as? Int32 { return Int64(i) }
+        if let i = val as? Int { return Int64(i) }
+        return nil
+    case .utf8:
+        return String(describing: val)
+    default:
+        return val
     }
 }
 
@@ -166,6 +244,7 @@ private func toDouble(_ v: Any) -> Double? {
     case let x as Int64:  return Double(x)
     case let x as Int32:  return Double(x)
     case let x as Int:    return Double(x)
+    case let x as Bool:   return x ? 1.0 : 0.0
     default: return nil
     }
 }

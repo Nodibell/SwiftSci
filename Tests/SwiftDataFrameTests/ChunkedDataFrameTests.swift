@@ -141,4 +141,64 @@ final class ChunkedDataFrameTests: XCTestCase {
         let ids = (collected[column: "id"] as? TypedColumn<Int64>)?.values
         XCTAssertEqual(ids, [2, 3])
     }
+
+    func testChunkedDataFrameJoinLeft() async throws {
+        let left1 = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [1, 2]),
+            TypedColumn<String>(name: "name", values: ["Alice", "Bob"])
+        ])
+        let left2 = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [3, 4]),
+            TypedColumn<String>(name: "name", values: ["Charlie", "David"])
+        ])
+        let chunked = ChunkedDataFrame(chunks: [left1, left2])
+
+        let right = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [2, 3]),
+            TypedColumn<Double>(name: "score", values: [85.5, 92.0])
+        ])
+
+        let joined = chunked.join(right, on: "id", how: .left)
+        let collected = try await joined.collect()
+
+        // Left join preserves all 4 left rows exactly once
+        XCTAssertEqual(collected.rowCount, 4)
+        let ids = (collected[column: "id"] as? TypedColumn<Int64>)?.values
+        XCTAssertEqual(ids, [1, 2, 3, 4])
+        let scores = (collected[column: "score"] as? TypedColumn<Double>)?.values
+        XCTAssertEqual(scores, [nil, 85.5, 92.0, nil])
+    }
+
+    func testChunkedDataFrameJoinUnsupportedRightOuter() async throws {
+        let left = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [1, 2])
+        ])
+        let right = try DataFrame(columns: [
+            TypedColumn<Int64>(name: "id", values: [2, 3])
+        ])
+        let chunked = ChunkedDataFrame(chunks: [left])
+
+        // .right and .outer must throw SwiftMLError.unsupportedOperation
+        let rightJoined = chunked.join(right, on: "id", how: .right)
+        do {
+            _ = try await rightJoined.collect()
+            XCTFail("Expected unsupportedOperation thrown for chunked .right join")
+        } catch let error as SwiftMLError {
+            guard case .unsupportedOperation = error else {
+                XCTFail("Expected unsupportedOperation, got \(error)")
+                return
+            }
+        }
+
+        let outerJoined = chunked.join(right, on: "id", how: .outer)
+        do {
+            _ = try await outerJoined.collect()
+            XCTFail("Expected unsupportedOperation thrown for chunked .outer join")
+        } catch let error as SwiftMLError {
+            guard case .unsupportedOperation = error else {
+                XCTFail("Expected unsupportedOperation, got \(error)")
+                return
+            }
+        }
+    }
 }

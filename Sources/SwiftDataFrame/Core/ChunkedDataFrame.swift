@@ -91,9 +91,10 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
         let upstream = self.streamProducer
         return ChunkedDataFrame {
             AsyncThrowingStream { continuation in
-                Task {
+                let task = Task {
                     do {
                         for try await chunk in upstream() {
+                            try Task.checkCancellation()
                             let filtered = chunk.filter(predicate)
                             if filtered.rowCount > 0 {
                                 continuation.yield(filtered)
@@ -103,6 +104,9 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
                     } catch {
                         continuation.finish(throwing: error)
                     }
+                }
+                continuation.onTermination = { @Sendable _ in
+                    task.cancel()
                 }
             }
         }
@@ -116,9 +120,10 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
         let upstream = self.streamProducer
         return ChunkedDataFrame {
             AsyncThrowingStream { continuation in
-                Task {
+                let task = Task {
                     do {
                         for try await chunk in upstream() {
+                            try Task.checkCancellation()
                             let projected = try chunk.select(columns)
                             continuation.yield(projected)
                         }
@@ -126,6 +131,9 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
                     } catch {
                         continuation.finish(throwing: error)
                     }
+                }
+                continuation.onTermination = { @Sendable _ in
+                    task.cancel()
                 }
             }
         }
@@ -150,9 +158,10 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
         let upstream = self.streamProducer
         return ChunkedDataFrame {
             AsyncThrowingStream { continuation in
-                Task {
+                let task = Task {
                     do {
                         for try await chunk in upstream() {
+                            try Task.checkCancellation()
                             let mapped = try await transform(chunk)
                             continuation.yield(mapped)
                         }
@@ -161,6 +170,9 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
                         continuation.finish(throwing: error)
                     }
                 }
+                continuation.onTermination = { @Sendable _ in
+                    task.cancel()
+                }
             }
         }
     }
@@ -168,6 +180,11 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     // MARK: – Terminal Operations
 
     /// Collects and concatenates all chunks into a single unified `DataFrame`.
+    ///
+    /// > [!WARNING]
+    /// > `collect()` is an eager in-memory materialization operation that loads all partitions into RAM.
+    /// > For datasets exceeding available host memory, avoid `collect()` and process partitions via
+    /// > `forEachChunk(_:)` or streaming sinks.
     ///
     /// - Returns: A single `DataFrame` containing all rows from all chunks.
     /// - Throws: Any error thrown during streaming or schema alignment.
@@ -188,7 +205,11 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     public func rowCount() async throws -> Int {
         var total = 0
         for try await chunk in self {
-            total += chunk.rowCount
+            let (newTotal, overflow) = total.addingReportingOverflow(chunk.rowCount)
+            guard !overflow else {
+                throw SwiftMLError.invalidParameter("ChunkedDataFrame total row count overflows Int")
+            }
+            total = newTotal
         }
         return total
     }
@@ -209,7 +230,7 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     /// - Parameters:
     ///   - other: The right-side `DataFrame` (typically smaller or pre-loaded dimension table).
     ///   - key: The common join column name.
-    ///   - how: The kind of join (inner, left, outer).
+    ///   - how: The kind of join (.inner, .left).
     /// - Returns: A new `ChunkedDataFrame` yielding the joined partitions.
     public func join(
         _ other: DataFrame,
@@ -219,9 +240,16 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
         let upstream = self.streamProducer
         return ChunkedDataFrame {
             AsyncThrowingStream { continuation in
-                Task {
+                let task = Task {
                     do {
+                        guard how == .inner || how == .left else {
+                            throw SwiftMLError.unsupportedOperation(
+                                "Streaming join only supports .inner and .left against an in-memory dimension table. " +
+                                "(.right and .outer require global tracking of right-side matches to avoid duplicating unmatched rows per chunk)"
+                            )
+                        }
                         for try await chunk in upstream() {
+                            try Task.checkCancellation()
                             let joinedChunk = try chunk.join(other, on: key, how: how)
                             continuation.yield(joinedChunk)
                         }
@@ -229,6 +257,9 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
                     } catch {
                         continuation.finish(throwing: error)
                     }
+                }
+                continuation.onTermination = { @Sendable _ in
+                    task.cancel()
                 }
             }
         }

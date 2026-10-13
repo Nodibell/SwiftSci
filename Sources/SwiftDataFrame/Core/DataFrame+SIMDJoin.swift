@@ -52,42 +52,29 @@ extension DataFrame {
         let totalResultRows = leftIndices.count
         guard totalResultRows > 0 else { return DataFrame.empty }
 
-        // Assemble result columns using gathered indexing
+        // Assemble result columns using direct typed gathered indexing (zero boxing)
         var resultColumns: [any AnyColumn] = []
         resultColumns.reserveCapacity(self.columns.count + other.columns.count - 1)
 
         // 1. Build joined key column
-        var joinedKeyValues: [Any?] = []
-        joinedKeyValues.reserveCapacity(totalResultRows)
-        for i in 0..<totalResultRows {
-            if let lIdx = leftIndices[i] {
-                joinedKeyValues.append(leftKeyCol.value(at: lIdx))
-            } else if let rIdx = rightIndices[i] {
-                joinedKeyValues.append(rightKeyCol.value(at: rIdx))
-            } else {
-                joinedKeyValues.append(nil)
-            }
-        }
-        resultColumns.append(makeColumn(name: key, dtype: leftKeyCol.dtype, rawValues: joinedKeyValues))
+        let joinedKeyCol = leftKeyCol.gatheredJoinKey(
+            leftIndices: leftIndices,
+            rightColumn: rightKeyCol,
+            rightIndices: rightIndices,
+            name: key
+        )
+        resultColumns.append(joinedKeyCol)
 
         // 2. Gather left columns
         for leftCol in self.columns where leftCol.name != key {
             let colName = other._columns[leftCol.name] != nil ? "\(leftCol.name)_x" : leftCol.name
-            let rawVals: [Any?] = leftIndices.map { idx in
-                guard let idx else { return nil }
-                return leftCol.value(at: idx)
-            }
-            resultColumns.append(makeColumn(name: colName, dtype: leftCol.dtype, rawValues: rawVals))
+            resultColumns.append(leftCol.gatheredWithNulls(at: leftIndices, newName: colName))
         }
 
         // 3. Gather right columns
         for rightCol in other.columns where rightCol.name != key {
             let colName = self._columns[rightCol.name] != nil ? "\(rightCol.name)_y" : rightCol.name
-            let rawVals: [Any?] = rightIndices.map { idx in
-                guard let idx else { return nil }
-                return rightCol.value(at: idx)
-            }
-            resultColumns.append(makeColumn(name: colName, dtype: rightCol.dtype, rawValues: rawVals))
+            resultColumns.append(rightCol.gatheredWithNulls(at: rightIndices, newName: colName))
         }
 
         return try DataFrame(columns: resultColumns)
@@ -199,13 +186,35 @@ extension DataFrame {
         rightCount: Int,
         how: JoinKind
     ) -> (leftIndices: [Int?], rightIndices: [Int?]) {
-        // 1. Build hash table on right column
-        var rightHashTable = [T: [Int]]()
-        rightHashTable.reserveCapacity(rightCount)
+        guard rightCount > 0 else {
+            if how == .left || how == .outer {
+                return ((0..<leftCount).map { Optional($0) }, [Int?](repeating: nil, count: leftCount))
+            }
+            return ([], [])
+        }
 
+        // 1. Capacity & bucket count (power of two >= rightCount * 2)
+        var bucketCount = 16
+        while bucketCount < max(rightCount * 2, 16) {
+            bucketCount <<= 1
+        }
+        let mask = bucketCount - 1
+
+        var head = [Int32](repeating: -1, count: bucketCount)
+        var tail = [Int32](repeating: -1, count: bucketCount)
+        var next = [Int32](repeating: -1, count: rightCount)
+
+        // 2. Build chained hash table on right column with FIFO order
         for r in 0..<rightCount {
             if let val = rightValues[r] {
-                rightHashTable[val, default: []].append(r)
+                let bucket = (val.hashValue & 0x7FFFFFFF) & mask
+                let prevTail = tail[bucket]
+                if prevTail == -1 {
+                    head[bucket] = Int32(r)
+                } else {
+                    next[Int(prevTail)] = Int32(r)
+                }
+                tail[bucket] = Int32(r)
             }
         }
 
@@ -215,20 +224,32 @@ extension DataFrame {
         leftIndices.reserveCapacity(capEstimate)
         rightIndices.reserveCapacity(capEstimate)
 
-        var matchedRightIndices = Set<Int>()
+        var matchedRight: [Bool]? = nil
         if how == .right || how == .outer {
-            matchedRightIndices.reserveCapacity(rightCount)
+            matchedRight = [Bool](repeating: false, count: rightCount)
         }
 
-        // 2. Probe loop
+        // 3. Probe loop
         for l in 0..<leftCount {
-            if let val = leftValues[l], let matches = rightHashTable[val] {
-                for r in matches {
-                    leftIndices.append(l)
-                    rightIndices.append(r)
-                    if how == .right || how == .outer {
-                        matchedRightIndices.insert(r)
+            if let val = leftValues[l] {
+                let bucket = (val.hashValue & 0x7FFFFFFF) & mask
+                var curr = head[bucket]
+                var foundMatch = false
+                while curr != -1 {
+                    let r = Int(curr)
+                    if rightValues[r] == val {
+                        foundMatch = true
+                        leftIndices.append(l)
+                        rightIndices.append(r)
+                        if how == .right || how == .outer {
+                            matchedRight?[r] = true
+                        }
                     }
+                    curr = next[r]
+                }
+                if !foundMatch && (how == .left || how == .outer) {
+                    leftIndices.append(l)
+                    rightIndices.append(nil)
                 }
             } else {
                 if how == .left || how == .outer {
@@ -238,10 +259,10 @@ extension DataFrame {
             }
         }
 
-        // 3. Add unmatched right rows
-        if how == .right || how == .outer {
+        // 4. Add unmatched right rows
+        if let matchedRight = matchedRight {
             for r in 0..<rightCount {
-                if !matchedRightIndices.contains(r) {
+                if !matchedRight[r] {
                     leftIndices.append(nil)
                     rightIndices.append(r)
                 }
@@ -258,12 +279,35 @@ extension DataFrame {
         rightCount: Int,
         how: JoinKind
     ) -> (leftIndices: [Int?], rightIndices: [Int?]) {
-        var rightHashTable = [AnyHashable: [Int]]()
-        rightHashTable.reserveCapacity(rightCount)
+        guard rightCount > 0 else {
+            if how == .left || how == .outer {
+                return ((0..<leftCount).map { Optional($0) }, [Int?](repeating: nil, count: leftCount))
+            }
+            return ([], [])
+        }
 
+        var bucketCount = 16
+        while bucketCount < max(rightCount * 2, 16) {
+            bucketCount <<= 1
+        }
+        let mask = bucketCount - 1
+
+        var head = [Int32](repeating: -1, count: bucketCount)
+        var tail = [Int32](repeating: -1, count: bucketCount)
+        var next = [Int32](repeating: -1, count: rightCount)
+
+        var rightHashables = [AnyHashable?](repeating: nil, count: rightCount)
         for r in 0..<rightCount {
             if let val = rightKeyCol.value(at: r), let hashable = val as? AnyHashable {
-                rightHashTable[hashable, default: []].append(r)
+                rightHashables[r] = hashable
+                let bucket = (hashable.hashValue & 0x7FFFFFFF) & mask
+                let prevTail = tail[bucket]
+                if prevTail == -1 {
+                    head[bucket] = Int32(r)
+                } else {
+                    next[Int(prevTail)] = Int32(r)
+                }
+                tail[bucket] = Int32(r)
             }
         }
 
@@ -273,21 +317,31 @@ extension DataFrame {
         leftIndices.reserveCapacity(capEstimate)
         rightIndices.reserveCapacity(capEstimate)
 
-        var matchedRightIndices = Set<Int>()
+        var matchedRight: [Bool]? = nil
         if how == .right || how == .outer {
-            matchedRightIndices.reserveCapacity(rightCount)
+            matchedRight = [Bool](repeating: false, count: rightCount)
         }
 
         for l in 0..<leftCount {
-            if let val = leftKeyCol.value(at: l),
-               let hashable = val as? AnyHashable,
-               let matches = rightHashTable[hashable] {
-                for r in matches {
-                    leftIndices.append(l)
-                    rightIndices.append(r)
-                    if how == .right || how == .outer {
-                        matchedRightIndices.insert(r)
+            if let val = leftKeyCol.value(at: l), let hashable = val as? AnyHashable {
+                let bucket = (hashable.hashValue & 0x7FFFFFFF) & mask
+                var curr = head[bucket]
+                var foundMatch = false
+                while curr != -1 {
+                    let r = Int(curr)
+                    if rightHashables[r] == hashable {
+                        foundMatch = true
+                        leftIndices.append(l)
+                        rightIndices.append(r)
+                        if how == .right || how == .outer {
+                            matchedRight?[r] = true
+                        }
                     }
+                    curr = next[r]
+                }
+                if !foundMatch && (how == .left || how == .outer) {
+                    leftIndices.append(l)
+                    rightIndices.append(nil)
                 }
             } else {
                 if how == .left || how == .outer {
@@ -297,9 +351,9 @@ extension DataFrame {
             }
         }
 
-        if how == .right || how == .outer {
+        if let matchedRight = matchedRight {
             for r in 0..<rightCount {
-                if !matchedRightIndices.contains(r) {
+                if !matchedRight[r] {
                     leftIndices.append(nil)
                     rightIndices.append(r)
                 }

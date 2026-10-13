@@ -24,7 +24,7 @@ public actor TextPipeline {
     public func fit(documents: [String], labels: [String]) async throws {
         try vectorizer.fit(documents)
         let X = try vectorizer.transform(documents)
-        classifier.fit(X: X, y: labels)
+        try classifier.fit(X: X, y: labels)
     }
 
     /// Predicts the class label for a single document string.
@@ -35,7 +35,7 @@ public actor TextPipeline {
     public func predict(document: String) async throws -> String? {
         let x = try vectorizer.transform([document])
         guard let first = x.first else { return nil }
-        return classifier.predict(x: first)
+        return try classifier.predict(x: first)
     }
 
     /// Predicts class labels for an array of document strings.
@@ -45,7 +45,7 @@ public actor TextPipeline {
     /// - Returns: Array of feature names, column identifiers, or tokens.
     public func predict(documents: [String]) async throws -> [String] {
         let X = try vectorizer.transform(documents)
-        return classifier.predict(X: X)
+        return try classifier.predict(X: X)
     }
 }
 

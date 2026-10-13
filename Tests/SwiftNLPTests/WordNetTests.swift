@@ -236,4 +236,87 @@ struct WordNetTests {
         #expect(simDogCat > 0.0)
         #expect(wupDogCat > wupDogComp)
     }
+
+    // MARK: - Graph Distance & Taxonomy Validation
+
+    @Test("WordNet shortestGraphDistance vs ancestral pathDistance")
+    func testWordNetGraphDistance() throws {
+        let wn = WordNet()
+        guard let dog = wn.synsets(for: "dog").first,
+              let cat = wn.synsets(for: "cat").first else {
+            Issue.record("Default synsets dog/cat missing")
+            return
+        }
+
+        let ancestralDist = wn.pathDistance(dog, cat)
+        #expect(ancestralDist != nil)
+        #expect(ancestralDist! > 0)
+
+        let graphDist = wn.shortestGraphDistance(dog, cat)
+        #expect(graphDist != nil)
+        #expect(graphDist! > 0)
+        #expect(graphDist! <= ancestralDist!)
+
+        #expect(wn.pathDistance(dog, dog) == 0)
+        #expect(wn.shortestGraphDistance(dog, dog) == 0)
+    }
+
+    @Test("WordNet BFS queue handles ancestor lookup and depth efficiently")
+    func testWordNetBFSEfficiency() throws {
+        let wn = WordNet()
+        guard let dog = wn.synsets(for: "dog").first else {
+            Issue.record("dog synset missing")
+            return
+        }
+        let hypernyms = wn.hypernyms(of: dog)
+        #expect(!hypernyms.isEmpty)
+        let dogDepth = wn.depth(of: dog)
+        #expect(dogDepth > 0)
+    }
+
+    @Test("WordNet rejects cyclic taxonomy")
+    func testWordNetCycleDetection() {
+        let cyclicSynsets = [
+            Synset(id: "nodeA", name: "A", pos: .noun, definition: "A", lemmas: ["a"], hypernymIDs: ["nodeB"]),
+            Synset(id: "nodeB", name: "B", pos: .noun, definition: "B", lemmas: ["b"], hypernymIDs: ["nodeA"])
+        ]
+        let wn = WordNet(synsets: cyclicSynsets)
+        #expect(throws: NLPError.self) {
+            try wn.validateTaxonomy()
+        }
+
+        #expect(throws: NLPError.self) {
+            _ = try WordNet(validatingSynsets: cyclicSynsets)
+        }
+    }
+
+    @Test("WordNet rejects dangling hypernym references")
+    func testWordNetDanglingHypernyms() {
+        let danglingSynsets = [
+            Synset(id: "node1", name: "Node 1", pos: .noun, definition: "1", lemmas: ["one"], hypernymIDs: ["nonexistent_parent"])
+        ]
+        let wn = WordNet(synsets: danglingSynsets)
+        #expect(throws: NLPError.self) {
+            try wn.validateTaxonomy()
+        }
+    }
+
+    @Test("WordNet rejects duplicate synset IDs")
+    func testWordNetDuplicateSynsetIDs() {
+        let duplicateSynsets = [
+            Synset(id: "dup", name: "First", pos: .noun, definition: "First", lemmas: ["f"]),
+            Synset(id: "dup", name: "Second", pos: .noun, definition: "Second", lemmas: ["s"])
+        ]
+        #expect(throws: NLPError.self) {
+            _ = try WordNet(validatingSynsets: duplicateSynsets)
+        }
+    }
+
+    @Test("WordNet defaultSynsets pass taxonomy validation")
+    func testWordNetDefaultSynsetsValidation() throws {
+        let validatedWN = try WordNet(validatingSynsets: WordNet.defaultSynsets)
+        #expect(validatedWN.synsetCount > 0)
+        #expect(validatedWN.synset(forID: "dog.n.01") != nil)
+    }
 }
+

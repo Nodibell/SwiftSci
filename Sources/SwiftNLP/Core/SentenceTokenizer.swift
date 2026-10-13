@@ -57,11 +57,11 @@ public struct SentenceTokenizer: Tokenizer, Sendable {
         #endif
     }
 
-    /// Encodes input string into integer hashes.
+    /// Encodes input string into deterministic 64-bit FNV-1a integer sentence hashes.
     /// - Parameter text: Raw text string.
-    /// - Returns: Array of integer sentence hashes.
+    /// - Returns: Array of deterministic integer sentence hashes.
     public func encode(text: String) -> [Int] {
-        return tokenize(text: text).map { $0.hashValue }
+        return tokenize(text: text).map { fnv1aTokenHash($0) }
     }
 
     /// Decodes token integer IDs back to string.

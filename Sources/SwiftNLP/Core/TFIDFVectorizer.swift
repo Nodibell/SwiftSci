@@ -36,6 +36,18 @@ public struct SparseVector: Sendable, Codable, Equatable {
 
 /// TF-IDF Vectorizer for text feature extraction.
 /// TF-IDF Vectorizer for text feature extraction.
+///
+/// ## Mathematical Scaling & Term Frequency (TF) Contract
+/// - **Standard TF** (`sublinearTF == false`, default):
+///   Term frequency is normalized by document length:
+///   `tf(t, d) = count(t, d) / |d|`.
+/// - **Sublinear TF** (`sublinearTF == true`):
+///   Term frequency uses logarithmic sublinear scaling without document length normalization:
+///   `tf(t, d) = 1 + log(count(t, d))` for `count(t, d) > 0`, and 0 otherwise.
+/// - **IDF Calculation**:
+///   Smooth IDF: `idf(t) = log((1 + nDocs) / (1 + df(t))) + 1`.
+/// - **maxDF Threshold**:
+///   Ratio threshold in `(0.0, 1.0]`. Terms with `df(t) > Int(nDocs * maxDF)` are excluded from the vocabulary.
 public final class TFIDFVectorizer: @unchecked Sendable {
     /// Default stop words list to filter out during tokenization.
     public static let defaultStopWords: Set<String> = [
@@ -58,7 +70,7 @@ public final class TFIDFVectorizer: @unchecked Sendable {
     /// Whether to apply sublinear TF scaling (1 + log(count)).
     public let sublinearTF: Bool
 
-    /// Optional maximum document frequency threshold ratio (e.g. 0.85).
+    /// Optional maximum document frequency threshold ratio in range (0.0, 1.0] (e.g. 0.85).
     public let maxDF: Double?
 
     /// Optional maximum number of vocabulary features to retain (ordered by document frequency).
@@ -67,18 +79,26 @@ public final class TFIDFVectorizer: @unchecked Sendable {
     /// Minimum document frequency required for a term to be included in vocabulary.
     public let minDF: Int
 
+    private let lock = NSLock()
+    private var _vocabulary: [String: Int] = [:]
+    private var _idfs: [Double] = []
+
     /// Map of word to vocabulary index.
-    public private(set) var vocabulary: [String: Int] = [:]
+    public var vocabulary: [String: Int] {
+        lock.withLock { _vocabulary }
+    }
     
     /// Inverse document frequency (IDF) vector. Shape: [vocabSize]
-    public private(set) var idfs: [Double] = []
+    public var idfs: [Double] {
+        lock.withLock { _idfs }
+    }
     
     /// Initializes a new TFIDFVectorizer.
     /// - Parameters:
     ///   - ngramRange: Range of n-gram sizes to extract. Defaults to 1...1 (unigrams only).
     ///   - maxFeatures: Optional maximum number of features to retain by term frequency.
     ///   - minDF: Minimum document frequency threshold. Defaults to 1.
-    ///   - maxDF: Optional maximum document frequency ratio (0.0 to 1.0). Terms exceeding this frequency are excluded.
+    ///   - maxDF: Optional maximum document frequency ratio in `(0.0, 1.0]`. Terms exceeding this frequency are excluded.
     ///   - sublinearTF: Whether to apply sublinear term frequency scaling: `1 + log(tf)`. Defaults to false.
     ///   - language: Optional language identifier for built-in stop words.
     ///   - removeStopWords: Whether to prune stop words during tokenization. Defaults to true.
@@ -95,6 +115,9 @@ public final class TFIDFVectorizer: @unchecked Sendable {
         customStopWords: Set<String>? = nil,
         stopWords: Set<String>? = nil
     ) {
+        if let mdf = maxDF {
+            precondition(!mdf.isNaN && mdf > 0.0 && mdf <= 1.0, "maxDF ratio must be in range (0.0, 1.0], got \(mdf)")
+        }
         let lower = max(1, ngramRange.lowerBound)
         let upper = max(lower, ngramRange.upperBound)
         self.ngramRange = lower...upper
@@ -160,7 +183,16 @@ public final class TFIDFVectorizer: @unchecked Sendable {
     }
 
     private func buildVocabulary(dfMap: [String: Int], numDocs: Int) throws {
-        let maxDocLimit = maxDF.map { Int(Double(numDocs) * $0) }
+        let maxDocLimit: Int?
+        if let mdf = maxDF {
+            guard !mdf.isNaN, mdf > 0.0, mdf <= 1.0 else {
+                throw NLPError.invalidInput("maxDF ratio must be in range (0.0, 1.0], got \(mdf)")
+            }
+            maxDocLimit = Int(Double(numDocs) * mdf)
+        } else {
+            maxDocLimit = nil
+        }
+
         var validTerms = dfMap.filter { (term, df) in
             if df < minDF { return false }
             if let maxLimit = maxDocLimit, df > maxLimit { return false }
@@ -196,12 +228,14 @@ public final class TFIDFVectorizer: @unchecked Sendable {
             idfValues[idx] = log((1.0 + n) / (1.0 + df)) + 1.0
         }
 
-        self.vocabulary = vocabMap
-        self.idfs = idfValues
+        lock.withLock {
+            self._vocabulary = vocabMap
+            self._idfs = idfValues
+        }
     }
 
-    private func transformTokenizedDocs(_ docTokensList: [[String]]) -> [[Double]] {
-        let vocabSize = vocabulary.count
+    private func transformTokenizedDocs(_ docTokensList: [[String]], vocab: [String: Int], idfs: [Double]) -> [[Double]] {
+        let vocabSize = vocab.count
         var result = [[Double]]()
         result.reserveCapacity(docTokensList.count)
 
@@ -216,7 +250,7 @@ public final class TFIDFVectorizer: @unchecked Sendable {
             if !docTokens.isEmpty {
                 let docCount = Double(docTokens.count)
                 for (tok, count) in termCounts {
-                    if let idx = vocabulary[tok] {
+                    if let idx = vocab[tok] {
                         let tf: Double
                         if sublinearTF {
                             tf = 1.0 + log(Double(count))
@@ -232,8 +266,8 @@ public final class TFIDFVectorizer: @unchecked Sendable {
         return result
     }
 
-    private func transformSparseTokenizedDocs(_ docTokensList: [[String]]) -> [SparseVector] {
-        let vocabSize = vocabulary.count
+    private func transformSparseTokenizedDocs(_ docTokensList: [[String]], vocab: [String: Int], idfs: [Double]) -> [SparseVector] {
+        let vocabSize = vocab.count
         var sparseVectors = [SparseVector]()
         sparseVectors.reserveCapacity(docTokensList.count)
 
@@ -248,10 +282,10 @@ public final class TFIDFVectorizer: @unchecked Sendable {
             var activeValues = [Double]()
 
             if !docTokens.isEmpty {
-                let docCount = Double(docTokens.count)
                 let uniqueDocTerms = termCounts.keys.sorted()
+                let docCount = Double(docTokens.count)
                 for tok in uniqueDocTerms {
-                    if let idx = vocabulary[tok], let count = termCounts[tok] {
+                    if let idx = vocab[tok], let count = termCounts[tok] {
                         let tf: Double
                         if sublinearTF {
                             tf = 1.0 + log(Double(count))
@@ -296,14 +330,15 @@ public final class TFIDFVectorizer: @unchecked Sendable {
     /// - Returns: A 2D array of shape [documents, vocabSize].
     /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func transform(_ documents: [String]) throws -> [[Double]] {
-        guard !vocabulary.isEmpty, !idfs.isEmpty else {
+        let (vocab, idfs) = lock.withLock { (_vocabulary, _idfs) }
+        guard !vocab.isEmpty, !idfs.isEmpty else {
             throw NLPError.fittingRequired
         }
         guard !documents.isEmpty else {
             throw NLPError.emptyInput
         }
         let docTokensList = documents.map { tokenize($0) }
-        return transformTokenizedDocs(docTokensList)
+        return transformTokenizedDocs(docTokensList, vocab: vocab, idfs: idfs)
     }
 
     /// Transforms documents into memory-efficient `SparseVector` representations.
@@ -311,14 +346,15 @@ public final class TFIDFVectorizer: @unchecked Sendable {
     /// - Returns: An array of `SparseVector` objects.
     /// - Throws: `SwiftMLError` or `NLPError` if vocabulary is uninitialized, files are unreadable, or models fail.
     public func transformSparse(_ documents: [String]) throws -> [SparseVector] {
-        guard !vocabulary.isEmpty, !idfs.isEmpty else {
+        let (vocab, idfs) = lock.withLock { (_vocabulary, _idfs) }
+        guard !vocab.isEmpty, !idfs.isEmpty else {
             throw NLPError.fittingRequired
         }
         guard !documents.isEmpty else {
             throw NLPError.emptyInput
         }
         let docTokensList = documents.map { tokenize($0) }
-        return transformSparseTokenizedDocs(docTokensList)
+        return transformSparseTokenizedDocs(docTokensList, vocab: vocab, idfs: idfs)
     }
     
     /// Fits the model and transforms the documents into a dense matrix.
@@ -341,7 +377,8 @@ public final class TFIDFVectorizer: @unchecked Sendable {
         }
 
         try buildVocabulary(dfMap: dfMap, numDocs: documents.count)
-        return transformTokenizedDocs(allTokens)
+        let (vocab, idfs) = lock.withLock { (_vocabulary, _idfs) }
+        return transformTokenizedDocs(allTokens, vocab: vocab, idfs: idfs)
     }
 
     /// Fits the model and transforms documents into sparse vectors.
@@ -365,7 +402,8 @@ public final class TFIDFVectorizer: @unchecked Sendable {
         }
 
         try buildVocabulary(dfMap: dfMap, numDocs: documents.count)
-        return transformSparseTokenizedDocs(allTokens)
+        let (vocab, idfs) = lock.withLock { (_vocabulary, _idfs) }
+        return transformSparseTokenizedDocs(allTokens, vocab: vocab, idfs: idfs)
     }
 
     /// Fits the vectorizer on a corpus of documents (labeled argument overload).

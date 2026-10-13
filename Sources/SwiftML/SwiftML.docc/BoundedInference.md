@@ -72,3 +72,39 @@ Make the source and consumer cooperate with task cancellation. On an observed er
 Earlier consumer writes remain committed when a later batch fails. The pipeline supplies no transaction or retry policy. Use idempotent writes or an application transaction if the source may restart.
 
 Use <doc:CoreMLInference> directly when the application already controls source admission and result lifetime, or when it needs to reuse one prepared matrix across predictions.
+
+
+## Retain one model between bounded runs
+
+Use `CoreMLBatchPipeline.withSession` when peers need workspace between inference runs. The model stays loaded while each `session.run` reserves its batch window. Return `nil` from the loader after the chosen number of batches, then call `run` again. Sequence numbers restart at zero for every run; keep the global source position in your application adapter.
+
+```swift
+let lifetimeBudget = try MemoryBudget(limit: configuration.sessionBytes)
+let workBudget = try MemoryBudget(limit: configuration.windowBytes)
+try await CoreMLBatchPipeline.withSession(
+    compiledModelURL: compiledModelURL,
+    inputColumns: plan.columnNames,
+    outputName: "result",
+    computeUnits: .cpuAndNeuralEngine,
+    preprocessing: plan,
+    lifetimeBudget: lifetimeBudget,
+    workBudget: workBudget,
+    configuration: configuration
+) { session in
+    // Each source returns nil after its bounded chunk.
+    for source in chunks {
+        try await session.run(
+            load: { request in try await source.readBatch(request) },
+            consume: { sequence, result in try await sink.write(sequence, result) }
+        )
+    }
+}
+```
+
+The two budgets must be distinct. Their limits add to the total participating allowance. The lifetime budget covers pool slots, the fitted plan, source context, and consumer context. The work budget covers the complete batch window. CPU/GPU peers may share that work budget, with enough capacity for each peer's complete request. The session rejects a window that cannot fit before loading its model.
+
+Keep peer tasks structured and await them inside the scope. Do not acquire lifetime capacity while holding workspace. Do not acquire the same workspace budget again inside a loader or consumer. These nested acquisitions can wait on capacity held by their caller. Idle lifetime capacity cannot be borrowed by peers.
+
+One session admits one run at a time. Overlapping calls throw instead of adding an implicit queue. A failed or cancelled run drains predictions and callbacks, releases workspace, and permits a later run while the scope remains open. Scope exit rejects new runs, waits for any active run, releases its fitted state, closes the pool, and releases lifetime capacity. Escaped session references cannot run again.
+
+Choose bounded runs when peer response time matters. The existing `run` API remains suitable for throughput-oriented work. The library does not select a chunk size, retry failed chunks, or manage conversation state. Reservations remain estimates, not physical memory caps.

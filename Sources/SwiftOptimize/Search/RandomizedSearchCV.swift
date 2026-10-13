@@ -30,11 +30,28 @@ public struct RandomizedSearchCV: Sendable {
         }
 
         public static func < (lhs: Result, rhs: Result) -> Bool {
-            lhs.meanScore < rhs.meanScore
+            if lhs.meanScore != rhs.meanScore {
+                return lhs.meanScore < rhs.meanScore
+            }
+            if lhs.stdScore != rhs.stdScore {
+                return lhs.stdScore > rhs.stdScore
+            }
+            if lhs.maxDepth != rhs.maxDepth {
+                return lhs.maxDepth > rhs.maxDepth
+            }
+            return lhs.criterionOrder < rhs.criterionOrder
         }
         
         public static func == (lhs: Result, rhs: Result) -> Bool {
             lhs.maxDepth == rhs.maxDepth && lhs.criterion == rhs.criterion && lhs.meanScore == rhs.meanScore && lhs.stdScore == rhs.stdScore
+        }
+
+        private var criterionOrder: Int {
+            switch criterion {
+            case .gini: return 0
+            case .entropy: return 1
+            case .mse: return 2
+            }
         }
     }
 
@@ -112,9 +129,36 @@ public struct RandomizedSearchCV: Sendable {
     /// - Parameters:
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.
     ///   - targets: 1D array of ground-truth target values of length `N`.
-    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Throws: `ValidationError` or `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
     /// - Returns: The computed [Result] result instance.
     public func search(features: [[Double]], targets: [Double]) async throws -> [Result] {
+        guard nIter > 0 else {
+            throw ValidationError.invalidParameter("nIter must be positive, got \(nIter)")
+        }
+        guard nSplits >= 2 else {
+            throw ValidationError.invalidFoldCount(nSplits)
+        }
+        guard !maxDepthValues.isEmpty else {
+            throw ValidationError.invalidParameter("maxDepthValues must not be empty")
+        }
+        guard !criterionValues.isEmpty else {
+            throw ValidationError.invalidParameter("criterionValues must not be empty")
+        }
+        for d in maxDepthValues {
+            guard d > 0 else {
+                throw ValidationError.invalidParameter("maxDepthValues must contain positive integers, got \(d)")
+            }
+        }
+        guard !features.isEmpty, !targets.isEmpty else {
+            throw ValidationError.emptyDataset
+        }
+        guard features.count == targets.count else {
+            throw ValidationError.dimensionMismatch(features: features.count, targets: targets.count)
+        }
+        guard features.count >= nSplits else {
+            throw ValidationError.insufficientSamples(samples: features.count, required: nSplits)
+        }
+
         let allPairs: [(Int, SplitCriterion)] = maxDepthValues.flatMap { d in criterionValues.map { c in (d, c) } }
         guard !allPairs.isEmpty else { return [] }
 
@@ -159,14 +203,33 @@ public struct RandomizedSearchCV: Sendable {
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.
     ///   - targets: 1D array of ground-truth target values of length `N`.
     ///   - estimatorBuilder: Closure constructing fresh estimator instances.
-    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
-    /// - Returns: The computed E ) async throws -> [GenericResult<P>] result instance.
+    /// - Throws: `ValidationError` or `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Returns: Generic results sorted best-first.
     public func searchGeneric<P: Sendable, E: ClassifierEstimator>(
         candidates: [P],
         features: [[Double]],
         targets: [Double],
         estimatorBuilder: @escaping @Sendable (P) -> E
     ) async throws -> [GenericResult<P>] {
+        guard nIter > 0 else {
+            throw ValidationError.invalidParameter("nIter must be positive, got \(nIter)")
+        }
+        guard nSplits >= 2 else {
+            throw ValidationError.invalidFoldCount(nSplits)
+        }
+        guard !candidates.isEmpty else {
+            throw ValidationError.invalidParameter("candidates must not be empty")
+        }
+        guard !features.isEmpty, !targets.isEmpty else {
+            throw ValidationError.emptyDataset
+        }
+        guard features.count == targets.count else {
+            throw ValidationError.dimensionMismatch(features: features.count, targets: targets.count)
+        }
+        guard features.count >= nSplits else {
+            throw ValidationError.insufficientSamples(samples: features.count, required: nSplits)
+        }
+
         var rng = SeededRandom(seed: seed)
         var sampled = [P]()
         let count = min(nIter, candidates.count)
@@ -200,11 +263,78 @@ public struct RandomizedSearchCV: Sendable {
         return results.sorted().reversed()
     }
 
+    /// Runs randomized search over generic parameter candidates and custom regressor estimator factory.
+    /// Evaluates candidate models via K-Fold Cross-Validation using the R² score metric.
+    /// - Parameters:
+    ///   - candidates: Candidate models or hyperparameter sets to evaluate.
+    ///   - features: 2D array of input feature vectors of shape `[N, P]`.
+    ///   - targets: 1D array of ground-truth target values of length `N`.
+    ///   - estimatorBuilder: Closure constructing fresh regressor estimator instances.
+    /// - Throws: `ValidationError` or `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Returns: Generic results sorted best-first (highest R² first).
+    public func searchGeneric<P: Sendable, E: RegressorEstimator>(
+        candidates: [P],
+        features: [[Double]],
+        targets: [Double],
+        estimatorBuilder: @escaping @Sendable (P) -> E
+    ) async throws -> [GenericResult<P>] {
+        guard nIter > 0 else {
+            throw ValidationError.invalidParameter("nIter must be positive, got \(nIter)")
+        }
+        guard nSplits >= 2 else {
+            throw ValidationError.invalidFoldCount(nSplits)
+        }
+        guard !candidates.isEmpty else {
+            throw ValidationError.invalidParameter("candidates must not be empty")
+        }
+        guard !features.isEmpty, !targets.isEmpty else {
+            throw ValidationError.emptyDataset
+        }
+        guard features.count == targets.count else {
+            throw ValidationError.dimensionMismatch(features: features.count, targets: targets.count)
+        }
+        guard features.count >= nSplits else {
+            throw ValidationError.insufficientSamples(samples: features.count, required: nSplits)
+        }
+
+        var rng = SeededRandom(seed: seed)
+        var sampled = [P]()
+        let count = min(nIter, candidates.count)
+        var available = candidates
+        for _ in 0..<count {
+            let idx = rng.nextInt(upperBound: available.count)
+            sampled.append(available.remove(at: idx))
+        }
+        let nSplits = self.nSplits
+        let cvSeed = self.seed
+
+        let results: [GenericResult<P>] = try await withThrowingTaskGroup(of: GenericResult<P>.self) { group in
+            for p in sampled {
+                group.addTask {
+                    let factory: @Sendable () -> E = { estimatorBuilder(p) }
+                    let cvResult = try await CrossValidator.crossValidateRegressor(
+                        factory,
+                        features: features,
+                        targets: targets,
+                        nSplits: nSplits,
+                        seed: cvSeed
+                    )
+                    return GenericResult(params: p, meanScore: cvResult.mean, stdScore: cvResult.std)
+                }
+            }
+            var allResults = [GenericResult<P>]()
+            for try await r in group { allResults.append(r) }
+            return allResults
+        }
+
+        return results.sorted().reversed()
+    }
+
     /// Convenience: returns only the best parameter combination.
     /// - Parameters:
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.
     ///   - targets: 1D array of ground-truth target values of length `N`.
-    /// - Throws: `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
+    /// - Throws: `ValidationError` or `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
     /// - Returns: The computed Result? result instance.
     public func bestParams(features: [[Double]], targets: [Double]) async throws -> Result? {
         let results = try await search(features: features, targets: targets)

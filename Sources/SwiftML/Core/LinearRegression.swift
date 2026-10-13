@@ -46,6 +46,12 @@ private struct OLSAccumulator {
     }
 }
 
+/// Solver type used by LinearRegression.
+public enum LinearRegressionSolver: String, Sendable, Codable {
+    case analyticalOLS = "analytical_ols"
+    case gradientDescent = "gradient_descent"
+}
+
 /// Ordinary Least Squares linear regression using LAPACK analytical OLS or gradient descent.
 public actor LinearRegression: RegressorEstimator {
     /// The weights.
@@ -58,6 +64,11 @@ public actor LinearRegression: RegressorEstimator {
     /// The resolved device.
     public private(set) var resolvedDevice: ExecutionDevice?
     
+    /// The solver used to fit the model.
+    public private(set) var solverUsed: LinearRegressionSolver?
+    /// Reason for falling back from analytical OLS to gradient descent, if applicable.
+    public private(set) var fallbackReason: String?
+
     private var cpuWeights: [Double]?
     private var cpuBias: Double?
     private var preparedFeatureNames: [String]?
@@ -118,6 +129,22 @@ public actor LinearRegression: RegressorEstimator {
               features.allSatisfy({ $0.count == width }) else {
             throw SwiftMLError.invalidParameter("Invalid regression shape")
         }
+        guard lr.isFinite, lr > 0 else {
+            throw SwiftMLError.invalidParameter("Learning rate must be finite and positive")
+        }
+        guard epochs > 0 else {
+            throw SwiftMLError.invalidParameter("Epochs must be positive")
+        }
+        for row in features {
+            for val in row {
+                if val.isNaN { throw SwiftMLError.containsNaN }
+                if val.isInfinite { throw SwiftMLError.containsInfinity }
+            }
+        }
+        for t in targets {
+            if t.isNaN { throw SwiftMLError.containsNaN }
+            if t.isInfinite { throw SwiftMLError.containsInfinity }
+        }
         try await fitValidated(features: RegressionRows(values: features), targets: targets, learningRate: lr, epochs: epochs)
         preparedFeatureNames = nil
     }
@@ -136,6 +163,12 @@ public actor LinearRegression: RegressorEstimator {
     }
 
     private func fitValidated<F: RegressionFeatures>(features: F, targets: [Double], learningRate: Float, epochs: Int) async throws {
+        guard learningRate.isFinite, learningRate > 0 else {
+            throw SwiftMLError.invalidParameter("Learning rate must be finite and positive")
+        }
+        guard epochs > 0 else {
+            throw SwiftMLError.invalidParameter("Epochs must be positive")
+        }
         let numSamples = features.count, numFeatures = features.width
         guard numSamples <= Int32.max, numFeatures < Int32.max,
               !numSamples.multipliedReportingOverflow(by: numFeatures + 1).overflow else {
@@ -168,7 +201,10 @@ public actor LinearRegression: RegressorEstimator {
     private func fitCPU<F: RegressionFeatures>(features: F, targets: [Double], learningRate lr: Double, epochs: Int) throws {
         do {
             try fitCPUAnalytical(features: features, targets: targets)
+            self.solverUsed = .analyticalOLS
+            self.fallbackReason = nil
         } catch {
+            self.fallbackReason = "\(error)"
             try fitCPUGradientDescent(features: features, targets: targets, learningRate: lr, epochs: epochs)
         }
     }
@@ -285,6 +321,8 @@ public actor LinearRegression: RegressorEstimator {
         // Sync to MLXArray variables for public API compatibility
         self.weights = MLXArray(w.map { Float($0) }).reshaped([numFeatures, 1])
         self.bias = MLXArray([Float(b)])
+        self.solverUsed = .analyticalOLS
+        self.fallbackReason = nil
     }
 
     /// Explicit Gradient Descent CPU backend.
@@ -295,16 +333,39 @@ public actor LinearRegression: RegressorEstimator {
     ///   - epochs: Total number of optimization training epochs.
     /// - Throws: `SwiftMLError` if feature-target dimensions mismatch, inputs are empty, or optimization fails.
     public func fitCPUGradientDescent(features: [[Double]], targets: [Double], learningRate lr: Double = 0.01, epochs: Int = 1000) throws {
-        guard let width = features.first?.count else { throw SwiftMLError.emptyInput }
+        guard !features.isEmpty, !targets.isEmpty else { throw SwiftMLError.emptyInput }
+        let width = features[0].count
         guard features.count == targets.count,
               features.allSatisfy({ $0.count == width }) else {
             throw SwiftMLError.invalidParameter("Invalid regression shape")
+        }
+        guard lr.isFinite, lr > 0 else {
+            throw SwiftMLError.invalidParameter("Learning rate must be finite and positive")
+        }
+        guard epochs > 0 else {
+            throw SwiftMLError.invalidParameter("Epochs must be positive")
+        }
+        for row in features {
+            for val in row {
+                if val.isNaN { throw SwiftMLError.containsNaN }
+                if val.isInfinite { throw SwiftMLError.containsInfinity }
+            }
+        }
+        for t in targets {
+            if t.isNaN { throw SwiftMLError.containsNaN }
+            if t.isInfinite { throw SwiftMLError.containsInfinity }
         }
         try fitCPUGradientDescent(features: RegressionRows(values: features), targets: targets, learningRate: lr, epochs: epochs)
         preparedFeatureNames = nil
     }
 
     private func fitCPUGradientDescent<F: RegressionFeatures>(features: F, targets: [Double], learningRate lr: Double, epochs: Int) throws {
+        guard lr.isFinite, lr > 0 else {
+            throw SwiftMLError.invalidParameter("Learning rate must be finite and positive")
+        }
+        guard epochs > 0 else {
+            throw SwiftMLError.invalidParameter("Epochs must be positive")
+        }
         let numSamples = features.count
         let numFeatures = features.width
         
@@ -356,6 +417,7 @@ public actor LinearRegression: RegressorEstimator {
         // Sync to MLXArray variables for public API compatibility
         self.weights = MLXArray(w.map { Float($0) }).reshaped([numFeatures, 1])
         self.bias = MLXArray([Float(b)])
+        self.solverUsed = .gradientDescent
     }
     
     // MARK: - GPU Backend (MLX)
@@ -412,6 +474,8 @@ public actor LinearRegression: RegressorEstimator {
         // Sync to CPU variables
         self.cpuWeights = w.asArray(Float.self).map { Double($0) }
         self.cpuBias = Double(b.item(Float.self))
+        self.solverUsed = .gradientDescent
+        self.fallbackReason = nil
     }
     
     /// Predicts target values for the given features matrix (Sendable interface).

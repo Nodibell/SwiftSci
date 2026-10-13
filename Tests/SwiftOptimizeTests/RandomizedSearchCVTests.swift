@@ -74,3 +74,50 @@ struct RandomizedSearchCVTests {
     }
 }
 
+// MARK: - Generic Regression Search & Parameter Validation
+
+extension RandomizedSearchCVTests {
+
+    @Test("searchGeneric supports RegressorEstimator candidates")
+    func testSearchGenericRegressor() async throws {
+        let n = 24
+        let features = (0..<n).map { [Double($0), Double($0) * 1.5] }
+        let targets = (0..<n).map { Double($0) * 3.0 + 2.5 }
+
+        let search = RandomizedSearchCV(nIter: 3, nSplits: 3, seed: 42)
+        let results = try await search.searchGeneric(
+            candidates: [1, 2, 4, 8],
+            features: features,
+            targets: targets
+        ) { depth in
+            DecisionTreeRegressor(maxDepth: depth)
+        }
+
+        #expect(results.count == 3)
+        for i in 1..<results.count {
+            #expect(results[0].meanScore >= results[i].meanScore)
+        }
+    }
+
+    @Test("RandomizedSearchCV validates nIter and candidate list")
+    func testParameterValidation() async throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let targets: [Double] = [0.0, 0.0, 1.0, 1.0]
+
+        await #expect(throws: ValidationError.self) {
+            _ = try await RandomizedSearchCV(nIter: 0, nSplits: 2).search(features: features, targets: targets)
+        }
+
+        let validSearch = RandomizedSearchCV(nIter: 2, nSplits: 2)
+        let emptyCandidates: [Int] = []
+        await #expect(throws: ValidationError.self) {
+            _ = try await validSearch.searchGeneric(
+                candidates: emptyCandidates,
+                features: features,
+                targets: targets
+            ) { depth in
+                DecisionTreeClassifier(maxDepth: depth)
+            }
+        }
+    }
+}

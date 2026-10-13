@@ -50,10 +50,14 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         loss: GBDTLoss = .squaredError
     ) throws {
         guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
-        guard learningRate > 0 else { throw SwiftMLError.invalidParameter("learningRate must be > 0") }
+        guard learningRate > 0 && learningRate.isFinite else {
+            throw SwiftMLError.invalidParameter("learningRate must be finite and > 0")
+        }
+        guard maxDepth > 0 else { throw SwiftMLError.invalidParameter("maxDepth must be > 0") }
+        guard minSamplesSplit >= 2 else { throw SwiftMLError.invalidParameter("minSamplesSplit must be >= 2") }
         if case .quantile(let alpha) = loss {
-            guard alpha > 0.0 && alpha < 1.0 else {
-                throw SwiftMLError.invalidParameter("quantile alpha must be between 0 and 1 (exclusive)")
+            guard alpha > 0.0 && alpha < 1.0 && alpha.isFinite else {
+                throw SwiftMLError.invalidParameter("quantile alpha must be finite and between 0 and 1 (exclusive)")
             }
         }
         self.nEstimators = nEstimators
@@ -109,11 +113,46 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         validationTargets: [Double]? = nil,
         earlyStopping: EarlyStopping? = nil
     ) async throws {
-        guard !features.isEmpty else { throw SwiftMLError.emptyInput }
+        guard !features.isEmpty, !targets.isEmpty else { throw SwiftMLError.emptyInput }
+        guard !features[0].isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
             throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
-        self.numFeatures = features[0].count
+        let p = features[0].count
+        for row in features {
+            guard row.count == p else {
+                throw SwiftMLError.dimensionMismatch(expected: p, got: row.count)
+            }
+            guard row.allSatisfy(\.isFinite) else {
+                throw SwiftMLError.containsNaN
+            }
+        }
+        guard targets.allSatisfy(\.isFinite) else {
+            throw SwiftMLError.containsNaN
+        }
+        self.numFeatures = p
+
+        if (validationFeatures != nil && validationTargets == nil) || (validationFeatures == nil && validationTargets != nil) {
+            throw SwiftMLError.invalidParameter("Both validationFeatures and validationTargets must be provided together")
+        }
+
+        if let valX = validationFeatures, let valY = validationTargets {
+            guard !valX.isEmpty, !valY.isEmpty else { throw SwiftMLError.emptyInput }
+            guard valX.count == valY.count else {
+                throw SwiftMLError.dimensionMismatch(expected: valX.count, got: valY.count)
+            }
+            for row in valX {
+                guard row.count == p else {
+                    throw SwiftMLError.dimensionMismatch(expected: p, got: row.count)
+                }
+                guard row.allSatisfy(\.isFinite) else {
+                    throw SwiftMLError.containsNaN
+                }
+            }
+            guard valY.allSatisfy(\.isFinite) else {
+                throw SwiftMLError.containsNaN
+            }
+        }
         
         let n = features.count
         switch loss {
@@ -121,11 +160,10 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
             initialPrediction = targets.mean()
         case .absoluteError:
             let sorted = targets.sorted()
-            initialPrediction = sorted[sorted.count / 2]
+            initialPrediction = GradientBoostedTreesRegressor.computeQuantile(sorted: sorted, alpha: 0.5)
         case .quantile(let alpha):
             let sorted = targets.sorted()
-            let idx = Int((Double(sorted.count - 1) * alpha).rounded())
-            initialPrediction = sorted[idx]
+            initialPrediction = GradientBoostedTreesRegressor.computeQuantile(sorted: sorted, alpha: alpha)
         }
         
         var currentPredictions = [Double](repeating: initialPrediction, count: n)
@@ -162,7 +200,17 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
                 nodes: &nodes
             )
 
-            if case .quantile(let alpha) = loss {
+            switch loss {
+            case .squaredError:
+                break
+            case .absoluteError:
+                GradientBoostedTreesRegressor.updateLeafQuantileValues(
+                    nodes: &nodes,
+                    features: features,
+                    residuals: rawResiduals,
+                    alpha: 0.5
+                )
+            case .quantile(let alpha):
                 GradientBoostedTreesRegressor.updateLeafQuantileValues(
                     nodes: &nodes,
                     features: features,
@@ -180,14 +228,21 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
             }
 
             if var tracker = es, let valX = validationFeatures, let valY = validationTargets, !valX.isEmpty {
-                var valMSE = 0.0
+                var valLoss = 0.0
                 for vi in 0..<valX.count {
                     valPredictions[vi] += lr * GradientBoostedTreesRegressor.predictSample(valX[vi], nodes: nodes)
-                    let diff = valPredictions[vi] - valY[vi]
-                    valMSE += diff * diff
+                    let diff = valY[vi] - valPredictions[vi]
+                    switch loss {
+                    case .squaredError:
+                        valLoss += diff * diff
+                    case .absoluteError:
+                        valLoss += abs(diff)
+                    case .quantile(let alpha):
+                        valLoss += diff >= 0 ? alpha * diff : (alpha - 1.0) * diff
+                    }
                 }
-                valMSE /= Double(valX.count)
-                let (shouldStop, isBest) = tracker.step(currentScore: valMSE, epoch: treeIdx)
+                valLoss /= Double(valX.count)
+                let (shouldStop, isBest) = tracker.step(currentScore: valLoss, epoch: treeIdx)
                 if isBest {
                     bestTrees = trainedTrees
                 }
@@ -211,6 +266,15 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     /// - Returns: Array of predicted continuous targets for input observations.
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw SwiftMLError.notFitted }
+        guard !features.isEmpty else { return [] }
+        for row in features {
+            guard row.count == numFeatures else {
+                throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
+            guard row.allSatisfy(\.isFinite) else {
+                throw SwiftMLError.containsNaN
+            }
+        }
         
         let lr = learningRate
         let base = initialPrediction
@@ -247,6 +311,16 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     }
     
     // MARK: Private Helpers
+
+    private static func computeQuantile(sorted: [Double], alpha: Double) -> Double {
+        guard !sorted.isEmpty else { return 0.0 }
+        if sorted.count == 1 { return sorted[0] }
+        let index = Double(sorted.count - 1) * alpha
+        let lo = Int(index.rounded(.down))
+        let hi = min(lo + 1, sorted.count - 1)
+        let frac = index - Double(lo)
+        return (1.0 - frac) * sorted[lo] + frac * sorted[hi]
+    }
     
     private static func updateLeafQuantileValues(
         nodes: inout [FlatTreeNode],
@@ -272,8 +346,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         for (leafIdx, resList) in leafResiduals {
             guard !resList.isEmpty else { continue }
             let sorted = resList.sorted()
-            let qIdx = Int((Double(sorted.count - 1) * alpha).rounded())
-            let qVal = sorted[qIdx]
+            let qVal = computeQuantile(sorted: sorted, alpha: alpha)
             let old = nodes[leafIdx]
             nodes[leafIdx] = FlatTreeNode(
                 featureIndex: old.featureIndex,

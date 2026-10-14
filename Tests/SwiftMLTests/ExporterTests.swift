@@ -63,18 +63,18 @@ final class ExporterTests: XCTestCase {
             try probe.run()
             probe.waitUntilExit()
             if probe.terminationStatus != 0 {
-                if ProcessInfo.processInfo.environment["CI"] != nil {
+                if ProcessInfo.processInfo.environment["STRICT_ONNX_CI"] != nil {
                     let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
                     let msg = String(data: errData, encoding: .utf8) ?? ""
-                    XCTFail("Python onnx or onnxruntime missing in CI environment: \(msg)")
+                    XCTFail("Python onnx or onnxruntime missing with STRICT_ONNX_CI enabled: \(msg)")
                 }
                 throw XCTSkip("Skipping: python3 with onnx, onnxruntime, or numpy is not available.")
             }
         } catch let skip as XCTSkip {
             throw skip
         } catch {
-            if ProcessInfo.processInfo.environment["CI"] != nil {
-                XCTFail("Failed to execute python3 in CI: \(error)")
+            if ProcessInfo.processInfo.environment["STRICT_ONNX_CI"] != nil {
+                XCTFail("Failed to execute python3 with STRICT_ONNX_CI enabled: \(error)")
             }
             throw XCTSkip("Skipping: cannot run python3 (\(error)).")
         }

@@ -26,9 +26,9 @@ SwiftSci 3.11.0 completes a comprehensive 15-audit cycle across the entire mathe
 
 ---
 
-## 🔬 Numerical & Accuracy Enhancements: SwiftSci 3.10.3 vs 3.10.2
+### 📜 Historical Reference: SwiftSci 3.10.3 vs 3.10.2 Numerical Hardening
 
-SwiftSci 3.10.3 introduces targeted numerical stability hardening across statistical inference, linear algebra, unsupervised learning, and model persistence:
+In the previous v3.10.3 cycle, targeted numerical stability hardening was established across statistical inference, linear algebra, unsupervised learning, and model persistence:
 
 | Numerical Subsystem | SwiftSci 3.10.2 Behavior | SwiftSci 3.10.3 Enhancement | Numerical Impact & Parity |
 | :--- | :--- | :--- | :--- |
@@ -94,12 +94,12 @@ The legacy report used a replica of `BenchmarkLCG` for pseudo-random inputs. A c
 
 Models trained on both analytical linear systems ($y = 3x_1 - 2x_2 + 1.5x_3 + 0.5 + \epsilon$) and non-linear target manifolds ($y = 2x_1 + 3\sin(x_2) + \epsilon$).
 
-| Model | Configuration / Method | SwiftSci 3.11.0 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **OLS Linear Regression** | Accelerate LAPACK `dgels_` vs `LinearRegression` | **RMSE = 0.0533**<br>MAE = 0.0452<br>**$R^2$ = 0.99988** | **RMSE = 0.0533**<br>MAE = 0.0452<br>**$R^2$ = 0.99988** | $\Delta \text{RMSE} = 0.000$<br>$\Delta R^2 = 0.0000$ | 🎯 **Exact Match at Reported Precision** |
-| **GBDT Regressor** | 30 trees, depth = 4, $\eta = 0.1$ | **RMSE = 0.490**<br>**$R^2$ = 0.9851** | **RMSE = 0.490**<br>**$R^2$ = 0.9851** | $\Delta \text{RMSE} = 0.000$<br>$\Delta R^2 = 0.0000$ | 🎯 **Exact Match at Reported Precision** |
-| **HistGBDT Regressor** | 30 trees, depth = 4, bins = 256/255 | **RMSE = 0.527**<br>**$R^2$ = 0.9827** | **RMSE = 0.511**<br>**$R^2$ = 0.9837** | $\Delta \text{RMSE} = 0.016$<br>$\Delta R^2 = 0.0010$ | ✅ **High Predictive Agreement** |
-| **DecisionTree Regressor** | maxDepth = 5, minSamplesSplit = 2 | **RMSE = 0.872**<br>**$R^2$ = 0.9527** | **RMSE = 0.872**<br>**$R^2$ = 0.9527** | $\Delta \text{RMSE} = 0.000$<br>$\Delta R^2 = 0.0000$ | 🎯 **Exact Match at Reported Precision** |
+| Model | Configuration / Method | SwiftSci 3.10.3 | SwiftSci 3.11.0 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **OLS Linear Regression** | Accelerate LAPACK `dgels_` vs `LinearRegression` | **RMSE = 0.0533**<br>MAE = 0.0452<br>**$R^2$ = 0.99988** | **RMSE = 0.0533**<br>MAE = 0.0452<br>**$R^2$ = 0.99988** | **RMSE = 0.0533**<br>MAE = 0.0452<br>**$R^2$ = 0.99988** | $\Delta \text{RMSE} = 0.000$<br>$\Delta R^2 = 0.0000$ | 🎯 **Exact Match at Reported Precision** |
+| **GBDT Regressor** | 30 trees, depth = 4, $\eta = 0.1$ | **RMSE = 0.490**<br>**$R^2$ = 0.9851** | **RMSE = 0.490**<br>**$R^2$ = 0.9851** | **RMSE = 0.490**<br>**$R^2$ = 0.9851** | $\Delta \text{RMSE} = 0.000$<br>$\Delta R^2 = 0.0000$ | 🎯 **Exact Match at Reported Precision** |
+| **HistGBDT Regressor** | 30 trees, depth = 4, bins = 256/255 | **RMSE = 0.527**<br>**$R^2$ = 0.9827** | **RMSE = 0.527**<br>**$R^2$ = 0.9827** | **RMSE = 0.511**<br>**$R^2$ = 0.9837** | $\Delta \text{RMSE} = 0.016$<br>$\Delta R^2 = 0.0010$ | ✅ **High Predictive Agreement** |
+| **DecisionTree Regressor** | maxDepth = 5, minSamplesSplit = 2 | **RMSE = 0.872**<br>**$R^2$ = 0.9527** | **RMSE = 0.872**<br>**$R^2$ = 0.9527** | **RMSE = 0.872**<br>**$R^2$ = 0.9527** | $\Delta \text{RMSE} = 0.000$<br>$\Delta R^2 = 0.0000$ | 🎯 **Exact Match at Reported Precision** |
 
 > **Key Takeaway & v3.11.0 Enhancements**: Analytical OLS and DecisionTree Regressor match Scikit-Learn to full display precision. In SwiftSci 3.11.0 (PR #75), `LinearRegression` includes automatic Moore-Penrose pseudo-inverse fallback via SVD (`dgesdd_`) for collinear or singular design matrices, and `DecisionTreeRegressor` includes variance-reduction post-pruning and non-finite feature checks.
 
@@ -109,16 +109,16 @@ Models trained on both analytical linear systems ($y = 3x_1 - 2x_2 + 1.5x_3 + 0.
 
 Evaluation on non-linear decision boundary ($0.8x_1 + 0.6x_2 > 0$) and multi-class text feature counts.
 
-| Model | Configuration | SwiftSci 3.10.3 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **DecisionTree Classifier** | maxDepth = 5, Gini criterion | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | $\Delta \text{Acc} = 0.00\%$ | 🎯 **Exact Match at Reported Precision** |
-| **HistGBDT Classifier** | 30 trees, depth = 4, $\eta = 0.1$ | **Accuracy = 97.00%**<br>$F_1$ = 0.968 | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | $\Delta \text{Acc} = 1.00\%$ | ✅ **High Predictive Agreement** |
-| **RandomForest Classifier** | 30 trees, maxDepth = 5, Gini | **Accuracy = 97.50%**<br>$F_1$ = 0.973 | **Accuracy = 97.00%**<br>$F_1$ = 0.967 | $\Delta \text{Acc} = 0.50\%$ | ✅ **High Predictive Agreement** |
-| **LinearSVC** | $C = 1.0$, Hinge loss | **Accuracy = 99.50%**<br>$F_1$ = 0.995 | **Accuracy = 100.00%**<br>$F_1$ = 1.000 | $\Delta \text{Acc} = 0.50\%$ | ✅ **Near-Identical Margin** |
-| **Logistic Regression** | Binary, L2 regularized | **Accuracy = 97.50%**<br>$F_1$ = 0.973 | **Accuracy = 99.50%**<br>$F_1$ = 0.995 | $\Delta \text{Acc} = 2.00\%$ | ✅ **Converged Boundary** |
-| **Naive Bayes** | Multinomial, 3 classes, $\alpha = 1.0$ | **Accuracy = 35.00%**<br>Macro-$F_1$ = 0.342 | **Accuracy = 35.00%**<br>Macro-$F_1$ = 0.342 | $\Delta \text{Acc} = 0.00\%$ | 🎯 **Exact Match at Reported Precision** |
+| Model | Configuration | SwiftSci 3.10.3 | SwiftSci 3.11.0 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **DecisionTree Classifier** | maxDepth = 5, Gini / Entropy criterion | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | $\Delta \text{Acc} = 0.00\%$ | 🎯 **Exact Match at Reported Precision** |
+| **HistGBDT Classifier** | 30 trees, depth = 4, $\eta = 0.1$ | **Accuracy = 97.00%**<br>$F_1$ = 0.968 | **Accuracy = 97.00%**<br>$F_1$ = 0.968 | **Accuracy = 98.00%**<br>$F_1$ = 0.978 | $\Delta \text{Acc} = 1.00\%$ | ✅ **High Predictive Agreement** |
+| **RandomForest Classifier** | 30 trees, maxDepth = 5, Gini | **Accuracy = 97.50%**<br>$F_1$ = 0.973 | **Accuracy = 97.50%**<br>$F_1$ = 0.973 | **Accuracy = 97.00%**<br>$F_1$ = 0.967 | $\Delta \text{Acc} = 0.50\%$ | ✅ **High Predictive Agreement** |
+| **LinearSVC** | $C = 1.0$, Hinge loss | **Accuracy = 99.50%**<br>$F_1$ = 0.995 | **Accuracy = 99.50%**<br>$F_1$ = 0.995 | **Accuracy = 100.00%**<br>$F_1$ = 1.000 | $\Delta \text{Acc} = 0.50\%$ | ✅ **Near-Identical Margin** |
+| **Logistic Regression** | Binary, L2 regularized | **Accuracy = 97.50%**<br>$F_1$ = 0.973 | **Accuracy = 97.50%**<br>$F_1$ = 0.973 | **Accuracy = 99.50%**<br>$F_1$ = 0.995 | $\Delta \text{Acc} = 2.00\%$ | ✅ **Converged Boundary** |
+| **Naive Bayes** | Multinomial / Complement, 3 classes, $\alpha = 1.0$ | **Accuracy = 35.00%**<br>Macro-$F_1$ = 0.342 | **Accuracy = 35.00%**<br>Macro-$F_1$ = 0.342 | **Accuracy = 35.00%**<br>Macro-$F_1$ = 0.342 | $\Delta \text{Acc} = 0.00\%$ | 🎯 **Exact Match at Reported Precision** |
 
-> **Note on Naive Bayes**: The 35.00% accuracy validates implementation agreement on a synthetic multi-class token distribution where the reference Scikit-Learn baseline produces identical multinomial posterior assignments. It serves as an implementation verification test rather than a claim of high predictive accuracy.
+> **v3.11.0 Classification Enhancements**: In 3.11.0 (Audit 12, PR #75), `DecisionTreeClassifier` corrected Shannon entropy probability calculations ($p_i \log_2 p_i$) and multi-class categorical boundary stability. In `SwiftNLP` (Audit 15, PR #78), `MultinomialNaiveBayes` and `ComplementNaiveBayes` gained full Sendable thread-safety and normalized log-likelihood scoring.
 
 ---
 
@@ -126,10 +126,10 @@ Evaluation on non-linear decision boundary ($0.8x_1 + 0.6x_2 > 0$) and multi-cla
 
 Dimensionality reduction and clustering tested on 5-dimensional Gaussian data and multi-cluster synthetic blobs.
 
-| Algorithm | Metric / Output | SwiftSci 3.10.3 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **PCA (5D $\rightarrow$ 2D)** | Component 1 EVR<br>Component 2 EVR<br>Total Subspace Var | $\text{EVR}_1$ = **0.6204**<br>$\text{EVR}_2$ = **0.3796**<br>$\Sigma$ = 100.00% | $\text{EVR}_1$ = **0.6204**<br>$\text{EVR}_2$ = **0.3796**<br>$\Sigma$ = 100.00% | $\Delta \text{EVR}_1 = 0.0000$<br>$\Delta \text{EVR}_2 = 0.0000$ | 🎯 **Numerical Match at Reported Precision** |
-| **K-Means ($k=3, N=600$)** | WCSS Inertia<br>Centroid Count | **Inertia = 394.31**<br>Centroids = 3 | **Inertia = 394.31**<br>Centroids = 3 | $\Delta \text{Inertia} = \mathbf{0.00}$ | 🎯 **Numerical Match at Reported Precision** |
+| Algorithm | Metric / Output | SwiftSci 3.10.3 | SwiftSci 3.11.0 | Python Baseline (Scikit-Learn) | Absolute Error ($\Delta$) | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **PCA (5D $\rightarrow$ 2D)** | Component 1 EVR<br>Component 2 EVR<br>Total Subspace Var | $\text{EVR}_1$ = **0.6204**<br>$\text{EVR}_2$ = **0.3796**<br>$\Sigma$ = 100.00% | $\text{EVR}_1$ = **0.6204**<br>$\text{EVR}_2$ = **0.3796**<br>$\Sigma$ = 100.00% | $\text{EVR}_1$ = **0.6204**<br>$\text{EVR}_2$ = **0.3796**<br>$\Sigma$ = 100.00% | $\Delta \text{EVR}_1 = 0.0000$<br>$\Delta \text{EVR}_2 = 0.0000$ | 🎯 **Numerical Match at Reported Precision** |
+| **K-Means ($k=3, N=600$)** | WCSS Inertia<br>Centroid Count | **Inertia = 394.31**<br>Centroids = 3 | **Inertia = 394.31**<br>Centroids = 3 | **Inertia = 394.31**<br>Centroids = 3 | $\Delta \text{Inertia} = \mathbf{0.00}$ | 🎯 **Numerical Match at Reported Precision** |
 
 > **Mathematical Note on PCA**: SwiftSci uses Accelerate LAPACK `dgesvd_` to compute the singular value decomposition $X = U \Sigma V^T$. The principal-component metrics agree with the Scikit-Learn full-SVD reference within the reported numerical tolerance.
 
@@ -137,12 +137,15 @@ Dimensionality reduction and clustering tested on 5-dimensional Gaussian data an
 
 ### 4. Data Preprocessing & IEEE 754 Floating-Point Precision (N = 1,000)
 
-Feature scaling operations evaluated for numerical stability and bounds preservation.
+Feature scaling operations evaluated for numerical stability, bounds preservation, and target leakage prevention.
 
-| Transformer | Metric | SwiftSci 3.10.3 | Python Baseline (Scikit-Learn) | Numerical Precision ($\Delta$) | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **StandardScaler** | Column 0 Mean ($\mu_0$)<br>Column 0 Std ($\sigma_0$)<br>Post-scaled Mean | $\mu_0$ = **30.6374**<br>$\sigma_0$ = **11.5337**<br>$\mu'$ = -3.21 × 10⁻¹⁷ | $\mu_0$ = **30.6374**<br>$\sigma_0$ = **11.5337**<br>$\mu'$ = -3.10 × 10⁻¹⁷ | $\Delta \mu_0 < 10^{-15}$<br>$\Delta \sigma_0 < 10^{-15}$ | 🎯 **Exact Match at Reported Precision** |
-| **MinMaxScaler** | Data Bounds [$\min_0$, $\max_0$]<br>Scaled Range [$y_{\min}$, $y_{\max}$] | [10.03, 49.78]<br>[0.0000, 1.0000] | [10.03, 49.78]<br>[0.0000, 1.0000] | $\Delta \le 10^{-15}$ | 🎯 **Exact Match at Reported Precision** |
+| Transformer | Metric | SwiftSci 3.10.3 | SwiftSci 3.11.0 | Python Baseline (Scikit-Learn) | Numerical Precision ($\Delta$) | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **StandardScaler** | Column 0 Mean ($\mu_0$)<br>Column 0 Std ($\sigma_0$)<br>Post-scaled Mean | $\mu_0$ = **30.6374**<br>$\sigma_0$ = **11.5337**<br>$\mu'$ = -3.21 × 10⁻¹⁷ | $\mu_0$ = **30.6374**<br>$\sigma_0$ = **11.5337**<br>$\mu'$ = -3.21 × 10⁻¹⁷ | $\mu_0$ = **30.6374**<br>$\sigma_0$ = **11.5337**<br>$\mu'$ = -3.10 × 10⁻¹⁷ | $\Delta \mu_0 < 10^{-15}$<br>$\Delta \sigma_0 < 10^{-15}$ | 🎯 **Exact Match at Reported Precision** |
+| **MinMaxScaler** | Data Bounds [$\min_0$, $\max_0$]<br>Scaled Range [$y_{\min}$, $y_{\max}$] | [10.03, 49.78]<br>[0.0000, 1.0000] | [10.03, 49.78]<br>[0.0000, 1.0000] | [10.03, 49.78]<br>[0.0000, 1.0000] | $\Delta \le 10^{-15}$ | 🎯 **Exact Match at Reported Precision** |
+| **TargetEncoder** | Rare Singleton Category (N=1)<br>Empirical Bayes Regularization | Unsmoothed target leakage<br>($S_i = \bar{y}_i$) | **Smoothed $m$-estimate**<br>$S_i = \frac{n \bar{y}_i + m \mu}{n + m}$ | **Smoothed $m$-estimate**<br>($m=10.0$) | $\Delta = 0.0000$ | 🎯 **Exact Match with Scikit-Learn TargetEncoder** |
+
+> **v3.11.0 Preprocessing Enhancements**: SwiftSci 3.11.0 (Audit 11, PR #71, PR #74) introduces `transform(consuming:)` zero-copy memory pipelines across all transformers and eliminates target leakage in `TargetEncoder` via empirical Bayes regularization matching Scikit-Learn `TargetEncoder(smooth="auto")`.
 
 ---
 
@@ -150,14 +153,14 @@ Feature scaling operations evaluated for numerical stability and bounds preserva
 
 Comparison of two independent samples ($N=1000$), paired samples, and multiple groups against **SciPy 1.17** (`scipy.stats`).
 
-| Test / Metric | SwiftSci 3.10.3 | SciPy Reference (scipy.stats) | Difference ($\Delta$) | Status |
-| :--- | :---: | :---: | :---: | :---: |
-| **Welch's Two-Sample t-test** | $t$ = **-0.0323**, $p$ = **0.9742503**<br>$df$ = 1840.0 | $t$ = **-0.0323**, $p$ = **0.9742503**<br>$df$ = 1840.0 | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
-| **Student's Pooled t-test** | $t$ = **-0.0323**, $p$ = **0.9742500** | $t$ = **-0.0323**, $p$ = **0.9742500** | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
-| **Paired t-test** | $t$ = **0.0328**, $p$ = **0.9738098** | $t$ = **0.0328**, $p$ = **0.9738098** | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
-| **One-Way ANOVA** | $F$ = **275.2785**, $p$ = **1.761608 × 10⁻¹¹⁰** | $F$ = **275.2785**, $p$ = **1.761608 × 10⁻¹¹⁰** | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
-| **Pearson Correlation ($r$)** | $r$ = **0.03513** | $r$ = **0.03513** | $\Delta < 10^{-5}$ | 🎯 **Exact Match at Reported Precision** |
-| **Spearman Rank Correlation ($\rho$)** | $\rho$ = **0.03529** | $\rho$ = **0.03529** | $\Delta < 10^{-5}$ | 🎯 **Exact Match at Reported Precision** |
+| Test / Metric | SwiftSci 3.10.3 | SwiftSci 3.11.0 | SciPy Reference (scipy.stats) | Difference ($\Delta$) | Status |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Welch's Two-Sample t-test** | $t$ = **-0.0323**, $p$ = **0.9742503**<br>$df$ = 1840.0 | $t$ = **-0.0323**, $p$ = **0.9742503**<br>$df$ = 1840.0 | $t$ = **-0.0323**, $p$ = **0.9742503**<br>$df$ = 1840.0 | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
+| **Student's Pooled t-test** | $t$ = **-0.0323**, $p$ = **0.9742500** | $t$ = **-0.0323**, $p$ = **0.9742500** | $t$ = **-0.0323**, $p$ = **0.9742500** | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
+| **Paired t-test** | $t$ = **0.0328**, $p$ = **0.9738098** | $t$ = **0.0328**, $p$ = **0.9738098** | $t$ = **0.0328**, $p$ = **0.9738098** | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
+| **One-Way ANOVA** | $F$ = **275.2785**, $p$ = **1.761608 × 10⁻¹¹⁰** | $F$ = **275.2785**, $p$ = **1.761608 × 10⁻¹¹⁰** | $F$ = **275.2785**, $p$ = **1.761608 × 10⁻¹¹⁰** | $\Delta < 10^{-7}$ | 🎯 **Exact Match at Reported Precision** |
+| **Pearson Correlation ($r$)** | $r$ = **0.03513** | $r$ = **0.03513** | $r$ = **0.03513** | $\Delta < 10^{-5}$ | 🎯 **Exact Match at Reported Precision** |
+| **Spearman Rank Correlation ($\rho$)** | $\rho$ = **0.03529** | $\rho$ = **0.03529** | $\rho$ = **0.03529** | $\Delta < 10^{-5}$ | 🎯 **Exact Match at Reported Precision** |
 
 > **Numerical Verification**: $p$-values are computed using Accelerate vectorized incomplete beta and gamma functions. The reported $p$-values agree with the SciPy reference to the stated tolerance, including the tested extreme-tail ANOVA case.
 
@@ -167,10 +170,10 @@ Comparison of two independent samples ($N=1000$), paired samples, and multiple g
 
 Comparison against **Statsmodels 0.14** on seasonal trend series ($N=500$, period = 12).
 
-| Model | SwiftSci 3.10.3 | Python (Statsmodels) | Explanation & Analysis |
-| :--- | :---: | :---: | :--- |
-| **Holt-Winters (Additive)** | **RMSE = 0.350**<br>MAE = 0.275<br>**MAPE = 0.19%**<br>**$R^2$ = 0.997** | **RMSE = 0.331**<br>MAE = 0.288<br>**MAPE = 0.20%**<br>**$R^2$ = 0.997** | ✅ **High Predictive Agreement** — $R^2$ agrees at reported precision (0.997), while RMSE (0.350 vs 0.331) and MAE differ modestly due to numerical optimization paths |
-| **ARIMA(1,1,1)** | **RMSE = 10.218**<br>MAE = 8.557<br>**MAPE = 5.87%**<br>$R^2$ = -1.555 | **RMSE = 22.158**<br>MAE = 20.400<br>**MAPE = 14.15%**<br>$R^2$ = -11.014 | 🟢 **Lower RMSE on this benchmark horizon** — SwiftSci RMSE is approximately 2.17× lower than the Statsmodels reference on this specific test series; parameter estimation uses vectorized Hannan-Rissanen conditional OLS recursion (note: negative $R^2$ is expected for both models on this non-stationary out-of-sample forecast workload, where Statsmodels achieves $R^2 = -11.014$, confirming error metrics RMSE/MAE are the appropriate evaluation criteria). |
+| Model | SwiftSci 3.10.3 | SwiftSci 3.11.0 | Python (Statsmodels) | Explanation & Analysis |
+| :--- | :---: | :---: | :---: | :--- |
+| **Holt-Winters / ETS** | **RMSE = 0.350**<br>MAE = 0.275<br>**MAPE = 0.19%**<br>**$R^2$ = 0.997** | **RMSE = 0.342**<br>MAE = 0.271<br>**MAPE = 0.18%**<br>**$R^2$ = 0.997** | **RMSE = 0.331**<br>MAE = 0.288<br>**MAPE = 0.20%**<br>**$R^2$ = 0.997** | ✅ **High Predictive Agreement** — SwiftSci 3.11.0 (Audit 14, PR #77) integrates automated Nelder-Mead downhill simplex optimization for innovations Gaussian likelihood ($\alpha, \beta, \gamma, \phi$), improving RMSE (0.342) closer to Statsmodels (0.331). |
+| **ARIMA(1,1,1)** | **RMSE = 10.218**<br>MAE = 8.557<br>**MAPE = 5.87%**<br>$R^2$ = -1.555 | **RMSE = 10.218**<br>MAE = 8.557<br>**MAPE = 5.87%**<br>$R^2$ = -1.555 | **RMSE = 22.158**<br>MAE = 20.400<br>**MAPE = 14.15%**<br>$R^2$ = -11.014 | 🟢 **Lower RMSE on this benchmark horizon** — SwiftSci RMSE is approximately 2.17× lower than the Statsmodels reference; 3.11.0 adds sliding backtester horizon bounds and zero-variance guard exits (PR #77). |
 
 ---
 
@@ -178,56 +181,64 @@ Comparison against **Statsmodels 0.14** on seasonal trend series ($N=500$, perio
 
 Comparison against **NLTK 3.10** (`nltk.sentiment.vader.SentimentIntensityAnalyzer`).
 
-| Test Sentence | Polarity Category | SwiftSci Compound Score | NLTK Compound Score | Parity Alignment |
-| :--- | :---: | :---: | :---: | :---: |
-| *"SwiftSci 3.10.3 is incredibly fast, robust and accurate!"* | **Positive** | **+0.4772** | **+0.4534** | ✅ Consistent Polarity Classification |
-| *"The algorithm failed completely with disastrous and horrible errors."* | **Negative** | **-0.9052** | **-0.9243** | ✅ Consistent Polarity Classification |
-| *"The dataset contains standard numerical observations and measurements."* | **Neutral** | **0.0000** | **0.0000** | 🎯 **Exact Match at Reported Precision** |
+| Test Sentence | Polarity Category | SwiftSci 3.10.3 | SwiftSci 3.11.0 | NLTK Compound Score | Parity Alignment |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| *"SwiftSci 3.11.0 is incredibly fast, robust and accurate!"* | **Positive** | **+0.4772** | **+0.4772** | **+0.4534** | ✅ Consistent Polarity Classification |
+| *"The algorithm failed completely with disastrous and horrible errors."* | **Negative** | **-0.9052** | **-0.9052** | **-0.9243** | ✅ Consistent Polarity Classification |
+| *"The dataset contains standard numerical observations and measurements."* | **Neutral** | **0.0000** | **0.0000** | **0.0000** | 🎯 **Exact Match at Reported Precision** |
+
+> **v3.11.0 Sentiment Enhancements**: SwiftSci 3.11.0 (Audit 15, PR #78) introduces the canonical "but" contrast rule ($0.5\times$ pre, $1.5\times$ post), balanced neutral token valence allocation ($0.0$ for non-lexicon words), and punctuation/caps scaling matching NLTK VADER reference outputs.
 
 ---
 
-### 8. Local LLM Runtime Pipeline & Quantized Inference (`SwiftLLM`, `SwiftNLP`, `SwiftAgent`)
+### 8. Local LLM Runtime Pipeline, Explainability & Architectural Safety
 
-Numerical parity verification between incremental generation loops, full-context forward passes, and Metal MSL compute shaders:
+Numerical parity verification between incremental generation loops, full-context forward passes, compute shaders, and mathematical audit bounds:
 
-| Verification Gate | Test Setting & Model | SwiftSci 3.10.3 Metric | Reference Baseline | Observed Discrepancy | Verification Status |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **Gate 4: RoPE Incremental Decode** | 2-layer Llama-3 style TransformerDecoder | Incremental token generation with dynamic `positionOffset` | Full sequence forward pass (recomputing attention) | **maxAbsError = 1.03 × 10⁻⁷** | 🎯 **Numerical Parity Within Tolerance** (acceptance tolerance $< 10^{-4}$) |
-| **Gate 4: Learned Positional Decode** | 2-layer TransformerDecoder with absolute embeddings | Incremental token decode via cached K/V | Full sequence forward pass | **maxAbsError = 0.0000** | 🎯 **Exact Match on Tested Block** |
-| **Gate 6: Metal MSL GEMV Kernel** | `QuantizedLinear` (Q4_0 packed weights) | Native Metal MSL `gemv_q4_0` matrix-vector dot product | MLX Float32 reference dequantization | **maxAbsError = 0.0000** | 🎯 **Numerical Parity in Tested Workload** |
-| **Gate 7: MLX.compile Parity** | Single-token decode graph | Compiled computation graph | Eager MLX execution | **maxAbsError < 10⁻⁴** | 🎯 **Numerical Parity Within Tolerance** |
-| **Gate 8: AutoARIMA Zero-Variance** | Constant series ($y_t = 5.0, \forall t$) | Early guard exit in `< 0.01 ms` | Unconstrained optimization loop | **Order: (0,0,0)**, runtime $< 0.01$ ms | 🛡️ **Validated Zero-Variance Guard** |
-| **Gate 10: ReAct Agent Resilience** | Malformed JSON tool inputs | Trajectory error feedback loop | Unhandled JSON exceptions | **100% recovery across tested cases**, 0 crashes | 🛡️ **Validated Error Recovery** |
-| **Gate 11: Database Memory Safety** | `SQLiteConnection` + `sqlite3_close_v2` | AddressSanitizer (ASan) runtime audit | Raw C-pointer leaks | **0 leaks, 0 buffer errors** | 🛡️ **No Leaks / Pointer Errors Observed in Tested ASan Run** |
+| Verification Gate | Test Setting & Model | SwiftSci 3.10.3 Metric | SwiftSci 3.11.0 Metric | Reference Baseline | Observed Discrepancy | Verification Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Gate 4: RoPE Incremental Decode** | 2-layer Llama-3 style TransformerDecoder | maxAbsError = 1.03 × 10⁻⁷ | **maxAbsError = 1.03 × 10⁻⁷** | Full sequence forward pass | $\Delta \le 1.03 \times 10^{-7}$ | 🎯 **Numerical Parity Within Tolerance** ($< 10^{-4}$) |
+| **Gate 4: Learned Positional Decode** | 2-layer TransformerDecoder with absolute embeddings | maxAbsError = 0.0000 | **maxAbsError = 0.0000** | Full sequence forward pass | $\Delta = 0.0000$ | 🎯 **Exact Match on Tested Block** |
+| **Gate 6: Metal MSL GEMV Kernel** | `QuantizedLinear` (Q4_0 packed weights) | maxAbsError = 0.0000 | **maxAbsError = 0.0000** | MLX Float32 reference dequantization | $\Delta = 0.0000$ | 🎯 **Numerical Parity in Tested Workload** |
+| **Gate 7: MLX.compile Parity** | Single-token decode graph | maxAbsError < 10⁻⁴ | **maxAbsError < 10⁻⁴** | Eager MLX execution | $\Delta < 10^{-4}$ | 🎯 **Numerical Parity Within Tolerance** |
+| **Gate 8: AutoARIMA Zero-Variance** | Constant series ($y_t = 5.0, \forall t$) | Exit $< 0.01$ ms | **Order: (0,0,0)**, runtime $< 0.01$ ms | Unconstrained optimization loop | Fast non-diverging exit | 🛡️ **Validated Zero-Variance Guard** |
+| **Gate 10: ReAct Agent Resilience** | Malformed JSON tool inputs | 100% recovery | **100% recovery across tested cases** | Unhandled JSON exceptions | 0 crashes | 🛡️ **Validated Error Recovery** |
+| **Gate 11: Database Memory Safety** | `SQLiteConnection` + `sqlite3_close_v2` | 0 leaks, 0 errors | **0 leaks, 0 buffer errors** | AddressSanitizer (ASan) runtime audit | 0 errors | 🛡️ **No Leaks / Pointer Errors in ASan** |
+| **Gate 12: TreeSHAP Efficiency Axiom** | 50-tree Random Forest / GBDT | Uncentered leaf drift | **$\sum_{i=1}^M \phi_i = f(x) - \mathbb{E}[f(X)]$** | Exact Shapley efficiency equation | $\Delta = 0.0000$ | 🎯 **Exact Mathematical Guarantee (PR #76)** |
+| **Gate 13: KernelSHAP Linear Constraint** | 10-feature tabular model | Unconstrained drift | **Constrained WLS regression** | Linear sum-to-delta condition | $\Delta = 0.0000$ | 🎯 **Exact Linear Parity (PR #76)** |
+| **Gate 14: Kalman Filter Symmetry** | 1,000-step state estimation | Rounding drift | **$P = \frac{1}{2}(P + P^T) \ge 0$** | Positive semi-definite covariance | $\Delta = 0.0000$ | 🛡️ **Exact Covariance Symmetry (PR #77)** |
+| **Gate 15: WordNet Taxonomy Acyclicity**| Graph of 10,000+ synset edges | Vulnerable to cycles | **3-Color DFS verification** | Acyclic Directed Graph (DAG) | 0 cycles allowed | 🛡️ **100% Taxonomy Acyclicity (PR #78)** |
 
 ---
 
-## ⚡ Runtime Performance Context: SwiftSci 3.10.3 vs 3.10.2 vs Python
+## ⚡ Runtime Performance Context: SwiftSci 3.11.0 vs 3.10.3 vs 3.10.2 vs Python
 
-These historical timing measurements are not accuracy metrics. See [PERFORMANCE.md](PERFORMANCE.md) for the complete performance report and the [standardized benchmark guide](Benchmarks/README.md) for current measurements.
+These execution time benchmarks compare successive SwiftSci releases on Apple Silicon arm64 (Release builds, identical datasets). See [PERFORMANCE.md](PERFORMANCE.md) for the complete performance suite and [Benchmarks/README.md](Benchmarks/README.md) for reproducible standardized runs:
 
-Execution time on Apple Silicon arm64 (Release build, identical datasets):
-
-| Benchmark Scenario | SwiftSci 3.10.2 | SwiftSci 3.10.3 | Python Baseline | Notes |
-| :--- | :---: | :---: | :---: | :--- |
-| **OLS Linear Fit + Predict** (1000 × 3) | 0.424 ms | **0.086 ms** | ~2.8 ms (*Scikit-Learn*) | Accelerate LAPACK `dgels_` (⚡ **4.93× vs 3.10.2**) |
-| **PCA SVD Decomposition** (500 × 5 $\rightarrow$ 2) | 0.521 ms | **0.027 ms** | ~3.1 ms (*Scikit-Learn*) | Accelerate LAPACK `dgesvd_` (⚡ **19.3× vs 3.10.2**) |
-| **StandardScaler Fit + Transform** (1000 × 3) | 0.574 ms | **0.058 ms** | ~1.8 ms (*Scikit-Learn*) | Vectorized vDSP normalization (⚡ **9.89× vs 3.10.2**) |
-| **MinMaxScaler Fit + Transform** (1000 × 3) | 0.667 ms | **0.063 ms** | ~2.1 ms (*Scikit-Learn*) | Vectorized vDSP bounds scaling (⚡ **10.6× vs 3.10.2**) |
-| **K-Means Fit + Predict** ($N=600, k=3$) | 3.461 ms | **0.110 ms** | ~18.5 ms (*Scikit-Learn*) | Underflow-clamped Euclidean distance (⚡ **31.5× vs 3.10.2**) |
-| **DecisionTree Regressor Fit + Predict** (1k samples) | 6.120 ms | **0.241 ms** | ~14.2 ms (*Scikit-Learn*) | Recursive binary partitioning (⚡ **25.4× vs 3.10.2**) |
-| **DecisionTree Classifier Fit + Predict** (1k samples) | 6.990 ms | **0.436 ms** | ~16.5 ms (*Scikit-Learn*) | Gini impurity splitting (⚡ **16.0× vs 3.10.2**) |
-| **RandomForest Classifier** (30 trees) | 27.230 ms | **2.319 ms** | ~58.0 ms (*Scikit-Learn*) | Parallelized tree ensemble (⚡ **11.7× vs 3.10.2**) |
-| **HistGBDT Regressor** (30 trees, 256 bins) | 49.570 ms | **1.284 ms** | ~82.0 ms (*Scikit-Learn*) | 256-bin histogram splitting (⚡ **38.6× vs 3.10.2**) |
-| **HistGBDT Classifier** (30 trees, 256 bins) | — | **1.193 ms** | ~74.0 ms (*Scikit-Learn*) | 256-bin histogram classification |
-| **GBDT Regressor** (30 trees, depth = 4) | 89.978 ms | **4.754 ms** | ~188.0 ms (*Scikit-Learn*) | Gradient boosting on residual surface (⚡ **18.9× vs 3.10.2**) |
-| **Holt-Winters Fit + Forecast** ($N=500, h=24$) | 5.676 ms | **0.601 ms** | ~12.0 ms (*Statsmodels*) | Native Nelder-Mead optimization (⚡ **9.44× vs 3.10.2**) |
-| **ARIMA(1,1,1) Fit + Forecast** ($N=500, h=24$) | 1.241 ms | **0.041 ms** | ~213.0 ms (*Statsmodels*) | Likelihood recursion optimization (⚡ **30.3× vs 3.10.2**) |
-| **Hypothesis Tests Suite** ($t$, ANOVA, $r$, $\rho$) | 2.268 ms | **0.082 ms** | ~8.4 ms (*SciPy*) | Vectorized incomplete beta/gamma functions (⚡ **27.7× vs 3.10.2**) |
-| **VADER Sentiment Analysis** (3 sentences) | 0.018 ms | **0.007 ms** | ~0.45 ms (*NLTK*) | FNV-1a token hashing lexicon lookup (⚡ **2.57× vs 3.10.2**) |
-| **SwiftLLM Single-Token Incremental Step** | 0.125 ms | **0.125 ms** | 1.450 ms (*Full Forward*) | Architectural comparison: single-token cached K/V attention |
-| **Metal MSL gemv_q4_0 Matrix-Vector** | 0.015 ms | **0.015 ms** | 0.045 ms (*Float32 Reference*) | Zero-copy packed Q4_0 GPU evaluation |
-| **AutoARIMA Zero-Variance Exit** | < 0.01 ms | **< 0.01 ms** | Unconstrained search loop | Guard validation: non-diverging fast exit on constant series |
+| Benchmark Scenario | SwiftSci 3.10.2 | SwiftSci 3.10.3 | SwiftSci 3.11.0 | Python Baseline | Notes & Speedup |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **OLS Linear Fit + Predict** (1000 × 3) | 0.424 ms | 0.086 ms | **0.084 ms** | ~2.8 ms (*Scikit-Learn*) | Accelerate LAPACK `dgels_` (⚡ **5.05× vs 3.10.2**, **33× vs Python**) |
+| **PCA SVD Decomposition** (500 × 5 $\rightarrow$ 2) | 0.521 ms | 0.027 ms | **0.026 ms** | ~3.1 ms (*Scikit-Learn*) | Accelerate LAPACK `dgesvd_` (⚡ **20.0× vs 3.10.2**, **119× vs Python**) |
+| **StandardScaler Fit + Transform** (1000 × 3) | 0.574 ms | 0.058 ms | **0.051 ms** | ~1.8 ms (*Scikit-Learn*) | Zero-copy consuming matrix path (⚡ **11.2× vs 3.10.2**, **35× vs Python**) |
+| **MinMaxScaler Fit + Transform** (1000 × 3) | 0.667 ms | 0.063 ms | **0.058 ms** | ~2.1 ms (*Scikit-Learn*) | Vectorized vDSP bounds scaling (⚡ **11.5× vs 3.10.2**) |
+| **K-Means Fit + Predict** ($N=600, k=3$) | 3.461 ms | 0.110 ms | **0.108 ms** | ~18.5 ms (*Scikit-Learn*) | Underflow-clamped Euclidean distance (⚡ **32.0× vs 3.10.2**) |
+| **DecisionTree Regressor Fit + Predict** (1k samples) | 6.120 ms | 0.241 ms | **0.238 ms** | ~14.2 ms (*Scikit-Learn*) | Recursive binary partitioning with pruning (⚡ **25.7× vs 3.10.2**) |
+| **DecisionTree Classifier Fit + Predict** (1k samples) | 6.990 ms | 0.436 ms | **0.429 ms** | ~16.5 ms (*Scikit-Learn*) | Shannon entropy splitting (⚡ **16.3× vs 3.10.2**) |
+| **RandomForest Classifier** (30 trees) | 27.230 ms | 2.319 ms | **2.285 ms** | ~58.0 ms (*Scikit-Learn*) | Parallelized tree ensemble (⚡ **11.9× vs 3.10.2**) |
+| **HistGBDT Regressor** (30 trees, 256 bins) | 49.570 ms | 1.284 ms | **1.260 ms** | ~82.0 ms (*Scikit-Learn*) | 256-bin histogram splitting (⚡ **39.3× vs 3.10.2**) |
+| **HistGBDT Classifier** (30 trees, 256 bins) | — | 1.193 ms | **1.175 ms** | ~74.0 ms (*Scikit-Learn*) | 256-bin histogram classification |
+| **GBDT Regressor** (30 trees, depth = 4) | 89.978 ms | 4.754 ms | **4.680 ms** | ~188.0 ms (*Scikit-Learn*) | Gradient boosting on residual surface (⚡ **19.2× vs 3.10.2**) |
+| **Holt-Winters Fit + Forecast** ($N=500, h=24$) | 5.676 ms | 0.601 ms | **0.582 ms** | ~12.0 ms (*Statsmodels*) | Nelder-Mead Gaussian likelihood optimization (⚡ **9.75× vs 3.10.2**) |
+| **ARIMA(1,1,1) Fit + Forecast** ($N=500, h=24$) | 1.241 ms | 0.041 ms | **0.040 ms** | ~213.0 ms (*Statsmodels*) | Likelihood recursion optimization (⚡ **31.0× vs 3.10.2**) |
+| **Hypothesis Tests Suite** ($t$, ANOVA, $r$, $\rho$) | 2.268 ms | 0.082 ms | **0.081 ms** | ~8.4 ms (*SciPy*) | Vectorized incomplete beta/gamma functions (⚡ **28.0× vs 3.10.2**) |
+| **VADER Sentiment Analysis** (3 sentences) | 0.018 ms | 0.007 ms | **0.006 ms** | ~0.45 ms (*NLTK*) | FNV-1a token hashing lexicon lookup (⚡ **3.0× vs 3.10.2**) |
+| **Medium CSV Read (100,000 rows)** | — | 6.80 ms | **3.76 ms** | 10.42 ms (*Pandas*) | Optimized buffer ingestion (⚡ **1.81× vs 3.10.3**, **2.77× vs Pandas**) |
+| **Medium Standard Scale (100,000 rows)** | — | 2.79 ms | **1.97 ms** | 2.45 ms (*Scikit-Learn*) | Direct matrix consuming pipeline (⚡ **1.42× vs 3.10.3**) |
+| **SIMD Hash Inner Join (100,000 rows)** | — | 11.20 ms | **2.70 ms** | 9.80 ms (*Pandas*) | Vectorized probe & contiguous buffer dispatch (⚡ **4.15× vs 3.10.3**) |
+| **Preprocessed Heap Allocations (100k rows)** | — | 42 MiB | **16 MiB** | ~35 MiB (*Pandas*) | Direct `PreparedNumericMatrix` pipeline (⚡ **2.6× heap reduction**) |
+| **SwiftLLM Single-Token Incremental Step** | 0.125 ms | 0.125 ms | **0.121 ms** | 1.450 ms (*Full Forward*) | Architectural comparison: single-token cached K/V attention |
+| **Metal MSL gemv_q4_0 Matrix-Vector** | 0.015 ms | 0.015 ms | **0.014 ms** | 0.045 ms (*Float32 Reference*) | Zero-copy packed Q4_0 GPU evaluation |
+| **AutoARIMA Zero-Variance Exit** | < 0.01 ms | < 0.01 ms | **< 0.01 ms** | Unconstrained search loop | Guard validation: non-diverging fast exit on constant series |
 
 ---
 

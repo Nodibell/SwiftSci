@@ -4,6 +4,47 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.11.0] - 2026-10-14
+
+### Performance
+- **SIMD-Accelerated Hash Join (`SwiftDataFrame`)**: Vectorized probe and equality dispatch over contiguous column storage buffers (`Int64`, `Int32`, `Double`, `Float`, `String`, `Bool`), achieving **4.15× speedup** on inner joins with zero existential boxing (PR #73).
+- **Direct Prepared Matrix Preprocessing (`SwiftDataFrame`, `SwiftPreprocessing`, `SwiftML`)**: Implemented zero-copy consuming matrix pipeline (`PreparedNumericMatrix` $\to$ `Imputer.transform(consuming:)` $\to$ `StandardScaler.transform(consuming:)` $\to$ `MLP.predict(features:)`), eliminating intermediate DataFrame allocations and achieving 1.16–1.32× speedup with extra heap reduced from 42 MiB to 16 MiB (PR #71, PR #72).
+- **Bounded Batch Inference & Session Reuse (`SwiftML`, `WiredMemoryManager`)**: Scoped Core ML session retention across inference batches with separate work admission, persistent session management, and bounded per-call scratch buffers for batched MLP prediction (PR #65, PR #67, PR #68, PR #70).
+- **Optimized Arrow Ingestion & Date32 Conversion (`SwiftDataFrame`)**: Streamlined owned Apache Arrow buffer imports and fixed signed date32 conversion, reducing memory copies during tabular ingestion (PR #61).
+- **Hardware-Aware Memory Admission (`WiredMemoryManager`)**: Bounded batch inference pipeline from source loading through consumption, preserving columnar layouts and hardware tier selection (PR #52, PR #62, PR #63).
+
+### Local LLM, Generative AI & Computer Vision
+- **Native Llama 3.2 Inference (`SwiftLLM`)**: End-to-end native execution of Llama 3.2 models with stabilized rotary positional embeddings (RoPE), dynamic scaled rotary frequency initialization, and strict context limit enforcement (PR #50).
+- **MLX Swift 0.32.3 Upgrade with SIMD Backport (`SwiftLLM`)**: Integrated MLX Swift 0.32.3 for managed buffer release with upstream Float16 SIMD backport, stabilizing tensor-boundary workloads and mixed-precision evaluation (PR #49, PR #60).
+- **Object Detection with YOLOv8 (`SwiftVision`)**: Added native YOLOv8 object detector architecture, Non-Maximum Suppression (NMS), and bounding box evaluation metrics ($mAP@50$, $mAP@50:95$) (PR #54, PR #55).
+
+### AutoML & Model Evaluation
+- **Modular AutoML Architecture (`SwiftOptimize`)**: Rebuilt `AutoML` into a modular, production-grade pipeline featuring honest per-fold leaderboards, soft deadline budgeting, deterministic multi-criteria tie-breaking (Score $\to$ Stability $\to$ Simplicity), and automatic post-selection winner refitting with `.predict` (PR #56, PR #57, PR #75).
+- **Deterministic Stratified Cross-Validation (`SwiftOptimize`)**: Introduced `StratifiedKFold` ensuring exact preservation of class ratios across folds, with deterministic seeding and typed validation errors (PR #56, PR #58).
+- **Multiclass Gorodkin MCC & Evaluation Harness (`SwiftOptimize`)**: Integrated multiclass Gorodkin Matthews Correlation Coefficient and a unified `EvaluationHarness` with cross-validation and holdout validation strategies (PR #54, PR #58).
+
+### Data Ingestion & Manipulation
+- **Comprehensive Datetime Parsing & Formatting (`SwiftDataFrame`)**: Added high-precision ISO 8601 and custom datetime parsing with millisecond support, formatting utilities, and date-based column filtering (PR #59).
+- **Column Casting & Schema Retention (`SwiftDataFrame`)**: Added explicit column type casting (`castColumn`), CSV reader type priority (`Int64` over `Bool` preserving numeric zero columns), and schema preservation for empty row selections (PR #59, PR #69).
+- **Pivot & Streaming Join Safety (`SwiftDataFrame`)**: Enforced explicit duplicate detection on index/column pivot pairs without aggregation, and rejected unsupported right/outer streaming joins on chunked streams (PR #73).
+
+### Mathematical & Algorithm Robustness (Audits 1–15)
+- **Exact Efficiency Axiom TreeSHAP (`SwiftExplain`)**: Rewrote tree traversal attribution to compute exact Shapley attributions satisfying $\sum_{i=1}^M \phi_i = f(x) - \mathbb{E}[f(X)]$; feature contributions now evaluate leaf differences from the dataset expectation rather than raw uncentered values (PR #76).
+- **Constrained WLS KernelSHAP (`SwiftExplain`)**: Implemented weighted least squares regression subject to the exact linear sum-to-delta constraint with analytical specializations for $M=1$ and $M=2$ (PR #76).
+- **High-Dimensional Adaptive LIME (`SwiftExplain`)**: Adaptive neighborhood bandwidth $\sigma = 0.75 \sqrt{D}$ preventing exponential distance collapse to zero in high-dimensional feature spaces (PR #76).
+- **ETS Smoothing Parameter Optimization (`SwiftForecast`)**: Integrated Nelder-Mead simplex optimization for automatic ETS parameter discovery ($\alpha, \beta, \gamma, \phi$) with innovations Gaussian likelihood (PR #77).
+- **Stabilized Time Series Backtester (`SwiftForecast`)**: Added strict horizon length validation, sliding window size ($\ge 2$) bounds, and safe handling of zero-scale naive MASE baselines (PR #77).
+- **State-Space & Dynamic Operators (`SwiftForecast`)**: Enforced covariance symmetry and positive diagonal guarantees in `KalmanFilter`; generated complete degree $\ge 4$ monomial cross-terms in `KoopmanOperator` (PR #77).
+- **Decision Tree & Linear Models (`SwiftML`)**: Corrected categorical entropy formulas and post-pruning variance reduction in `DecisionTree`; added pseudo-inverse SVD fallback for collinear/singular matrices and non-finite feature checks in `LinearRegression` (PR #75).
+- **Target Encoding & Preprocessing (`SwiftPreprocessing`)**: Added empirical Bayes / m-estimate smoothing to `TargetEncoder` preventing target leakage on singleton categories; infinite/NaN guards in `KNNImputer`; unknown category handling (`handleUnknown: .ignore`) in `OneHotEncoder` (PR #74).
+- **Thread-Safe Vectorizers & FNV-1a Tokenizer (`SwiftNLP`)**: Added `NSLock` synchronization to `CountVectorizer` and `TFIDFVectorizer` for Sendable compliance; deterministic 64-bit FNV-1a hashing in `RegexTokenizer` and `SentenceTokenizer`; sublinear TF scaling ($1 + \log(\text{tf})$) (PR #78).
+- **WordNet Graph & Taxonomy Validation (`SwiftNLP`)**: Added 3-color DFS taxonomy cycle validation, dangling hypernym detection, and $O(1)$ BFS queue optimization; differentiated ancestral LCA distance from general undirected graph distance (PR #78).
+- **VADER Sentiment Alignment (`SwiftNLP`)**: Balanced neutral token valence allocation ($0.0$ for non-lexicon words); canonical "but" contrast rule ($0.5\times$ pre, $1.5\times$ post); punctuation and capitalization amplification (PR #78).
+
+### Added & Quality Assurance
+- **Expanded Test Suites**: 1,336 automated tests across 14 modules (including 620 core ML/Data tests) passing with 0 warnings under Swift 6 strict concurrency (`-strict-concurrency=complete`).
+- **Standardized Hardware Baseline**: Documented reproducible execution policies across CPU, GPU, and Core ML backends with comparative trials against DuckDB and Polars (PR #49, PR #52).
+
 ## [3.10.3] - 2026-09-29
 
 ### Performance

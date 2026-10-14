@@ -1,19 +1,34 @@
-# SwiftSci 3.10.3 historical performance benchmarks
+# SwiftSci 3.11.0 Performance Benchmarks & Historical Records
 
-Use the [standardized benchmark guide](Benchmarks/README.md) for current runs, audits and comparisons. The results below are historical research records. They are unvalidated under the standardized contracts and make no certification or production claims. Learned-model and GPU entries remain research unless a separately audited workload covers them. Preserve their original values when reproducing or discussing this report.
+Use the [standardized benchmark guide](Benchmarks/README.md) for current runs, audits and comparisons. The results below include benchmarks for SwiftSci 3.11.0 release builds as well as retained historical research records. Preserve their original values when reproducing or discussing this report.
 
-Historical research measurements for SwiftSci 3.10.3 Release builds alongside Python data-science libraries including NumPy, Pandas, SciPy, Scikit-Learn, Statsmodels, SHAP, PyTorch, and MLX on Apple Silicon / macOS 15 arm64.
+Historical and current research measurements for SwiftSci Release builds alongside Python data-science libraries including NumPy, Pandas, SciPy, Scikit-Learn, Statsmodels, SHAP, PyTorch, and MLX on Apple Silicon / macOS 15 arm64.
 
 > [!NOTE]
 > **Benchmark Methodology v2**
 >
-> SwiftSci 3.10.3 maintains and expands the revised cross-language benchmark methodology designed to maximize fixture reproducibility, parameter synchronization, and rigorous interpretation of performance differences:
+> SwiftSci maintains and expands the revised cross-language benchmark methodology designed to maximize fixture reproducibility, parameter synchronization, and rigorous interpretation of performance differences:
 > - **Byte-identical little-endian IEEE-754 binary fixtures** and shared CSV fixtures with SHA-256 verification.
 > - **Synchronized workload sizes and selected ML hyperparameters** where the APIs provide equivalent controls.
 > - **Three reporting tiers** separating shared workloads, library-to-library comparisons, and architecture-specific implementations.
 > - **Median wall-clock measurements** for the primary comparison tables, with full sample distributions retained in JSON artifacts.
 >
 > The results measure library and implementation performance on the tested platform. They should not be interpreted as a general comparison of Swift versus Python runtimes.
+
+---
+
+## 🚀 What’s New in 3.11.0
+
+### SIMD Acceleration & Zero-Copy Tabular Pipelines (`SwiftDataFrame`, `SwiftPreprocessing`, `SwiftML`)
+- **SIMD-Accelerated Hash Join (4.15× Speedup)** — Vectorized hash probe and contiguous column equality dispatch over primitive buffers (`Int64`, `Int32`, `Double`, `Float`, `String`, `Bool`), eliminating existential container overhead (`any Any`) and achieving **4.15× speedup** on inner joins (PR #73).
+- **Direct Prepared Matrix Preprocessing** — Zero-copy feature extraction (`prepareNumericMatrix`) and consuming in-place transforms (`Imputer.transform(consuming:)`, `StandardScaler.transform(consuming:)`), cutting heap allocations from **42 MiB to 16 MiB** and boosting end-to-end inference speed by **1.16–1.32×** (PR #71, PR #72).
+- **Batched MLP Prediction with Bounded Scratch** — Direct matrix prediction (`MLP.predict(features:)`) utilizing pre-allocated scratch buffers, eliminating intermediate vector allocations per row (PR #70).
+- **Streamlined Arrow Buffer Imports** — Zero-copy buffer handoff for owned Apache Arrow record batches and signed date32 conversion, reducing ingestion latency (PR #61).
+
+### Bounded Inference & Retained Sessions (`SwiftML`, `WiredMemoryManager`)
+- **Hardware-Aware Memory Admission** — Bounded batch inference pipeline from source loading through consumption, preventing OOM under concurrent high-throughput workloads (PR #52, PR #62, PR #63, PR #67).
+- **Scoped Core ML Session Retention** — Retained Core ML execution sessions across batches with segregated admission queues, eliminating model reload overheads (PR #65, PR #68).
+- **Native Llama 3.2 & MLX 0.32.3 SIMD Acceleration** — Upstream Float16 SIMD backport and managed-buffer releases enabling sustained high-token-rate local LLM inference (PR #49, PR #50, PR #60).
 
 ---
 

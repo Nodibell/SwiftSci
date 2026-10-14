@@ -153,3 +153,36 @@ struct ExponentialSmoothingTests {
         }
     }
 }
+
+// MARK: - Seasonal Period & Interval Contracts
+
+extension ExponentialSmoothingTests {
+
+    @Test("Holt-Winters rejects seasonal period < 2")
+    func testHoltWintersPeriodValidation() async {
+        let series = (0..<20).map { Double($0) }
+        let hwZero = ExponentialSmoothing(method: .holtWinters(beta: 0.1, gamma: 0.1, period: 0, seasonal: .additive), alpha: 0.2)
+        await #expect(throws: ForecastError.self) {
+            try await hwZero.fit(series: series)
+        }
+
+        let hwOne = ExponentialSmoothing(method: .holtWinters(beta: 0.1, gamma: 0.1, period: 1, seasonal: .additive), alpha: 0.2)
+        await #expect(throws: ForecastError.self) {
+            try await hwOne.fit(series: series)
+        }
+    }
+
+    @Test("Confidence intervals collapse on a zero-residual deterministic series")
+    func testZeroResidualIntervalCollapse() async throws {
+        let constantSeries = Array(repeating: 42.0, count: 10)
+        let ses = ExponentialSmoothing(method: .simple, alpha: 0.5)
+        try await ses.fit(series: constantSeries)
+        let result = try await ses.forecast(horizon: 3)
+
+        #expect(result.mse == 0.0)
+        if let lower = result.lowerBound, let upper = result.upperBound {
+            #expect(lower == result.predictions)
+            #expect(upper == result.predictions)
+        }
+    }
+}

@@ -53,7 +53,12 @@ public actor ExponentialSmoothing {
         switch method {
         case .simple: minLen = 2
         case .double: minLen = 3
-        case let .holtWinters(_, _, period, _): minLen = period * 2
+        case let .holtWinters(_, _, period, _):
+            // Validate seasonal period >= 2 before minimum length check
+            guard period >= 2 else {
+                throw ForecastError.invalidSeasonalPeriod(period)
+            }
+            minLen = period * 2
         }
         
         guard series.count >= minLen else {
@@ -123,7 +128,7 @@ public actor ExponentialSmoothing {
         let mse = vDSP.sumOfSquares(residuals) / Double(n)
         let mae = residuals.reduce(0.0) { $0 + abs($1) } / Double(n)
         
-        let seBase = sqrt(max(mse, 1e-6))
+        let seBase = sqrt(max(mse, 0.0))
         let z = 1.96 // 95% confidence interval
         var lower = [Double](repeating: 0.0, count: horizon)
         var upper = [Double](repeating: 0.0, count: horizon)

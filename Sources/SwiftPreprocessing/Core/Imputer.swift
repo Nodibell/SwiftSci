@@ -148,7 +148,7 @@ public struct Imputer: PreprocessingTransformer, Sendable {
             var sorted = values
             sorted.sort()
             let mid = sorted.count / 2
-            return sorted.count % 2 == 0 ? (sorted[mid - 1] + sorted[mid]) / 2.0 : sorted[mid]
+            return sorted.count % 2 == 0 ? (sorted[mid - 1] * 0.5 + sorted[mid] * 0.5) : sorted[mid]
         case .mostFrequent:
             var counts = [Double: Int]()
             for value in values { counts[value, default: 0] += 1 }

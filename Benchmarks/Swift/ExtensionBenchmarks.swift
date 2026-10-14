@@ -98,7 +98,7 @@ struct ExtensionBenchmarks: BenchmarkSuite {
         let catData = (0..<50_000).map { ["dept_\($0 % 8)", "region_\($0 % 4)"] }
         let oheRes = await BenchmarkRunner.run(name: "OneHotEncoder fitTransform (50k rows)", module: module, warmup: 2, iterations: 5) {
             let ohe = OneHotEncoder()
-            ohe.fit(catData)
+            try ohe.fit(catData)
             _ = try ohe.transform(catData)
         }
         results.append(oheRes)

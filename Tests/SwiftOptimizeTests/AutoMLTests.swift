@@ -248,3 +248,39 @@ struct AutoMLTests {
         #expect(entry.displayName == "RandomForestClassifier (maxDepth: 5, nEstimators: 15)")
     }
 }
+
+// MARK: - Winner Refitting & Inference
+
+extension AutoMLTests {
+
+    @Test("AutoML refits the winning model on full data and performs inference")
+    func testRefitBestModelAndPredict() async throws {
+        var X: [[Double]] = []
+        var y: [Double] = []
+        for i in 0..<20 {
+            if i % 2 == 0 {
+                X.append([1.0 + Double(i) * 0.05, 2.0 + Double(i) * 0.05])
+                y.append(0.0)
+            } else {
+                X.append([10.0 + Double(i) * 0.05, 20.0 + Double(i) * 0.05])
+                y.append(1.0)
+            }
+        }
+
+        let automl = AutoML(timeBudgetSeconds: 20, nFolds: 2)
+
+        // Refit before fit throws
+        await #expect(throws: AutoMLError.self) {
+            _ = try await automl.refitBestModel(features: X, targets: y)
+        }
+
+        _ = try await automl.fit(features: X, targets: y)
+
+        let fittedModel = try await automl.refitBestModel(features: X, targets: y)
+        let preds1 = try await fittedModel.predict(features: [[1.0, 2.0], [10.0, 20.0]])
+        let preds2 = try await automl.predict(features: [[1.0, 2.0], [10.0, 20.0]])
+
+        #expect(preds1 == preds2)
+        #expect(preds1 == [0.0, 1.0])
+    }
+}

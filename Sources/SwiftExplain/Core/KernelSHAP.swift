@@ -9,10 +9,9 @@ public actor KernelSHAP {
     /// Computes model-agnostic Shapley additive explanations for an instance using KernelSHAP.
     ///
     /// ## Mathematical Guarantees & Low-Dimensional Analytical Path
-    /// For low-dimensional spaces ($M \le 2$), computes exact analytical Shapley values without subset sampling:
-    /// - For $M = 1$: $\phi_0 = f(x) - f_{\text{empty}}$.
-    /// - For $M = 2$: computes exact 2-player coalition values satisfying the efficiency axiom $\phi_0 + \phi_1 = f(x) - f_{\text{empty}}$ identically.
-    /// - For $M > 2$: denominators $k(M - k)$ in the Shapley kernel weight are strictly guarded against zero-division for boundary coalitions.
+    /// - For $M = 1$: $\phi_0 = f(x) - f_{\text{empty}}$ exact.
+    /// - For $M = 2$: computes exact 2-player coalition values satisfying efficiency $\phi_0 + \phi_1 = f(x) - f_{\text{empty}}$ identically.
+    /// - For $M \ge 3$: exact constrained weighted linear regression enforcing $\sum_{i=1}^M \phi_i = f(x) - f_{\text{empty}}$ analytically without artificial penalties.
     ///
     /// - Parameters:
     ///   - model: An asynchronous model function mapping an array of features to a scalar output.
@@ -27,25 +26,38 @@ public actor KernelSHAP {
         numCoalitions: Int = 200
     ) async -> [Double] {
         let M = instance.count
-        guard M > 0 else { return [] }
+        // Parameter and dimension validation
+        guard M > 0, numCoalitions > 0 else { return [] }
+        guard instance.allSatisfy({ !$0.isNaN && !$0.isInfinite }) else {
+            return [Double](repeating: 0.0, count: M)
+        }
+
+        // Strict background validation (must be non-empty, rectangular with >= M cols, all finite)
+        guard !background.isEmpty,
+              background.allSatisfy({ $0.count >= M && $0.prefix(M).allSatisfy({ !$0.isNaN && !$0.isInfinite }) }) else {
+            return [Double](repeating: 0.0, count: M)
+        }
         
         // 1. Calculate the background mean vector
-        var tempBgMean = [Double](repeating: 0.0, count: M)
-        for col in 0..<M {
-            let sum = background.map { $0[col] }.reduce(0.0, +)
-            tempBgMean[col] = background.isEmpty ? 0.0 : sum / Double(background.count)
+        let bgCount = Double(background.count)
+        let bgMean: [Double] = (0..<M).map { col in
+            var sum = 0.0
+            for row in background {
+                sum += row[col]
+            }
+            return sum / bgCount
         }
-        let bgMean = tempBgMean
         
         let fEmpty = await model(bgMean)
         let fFull = await model(instance)
+        let deltaF = fFull - fEmpty
 
         // Exact analytical path for M = 1
         if M == 1 {
-            return [fFull - fEmpty]
+            return [deltaF]
         }
 
-        // Exact analytical path for M = 2 (eliminates sampling variance and zero-division)
+        // Exact analytical path for M = 2
         if M == 2 {
             let f0 = await model([instance[0], bgMean[1]])
             let f1 = await model([bgMean[0], instance[1]])
@@ -54,106 +66,162 @@ public actor KernelSHAP {
             return [phi0, phi1]
         }
         
-        // 2. Generate coalition masks and their Shapley weights
+        // Exact Constrained Weighted Least Squares for M >= 3
+        // Efficiency axiom constraint: phi_{M-1} = deltaF - sum_{j=0}^{M-2} phi_j
+        // Substituted into surrogate model:
+        //   g(z) = sum_{j=0}^{M-2} phi_j (z_j - z_{M-1}) + z_{M-1} * deltaF
+        // Regressors: \tilde{z}_j = z_j - z_{M-1} for j in 0..<(M-1)
+        // Target: \tilde{y} = (y - fEmpty) - z_{M-1} * deltaF
+        // System dimension is (M - 1).
+        let P = M - 1
+
+        let totalPossible = (M < 31) ? ((1 << M) - 2) : Int.max
+        let canEnumerateAll = totalPossible <= numCoalitions
+
         var masks = [[Double]]()
         var weights = [Double]()
         var targets = [Double]()
-        
-        masks.reserveCapacity(numCoalitions)
-        weights.reserveCapacity(numCoalitions)
-        targets.reserveCapacity(numCoalitions)
-        
-        // Always include all-zeros and all-ones coalitions with very high weight to enforce efficiency constraints
-        let largeWeight = 1e6
-        
-        masks.append([Double](repeating: 0.0, count: M))
-        weights.append(largeWeight)
-        targets.append(0.0) // fEmpty - fEmpty
-        
-        masks.append([Double](repeating: 1.0, count: M))
-        weights.append(largeWeight)
-        targets.append(fFull - fEmpty)
-        
-        // Generate intermediate coalitions
-        let coalitionSizes = M > 2 ? Array(1..<(M - 1)) : []
-        let sizeWeights = coalitionSizes.map { k -> Double in
-            let denom = Double(k) * Double(M - k)
-            return denom > 0 ? 1.0 / denom : 1.0
-        }
-        let totalSizeWeight = sizeWeights.reduce(0.0, +)
-        
-        // Concurrently evaluate coalitions in batches using a TaskGroup
-        let remaining = max(0, numCoalitions - 2)
-        
-        await withTaskGroup(of: (mask: [Double], weight: Double, target: Double).self) { group in
-            for _ in 0..<remaining {
-                group.addTask {
-                    // Sample subset size k using helper function
-                    let k = sampleSubsetSize(sizes: coalitionSizes, weights: sizeWeights, totalWeight: totalSizeWeight, fallback: max(1, M / 2))
-                    
-                    // Generate mask with k features present
-                    var mask = [Double](repeating: 0.0, count: M)
-                    var indices = Array(0..<M)
-                    indices.shuffle()
-                    for idx in indices.prefix(k) {
-                        mask[idx] = 1.0
+
+        if canEnumerateAll {
+            // Full enumeration of all 2^M - 2 intermediate coalitions with exact Shapley kernel weights
+            let numSubsets = totalPossible
+            masks.reserveCapacity(numSubsets)
+            weights.reserveCapacity(numSubsets)
+            targets.reserveCapacity(numSubsets)
+
+            var subsets = [[Double]]()
+            var subWeights = [Double]()
+            for maskVal in 1...numSubsets {
+                var mask = [Double](repeating: 0.0, count: M)
+                var k = 0
+                for bit in 0..<M {
+                    if (maskVal & (1 << bit)) != 0 {
+                        mask[bit] = 1.0
+                        k += 1
                     }
-                    
-                    // Compute Shapley kernel weight (guarded against zero-division)
-                    let nCr = choose(M, k)
-                    let denom = nCr * Double(k) * Double(M - k)
-                    let weight = denom > 1e-12 ? (Double(M) - 1.0) / denom : 1.0
-                    
-                    // Map coalition mask to feature space
-                    var xMapped = [Double](repeating: 0.0, count: M)
-                    for i in 0..<M {
-                        xMapped[i] = (mask[i] == 1.0) ? instance[i] : bgMean[i]
+                }
+                guard k > 0 && k < M else { continue }
+                let nCr = choose(M, k)
+                let denom = nCr * Double(k) * Double(M - k)
+                let w = denom > 1e-12 ? (Double(M) - 1.0) / denom : 1.0
+                subsets.append(mask)
+                subWeights.append(w)
+            }
+
+            await withTaskGroup(of: (mask: [Double], weight: Double, target: Double).self) { group in
+                for idx in 0..<subsets.count {
+                    let mask = subsets[idx]
+                    let w = subWeights[idx]
+                    group.addTask {
+                        var xMapped = [Double](repeating: 0.0, count: M)
+                        for i in 0..<M {
+                            xMapped[i] = (mask[i] == 1.0) ? instance[i] : bgMean[i]
+                        }
+                        let y = await model(xMapped)
+                        let rawTarget = y - fEmpty
+                        return (mask, w, rawTarget)
                     }
-                    
-                    let y = await model(xMapped)
-                    let target = y - fEmpty
-                    
-                    return (mask, weight, target)
+                }
+                for await res in group {
+                    masks.append(res.mask)
+                    weights.append(res.weight)
+                    targets.append(res.target)
                 }
             }
-            
-            for await result in group {
-                masks.append(result.mask)
-                weights.append(result.weight)
-                targets.append(result.target)
+        } else {
+            // Sample coalitions with proposal distribution q(k) proportional to 1 / (k*(M-k)).
+            // Because q(S) = q(k) / \binom{M}{k} \propto \pi(S), importance weights in regression are uniform (1.0).
+            masks.reserveCapacity(numCoalitions)
+            weights.reserveCapacity(numCoalitions)
+            targets.reserveCapacity(numCoalitions)
+
+            let coalitionSizes = Array(1..<(M - 1))
+            let sizeWeights = coalitionSizes.map { k -> Double in
+                let denom = Double(k) * Double(M - k)
+                return denom > 0 ? 1.0 / denom : 1.0
+            }
+            let totalSizeWeight = sizeWeights.reduce(0.0, +)
+
+            await withTaskGroup(of: (mask: [Double], weight: Double, target: Double).self) { group in
+                for _ in 0..<numCoalitions {
+                    group.addTask {
+                        let k = sampleSubsetSize(
+                            sizes: coalitionSizes,
+                            weights: sizeWeights,
+                            totalWeight: totalSizeWeight,
+                            fallback: max(1, M / 2)
+                        )
+                        var mask = [Double](repeating: 0.0, count: M)
+                        var indices = Array(0..<M)
+                        indices.shuffle()
+                        for idx in indices.prefix(k) {
+                            mask[idx] = 1.0
+                        }
+
+                        var xMapped = [Double](repeating: 0.0, count: M)
+                        for i in 0..<M {
+                            xMapped[i] = (mask[i] == 1.0) ? instance[i] : bgMean[i]
+                        }
+                        let y = await model(xMapped)
+                        let rawTarget = y - fEmpty
+                        // Uniform importance weight: sampling probability already matches Shapley kernel
+                        return (mask, 1.0, rawTarget)
+                    }
+                }
+                for await res in group {
+                    masks.append(res.mask)
+                    weights.append(res.weight)
+                    targets.append(res.target)
+                }
             }
         }
-        
-        // 3. Solve OLS system: (Z^T * W * Z) * beta = Z^T * W * Y
+
+        // Fit weighted regression for (M - 1) parameters on transformed variables
         let N = masks.count
-        var ZTWZ = [Double](repeating: 0.0, count: M * M)
-        var ZTWY = [Double](repeating: 0.0, count: M)
-        
-        for r in 0..<M {
-            for c in 0..<M {
-                var sum = 0.0
-                for i in 0..<N {
-                    sum += masks[i][r] * weights[i] * masks[i][c]
+        guard N > 0 else { return [Double](repeating: deltaF / Double(M), count: M) }
+
+        var ZtWZ = [Double](repeating: 0.0, count: P * P)
+        var ZtWy = [Double](repeating: 0.0, count: P)
+
+        let lastIdx = M - 1
+        for i in 0..<N {
+            let w = weights[i]
+            let zLast = masks[i][lastIdx]
+            let tildeY = targets[i] - zLast * deltaF
+
+            var tildeZ = [Double](repeating: 0.0, count: P)
+            for j in 0..<P {
+                tildeZ[j] = masks[i][j] - zLast
+            }
+
+            for j in 0..<P {
+                ZtWy[j] += tildeZ[j] * w * tildeY
+                for k in 0..<P {
+                    ZtWZ[j * P + k] += tildeZ[j] * w * tildeZ[k]
                 }
-                ZTWZ[r * M + c] = sum
             }
-            
-            // Add a tiny ridge regularization to ensure positive definiteness
-            ZTWZ[r * M + r] += 1e-6
-            
-            var sum = 0.0
-            for i in 0..<N {
-                sum += masks[i][r] * weights[i] * targets[i]
+        }
+
+        // Add small ridge regularization to ensure numerical invertibility
+        for j in 0..<P {
+            ZtWZ[j * P + j] += 1e-8
+        }
+
+        var phi = [Double](repeating: 0.0, count: M)
+        if let beta = solveLinearSystem(A: ZtWZ, B: ZtWy, M: P) {
+            var sumFirst = 0.0
+            for j in 0..<P {
+                phi[j] = beta[j]
+                sumFirst += beta[j]
             }
-            ZTWY[r] = sum
+            // Exact efficiency enforcement:
+            phi[lastIdx] = deltaF - sumFirst
+            return phi
         }
-        
-        // Solve system using Gauss-Jordan solver
-        if let shapValues = solveLinearSystem(A: ZTWZ, B: ZTWY, M: M) {
-            return shapValues
-        }
-        
-        return [Double](repeating: 0.0, count: M)
+
+        // Fallback: equal attribution maintaining exact efficiency
+        let equalContrib = deltaF / Double(M)
+        return [Double](repeating: equalContrib, count: M)
     }
 }
 
@@ -207,7 +275,7 @@ private func solveLinearSystem(A: [Double], B: [Double], M: Int) -> [Double]? {
         }
         
         let pivot = a[i * M + i]
-        if abs(pivot) < 1e-9 {
+        if abs(pivot) < 1e-12 {
             return nil
         }
         
@@ -228,3 +296,4 @@ private func solveLinearSystem(A: [Double], B: [Double], M: Int) -> [Double]? {
     
     return b
 }
+

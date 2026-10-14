@@ -67,7 +67,7 @@ public actor KalmanFilter {
     ///   - matrix: 2D numerical matrix of values.
     /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func setProcessNoise(_ matrix: [[Double]]) throws {
-        try validateMatrixDimensions(matrix, expectedRows: stateSize, expectedCols: stateSize)
+        try validateCovarianceMatrix(matrix, size: stateSize)
         self.Q = flatten(matrix)
     }
 
@@ -76,7 +76,7 @@ public actor KalmanFilter {
     ///   - matrix: 2D numerical matrix of values.
     /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
     public func setMeasurementNoise(_ matrix: [[Double]]) throws {
-        try validateMatrixDimensions(matrix, expectedRows: observationSize, expectedCols: observationSize)
+        try validateCovarianceMatrix(matrix, size: observationSize)
         self.R = flatten(matrix)
     }
 
@@ -92,7 +92,9 @@ public actor KalmanFilter {
                 gotRows: mean.count, gotCols: 1
             )
         }
-        try validateMatrixDimensions(covariance, expectedRows: stateSize, expectedCols: stateSize)
+        if mean.contains(where: { $0.isNaN }) { throw ForecastError.containsNaN }
+        if mean.contains(where: { $0.isInfinite }) { throw ForecastError.containsInfinity }
+        try validateCovarianceMatrix(covariance, size: stateSize)
         self.x0 = mean
         self.P0 = flatten(covariance)
         self.x = mean
@@ -134,6 +136,8 @@ public actor KalmanFilter {
                     gotRows: z.count, gotCols: 1
                 )
             }
+            if z.contains(where: { $0.isNaN }) { throw ForecastError.containsNaN }
+            if z.contains(where: { $0.isInfinite }) { throw ForecastError.containsInfinity }
 
             // 1. Predict
             // xPred = F * x
@@ -222,6 +226,8 @@ public actor KalmanFilter {
                     gotRows: z.count, gotCols: 1
                 )
             }
+            if z.contains(where: { $0.isNaN }) { throw ForecastError.containsNaN }
+            if z.contains(where: { $0.isInfinite }) { throw ForecastError.containsInfinity }
 
             let xp = matVecMulFlat(F, rows: n, cols: n, vec: curX)
             let FP = matMulFlat(F, rA: n, cA: n, curP, rB: n, cB: n)
@@ -318,6 +324,28 @@ public actor KalmanFilter {
                     expectedRows: expectedRows, expectedCols: expectedCols,
                     gotRows: mat.count, gotCols: row.count
                 )
+            }
+            if row.contains(where: { $0.isNaN }) {
+                throw ForecastError.containsNaN
+            }
+            if row.contains(where: { $0.isInfinite }) {
+                throw ForecastError.containsInfinity
+            }
+        }
+    }
+
+    private func validateCovarianceMatrix(_ matrix: [[Double]], size: Int) throws {
+        try validateMatrixDimensions(matrix, expectedRows: size, expectedCols: size)
+        for i in 0..<size {
+            guard matrix[i][i] >= 0.0 else {
+                throw ForecastError.invalidParameter("Covariance diagonal elements must be non-negative, got \(matrix[i][i]) at (\(i), \(i))")
+            }
+            for j in (i + 1)..<size {
+                let diff = abs(matrix[i][j] - matrix[j][i])
+                let scale = max(abs(matrix[i][j]), abs(matrix[j][i]), 1.0)
+                guard diff <= 1e-6 * scale else {
+                    throw ForecastError.invalidParameter("Covariance matrix must be symmetric, mismatch between (\(i), \(j))=\(matrix[i][j]) and (\(j), \(i))=\(matrix[j][i])")
+                }
             }
         }
     }
@@ -503,6 +531,12 @@ extension KalmanFilter {
         processNoise: Double,
         measurementNoise: Double
     ) async throws -> KalmanFilter {
+        guard !processNoise.isNaN && !processNoise.isInfinite && processNoise >= 0.0 else {
+            throw ForecastError.invalidParameter("processNoise must be finite and non-negative, got \(processNoise)")
+        }
+        guard !measurementNoise.isNaN && !measurementNoise.isInfinite && measurementNoise >= 0.0 else {
+            throw ForecastError.invalidParameter("measurementNoise must be finite and non-negative, got \(measurementNoise)")
+        }
         let kf = try KalmanFilter(stateSize: 2, observationSize: 1)
 
         try await kf.setTransitionMatrix([

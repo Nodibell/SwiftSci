@@ -149,6 +149,79 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         return TypedColumn<T>(name: name, values: result, nullCount: gatheredNullCount)
     }
 
+    /// Gathers elements at the specified row indices using typed indexed loops, placing nil where index is nil.
+    public func gatheredWithNulls(at indices: [Int?], newName: String? = nil) -> any AnyColumn {
+        let n = indices.count
+        var result = Array<T?>(repeating: nil, count: n)
+        var gatheredNullCount = 0
+        let targetName = newName ?? name
+        values.withUnsafeBufferPointer { srcBuf in
+            indices.withUnsafeBufferPointer { idxBuf in
+                result.withUnsafeMutableBufferPointer { dstBuf in
+                    guard let src = srcBuf.baseAddress,
+                          let idx = idxBuf.baseAddress,
+                          let dst = dstBuf.baseAddress else { return }
+                    for k in 0..<n {
+                        if let rowIdx = idx[k] {
+                            let value = src[rowIdx]
+                            dst[k] = value
+                            if case nil = value { gatheredNullCount += 1 }
+                        } else {
+                            dst[k] = nil
+                            gatheredNullCount += 1
+                        }
+                    }
+                }
+            }
+        }
+        return TypedColumn<T>(name: targetName, values: result, nullCount: gatheredNullCount)
+    }
+
+    /// Fast path for joining key columns: gathers from self where leftIndices is non-nil, or rightColumn where rightIndices is non-nil.
+    public func gatheredJoinKey(
+        leftIndices: [Int?],
+        rightColumn: any AnyColumn,
+        rightIndices: [Int?],
+        name: String
+    ) -> any AnyColumn {
+        guard let typedRight = rightColumn as? TypedColumn<T> else {
+            return (self as any AnyColumn).gatheredJoinKey(leftIndices: leftIndices, rightColumn: rightColumn, rightIndices: rightIndices, name: name)
+        }
+        let n = leftIndices.count
+        var result = Array<T?>(repeating: nil, count: n)
+        var gatheredNullCount = 0
+        values.withUnsafeBufferPointer { leftBuf in
+            typedRight.values.withUnsafeBufferPointer { rightBuf in
+                leftIndices.withUnsafeBufferPointer { lIdxBuf in
+                    rightIndices.withUnsafeBufferPointer { rIdxBuf in
+                        result.withUnsafeMutableBufferPointer { dstBuf in
+                            guard let lSrc = leftBuf.baseAddress,
+                                  let rSrc = rightBuf.baseAddress,
+                                  let lIdx = lIdxBuf.baseAddress,
+                                  let rIdx = rIdxBuf.baseAddress,
+                                  let dst = dstBuf.baseAddress else { return }
+                            for k in 0..<n {
+                                if let l = lIdx[k] {
+                                    let val = lSrc[l]
+                                    dst[k] = val
+                                    if case nil = val { gatheredNullCount += 1 }
+                                } else if let r = rIdx[k] {
+                                    let val = rSrc[r]
+                                    dst[k] = val
+                                    if case nil = val { gatheredNullCount += 1 }
+                                } else {
+                                    dst[k] = nil
+                                    gatheredNullCount += 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return TypedColumn<T>(name: name, values: result, nullCount: gatheredNullCount)
+    }
+
     /// Evaluates supported conditions on typed column values and returns matching row indices.
     /// - Parameter condition: Filter condition comparison operator and threshold.
     /// - Returns: Array of row indices matching the condition, or `nil` if unsupported.

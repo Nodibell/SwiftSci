@@ -103,6 +103,25 @@ public struct AutoMLCandidateFailure: Sendable, Equatable {
     public let reason: String
 }
 
+/// A trained model instance returned by AutoML after refitting on the full training dataset.
+public enum AutoMLFittedModel: Sendable {
+    /// Fitted classification model conforming to `ClassifierEstimator`.
+    case classifier(any ClassifierEstimator)
+    /// Fitted regression model conforming to `RegressorEstimator`.
+    case regressor(any RegressorEstimator)
+
+    /// Predicts output values (class labels or continuous predictions) for the given features.
+    public func predict(features: [[Double]]) async throws -> [Double] {
+        switch self {
+        case .classifier(let c):
+            let labels = try await c.predict(features: features)
+            return labels.map(Double.init)
+        case .regressor(let r):
+            return try await r.predict(features: features)
+        }
+    }
+}
+
 // MARK: - AutoML
 
 /// Automated model selection with stratified cross-validation.
@@ -161,6 +180,10 @@ public actor AutoML {
     public private(set) var leaderboard: [AutoMLLeaderboardEntry] = []
     /// Candidates excluded from the leaderboard because they failed on a fold.
     public private(set) var failedCandidates: [AutoMLCandidateFailure] = []
+    /// Candidate specification of the winning model from the latest `fit` run.
+    private var bestCandidateSpec: CandidateSpec?
+    /// Refitted instance of the winning model trained on all samples, if `refitBestModel` was called.
+    public private(set) var fittedBestModel: AutoMLFittedModel?
 
     /// Creates a new AutoML controller.
     /// - Parameters:
@@ -211,6 +234,8 @@ public actor AutoML {
         failedCandidates = []
         bestModelName = nil
         bestScore = nil
+        bestCandidateSpec = nil
+        fittedBestModel = nil
 
         // 1. Task type
         let isClassification = try resolveTaskType(targets: targets)
@@ -260,6 +285,7 @@ public actor AutoML {
 
         struct Evaluated {
             let entry: AutoMLLeaderboardEntry
+            let candidate: CandidateSpec
             let order: Int
             let pooledTrue: [Double]
             let pooledPred: [Double]
@@ -322,7 +348,7 @@ public actor AutoML {
                 foldScores: foldScores,
                 fitDuration: Date().timeIntervalSince(candStart)
             )
-            evaluated.append(Evaluated(entry: entry, order: order, pooledTrue: pooledTrue, pooledPred: pooledPred))
+            evaluated.append(Evaluated(entry: entry, candidate: candidate, order: order, pooledTrue: pooledTrue, pooledPred: pooledPred))
         }
 
         failedCandidates = failures
@@ -340,6 +366,7 @@ public actor AutoML {
         }
         bestModelName = winner.entry.displayName
         bestScore = winner.entry.meanScore
+        bestCandidateSpec = winner.candidate
 
         // 5. Pooled out-of-fold report for the winner
         var metrics: [String: Double]
@@ -360,6 +387,39 @@ public actor AutoML {
         metrics["cv_std"] = winner.entry.stdScore
         metrics["time_spent_seconds"] = Date().timeIntervalSince(startTime)
         return EvaluationReport(metrics: metrics, confusionMatrix: confusionMatrix)
+    }
+
+    /// Retrains the winning candidate model architecture on the entire training dataset.
+    /// - Parameters:
+    ///   - features: Full training samples of shape `[n, p]`.
+    ///   - targets: Full ground-truth target values of length `n`.
+    /// - Returns: The trained `AutoMLFittedModel` instance ready for predictions.
+    /// - Throws: `AutoMLError` if `fit` has not been completed or if fitting fails.
+    @discardableResult
+    public func refitBestModel(features: [[Double]], targets: [Double]) async throws -> AutoMLFittedModel {
+        guard let spec = bestCandidateSpec else {
+            throw AutoMLError.invalidInput("No winning model available. Call fit(features:targets:) before refitting.")
+        }
+        guard !features.isEmpty, !targets.isEmpty else {
+            throw AutoMLError.invalidInput("features and targets must not be empty")
+        }
+        guard features.count == targets.count else {
+            throw AutoMLError.invalidInput("features count (\(features.count)) does not match targets count (\(targets.count))")
+        }
+        let model = try await spec.fitFull(features, targets)
+        self.fittedBestModel = model
+        return model
+    }
+
+    /// Predicts target values using the refitted winning model.
+    /// - Parameter features: Input feature vectors of shape `[m, p]`.
+    /// - Returns: Predicted target values (class labels or continuous values).
+    /// - Throws: `AutoMLError` if `refitBestModel` has not been called yet.
+    public func predict(features: [[Double]]) async throws -> [Double] {
+        guard let model = fittedBestModel else {
+            throw AutoMLError.invalidInput("No refitted model available. Call refitBestModel(features:targets:) first.")
+        }
+        return try await model.predict(features: features)
     }
 
     // MARK: - Task Type Resolution
@@ -392,6 +452,7 @@ public actor AutoML {
         let name: String
         let parameters: [String: String]
         let fitPredict: @Sendable (_ trainX: [[Double]], _ trainY: [Double], _ testX: [[Double]]) async throws -> [Double]
+        let fitFull: @Sendable (_ x: [[Double]], _ y: [Double]) async throws -> AutoMLFittedModel
 
         var displayName: String {
             guard !parameters.isEmpty else { return name }
@@ -403,49 +464,121 @@ public actor AutoML {
     private static func baselineCandidates(isClassification: Bool, seed: Int) -> [CandidateSpec] {
         if isClassification {
             return [
-                CandidateSpec(name: "LogisticRegression", parameters: ["epochs": "200"]) { x, y, tx in
-                    let m = LogisticRegression()
-                    try await m.fit(features: x, targets: y, epochs: 200)
-                    return try await m.predict(features: tx).map(Double.init)
-                },
-                CandidateSpec(name: "DecisionTreeClassifier", parameters: ["maxDepth": "4"]) { x, y, tx in
-                    let m = DecisionTreeClassifier(maxDepth: 4)
-                    try await m.fit(features: x, targets: y)
-                    return try await m.predict(features: tx).map(Double.init)
-                },
-                CandidateSpec(name: "RandomForestClassifier", parameters: ["nEstimators": "15", "maxDepth": "5"]) { x, y, tx in
-                    let m = RandomForestClassifier(nEstimators: 15, maxDepth: 5, randomState: seed)
-                    try await m.fit(features: x, targets: y)
-                    return try await m.predict(features: tx).map(Double.init)
-                },
-                CandidateSpec(name: "MLPClassifier", parameters: ["hiddenLayers": "16-8", "learningRate": "0.05", "maxIter": "50"]) { x, y, tx in
-                    let m = MLPClassifier(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05, seed: seed)
-                    try await m.fit(features: x, targets: y)
-                    return try await m.predict(features: tx).map(Double.init)
-                }
+                CandidateSpec(
+                    name: "LogisticRegression",
+                    parameters: ["epochs": "200"],
+                    fitPredict: { x, y, tx in
+                        let m = LogisticRegression()
+                        try await m.fit(features: x, targets: y, epochs: 200)
+                        return try await m.predict(features: tx).map(Double.init)
+                    },
+                    fitFull: { x, y in
+                        let m = LogisticRegression()
+                        try await m.fit(features: x, targets: y, epochs: 200)
+                        return .classifier(m)
+                    }
+                ),
+                CandidateSpec(
+                    name: "DecisionTreeClassifier",
+                    parameters: ["maxDepth": "4"],
+                    fitPredict: { x, y, tx in
+                        let m = DecisionTreeClassifier(maxDepth: 4)
+                        try await m.fit(features: x, targets: y)
+                        return try await m.predict(features: tx).map(Double.init)
+                    },
+                    fitFull: { x, y in
+                        let m = DecisionTreeClassifier(maxDepth: 4)
+                        try await m.fit(features: x, targets: y)
+                        return .classifier(m)
+                    }
+                ),
+                CandidateSpec(
+                    name: "RandomForestClassifier",
+                    parameters: ["nEstimators": "15", "maxDepth": "5"],
+                    fitPredict: { x, y, tx in
+                        let m = RandomForestClassifier(nEstimators: 15, maxDepth: 5, randomState: seed)
+                        try await m.fit(features: x, targets: y)
+                        return try await m.predict(features: tx).map(Double.init)
+                    },
+                    fitFull: { x, y in
+                        let m = RandomForestClassifier(nEstimators: 15, maxDepth: 5, randomState: seed)
+                        try await m.fit(features: x, targets: y)
+                        return .classifier(m)
+                    }
+                ),
+                CandidateSpec(
+                    name: "MLPClassifier",
+                    parameters: ["hiddenLayers": "16-8", "learningRate": "0.05", "maxIter": "50"],
+                    fitPredict: { x, y, tx in
+                        let m = MLPClassifier(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05, seed: seed)
+                        try await m.fit(features: x, targets: y)
+                        return try await m.predict(features: tx).map(Double.init)
+                    },
+                    fitFull: { x, y in
+                        let m = MLPClassifier(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05, seed: seed)
+                        try await m.fit(features: x, targets: y)
+                        return .classifier(m)
+                    }
+                )
             ]
         } else {
             return [
-                CandidateSpec(name: "LinearRegression", parameters: [:]) { x, y, tx in
-                    let m = LinearRegression()
-                    try await m.fit(features: x, targets: y)
-                    return try await m.predict(features: tx)
-                },
-                CandidateSpec(name: "DecisionTreeRegressor", parameters: ["maxDepth": "4"]) { x, y, tx in
-                    let m = DecisionTreeRegressor(maxDepth: 4)
-                    try await m.fit(features: x, targets: y)
-                    return try await m.predict(features: tx)
-                },
-                CandidateSpec(name: "RandomForestRegressor", parameters: ["nEstimators": "15", "maxDepth": "5"]) { x, y, tx in
-                    let m = RandomForestRegressor(nEstimators: 15, maxDepth: 5, randomState: seed)
-                    try await m.fit(features: x, targets: y)
-                    return try await m.predict(features: tx)
-                },
-                CandidateSpec(name: "MLPRegressor", parameters: ["hiddenLayers": "16-8", "learningRate": "0.05", "maxIter": "50"]) { x, y, tx in
-                    let m = MLPRegressor(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05, seed: seed)
-                    try await m.fit(features: x, targets: y)
-                    return try await m.predict(features: tx)
-                }
+                CandidateSpec(
+                    name: "LinearRegression",
+                    parameters: [:],
+                    fitPredict: { x, y, tx in
+                        let m = LinearRegression()
+                        try await m.fit(features: x, targets: y)
+                        return try await m.predict(features: tx)
+                    },
+                    fitFull: { x, y in
+                        let m = LinearRegression()
+                        try await m.fit(features: x, targets: y)
+                        return .regressor(m)
+                    }
+                ),
+                CandidateSpec(
+                    name: "DecisionTreeRegressor",
+                    parameters: ["maxDepth": "4"],
+                    fitPredict: { x, y, tx in
+                        let m = DecisionTreeRegressor(maxDepth: 4)
+                        try await m.fit(features: x, targets: y)
+                        return try await m.predict(features: tx)
+                    },
+                    fitFull: { x, y in
+                        let m = DecisionTreeRegressor(maxDepth: 4)
+                        try await m.fit(features: x, targets: y)
+                        return .regressor(m)
+                    }
+                ),
+                CandidateSpec(
+                    name: "RandomForestRegressor",
+                    parameters: ["nEstimators": "15", "maxDepth": "5"],
+                    fitPredict: { x, y, tx in
+                        let m = RandomForestRegressor(nEstimators: 15, maxDepth: 5, randomState: seed)
+                        try await m.fit(features: x, targets: y)
+                        return try await m.predict(features: tx)
+                    },
+                    fitFull: { x, y in
+                        let m = RandomForestRegressor(nEstimators: 15, maxDepth: 5, randomState: seed)
+                        try await m.fit(features: x, targets: y)
+                        return .regressor(m)
+                    }
+                ),
+                CandidateSpec(
+                    name: "MLPRegressor",
+                    parameters: ["hiddenLayers": "16-8", "learningRate": "0.05", "maxIter": "50"],
+                    fitPredict: { x, y, tx in
+                        let m = MLPRegressor(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05, seed: seed)
+                        try await m.fit(features: x, targets: y)
+                        return try await m.predict(features: tx)
+                    },
+                    fitFull: { x, y in
+                        let m = MLPRegressor(hiddenLayerSizes: [16, 8], maxIter: 50, learningRate: 0.05, seed: seed)
+                        try await m.fit(features: x, targets: y)
+                        return .regressor(m)
+                    }
+                )
             ]
         }
     }

@@ -48,6 +48,8 @@ public struct FlatTreeNode: Sendable, Codable {
     public let isLeaf: Bool
     /// Impurity reduction achieved by this split.
     public let impurityGain: Double
+    /// Empirical class probability distribution at this leaf node (classifier only).
+    public let classDistribution: [Double]?
 
     /// Creates a new flat tree node.
     /// - Parameters:
@@ -58,6 +60,7 @@ public struct FlatTreeNode: Sendable, Codable {
     ///   - value: Predicted value at a leaf node.
     ///   - isLeaf: Whether this node is a terminal leaf.
     ///   - impurityGain: Impurity reduction achieved by this split.
+    ///   - classDistribution: Empirical class probability distribution at this leaf node.
     public init(
         featureIndex: Int,
         threshold: Double,
@@ -65,7 +68,8 @@ public struct FlatTreeNode: Sendable, Codable {
         rightChild: Int,
         value: Double,
         isLeaf: Bool,
-        impurityGain: Double = 0.0
+        impurityGain: Double = 0.0,
+        classDistribution: [Double]? = nil
     ) {
         self.featureIndex = featureIndex
         self.threshold = threshold
@@ -74,6 +78,7 @@ public struct FlatTreeNode: Sendable, Codable {
         self.value = value
         self.isLeaf = isLeaf
         self.impurityGain = impurityGain
+        self.classDistribution = classDistribution
     }
 }
 
@@ -196,7 +201,7 @@ func bestSplit(
                     let gain = ( (leftSum * leftSum / leftCount) + (rightSum * rightSum / rightCount) - baseTerm ) / n
 
                     if best == nil || gain > (best?.gain ?? -Double.infinity) {
-                        let threshold = (X[idx][fi] + X[nextIdx][fi]) / 2.0
+                        let threshold = X[idx][fi] * 0.5 + X[nextIdx][fi] * 0.5
                         best = SplitResult(
                             featureIndex: fi,
                             threshold: threshold,
@@ -273,7 +278,7 @@ func bestSplit(
                     let gain = parentImpurity - (leftCount / n) * leftImpurity - (rightCount / n) * rightImpurity
 
                     if best == nil || gain > (best?.gain ?? -Double.infinity) {
-                        let threshold = (X[idx][fi] + X[nextIdx][fi]) / 2.0
+                        let threshold = X[idx][fi] * 0.5 + X[nextIdx][fi] * 0.5
                         best = SplitResult(
                             featureIndex: fi,
                             threshold: threshold,
@@ -318,6 +323,9 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     /// The collection of fitted tree nodes in contiguous flat array.
     public var flatNodes: [FlatTreeNode] { nodes }
     
+    /// The sorted unique class labels observed during training.
+    public private(set) var classes: [Double] = []
+    private var classToIndex: [Double: Int] = [:]
     private var numFeatures: Int = 0
 
     /// The feature importances.
@@ -342,11 +350,32 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     ///   - targets: The targets.
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
-        guard !features.isEmpty else { throw SwiftMLError.emptyInput }
+        guard !features.isEmpty, !targets.isEmpty else { throw SwiftMLError.emptyInput }
+        guard !features[0].isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
             throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
-        numFeatures = features[0].count
+        let width = features[0].count
+        for row in features {
+            guard row.count == width else {
+                throw SwiftMLError.dimensionMismatch(expected: width, got: row.count)
+            }
+            guard row.allSatisfy(\.isFinite) else {
+                throw SwiftMLError.containsNaN
+            }
+        }
+        guard targets.allSatisfy(\.isFinite) else {
+            throw SwiftMLError.containsNaN
+        }
+
+        let uniqueClasses = Array(Set(targets)).sorted()
+        self.classes = uniqueClasses
+        var mapping = [Double: Int]()
+        for (idx, c) in uniqueClasses.enumerated() {
+            mapping[c] = idx
+        }
+        self.classToIndex = mapping
+        numFeatures = width
         nodes = []
         let presorted = createPresortedIndices(X: features)
         _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), presortedIndices: presorted, depth: 0, nodes: &nodes)
@@ -359,26 +388,36 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     /// - Returns: A `[Int]` result.
     public func predict(features: [[Double]]) async throws -> [Int] {
         guard !nodes.isEmpty else { throw SwiftMLError.notFitted }
+        guard !features.isEmpty else { return [] }
+        for row in features {
+            guard row.count == numFeatures else {
+                throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
+            guard row.allSatisfy(\.isFinite) else {
+                throw SwiftMLError.containsNaN
+            }
+        }
         return features.map { predictSample($0, nodes: nodes) }
     }
 
-    /// Predict probability.
+    /// Predicts empirical class probability distributions based on leaf sample compositions.
     /// - Parameters:
-    ///   - features: The features.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `[[Double]]` result.
+    ///   - features: 2D feature matrix `[N, P]`.
+    /// - Throws: `SwiftMLError` if not fitted or dimensions mismatch.
+    /// - Returns: 2D array of class probabilities `[N, C]` ordered by `classes`.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard !nodes.isEmpty else { throw SwiftMLError.notFitted }
-        let maxLabel = nodes.map { Int($0.value) }.max() ?? 0
-        let numClasses = maxLabel + 1
-        return features.map { sample in
-            let predClass = predictSample(sample, nodes: nodes)
-            var probs = [Double](repeating: 0.0, count: numClasses)
-            if predClass < probs.count {
-                probs[predClass] = 1.0
+        guard !features.isEmpty else { return [] }
+        for row in features {
+            guard row.count == numFeatures else {
+                throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
             }
-            return probs
+            guard row.allSatisfy(\.isFinite) else {
+                throw SwiftMLError.containsNaN
+            }
         }
+        let nClasses = classes.count
+        return features.map { predictSampleProbs($0, nodes: nodes, numClasses: nClasses) }
     }
     
     /// Get tree nodes.
@@ -406,7 +445,8 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
                     rightChild: -1,
                     value: nodes[idx].value,
                     isLeaf: true,
-                    impurityGain: 0.0
+                    impurityGain: 0.0,
+                    classDistribution: nodes[idx].classDistribution
                 )
                 return true
             }
@@ -419,15 +459,36 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         let labels = indices.map { y[$0] }
         let majority = labels.mostFrequent()
 
+        func makeLeaf() -> FlatTreeNode {
+            var classCounts = [Double](repeating: 0.0, count: classes.count)
+            for idx in indices {
+                if let cIdx = classToIndex[y[idx]] {
+                    classCounts[cIdx] += 1.0
+                }
+            }
+            let total = Double(indices.count)
+            let distribution = total > 0 ? classCounts.map { $0 / total } : classCounts
+            return FlatTreeNode(
+                featureIndex: -1,
+                threshold: 0,
+                leftChild: -1,
+                rightChild: -1,
+                value: majority,
+                isLeaf: true,
+                impurityGain: 0.0,
+                classDistribution: distribution
+            )
+        }
+
         // Leaf: max depth, too few samples, or pure node
         if depth >= maxDepth || indices.count < minSamplesSplit || Set(labels).count == 1 {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0)
+            let leaf = makeLeaf()
             nodes.append(leaf)
             return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: criterion, maxFeatures: nil) else {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0)
+            let leaf = makeLeaf()
             nodes.append(leaf)
             return nodes.count - 1
         }
@@ -467,6 +528,28 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         }
         return Int(nodes[curr].value)
     }
+
+    private func predictSampleProbs(_ x: [Double], nodes: [FlatTreeNode], numClasses: Int) -> [Double] {
+        guard !nodes.isEmpty else { return [] }
+        var curr = 0
+        while !nodes[curr].isLeaf {
+            let node = nodes[curr]
+            if x[node.featureIndex] <= node.threshold {
+                curr = node.leftChild
+            } else {
+                curr = node.rightChild
+            }
+        }
+        if let dist = nodes[curr].classDistribution {
+            return dist
+        }
+        var fallback = [Double](repeating: 0.0, count: numClasses)
+        let val = nodes[curr].value
+        if let cIdx = classToIndex[val], cIdx < fallback.count {
+            fallback[cIdx] = 1.0
+        }
+        return fallback
+    }
 }
 
 // MARK: - Decision Tree Regressor
@@ -505,12 +588,25 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     ///   - targets: The targets.
     /// - Throws: An error if the operation fails.
     public func fit(features: [[Double]], targets: [Double]) async throws {
-        guard !features.isEmpty else { throw SwiftMLError.emptyInput }
+        guard !features.isEmpty, !targets.isEmpty else { throw SwiftMLError.emptyInput }
+        guard !features[0].isEmpty else { throw SwiftMLError.emptyInput }
         guard features.count == targets.count else {
             throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
+        let width = features[0].count
+        for row in features {
+            guard row.count == width else {
+                throw SwiftMLError.dimensionMismatch(expected: width, got: row.count)
+            }
+            guard row.allSatisfy(\.isFinite) else {
+                throw SwiftMLError.containsNaN
+            }
+        }
+        guard targets.allSatisfy(\.isFinite) else {
+            throw SwiftMLError.containsNaN
+        }
         
-        numFeatures = features[0].count
+        numFeatures = width
         nodes = []
         let presorted = createPresortedIndices(X: features)
         _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), presortedIndices: presorted, depth: 0, nodes: &nodes)
@@ -523,6 +619,15 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     /// - Returns: A `[Double]` result.
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !nodes.isEmpty else { throw SwiftMLError.notFitted }
+        guard !features.isEmpty else { return [] }
+        for row in features {
+            guard row.count == numFeatures else {
+                throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
+            guard row.allSatisfy(\.isFinite) else {
+                throw SwiftMLError.containsNaN
+            }
+        }
         return features.map { predictSample($0, nodes: nodes) }
     }
 

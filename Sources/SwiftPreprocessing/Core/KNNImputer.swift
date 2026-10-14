@@ -14,6 +14,7 @@ public struct KNNImputer: PreprocessingTransformer, Sendable {
     public let weights: KNNWeightStrategy
     
     private var trainMatrix: [[Double]] = []
+    private var columnMeans: [Double] = []
     private var isFitted: Bool = false
     
     /// Creates a new instance.
@@ -30,11 +31,31 @@ public struct KNNImputer: PreprocessingTransformer, Sendable {
     ///   - data: Raw input data array or matrix for transformation.
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     public mutating func fit(_ data: [[Double]]) throws {
-
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }
+        let cols = data[0].count
+        for row in data where row.count != cols {
+            throw PreprocessingError.dimensionMismatch(expected: cols, got: row.count)
+        }
+        
         self.trainMatrix = data
+        
+        // Compute column means for fallback when no valid neighbors exist (Scikit-Learn parity)
+        var means = [Double](repeating: 0.0, count: cols)
+        for c in 0..<cols {
+            var sum = 0.0
+            var count = 0
+            for r in 0..<data.count {
+                let v = data[r][c]
+                if !v.isNaN {
+                    sum += v
+                    count += 1
+                }
+            }
+            means[c] = count > 0 ? (sum / Double(count)) : 0.0
+        }
+        self.columnMeans = means
         self.isFitted = true
     }
     
@@ -45,13 +66,17 @@ public struct KNNImputer: PreprocessingTransformer, Sendable {
     /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func transform(_ data: [[Double]]) throws -> [[Double]] {
         guard isFitted else { throw PreprocessingError.fittingRequired }
-        guard !data.isEmpty else { throw PreprocessingError.emptyInput }
+        guard !data.isEmpty, !data[0].isEmpty else { throw PreprocessingError.emptyInput }
         
-        let nCols = data[0].count
+        let expectedCols = trainMatrix[0].count
+        for row in data where row.count != expectedCols {
+            throw PreprocessingError.dimensionMismatch(expected: expectedCols, got: row.count)
+        }
+        
         var result = data
         
         for i in 0..<result.count {
-            for j in 0..<nCols {
+            for j in 0..<expectedCols {
                 if result[i][j].isNaN {
                     result[i][j] = imputeValue(rowIdx: i, colIdx: j, dataset: data)
                 }
@@ -92,7 +117,10 @@ public struct KNNImputer: PreprocessingTransformer, Sendable {
             }
         }
         
-        guard !candidates.isEmpty else { return 0.0 }
+        // Fallback to column mean when no neighbors share overlapping valid coordinates
+        guard !candidates.isEmpty else {
+            return colIdx < columnMeans.count ? columnMeans[colIdx] : 0.0
+        }
         
         candidates.sort { $0.dist < $1.dist }
         let topK = Array(candidates.prefix(nNeighbors))

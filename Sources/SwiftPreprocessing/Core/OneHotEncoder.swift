@@ -30,17 +30,22 @@ public final class OneHotEncoder: @unchecked Sendable {
     /// Fits the OneHotEncoder to a 2D categorical dataset of shape [rows, cols].
     /// - Parameters:
     ///   - data: Raw input data array or matrix for transformation.
-    public func fit(_ data: [[String]]) {
+    /// - Throws: `PreprocessingError.dimensionMismatch` if rows have inconsistent column counts.
+    public func fit(_ data: [[String]]) throws {
         guard !data.isEmpty, !data[0].isEmpty else {
             self.categories = []
             return
         }
         
         let colCount = data[0].count
+        for row in data where row.count != colCount {
+            throw PreprocessingError.dimensionMismatch(expected: colCount, got: row.count)
+        }
+        
         var uniques = [Set<String>](repeating: Set<String>(), count: colCount)
         
         for row in data {
-            for col in 0..<min(colCount, row.count) {
+            for col in 0..<colCount {
                 uniques[col].insert(row[col])
             }
         }
@@ -113,7 +118,7 @@ public final class OneHotEncoder: @unchecked Sendable {
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     /// - Returns: 2D numerical matrix of shape `[N, P]`.
     public func fitTransform(_ data: [[String]]) throws -> [[Double]] {
-        fit(data)
+        try fit(data)
         return try transform(data)
     }
 }

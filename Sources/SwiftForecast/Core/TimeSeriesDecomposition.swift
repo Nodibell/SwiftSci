@@ -129,7 +129,10 @@ public enum TimeSeriesDecomposition {
                     let ts = trend[i] * seasonal[i]
                     let denom = abs(ts) < 1e-8 ? (ts >= 0 ? 1e-8 : -1e-8) : ts
                     let val = series[i] / denom
-                    residual[i] = val.isFinite ? val : 1.0
+                    guard val.isFinite else {
+                        throw ForecastError.divisionByZero(context: "multiplicative residual is non-finite at index \(i)")
+                    }
+                    residual[i] = val
                 }
             }
         }

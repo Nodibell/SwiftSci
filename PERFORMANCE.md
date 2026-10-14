@@ -86,7 +86,7 @@ The table below presents direct side-by-side wall-clock timings measured under i
 | **OLS Linear Regression** (LAPACK) | `0.424 ms` | **`0.086 ms`** | `0.850 ms` (*Scikit-Learn*) | ⚡ **4.93× faster** | **SwiftSci 9.88×** | Accelerate LAPACK `dgels_` |
 | **PCA fitTransform** (1k×100 $\to$ 10) | `1.132 ms` | **`0.027 ms`** | `0.758 ms` (*Scikit-Learn*) | ⚡ **41.9× faster** | **SwiftSci 28.07×** | Accelerate LAPACK SVD spectrum |
 | **Holt-Winters Fit** (50k points, p=12) | `16.681 ms` | **`0.601 ms`** | `3299.056 ms` (*Statsmodels*) | ⚡ **27.8× faster** | **SwiftSci >5000×** | Native Nelder-Mead simplex optimization |
-| **ARIMA(1,1,1) Fit** (50k points) | `2.343 ms` | **`0.041 ms`** | `392.746 ms` (*Statsmodels*) | ⚡ **57.1× faster** | **SwiftSci >9000×** | Native Gaussian likelihood recursion |
+| **ARIMA(1,1,1) Fit** (50k points) | `2.343 ms` | **`0.041 ms`** | `392.746 ms` (*Statsmodels*) | ⚡ **57.1× faster** | **SwiftSci >9000×** | Vectorized Hannan-Rissanen conditional OLS recursion |
 
 ---
 
@@ -234,7 +234,7 @@ $$\text{Example: } \frac{0.119\text{ ms (NumPy)}}{0.081\text{ ms (SwiftSci)}} = 
 | **Flat Feature Matrix** — 100k rows | `0.106 ms` | `0.700 ms` (*NumPy*) | **SwiftSci 6.60×** | Cache-aligned contiguous buffer (improved from 0.131 ms in 3.10.2) |
 | **MinMaxScaler Fit + Transform** — 100k | `0.751 ms` | `0.785 ms` (*Scikit-Learn*) | **SwiftSci 1.05×** | Vectorized bounds scaling (improved from 33.165 ms in 3.10.2) |
 | **StandardScaler Fit + Transform** — 100k | `2.785 ms` | `0.892 ms` (*Scikit-Learn*) | **Python 3.12×** | Vectorized vDSP normalization (improved from 28.393 ms in 3.10.2) |
-| **DataFrame Hash Join** — 100k rows | `35.200 ms` | `0.456 ms` (*Pandas*) | **Python 77.19×** | Swift typed hash table vs Pandas C hashtable |
+| **DataFrame Hash Join** — 100k rows | `8.471 ms` | `0.456 ms` (*Pandas*) | **Python 18.57×** | Zero-boxing flat chained hash table + direct typed buffer gather (4.15× speedup from 35.2 ms) |
 | **KMeans Fit** — 10k × 4, 3 clusters, 50 iters | `14.200 ms` | `6.944 ms` (*Scikit-Learn*) | **Python 2.05×** | Underflow-clamped SIMD distance vs Cython k-means |
 | **ROC-AUC** — 50k predictions | `2.590 ms` | `5.196 ms` (*Scikit-Learn*) | **SwiftSci 2.01×** | Single-pass sorted trapezoidal integration |
 | **OneHotEncoder fitTransform** — 50k rows | `4.912 ms` | `27.639 ms` (*Scikit-Learn*) | **SwiftSci 5.63×** | SIMD categorical bitmask transformation (13× less RAM) |
@@ -255,7 +255,7 @@ $$\text{Example: } \frac{0.119\text{ ms (NumPy)}}{0.081\text{ ms (SwiftSci)}} = 
 | **PCA fitTransform** — 1k × 100 → 10 components | `0.027 ms` | `0.758 ms` (*Scikit-Learn*) | **SwiftSci 28.07×** | Accelerate LAPACK `dgesdd_` SVD spectrum |
 | **IsolationForest Fit** — 1k × 10, 100 trees | `13.424 ms` | `37.539 ms` (*Scikit-Learn*) | **SwiftSci 2.80×** | Parallelized data-oriented outlier trees (18× less RAM) |
 | **Holt-Winters Fit** — 50k points, period=12 | `0.601 ms` | `3299.056 ms` (*Statsmodels*) | **SwiftSci >5000×** | Native Nelder-Mead simplex optimization |
-| **ARIMA(1,1,1) Fit** — 50k points | `0.041 ms` | `392.746 ms` (*Statsmodels*) | **SwiftSci >9000×** | Native Gaussian likelihood recursion optimization |
+| **ARIMA(1,1,1) Fit** — 50k points | `0.041 ms` | `392.746 ms` (*Statsmodels*) | **SwiftSci >9000×** | Vectorized Hannan-Rissanen conditional OLS recursion |
 | **KernelSHAP Explain** — 5 features, 100 coalitions | `0.189 ms` | `0.434 ms` (*SHAP*) | **SwiftSci 2.30×** | Coalitional sampling with zero-division numerical guards |
 | **TreeSHAP Explanation** — 100 samples | `0.101 ms` | `0.067 ms` (*SHAP*) | **Python 1.51×** | Precomputed lookup tables and zero-allocation backtracking |
 | **NaiveBayes Fit** — 1k × 100, 3 classes | `0.047 ms` | `0.410 ms` (*Scikit-Learn*) | **SwiftSci 8.72×** | Accelerate `vDSP_dotprD` SIMD dot-products |
@@ -307,7 +307,7 @@ Performance alone does not establish numerical or behavioral correctness. SwiftS
 | Task | Model | Dataset / Setting | Metrics | Validation |
 | :--- | :--- | :--- | :--- | :---: |
 | **Time Series Forecast** | `ExponentialSmoothing` (Holt-Winters) | Seasonal trend, horizon 24, period 12 | RMSE 0.350; MAE 0.281; MAPE 0.21%; $R^2$ 0.997 | 🟢 $R^2$ parity with reference ($R^2=0.997$); RMSE 0.350 vs reference 0.331 |
-| **Time Series Forecast** | `ARIMAModel(1,1,1)` | Autoregressive trend, horizon 24 | RMSE 10.218; MAE 8.557; MAPE 5.87% | 🟢 Gaussian maximum-likelihood parameter estimation |
+| **Time Series Forecast** | `ARIMAModel(1,1,1)` | Autoregressive trend, horizon 24 | RMSE 10.218; MAE 8.557; MAPE 5.87% | 🟢 Hannan-Rissanen conditional OLS parameter estimation (2.17× lower RMSE vs Statsmodels reference on test horizon) |
 
 ---
 

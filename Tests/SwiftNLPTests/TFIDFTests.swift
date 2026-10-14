@@ -125,4 +125,65 @@ struct TFIDFTests {
             }
         }
     }
+
+    @Test("TF-IDF respects sublinearTF mathematical contract")
+    func testTFIDFVectorizerSublinearTFRules() throws {
+        let corpus = [
+            "term term term term other",
+            "other words only"
+        ]
+
+        let stdVec = TFIDFVectorizer(sublinearTF: false)
+        let stdMatrix = try stdVec.fitTransform(corpus)
+        guard let termIdxStd = stdVec.vocabulary["term"] else {
+            Issue.record("Missing 'term' in standard vocabulary")
+            return
+        }
+        let stdTFIDF = stdMatrix[0][termIdxStd]
+        let stdIDF = stdVec.idfs[termIdxStd]
+        let expectedStdTF = 4.0 / 5.0
+        #expect(abs(stdTFIDF - (expectedStdTF * stdIDF)) < 1e-6)
+
+        let sublinearVec = TFIDFVectorizer(sublinearTF: true)
+        let sublinearMatrix = try sublinearVec.fitTransform(corpus)
+        guard let termIdxSub = sublinearVec.vocabulary["term"] else {
+            Issue.record("Missing 'term' in sublinear vocabulary")
+            return
+        }
+        let sublinearTFIDF = sublinearMatrix[0][termIdxSub]
+        let sublinearIDF = sublinearVec.idfs[termIdxSub]
+        let expectedSublinearTF = 1.0 + log(4.0)
+        #expect(abs(sublinearTFIDF - (expectedSublinearTF * sublinearIDF)) < 1e-6)
+    }
+
+    @Test("TF-IDF rejects invalid maxDF values")
+    func testTFIDFVectorizerMaxDFValidation() {
+        let corpus = ["doc one", "doc two"]
+        #expect(throws: NLPError.self) {
+            let v = TFIDFVectorizer(minDF: 1, maxDF: 0.0001)
+            try v.fit(corpus)
+        }
+    }
+
+    @Test("TF-IDF concurrent read/transform safety")
+    func testTFIDFThreadSafety() async throws {
+        let corpus = [
+            "swift data science machine learning text processing",
+            "natural language processing with accelerate framework",
+            "naive bayes classification and text vectorization"
+        ]
+        let tfidfVec = TFIDFVectorizer()
+        _ = try tfidfVec.fitTransform(corpus)
+
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0..<10 {
+                group.addTask {
+                    _ = try? tfidfVec.transform(["natural language processing"])
+                    _ = tfidfVec.vocabulary
+                    _ = tfidfVec.idfs
+                }
+            }
+        }
+    }
 }
+

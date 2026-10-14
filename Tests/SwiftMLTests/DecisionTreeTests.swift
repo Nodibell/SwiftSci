@@ -99,6 +99,108 @@ struct DecisionTreeTests {
             _ = try await tree.predict(features: [[1.0]])
         }
     }
+
+    // MARK: - Shape, Label & Finiteness Validation
+
+    @Test("DecisionTree rejects ragged feature rows")
+    func testRaggedFeatureMatrix() async throws {
+        let raggedX = [
+            [1.0, 2.0],
+            [3.0],
+            [4.0, 5.0]
+        ]
+        let y = [0.0, 1.0, 0.0]
+
+        let clf = DecisionTreeClassifier()
+        await #expect(throws: SwiftMLError.self) {
+            try await clf.fit(features: raggedX, targets: y)
+        }
+
+        let reg = DecisionTreeRegressor()
+        await #expect(throws: SwiftMLError.self) {
+            try await reg.fit(features: raggedX, targets: y)
+        }
+
+        // Also test ragged row in predict
+        let validX = [[1.0, 2.0], [3.0, 4.0]]
+        let validY = [0.0, 1.0]
+        try await clf.fit(features: validX, targets: validY)
+        await #expect(throws: SwiftMLError.self) {
+            _ = try await clf.predict(features: [[1.0]])
+        }
+    }
+
+    @Test("predictProbability returns calibrated empirical probabilities with non-standard labels")
+    func testEmpiricalClassProbabilitiesAndNegativeLabels() async throws {
+        // Labels: -1.0, 10.0, 50.0 (arbitrary, non-contiguous, negative)
+        // 10 samples: at a leaf of depth 1 or shallow tree with mixed samples
+        let X: [[Double]] = [
+            [1.0], [1.1], [1.2], [1.3], [1.4], [1.5], [1.6], [1.7], [1.8], [1.9]
+        ]
+        // 7 samples of class -1.0, 3 samples of class 50.0 (all at the same node with maxDepth: 0)
+        let y: [Double] = [
+            -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 50.0, 50.0, 50.0
+        ]
+
+        let tree = DecisionTreeClassifier(maxDepth: 0)
+        try await tree.fit(features: X, targets: y)
+
+        let classes = await tree.classes
+        #expect(classes == [-1.0, 50.0])
+
+        let probs = try await tree.predictProbability(features: [[1.2]])
+        #expect(probs.count == 1)
+        #expect(probs[0].count == 2)
+        // Empirical distribution: 70% class -1.0, 30% class 50.0
+        #expect(abs(probs[0][0] - 0.7) < 1e-6)
+        #expect(abs(probs[0][1] - 0.3) < 1e-6)
+    }
+
+    @Test("DecisionTree rejects NaN in features and targets")
+    func testNaNRejection() async throws {
+        let nanFeatures = [[1.0, Double.nan], [2.0, 3.0]]
+        let cleanFeatures = [[1.0, 2.0], [2.0, 3.0]]
+        let nanTargets = [0.0, Double.nan]
+        let cleanTargets = [0.0, 1.0]
+
+        let clf = DecisionTreeClassifier()
+        await #expect(throws: SwiftMLError.self) {
+            try await clf.fit(features: nanFeatures, targets: cleanTargets)
+        }
+        await #expect(throws: SwiftMLError.self) {
+            try await clf.fit(features: cleanFeatures, targets: nanTargets)
+        }
+
+        try await clf.fit(features: cleanFeatures, targets: cleanTargets)
+        await #expect(throws: SwiftMLError.self) {
+            _ = try await clf.predict(features: [[Double.nan, 2.0]])
+        }
+    }
+
+    @Test("DecisionTree threshold calculation avoids overflow with large magnitude numbers")
+    func testLargeMagnitudeThreshold() async throws {
+        // Values near Double max that would overflow (a + b) to infinity
+        let X = [
+            [1.0e308],
+            [1.5e308]
+        ]
+        let y = [0.0, 1.0]
+
+        let tree = DecisionTreeClassifier(maxDepth: 1)
+        try await tree.fit(features: X, targets: y)
+
+        let nodes = await tree.flatNodes
+        #expect(!nodes.isEmpty)
+        let root = nodes[0]
+        #expect(!root.isLeaf)
+        #expect(root.threshold.isFinite)
+        #expect(abs(root.threshold - 1.25e308) / 1.25e308 < 1e-6)
+
+        let pred1 = try await tree.predict(features: [[1.0e308]])
+        let pred2 = try await tree.predict(features: [[1.5e308]])
+        #expect(pred1 == [0])
+        #expect(pred2 == [1])
+    }
 }
 
 @Suite("RandomForest Tests")
@@ -226,5 +328,141 @@ struct GradientBoostingTests {
         #expect(pred50[0] <= pred90[0])
         #expect(pred10[1] <= pred50[1])
         #expect(pred50[1] <= pred90[1])
+    }
+
+    // MARK: - Loss, Early Stopping & Hyperparameter Validation
+
+    @Test("Absolute error loss resists extreme outliers via median leaf adjustments")
+    func testAbsoluteErrorOutlierResistance() async throws {
+        // Linear data y = 3 * x with a severe outlier at x = 5
+        var features: [[Double]] = []
+        var targets: [Double] = []
+        for i in 1...20 {
+            let x = Double(i)
+            features.append([x])
+            if i == 5 {
+                targets.append(1000.0) // Severe outlier
+            } else {
+                targets.append(3.0 * x)
+            }
+        }
+
+        let l1Model = try GradientBoostedTreesRegressor(nEstimators: 60, learningRate: 0.1, maxDepth: 3, loss: .absoluteError)
+        try await l1Model.fit(features: features, targets: targets)
+
+        // Evaluate on clean points away from outlier
+        let testPoints = [[2.0], [10.0], [18.0]]
+        let l1Preds = try await l1Model.predict(features: testPoints)
+
+        // Expected roughly 6, 30, 54
+        #expect(abs(l1Preds[0] - 6.0) < 3.0)
+        #expect(abs(l1Preds[1] - 30.0) < 5.0)
+        #expect(abs(l1Preds[2] - 54.0) < 5.0)
+    }
+
+    @Test("Early stopping monitors loss-specific metric")
+    func testLossSpecificEarlyStopping() async throws {
+        let trainX = (1...20).map { [Double($0)] }
+        let trainY = (1...20).map { Double($0) * 2.0 }
+        let valX = (21...25).map { [Double($0)] }
+        let valY = (21...25).map { Double($0) * 2.0 }
+
+        let earlyStopping = EarlyStopping(patience: 3, minDelta: 0.001)
+        let model = try GradientBoostedTreesRegressor(nEstimators: 100, learningRate: 0.1, maxDepth: 2, loss: .absoluteError)
+        try await model.fit(
+            features: trainX,
+            targets: trainY,
+            validationFeatures: valX,
+            validationTargets: valY,
+            earlyStopping: earlyStopping
+        )
+
+        let trees = await model.getEnsembleTrees()
+        // Should have converged/stopped well before 100 estimators
+        #expect(trees.count < 100)
+    }
+
+    @Test("Validation data dimension mismatch and NaN rejection")
+    func testValidationDataValidation() async throws {
+        let trainX = [[1.0, 2.0], [3.0, 4.0]]
+        let trainY = [1.0, 2.0]
+
+        let model = try GradientBoostedTreesRegressor(nEstimators: 5)
+        // Mismatched feature width in validation
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(
+                features: trainX,
+                targets: trainY,
+                validationFeatures: [[1.0]],
+                validationTargets: [1.0]
+            )
+        }
+
+        // Mismatched count in validation features vs targets
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(
+                features: trainX,
+                targets: trainY,
+                validationFeatures: [[1.0, 2.0]],
+                validationTargets: [1.0, 2.0]
+            )
+        }
+
+        // NaN in validation targets
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(
+                features: trainX,
+                targets: trainY,
+                validationFeatures: [[1.0, 2.0]],
+                validationTargets: [Double.nan]
+            )
+        }
+    }
+
+    @Test("predict validates feature dimensions and rejects NaN")
+    func testPredictValidation() async throws {
+        let trainX = [[1.0, 2.0], [3.0, 4.0]]
+        let trainY = [5.0, 7.0]
+
+        let model = try GradientBoostedTreesRegressor(nEstimators: 5)
+        try await model.fit(features: trainX, targets: trainY)
+
+        // Wrong number of features in prediction
+        await #expect(throws: SwiftMLError.self) {
+            _ = try await model.predict(features: [[1.0]])
+        }
+
+        // NaN in prediction features
+        await #expect(throws: SwiftMLError.self) {
+            _ = try await model.predict(features: [[1.0, Double.nan]])
+        }
+    }
+
+    @Test("Hyperparameter validation in GradientBoostedTreesRegressor")
+    func testHyperparameterValidation() {
+        #expect(throws: SwiftMLError.self) {
+            _ = try GradientBoostedTreesRegressor(nEstimators: 0)
+        }
+        #expect(throws: SwiftMLError.self) {
+            _ = try GradientBoostedTreesRegressor(learningRate: 0.0)
+        }
+        #expect(throws: SwiftMLError.self) {
+            _ = try GradientBoostedTreesRegressor(learningRate: Double.infinity)
+        }
+        #expect(throws: SwiftMLError.self) {
+            _ = try GradientBoostedTreesRegressor(maxDepth: 0)
+        }
+        #expect(throws: SwiftMLError.self) {
+            _ = try GradientBoostedTreesRegressor(minSamplesSplit: 1)
+        }
+        #expect(throws: SwiftMLError.self) {
+            _ = try GradientBoostedTreesRegressor(loss: .quantile(alpha: 0.0))
+        }
+        #expect(throws: SwiftMLError.self) {
+            _ = try GradientBoostedTreesRegressor(loss: .quantile(alpha: 1.0))
+        }
+        #expect(throws: SwiftMLError.self) {
+            _ = try GradientBoostedTreesRegressor(loss: .quantile(alpha: Double.nan))
+        }
     }
 }

@@ -4,10 +4,23 @@ import SwiftStats
 
 
 
+/// Parameter estimation method for ARIMA models.
+public enum ARIMAEstimationMethod: String, Sendable, CaseIterable {
+    /// High-speed conditional two-stage least-squares regression (Hannan-Rissanen heuristic).
+    case hannanRissanen = "hannan_rissanen"
+}
+
 /// AutoRegressive Integrated Moving Average (ARIMA) time-series forecasting model actor.
+///
+/// Implements ARIMA(p, d, q) forecasting utilizing vectorized two-stage Hannan-Rissanen conditional
+/// least-squares parameter estimation. High-order AR approximation is used to initialize moving-average residuals,
+/// followed by multi-variable linear regression.
 public actor ARIMAModel {
-    /// The order.
+    /// The order (p, d, q).
     public let order: (p: Int, d: Int, q: Int)
+    
+    /// The parameter estimation method used for this model.
+    public let estimationMethod: ARIMAEstimationMethod
     
     public private(set) var arCoefficients: [Double] = []
     public private(set) var maCoefficients: [Double] = []
@@ -24,17 +37,19 @@ public actor ARIMAModel {
     public private(set) var residuals: [Double] = []
     public private(set) var isFitted: Bool = false
     
-    /// Creates a new instance.
+    /// Creates a new ARIMA model instance.
     /// - Parameters:
-    ///   - p: The p.
-    ///   - d: The d.
-    ///   - q: The q.
-    /// - Throws: An error if the operation fails.
-    public init(p: Int, d: Int, q: Int) throws {
+    ///   - p: Autoregressive order \(p \ge 0\).
+    ///   - d: Differencing order \(d \ge 0\).
+    ///   - q: Moving average order \(q \ge 0\).
+    ///   - method: Estimation method (defaults to `.hannanRissanen`).
+    /// - Throws: `ForecastError` if orders are negative.
+    public init(p: Int, d: Int, q: Int, method: ARIMAEstimationMethod = .hannanRissanen) throws {
         guard p >= 0 else { throw ForecastError.invalidAROrder(p) }
         guard d >= 0 else { throw ForecastError.invalidDifferencing(d) }
         guard q >= 0 else { throw ForecastError.invalidMAOrder(q) }
         self.order = (p, d, q)
+        self.estimationMethod = method
     }
     
     /// Fits the ARIMA model on the series using Hannan-Rissanen conditional OLS.
@@ -236,12 +251,16 @@ public actor ARIMAModel {
             guard let exog = exog else {
                 throw ForecastError.matrixDimensionMismatch(expectedRows: horizon, expectedCols: exogCoefficients.count, gotRows: 0, gotCols: 0)
             }
+            let gotCols = exog.first?.count ?? 0
             guard exog.count == horizon else {
-                throw ForecastError.matrixDimensionMismatch(expectedRows: horizon, expectedCols: exogCoefficients.count, gotRows: exog.count, gotCols: exog[0].count)
+                throw ForecastError.matrixDimensionMismatch(expectedRows: horizon, expectedCols: exogCoefficients.count, gotRows: exog.count, gotCols: gotCols)
             }
             for row in exog {
                 guard row.count == exogCoefficients.count else {
                     throw ForecastError.matrixDimensionMismatch(expectedRows: horizon, expectedCols: exogCoefficients.count, gotRows: horizon, gotCols: row.count)
+                }
+                guard row.allSatisfy({ !$0.isNaN && !$0.isInfinite }) else {
+                    throw ForecastError.containsNaN
                 }
             }
         }

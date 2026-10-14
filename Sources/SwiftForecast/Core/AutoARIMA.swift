@@ -58,8 +58,12 @@ public struct AutoARIMAOrder: Sendable, Equatable, CustomStringConvertible {
 
 /// Automated hyperparameter grid search for ARIMA and SARIMA time-series models.
 ///
-/// `AutoARIMA` evaluates an exhaustive or bounded grid of orders across \((p, d, q) 	imes (P, D, Q)_s\),
+/// `AutoARIMA` evaluates an exhaustive or bounded grid of orders across \((p, d, q) \times (P, D, Q)_s\),
 /// identifying the optimal order that minimizes AIC or BIC while ensuring stability and invertibility.
+///
+/// In accordance with Hyndman & Khandakar (2008) and canonical time-series methodology, model selection
+/// is governed by penalized in-sample likelihood criteria (AIC / BIC) rather than an ad-hoc train/test split.
+/// For out-of-sample forecast validation, employ `TimeSeriesBacktester`.
 ///
 /// ## Concurrency Management
 /// Evaluates candidate model configurations concurrently across Apple Silicon CPU cores via structured `withThrowingTaskGroup`.

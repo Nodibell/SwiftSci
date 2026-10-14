@@ -81,7 +81,88 @@ public struct WordNet: Sendable {
         self.synsetMap = map
         self.lemmaIndex = idx
     }
+
+    /// Creates a WordNet database initialized with custom synsets, validating graph taxonomy integrity.
+    /// - Parameter synsets: Collection of synsets.
+    /// - Throws: `NLPError.invalidInput` if duplicate IDs, dangling references, or cycles exist.
+    public init(validatingSynsets synsets: [Synset]) throws {
+        var map: [String: Synset] = [:]
+        var idx: [String: [String]] = [:]
+        
+        for syn in synsets {
+            if map[syn.id] != nil {
+                throw NLPError.invalidInput("Duplicate synset identifier found: '\(syn.id)'.")
+            }
+            map[syn.id] = syn
+            for lemma in syn.lemmas {
+                let key = lemma.lowercased()
+                idx[key, default: []].append(syn.id)
+            }
+        }
+        
+        self.synsetMap = map
+        self.lemmaIndex = idx
+        try self.validateTaxonomy()
+    }
+
+    /// Validates taxonomy graph integrity (checks for dangling references and hypernym cycles).
+    /// - Throws: `NLPError.invalidInput` if dangling references or taxonomy cycles are discovered.
+    public func validateTaxonomy() throws {
+        // 1. Check for dangling references in hypernymIDs and hyponymIDs
+        for (id, syn) in synsetMap {
+            for parentID in syn.hypernymIDs {
+                if synsetMap[parentID] == nil {
+                    throw NLPError.invalidInput("Synset '\(id)' references non-existent hypernym '\(parentID)'.")
+                }
+            }
+            for childID in syn.hyponymIDs {
+                if synsetMap[childID] == nil {
+                    throw NLPError.invalidInput("Synset '\(id)' references non-existent hyponym '\(childID)'.")
+                }
+            }
+        }
+
+        // 2. Cycle detection in hypernym DAG using 3-color DFS (0 = unvisited, 1 = visiting, 2 = visited)
+        var color: [String: Int] = [:]
+        for id in synsetMap.keys { color[id] = 0 }
+
+        func hasCycle(_ node: String) -> Bool {
+            color[node] = 1
+            if let syn = synsetMap[node] {
+                for parentID in syn.hypernymIDs {
+                    if color[parentID] == 1 {
+                        return true
+                    }
+                    if color[parentID] == 0 {
+                        if hasCycle(parentID) { return true }
+                    }
+                }
+            }
+            color[node] = 2
+            return false
+        }
+
+        for id in synsetMap.keys {
+            if color[id] == 0 {
+                if hasCycle(id) {
+                    throw NLPError.invalidInput("Cycle detected in hypernym taxonomy containing synset '\(id)'.")
+                }
+            }
+        }
+    }
     
+    /// Total number of unique synsets contained in this WordNet database.
+    public var synsetCount: Int {
+        synsetMap.count
+    }
+
+    /// Looks up a synset by its unique identifier (e.g. "dog.n.01").
+    /// - Parameter id: Unique synset identifier.
+    /// - Returns: Matching `Synset`, or `nil` if not present.
+    public func synset(forID id: String) -> Synset? {
+        synsetMap[id]
+    }
+
     /// Returns all synsets matching the given lemma (word).
     /// - Parameters:
     ///   - lemma: Base canonical form or lemma of a word.
@@ -113,19 +194,25 @@ public struct WordNet: Sendable {
         synset.hyponymIDs.compactMap { synsetMap[$0] }
     }
     
-    /// Computes shortest path distance between two synsets in the hypernym hierarchy.
+    /// Computes shortest ancestral path distance between two synsets via a lowest common ancestor (hypernym).
+    ///
+    /// - Note: This computes the shortest ancestral path through the hypernym hierarchy:
+    ///   `dist(s1, s2) = min_{a \in Ancestors(s1) \cap Ancestors(s2)} (dist(s1, a) + dist(s2, a))`.
+    ///   For general undirected graph shortest path across all edges, use `shortestGraphDistance(_:_:)`.
     /// - Parameters:
     ///   - s1: First synset for taxonomic comparison.
     ///   - s2: Second synset for taxonomic comparison.
-    /// - Returns: Calculated integer value, or `nil` if undefined.
+    /// - Returns: Calculated integer value, or `nil` if no common ancestor exists.
     public func pathDistance(_ s1: Synset, _ s2: Synset) -> Int? {
         if s1 == s2 { return 0 }
         
         var visited1: [String: Int] = [s1.id: 0]
         var queue1 = [s1.id]
+        var head1 = 0
         
-        while !queue1.isEmpty {
-            let curr = queue1.removeFirst()
+        while head1 < queue1.count {
+            let curr = queue1[head1]
+            head1 += 1
             let dist = visited1[curr]!
             if let syn = synsetMap[curr] {
                 for parentID in syn.hypernymIDs {
@@ -139,10 +226,12 @@ public struct WordNet: Sendable {
         
         var visited2: [String: Int] = [s2.id: 0]
         var queue2 = [s2.id]
+        var head2 = 0
         var minTotalDist: Int? = nil
         
-        while !queue2.isEmpty {
-            let curr = queue2.removeFirst()
+        while head2 < queue2.count {
+            let curr = queue2[head2]
+            head2 += 1
             let dist2 = visited2[curr]!
             if let dist1 = visited1[curr] {
                 let total = dist1 + dist2
@@ -159,6 +248,34 @@ public struct WordNet: Sendable {
         }
         
         return minTotalDist
+    }
+
+    /// Computes the shortest distance in the undirected synset graph traversing both hypernyms and hyponyms.
+    /// - Parameters:
+    ///   - s1: First synset.
+    ///   - s2: Second synset.
+    /// - Returns: The shortest graph distance, or `nil` if unreachable.
+    public func shortestGraphDistance(_ s1: Synset, _ s2: Synset) -> Int? {
+        if s1.id == s2.id { return 0 }
+        var visited: [String: Int] = [s1.id: 0]
+        var queue = [s1.id]
+        var head = 0
+        while head < queue.count {
+            let curr = queue[head]
+            head += 1
+            let d = visited[curr]!
+            if curr == s2.id { return d }
+            if let syn = synsetMap[curr] {
+                let neighbors = syn.hypernymIDs + syn.hyponymIDs
+                for neighbor in neighbors {
+                    if visited[neighbor] == nil {
+                        visited[neighbor] = d + 1
+                        queue.append(neighbor)
+                    }
+                }
+            }
+        }
+        return nil
     }
     
     /// Computes Path Similarity (1 / (path_distance + 1)) between two synsets in [0, 1].
@@ -233,9 +350,11 @@ public struct WordNet: Sendable {
         var ancestors: Set<String> = [synset.id]
         var queue = [synset.id]
         var visited: Set<String> = [synset.id]
+        var head = 0
         
-        while !queue.isEmpty {
-            let currID = queue.removeFirst()
+        while head < queue.count {
+            let currID = queue[head]
+            head += 1
             if let syn = synsetMap[currID] {
                 for parentID in syn.hypernymIDs {
                     if !visited.contains(parentID) {

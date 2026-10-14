@@ -135,4 +135,44 @@ struct TrainTestSplitTests {
         #expect(testSplit.trainTargets.isEmpty)
         #expect(testSplit.testTargets.count == 1)
     }
+
+    @Test("SeedableRandomNumberGenerator handles Int.min without overflow crash")
+    func testSeedableRNGIntMin() {
+        var rng = SeedableRandomNumberGenerator(seed: Int.min)
+        let v1 = rng.next()
+        let v2 = rng.next()
+        #expect(v1 != 0)
+        #expect(v1 != v2)
+    }
+
+    @Test("Stratified trainTestSplit produces identical splits with fixed seed")
+    func testStratifiedSplitReproducibility() throws {
+        let features = (0..<20).map { [Double($0)] }
+        let targets = (0..<20).map { Double($0 % 3) }
+        let stratify = targets
+
+        let split1 = try trainTestSplit(features, targets, testSize: 0.3, stratify: stratify, shuffle: true, seed: 123)
+        let split2 = try trainTestSplit(features, targets, testSize: 0.3, stratify: stratify, shuffle: true, seed: 123)
+
+        #expect(split1.trainTargets == split2.trainTargets)
+        #expect(split1.testTargets == split2.testTargets)
+        #expect(split1.trainFeatures == split2.trainFeatures)
+        #expect(split1.testFeatures == split2.testFeatures)
+    }
+
+    @Test("StratifiedKFold produces identical folds across calls with fixed seed")
+    func testStratifiedKFoldDeterminism() throws {
+        let targets = (0..<30).map { "class_\($0 % 3)" }
+        let kf1 = StratifiedKFold(nSplits: 3, shuffle: true, seed: 42)
+        let kf2 = StratifiedKFold(nSplits: 3, shuffle: true, seed: 42)
+
+        let splits1 = try kf1.split(targets: targets)
+        let splits2 = try kf2.split(targets: targets)
+
+        #expect(splits1.count == splits2.count)
+        for i in 0..<splits1.count {
+            #expect(splits1[i].trainIndices == splits2[i].trainIndices)
+            #expect(splits1[i].testIndices == splits2[i].testIndices)
+        }
+    }
 }

@@ -26,7 +26,7 @@ public actor LIMEExplainer {
     
     /// Initializes a new LIME explainer.
     /// - Parameters:
-    ///   - kernelWidth: Exponential kernel bandwidth (defaults to 0.75).
+    ///   - kernelWidth: Exponential kernel bandwidth factor (defaults to 0.75).
     ///   - regularization: Ridge regression penalty $\lambda$ (defaults to 1.0).
     public init(kernelWidth: Double = 0.75, regularization: Double = 1.0) {
         self.kernelWidth = max(1e-5, kernelWidth)
@@ -47,14 +47,38 @@ public actor LIMEExplainer {
         featureScales: [Double]? = nil
     ) async -> Explanation {
         let D = instance.count
-        guard D > 0 else {
+        guard D > 0, instance.allSatisfy({ !$0.isNaN && !$0.isInfinite }) else {
             return Explanation(featureWeights: [], intercept: 0.0, localR2: 0.0, prediction: 0.0)
         }
         
-        let targetPred = await model(instance)
-        let N = max(10, numSamples)
+        // Validate featureScales dimensionality and finiteness
+        let scales: [Double]
+        if let customScales = featureScales {
+            guard customScales.count == D,
+                  customScales.allSatisfy({ !$0.isNaN && !$0.isInfinite && $0 > 0.0 }) else {
+                return Explanation(
+                    featureWeights: [Double](repeating: 0.0, count: D),
+                    intercept: 0.0,
+                    localR2: 0.0,
+                    prediction: 0.0
+                )
+            }
+            scales = customScales
+        } else {
+            scales = [Double](repeating: 1.0, count: D)
+        }
         
-        let scales = featureScales ?? [Double](repeating: 1.0, count: D)
+        let targetPred = await model(instance)
+        guard !targetPred.isNaN, !targetPred.isInfinite else {
+            return Explanation(
+                featureWeights: [Double](repeating: 0.0, count: D),
+                intercept: 0.0,
+                localR2: 0.0,
+                prediction: 0.0
+            )
+        }
+
+        let N = max(10, numSamples)
         
         // 1. Generate perturbations around the instance
         var perturbedData = [Double](repeating: 0.0, count: N * D)
@@ -78,6 +102,11 @@ public actor LIMEExplainer {
             return sqrt(-2.0 * log(u1)) * cos(2.0 * Double.pi * u2)
         }
         
+        // Dimension-aware kernel bandwidth scaling: sigma_eff = sqrt(D) * kernelWidth
+        // This ensures distance weighting does not collapse to zero in high dimensions.
+        let sigmaEff = sqrt(Double(D)) * kernelWidth
+        let twoSigmaSq = 2.0 * sigmaEff * sigmaEff
+        
         for i in 1..<N {
             var distSq = 0.0
             for d in 0..<D {
@@ -88,10 +117,8 @@ public actor LIMEExplainer {
                 let normDiff = noise / std
                 distSq += normDiff * normDiff
             }
-            let dist = sqrt(distSq)
-            distances[i] = dist
-            // Exponential distance kernel w = exp(-d^2 / (2 * sigma^2))
-            weights[i] = exp(-distSq / (2.0 * kernelWidth * kernelWidth))
+            distances[i] = sqrt(distSq)
+            weights[i] = exp(-distSq / twoSigmaSq)
         }
         
         // 2. Query the black-box model predictions for perturbed samples
@@ -116,10 +143,10 @@ public actor LIMEExplainer {
             let w = weights[i]
             let y = targets[i]
             
-            // Construct row X_i = [1.0, x_i1, x_i2, ...]
+            // Construct row X_i = [1.0, x_i1, x_i2, ...] centered around instance
             var xi = [Double](repeating: 1.0, count: P)
             for d in 0..<D {
-                xi[d + 1] = perturbedData[i * D + d] - instance[d] // centered around instance
+                xi[d + 1] = perturbedData[i * D + d] - instance[d]
             }
             
             for j in 0..<P {
@@ -131,13 +158,15 @@ public actor LIMEExplainer {
         }
         
         // Add Ridge Regularization lambda * I (excluding intercept)
+        let ridgePenalty = max(regularization, 1e-6)
         for d in 1..<P {
-            XtWX[d * P + d] += regularization
+            XtWX[d * P + d] += ridgePenalty
         }
         
         // Solve linear system (XtWX) * beta = XtWy via Gaussian elimination with partial pivoting
         var A = XtWX
         var b = XtWy
+        var isSingular = false
         
         for col in 0..<P {
             var maxRow = col
@@ -162,29 +191,39 @@ public actor LIMEExplainer {
             }
             
             let pivot = A[col * P + col]
-            if abs(pivot) > 1e-12 {
-                for r in (col + 1)..<P {
-                    let factor = A[r * P + col] / pivot
-                    for c in col..<P {
-                        A[r * P + c] -= factor * A[col * P + c]
-                    }
-                    b[r] -= factor * b[col]
+            if abs(pivot) <= 1e-12 {
+                isSingular = true
+                break
+            }
+            
+            for r in (col + 1)..<P {
+                let factor = A[r * P + col] / pivot
+                for c in col..<P {
+                    A[r * P + c] -= factor * A[col * P + c]
                 }
+                b[r] -= factor * b[col]
             }
         }
         
         var beta = [Double](repeating: 0.0, count: P)
-        for r in stride(from: P - 1, through: 0, by: -1) {
-            var sum = b[r]
-            for c in (r + 1)..<P {
-                sum -= A[r * P + c] * beta[c]
+        if !isSingular {
+            for r in stride(from: P - 1, through: 0, by: -1) {
+                var sum = b[r]
+                for c in (r + 1)..<P {
+                    sum -= A[r * P + c] * beta[c]
+                }
+                let diag = A[r * P + r]
+                if abs(diag) > 1e-12 {
+                    beta[r] = sum / diag
+                } else {
+                    isSingular = true
+                    break
+                }
             }
-            let diag = A[r * P + r]
-            beta[r] = abs(diag) > 1e-12 ? sum / diag : 0.0
         }
         
-        let intercept = beta[0]
-        let featureWeights = Array(beta[1..<P])
+        let intercept = isSingular ? targetPred : beta[0]
+        let featureWeights = isSingular ? [Double](repeating: 0.0, count: D) : Array(beta[1..<P])
         
         // Compute weighted R^2 score
         var meanY = 0.0
@@ -209,7 +248,8 @@ public actor LIMEExplainer {
             ssRes += weights[i] * diffRes * diffRes
         }
         
-        let localR2 = ssTot > 1e-9 ? max(0.0, min(1.0, 1.0 - (ssRes / ssTot))) : 1.0
+        // Do not clamp negative R^2 to 0.0; report true goodness-of-fit
+        let localR2 = ssTot > 1e-9 ? (1.0 - (ssRes / ssTot)) : 1.0
         
         return Explanation(
             featureWeights: featureWeights,
@@ -219,3 +259,4 @@ public actor LIMEExplainer {
         )
     }
 }
+

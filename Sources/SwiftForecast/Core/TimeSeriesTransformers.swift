@@ -6,11 +6,25 @@ public final class LagTransformer: Sendable {
     /// The lags.
     public let lags: [Int]
     
-    /// Creates a new instance.
+    /// Creates a new instance, filtering non-positive lags.
     /// - Parameters:
     ///   - lags: The lags.
     public init(lags: [Int]) {
         self.lags = lags.filter { $0 > 0 }.sorted()
+    }
+
+    /// Creates a new instance, validating that all lags are strictly positive.
+    /// - Parameters:
+    ///   - lags: The lags.
+    /// - Throws: `ForecastError.invalidParameter` if lags is empty or contains non-positive values.
+    public convenience init(validatingLags lags: [Int]) throws {
+        guard !lags.isEmpty else {
+            throw ForecastError.invalidParameter("lags array cannot be empty")
+        }
+        guard lags.allSatisfy({ $0 > 0 }) else {
+            throw ForecastError.invalidParameter("All lags must be strictly positive integers > 0, got \(lags)")
+        }
+        self.init(lags: lags)
     }
     
     /// Generates feature matrix of lagged values and aligned target values.
@@ -44,11 +58,22 @@ public final class RollingWindow: Sendable {
     /// The window size.
     public let windowSize: Int
     
-    /// Creates a new instance.
+    /// Creates a new instance, clamping windowSize to minimum of 1.
     /// - Parameters:
     ///   - windowSize: The window size.
     public init(windowSize: Int) {
         self.windowSize = max(1, windowSize)
+    }
+
+    /// Creates a new instance, validating windowSize >= 1.
+    /// - Parameters:
+    ///   - windowSize: The window size.
+    /// - Throws: `ForecastError.invalidParameter` if windowSize < 1.
+    public convenience init(validatingWindowSize windowSize: Int) throws {
+        guard windowSize >= 1 else {
+            throw ForecastError.invalidParameter("windowSize must be >= 1, got \(windowSize)")
+        }
+        self.init(windowSize: windowSize)
     }
     
     /// Computes rolling mean and rolling standard deviation series.
@@ -102,11 +127,22 @@ public final class ExpandingWindow: Sendable {
     /// The min periods.
     public let minPeriods: Int
 
-    /// Creates a new instance.
+    /// Creates a new instance, clamping minPeriods to minimum of 1.
     /// - Parameters:
     ///   - minPeriods: The min periods.
     public init(minPeriods: Int = 1) {
         self.minPeriods = max(1, minPeriods)
+    }
+
+    /// Creates a new instance, validating minPeriods >= 1.
+    /// - Parameters:
+    ///   - minPeriods: The min periods.
+    /// - Throws: `ForecastError.invalidParameter` if minPeriods < 1.
+    public convenience init(validatingMinPeriods minPeriods: Int) throws {
+        guard minPeriods >= 1 else {
+            throw ForecastError.invalidParameter("minPeriods must be >= 1, got \(minPeriods)")
+        }
+        self.init(minPeriods: minPeriods)
     }
 
     /// Computes expanding mean and expanding standard deviation series.

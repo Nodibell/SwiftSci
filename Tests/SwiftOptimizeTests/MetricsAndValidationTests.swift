@@ -193,3 +193,122 @@ struct ValidationTests {
         }
     }
 }
+
+// MARK: - Stratification, Label & Search Parameter Validation
+
+extension ValidationTests {
+
+    @Test("CrossValidator preserves class proportions on imbalanced data via StratifiedKFold")
+    func testCrossValidatorStratifiedImbalanced() async throws {
+        // 27 class-0 and 9 class-1 samples across 3 folds
+        var features: [[Double]] = []
+        var targets: [Double] = []
+        for i in 0..<27 {
+            features.append([Double(i), 0.0])
+            targets.append(0.0)
+        }
+        for i in 0..<9 {
+            features.append([Double(i + 30), 1.0])
+            targets.append(1.0)
+        }
+
+        let result = try await CrossValidator.crossValidate(
+            classifier: (maxDepth: 3, criterion: .gini),
+            features: features,
+            targets: targets,
+            nSplits: 3,
+            seed: 42
+        )
+        #expect(result.scores.count == 3)
+        #expect(result.mean >= 0.0 && result.mean <= 1.0)
+    }
+
+    @Test("CrossValidator throws when a class has fewer samples than folds")
+    func testCrossValidatorInsufficientClassSamples() async throws {
+        let features: [[Double]] = (0..<22).map { [Double($0)] }
+        let targets: [Double] = [Double](repeating: 0.0, count: 20) + [1.0, 1.0]
+
+        await #expect(throws: ValidationError.self) {
+            _ = try await CrossValidator.crossValidate(
+                classifier: (maxDepth: 3, criterion: .gini),
+                features: features,
+                targets: targets,
+                nSplits: 3
+            )
+        }
+    }
+
+    @Test("CrossValidator rejects fractional labels for classification")
+    func testCrossValidatorRejectsFractionalLabels() async throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0], [5.0], [6.0]]
+        let fractionalTargets: [Double] = [0.0, 1.2, 1.8, 0.0, 1.0, 0.0]
+
+        await #expect(throws: ValidationError.self) {
+            _ = try await CrossValidator.crossValidate(
+                classifier: (maxDepth: 3, criterion: .gini),
+                features: features,
+                targets: fractionalTargets,
+                nSplits: 2
+            )
+        }
+
+        await #expect(throws: ValidationError.self) {
+            _ = try await CrossValidator.crossValidate(
+                { DecisionTreeClassifier(maxDepth: 3) },
+                features: features,
+                targets: fractionalTargets,
+                nSplits: 2
+            )
+        }
+    }
+
+    @Test("GridSearchCV validates input parameters and grid constraints")
+    func testGridSearchCVParameterValidation() async throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let targets: [Double] = [0.0, 0.0, 1.0, 1.0]
+
+        await #expect(throws: ValidationError.self) {
+            _ = try await GridSearchCV(nSplits: 1).search(features: features, targets: targets)
+        }
+        await #expect(throws: ValidationError.self) {
+            _ = try await GridSearchCV(maxDepthValues: [], nSplits: 2).search(features: features, targets: targets)
+        }
+        await #expect(throws: ValidationError.self) {
+            _ = try await GridSearchCV(criterionValues: [], nSplits: 2).search(features: features, targets: targets)
+        }
+        await #expect(throws: ValidationError.self) {
+            _ = try await GridSearchCV(maxDepthValues: [3, -1], nSplits: 2).search(features: features, targets: targets)
+        }
+
+        let validGrid = GridSearchCV(nSplits: 2)
+        await #expect(throws: ValidationError.self) {
+            _ = try await validGrid.search(features: [], targets: [])
+        }
+        await #expect(throws: ValidationError.self) {
+            _ = try await validGrid.search(features: features, targets: [0.0])
+        }
+    }
+
+    @Test("Search results use deterministic tie-breaking (score, stability, simplicity)")
+    func testSearchResultDeterministicTieBreaking() {
+        // Order: meanScore desc, stdScore asc, maxDepth asc, then criterion.
+        let rHigh = GridSearchCV.Result(maxDepth: 5, criterion: .gini, meanScore: 0.90, stdScore: 0.05)
+        let rLow = GridSearchCV.Result(maxDepth: 5, criterion: .gini, meanScore: 0.80, stdScore: 0.05)
+        #expect(rLow < rHigh)
+
+        let rStable = GridSearchCV.Result(maxDepth: 5, criterion: .gini, meanScore: 0.85, stdScore: 0.02)
+        let rNoisy = GridSearchCV.Result(maxDepth: 5, criterion: .gini, meanScore: 0.85, stdScore: 0.08)
+        #expect(rNoisy < rStable)
+
+        let rShallow = GridSearchCV.Result(maxDepth: 3, criterion: .gini, meanScore: 0.85, stdScore: 0.05)
+        let rDeep = GridSearchCV.Result(maxDepth: 7, criterion: .gini, meanScore: 0.85, stdScore: 0.05)
+        #expect(rDeep < rShallow)
+
+        let rSame = GridSearchCV.Result(maxDepth: 3, criterion: .gini, meanScore: 0.85, stdScore: 0.05)
+        #expect(rShallow == rSame)
+
+        let rand1 = RandomizedSearchCV.Result(maxDepth: 3, criterion: .gini, meanScore: 0.85, stdScore: 0.02)
+        let rand2 = RandomizedSearchCV.Result(maxDepth: 3, criterion: .gini, meanScore: 0.85, stdScore: 0.08)
+        #expect(rand2 < rand1)
+    }
+}

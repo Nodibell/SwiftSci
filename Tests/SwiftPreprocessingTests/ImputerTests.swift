@@ -67,4 +67,33 @@ struct ImputerTests {
         #expect(imputed[0] == [1.0, -999.0])
         #expect(imputed[1] == [-999.0, 2.0])
     }
+
+    @Test("Imputer all-NaN column uses 0.0 fallback statistic to ensure valid downstream pipeline imputation (PP-05)")
+    func testAllNaNColumn() throws {
+        var imputer = Imputer(strategy: .mean)
+        let data = [
+            [Double.nan],
+            [Double.nan]
+        ]
+        
+        let imputed = try imputer.fitTransform(data)
+        #expect(imputer.statistics == [0.0])
+        #expect(imputed[0] == [0.0])
+        #expect(imputed[1] == [0.0])
+    }
+
+    @Test("Imputer median does not overflow with large values (PP-05)")
+    func testMedianNoOverflow() throws {
+        var imputer = Imputer(strategy: .median)
+        let data = [
+            [Double.greatestFiniteMagnitude * 0.8],
+            [Double.greatestFiniteMagnitude * 0.9]
+        ]
+        
+        try imputer.fit(data)
+        #expect(imputer.statistics?.count == 1)
+        let med = imputer.statistics![0]
+        #expect(med.isFinite)
+        #expect(abs(med - Double.greatestFiniteMagnitude * 0.85) < 1e10)
+    }
 }

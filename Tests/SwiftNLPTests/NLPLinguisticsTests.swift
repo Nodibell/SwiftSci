@@ -78,6 +78,20 @@ struct NLPLinguisticsTests {
         #endif
     }
 
+    @Test("NLSentimentAnalyzer scoreOptional disambiguation")
+    func testNLSentimentAnalyzerScoreOptional() throws {
+        let analyzer = NLSentimentAnalyzer()
+        #expect(try analyzer.scoreOptional(text: "") == nil)
+        #expect(try analyzer.scoreOptional(text: "   \n\t") == nil)
+        #expect(try analyzer.score(text: "") == 0.0)
+
+        #if canImport(NaturalLanguage)
+        let score = try analyzer.scoreOptional(text: "I am absolutely thrilled and overjoyed with this marvelous result!")
+        #expect(score != nil)
+        #expect(score! > 0.0)
+        #endif
+    }
+
     @Test("AppleWordTokenizer - Deterministic Encoding Persistence")
     func testAppleWordTokenizerDeterminism() {
         let tokenizer = AppleWordTokenizer()
@@ -117,7 +131,7 @@ struct NLPLinguisticsTests {
     }
 
     @Test("Naive Bayes Classifiers - Multinomial & Complement")
-    func testNaiveBayesClassifiers() {
+    func testNaiveBayesClassifiers() throws {
         let X = [
             [3.0, 0.0, 1.0], // sports
             [2.0, 1.0, 0.0], // sports
@@ -127,17 +141,17 @@ struct NLPLinguisticsTests {
         let y = ["sports", "sports", "tech", "tech"]
 
         var mnb = MultinomialNaiveBayes(alpha: 1.0)
-        mnb.fit(X: X, y: y)
+        try mnb.fit(X: X, y: y)
 
-        let pred1 = mnb.predict(x: [3.0, 0.0, 0.0])
+        let pred1 = try mnb.predict(x: [3.0, 0.0, 0.0])
         #expect(pred1 == "sports")
 
-        let pred2 = mnb.predict(x: [0.0, 2.0, 3.0])
+        let pred2 = try mnb.predict(x: [0.0, 2.0, 3.0])
         #expect(pred2 == "tech")
 
         var cnb = ComplementNaiveBayes(alpha: 1.0)
-        cnb.fit(X: X, y: y)
-        let pred3 = cnb.predict(x: [3.0, 0.0, 0.0])
+        try cnb.fit(X: X, y: y)
+        let pred3 = try cnb.predict(x: [3.0, 0.0, 0.0])
         #expect(pred3 == "sports")
     }
 

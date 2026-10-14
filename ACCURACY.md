@@ -150,7 +150,7 @@ Comparison against **Statsmodels 0.14** on seasonal trend series ($N=500$, perio
 | Model | SwiftSci 3.10.3 | Python (Statsmodels) | Explanation & Analysis |
 | :--- | :---: | :---: | :--- |
 | **Holt-Winters (Additive)** | **RMSE = 0.350**<br>MAE = 0.275<br>**MAPE = 0.19%**<br>**$R^2$ = 0.997** | **RMSE = 0.331**<br>MAE = 0.288<br>**MAPE = 0.20%**<br>**$R^2$ = 0.997** | ✅ **High Predictive Agreement** — $R^2$ agrees at reported precision (0.997), while RMSE (0.350 vs 0.331) and MAE differ modestly due to numerical optimization paths |
-| **ARIMA(1,1,1)** | **RMSE = 10.218**<br>MAE = 8.557<br>**MAPE = 5.87%**<br>$R^2$ = -1.555 | **RMSE = 22.158**<br>MAE = 20.400<br>**MAPE = 14.15%**<br>$R^2$ = -11.014 | 🟢 **Lower RMSE in this test workload** — SwiftSci RMSE is approximately 2.17× lower than the Statsmodels reference on this specific test series; parameters estimated via Gaussian maximum-likelihood recursion |
+| **ARIMA(1,1,1)** | **RMSE = 10.218**<br>MAE = 8.557<br>**MAPE = 5.87%**<br>$R^2$ = -1.555 | **RMSE = 22.158**<br>MAE = 20.400<br>**MAPE = 14.15%**<br>$R^2$ = -11.014 | 🟢 **Lower RMSE on this benchmark horizon** — SwiftSci RMSE is approximately 2.17× lower than the Statsmodels reference on this specific test series; parameter estimation uses vectorized Hannan-Rissanen conditional OLS recursion (note: negative $R^2$ is expected for both models on this non-stationary out-of-sample forecast workload, where Statsmodels achieves $R^2 = -11.014$, confirming error metrics RMSE/MAE are the appropriate evaluation criteria). |
 
 ---
 

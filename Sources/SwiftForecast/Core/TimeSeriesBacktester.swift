@@ -131,6 +131,21 @@ public enum TimeSeriesBacktester {
         fitAndForecast: @Sendable (_ trainSeries: [Double], _ horizon: Int) async throws -> [Double]
     ) async throws -> TimeSeriesBacktestResult {
         guard !series.isEmpty else { throw ForecastError.emptyTimeSeries }
+        // Validate finiteness of input series
+        if series.contains(where: { $0.isNaN }) {
+            throw ForecastError.containsNaN
+        }
+        if series.contains(where: { $0.isInfinite }) {
+            throw ForecastError.containsInfinity
+        }
+
+        // Validate sliding window size
+        if case .sliding(let windowSize) = mode {
+            guard windowSize >= 2 else {
+                throw ForecastError.invalidParameter("sliding windowSize must be >= 2, got \(windowSize)")
+            }
+        }
+
         guard initialWindow >= 2 else {
             throw ForecastError.insufficientLength(minimum: 2, got: initialWindow)
         }
@@ -163,13 +178,25 @@ public enum TimeSeriesBacktester {
             let actual = Array(series[origin..<(origin + horizon)])
             let predicted = try await fitAndForecast(trainSeries, horizon)
 
+            // Strictly validate prediction output dimension and finiteness
+            guard predicted.count == horizon else {
+                throw ForecastError.dimensionMismatch(expected: horizon, got: predicted.count)
+            }
+            if predicted.contains(where: { $0.isNaN }) {
+                throw ForecastError.containsNaN
+            }
+            if predicted.contains(where: { $0.isInfinite }) {
+                throw ForecastError.containsInfinity
+            }
+
             let foldRmse = TimeSeriesMetrics.rmse(actual: actual, forecast: predicted)
             let foldMae = TimeSeriesMetrics.mae(actual: actual, forecast: predicted)
             let foldMape = TimeSeriesMetrics.mape(actual: actual, forecast: predicted)
             let foldSmape = TimeSeriesMetrics.smape(actual: actual, forecast: predicted)
 
             let foldScale = TimeSeriesMetrics.naiveInSampleMAE(trainingSeries: trainSeries)
-            let foldMase = foldScale > 1e-12 ? (foldMae / foldScale) : (foldMae == 0.0 ? 0.0 : 1.0)
+            // Use Double.nan when naive scale is zero and MAE > 0 (undefined MASE)
+            let foldMase = foldScale > 1e-12 ? (foldMae / foldScale) : (foldMae == 0.0 ? 0.0 : Double.nan)
 
             let fold = BacktestFold(
                 originIndex: origin,

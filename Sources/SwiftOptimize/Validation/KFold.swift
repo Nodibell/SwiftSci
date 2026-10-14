@@ -126,12 +126,13 @@ public struct CrossValidationResult: Sendable {
 /// Each fold is evaluated concurrently with TaskGroup.
 public enum CrossValidator {
 
-    /// Cross-validates a Decision Tree Classifier.
+    /// Cross-validates a Decision Tree Classifier using stratified K-Fold cross-validation.
+    /// Preserves class label distributions across validation folds.
     /// - Parameters:
-    ///   - classifier: Trained classifier estimator instance.
+    ///   - classifier: Maximum depth and split criterion for DecisionTreeClassifier.
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.
-    ///   - targets: 1D array of ground-truth target values of length `N`.
-    ///   - nSplits: Number of cross-validation splitting folds.
+    ///   - targets: 1D array of ground-truth target values of length `N` (must be whole-number class labels).
+    ///   - nSplits: Number of cross-validation splitting folds (at least 2).
     ///   - seed: Random number generator seed for deterministic reproducibility.
     /// - Throws: `ValidationError` or `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
     /// - Returns: The computed CrossValidationResult result instance.
@@ -142,7 +143,15 @@ public enum CrossValidator {
         nSplits: Int = 5,
         seed: Int = 42
     ) async throws -> CrossValidationResult {
-        let folds = try KFold(nSplits: nSplits, shuffle: true, seed: seed)
+        guard nSplits >= 2 else {
+            throw ValidationError.invalidFoldCount(nSplits)
+        }
+        for t in targets {
+            guard t.isFinite && abs(t.rounded() - t) < 1e-7 else {
+                throw ValidationError.invalidParameter("Classification targets must be finite whole-number class labels, found \(t)")
+            }
+        }
+        let folds = try StratifiedKFold(nSplits: nSplits, shuffle: true, seed: seed)
             .split(features: features, targets: targets)
 
         let scores: [Double] = try await withThrowingTaskGroup(of: Double.self) { group in
@@ -154,7 +163,7 @@ public enum CrossValidator {
                     )
                     try await tree.fit(features: fold.trainFeatures, targets: fold.trainTargets)
                     let preds = try await tree.predict(features: fold.valFeatures)
-                    let trueLabels = fold.valTargets.map { Int($0) }
+                    let trueLabels = fold.valTargets.map { Int($0.rounded()) }
                     return Metrics.accuracy(yTrue: trueLabels, yPred: preds)
                 }
             }
@@ -170,7 +179,7 @@ public enum CrossValidator {
     ///   - maxDepth: Maximum allowable depth of the decision tree.
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.
     ///   - targets: 1D array of ground-truth target values of length `N`.
-    ///   - nSplits: Number of cross-validation splitting folds.
+    ///   - nSplits: Number of cross-validation splitting folds (at least 2).
     ///   - seed: Random number generator seed for deterministic reproducibility.
     /// - Throws: `ValidationError` or `SwiftMLError` if parameter grids are empty, folds are invalid, or evaluations fail.
     /// - Returns: The computed CrossValidationResult result instance.
@@ -181,6 +190,14 @@ public enum CrossValidator {
         nSplits: Int = 5,
         seed: Int = 42
     ) async throws -> CrossValidationResult {
+        guard nSplits >= 2 else {
+            throw ValidationError.invalidFoldCount(nSplits)
+        }
+        for t in targets {
+            guard t.isFinite else {
+                throw ValidationError.invalidParameter("Regression targets must be finite, found \(t)")
+            }
+        }
         let folds = try KFold(nSplits: nSplits, shuffle: true, seed: seed)
             .split(features: features, targets: targets)
 
@@ -200,12 +217,13 @@ public enum CrossValidator {
         return try CrossValidationResult(scores: scores)
     }
 
-    /// Generic cross-validation for any ClassifierEstimator.
+    /// Generic cross-validation for any ClassifierEstimator using Stratified K-Fold.
+    /// Preserves class label distributions across validation folds.
     /// - Parameters:
     ///   - estimatorFactory: Closure creating a fresh estimator instance for each fold.
     ///   - features: Feature matrix (N samples × D features).
-    ///   - targets: Target label array.
-    ///   - nSplits: Number of cross-validation folds.
+    ///   - targets: Target label array (must be whole-number class labels).
+    ///   - nSplits: Number of cross-validation folds (at least 2).
     ///   - seed: Random seed for fold shuffling.
     /// - Throws: Any error thrown during model fitting or evaluation.
     /// - Returns: Cross-validation result containing accuracy scores per fold.
@@ -216,7 +234,15 @@ public enum CrossValidator {
         nSplits: Int = 5,
         seed: Int = 42
     ) async throws -> CrossValidationResult {
-        let folds = try KFold(nSplits: nSplits, shuffle: true, seed: seed)
+        guard nSplits >= 2 else {
+            throw ValidationError.invalidFoldCount(nSplits)
+        }
+        for t in targets {
+            guard t.isFinite && abs(t.rounded() - t) < 1e-7 else {
+                throw ValidationError.invalidParameter("Classification targets must be finite whole-number class labels, found \(t)")
+            }
+        }
+        let folds = try StratifiedKFold(nSplits: nSplits, shuffle: true, seed: seed)
             .split(features: features, targets: targets)
 
         let scores: [Double] = try await withThrowingTaskGroup(of: Double.self) { group in
@@ -225,7 +251,7 @@ public enum CrossValidator {
                     let estimator = estimatorFactory()
                     try await estimator.fit(features: fold.trainFeatures, targets: fold.trainTargets)
                     let preds = try await estimator.predict(features: fold.valFeatures)
-                    let trueLabels = fold.valTargets.map { Int($0) }
+                    let trueLabels = fold.valTargets.map { Int($0.rounded()) }
                     return Metrics.accuracy(yTrue: trueLabels, yPred: preds)
                 }
             }
@@ -236,12 +262,12 @@ public enum CrossValidator {
         return try CrossValidationResult(scores: scores)
     }
 
-    /// Generic cross-validation for any RegressorEstimator.
+    /// Generic cross-validation for any RegressorEstimator using standard K-Fold.
     /// - Parameters:
     ///   - estimatorFactory: Closure creating a fresh estimator instance for each fold.
     ///   - features: Feature matrix (N samples × D features).
     ///   - targets: Continuous target value array.
-    ///   - nSplits: Number of cross-validation folds.
+    ///   - nSplits: Number of cross-validation folds (at least 2).
     ///   - seed: Random seed for fold shuffling.
     /// - Throws: Any error thrown during model fitting or evaluation.
     /// - Returns: Cross-validation result containing metrics per fold.
@@ -252,6 +278,14 @@ public enum CrossValidator {
         nSplits: Int = 5,
         seed: Int = 42
     ) async throws -> CrossValidationResult {
+        guard nSplits >= 2 else {
+            throw ValidationError.invalidFoldCount(nSplits)
+        }
+        for t in targets {
+            guard t.isFinite else {
+                throw ValidationError.invalidParameter("Regression targets must be finite, found \(t)")
+            }
+        }
         let folds = try KFold(nSplits: nSplits, shuffle: true, seed: seed)
             .split(features: features, targets: targets)
 

@@ -104,8 +104,8 @@ public enum TimeSeriesMetrics {
         seasonality: Int = 1
     ) -> Double {
         let scale = naiveInSampleMAE(trainingSeries: trainingSeries, seasonality: seasonality)
-        guard scale > 1e-12 else { return 0.0 }
         let maeVal = mae(actual: actual, forecast: forecast)
+        guard scale > 1e-12 else { return maeVal == 0.0 ? 0.0 : Double.nan }
         return maeVal / scale
     }
 
@@ -116,6 +116,12 @@ public enum TimeSeriesMetrics {
         guard !actual.isEmpty else { throw ForecastError.emptyTimeSeries }
         guard actual.count == forecast.count else {
             throw ForecastError.dimensionMismatch(expected: actual.count, got: forecast.count)
+        }
+        if actual.contains(where: { $0.isNaN }) || forecast.contains(where: { $0.isNaN }) {
+            throw ForecastError.containsNaN
+        }
+        if actual.contains(where: { $0.isInfinite }) || forecast.contains(where: { $0.isInfinite }) {
+            throw ForecastError.containsInfinity
         }
     }
 
@@ -151,6 +157,8 @@ public enum TimeSeriesMetrics {
         seasonality: Int = 1
     ) throws -> Double {
         guard !trainingSeries.isEmpty else { throw ForecastError.emptyTimeSeries }
+        if trainingSeries.contains(where: { $0.isNaN }) { throw ForecastError.containsNaN }
+        if trainingSeries.contains(where: { $0.isInfinite }) { throw ForecastError.containsInfinity }
         try validateInputs(actual: actual, forecast: forecast)
         let scale = naiveInSampleMAE(trainingSeries: trainingSeries, seasonality: seasonality)
         guard scale > 1e-12 else {

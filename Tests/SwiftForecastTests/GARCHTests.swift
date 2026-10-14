@@ -32,3 +32,28 @@ struct GARCHTests {
         }
     }
 }
+
+// MARK: - Input Finiteness & Horizon Validation
+
+extension GARCHTests {
+
+    @Test("GARCH rejects NaN in fit and non-positive forecast horizon")
+    func testGARCHInputFinitenessAndHorizon() async throws {
+        let garch = try GARCHModel(p: 1, q: 1)
+        var nanSeries = (0..<20).map { sin(Double($0)) }
+        nanSeries[5] = Double.nan
+
+        await #expect(throws: ForecastError.self) {
+            try await garch.fit(series: nanSeries)
+        }
+
+        let validSeries = (0..<20).map { sin(Double($0)) }
+        try await garch.fit(series: validSeries)
+        await #expect(throws: ForecastError.self) {
+            _ = try await garch.forecastVolatility(steps: 0)
+        }
+        await #expect(throws: ForecastError.self) {
+            _ = try await garch.forecastVolatility(steps: -2)
+        }
+    }
+}

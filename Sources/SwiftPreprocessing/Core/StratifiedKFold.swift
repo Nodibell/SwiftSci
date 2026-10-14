@@ -35,15 +35,20 @@ public struct StratifiedKFold: Sendable {
         }
         
         let n = targets.count
+        var uniqueClasses: [T] = []
         var classIndices: [T: [Int]] = [:]
         for (idx, target) in targets.enumerated() {
+            if classIndices[target] == nil {
+                uniqueClasses.append(target)
+            }
             classIndices[target, default: []].append(idx)
         }
         
         var rng: SeedableRandomNumberGenerator? = seed != nil ? SeedableRandomNumberGenerator(seed: seed!) : nil
         var foldTestIndices = [[Int]](repeating: [], count: nSplits)
         
-        for (_, indices) in classIndices {
+        for c in uniqueClasses {
+            guard let indices = classIndices[c] else { continue }
             var clsIdxs = indices
             if shuffle {
                 if rng != nil {

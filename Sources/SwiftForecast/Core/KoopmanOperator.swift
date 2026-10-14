@@ -60,6 +60,20 @@ public enum ObservableDictionary: Sendable {
                             }
                         }
                     }
+                    if degree >= 4 {
+                        for k in 4...degree {
+                            let comps = Self.generateCrossMonomials(dim: d, targetDegree: k)
+                            for comp in comps {
+                                var val = 1.0
+                                for idx in 0..<d {
+                                    if comp[idx] > 0 {
+                                        val *= pow(x[idx], Double(comp[idx]))
+                                    }
+                                }
+                                features.append(val)
+                            }
+                        }
+                    }
                 }
             }
             return features
@@ -96,6 +110,74 @@ public enum ObservableDictionary: Sendable {
             }
             return features
         }
+    }
+
+    /// Validates the dictionary configuration parameters.
+    public func validate() throws {
+        switch self {
+        case .identity:
+            break
+        case .polynomial(let degree, _):
+            guard degree >= 1 else {
+                throw ForecastError.invalidParameter("Polynomial degree must be >= 1, got \(degree)")
+            }
+        case .rbf(let centers, let gamma):
+            guard !centers.isEmpty else {
+                throw ForecastError.invalidParameter("RBF centers cannot be empty")
+            }
+            guard !gamma.isNaN && !gamma.isInfinite && gamma > 0.0 else {
+                throw ForecastError.invalidParameter("RBF gamma must be positive and finite, got \(gamma)")
+            }
+            for c in centers {
+                guard !c.isEmpty else {
+                    throw ForecastError.invalidParameter("RBF center vector cannot be empty")
+                }
+                if c.contains(where: { $0.isNaN }) {
+                    throw ForecastError.containsNaN
+                }
+                if c.contains(where: { $0.isInfinite }) {
+                    throw ForecastError.containsInfinity
+                }
+            }
+        case .fourier(let frequencies):
+            guard !frequencies.isEmpty else {
+                throw ForecastError.invalidParameter("Fourier frequencies cannot be empty")
+            }
+            if frequencies.contains(where: { $0.isNaN }) {
+                throw ForecastError.containsNaN
+            }
+            if frequencies.contains(where: { $0.isInfinite }) {
+                throw ForecastError.containsInfinity
+            }
+        case .combined(let dicts):
+            guard !dicts.isEmpty else {
+                throw ForecastError.invalidParameter("Combined dictionaries cannot be empty")
+            }
+            for d in dicts {
+                try d.validate()
+            }
+        }
+    }
+
+    private static func generateCrossMonomials(dim: Int, targetDegree: Int) -> [[Int]] {
+        var results: [[Int]] = []
+        var current = [Int](repeating: 0, count: dim)
+        func backtrack(index: Int, remainingDegree: Int, nonZeroCount: Int) {
+            if index == dim - 1 {
+                current[index] = remainingDegree
+                let totalNonZero = nonZeroCount + (remainingDegree > 0 ? 1 : 0)
+                if totalNonZero >= 2 {
+                    results.append(current)
+                }
+                return
+            }
+            for power in 0...remainingDegree {
+                current[index] = power
+                backtrack(index: index + 1, remainingDegree: remainingDegree - power, nonZeroCount: nonZeroCount + (power > 0 ? 1 : 0))
+            }
+        }
+        backtrack(index: 0, remainingDegree: targetDegree, nonZeroCount: 0)
+        return results
     }
 }
 
@@ -168,6 +250,7 @@ public actor KoopmanOperator {
     /// - Parameter trajectory: Array of multi-dimensional state vectors [[x_0], [x_1], ...].
     /// - Throws: `ForecastError` if trajectory is empty or matrix solve fails.
     public func fit(trajectory: [[Double]]) async throws {
+        try dictionary.validate()
         let N = trajectory.count
         guard N >= 2 else {
             throw ForecastError.insufficientLength(minimum: 2, got: N)
@@ -328,6 +411,12 @@ public actor KoopmanOperator {
             throw ForecastError.matrixDimensionMismatch(
                 expectedRows: stateDimension, expectedCols: 1, gotRows: initialState.count, gotCols: 1
             )
+        }
+        if initialState.contains(where: { $0.isNaN }) {
+            throw ForecastError.containsNaN
+        }
+        if initialState.contains(where: { $0.isInfinite }) {
+            throw ForecastError.containsInfinity
         }
 
         var results = [[Double]]()

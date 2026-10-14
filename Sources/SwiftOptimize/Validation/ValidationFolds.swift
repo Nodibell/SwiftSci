@@ -92,6 +92,9 @@ public struct StratifiedKFold: Sendable {
         // Group sample indices by integer class label
         var classIndices: [Int: [Int]] = [:]
         for (i, target) in targets.enumerated() {
+            guard target.isFinite && abs(target.rounded() - target) < 1e-7 else {
+                throw ValidationError.invalidParameter("StratifiedKFold requires finite whole-number class labels, found \(target)")
+            }
             let label = Int(target.rounded())
             classIndices[label, default: []].append(i)
         }

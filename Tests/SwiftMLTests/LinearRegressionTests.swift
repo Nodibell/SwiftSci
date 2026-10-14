@@ -87,4 +87,79 @@ struct LinearRegressionTests {
             _ = try await model.predict(features: [[1.0, 2.0]])
         }
     }
+
+    // MARK: - Input & Solver Validation
+
+    @Test("LinearRegression rejects non-finite features and targets across row array API")
+    func testFiniteValidationInRowAPI() async throws {
+        let nanFeatures = [[1.0, Double.nan], [2.0, 3.0]]
+        let cleanFeatures = [[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]]
+        let nanTargets = [1.0, Double.nan, 3.0]
+        let infFeatures = [[1.0, Double.infinity], [2.0, 3.0], [3.0, 4.0]]
+        let cleanTargets = [1.0, 2.0, 3.0]
+
+        let model = LinearRegression()
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(features: nanFeatures, targets: [1.0, 2.0])
+        }
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(features: infFeatures, targets: cleanTargets)
+        }
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(features: cleanFeatures, targets: nanTargets)
+        }
+
+        try await model.fit(features: cleanFeatures, targets: cleanTargets)
+        let preds = try await model.predict(features: [[1.0, Double.nan]])
+        #expect(preds[0].isNaN)
+    }
+
+    @Test("LinearRegression exposes solverUsed and fallbackReason")
+    func testSolverUsedAndFallback() async throws {
+        // Overdetermined clean system on CPU -> analytical OLS
+        let X = [[1.0], [2.0], [3.0], [4.0]]
+        let y = [2.0, 4.0, 6.0, 8.0]
+        let olsModel = LinearRegression(device: .cpu)
+        try await olsModel.fit(features: X, targets: y)
+        let solver1 = await olsModel.solverUsed
+        let fallback1 = await olsModel.fallbackReason
+        #expect(solver1 == .analyticalOLS)
+        #expect(fallback1 == nil)
+
+        // Underdetermined system (numSamples < numFeatures + 1): 2 samples, 2 features (requires 3 samples for OLS)
+        let underX = [[1.0, 2.0], [3.0, 4.0]]
+        let underY = [5.0, 11.0]
+        let gdModel = LinearRegression(device: .cpu)
+        try await gdModel.fit(features: underX, targets: underY, learningRate: 0.01, epochs: 100)
+        let solver2 = await gdModel.solverUsed
+        let fallback2 = await gdModel.fallbackReason
+        #expect(solver2 == .gradientDescent)
+        #expect(fallback2 != nil)
+    }
+
+    @Test("LinearRegression validates optimization parameters")
+    func testParameterValidation() async throws {
+        let X = [[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]]
+        let y = [3.0, 5.0, 7.0]
+
+        let model = LinearRegression()
+        // Invalid learning rate
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(features: X, targets: y, learningRate: 0.0, epochs: 100)
+        }
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(features: X, targets: y, learningRate: -0.01, epochs: 100)
+        }
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(features: X, targets: y, learningRate: Float.nan, epochs: 100)
+        }
+
+        // Invalid epochs
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(features: X, targets: y, learningRate: 0.01, epochs: 0)
+        }
+        await #expect(throws: SwiftMLError.self) {
+            try await model.fit(features: X, targets: y, learningRate: 0.01, epochs: -10)
+        }
+    }
 }

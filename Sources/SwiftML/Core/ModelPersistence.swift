@@ -65,6 +65,8 @@ public struct RandomForestModelState: Codable, Sendable {
     public let numFeatures: Int
     /// The number of unique classes (classifiers only).
     public let numClasses: Int?
+    /// The observed unique class labels (classifiers only).
+    public let classes: [Double]?
     /// The max features per split.
     public let maxFeatures: Int?
     /// The max bootstrap samples per tree.
@@ -81,6 +83,7 @@ public struct RandomForestModelState: Codable, Sendable {
         trees: [[FlatTreeNode]],
         numFeatures: Int,
         numClasses: Int? = nil,
+        classes: [Double]? = nil,
         maxFeatures: Int? = nil,
         maxSamples: Int? = nil,
         criterion: String? = nil,
@@ -92,6 +95,7 @@ public struct RandomForestModelState: Codable, Sendable {
         self.trees = trees
         self.numFeatures = numFeatures
         self.numClasses = numClasses
+        self.classes = classes
         self.maxFeatures = maxFeatures
         self.maxSamples = maxSamples
         self.criterion = criterion
@@ -222,6 +226,7 @@ extension RandomForestClassifier {
         let data = try Data(contentsOf: url)
         let state = try JSONDecoder().decode(RandomForestModelState.self, from: data)
         let crit: SplitCriterion = state.criterion == "entropy" ? .entropy : .gini
+        let resolvedClasses = state.classes ?? (state.numClasses != nil ? (0..<state.numClasses!).map { Double($0) } : [])
         return RandomForestClassifier(
             nEstimators: state.nEstimators,
             maxDepth: state.maxDepth,
@@ -232,7 +237,8 @@ extension RandomForestClassifier {
             randomState: state.randomState,
             trees: state.trees,
             numFeatures: state.numFeatures,
-            numClasses: state.numClasses ?? 2
+            numClasses: state.numClasses ?? resolvedClasses.count,
+            classes: resolvedClasses
         )
     }
 }

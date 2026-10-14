@@ -210,4 +210,35 @@ final class CoreMLPipelineTests: XCTestCase {
             XCTAssertEqual(coremlInt, Int64(swiftPred))
         }
     }
+
+    func testRandomForestClassifierArbitraryLabelsCoreMLParity() async throws {
+        let rf = RandomForestClassifier(nEstimators: 5, maxDepth: 4, randomState: 42)
+        let X = [
+            [0.1, 0.2],
+            [0.2, 0.1],
+            [5.0, 5.1],
+            [5.2, 4.9],
+            [10.0, 10.2],
+            [10.1, 9.9]
+        ]
+        let y = [10.0, 10.0, 50.0, 50.0, 100.0, 100.0]
+        try await rf.fit(features: X, targets: y)
+
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("RFArbitrary_\(UUID().uuidString).mlmodel")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try await rf.writeCoreML(to: url, featureNames: ["f1", "f2"], outputName: "label")
+
+        let compiled = try await MLModel.compileModel(at: url)
+        defer { try? FileManager.default.removeItem(at: compiled) }
+
+        let model = try MLModel(contentsOf: compiled)
+        for row in X {
+            let swiftPred: Int = try await rf.predict(features: [row])[0]
+            let provider = try MLDictionaryFeatureProvider(dictionary: ["f1": row[0], "f2": row[1]])
+            let coremlResult = try await model.prediction(from: provider)
+            let coremlInt: Int64 = coremlResult.featureValue(for: "label")?.int64Value ?? -1
+            XCTAssertEqual(coremlInt, Int64(swiftPred))
+            XCTAssertTrue([10, 50, 100].contains(coremlInt))
+        }
+    }
 }

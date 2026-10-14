@@ -420,6 +420,40 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         return features.map { predictSampleProbs($0, nodes: nodes, numClasses: nClasses) }
     }
     
+    /// Creates a new restored DecisionTreeClassifier instance from trained state.
+    public init(
+        maxDepth: Int,
+        minSamplesSplit: Int = 2,
+        criterion: SplitCriterion = .gini,
+        nodes: [FlatTreeNode],
+        numFeatures: Int,
+        classes: [Double] = []
+    ) {
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.criterion = criterion
+        self.nodes = nodes
+        self.numFeatures = numFeatures
+        self.classes = classes
+        var mapping = [Double: Int]()
+        for (idx, c) in classes.enumerated() {
+            mapping[c] = idx
+        }
+        self.classToIndex = mapping
+    }
+
+    /// Returns the fitted model state for serialization.
+    public func getModelState() -> DecisionTreeModelState {
+        return DecisionTreeModelState(
+            maxDepth: maxDepth,
+            minSamplesSplit: minSamplesSplit,
+            nodes: nodes,
+            numFeatures: numFeatures,
+            classes: classes,
+            criterion: criterion == .entropy ? "entropy" : "gini"
+        )
+    }
+
     /// Get tree nodes.
     /// - Returns: A `[FlatTreeNode]` result.
     public func getTreeNodes() -> [FlatTreeNode] {
@@ -657,6 +691,31 @@ public actor DecisionTreeRegressor: RegressorEstimator {
             return false
         }
         _ = pruneNode(0)
+    }
+
+    /// Creates a new restored DecisionTreeRegressor instance from trained state.
+    public init(
+        maxDepth: Int,
+        minSamplesSplit: Int = 2,
+        nodes: [FlatTreeNode],
+        numFeatures: Int
+    ) {
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.nodes = nodes
+        self.numFeatures = numFeatures
+    }
+
+    /// Returns the fitted model state for serialization.
+    public func getModelState() -> DecisionTreeModelState {
+        return DecisionTreeModelState(
+            maxDepth: maxDepth,
+            minSamplesSplit: minSamplesSplit,
+            nodes: nodes,
+            numFeatures: numFeatures,
+            classes: nil,
+            criterion: "mse"
+        )
     }
 
     /// Get tree nodes.

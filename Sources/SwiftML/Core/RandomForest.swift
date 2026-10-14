@@ -217,6 +217,47 @@ public actor RandomForestClassifier: ClassifierEstimator {
         }
     }
 
+    /// Creates a new restored RandomForestClassifier instance from trained state.
+    public init(
+        nEstimators: Int,
+        maxDepth: Int,
+        minSamplesSplit: Int = 2,
+        maxFeatures: Int? = nil,
+        maxSamples: Int? = nil,
+        criterion: SplitCriterion = .gini,
+        randomState: Int? = nil,
+        trees: [[FlatTreeNode]],
+        numFeatures: Int,
+        numClasses: Int
+    ) {
+        self.nEstimators = nEstimators
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.maxFeatures = maxFeatures
+        self.maxSamples = maxSamples
+        self.criterion = criterion
+        self.randomState = randomState
+        self.trees = trees
+        self.numFeatures = numFeatures
+        self.numClasses = numClasses
+    }
+
+    /// Returns the fitted model state for serialization.
+    public func getModelState() -> RandomForestModelState {
+        return RandomForestModelState(
+            nEstimators: nEstimators,
+            maxDepth: maxDepth,
+            minSamplesSplit: minSamplesSplit,
+            trees: trees,
+            numFeatures: numFeatures,
+            numClasses: numClasses,
+            maxFeatures: maxFeatures,
+            maxSamples: maxSamples,
+            criterion: criterion == .entropy ? "entropy" : "gini",
+            randomState: randomState
+        )
+    }
+
     /// Returns the fitted forest as an array of per-tree `FlatTreeNode` arrays.
     ///
     /// Used by ``CoreMLExportable`` conformance to build binary `.mlmodel` artifacts.
@@ -452,6 +493,43 @@ public actor RandomForestRegressor: RegressorEstimator {
             let preds = trees.map { RandomForestRegressor.predictSample(sample, nodes: $0) }
             return preds.mean()
         }
+    }
+
+    /// Creates a new restored RandomForestRegressor instance from trained state.
+    public init(
+        nEstimators: Int,
+        maxDepth: Int,
+        minSamplesSplit: Int = 2,
+        maxFeatures: Int? = nil,
+        maxSamples: Int? = nil,
+        randomState: Int? = nil,
+        trees: [[FlatTreeNode]],
+        numFeatures: Int
+    ) {
+        self.nEstimators = nEstimators
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.maxFeatures = maxFeatures
+        self.maxSamples = maxSamples
+        self.randomState = randomState
+        self.trees = trees
+        self.numFeatures = numFeatures
+    }
+
+    /// Returns the fitted model state for serialization.
+    public func getModelState() -> RandomForestModelState {
+        return RandomForestModelState(
+            nEstimators: nEstimators,
+            maxDepth: maxDepth,
+            minSamplesSplit: minSamplesSplit,
+            trees: trees,
+            numFeatures: numFeatures,
+            numClasses: nil,
+            maxFeatures: maxFeatures,
+            maxSamples: maxSamples,
+            criterion: "mse",
+            randomState: randomState
+        )
     }
 
     /// Returns the fitted forest as an array of per-tree `FlatTreeNode` arrays.

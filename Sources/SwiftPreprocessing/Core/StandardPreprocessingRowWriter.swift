@@ -60,8 +60,9 @@ private func fillRows<T: BinaryFloatingPoint>(input: PreparedNumericBatch, rows:
         let count = min(capacity, rows.count - start)
         for c in 0..<width {
             input.columns[c].values.withUnsafeBufferPointer { column in
+                let source = column.baseAddress!.advanced(by: rows.lowerBound + start)
                 for r in 0..<count {
-                    let value = column[rows.lowerBound + start + r]
+                    let value = source[r]
                     buffer[r * width + c] = value.isNaN ? replacements[c] : value
                 }
             }

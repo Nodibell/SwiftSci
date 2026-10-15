@@ -7,7 +7,8 @@ func normalizePreprocessingTile<T: BinaryFloatingPoint>(buffer: UnsafeMutableBuf
         let row = buffer.baseAddress!.advanced(by: r * width)
         vDSP_vaddD(row, 1, negativeMeans, 1, &shifted, 1, vDSP_Length(width))
         vDSP_vdivD(deviations, 1, shifted, 1, &normalized, 1, vDSP_Length(width))
-        for c in 0..<width { output[(destinationRow + r) * stride + c] = T(normalized[c]) }
+        let destination = output.baseAddress!.advanced(by: (destinationRow + r) * stride)
+        for c in 0..<width { destination[c] = T(normalized[c]) }
     }
 }
 

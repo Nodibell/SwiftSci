@@ -62,4 +62,27 @@ struct CoreMLPreparationFiniteTests {
             #expect(await poolBudget.reservedBytes == 0)
         }
     }
+
+    @available(macOS 15, *)
+    @Test(arguments: [2, 4, 8]) func rejectsNaNProducedByScaling(bytes: Int) async throws {
+        try await withPreparedMatrixModel(bytes) { url in
+            let names = ["x", "y"]
+            let training = try PreparedNumericBatch(columnNames: names, columns: [[.infinity, .infinity], [-1, 1]])
+            let plan = try StandardPreprocessingPlan(training: training)
+            let source = try PreparedNumericBatch(columnNames: names, columns: [[1, 1, 1], [1, 1, 1]])
+            let inputBudget = try MemoryBudget(limit: 1_048_576)
+            let poolBudget = try MemoryBudget(limit: 2_097_152)
+            let config = try CoreMLMatrixPool.Configuration(retainedBytes: 1_048_576, requestBytes: 131_072)
+            try await CoreMLMatrixPool.withPool(compiledModelURL: url, inputColumns: names,
+                outputName: "result", computeUnits: .cpuOnly, budget: poolBudget, configuration: config) { pool in
+                let preparation = try await pool.inputPreparation()
+                await #expect(throws: SwiftMLError.self) {
+                    try await preparation.prepare(source, preprocessing: plan, budget: inputBudget)
+                }
+                #expect(await inputBudget.reservedBytes == 0)
+            }
+            #expect(await poolBudget.reservedBytes == 0)
+        }
+    }
+
 }

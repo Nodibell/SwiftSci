@@ -120,10 +120,12 @@ extension DecisionTreeClassifier: CoreMLExportable {
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {
         let nodes = getTreeNodes()
         guard !nodes.isEmpty else { throw SwiftMLError.modelNotFitted }
+        let classLabels = !classes.isEmpty ? classes.map { Int64($0) } : [0, 1]
         return CoreMLExporter.exportBinaryDecisionTreeClassifier(
-            state: DecisionTreeModelState(maxDepth: 0, minSamplesSplit: 2, nodes: nodes, numFeatures: featureNames.count),
+            state: DecisionTreeModelState(maxDepth: 0, minSamplesSplit: 2, nodes: nodes, numFeatures: featureNames.count, classes: classes),
             featureNames: featureNames,
-            outputName: outputName
+            outputName: outputName,
+            classLabels: classLabels
         )
     }
 }
@@ -171,12 +173,16 @@ extension RandomForestClassifier: CoreMLExportable {
             maxDepth: 0,
             minSamplesSplit: 2,
             trees: treesNodes,
-            numFeatures: nf
+            numFeatures: nf,
+            numClasses: numClasses,
+            classes: classes
         )
+        let classLabels = !classes.isEmpty ? classes.map { Int64($0) } : (0..<Int64(max(numClasses, 2))).map { $0 }
         return CoreMLExporter.exportBinaryRandomForestClassifier(
             state: state,
             featureNames: names,
-            outputName: outputName
+            outputName: outputName,
+            classLabels: classLabels
         )
     }
 }

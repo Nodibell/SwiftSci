@@ -46,7 +46,12 @@ public actor RandomForestClassifier: ClassifierEstimator {
     /// The collection of fitted trees as flat node arrays.
     public var flatTrees: [[FlatTreeNode]] { trees }
     
-    private var numClasses: Int = 0
+    /// The sorted unique class labels observed during training.
+    public private(set) var classes: [Double] = []
+    private var classToIndex: [Double: Int] = [:]
+
+    /// The number of classes observed during training.
+    public private(set) var numClasses: Int = 0
     private var numFeatures: Int = 0
 
     /// The feature importances.
@@ -132,8 +137,15 @@ public actor RandomForestClassifier: ClassifierEstimator {
             throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
 
-        numClasses = Int(targets.max() ?? 0) + 1
-        numFeatures = features[0].count
+        let uniqueClasses = Array(Set(targets)).sorted()
+        self.classes = uniqueClasses
+        var mapping = [Double: Int]()
+        for (idx, c) in uniqueClasses.enumerated() {
+            mapping[c] = idx
+        }
+        self.classToIndex = mapping
+        self.numClasses = uniqueClasses.count
+        self.numFeatures = features[0].count
         let maxDepth = self.maxDepth
         let maxFeatures = self.maxFeatures ?? max(1, Int(sqrt(Double(numFeatures))))
         let maxSamples = self.maxSamples ?? (features.count > 10_000 ? 10_000 : features.count)
@@ -197,24 +209,105 @@ public actor RandomForestClassifier: ClassifierEstimator {
         }
     }
 
-    /// Predict probability.
+    /// Predicts empirical class probability distributions across classes ordered by ``classes``.
+    ///
+    /// The returned 2D array has shape `[N, C]`, where `N` is the number of input samples and `C` is the
+    /// number of unique classes observed during training (or restored from state). Column `i` corresponds
+    /// to the empirical probability of observing class label `classes[i]`, exactly matching the contract
+    /// of ``DecisionTreeClassifier/predictProbability(features:)`` and ``ClassifierEstimator``.
+    ///
     /// - Parameters:
-    ///   - features: The features.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `[[Double]]` result.
+    ///   - features: The features matrix of shape `[N, P]`.
+    /// - Throws: `SwiftMLError.notFitted` if the model is not fitted.
+    /// - Returns: A `[[Double]]` probability matrix of shape `[N, C]` ordered by sorted class labels in ``classes``.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard !trees.isEmpty else { throw SwiftMLError.notFitted }
+        let effectiveClassCount = !classes.isEmpty ? classes.count : numClasses
         return features.map { sample in
-            var votes = [Double](repeating: 0, count: numClasses)
+            var votes = [Double](repeating: 0, count: effectiveClassCount)
             for treeNodes in trees {
-                let pred = Int(RandomForestClassifier.predictSample(sample, nodes: treeNodes))
-                if pred < votes.count {
-                    votes[pred] += 1.0
+                let pred = RandomForestClassifier.predictSample(sample, nodes: treeNodes)
+                if let idx = classToIndex[pred], idx < votes.count {
+                    votes[idx] += 1.0
+                } else {
+                    let intPred = Int(pred)
+                    if intPred >= 0 && intPred < votes.count {
+                        votes[intPred] += 1.0
+                    }
                 }
             }
             let total = Double(trees.count)
-            return votes.map { $0 / total }
+            return total > 0 ? votes.map { $0 / total } : votes
         }
+    }
+
+    /// Creates a new restored RandomForestClassifier instance from trained state.
+    /// - Parameters:
+    ///   - nEstimators: The number of trees in the forest.
+    ///   - maxDepth: The maximum depth of each decision tree.
+    ///   - minSamplesSplit: The minimum number of samples required to split an internal node.
+    ///   - maxFeatures: The number of features to consider when looking for the best split.
+    ///   - maxSamples: Maximum bootstrap samples per tree.
+    ///   - criterion: The split criterion (`.gini` or `.entropy`).
+    ///   - randomState: Controls random seed for bootstrapping and feature selection.
+    ///   - trees: The fitted decision tree ensemble as flat node arrays.
+    ///   - numFeatures: Number of features observed during training.
+    ///   - numClasses: The number of unique classes.
+    ///   - classes: The sorted unique class labels observed during training.
+    public init(
+        nEstimators: Int,
+        maxDepth: Int,
+        minSamplesSplit: Int = 2,
+        maxFeatures: Int? = nil,
+        maxSamples: Int? = nil,
+        criterion: SplitCriterion = .gini,
+        randomState: Int? = nil,
+        trees: [[FlatTreeNode]],
+        numFeatures: Int,
+        numClasses: Int,
+        classes: [Double] = []
+    ) {
+        self.nEstimators = nEstimators
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.maxFeatures = maxFeatures
+        self.maxSamples = maxSamples
+        self.criterion = criterion
+        self.randomState = randomState
+        self.trees = trees
+        self.numFeatures = numFeatures
+        let resolvedClasses: [Double]
+        if !classes.isEmpty {
+            resolvedClasses = classes
+        } else if numClasses > 0 {
+            resolvedClasses = (0..<numClasses).map { Double($0) }
+        } else {
+            resolvedClasses = []
+        }
+        self.classes = resolvedClasses
+        self.numClasses = resolvedClasses.count
+        var mapping = [Double: Int]()
+        for (idx, c) in resolvedClasses.enumerated() {
+            mapping[c] = idx
+        }
+        self.classToIndex = mapping
+    }
+
+    /// Returns the fitted model state for serialization.
+    public func getModelState() -> RandomForestModelState {
+        return RandomForestModelState(
+            nEstimators: nEstimators,
+            maxDepth: maxDepth,
+            minSamplesSplit: minSamplesSplit,
+            trees: trees,
+            numFeatures: numFeatures,
+            numClasses: numClasses,
+            classes: classes,
+            maxFeatures: maxFeatures,
+            maxSamples: maxSamples,
+            criterion: criterion == .entropy ? "entropy" : "gini",
+            randomState: randomState
+        )
     }
 
     /// Returns the fitted forest as an array of per-tree `FlatTreeNode` arrays.
@@ -452,6 +545,43 @@ public actor RandomForestRegressor: RegressorEstimator {
             let preds = trees.map { RandomForestRegressor.predictSample(sample, nodes: $0) }
             return preds.mean()
         }
+    }
+
+    /// Creates a new restored RandomForestRegressor instance from trained state.
+    public init(
+        nEstimators: Int,
+        maxDepth: Int,
+        minSamplesSplit: Int = 2,
+        maxFeatures: Int? = nil,
+        maxSamples: Int? = nil,
+        randomState: Int? = nil,
+        trees: [[FlatTreeNode]],
+        numFeatures: Int
+    ) {
+        self.nEstimators = nEstimators
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.maxFeatures = maxFeatures
+        self.maxSamples = maxSamples
+        self.randomState = randomState
+        self.trees = trees
+        self.numFeatures = numFeatures
+    }
+
+    /// Returns the fitted model state for serialization.
+    public func getModelState() -> RandomForestModelState {
+        return RandomForestModelState(
+            nEstimators: nEstimators,
+            maxDepth: maxDepth,
+            minSamplesSplit: minSamplesSplit,
+            trees: trees,
+            numFeatures: numFeatures,
+            numClasses: nil,
+            maxFeatures: maxFeatures,
+            maxSamples: maxSamples,
+            criterion: "mse",
+            randomState: randomState
+        )
     }
 
     /// Returns the fitted forest as an array of per-tree `FlatTreeNode` arrays.

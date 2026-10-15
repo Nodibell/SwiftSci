@@ -352,7 +352,8 @@ internal func buildTreeEnsembleClassifierModel(
             if node.isLeaf {
                 n.writeVarintField(fieldNumber: TreeNodeField.nodeBehavior, value: TreeNodeBehavior.leafNode.rawValue)
                 var leaf = ProtobufWriter()
-                let evalIdx = min(max(0, Int(node.value)), numClasses - 1)
+                let targetInt = Int64(node.value)
+                let evalIdx = classLabels.firstIndex(of: targetInt) ?? min(max(0, Int(node.value)), numClasses - 1)
                 leaf.writeVarintField(fieldNumber: EvaluationInfoField.evaluationIndex, value: UInt64(evalIdx))
                 leaf.writeDoubleField(fieldNumber: EvaluationInfoField.evaluationValue, value: 1.0)
                 n.writeBytesField(fieldNumber: TreeNodeField.evaluationInfo, bytes: leaf.data)

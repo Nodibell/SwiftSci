@@ -29,6 +29,26 @@ public struct DecisionTreeModelState: Codable, Sendable {
     public let nodes: [FlatTreeNode]
     /// The num features.
     public let numFeatures: Int
+    /// The observed unique classes (classifiers only).
+    public let classes: [Double]?
+    /// The splitting impurity criterion ("gini", "entropy", "mse").
+    public let criterion: String?
+
+    public init(
+        maxDepth: Int,
+        minSamplesSplit: Int,
+        nodes: [FlatTreeNode],
+        numFeatures: Int,
+        classes: [Double]? = nil,
+        criterion: String? = nil
+    ) {
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.nodes = nodes
+        self.numFeatures = numFeatures
+        self.classes = classes
+        self.criterion = criterion
+    }
 }
 
 /// Represents random forest model state.
@@ -43,6 +63,44 @@ public struct RandomForestModelState: Codable, Sendable {
     public let trees: [[FlatTreeNode]]
     /// The num features.
     public let numFeatures: Int
+    /// The number of unique classes (classifiers only).
+    public let numClasses: Int?
+    /// The observed unique class labels (classifiers only).
+    public let classes: [Double]?
+    /// The max features per split.
+    public let maxFeatures: Int?
+    /// The max bootstrap samples per tree.
+    public let maxSamples: Int?
+    /// The splitting criterion ("gini", "entropy", "mse").
+    public let criterion: String?
+    /// The random seed.
+    public let randomState: Int?
+
+    public init(
+        nEstimators: Int,
+        maxDepth: Int,
+        minSamplesSplit: Int,
+        trees: [[FlatTreeNode]],
+        numFeatures: Int,
+        numClasses: Int? = nil,
+        classes: [Double]? = nil,
+        maxFeatures: Int? = nil,
+        maxSamples: Int? = nil,
+        criterion: String? = nil,
+        randomState: Int? = nil
+    ) {
+        self.nEstimators = nEstimators
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.trees = trees
+        self.numFeatures = numFeatures
+        self.numClasses = numClasses
+        self.classes = classes
+        self.maxFeatures = maxFeatures
+        self.maxSamples = maxSamples
+        self.criterion = criterion
+        self.randomState = randomState
+    }
 }
 
 // MARK: - Model Persistence Extensions
@@ -100,3 +158,116 @@ extension LogisticRegression {
         return LogisticRegression(weights: state.weights, bias: state.bias, device: device)
     }
 }
+
+extension DecisionTreeClassifier {
+    /// Saves trained Decision Tree Classifier parameters and tree structure to a JSON file URL.
+    /// - Parameter url: Target file `URL`.
+    public func save(to url: URL) async throws {
+        let state = getModelState()
+        guard !state.nodes.isEmpty else { throw SwiftMLError.notFitted }
+        let data = try JSONEncoder().encode(state)
+        try data.write(to: url)
+    }
+
+    /// Loads a trained Decision Tree Classifier from a JSON file URL.
+    /// - Parameter url: Source file `URL`.
+    public static func load(from url: URL) throws -> DecisionTreeClassifier {
+        let data = try Data(contentsOf: url)
+        let state = try JSONDecoder().decode(DecisionTreeModelState.self, from: data)
+        let crit: SplitCriterion = state.criterion == "entropy" ? .entropy : .gini
+        return DecisionTreeClassifier(
+            maxDepth: state.maxDepth,
+            minSamplesSplit: state.minSamplesSplit,
+            criterion: crit,
+            nodes: state.nodes,
+            numFeatures: state.numFeatures,
+            classes: state.classes ?? []
+        )
+    }
+}
+
+extension DecisionTreeRegressor {
+    /// Saves trained Decision Tree Regressor parameters and tree structure to a JSON file URL.
+    /// - Parameter url: Target file `URL`.
+    public func save(to url: URL) async throws {
+        let state = getModelState()
+        guard !state.nodes.isEmpty else { throw SwiftMLError.notFitted }
+        let data = try JSONEncoder().encode(state)
+        try data.write(to: url)
+    }
+
+    /// Loads a trained Decision Tree Regressor from a JSON file URL.
+    /// - Parameter url: Source file `URL`.
+    public static func load(from url: URL) throws -> DecisionTreeRegressor {
+        let data = try Data(contentsOf: url)
+        let state = try JSONDecoder().decode(DecisionTreeModelState.self, from: data)
+        return DecisionTreeRegressor(
+            maxDepth: state.maxDepth,
+            minSamplesSplit: state.minSamplesSplit,
+            nodes: state.nodes,
+            numFeatures: state.numFeatures
+        )
+    }
+}
+
+extension RandomForestClassifier {
+    /// Saves trained Random Forest Classifier parameters and tree ensemble to a JSON file URL.
+    /// - Parameter url: Target file `URL`.
+    public func save(to url: URL) async throws {
+        let state = getModelState()
+        guard !state.trees.isEmpty else { throw SwiftMLError.notFitted }
+        let data = try JSONEncoder().encode(state)
+        try data.write(to: url)
+    }
+
+    /// Loads a trained Random Forest Classifier from a JSON file URL.
+    /// - Parameter url: Source file `URL`.
+    public static func load(from url: URL) throws -> RandomForestClassifier {
+        let data = try Data(contentsOf: url)
+        let state = try JSONDecoder().decode(RandomForestModelState.self, from: data)
+        let crit: SplitCriterion = state.criterion == "entropy" ? .entropy : .gini
+        let resolvedClasses = state.classes ?? (state.numClasses != nil ? (0..<state.numClasses!).map { Double($0) } : [])
+        return RandomForestClassifier(
+            nEstimators: state.nEstimators,
+            maxDepth: state.maxDepth,
+            minSamplesSplit: state.minSamplesSplit,
+            maxFeatures: state.maxFeatures,
+            maxSamples: state.maxSamples,
+            criterion: crit,
+            randomState: state.randomState,
+            trees: state.trees,
+            numFeatures: state.numFeatures,
+            numClasses: state.numClasses ?? resolvedClasses.count,
+            classes: resolvedClasses
+        )
+    }
+}
+
+extension RandomForestRegressor {
+    /// Saves trained Random Forest Regressor parameters and tree ensemble to a JSON file URL.
+    /// - Parameter url: Target file `URL`.
+    public func save(to url: URL) async throws {
+        let state = getModelState()
+        guard !state.trees.isEmpty else { throw SwiftMLError.notFitted }
+        let data = try JSONEncoder().encode(state)
+        try data.write(to: url)
+    }
+
+    /// Loads a trained Random Forest Regressor from a JSON file URL.
+    /// - Parameter url: Source file `URL`.
+    public static func load(from url: URL) throws -> RandomForestRegressor {
+        let data = try Data(contentsOf: url)
+        let state = try JSONDecoder().decode(RandomForestModelState.self, from: data)
+        return RandomForestRegressor(
+            nEstimators: state.nEstimators,
+            maxDepth: state.maxDepth,
+            minSamplesSplit: state.minSamplesSplit,
+            maxFeatures: state.maxFeatures,
+            maxSamples: state.maxSamples,
+            randomState: state.randomState,
+            trees: state.trees,
+            numFeatures: state.numFeatures
+        )
+    }
+}
+

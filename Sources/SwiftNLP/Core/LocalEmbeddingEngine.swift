@@ -22,7 +22,7 @@ import Accelerate
 /// let embedding = engine.embed("Apple Silicon Machine Learning")
 /// print(embedding.count) // 128
 /// ```
-public final class LocalEmbeddingEngine: Sendable {
+public final class LocalEmbeddingEngine: SentenceEmbeddingProvider, Sendable {
 
     /// Dimensionality of the generated dense embedding vectors.
     public let dimension: Int
@@ -100,6 +100,14 @@ public final class LocalEmbeddingEngine: Sendable {
     /// - Parameter texts: Array of input strings.
     /// - Returns: Array of dense embedding vectors corresponding to the input order.
     public func embedBatch(_ texts: [String]) -> [[Double]] {
+        texts.map { embed($0) }
+    }
+
+    /// Computes dense \(L_2\)-normalized embedding vectors asynchronously for a batch of text strings.
+    ///
+    /// - Parameter texts: Array of input strings.
+    /// - Returns: Array of dense embedding vectors corresponding to the input order.
+    public func embedBatch(_ texts: [String]) async throws -> [[Double]] {
         texts.map { embed($0) }
     }
 }

@@ -69,6 +69,30 @@ public enum TimeSeriesMetrics {
         return (sum / Double(actual.count)) * 100.0
     }
 
+    /// Weighted Absolute Percentage Error (WAPE) expressed in percent [0, inf).
+    ///
+    /// Evaluates volume-weighted relative error across the forecast horizon:
+    /// $$\text{WAPE} = \frac{\sum_{t=1}^n |y_t - \hat{y}_t|}{\sum_{t=1}^n |y_t|} \times 100\%$$
+    /// - Parameters:
+    ///   - actual: Ground-truth target values.
+    ///   - forecast: Predicted forecast values.
+    ///   - epsilon: Threshold below which sum of actuals is treated as zero to prevent division by zero.
+    /// - Returns: WAPE scalar value in percent.
+    public static func wape(actual: [Double], forecast: [Double], epsilon: Double = 1e-12) -> Double {
+        guard !actual.isEmpty, actual.count == forecast.count else { return 0.0 }
+        var diff = [Double](repeating: 0.0, count: actual.count)
+        vDSP.subtract(actual, forecast, result: &diff)
+        
+        let totalAbsDiff = vDSP.sumOfMagnitudes(diff)
+        let totalActual = vDSP.sumOfMagnitudes(actual)
+        
+        guard totalActual > epsilon else {
+            return totalAbsDiff == 0.0 ? 0.0 : 100.0
+        }
+        return (totalAbsDiff / totalActual) * 100.0
+    }
+
+
     /// Computes the in-sample mean absolute error of a 1-step (or s-step seasonal) naive persistence forecast.
     ///
     /// This serves as the canonical scaling factor in the denominator of MASE (Hyndman & Koehler, 2006):
@@ -147,6 +171,13 @@ public enum TimeSeriesMetrics {
     public static func evaluateSMAPE(actual: [Double], forecast: [Double], epsilon: Double = 1e-12) throws -> Double {
         try validateInputs(actual: actual, forecast: forecast)
         return smape(actual: actual, forecast: forecast, epsilon: epsilon)
+    }
+
+    /// Evaluates Weighted Absolute Percentage Error (WAPE), throwing on empty inputs, length mismatches,
+    /// or NaN/Infinity.
+    public static func evaluateWAPE(actual: [Double], forecast: [Double], epsilon: Double = 1e-12) throws -> Double {
+        try validateInputs(actual: actual, forecast: forecast)
+        return wape(actual: actual, forecast: forecast, epsilon: epsilon)
     }
 
     /// Evaluates Mean Absolute Scaled Error (MASE), throwing on empty inputs or length mismatches.

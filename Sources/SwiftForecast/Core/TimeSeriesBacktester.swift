@@ -28,6 +28,8 @@ public struct BacktestFold: Sendable, Codable, Equatable {
     public let smape: Double
     /// Fold Mean Absolute Scaled Error relative to this fold's specific training history (Hyndman & Koehler, 2006).
     public let mase: Double
+    /// Fold Weighted Absolute Percentage Error expressed in percent [0, inf).
+    public let wape: Double
 
     /// Initializes a new BacktestFold instance.
     public init(
@@ -39,7 +41,8 @@ public struct BacktestFold: Sendable, Codable, Equatable {
         mae: Double,
         mape: Double,
         smape: Double,
-        mase: Double = 0.0
+        mase: Double = 0.0,
+        wape: Double = 0.0
     ) {
         self.originIndex = originIndex
         self.horizon = horizon
@@ -50,6 +53,7 @@ public struct BacktestFold: Sendable, Codable, Equatable {
         self.mape = mape
         self.smape = smape
         self.mase = mase
+        self.wape = wape
     }
 }
 
@@ -67,6 +71,8 @@ public struct TimeSeriesBacktestResult: Sendable, Codable, Equatable {
     public let smape: Double
     /// Mean out-of-sample MASE averaged across all evaluated folds.
     public let mase: Double
+    /// Aggregate out-of-sample WAPE in percent.
+    public let wape: Double
     /// Flat dictionary of summary evaluation metrics for reporting.
     public let metrics: [String: Double]
 
@@ -78,6 +84,7 @@ public struct TimeSeriesBacktestResult: Sendable, Codable, Equatable {
         mape: Double,
         smape: Double,
         mase: Double,
+        wape: Double = 0.0,
         metrics: [String: Double]? = nil
     ) {
         self.folds = folds
@@ -86,6 +93,7 @@ public struct TimeSeriesBacktestResult: Sendable, Codable, Equatable {
         self.mape = mape
         self.smape = smape
         self.mase = mase
+        self.wape = wape
         if let m = metrics {
             self.metrics = m
         } else {
@@ -94,7 +102,8 @@ public struct TimeSeriesBacktestResult: Sendable, Codable, Equatable {
                 "mae": mae,
                 "mape": mape,
                 "smape": smape,
-                "mase": mase
+                "mase": mase,
+                "wape": wape
             ]
         }
     }
@@ -193,6 +202,7 @@ public enum TimeSeriesBacktester {
             let foldMae = TimeSeriesMetrics.mae(actual: actual, forecast: predicted)
             let foldMape = TimeSeriesMetrics.mape(actual: actual, forecast: predicted)
             let foldSmape = TimeSeriesMetrics.smape(actual: actual, forecast: predicted)
+            let foldWape = TimeSeriesMetrics.wape(actual: actual, forecast: predicted)
 
             let foldScale = TimeSeriesMetrics.naiveInSampleMAE(trainingSeries: trainSeries)
             // Use Double.nan when naive scale is zero and MAE > 0 (undefined MASE)
@@ -207,7 +217,8 @@ public enum TimeSeriesBacktester {
                 mae: foldMae,
                 mape: foldMape,
                 smape: foldSmape,
-                mase: foldMase
+                mase: foldMase,
+                wape: foldWape
             )
             folds.append(fold)
             allActuals.append(contentsOf: actual)
@@ -220,6 +231,7 @@ public enum TimeSeriesBacktester {
         let pooledMae = TimeSeriesMetrics.mae(actual: allActuals, forecast: allForecasts)
         let pooledMape = TimeSeriesMetrics.mape(actual: allActuals, forecast: allForecasts)
         let pooledSmape = TimeSeriesMetrics.smape(actual: allActuals, forecast: allForecasts)
+        let pooledWape = TimeSeriesMetrics.wape(actual: allActuals, forecast: allForecasts)
 
         // Mean MASE across folds (canonical Hyndman & Athanasopoulos multi-fold backtesting definition)
         let validFoldMases = folds.map(\.mase).filter { $0.isFinite }
@@ -231,7 +243,8 @@ public enum TimeSeriesBacktester {
             mae: pooledMae,
             mape: pooledMape,
             smape: pooledSmape,
-            mase: pooledMase
+            mase: pooledMase,
+            wape: pooledWape
         )
     }
 

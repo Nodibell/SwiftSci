@@ -69,6 +69,7 @@ private func fillRows<T: BinaryFloatingPoint>(input: PreparedNumericBatch, rows:
 private func gatherPreprocessingTile(_ input: PreparedNumericBatch, count: Int, start: Int,
     output: UnsafeMutableBufferPointer<Double>, replacements: [Double]) {
     let width = input.columnCount
+    // The caller bounds count by output.count / width, so row offsets cannot overflow.
     let grouped = width / 4 * 4
     for c in stride(from: 0, to: grouped, by: 4) {
         input.columns[c].values.withUnsafeBufferPointer { column0 in
@@ -80,7 +81,7 @@ private func gatherPreprocessingTile(_ input: PreparedNumericBatch, count: Int, 
                         let p2 = column2.baseAddress!.advanced(by: start)
                         let p3 = column3.baseAddress!.advanced(by: start)
                         for r in 0..<count {
-                            let destination = output.baseAddress!.advanced(by: r * width + c)
+                            let destination = output.baseAddress!.advanced(by: r &* width &+ c)
                             let v0 = p0[r]
                             let v1 = p1[r]
                             let v2 = p2[r]
@@ -100,7 +101,7 @@ private func gatherPreprocessingTile(_ input: PreparedNumericBatch, count: Int, 
             let source = column.baseAddress!.advanced(by: start)
             for r in 0..<count {
                 let v = source[r]
-                output[r * width + c] = v.isNaN ? replacements[c] : v
+                output[r &* width &+ c] = v.isNaN ? replacements[c] : v
             }
         }
     }

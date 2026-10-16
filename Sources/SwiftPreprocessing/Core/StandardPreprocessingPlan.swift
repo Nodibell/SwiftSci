@@ -65,11 +65,7 @@ public struct StandardPreprocessingPlan: Sendable {
         return try MemoryEstimate(capacities: [bytes, 4096])
     }
 
-    private func tileRows(_ input: PreparedNumericBatch, tiled: Bool) -> Int {
-        tileRows(rowCount: input.rowCount, width: input.columnCount, tiled: tiled)
-    }
-
-    private func tileRows(rowCount: Int, width: Int, tiled: Bool) -> Int {
+    func tileRows(rowCount: Int, width: Int, tiled: Bool) -> Int {
         return tiled && rowCount >= 32 && width > 0 && width <= 512
             ? min(rowCount, 2048 / width) : 1
     }
@@ -85,31 +81,18 @@ public struct StandardPreprocessingPlan: Sendable {
         guard output.count == input.rowCount * input.columnCount else {
             throw SwiftMLError.invalidParameter("Fused output capacity differs")
         }
-        let width = input.columnCount
-        let capacity = tileRows(input, tiled: tiled)
-        var tile = [Double](repeating: 0, count: capacity * width)
-        var shifted = [Double](repeating: 0, count: width)
-        var normalized = [Double](repeating: 0, count: width)
-        try tile.withUnsafeMutableBufferPointer { buffer in
-            for start in stride(from: 0, to: input.rowCount, by: capacity) {
-                try Task.checkCancellation()
-                let rows = min(capacity, input.rowCount - start)
-                for c in 0..<width {
-                    input.columns[c].values.withUnsafeBufferPointer { column in
-                        for r in 0..<rows {
-                            let value = column[start + r]
-                            buffer[r * width + c] = value.isNaN ? replacements[c] : value
-                        }
-                    }
-                }
-                for r in 0..<rows {
-                    let row = buffer.baseAddress!.advanced(by: r * width)
-                    vDSP_vaddD(row, 1, negativeMeans, 1, &shifted, 1, vDSP_Length(width))
-                    // Match StandardScaler's array-backed, row-width division.
-                    vDSP_vdivD(deviations, 1, shifted, 1, &normalized, 1, vDSP_Length(width))
-                    for c in 0..<width { output[(start + r) * width + c] = T(normalized[c]) }
-                }
-            }
-        }
+        var writer = try makeRowWriter(input, maximumRows: input.rowCount, tiled: tiled)
+        try writer.fill(rows: 0..<input.rowCount, into: output, stride: input.columnCount)
+    }
+
+    package func makeRowWriter(_ input: PreparedNumericBatch, maximumRows: Int,
+                               tiled: Bool = true) throws -> StandardPreprocessingRowWriter {
+        try validate(input)
+        guard maximumRows >= 0 else { throw SwiftMLError.invalidParameter("Negative row capacity") }
+        let capacity = min(max(1, maximumRows), tileRows(rowCount: input.rowCount,
+            width: input.columnCount, tiled: tiled))
+        return StandardPreprocessingRowWriter(input: input, replacements: replacements,
+            negativeMeans: negativeMeans, deviations: deviations, maximumRows: maximumRows,
+            tileRows: capacity)
     }
 }

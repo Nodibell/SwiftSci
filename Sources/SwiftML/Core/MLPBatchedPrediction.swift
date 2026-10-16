@@ -56,23 +56,23 @@ func mlpBatchedPrediction<Result>(
     }
 }
 
-private func mlpBatchedPrediction<Result>(
+func mlpBatchedPrediction<Result>(
     rowCount: Int, width: Int, layers: [LayerWeights],
-    fill: (Int, Int, UnsafeMutableBufferPointer<Double>, Int) -> Void,
+    fill: (Int, Int, UnsafeMutableBufferPointer<Double>, Int) throws -> Void,
     activate: (Double) -> Double,
     finish: (UnsafeBufferPointer<Double>) -> Result
-) -> [Result] {
+) rethrows -> [Result] {
     let lastLayer = layers.last!
     let batchRows = mlpPredictionBatchRows
     var first = [Double](repeating: 0, count: batchRows * width)
     var second = [Double](repeating: 0, count: batchRows * width)
     var results: [Result] = []
     results.reserveCapacity(rowCount)
-    first.withUnsafeMutableBufferPointer { a in
-        second.withUnsafeMutableBufferPointer { b in
+    try first.withUnsafeMutableBufferPointer { a in
+        try second.withUnsafeMutableBufferPointer { b in
             for start in stride(from: 0, to: rowCount, by: batchRows) {
                 let count = min(batchRows, rowCount - start)
-                fill(start, count, a, width)
+                try fill(start, count, a, width)
                 var input = a.baseAddress!, output = b.baseAddress!
                 for (index, layer) in layers.enumerated() {
                     for row in 0..<count {

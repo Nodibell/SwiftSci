@@ -7,8 +7,12 @@ struct IndexedPreprocessingTests {
     @Test(arguments: [1, 7, 64, 128, 512, 513, 2049])
     func normalizationMatchesGatheredLegacyTransforms(width: Int) throws {
         let names = (0..<width).map { "x\($0)" }
-        let columns: [[Double]] = (0..<width).map { c in
-            (0..<97).map { r in (r + c) % 13 == 0 ? .nan : Double((r * 13 + c) % 47) / 8 }
+        let columns: [[Double]] = (0..<width).map { c -> [Double] in
+            (0..<97).map { r -> Double in
+                let missing: Bool = (r + c) % 13 == 0
+                let value: Double = Double((r * 13 + c) % 47) / 8
+                return missing ? .nan : value
+            }
         }
         let source = try PreparedNumericBatch(columnNames: names, columns: columns)
         for strategy in [Imputer.Strategy.mean, .median, .mostFrequent, .constant(7)] {
@@ -32,8 +36,10 @@ struct IndexedPreprocessingTests {
     }
 
     @Test func paddingAndInvalidRanges() throws {
-        let source = try PreparedNumericBatch(columnNames: ["x", "y"], columns:
-            [(0..<65).map(Double.init), (0..<65).map { Double($0 + 3) }])
+        let first: [Double] = (0..<65).map { row -> Double in Double(row) }
+        let second: [Double] = (0..<65).map { row -> Double in Double(row + 3) }
+        let columns: [[Double]] = [first, second]
+        let source = try PreparedNumericBatch(columnNames: ["x", "y"], columns: columns)
         let view = try IndexedNumericBatch(source, selectingRows: Array((0..<65).reversed()))
         let plan = try StandardPreprocessingPlan(training: source)
         let expected = try plan.preparedMatrix(view).values

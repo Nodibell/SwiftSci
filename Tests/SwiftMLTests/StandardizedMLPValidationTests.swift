@@ -7,9 +7,13 @@ import SwiftDataFrame
 struct StandardizedMLPValidationTests {
     @Test func validationUsesTrainingStatisticsAndSameEarlyStopping() async throws {
         let training = try publicMLPTraining()
-        let rows: [[Double]] = matrixMLPFeatures(7, width: 7).map { row in row.map { $0 + 100 } }
+        let rows: [[Double]] = matrixMLPFeatures(7, width: 7).map { row -> [Double] in
+            row.map { value -> Double in value + 100 }
+        }
         let targets: [Double] = rows.map { $0[0] - $0[1] }
-        let columns: [[Double]] = (0..<7).map { column in rows.map { $0[column] } } + [targets]
+        let columns: [[Double]] = (0..<7).map { column -> [Double] in
+            rows.map { row -> Double in row[column] }
+        } + [targets]
         let raw = try PreparedNumericBatch(columnNames: training.batch.columnNames + ["target"], columns: columns)
         let validation = try PreparedSupervisedBatch(raw, targetColumn: "target")
         var pipeline = Pipeline(steps: [Imputer(), StandardScaler()])

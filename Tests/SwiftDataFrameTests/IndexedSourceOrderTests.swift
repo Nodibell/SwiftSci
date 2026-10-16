@@ -5,8 +5,10 @@ import Testing
 struct IndexedSourceOrderTests {
     @Test func editsValidityAndProvenanceFollowLogicalOccurrences() throws {
         let payload = Double(bitPattern: 0x7ff8_0000_0000_0042)
-        var original = try PreparedNumericBatch(columnNames: ["x", "y"], columns:
-            [(0..<8).map(Double.init), [10, payload, 12, 13, 14, 15, 16, 17]])
+        let first: [Double] = (0..<8).map { row -> Double in Double(row) }
+        let second: [Double] = [10, payload, 12, 13, 14, 15, 16, 17]
+        let columns: [[Double]] = [first, second]
+        var original = try PreparedNumericBatch(columnNames: ["x", "y"], columns: columns)
         try original.updateColumn(at: 0, rows: [1], values: [nil])
         let source = try original.selectingRows([7, 1, 3, 1, 6])
         var view = try IndexedNumericBatch(source, selectingRows: [4, 1, 4, 0, 3, 2, 1])

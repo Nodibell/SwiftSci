@@ -13,8 +13,12 @@ struct MLPDirectPreprocessingTests {
         let model = MLPRegressor(hiddenLayerSizes: [9, 5], maxIter: 1, seed: 42, requestedDevice: .cpu)
         try await model.fit(features: rows, targets: rows.map { $0[0] })
         for count in [0, 1, 31, 32, 33, 65] {
-            let columns: [[Double]] = (0..<width).map { c in
-                (0..<count).map { r in (r + c) % 11 == 0 ? .nan : Double(r - c) / 16 }
+            let columns: [[Double]] = (0..<width).map { c -> [Double] in
+                (0..<count).map { r -> Double in
+                    let missing: Bool = (r + c) % 11 == 0
+                    let value: Double = Double(r - c) / 16
+                    return missing ? .nan : value
+                }
             }
             let input = try PreparedNumericBatch(columnNames: training.columnNames, columns: columns)
             let snapshot = input

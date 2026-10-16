@@ -7,8 +7,12 @@ struct StandardPreprocessingRowWriterTests {
     @Test(arguments: [1, 7, 64, 128, 513, 2049])
     func rangesAndPadding(width: Int) throws {
         let names = (0..<width).map { "x\($0)" }
-        let columns: [[Double]] = (0..<width).map { c in
-            (0..<65).map { r in (r + c) % 13 == 0 ? .nan : Double(r - c) / 16 }
+        let columns: [[Double]] = (0..<width).map { c -> [Double] in
+            (0..<65).map { r -> Double in
+                let missing: Bool = (r + c) % 13 == 0
+                let value: Double = Double(r - c) / 16
+                return missing ? .nan : value
+            }
         }
         let input = try PreparedNumericBatch(columnNames: names, columns: columns)
         let plan = try StandardPreprocessingPlan(training: input)

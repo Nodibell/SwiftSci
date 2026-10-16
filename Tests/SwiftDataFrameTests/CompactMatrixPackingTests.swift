@@ -11,7 +11,9 @@ struct CompactMatrixPackingTests {
             let values: [Double] = (0..<rows).map { r -> Double in
                 if (r + c) % 13 == 0 { return Double(bitPattern: 0x7ff8_0000_0000_0042) }
                 if (r + c) % 11 == 0 { return -0.0 }
-                return Double((r * 13 + c * 17) % 97 - 48) / 16
+                let numerator: Int = (r * 13 + c * 17) % 97 - 48
+                let value: Double = Double(numerator) / 16
+                return value
             }
             columns.append(values)
         }
@@ -42,7 +44,8 @@ struct CompactMatrixPackingTests {
         let columns: [[Double]] = (0..<64).map { c -> [Double] in
             (0..<129).map { r -> Double in Double(r + c) }
         }
-        var batch = try PreparedNumericBatch(columnNames: (0..<64).map { "x\($0)" }, columns: columns)
+        let names: [String] = (0..<64).map { column -> String in "x\(column)" }
+        var batch = try PreparedNumericBatch(columnNames: names, columns: columns)
         let snapshot = batch
         let row = try batch.matrix()
         let column = try batch.matrix(order: .columnMajor)

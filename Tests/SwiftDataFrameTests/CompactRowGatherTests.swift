@@ -36,7 +36,9 @@ struct CompactRowGatherTests {
     func wideDenseAndNullableGathers(width: Int) throws {
         let rows = 2048
         let names = (0..<width).map { "x\($0)" }
-        let columns = (0..<width).map { column in (0..<rows).map { Double($0 + column * rows) } }
+        let columns: [[Double]] = (0..<width).map { column -> [Double] in
+            (0..<rows).map { row -> Double in Double(row + column * rows) }
+        }
         var batch = try PreparedNumericBatch(columnNames: names, columns: columns)
         for column in stride(from: 0, to: width, by: 3) {
             try batch.updateColumn(at: column, rows: [0, 63, 64, 2047], values: [nil, nil, nil, nil])

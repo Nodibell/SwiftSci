@@ -7,7 +7,9 @@ struct CompactRowGatherConcurrencyTests {
         let rows = 2048
         let width = 129
         let names = (0..<width).map { "x\($0)" }
-        let columns = (0..<width).map { column in (0..<rows).map { Double(column * rows + $0) } }
+        let columns: [[Double]] = (0..<width).map { column -> [Double] in
+            (0..<rows).map { row -> Double in Double(column * rows + row) }
+        }
         var prepared = try PreparedNumericBatch(columnNames: names, columns: columns)
         for column in 0..<width {
             try prepared.updateColumn(at: column, rows: [0, 63, 64, 2047], values: [nil, nil, nil, nil])

@@ -43,7 +43,7 @@ public struct PreparedNumericBatch: Sendable {
             throw SwiftMLError.invalidParameter("Row selection contains an out-of-bounds index")
         }
         let mapping = sourceRows.map { original in indices.map { original[$0] } } ?? indices
-        return PreparedNumericBatch(columnNames: columnNames, columns: columns.map { $0.gathered(at: indices) },
+        return PreparedNumericBatch(columnNames: columnNames, columns: gatheredColumns(at: indices),
                                     rowCount: indices.count, sourceRows: mapping)
     }
 
@@ -66,8 +66,25 @@ public struct PreparedNumericBatch: Sendable {
             output = packed
         } else {
             var packed = [Double](repeating: 0, count: count)
-            for c in columns.indices {
-                for r in 0..<rowCount { packed[r * columnCount + c] = columns[c].values[r] }
+            if count <= 2048 || columnCount > 2048 {
+                for c in columns.indices {
+                    for r in 0..<rowCount { packed[r * columnCount + c] = columns[c].values[r] }
+                }
+            } else {
+                // Bound each row tile to 16 KiB of destination values.
+                let tileRows = max(1, 2048 / columnCount)
+                packed.withUnsafeMutableBufferPointer { destination in
+                    for start in stride(from: 0, to: rowCount, by: tileRows) {
+                        let end = min(rowCount, start + tileRows)
+                        for c in columns.indices {
+                            columns[c].values.withUnsafeBufferPointer { source in
+                                for r in start..<end {
+                                    destination[r * columnCount + c] = source[r]
+                                }
+                            }
+                        }
+                    }
+                }
             }
             output = packed
         }
@@ -145,22 +162,6 @@ package struct CompactNumericColumn: Sendable {
                 nullCount += 1
             }
         }
-    }
-
-    package func gathered(at indices: [Int]) -> CompactNumericColumn {
-        var result = CompactNumericColumn(indices.map { values[$0] })
-        if let validity {
-            for (destination, source) in indices.enumerated() {
-                if validity[source >> 6] & (UInt64(1) << (source & 63)) == 0 {
-                    if result.validity == nil {
-                        result.validity = [UInt64](repeating: .max, count: (indices.count + 63) / 64)
-                    }
-                    result.validity![destination >> 6] &= ~(UInt64(1) << (destination & 63))
-                    result.nullCount += 1
-                }
-            }
-        }
-        return result
     }
 
     package mutating func update(at rows: [Int], with replacements: [Double?]) {

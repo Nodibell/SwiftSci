@@ -36,6 +36,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         self.init(name: name, values: values, nullCount: nullCount)
     }
 
+    @usableFromInline
     internal init(name: String, values: [T?], nullCount: Int) {
         self.name = name
         self.dtype = T.columnDType
@@ -47,6 +48,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameters:
     ///   - name: The name.
     ///   - values: The values (non-optional elements).
+    @inlinable
     public init(name: String, values: [T]) {
         self.init(name: name, values: values.map { $0 as T? }, nullCount: 0)
     }

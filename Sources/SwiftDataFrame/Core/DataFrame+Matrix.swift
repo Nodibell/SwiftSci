@@ -70,22 +70,29 @@ extension DataFrame {
                                      missing: NumericMissingValuePolicy = .nan) throws -> PreparedNumericMatrix {
         let selected = try featureColumns(columns)
         let sourceCount = rowCount
-        if let rows, !rows.allSatisfy({ $0 >= 0 && $0 < sourceCount }) {
-            throw SwiftMLError.invalidParameter("Row selection contains an out-of-bounds index")
+        var sequentialRows = true
+        if let rows {
+            var expected = rows.first ?? 0
+            for row in rows {
+                guard row >= 0 && row < sourceCount else {
+                    throw SwiftMLError.invalidParameter("Row selection contains an out-of-bounds index")
+                }
+                if row != expected { sequentialRows = false }
+                expected = row + 1
+            }
         }
         let count = rows?.count ?? sourceCount
         let (elements, overflow) = count.multipliedReportingOverflow(by: selected.count)
         guard !overflow else { throw SwiftMLError.invalidParameter("Matrix element count overflows Int") }
         var values = [Double](repeating: 0, count: elements)
-        for (column, source) in selected.enumerated() {
-            let offset = order == .rowMajor ? column : column * count
-            let stride = order == .rowMajor ? selected.count : 1
+        // Row indices and total capacity are validated before the scoped write borrow.
+        try values.withUnsafeMutableBufferPointer { output in
             if let rows {
-                try source.writeSelected(to: &values, offset: offset, stride: stride,
-                                         rows: rows, missing: missing, name: columns[column])
+                try writeFeatureMatrix(selected, to: output, rows: rows, order: order,
+                                       missing: missing, names: columns, sequentialRows: sequentialRows)
             } else {
-                try source.writeSelected(to: &values, offset: offset, stride: stride,
-                                         rows: 0..<sourceCount, missing: missing, name: columns[column])
+                try writeFeatureMatrix(selected, to: output, rows: 0..<sourceCount, order: order,
+                                       missing: missing, names: columns, sequentialRows: sequentialRows)
             }
         }
         return PreparedNumericMatrix(values: values, columnNames: columns, rowCount: count,
@@ -103,6 +110,41 @@ extension DataFrame {
             if let column = self[column: name, as: Bool.self] { return .boolean(column.values) }
             throw SwiftMLError.castFailed(column: name, targetType: "Double")
         }
+    }
+}
+
+private func writeFeatureMatrix<Rows: RandomAccessCollection>(
+    _ columns: [FeatureColumn], to output: UnsafeMutableBufferPointer<Double>, rows: Rows,
+    order: NumericMatrixOrder, missing: NumericMissingValuePolicy, names: [String], sequentialRows: Bool
+) throws where Rows.Element == Int {
+    guard !rows.isEmpty && !columns.isEmpty else { return }
+    let count = rows.count
+    // Keep small matrices and irregular gathers in complete column passes.
+    // Rejecting writes also remain column-first to preserve error precedence.
+    guard order == .rowMajor && missing == .nan && sequentialRows && output.count > 2048 else {
+        for (column, source) in columns.enumerated() {
+            let offset = order == .rowMajor ? column : column * count
+            let stride = order == .rowMajor ? columns.count : 1
+            try source.writeSelected(to: output, offset: offset, stride: stride,
+                                     rows: rows, missing: missing, name: names[column])
+        }
+        return
+    }
+    // Target 16 KiB of output per tile, or one row when it is wider.
+    let blockRows = max(1, 2048 / columns.count)
+    var start = rows.startIndex
+    var outputRow = 0
+    while start != rows.endIndex {
+        let length = min(blockRows, rows.distance(from: start, to: rows.endIndex))
+        let end = rows.index(start, offsetBy: length)
+        for (column, source) in columns.enumerated() {
+            let offset = order == .rowMajor ? outputRow * columns.count + column : column * count + outputRow
+            let stride = order == .rowMajor ? columns.count : 1
+            try source.writeSelected(to: output, offset: offset, stride: stride,
+                                     rows: rows[start..<end], missing: missing, name: names[column])
+        }
+        outputRow += length
+        start = end
     }
 }
 
@@ -131,7 +173,7 @@ private enum FeatureColumn {
         }
     }
 
-    func writeSelected<Rows: Collection>(to output: inout [Double], offset: Int, stride: Int,
+    func writeSelected<Rows: Collection>(to output: UnsafeMutableBufferPointer<Double>, offset: Int, stride: Int,
                                         rows: Rows, missing: NumericMissingValuePolicy, name: String) throws
     where Rows.Element == Int {
         switch self {

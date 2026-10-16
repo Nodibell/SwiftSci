@@ -51,17 +51,17 @@ public struct ONNXWeightReader {
         while index < data.count {
             let (fieldNumber, wireType) = readTag(data: data, index: &index)
             switch (fieldNumber, wireType) {
-            case (1, 2): // name
+            case (8, 2): // name
                 name = String(data: readBytes(data: data, index: &index), encoding: .utf8) ?? ""
-            case (2, 0): // dims varint
+            case (1, 0): // dims varint
                 dims.append(Int(readVarint(data: data, index: &index)))
-            case (2, 2): // dims packed varints
+            case (1, 2): // dims packed varints
                 let packed = readBytes(data: data, index: &index)
                 var pIdx = 0
                 while pIdx < packed.count {
                     dims.append(Int(readVarint(data: packed, index: &pIdx)))
                 }
-            case (3, 0): // data_type
+            case (2, 0): // data_type
                 dataType = Int(readVarint(data: data, index: &index))
             case (4, 5): // float_data
                 floatValues.append(readFloat32(data: data, index: &index))
@@ -71,8 +71,14 @@ public struct ONNXWeightReader {
                 while pIdx < packed.count {
                     floatValues.append(readFloat32(data: packed, index: &pIdx))
                 }
-            case (7, 1): // double_data
+            case (10, 1): // double_data
                 doubleValues.append(readFloat64(data: data, index: &index))
+            case (10, 2): // double_data packed
+                let packed = readBytes(data: data, index: &index)
+                var pIdx = 0
+                while pIdx < packed.count {
+                    doubleValues.append(readFloat64(data: packed, index: &pIdx))
+                }
             case (9, 2): // raw_data
                 rawBytes = readBytes(data: data, index: &index)
             default:

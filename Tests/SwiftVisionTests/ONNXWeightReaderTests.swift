@@ -22,16 +22,16 @@ struct ONNXWeightReaderTests {
     @Test("Synthesized minimal ONNX graph initializer is parsed correctly")
     func testSynthesizedTensorInitializer() {
         var tensorData = Data()
-        // Name (field 1, wireType 2)
+        // Name (field 8, wireType 2)
         let nameBytes = "conv1.weight".data(using: .utf8)!
-        tensorData.append(contentsOf: [1 << 3 | 2, UInt8(nameBytes.count)])
+        tensorData.append(contentsOf: [8 << 3 | 2, UInt8(nameBytes.count)])
         tensorData.append(nameBytes)
 
-        // Dims (field 2, wireType 0): 2
-        tensorData.append(contentsOf: [2 << 3 | 0, 2])
+        // Dims (field 1, wireType 0): 2
+        tensorData.append(contentsOf: [1 << 3 | 0, 2])
 
-        // Data type (field 3, wireType 0): 1 (FLOAT)
-        tensorData.append(contentsOf: [3 << 3 | 0, 1])
+        // Data type (field 2, wireType 0): 1 (FLOAT)
+        tensorData.append(contentsOf: [2 << 3 | 0, 1])
 
         // Float data (field 4, wireType 5): 0.75f and 0.25f
         var f1: Float = 0.75

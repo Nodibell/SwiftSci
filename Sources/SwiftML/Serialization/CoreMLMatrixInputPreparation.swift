@@ -48,33 +48,39 @@ public struct CoreMLMatrixInputPreparation: Sendable {
 
     private func fill(_ storage: CoreMLMatrixStorage, source: PreparedNumericBatch,
                       plan: StandardPreprocessingPlan) throws {
+        let finite: Bool
         switch schema.dataType {
         case .float16:
             guard #available(macOS 15, *) else {
                 throw SwiftMLError.invalidParameter("Core ML Float16 arrays require macOS 15 or later")
             }
-            try storage.array.withUnsafeMutableBufferPointer(ofType: Float16.self) { buffer, _ in
+            finite = try storage.array.withUnsafeMutableBufferPointer(ofType: Float16.self) { buffer, _ in
                 try plan.fillFloat16(source, into: buffer)
-                try requireFinite(buffer)
+                return allFinite(buffer)
             }
         case .float32:
-            try storage.array.withUnsafeMutableBufferPointer(ofType: Float.self) { buffer, _ in
+            finite = try storage.array.withUnsafeMutableBufferPointer(ofType: Float.self) { buffer, _ in
                 try plan.fillFloat32(source, into: buffer)
-                try requireFinite(buffer)
+                return allFinite(buffer)
             }
         case .double:
-            try storage.array.withUnsafeMutableBufferPointer(ofType: Double.self) { buffer, _ in
+            finite = try storage.array.withUnsafeMutableBufferPointer(ofType: Double.self) { buffer, _ in
                 try plan.fillDouble(source, into: buffer)
-                try requireFinite(buffer)
+                return allFinite(buffer)
             }
         default:
             throw SwiftMLError.invalidParameter("Preprocessing requires a floating-point model input")
         }
-    }
-
-    private func requireFinite<T: BinaryFloatingPoint>(_ buffer: UnsafeMutableBufferPointer<T>) throws {
-        guard buffer.allSatisfy(\.isFinite) else {
+        guard finite else {
             throw SwiftMLError.invalidParameter("Preprocessed input overflows the model type or contains nonfinite values")
         }
+    }
+
+    // Keep error construction out of the vectorized reduction.
+    @inline(never)
+    private func allFinite<T: BinaryFloatingPoint>(_ buffer: UnsafeMutableBufferPointer<T>) -> Bool {
+        var invalid = 0
+        for value in buffer { invalid |= value.isFinite ? 0 : 1 }
+        return invalid == 0
     }
 }

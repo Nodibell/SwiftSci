@@ -49,10 +49,32 @@ package struct StandardIndexedPreprocessingRowWriter {
                         edited += 1
                     } else {
                         input.source.columns[c].values.withUnsafeBufferPointer { column in
-                            for r in 0..<count {
-                                let sourceRow = input.sourcePositions[rows.lowerBound + start + r]
-                                let value = column[sourceRow]
+                            if count < 4 {
+                                for r in 0..<count {
+                                    let sourceRow = input.sourcePositions[rows.lowerBound + start + r]
+                                    let value = column[sourceRow]
+                                    buffer[r * width + c] = value.isNaN ? replacements[c] : value
+                                }
+                                return
+                            }
+                            let first = rows.lowerBound + start
+                            var r = 0
+                            while r + 4 <= count {
+                                let value0 = column[input.sourcePositions[first + r]]
+                                let value1 = column[input.sourcePositions[first + r + 1]]
+                                let value2 = column[input.sourcePositions[first + r + 2]]
+                                let value3 = column[input.sourcePositions[first + r + 3]]
+                                let destination = r * width + c
+                                buffer[destination] = value0.isNaN ? replacements[c] : value0
+                                buffer[destination + width] = value1.isNaN ? replacements[c] : value1
+                                buffer[destination + 2 * width] = value2.isNaN ? replacements[c] : value2
+                                buffer[destination + 3 * width] = value3.isNaN ? replacements[c] : value3
+                                r += 4
+                            }
+                            while r < count {
+                                let value = column[input.sourcePositions[first + r]]
                                 buffer[r * width + c] = value.isNaN ? replacements[c] : value
+                                r += 1
                             }
                         }
                     }

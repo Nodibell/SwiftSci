@@ -58,16 +58,51 @@ private func fillRows<T: BinaryFloatingPoint>(input: PreparedNumericBatch, rows:
     for start in Swift.stride(from: 0, to: rows.count, by: capacity) {
         try Task.checkCancellation()
         let count = min(capacity, rows.count - start)
-        for c in 0..<width {
-            input.columns[c].values.withUnsafeBufferPointer { column in
-                for r in 0..<count {
-                    let value = column[rows.lowerBound + start + r]
-                    buffer[r * width + c] = value.isNaN ? replacements[c] : value
-                }
-            }
-        }
+        gatherPreprocessingTile(input, count: count, start: rows.lowerBound + start,
+            output: buffer, replacements: replacements)
         normalizePreprocessingTile(buffer: buffer, count: count, width: width, output: output,
             destinationRow: start, stride: stride, negativeMeans: negativeMeans, deviations: deviations,
             shifted: &shifted, normalized: &normalized)
+    }
+}
+
+private func gatherPreprocessingTile(_ input: PreparedNumericBatch, count: Int, start: Int,
+    output: UnsafeMutableBufferPointer<Double>, replacements: [Double]) {
+    let width = input.columnCount
+    // The caller bounds count by output.count / width, so row offsets cannot overflow.
+    let grouped = width / 4 * 4
+    for c in stride(from: 0, to: grouped, by: 4) {
+        input.columns[c].values.withUnsafeBufferPointer { column0 in
+            input.columns[c + 1].values.withUnsafeBufferPointer { column1 in
+                input.columns[c + 2].values.withUnsafeBufferPointer { column2 in
+                    input.columns[c + 3].values.withUnsafeBufferPointer { column3 in
+                        let p0 = column0.baseAddress!.advanced(by: start)
+                        let p1 = column1.baseAddress!.advanced(by: start)
+                        let p2 = column2.baseAddress!.advanced(by: start)
+                        let p3 = column3.baseAddress!.advanced(by: start)
+                        for r in 0..<count {
+                            let destination = output.baseAddress!.advanced(by: r &* width &+ c)
+                            let v0 = p0[r]
+                            let v1 = p1[r]
+                            let v2 = p2[r]
+                            let v3 = p3[r]
+                            destination[0] = v0.isNaN ? replacements[c] : v0
+                            destination[1] = v1.isNaN ? replacements[c + 1] : v1
+                            destination[2] = v2.isNaN ? replacements[c + 2] : v2
+                            destination[3] = v3.isNaN ? replacements[c + 3] : v3
+                        }
+                    }
+                }
+            }
+        }
+    }
+    for c in grouped..<width {
+        input.columns[c].values.withUnsafeBufferPointer { column in
+            let source = column.baseAddress!.advanced(by: start)
+            for r in 0..<count {
+                let v = source[r]
+                output[r &* width &+ c] = v.isNaN ? replacements[c] : v
+            }
+        }
     }
 }

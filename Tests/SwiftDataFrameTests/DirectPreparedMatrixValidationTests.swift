@@ -27,6 +27,27 @@ struct DirectPreparedMatrixValidationTests {
         }
     }
 
+    @Test func rejectionPreservesColumnPrecedenceAcrossTiles() throws {
+        var first = [Double?](repeating: 1, count: 257)
+        var second = [Double?](repeating: 2, count: 257)
+        first[256] = nil
+        second[0] = nil
+        let frame = try DataFrame(columns: [
+            TypedColumn<Double>(name: "first", values: first),
+            TypedColumn<Double>(name: "second", values: second)
+        ])
+        let names = ["first", "second"] + [String](repeating: "second", count: 52)
+        let error = SwiftMLError.invalidParameter("Column first contains missing values")
+        let selections: [[Int]?] = [nil, Array(0..<257)]
+        for order in [NumericMatrixOrder.rowMajor, .columnMajor] {
+            for rows in selections {
+                #expect(throws: error) {
+                    try frame.prepareNumericMatrix(names, rows: rows, order: order, missing: .reject)
+                }
+            }
+        }
+    }
+
     @Test func invalidRowsAndNamesThrow() throws {
         let frame = try DataFrame(columns: [
             TypedColumn<Double>(name: "x", values: [1, 2]),

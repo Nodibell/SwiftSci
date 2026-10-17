@@ -23,16 +23,26 @@ extension StandardScaler {
         var output = consume matrix
         let width = output.columnCount, rows = output.rowCount, order = output.order
         let negativeMeans = means.map { -$0 }
-        var row = [Double](repeating: 0, count: width)
-        var shifted = row, normalized = row
+        var shifted = [Double](repeating: 0, count: width)
+        var normalized = shifted
         output.withMutableValues { values in
-            for r in 0..<rows {
-                for c in 0..<width { row[c] = values[order == .rowMajor ? r * width + c : c * rows + r] }
-                row.withUnsafeBufferPointer { input in
-                    standardizeRow(input.baseAddress!, negativeMeans: negativeMeans,
+            if order == .rowMajor {
+                for r in 0..<rows {
+                    let offset = r * width
+                    standardizeRow(values.baseAddress!.advanced(by: offset), negativeMeans: negativeMeans,
                                    deviations: deviations, shifted: &shifted, output: &normalized)
+                    for c in 0..<width { values[offset + c] = normalized[c] }
                 }
-                for c in 0..<width { values[order == .rowMajor ? r * width + c : c * rows + r] = normalized[c] }
+            } else {
+                var row = [Double](repeating: 0, count: width)
+                for r in 0..<rows {
+                    for c in 0..<width { row[c] = values[c * rows + r] }
+                    row.withUnsafeBufferPointer { input in
+                        standardizeRow(input.baseAddress!, negativeMeans: negativeMeans,
+                                       deviations: deviations, shifted: &shifted, output: &normalized)
+                    }
+                    for c in 0..<width { values[c * rows + r] = normalized[c] }
+                }
             }
         }
         return output

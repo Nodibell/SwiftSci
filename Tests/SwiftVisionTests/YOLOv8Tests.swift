@@ -150,8 +150,8 @@ struct YOLOv8Tests {
         // an initializer TensorProto (field 5) that has data_type=1 but NO name field.
         // parseTensor should return nil → result dict stays empty.
         var tensorProto = Data()
-        // field 3 (data_type=FLOAT=1), wire 0: tag = (3<<3)|0 = 24, value = 1
-        tensorProto.append(contentsOf: [24, 1])
+        // field 2 (data_type=FLOAT=1), wire 0: tag = (2<<3)|0 = 16, value = 1
+        tensorProto.append(contentsOf: [16, 1])
 
         var graphProto = Data()
         // field 5, wire 2: tag = (5<<3)|2 = 42

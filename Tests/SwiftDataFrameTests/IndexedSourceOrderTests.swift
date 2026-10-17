@@ -17,6 +17,8 @@ struct IndexedSourceOrderTests {
         let positions = try #require(ordered.logicalPositions)
         #expect(positions == [3, 1, 6, 5, 4, 0, 2])
         #expect(ordered.batch.sourcePositions == [0, 1, 1, 2, 3, 4, 4])
+        #expect(view.columnNames == ["x", "y"])
+        #expect(ordered.batch.columnNames == ["x", "y"])
         #expect(ordered.batch.originalRowIndices == positions.map { view.originalRowIndices[$0] })
         for c in 0..<view.columnCount {
             for r in positions.indices {

@@ -11,6 +11,9 @@ public struct PreparedNumericBatch: Sendable {
     /// Row positions in the dataframe at preparation time, including repeated selections.
     public var originalRowIndices: [Int] { sourceRows ?? Array(0..<rowCount) }
 
+    package func originalRowIndex(at row: Int) -> Int { sourceRows?[row] ?? row }
+    package var provenanceStorageCapacity: Int { sourceRows?.capacity ?? 0 }
+
     package init(columnNames: [String], columns: [CompactNumericColumn], rowCount: Int, sourceRows: [Int]? = nil) {
         precondition(columnNames.count == columns.count && columns.allSatisfy { $0.values.count == rowCount })
         precondition(sourceRows == nil || sourceRows!.count == rowCount)
@@ -227,7 +230,7 @@ public struct PreparedNumericMatrix: Sendable {
     private let sourceRows: [Int]?
     public var originalRowIndices: [Int] { sourceRows ?? Array(0..<rowCount) }
 
-    init(values: [Double], columnNames: [String], rowCount: Int,
+    package init(values: [Double], columnNames: [String], rowCount: Int,
                      order: NumericMatrixOrder, sourceRows: [Int]?) {
         self.values = values
         self.columnNames = columnNames

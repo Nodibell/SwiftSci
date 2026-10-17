@@ -33,4 +33,31 @@ struct StandardizedMLPBoundaryTests {
         #expect(await budget.reservedBytes == 0)
         #expect(await budget.queuedCount == 0)
     }
+
+    @Test func predictionOverflowReleasesCapacityAndAllowsReuse() async throws {
+        let trainingColumns: [[Double]] = [[-1, 1]]
+        let training = try PreparedNumericBatch(columnNames: ["x"], columns: trainingColumns)
+        let model = MLPRegressor(hiddenLayerSizes: [], solver: .sgd,
+            maxIter: 1, learningRate: 1, seed: 42, requestedDevice: .cpu)
+        let fitted = try await model.fitStandardized(features: training, targets: [-2, 2])
+        let budget = try MemoryBudget(limit: 1024 * 1024)
+        let largeColumns: [[Double]] = [[1e308]]
+        let large = try PreparedNumericBatch(columnNames: ["x"], columns: largeColumns)
+        let input = try await fitted.prepare(MLPPredictionRequest(source: large), budget: budget)
+        defer { withExtendedLifetime(input) {} }
+        await #expect(throws: SwiftMLError.self) {
+            try await fitted.predict(input, budget: budget)
+        }
+        #expect(await budget.reservedBytes == 0)
+        #expect(await budget.queuedCount == 0)
+        let ordinaryColumns: [[Double]] = [[0]]
+        let ordinary = try PreparedNumericBatch(columnNames: ["x"], columns: ordinaryColumns)
+        let reusable = try await fitted.prepare(MLPPredictionRequest(source: ordinary), budget: budget)
+        let values = try await fitted.predict(reusable, budget: budget)
+        #expect(values.count == 1)
+        let allFinite: Bool = values.allSatisfy { $0.isFinite }
+        #expect(allFinite)
+        #expect(await budget.reservedBytes == 0)
+        #expect(await budget.queuedCount == 0)
+    }
 }

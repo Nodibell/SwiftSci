@@ -2,6 +2,21 @@
 
 Fit one preprocessing and model snapshot, then prepare and reuse selected inputs under an explicit memory budget.
 
+## Choose retained representation
+
+Choose the representation explicitly for each caller-owned cache. SwiftSci does not switch representations automatically.
+
+| Caller priority | Public workflow | Retained input |
+|---|---|---|
+| Avoid repeated preprocessing | Fit an existing `Pipeline` on training features, train the regressor on its transformed output, and cache transformed `PreparedNumericBatch` or `PreparedNumericMatrix` inputs for `MLPRegressor.predict(features:)`. | Already-imputed and standardized values. |
+| Reduce retained input storage | Use `fitStandardized`, then retain inputs from `FittedMLPPredictor.prepare` for `FittedMLPPredictor.predict`. | Compact source data, selections, edits, and the fitted preprocessing plan. Prediction applies preprocessing through bounded workspace. |
+
+Caching transformed values uses more retained storage to avoid repeating preprocessing. Compact prepared inputs can reduce retained storage while doing more work per prediction. The result depends on input shape, selection, and cache reuse. Measure the complete workflow before choosing. For tiny calls or cache churn, rebuilding inputs can also be appropriate.
+
+These are separate public workflows. `FittedMLPPredictor.prepare` creates compact inputs and has no storage-strategy argument. Choosing compact reuse is explicit. Existing `MLPRegressor.predict(features:)` methods retain their behavior. The fitted snapshot, context-identity checks, and automatic inference-budget admission described below belong to the compact workflow. Callers using the existing transformed-input workflow manage preprocessing, model ownership, and memory admission themselves.
+
+These batch and matrix prediction paths use CPU Double arithmetic. Representation choice is independent of numeric precision. Fit preprocessing on training data only in either workflow. Caller code owns cache lookup, retention limits, invalidation, and eviction.
+
 ## Fit on training data
 
 Configure the existing regressor and call `fitStandardized`. The method fits imputation and standard scaling on training features, trains with those transformed Double values, and returns an immutable `FittedMLPPredictor`.

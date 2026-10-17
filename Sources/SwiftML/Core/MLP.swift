@@ -549,6 +549,14 @@ public actor MLPRegressor: RegressorEstimator {
         validationTargets: [Double]? = nil,
         earlyStopping: EarlyStopping? = nil
     ) async throws {
+        self.layers = try await trainLayers(features: features, targets: targets,
+            validationFeatures: validationFeatures, validationTargets: validationTargets,
+            earlyStopping: earlyStopping)
+    }
+
+    private func trainLayers(features: [[Double]], targets: [Double],
+        validationFeatures: [[Double]]?, validationTargets: [Double]?,
+        earlyStopping: EarlyStopping?) async throws -> [LayerWeights] {
         guard !features.isEmpty, !features[0].isEmpty, !targets.isEmpty else {
             throw SwiftMLError.emptyInput
         }
@@ -726,7 +734,102 @@ public actor MLPRegressor: RegressorEstimator {
             }
         }
 
-        self.layers = layers
+        return layers
+    }
+
+    /// Fits training-only imputation and scaling, then captures immutable CPU Double prediction.
+    /// Validation uses the training plan. Later fits cannot change the returned predictor.
+    /// Ordinary prediction on this actor expects already-standardized features afterward.
+    /// Training allocations are outside inference budgets; callers can reserve a measured
+    /// whole-training allowance with MemoryBudget.withReservation. Cancellation is observed
+    /// before and after synchronous training, not inside individual training iterations.
+    public func fitStandardized(features: PreparedNumericBatch, targets: [Double],
+        validation: PreparedSupervisedBatch? = nil, imputationStrategy: Imputer.Strategy = .mean,
+        earlyStopping: EarlyStopping? = nil) async throws -> FittedMLPPredictor {
+        try Task.checkCancellation()
+        guard features.rowCount > 0, features.columnCount > 0 else { throw SwiftMLError.emptyInput }
+        try validateStandardizedConfiguration(width: features.columnCount)
+        guard earlyStopping == nil || validation != nil else {
+            throw SwiftMLError.invalidParameter("Early stopping requires validation data")
+        }
+        let training = try StandardizedMLPTraining(features: features, targets: targets,
+            validation: validation, strategy: imputationStrategy)
+        let trained = try await trainLayers(features: training.rows, targets: targets,
+            validationFeatures: training.validation?.rows, validationTargets: training.validation?.targets,
+            earlyStopping: earlyStopping)
+        try Task.checkCancellation()
+        guard trained.allSatisfy({ $0.W.allSatisfy(\.isFinite) && $0.b.allSatisfy(\.isFinite) }) else {
+            throw SwiftMLError.trainingFailed("Standardized MLP produced nonfinite weights")
+        }
+        let weights = try MLPCPUPredictor(layers: trained, activation: activation)
+        let result = try FittedMLPPredictor(preprocessing: training.plan, weights: weights)
+        self.layers = trained
+        return result
+    }
+
+    private func validateStandardizedConfiguration(width: Int) throws {
+        let sizes = [width] + hiddenLayerSizes + [1]
+        guard maxIter >= 0, batchSize > 0, learningRate.isFinite, learningRate > 0,
+              (0..<1).contains(beta1), (0..<1).contains(beta2), epsilon.isFinite, epsilon > 0,
+              sizes.allSatisfy({ $0 > 0 && $0 <= Int(Int32.max) }) else {
+            throw SwiftMLError.invalidParameter("Invalid standardized MLP configuration")
+        }
+        for index in 1..<sizes.count {
+            _ = try preparedMLPBytes(sizes[index - 1], sizes[index], MemoryLayout<Double>.stride)
+        }
+    }
+
+    /// Predicts finite compact columns without materializing nested row arrays.
+    /// Feature positions follow fitting order. Empty input returns an empty result
+    /// after fitted-state validation. Nonempty input must match the fitted width.
+    public func predict(features: PreparedNumericBatch) async throws -> [Double] {
+        try features.requireFinite()
+        guard let layers else { throw SwiftMLError.modelNotFitted }
+        guard features.rowCount > 0 else { return [] }
+        guard features.columnCount == layers[0].inDim else {
+            throw SwiftMLError.dimensionMismatch(expected: layers[0].inDim, got: features.columnCount)
+        }
+        return mlpCompactPrediction(features: features, layers: layers,
+            activate: { applyActivation($0, activation: activation) })
+    }
+
+    /// Preprocesses compact columns directly into bounded CPU Double buffers.
+    package func predict(features: PreparedNumericBatch,
+                         preprocessing: StandardPreprocessingPlan) async throws -> [Double] {
+        guard let layers else { throw SwiftMLError.modelNotFitted }
+        return try mlpPreprocessedPrediction(features: features, preprocessing: preprocessing,
+            layers: layers, activate: { applyActivation($0, activation: activation) }, finish: { $0[0] })
+    }
+
+    /// Predicts selected occurrences without gathering unchanged columns.
+    package func predict(features: IndexedNumericBatch,
+                         preprocessing: StandardPreprocessingPlan) async throws -> [Double] {
+        guard let layers else { throw SwiftMLError.modelNotFitted }
+        return try mlpPreprocessedPrediction(features: features, preprocessing: preprocessing,
+            layers: layers, activate: { applyActivation($0, activation: activation) }, finish: { $0[0] })
+    }
+
+    /// Captures committed weights for explicit CPU Double prediction.
+    /// Later fits do not change the returned owner. Idle snapshots hold no reservation.
+    package func makeCPUPredictor() throws -> MLPCPUPredictor {
+        guard let layers else { throw SwiftMLError.modelNotFitted }
+        return try MLPCPUPredictor(layers: layers, activation: activation)
+    }
+
+    /// Admits captured CPU state, then computes on this model actor.
+    /// The captured weights remain stable if a fit runs while admission waits.
+    package func predict(features: PreparedMLPInput, budget: MemoryBudget) async throws -> [Double] {
+        let fitted = try makeCPUPredictor()
+        let reservation = try await budget.acquire(fitted.predictionEstimate(for: features))
+        do {
+            let result = try fitted.predictExternallyAdmitted(features: features)
+            await reservation.finish()
+            try Task.checkCancellation()
+            return result
+        } catch {
+            await reservation.finish()
+            throw error
+        }
     }
 
     /// Predicts from a prepared matrix in either storage order using CPU Double precision.
@@ -776,6 +879,59 @@ public actor MLPRegressor: RegressorEstimator {
 
         return results
     }
+}
+
+/// Immutable weights for CPU Double prediction, independent of prepared input ownership.
+/// Direct calls are not serialized by the model actor. Callers control concurrency and idle retention.
+package final class MLPCPUPredictor: Sendable {
+    private let layers: [LayerWeights]
+    private let activation: ActivationFunction
+    /// Conservative weight capacity charge. Shared arrays may be charged again.
+    package let retainedBytes: Int
+
+    fileprivate init(layers: [LayerWeights], activation: ActivationFunction) throws {
+        guard !layers.isEmpty else { throw SwiftMLError.modelNotFitted }
+        self.layers = layers
+        self.activation = activation
+        retainedBytes = try preparedMLPModelBytes(layers)
+    }
+
+    /// Includes one input, captured weights, workspace, and replacing output buffers.
+    /// Concurrent predictions, accumulated outputs, and unrelated owners need additional allowance.
+    package func predictionEstimate(for features: PreparedMLPInput) throws -> MemoryEstimate {
+        try preparedMLPPredictionEstimate(features, layers: layers, modelBytes: retainedBytes)
+    }
+
+    /// Admits the complete estimate and releases it after synchronous CPU work finishes.
+    package func predict(features: PreparedMLPInput, budget: MemoryBudget) async throws -> [Double] {
+        let reservation = try await budget.acquire(predictionEstimate(for: features))
+        do {
+            let result = try predictExternallyAdmitted(features: features)
+            await reservation.finish()
+            try Task.checkCancellation()
+            return result
+        } catch {
+            await reservation.finish()
+            throw error
+        }
+    }
+
+    /// Caller-managed admission for this immutable model and input.
+    /// Runs synchronously on the calling context. Individual BLAS calls are not interruptible.
+    package func predictExternallyAdmitted(features: PreparedMLPInput) throws -> [Double] {
+        try Task.checkCancellation()
+        let result = try mlpPreparedInputPrediction(features: features, layers: layers, activation: activation)
+        try Task.checkCancellation()
+        return result
+    }
+}
+
+private func mlpPreparedInputPrediction(features: PreparedMLPInput, layers: [LayerWeights],
+                                        activation: ActivationFunction) throws -> [Double] {
+    let prediction = try mlpPreprocessedPrediction(features: features.batch,
+        preprocessing: features.preprocessing, layers: layers,
+        activate: { applyActivation($0, activation: activation) }, finish: { $0[0] })
+    return features.restoring(prediction)
 }
 
 private func applyActivation(_ x: Double, activation: ActivationFunction) -> Double {

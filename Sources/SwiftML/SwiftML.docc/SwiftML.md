@@ -42,3 +42,7 @@ try await rf.writeCoreML(to: exportURL, featureNames: ["f1", "f2"], outputName: 
 - <doc:EarlyStoppingCallbacks>
 - <doc:ReproducibilityAndPRNG>
 - <doc:MLOpsExport>
+
+## Reusable CPU prediction
+
+- <doc:ReusableCPUPrediction>

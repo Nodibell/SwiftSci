@@ -7,6 +7,7 @@ package struct BenchmarkRequest: Decodable, Sendable {
   package let case_key: String
   package let operation: String
   package let dataset_kind: String
+  package let csv_schema: [String: String]?
   package let input_path: String
   package let input_sha256: String
   package let input_bytes: Int
@@ -76,7 +77,10 @@ package struct BenchmarkResponse: Encodable, Sendable {
   package let peak_rss_bytes: Int64
   package let engine_version: String
   package let error: String?
-  package init(key: String, samples: [BenchmarkSample], error: String? = nil) {
+  package let csv_schema: [String: String]?
+  package init(key: String, samples: [BenchmarkSample], error: String? = nil,
+               csvSchema: [String: String]? = nil) {
+    csv_schema = csvSchema
     case_key = key
     self.samples = samples
     self.error = error

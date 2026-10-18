@@ -24,6 +24,9 @@ class TabularWorkload:
     def __init__(self, engine, request):
         self.engine, self.request = engine, request
         self.op = request['operation']
+        if self.op == "csv-read":
+            from csv_contract import requested_schema
+            requested_schema(request)
         if self.op not in OPERATIONS:
             raise ValueError('Unsupported native tabular operation: ' + self.op)
         self.mixed = request['dataset_kind'] in ('mixed-table-v1', 'parquet-table-v1')

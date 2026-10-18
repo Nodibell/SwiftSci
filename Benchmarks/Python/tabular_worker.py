@@ -10,6 +10,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'Tools'))
 from contracts import read_json,write_json,verified_file,validate_values
 from tabular_workloads import TabularWorkload
 from execution_policy import runtime_record, validate_runtime, LEGACY_MODE
+from csv_contract import validate_schema
 
 engine,request_path,destination=sys.argv[1:]
 request=read_json(Path(request_path));destination=Path(destination)
@@ -24,15 +25,24 @@ try:
     execution = runtime_record({engine: pool_size})
     validate_runtime(execution, request.get('execution_mode', LEGACY_MODE), engine)
     samples=[]
+    csv_schema=None
     for index in range(request['warmups']+request['samples']):
         start=time.perf_counter_ns();output=work.execute(destination,index);duration=time.perf_counter_ns()-start
+        if request["operation"] == "csv-read":
+            if engine == "polars":
+                types = {module.Int64:"Int64", module.Float64:"Double", module.String:"String", module.Boolean:"Bool"}
+                observed = {name:types.get(dtype, str(dtype)) for name,dtype in output.schema.items()}
+            else:
+                types = {"int64":"Int64", "double":"Double", "string":"String", "bool":"Bool"}
+                observed = {field.name:types.get(str(field.type), str(field.type)) for field in output.schema}
+            csv_schema=validate_schema(observed,request)
         actual=work.canonical(output)
         error=validate_values(actual,expected,request['atol'],request['rtol'])
         if index>=request['warmups']:
             samples.append(dict(elapsed_ns=duration,timing_resolved=duration>=1000,output_sha256=hashlib.sha256(actual.tobytes()).hexdigest(),maximum_absolute_error=error,validated=True))
         del output,actual
     rss=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    write_json(destination,dict(schema_version=1,case_key=request['case_key'],status='passed',samples=samples,peak_rss_bytes=rss if sys.platform=='darwin' else rss*1024,engine_version=version,execution=execution))
+    write_json(destination,dict(schema_version=1,case_key=request['case_key'],status='passed',samples=samples,peak_rss_bytes=rss if sys.platform=='darwin' else rss*1024,engine_version=version,execution=execution,csv_schema=csv_schema))
 except Exception as error:
     write_json(destination,dict(schema_version=1,case_key=request['case_key'],status='failed',samples=[],peak_rss_bytes=0,engine_version=version,error=str(error)))
     raise SystemExit(1)

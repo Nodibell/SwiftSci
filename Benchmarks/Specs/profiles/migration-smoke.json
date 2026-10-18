@@ -49,7 +49,7 @@
     {
       "id": "mixed-tiny-csv-read",
       "dataset": "mixed-tiny",
-      "workload": "csv-read-v1"
+      "workload": "csv-read-v2"
     },
     {
       "id": "mixed-tiny-csv-stream-read",

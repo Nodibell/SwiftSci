@@ -98,6 +98,23 @@
     },
     "error": {
       "type": "string"
+    },
+    "csv_schema": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "enum": [
+          "Int64",
+          "Double",
+          "String",
+          "Bool"
+        ]
+      }
+    },
+    "execution": {
+      "type": "object"
     }
   },
   "required": [

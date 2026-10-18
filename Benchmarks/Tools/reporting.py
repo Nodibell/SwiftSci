@@ -17,7 +17,7 @@ def validate_worker(result, request):
             "peak_rss_bytes",
             "engine_version",
         ],
-        ["error", "execution"],
+        ["error", "execution", "csv_schema"],
     )
     require(
         result["schema_version"] == 1 and result["case_key"] == request["case_key"],
@@ -26,6 +26,9 @@ def validate_worker(result, request):
     require(result["status"] == "passed", result.get("error", "Worker did not pass"))
     if "execution_mode" in request:
         validate_runtime(result.get("execution"), request["execution_mode"], request.get("engine"))
+    if "csv_schema" in request:
+        require(result.get("csv_schema") == request["csv_schema"],
+                "Missing or mismatched CSV schema evidence")
     positive(result["peak_rss_bytes"], "peak_rss_bytes")
     require(
         isinstance(result["samples"], list)
@@ -182,6 +185,8 @@ def audit(run, directory=None):
         validate_worker(
             event["result"],
             dict(case_key=expected[key], samples=run["plan"]["profile"]["samples"],
+                 **({"csv_schema": cases[event["case_id"]]["workload"]["csv_schema"]}
+                    if "csv_schema" in cases[event["case_id"]]["workload"] else {}),
                  **(dict(execution_mode=run["plan"]["execution"]["mode"], engine=event["engine"])
                     if "execution" in run["plan"] else {})),
         )

@@ -10,6 +10,7 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Tools"))
 from contracts import read_json, write_json, require, verified_file, validate_values
 from execution_policy import runtime_record
+from csv_contract import requested_schema, validate_schema
 from controlled_api_workloads import OPERATIONS as CONTROLLED_API_OPERATIONS, prepare as prepare_controlled, execute as execute_controlled
 from supervised_fixtures import OPERATIONS as SUPERVISED_OPERATIONS
 from supervised_workloads import prepare as prepare_supervised, execute as execute_supervised
@@ -39,6 +40,7 @@ try:
         verified_file(request["expected_path"], request["expected_sha256"]), dtype="<f8"
     )
     op = request["operation"]
+    if op == "csv-read": requested_schema(request)
     mixed = request["dataset_kind"] in ["mixed-table-v1", "parquet-table-v1"]
     dtypes = {
         "id": "int64",
@@ -448,10 +450,15 @@ try:
         return np.asarray(output, dtype="<f8").ravel(order="C")
 
     samples = []
+    csv_schema = None
     for index in range(request["warmups"] + request["samples"]):
         start = time.perf_counter_ns()
         output = execute()
         duration = time.perf_counter_ns() - start
+        if op == "csv-read":
+            types = {"int64":"Int64", "float64":"Double", "str":"String", "bool":"Bool"}
+            csv_schema = validate_schema({name:types.get(str(dtype), str(dtype))
+                                          for name,dtype in output.dtypes.items()}, request)
         actual = canonical(output)
         error = validate_values(actual, expected, request["atol"], request["rtol"])
         if index >= request["warmups"]:
@@ -476,6 +483,7 @@ try:
             peak_rss_bytes=rss if sys.platform == "darwin" else rss * 1024,
             engine_version=f"pandas {pd.__version__}; numpy {np.__version__}; python {sys.version}",
             execution=runtime_record(),
+            csv_schema=csv_schema,
         ),
     )
 except Exception as error:

@@ -34,7 +34,7 @@
     {
       "id": "mixed-medium-csv-read",
       "dataset": "mixed-medium",
-      "workload": "csv-read-v1"
+      "workload": "csv-read-v2"
     },
     {
       "id": "mixed-medium-filter",

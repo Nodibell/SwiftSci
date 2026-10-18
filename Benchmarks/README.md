@@ -211,6 +211,16 @@ Choose a new output directory for every run. Existing evidence is never overwrit
 
 The `mlx` engine executes the fixed decoder and dataframe-to-tensor contracts on the fixture-selected CPU or Metal GPU. [Run MLX comparisons](MLX-COMPARISONS.md) describes installation, supported cases, synchronization, and interpretation. Independent high-precision answers remain the correctness reference. Python MLX is an additional implementation, not an independent oracle for the MLX backend shared with Swift.
 
+## Matched CSV comparisons
+
+[CSV read v2](Specs/workloads/csv-read-v2.json) supplies every engine the same complete column schema. Type inference is excluded from this workload. The resolved schema is part of the experiment identity, reaches every worker in its request, and must match each worker's actual output types. Validation and canonical export occur outside the timed interval. File opening, parsing, and full native output materialization occur inside it.
+
+CSV read v1 mixed Swift inference with provided schemas in the reference engines. Its historical cross-engine ingestion timings are unmatched and cannot support parser performance rankings. The planner rejects new v1 runs. Existing profiles use v2; historical evidence retains its original contract and fingerprints. An inference benchmark needs a separate contract with inference included for every engine.
+
+The separate `csv-stream-*` and `wine-pipeline` adapters still mix inferred Swift ingestion with provided reference schemas. Their cross-engine timings are not qualified performance comparisons. The corrected CSV read contract does not validate those pipelines; their ingestion contracts must be matched before drawing speed conclusions.
+
+Sort comparisons require the same precision, ordering, stable ties, full rows and columns, and output materialization. Native CPU parallelism and internal algorithms may differ under `production-default`; this mode does not claim identical worker counts or physical-core placement.
+
 ## Optional comparison engines
 
 Polars and DuckDB use the same dataset, workload, materialized-output, and evidence contracts as the Swift and Python workers. Install [requirements-comparison.txt](Python/requirements-comparison.txt) to enable them. The standard environment remains sufficient for Swift/Python qualification.

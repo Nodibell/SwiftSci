@@ -255,6 +255,9 @@ def plan(root, profile, engines, swift_worker, python, mode=LEGACY_MODE):
     for case in profile["cases"]:
         dataset = load_manifest(root, case["dataset"])
         workload = resolve_workload(dataset, load_workload(root, case["workload"]))
+        if workload["operation"] == "csv-read":
+            require(workload["id"] == "csv-read-v2" and "csv_schema" in workload,
+                    "CSV v1 has unmatched inference; use the provided-schema csv-read-v2 contract")
         verified_file(
             cache_path(root, dataset), dataset["sha256"], dataset["size_bytes"]
         )
@@ -393,6 +396,8 @@ def run(root, resolved, destination, purpose="benchmark"):
                     atol=workload["atol"],
                     rtol=workload["rtol"],
                 )
+                if "csv_schema" in workload:
+                    request["csv_schema"] = workload["csv_schema"]
                 if dataset["kind"] == "nist-univariate-v1":
                     request["input_skip_rows"] = dataset["data_start_line"] - 1
                 request_path = destination / (token + ".request.json")

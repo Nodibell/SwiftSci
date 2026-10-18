@@ -85,6 +85,8 @@ import SwiftStats
       let expected = try decodeDoubles(
         verifiedData(path: request.expected_path, sha256: request.expected_sha256))
       let op = request.operation
+      let csvOptions = try matchedCSVOptions(request)
+      var csvSchema: [String: String]?
       let numericalInputs = try NumericalInputs.decode(
         input, operation: op, datasetKind: request.dataset_kind, rows: request.rows)
       let frame: DataFrame?
@@ -124,7 +126,8 @@ import SwiftStats
         } else if op == "wine-pipeline" {
           output = try await winePipeline(path: request.input_path, rows: request.rows)
         } else if op == "csv-read" {
-          output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path)))
+          output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path),
+                                             options: csvOptions!))
         } else if op == "sqlite-ingest" {
           output = .frame(try await sqliteIngest())
         } else if op == "parquet-read" {
@@ -167,6 +170,12 @@ import SwiftStats
           actual = try canonicalCosineFixtureValues(matches, entryCount: input.entryCount, expectedCount: input.topK)
         case .text(let text): actual = text.utf8.map(Double.init)
         case .frame(let result):
+          if csvOptions != nil {
+            csvSchema = Dictionary(uniqueKeysWithValues: result.columns.map { ($0.name, $0.dtype.description) })
+            guard csvSchema == request.csv_schema else {
+              throw BenchmarkFailure("CSV output schema mismatch")
+            }
+          }
           actual = try canonical(result, operation: op, mixed: request.dataset_kind != "table-v1")
         case .written(let path):
           actual = try canonical(try await ParquetReader.read(url: path), operation: op, mixed: true)
@@ -188,7 +197,7 @@ import SwiftStats
           rtol: request.rtol)
         if index >= request.warmups { samples.append(sample) }
       }
-      try JSONEncoder().encode(BenchmarkResponse(key: key, samples: samples)).write(
+      try JSONEncoder().encode(BenchmarkResponse(key: key, samples: samples, csvSchema: csvSchema)).write(
         to: outputURL, options: .atomic)
     } catch {
       try? JSONEncoder().encode(

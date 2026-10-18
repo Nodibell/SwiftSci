@@ -13,6 +13,7 @@ sys.path.insert(0,str(ROOT/'Benchmarks/Python'))
 sys.path.insert(0,str(ROOT/'Benchmarks/Tools'))
 from tabular_workloads import TabularWorkload
 from contracts import digest
+from csv_contract import schema_for
 from execution_policy import worker_environment, LEGACY_MODE
 
 
@@ -41,7 +42,7 @@ class TabularWorkersTests(unittest.TestCase):
             for engine in ('polars','duckdb'):
                 for op,expected in answers.items():
                     with self.subTest(engine=engine,operation=op):
-                        w=TabularWorkload(engine,dict(operation=op,dataset_kind='table-v1',input_path=str(path),rows=4))
+                        w=TabularWorkload(engine,dict(operation=op,dataset_kind='table-v1',input_path=str(path),rows=4,csv_schema=schema_for('table-v1')))
                         try:np.testing.assert_allclose(w.canonical(w.execute(Path(tmp)/(engine+op),0)),expected,rtol=1e-12,atol=1e-12)
                         finally:w.close()
 
@@ -51,7 +52,7 @@ class TabularWorkersTests(unittest.TestCase):
             for engine in ('polars','duckdb'):
                 for op in ('standard-scale','minmax-scale','csv-read','sort','group-sum'):
                     with self.subTest(engine=engine,operation=op):
-                        w=TabularWorkload(engine,dict(operation=op,dataset_kind='mixed-table-v1',input_path=str(p),rows=2))
+                        w=TabularWorkload(engine,dict(operation=op,dataset_kind='mixed-table-v1',input_path=str(p),rows=2,csv_schema=schema_for('mixed-table-v1')))
                         try:
                             actual=w.canonical(w.execute(Path(tmp)/'out',0))
                             expected=[0,0,0,0] if op.endswith('scale') else [1,3,2,3] if op=='group-sum' else [0,2,3,4,1,1,1,3,4,0]

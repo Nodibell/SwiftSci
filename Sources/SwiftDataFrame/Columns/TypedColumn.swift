@@ -131,6 +131,19 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let column = self as? TypedColumn<Float> {
             return column.gatheredNumeric(at: indices)
         }
+        if let column = self as? TypedColumn<String> {
+            return column.gatheredScalar(at: indices)
+        }
+        if let column = self as? TypedColumn<Bool> {
+            return column.gatheredScalar(at: indices)
+        }
+        if let column = self as? TypedColumn<Date> {
+            return column.gatheredScalar(at: indices)
+        }
+        return gatheredScalar(at: indices)
+    }
+
+    private func gatheredScalar(at indices: [Int]) -> TypedColumn<T> {
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
         var gatheredNullCount = 0

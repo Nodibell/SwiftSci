@@ -51,7 +51,7 @@ public final class SystemsCSVParser: Sendable {
     }
 
     internal func parseIndex(
-        buffer: UnsafeBufferPointer<UInt8>, minimumParallelBytes: Int = 4 * 1024 * 1024
+        buffer: UnsafeBufferPointer<UInt8>, minimumParallelBytes: Int = 1024 * 1024
     ) -> CSVRecordIndex {
         if buffer.count >= minimumParallelBytes,
            let records = parseParallelIndex(buffer: buffer) {
@@ -116,13 +116,15 @@ public final class SystemsCSVParser: Sendable {
     }
 
     private func countUnquoted(buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>) -> CSVChunkCount? {
+        let bytes = buffer.baseAddress!
         var fields = 0
         var rows = 0
         var pendingFields = 0
         var fieldStart = range.lowerBound
         var recordEnd = range.lowerBound
-        for index in range {
-            let byte = buffer[index]
+        var scanner = CSVStructuralScanner(bytes: bytes, range: range, delimiter: delimiterByte, quote: quoteByte)
+        while let index = scanner.next() {
+            let byte = bytes[index]
             if byte == quoteByte { return nil }
             if byte == delimiterByte {
                 pendingFields += 1
@@ -149,15 +151,17 @@ public final class SystemsCSVParser: Sendable {
         fieldBase: Int, rowBase: Int
     ) {
         guard count.rows > 0 else { return }
+        let bytes = buffer.baseAddress!
         var field = fieldBase
         var row = rowBase
         var fieldStart = range.lowerBound
         rows[row] = field
-        for index in range {
-            let byte = buffer[index]
+        var scanner = CSVStructuralScanner(bytes: bytes, range: range, delimiter: delimiterByte, quote: nil)
+        while let index = scanner.next() {
+            let byte = bytes[index]
             if byte == delimiterByte || byte == lfByte {
                 let isNewline = byte == lfByte
-                let end = isNewline && index > 0 && buffer[index - 1] == crByte ? index - 1 : index
+                let end = isNewline && index > 0 && bytes[index - 1] == crByte ? index - 1 : index
                 fields.advanced(by: field).initialize(to: PackedCSVField(
                     startOffset: fieldStart, length: max(0, end - fieldStart), escapedQuotesPresent: false
                 ))
@@ -266,3 +270,51 @@ private struct CSVChunkCount: Sendable { let fields: Int; let rows: Int; let end
 private struct CSVCountSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<CSVChunkCount?> }
 private struct CSVFieldSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<PackedCSVField> }
 private struct CSVRowSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<Int> }
+
+/// Visits structural bytes without branching over every ordinary character.
+private struct CSVStructuralScanner {
+    let bytes: UnsafePointer<UInt8>
+    let end: Int
+    let delimiter: UInt8
+    let quote: UInt8?
+    var cursor: Int
+    var blockStart = 0
+    var matches: UInt16 = 0
+
+    init(bytes: UnsafePointer<UInt8>, range: Range<Int>, delimiter: UInt8, quote: UInt8?) {
+        self.bytes = bytes
+        self.end = range.upperBound
+        self.cursor = range.lowerBound
+        self.delimiter = delimiter
+        self.quote = quote
+    }
+
+    @inline(__always)
+    mutating func next() -> Int? {
+        while matches == 0 {
+            guard cursor < end else { return nil }
+            blockStart = cursor
+            if end - cursor >= 16 {
+                // The complete load stays inside this chunk, even at an unaligned row boundary.
+                let block = UnsafeRawPointer(bytes.advanced(by: cursor)).loadUnaligned(as: SIMD16<UInt8>.self)
+                var structural = (block .== SIMD16(repeating: delimiter)) .| (block .== SIMD16(repeating: 10))
+                if let quote { structural = structural .| (block .== SIMD16(repeating: quote)) }
+                let weights = SIMD16<UInt8>(1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128)
+                let selected = SIMD16<UInt8>.zero.replacing(with: weights, where: structural)
+                matches = UInt16(selected.lowHalf.wrappedSum()) | (UInt16(selected.highHalf.wrappedSum()) << 8)
+                cursor += 16
+            } else {
+                while cursor < end {
+                    let byte = bytes[cursor]
+                    if byte == delimiter || byte == 10 || byte == quote {
+                        matches |= UInt16(1) << (cursor - blockStart)
+                    }
+                    cursor += 1
+                }
+            }
+        }
+        let position = matches.trailingZeroBitCount
+        matches &= matches - 1
+        return blockStart + position
+    }
+}

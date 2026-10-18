@@ -68,8 +68,12 @@ public final class SystemsCSVParser: Sendable {
         var boundaries = [0]
         for worker in 1..<workers {
             var position = buffer.count / workers * worker
-            while position < buffer.count && buffer[position - 1] != lfByte { position += 1 }
-            if position < buffer.count && position > boundaries.last! { boundaries.append(position) }
+            let limit = worker == workers - 1 ? buffer.count : buffer.count / workers * (worker + 1)
+            // A later window finds any newline beyond this one, without rescanning its bytes.
+            while position < limit && buffer[position - 1] != lfByte { position += 1 }
+            if position < buffer.count && buffer[position - 1] == lfByte && position > boundaries.last! {
+                boundaries.append(position)
+            }
         }
         boundaries.append(buffer.count)
         let ranges = zip(boundaries, boundaries.dropFirst()).map { $0..<$1 }

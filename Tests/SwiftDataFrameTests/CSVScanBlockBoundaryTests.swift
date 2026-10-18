@@ -61,4 +61,19 @@ struct CSVScanBlockBoundaryTests {
         }
     }
 
+
+    @Test func unevenRecordLengths() {
+        for tail in ["", "\n", "last,field\n"] {
+            let text = "a,b\n" + String(repeating: "x", count: 20_000) + ",1\n" + String(repeating: "y,2\n", count: 100) + tail
+            Array(text.utf8).withUnsafeBufferPointer { input in
+                let parser = SystemsCSVParser()
+                let expected = parser.parseIndex(buffer: input, minimumParallelBytes: .max)
+                let actual = parser.parseIndex(buffer: input, minimumParallelBytes: 0)
+                #expect(actual.rowStarts == expected.rowStarts)
+                #expect(actual.fields.map(\.startOffset) == expected.fields.map(\.startOffset))
+                #expect(actual.fields.map(\.length) == expected.fields.map(\.length))
+            }
+        }
+    }
+
 }

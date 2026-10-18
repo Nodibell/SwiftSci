@@ -59,7 +59,7 @@
     {
       "id": "wine-red-pipeline",
       "dataset": "wine-quality-red",
-      "workload": "wine-pipeline-v1"
+      "workload": "wine-pipeline-v2"
     }
   ]
 }

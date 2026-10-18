@@ -10,7 +10,7 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Tools"))
 from contracts import read_json, write_json, require, verified_file, validate_values
 from execution_policy import runtime_record
-from csv_contract import requested_schema, validate_schema
+from csv_contract import MATCHED_OPERATIONS, WINE_FEATURES, requested_schema, validate_schema, pandas_schema
 from controlled_api_workloads import OPERATIONS as CONTROLLED_API_OPERATIONS, prepare as prepare_controlled, execute as execute_controlled
 from supervised_fixtures import OPERATIONS as SUPERVISED_OPERATIONS
 from supervised_workloads import prepare as prepare_supervised, execute as execute_supervised
@@ -40,7 +40,7 @@ try:
         verified_file(request["expected_path"], request["expected_sha256"]), dtype="<f8"
     )
     op = request["operation"]
-    if op == "csv-read": requested_schema(request)
+    if op in MATCHED_OPERATIONS: requested_schema(request)
     mixed = request["dataset_kind"] in ["mixed-table-v1", "parquet-table-v1"]
     dtypes = {
         "id": "int64",
@@ -48,7 +48,9 @@ try:
         "x": "float64",
         "y": "float64",
     }
-    wine_features = ["fixed_acidity", "volatile_acidity", "citric_acid", "residual_sugar", "chlorides", "free_sulfur_dioxide", "total_sulfur_dioxide", "density", "pH", "sulphates", "alcohol"]
+    wine_features = list(WINE_FEATURES)
+    if op == "wine-pipeline":
+        dtypes = {**dict.fromkeys(wine_features, "float64"), "id": "int64", "quality": "int64"}
     h2o_queries = {
         "h2o-q1": (["id1"], {"v1": "sum"}),
         "h2o-q2": (["id1", "id2"], {"v1": "sum"}),
@@ -194,7 +196,7 @@ try:
             keys, aggregates = h2o_queries[op]
             return frame.groupby(keys, sort=False, as_index=False).agg(aggregates)
         if op == "wine-pipeline":
-            loaded = pd.read_csv(request["input_path"], dtype={**{k: "float64" for k in wine_features}, "id": "int64", "quality": "int64"})
+            loaded = pd.read_csv(request["input_path"], dtype=dtypes)
             require(len(loaded) == request["rows"] and list(loaded.columns) == ["id", *wine_features, "quality"], "Wine input shape mismatch")
             selected = loaded.loc[loaded.quality >= 6].sort_values("alcohol", kind="stable")
             values = selected[wine_features].to_numpy(dtype=np.float64)
@@ -451,14 +453,27 @@ try:
 
     samples = []
     csv_schema = None
+    if op in MATCHED_OPERATIONS and op != "csv-read":
+        if op.startswith("csv-stream-"):
+            rows = 0
+            with pd.read_csv(request["input_path"], chunksize=10000, dtype=dtypes) as reader:
+                for chunk in reader:
+                    csv_schema = validate_schema(pandas_schema(chunk), request)
+                    require(len(chunk) == min(10000, request["rows"] - rows), "Streaming input chunk boundaries differ")
+                    rows += len(chunk)
+                    del chunk
+        else:
+            observed = pd.read_csv(request["input_path"], dtype=dtypes)
+            csv_schema = validate_schema(pandas_schema(observed), request)
+            rows = len(observed)
+            del observed
+        require(rows == request["rows"], "CSV input row count mismatch")
     for index in range(request["warmups"] + request["samples"]):
         start = time.perf_counter_ns()
         output = execute()
         duration = time.perf_counter_ns() - start
         if op == "csv-read":
-            types = {"int64":"Int64", "float64":"Double", "str":"String", "bool":"Bool"}
-            csv_schema = validate_schema({name:types.get(str(dtype), str(dtype))
-                                          for name,dtype in output.dtypes.items()}, request)
+            csv_schema = validate_schema(pandas_schema(output), request)
         actual = canonical(output)
         error = validate_values(actual, expected, request["atol"], request["rtol"])
         if index >= request["warmups"]:

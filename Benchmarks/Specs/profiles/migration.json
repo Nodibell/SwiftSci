@@ -9,17 +9,17 @@
     {
       "id": "medium-csv-stream-read",
       "dataset": "medium",
-      "workload": "csv-stream-read-v1"
+      "workload": "csv-stream-read-v2"
     },
     {
       "id": "medium-csv-stream-filter",
       "dataset": "medium",
-      "workload": "csv-stream-filter-v1"
+      "workload": "csv-stream-filter-v2"
     },
     {
       "id": "medium-csv-stream-group",
       "dataset": "medium",
-      "workload": "csv-stream-group-v1"
+      "workload": "csv-stream-group-v2"
     },
     {
       "id": "medium-group-sum-mean",
@@ -54,17 +54,17 @@
     {
       "id": "mixed-medium-csv-stream-read",
       "dataset": "mixed-medium",
-      "workload": "csv-stream-read-v1"
+      "workload": "csv-stream-read-v2"
     },
     {
       "id": "mixed-medium-csv-stream-filter",
       "dataset": "mixed-medium",
-      "workload": "csv-stream-filter-v1"
+      "workload": "csv-stream-filter-v2"
     },
     {
       "id": "mixed-medium-csv-stream-group",
       "dataset": "mixed-medium",
-      "workload": "csv-stream-group-v1"
+      "workload": "csv-stream-group-v2"
     },
     {
       "id": "mixed-medium-filter",

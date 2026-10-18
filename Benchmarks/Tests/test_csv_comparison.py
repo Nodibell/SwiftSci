@@ -14,7 +14,7 @@ from reporting import validate_worker
 
 class CSVComparisonTests(unittest.TestCase):
     def test_complete_schema_is_required_and_output_types_are_checked(self):
-        for kind in ('table-v1', 'mixed-table-v1'):
+        for kind in ('table-v1', 'mixed-table-v1', 'wine-quality-v1'):
             expected = schema_for(kind)
             request = dict(dataset_kind=kind, csv_schema=expected)
             self.assertEqual(validate_schema(expected, request), expected)

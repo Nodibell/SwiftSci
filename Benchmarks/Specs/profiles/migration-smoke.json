@@ -9,17 +9,17 @@
     {
       "id": "tiny-csv-stream-read",
       "dataset": "tiny",
-      "workload": "csv-stream-read-v1"
+      "workload": "csv-stream-read-v2"
     },
     {
       "id": "tiny-csv-stream-filter",
       "dataset": "tiny",
-      "workload": "csv-stream-filter-v1"
+      "workload": "csv-stream-filter-v2"
     },
     {
       "id": "tiny-csv-stream-group",
       "dataset": "tiny",
-      "workload": "csv-stream-group-v1"
+      "workload": "csv-stream-group-v2"
     },
     {
       "id": "tiny-group-sum-mean",
@@ -54,17 +54,17 @@
     {
       "id": "mixed-tiny-csv-stream-read",
       "dataset": "mixed-tiny",
-      "workload": "csv-stream-read-v1"
+      "workload": "csv-stream-read-v2"
     },
     {
       "id": "mixed-tiny-csv-stream-filter",
       "dataset": "mixed-tiny",
-      "workload": "csv-stream-filter-v1"
+      "workload": "csv-stream-filter-v2"
     },
     {
       "id": "mixed-tiny-csv-stream-group",
       "dataset": "mixed-tiny",
-      "workload": "csv-stream-group-v1"
+      "workload": "csv-stream-group-v2"
     },
     {
       "id": "mixed-tiny-filter",

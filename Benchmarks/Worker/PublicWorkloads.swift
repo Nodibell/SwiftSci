@@ -9,8 +9,8 @@ extension Worker {
     "free_sulfur_dioxide", "total_sulfur_dioxide", "density", "pH", "sulphates", "alcohol",
   ]
 
-  static func winePipeline(path: String, rows: Int) async throws -> Output {
-    let loaded = try await DataFrame(csv: URL(fileURLWithPath: path))
+  static func winePipeline(path: String, rows: Int, options: CSVReadOptions) async throws -> Output {
+    let loaded = try await DataFrame(csv: URL(fileURLWithPath: path), options: options)
     guard loaded.shape.rows == rows, loaded.columnNames == ["id"] + wineFeatures + ["quality"] else {
       throw BenchmarkFailure("Wine input shape mismatch")
     }

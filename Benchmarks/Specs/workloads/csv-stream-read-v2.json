@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "csv-stream-read-v2",
+  "operation": "csv-stream-read",
+  "scope": "ingestion",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "atol": 0,
+  "rtol": 0,
+  "semantics": "read CSV in 10000-row chunks; retain complete chunks through end timestamp; validate every row in input order. Complete provided native schema: Int64 identifiers, group integers and quality; Double measurements; String mixed groups and Bool flags. No type inference. Before warmups, read once with the same reader options, check every input column type and input row count, and release the raw preflight data. Streaming preflight checks each 10000-row chunk. Preflight and output validation are outside timing. Each timed sample repeats ingestion and the complete declared transformation, retaining its full output through the end timestamp. This is a warm-cache contract."
+}

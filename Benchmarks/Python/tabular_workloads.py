@@ -24,7 +24,7 @@ class TabularWorkload:
     def __init__(self, engine, request):
         self.engine, self.request = engine, request
         self.op = request['operation']
-        if self.op == "csv-read":
+        if self.op in ("csv-read", "wine-pipeline"):
             from csv_contract import requested_schema
             requested_schema(request)
         if self.op not in OPERATIONS:

@@ -25,17 +25,25 @@ try:
     execution = runtime_record({engine: pool_size})
     validate_runtime(execution, request.get('execution_mode', LEGACY_MODE), engine)
     samples=[]
+    def observe(output):
+        if engine == "polars":
+            types = {module.Int64:"Int64", module.Float64:"Double", module.String:"String", module.Boolean:"Bool"}
+            observed = {name:types.get(dtype, str(dtype)) for name,dtype in output.schema.items()}
+        else:
+            types = {"int64":"Int64", "double":"Double", "string":"String", "bool":"Bool"}
+            observed = {field.name:types.get(str(field.type), str(field.type)) for field in output.schema}
+        return validate_schema(observed,request)
     csv_schema=None
+    if request["operation"] == "wine-pipeline":
+        observed = work.read_csv()
+        if engine == "duckdb": observed = observed.to_arrow_table()
+        csv_schema = observe(observed)
+        if len(observed) != request["rows"]: raise ValueError("CSV input row count mismatch")
+        del observed
     for index in range(request['warmups']+request['samples']):
         start=time.perf_counter_ns();output=work.execute(destination,index);duration=time.perf_counter_ns()-start
         if request["operation"] == "csv-read":
-            if engine == "polars":
-                types = {module.Int64:"Int64", module.Float64:"Double", module.String:"String", module.Boolean:"Bool"}
-                observed = {name:types.get(dtype, str(dtype)) for name,dtype in output.schema.items()}
-            else:
-                types = {"int64":"Int64", "double":"Double", "string":"String", "bool":"Bool"}
-                observed = {field.name:types.get(str(field.type), str(field.type)) for field in output.schema}
-            csv_schema=validate_schema(observed,request)
+            csv_schema=observe(output)
         actual=work.canonical(output)
         error=validate_values(actual,expected,request['atol'],request['rtol'])
         if index>=request['warmups']:

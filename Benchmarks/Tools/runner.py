@@ -21,6 +21,7 @@ from contracts import (
 )
 from datasets import load_manifest, cache_path, reference, binary, resolve_workload
 from reporting import validate_worker, summarize
+from csv_contract import MATCHED_OPERATIONS
 from execution_policy import LEGACY_MODE, PRODUCTION_MODE, policy, worker_environment, engine_order
 
 METAL_BUILD_SETTINGS = {
@@ -255,9 +256,9 @@ def plan(root, profile, engines, swift_worker, python, mode=LEGACY_MODE):
     for case in profile["cases"]:
         dataset = load_manifest(root, case["dataset"])
         workload = resolve_workload(dataset, load_workload(root, case["workload"]))
-        if workload["operation"] == "csv-read":
-            require(workload["id"] == "csv-read-v2" and "csv_schema" in workload,
-                    "CSV v1 has unmatched inference; use the provided-schema csv-read-v2 contract")
+        if workload["operation"] in MATCHED_OPERATIONS:
+            require(workload["id"] == workload["operation"] + "-v2" and "csv_schema" in workload,
+                    "CSV v1 has unmatched inference; use the provided-schema v2 contract")
         verified_file(
             cache_path(root, dataset), dataset["sha256"], dataset["size_bytes"]
         )

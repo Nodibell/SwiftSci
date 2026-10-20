@@ -137,9 +137,6 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let column = self as? TypedColumn<Bool> {
             return column.gatheredScalar(at: indices)
         }
-        if let column = self as? TypedColumn<Date> {
-            return column.gatheredScalar(at: indices)
-        }
         return gatheredScalar(at: indices)
     }
 

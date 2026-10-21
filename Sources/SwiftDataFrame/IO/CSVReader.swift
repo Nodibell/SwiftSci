@@ -278,7 +278,6 @@ internal enum CSVReader {
                 return values.column(named: name)
             case .date32:
                 let parser = CSVDateParser(format: options.columnDateFormats[name])
-                let nullMatcher = CSVNullMatcher(options.nullValues)
                 var values = CSVColumnBuilder<Date>(capacity: dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r

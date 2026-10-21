@@ -87,6 +87,12 @@ internal struct CSVRecordIndex: Sendable, CSVRecordAccess {
     }
 }
 
+private enum CSVFieldBlockLayout {
+    static var shift: Int { 14 }
+    static var capacity: Int { 1 << shift }
+    static var mask: Int { capacity - 1 }
+}
+
 private enum CSVFieldStorage: Sendable {
     case flat([PackedCSVField])
     case blocked([[PackedCSVField]])
@@ -95,8 +101,8 @@ private enum CSVFieldStorage: Sendable {
     subscript(index: Int) -> PackedCSVField {
         switch self {
         case .flat(let values): return values[index]
-        case .blocked(let blocks): return blocks[index >> 14][index & 16383]
-        case .compact(let blocks): return blocks[index >> 14][index & 16383].expanded
+        case .blocked(let blocks): return blocks[index >> CSVFieldBlockLayout.shift][index & CSVFieldBlockLayout.mask]
+        case .compact(let blocks): return blocks[index >> CSVFieldBlockLayout.shift][index & CSVFieldBlockLayout.mask].expanded
         }
     }
 }
@@ -107,14 +113,14 @@ internal struct CSVFieldBlocks<Field: CSVIndexField> {
     private(set) var count = 0
 
     init(byteCount: Int) {
-        current.reserveCapacity(min(byteCount / 8, 16384))
+        current.reserveCapacity(min(byteCount / 8, CSVFieldBlockLayout.capacity))
     }
 
     mutating func append(_ field: Field) {
-        if current.count == 16384 {
+        if current.count == CSVFieldBlockLayout.capacity {
             completed.append(current)
             current = []
-            current.reserveCapacity(16384)
+            current.reserveCapacity(CSVFieldBlockLayout.capacity)
         }
         current.append(field)
         count += 1
@@ -193,6 +199,6 @@ internal struct CSVCompactRecordView: CSVRecordAccess {
         let start = rowStarts[row]
         guard column < rowStarts[row + 1] - start else { return nil }
         let index = start + column
-        return blocks[index >> 14][index & 16383].offset
+        return blocks[index >> CSVFieldBlockLayout.shift][index & CSVFieldBlockLayout.mask].offset
     }
 }

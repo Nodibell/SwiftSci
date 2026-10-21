@@ -637,18 +637,21 @@ internal enum CSVReader {
 
     private static func deduplicateHeaders(_ rawHeaders: [String]) -> [String] {
         var counts: [String: Int] = [:]
+        var used = Set<String>()
         var result: [String] = []
 
         for (i, h) in rawHeaders.enumerated() {
             let trimmed = h.trimmingCharacters(in: .whitespacesAndNewlines)
             let baseName = trimmed.isEmpty ? "col_\(i)" : trimmed
-            if let count = counts[baseName] {
-                counts[baseName] = count + 1
-                result.append("\(baseName)_\(count)")
-            } else {
-                counts[baseName] = 1
-                result.append(baseName)
+            var name = baseName
+            var count = counts[baseName] ?? 0
+            while used.contains(name) {
+                count += 1
+                name = "\(baseName)_\(count)"
             }
+            counts[baseName] = count
+            used.insert(name)
+            result.append(name)
         }
         return result
     }

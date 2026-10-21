@@ -49,7 +49,7 @@ internal enum CSVEagerReader {
                 if attempt.rejected {
                     candidate[column] += 1
                     attempts[column] = plans[column].conversion(
-                        type: plans[column].candidates[candidate[column]], capacity: batchRows)
+                        type: plans[column].candidates[candidate[column]], capacity: batchRows, chunked: true)
                     retry.append(column)
                 } else {
                     completed[column] = attempt.column(named: headers[column])
@@ -88,7 +88,7 @@ internal enum CSVEagerReader {
                 rowCount: rows, column: column, name: name, options: options)
         }
         let attempts: [CSVColumnConversion?] = plans.map {
-            $0.conversion(type: $0.candidates[0], capacity: rows)
+            $0.conversion(type: $0.candidates[0], capacity: rows, chunked: true)
         }
         append(buffer: source, records: batch.records, attempts: attempts, columns: Array(headers.indices), rowCount: rows)
         return Initial(plans: plans, attempts: attempts, nextOffset: batch.nextOffset, rows: rows)

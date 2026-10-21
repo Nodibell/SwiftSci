@@ -16,6 +16,21 @@ struct CSVColumnBuilderTests {
         }
     }
 
+    @Test("Chunked finalization preserves typed values and releases its chunks")
+    func chunkedBuilder() {
+        var builder = CSVColumnBuilder<String>(capacity: 2, chunked: true)
+        let expected: [String?] = ["a", nil, "c", "d", nil]
+        for value in expected { builder.append(value) }
+        let column = builder.column(named: "value")
+        #expect(column.values == expected)
+        #expect(column.nullCount == 2)
+        builder.append("new")
+        let next = builder.column(named: "next")
+        #expect(next.values == ["new"])
+        #expect(next.nullCount == 0)
+        #expect(column.values == expected)
+    }
+
     @Test("CSV null counts include explicit nulls, conversion failures and absent fields")
     func parsedNullCounts() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("csv-null-count-\(UUID().uuidString).csv")

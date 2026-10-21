@@ -52,24 +52,24 @@ internal struct CSVColumnPlan {
         candidates = types
     }
 
-    func conversion(type: ColumnDType, capacity: Int) -> CSVColumnConversion {
+    func conversion(type: ColumnDType, capacity: Int, chunked: Bool = false) -> CSVColumnConversion {
         let nulls = CSVNullMatcher(nullValues)
         switch type {
         case .int32, .int64:
             return .integer(CSVColumnAttempt(decoder: CSVIntegerDecoder(nulls: nulls),
-                capacity: capacity, validates: validates))
+                capacity: capacity, validates: validates, chunked: chunked))
         case .float32, .float64:
             return .double(CSVColumnAttempt(decoder: CSVDoubleDecoder(nulls: nulls),
-                capacity: capacity, validates: validates))
+                capacity: capacity, validates: validates, chunked: chunked))
         case .boolean:
             return .boolean(CSVColumnAttempt(decoder: CSVBooleanDecoder(nullValues: nullValues),
-                capacity: capacity, validates: validates))
+                capacity: capacity, validates: validates, chunked: chunked))
         case .date32:
             return .date(CSVColumnAttempt(decoder: CSVDateDecoder(nulls: nulls,
-                parser: CSVDateParser(format: dateFormat)), capacity: capacity, validates: validates))
+                parser: CSVDateParser(format: dateFormat)), capacity: capacity, validates: validates, chunked: chunked))
         case .utf8:
             return .string(CSVColumnAttempt(decoder: CSVStringDecoder(nullValues: nullValues),
-                capacity: capacity, validates: false))
+                capacity: capacity, validates: false, chunked: chunked))
         }
     }
 }
@@ -148,10 +148,10 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
     private var values: CSVColumnBuilder<Decoder.Value>
     private(set) var rejected = false
 
-    init(decoder: Decoder, capacity: Int, validates: Bool) {
+    init(decoder: Decoder, capacity: Int, validates: Bool, chunked: Bool) {
         self.decoder = decoder
         self.validates = validates
-        values = CSVColumnBuilder(capacity: capacity)
+        values = CSVColumnBuilder(capacity: capacity, chunked: chunked)
     }
 
     func append<Records: CSVRecordAccess>(
@@ -159,6 +159,20 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
         _ startRow: Int, _ rowCount: Int, _ column: Int
     ) {
         guard !rejected else { return }
+        if !Self.appendRows(buffer, records, startRow, rowCount, column,
+            decoder: decoder, validates: validates, into: &values) {
+            rejected = true
+            values = CSVColumnBuilder(capacity: 0)
+        }
+    }
+
+    // Borrow the builder once per batch, rather than opening a mutable class
+    // property access for each value in the cell loop.
+    private static func appendRows<Records: CSVRecordAccess>(
+        _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
+        _ startRow: Int, _ rowCount: Int, _ column: Int,
+        decoder: Decoder, validates: Bool, into values: inout CSVColumnBuilder<Decoder.Value>
+    ) -> Bool {
         for row in startRow..<(startRow + rowCount) {
             guard let field = records.field(row: row, column: column) else {
                 values.append(nil)
@@ -168,14 +182,11 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
             case .value(let value): values.append(value)
             case .missing: values.append(nil)
             case .invalid:
-                if validates {
-                    rejected = true
-                    values = CSVColumnBuilder(capacity: 0)
-                    return
-                }
+                if validates { return false }
                 values.append(nil)
             }
         }
+        return true
     }
 
     func column(named name: String) -> TypedColumn<Decoder.Value> {

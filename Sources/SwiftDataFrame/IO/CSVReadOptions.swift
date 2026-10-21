@@ -9,6 +9,9 @@ public struct CSVReadOptions: Sendable {
     /// Strings that should be interpreted as null.
     public var nullValues: Set<String> = ["", "NA", "na", "N/A", "n/a", "null", "NULL", "NaN", "nan", "None"]
     /// Whether to automatically infer column types.
+    /// Sampled types are validated during conversion. Later incompatible values
+    /// can promote integers to Double or cause a column to retain its text.
+    /// Explicit type overrides keep their conversion-failure-as-null behavior.
     public var inferTypes: Bool = true
     /// Maximum number of rows to read (nil = unlimited).
     public var maxRows: Int? = nil

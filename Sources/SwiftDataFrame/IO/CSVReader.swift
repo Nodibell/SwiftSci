@@ -343,17 +343,23 @@ internal enum CSVReader {
             return values.column(named: name)
         }
 
+        // The sample selects candidates; conversion must validate the remaining rows.
         if isInt64 {
             var values = CSVColumnBuilder<Int64>(capacity: dataRowsToRead)
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
-                    values.append(parseCSVInt64(buffer: buffer, offset: offset, nullMatcher: nullMatcher))
+                    let value = parseCSVInt64(buffer: buffer, offset: offset, nullMatcher: nullMatcher)
+                    if value == nil && !nullMatcher.contains(buffer: buffer, offset: offset) {
+                        isInt64 = false
+                        break
+                    }
+                    values.append(value)
                 } else {
                     values.append(nil)
                 }
             }
-            return values.column(named: name)
+            if isInt64 { return values.column(named: name) }
         }
 
         if isDouble {
@@ -361,12 +367,17 @@ internal enum CSVReader {
             for r in 0..<dataRowsToRead {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
-                    values.append(parseCSVDouble(buffer: buffer, offset: offset, nullMatcher: nullMatcher))
+                    let value = parseCSVDouble(buffer: buffer, offset: offset, nullMatcher: nullMatcher)
+                    if value == nil && !nullMatcher.contains(buffer: buffer, offset: offset) {
+                        isDouble = false
+                        break
+                    }
+                    values.append(value)
                 } else {
                     values.append(nil)
                 }
             }
-            return values.column(named: name)
+            if isDouble { return values.column(named: name) }
         }
 
         if isBool {
@@ -375,12 +386,18 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
                     let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-                    values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
+                    let isNull = options.nullValues.contains(str)
+                    let value = isNull ? nil : Bool.parse(from: str)
+                    if value == nil && !isNull {
+                        isBool = false
+                        break
+                    }
+                    values.append(value)
                 } else {
                     values.append(nil)
                 }
             }
-            return values.column(named: name)
+            if isBool { return values.column(named: name) }
         }
 
         if isDate {
@@ -389,12 +406,18 @@ internal enum CSVReader {
                 let rowIdx = startRowIdx + r
                 if let offset = records.field(row: rowIdx, column: colIndex) {
                     let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-                    values.append(options.nullValues.contains(str) ? nil : Date.parse(from: str))
+                    let isNull = options.nullValues.contains(str)
+                    let value = isNull ? nil : Date.parse(from: str)
+                    if value == nil && !isNull {
+                        isDate = false
+                        break
+                    }
+                    values.append(value)
                 } else {
                     values.append(nil)
                 }
             }
-            return values.column(named: name)
+            if isDate { return values.column(named: name) }
         }
 
         var values = CSVColumnBuilder<String>(capacity: dataRowsToRead)

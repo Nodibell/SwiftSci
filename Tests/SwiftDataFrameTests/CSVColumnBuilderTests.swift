@@ -16,9 +16,9 @@ struct CSVColumnBuilderTests {
         }
     }
 
-    @Test("Chunked finalization preserves typed values and releases its chunks")
-    func chunkedBuilder() {
-        var builder = CSVColumnBuilder<String>(capacity: 2, chunked: true)
+    @Test("Finalization preserves typed values and resets temporary storage")
+    func reusableBuilder() {
+        var builder = CSVColumnBuilder<String>(capacity: 5)
         let expected: [String?] = ["a", nil, "c", "d", nil]
         for value in expected { builder.append(value) }
         let column = builder.column(named: "value")

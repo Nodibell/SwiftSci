@@ -11,11 +11,11 @@ struct CSVEagerBatchParityTests {
         options.hasHeader = !headerless
         let header = headerless ? "" : "id;date;label;flag;value\r\n"
         let line = "001;2020-01-02;\"alpha;\n\"\"beta\"\"\";1;2.5\r\n"
-        let csv = header + String(repeating: line, count: 20_000) + "late;bad;tail;true;3.25"
+        let csv = header + String(repeating: line, count: 70_000) + "late;bad;tail;true;3.25"
         try compare(csv, options: options)
     }
 
-    @Test("Explicit types, numeric null tokens and ragged rows agree", arguments: [0, 10_001, 20_001])
+    @Test("Explicit types, numeric null tokens and ragged rows agree", arguments: [0, 10_001, 70_001])
     func explicitTypes(_ limit: Int) throws {
         var options = CSVReadOptions()
         options.maxRows = limit
@@ -24,7 +24,7 @@ struct CSVEagerBatchParityTests {
         options.nullValues = ["", "7", "0.25"]
         let header = "id,date,flag,value,label\n"
         let line = "7,2/1/2020,true,0.25,text\n"
-        let csv = header + String(repeating: line, count: 20_000) + "bad,invalid,maybe,not-a-number\n"
+        let csv = header + String(repeating: line, count: 70_000) + "bad,invalid,maybe,not-a-number\n"
         try compare(csv, options: options)
     }
 

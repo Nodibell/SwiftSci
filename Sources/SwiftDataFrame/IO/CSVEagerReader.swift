@@ -49,7 +49,7 @@ internal enum CSVEagerReader {
                 if attempt.rejected {
                     candidate[column] += 1
                     attempts[column] = plans[column].conversion(
-                        type: plans[column].candidates[candidate[column]], capacity: batchRows, chunked: true)
+                        type: plans[column].candidates[candidate[column]], capacity: initial.capacity)
                     retry.append(column)
                 } else {
                     completed[column] = attempt.column(named: headers[column])
@@ -67,8 +67,25 @@ internal enum CSVEagerReader {
         })
     }
 
+    private static func countRows(
+        source: UnsafeBufferPointer<UInt8>, parser: SystemsCSVParser, maximum: Int?
+    ) throws -> Int {
+        var rows = 0
+        var offset = 0
+        while offset < source.count && maximum.map({ rows < $0 }) != false {
+            let bytes = UnsafeBufferPointer(rebasing: source[offset...])
+            let remaining = maximum.map { $0 - rows } ?? batchRows
+            let batch = try parser.scanBatch(buffer: bytes, maximumRows: min(batchRows, remaining))
+            guard !batch.records.isEmpty else { break }
+            rows += batch.records.count
+            offset += batch.nextOffset
+        }
+        return rows
+    }
+
     private struct Initial {
         let plans: [CSVColumnPlan]
+        let capacity: Int
         let attempts: [CSVColumnConversion?]
         let nextOffset: Int
         let rows: Int
@@ -83,15 +100,18 @@ internal enum CSVEagerReader {
         let batch = try parser.scanBatch(buffer: source, maximumRows: limit)
         guard !batch.records.isEmpty else { return nil }
         let rows = options.maxRows == 0 ? 0 : batch.records.count
+        let remainder = UnsafeBufferPointer(rebasing: source[batch.nextOffset...])
+        let remaining = options.maxRows.map { max(0, $0 - rows) }
+        let capacity = rows + (try countRows(source: remainder, parser: parser, maximum: remaining))
         let plans = headers.enumerated().map { column, name in
             CSVColumnPlan(buffer: source, records: batch.records, startRow: 0,
                 rowCount: rows, column: column, name: name, options: options)
         }
         let attempts: [CSVColumnConversion?] = plans.map {
-            $0.conversion(type: $0.candidates[0], capacity: rows, chunked: true)
+            $0.conversion(type: $0.candidates[0], capacity: capacity)
         }
         append(buffer: source, records: batch.records, attempts: attempts, columns: Array(headers.indices), rowCount: rows)
-        return Initial(plans: plans, attempts: attempts, nextOffset: batch.nextOffset, rows: rows)
+        return Initial(plans: plans, capacity: capacity, attempts: attempts, nextOffset: batch.nextOffset, rows: rows)
     }
 
     private static func append(

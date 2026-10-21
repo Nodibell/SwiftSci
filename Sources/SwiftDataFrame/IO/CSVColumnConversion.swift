@@ -52,24 +52,24 @@ internal struct CSVColumnPlan {
         candidates = types
     }
 
-    func conversion(type: ColumnDType, capacity: Int, chunked: Bool = false) -> CSVColumnConversion {
+    func conversion(type: ColumnDType, capacity: Int) -> CSVColumnConversion {
         let nulls = CSVNullMatcher(nullValues)
         switch type {
         case .int32, .int64:
             return .integer(CSVColumnAttempt(decoder: CSVIntegerDecoder(nulls: nulls),
-                capacity: capacity, validates: validates, chunked: chunked))
+                capacity: capacity, validates: validates))
         case .float32, .float64:
             return .double(CSVColumnAttempt(decoder: CSVDoubleDecoder(nulls: nulls),
-                capacity: capacity, validates: validates, chunked: chunked))
+                capacity: capacity, validates: validates))
         case .boolean:
             return .boolean(CSVColumnAttempt(decoder: CSVBooleanDecoder(nullValues: nullValues),
-                capacity: capacity, validates: validates, chunked: chunked))
+                capacity: capacity, validates: validates))
         case .date32:
             return .date(CSVColumnAttempt(decoder: CSVDateDecoder(nulls: nulls,
-                parser: CSVDateParser(format: dateFormat)), capacity: capacity, validates: validates, chunked: chunked))
+                parser: CSVDateParser(format: dateFormat)), capacity: capacity, validates: validates))
         case .utf8:
             return .string(CSVColumnAttempt(decoder: CSVStringDecoder(nullValues: nullValues),
-                capacity: capacity, validates: false, chunked: chunked))
+                capacity: capacity, validates: false))
         }
     }
 }
@@ -148,10 +148,10 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
     private var values: CSVColumnBuilder<Decoder.Value>
     private(set) var rejected = false
 
-    init(decoder: Decoder, capacity: Int, validates: Bool, chunked: Bool) {
+    init(decoder: Decoder, capacity: Int, validates: Bool) {
         self.decoder = decoder
         self.validates = validates
-        values = CSVColumnBuilder(capacity: capacity, chunked: chunked)
+        values = CSVColumnBuilder(capacity: capacity)
     }
 
     func append<Records: CSVRecordAccess>(

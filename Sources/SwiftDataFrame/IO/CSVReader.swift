@@ -28,28 +28,7 @@ internal enum CSVReader {
         let mappedData = try Data(contentsOf: url, options: .alwaysMapped)
         return try mappedData.withUnsafeBytes { rawBuffer in
             let buffer = rawBuffer.bindMemory(to: UInt8.self)
-            let delimiter = UInt8(options.delimiter.utf8.first ?? 44)
-            let records = SystemsCSVParser(delimiterByte: delimiter).parseIndex(buffer: buffer)
-            guard !records.isEmpty else { return DataFrame.empty }
-
-            let headers: [String]
-            let startRow: Int
-            if options.hasHeader {
-                let rawHeaders = records.row(at: 0).map {
-                    VectorizedByteParsers.parseString(buffer: buffer, offset: $0)
-                }
-                headers = deduplicateHeaders(rawHeaders)
-                startRow = 1
-            } else {
-                headers = (0..<records.row(at: 0).count).map { "col\($0)" }
-                startRow = 0
-            }
-
-            let dataRowCount = records.count - startRow
-            guard dataRowCount > 0, !headers.isEmpty else { return DataFrame.empty }
-            let rowsToRead = options.maxRows.map { min(dataRowCount, $0) } ?? dataRowCount
-            return try buildFrame(buffer: buffer, records: records, startRow: startRow,
-                rowCount: rowsToRead, headers: headers, options: options)
+            return try CSVEagerReader.read(buffer: buffer, options: options)
         }
     }
 

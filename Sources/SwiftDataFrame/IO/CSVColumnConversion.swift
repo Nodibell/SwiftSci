@@ -95,6 +95,21 @@ internal enum CSVColumnConversion {
         }
     }
 
+    func appendIndexed(
+        buffer: UnsafeBufferPointer<UInt8>, records: CSVRecordIndex,
+        startRow: Int, rowCount: Int, column: Int
+    ) {
+        if records.withFlatFields({ view in
+            append(buffer: buffer, records: view, startRow: startRow, rowCount: rowCount, column: column)
+            return true
+        }) == true { return }
+        if records.withCompactFields({ view in
+            append(buffer: buffer, records: view, startRow: startRow, rowCount: rowCount, column: column)
+            return true
+        }) == true { return }
+        append(buffer: buffer, records: records, startRow: startRow, rowCount: rowCount, column: column)
+    }
+
     var rejected: Bool {
         switch self {
         case .integer(let attempt): attempt.rejected

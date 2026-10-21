@@ -187,11 +187,19 @@ public final class SystemsCSVParser: Sendable {
         assert(field == fieldBase + count.fields && row == rowBase + count.rows)
     }
 
-    private func scanIndex(
+    internal func scanIndex(
         buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>
     ) -> CSVRecordIndex {
-        var fields = [PackedCSVField]()
-        fields.reserveCapacity(min(range.count / 8, 100_000))
+        if CompactCSVField.canRepresent(endOffset: range.upperBound) {
+            return scanIndex(buffer: buffer, range: range, fieldType: CompactCSVField.self)
+        }
+        return scanIndex(buffer: buffer, range: range, fieldType: PackedCSVField.self)
+    }
+
+    internal func scanIndex<Field: CSVIndexField>(
+        buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, fieldType: Field.Type
+    ) -> CSVRecordIndex {
+        var fields = CSVFieldBlocks<Field>(byteCount: range.count)
         var rowStarts = [0]
         rowStarts.reserveCapacity(min(range.count / 16, 100_000) + 1)
 
@@ -221,7 +229,7 @@ public final class SystemsCSVParser: Sendable {
                     insideQuotes = true
                 } else if byte == delimiterByte {
                     let len = index - fieldStart
-                    fields.append(PackedCSVField(
+                    fields.append(Field(
                         startOffset: fieldStart,
                         length: max(0, len),
                         escapedQuotesPresent: escapedQuotesFound
@@ -234,7 +242,7 @@ public final class SystemsCSVParser: Sendable {
                         endPosition -= 1
                     }
                     let len = endPosition - fieldStart
-                    fields.append(PackedCSVField(
+                    fields.append(Field(
                         startOffset: fieldStart,
                         length: max(0, len),
                         escapedQuotesPresent: escapedQuotesFound
@@ -252,7 +260,7 @@ public final class SystemsCSVParser: Sendable {
         // Handle trailing line without newline
         if fieldStart < count {
             let len = count - fieldStart
-            fields.append(PackedCSVField(
+            fields.append(Field(
                 startOffset: fieldStart,
                 length: max(0, len),
                 escapedQuotesPresent: escapedQuotesFound
@@ -260,10 +268,10 @@ public final class SystemsCSVParser: Sendable {
             rowStarts.append(fields.count)
         } else {
             // Keep the public parser's existing EOF behavior for an unfinished row.
-            fields.removeSubrange(rowStarts.last!..<fields.count)
+            fields.truncate(to: rowStarts.last!)
         }
 
-        return CSVRecordIndex(fields: fields, rowStarts: rowStarts)
+        return Field.recordIndex(blocks: fields, rowStarts: rowStarts)
     }
 }
 

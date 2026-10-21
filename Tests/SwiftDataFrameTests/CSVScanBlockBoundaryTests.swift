@@ -18,8 +18,8 @@ struct CSVScanBlockBoundaryTests {
                 let expected = parser.parseIndex(buffer: input, minimumParallelBytes: .max)
                 let actual = parser.parseIndex(buffer: input, minimumParallelBytes: 0)
                 #expect(actual.rowStarts == expected.rowStarts)
-                #expect(actual.fields.map(\.startOffset) == expected.fields.map(\.startOffset))
-                #expect(actual.fields.map(\.length) == expected.fields.map(\.length))
+                #expect(actual.testFields.map(\.startOffset) == expected.testFields.map(\.startOffset))
+                #expect(actual.testFields.map(\.length) == expected.testFields.map(\.length))
             }
         }
     }
@@ -35,9 +35,9 @@ struct CSVScanBlockBoundaryTests {
                 let expected = parser.parseIndex(buffer: input, minimumParallelBytes: .max)
                 let actual = parser.parseIndex(buffer: input, minimumParallelBytes: 0)
                 #expect(actual.rowStarts == expected.rowStarts)
-                #expect(actual.fields.map(\.startOffset) == expected.fields.map(\.startOffset))
-                #expect(actual.fields.map(\.length) == expected.fields.map(\.length))
-                #expect(actual.fields.map(\.escapedQuotesPresent) == expected.fields.map(\.escapedQuotesPresent))
+                #expect(actual.testFields.map(\.startOffset) == expected.testFields.map(\.startOffset))
+                #expect(actual.testFields.map(\.length) == expected.testFields.map(\.length))
+                #expect(actual.testFields.map(\.escapedQuotesPresent) == expected.testFields.map(\.escapedQuotesPresent))
             }
         }
     }
@@ -54,9 +54,9 @@ struct CSVScanBlockBoundaryTests {
                 let expected = parser.parseIndex(buffer: input, minimumParallelBytes: .max)
                 let actual = parser.parseIndex(buffer: input)
                 #expect(actual.rowStarts == expected.rowStarts)
-                #expect(actual.fields.map(\.startOffset) == expected.fields.map(\.startOffset))
-                #expect(actual.fields.map(\.length) == expected.fields.map(\.length))
-                #expect(actual.fields.map(\.escapedQuotesPresent) == expected.fields.map(\.escapedQuotesPresent))
+                #expect(actual.testFields.map(\.startOffset) == expected.testFields.map(\.startOffset))
+                #expect(actual.testFields.map(\.length) == expected.testFields.map(\.length))
+                #expect(actual.testFields.map(\.escapedQuotesPresent) == expected.testFields.map(\.escapedQuotesPresent))
             }
         }
     }
@@ -70,8 +70,8 @@ struct CSVScanBlockBoundaryTests {
                 let expected = parser.parseIndex(buffer: input, minimumParallelBytes: .max)
                 let actual = parser.parseIndex(buffer: input, minimumParallelBytes: 0)
                 #expect(actual.rowStarts == expected.rowStarts)
-                #expect(actual.fields.map(\.startOffset) == expected.fields.map(\.startOffset))
-                #expect(actual.fields.map(\.length) == expected.fields.map(\.length))
+                #expect(actual.testFields.map(\.startOffset) == expected.testFields.map(\.startOffset))
+                #expect(actual.testFields.map(\.length) == expected.testFields.map(\.length))
             }
         }
     }

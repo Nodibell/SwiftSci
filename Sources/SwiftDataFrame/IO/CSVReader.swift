@@ -202,6 +202,30 @@ internal enum CSVReader {
         name: String,
         options: CSVReadOptions
     ) -> any AnyColumn {
+        if let column = records.withFlatFields({ view in
+            buildIndexedColumn(buffer: buffer, records: view,
+                startRowIdx: startRowIdx, dataRowsToRead: dataRowsToRead,
+                colIndex: colIndex, name: name, options: options)
+        }) { return column }
+        if let column = records.withCompactFields({ view in
+            buildIndexedColumn(buffer: buffer, records: view,
+                startRowIdx: startRowIdx, dataRowsToRead: dataRowsToRead,
+                colIndex: colIndex, name: name, options: options)
+        }) { return column }
+        return buildIndexedColumn(buffer: buffer, records: records,
+            startRowIdx: startRowIdx, dataRowsToRead: dataRowsToRead,
+            colIndex: colIndex, name: name, options: options)
+    }
+
+    private static func buildIndexedColumn<Records: CSVRecordAccess>(
+        buffer: UnsafeBufferPointer<UInt8>,
+        records: Records,
+        startRowIdx: Int,
+        dataRowsToRead: Int,
+        colIndex: Int,
+        name: String,
+        options: CSVReadOptions
+    ) -> any AnyColumn {
         let nullMatcher = CSVNullMatcher(options.nullValues)
         if let overrideType = options.columnTypeOverrides[name] {
             switch overrideType {

@@ -18,9 +18,9 @@ struct CSVParallelScanTests {
                     let serial = parser.parseIndex(buffer: buffer, minimumParallelBytes: .max)
                     let parallel = parser.parseIndex(buffer: buffer, minimumParallelBytes: 0)
                     #expect(serial.rowStarts == parallel.rowStarts)
-                    #expect(serial.fields.map(\.startOffset) == parallel.fields.map(\.startOffset))
-                    #expect(serial.fields.map(\.length) == parallel.fields.map(\.length))
-                    #expect(serial.fields.map(\.escapedQuotesPresent) == parallel.fields.map(\.escapedQuotesPresent))
+                    #expect(serial.testFields.map(\.startOffset) == parallel.testFields.map(\.startOffset))
+                    #expect(serial.testFields.map(\.length) == parallel.testFields.map(\.length))
+                    #expect(serial.testFields.map(\.escapedQuotesPresent) == parallel.testFields.map(\.escapedQuotesPresent))
                 }
             }
         }
@@ -37,8 +37,8 @@ struct CSVParallelScanTests {
                 let serial = parser.parseIndex(buffer: buffer, minimumParallelBytes: .max)
                 let fallback = parser.parseIndex(buffer: buffer, minimumParallelBytes: 0)
                 #expect(serial.rowStarts == fallback.rowStarts)
-                #expect(serial.fields.map(\.startOffset) == fallback.fields.map(\.startOffset))
-                #expect(serial.fields.map(\.length) == fallback.fields.map(\.length))
+                #expect(serial.testFields.map(\.startOffset) == fallback.testFields.map(\.startOffset))
+                #expect(serial.testFields.map(\.length) == fallback.testFields.map(\.length))
             }
         }
     }
@@ -52,8 +52,8 @@ struct CSVParallelScanTests {
                 let serial = parser.parseIndex(buffer: buffer, minimumParallelBytes: .max)
                 let parallel = parser.parseIndex(buffer: buffer, minimumParallelBytes: 0)
                 #expect(serial.rowStarts == parallel.rowStarts)
-                #expect(serial.fields.map(\.startOffset) == parallel.fields.map(\.startOffset))
-                #expect(serial.fields.map(\.length) == parallel.fields.map(\.length))
+                #expect(serial.testFields.map(\.startOffset) == parallel.testFields.map(\.startOffset))
+                #expect(serial.testFields.map(\.length) == parallel.testFields.map(\.length))
             }
         }
     }
@@ -73,8 +73,8 @@ struct CSVParallelScanTests {
                     let serial = parser.parseIndex(buffer: buffer, minimumParallelBytes: .max)
                     let parallel = parser.parseIndex(buffer: buffer, minimumParallelBytes: 0)
                     #expect(serial.rowStarts == parallel.rowStarts)
-                    #expect(serial.fields.map(\.startOffset) == parallel.fields.map(\.startOffset))
-                    #expect(serial.fields.map(\.length) == parallel.fields.map(\.length))
+                    #expect(serial.testFields.map(\.startOffset) == parallel.testFields.map(\.startOffset))
+                    #expect(serial.testFields.map(\.length) == parallel.testFields.map(\.length))
                 }
             }
         }

@@ -515,9 +515,12 @@ internal enum CSVReader {
                         let sendableBuffer = UnsafeSendableBuffer(pointer: buffer)
                         let optionsBox = OptionsBox(options: options)
                         let headersBox = HeadersBox(headers: headers)
+                        let rowsToRead = options.maxRows.map { min(records.count - startRow, $0) }
+                            ?? (records.count - startRow)
+                        let endRow = startRow + rowsToRead
                         var currentOffset = startRow
-                        while currentOffset < records.count && !Task.isCancelled {
-                            let rowsInChunk = min(chunkSize, records.count - currentOffset)
+                        while currentOffset < endRow && !Task.isCancelled {
+                            let rowsInChunk = min(chunkSize, endRow - currentOffset)
                             let offset = currentOffset
                             var columns: [any AnyColumn] = Array(
                                 repeating: TypedColumn<String>(name: "", values: []), count: headers.count

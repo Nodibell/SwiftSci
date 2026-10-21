@@ -1,6 +1,12 @@
 import Foundation
 
+internal struct CSVRecordBatch: Sendable {
+    let records: CSVRecordIndex
+    let nextOffset: Int
+}
+
 internal struct PackedCSVField: CSVIndexField {
+    static var maximumEndOffset: Int { Int.max }
     let startOffset: Int
     private let encodedLength: Int
 
@@ -143,11 +149,13 @@ internal struct CSVFieldBlocks<Field: CSVIndexField> {
 }
 
 internal protocol CSVIndexField: Sendable {
+    static var maximumEndOffset: Int { get }
     init(startOffset: Int, length: Int, escapedQuotesPresent: Bool)
     static func recordIndex(blocks: CSVFieldBlocks<Self>, rowStarts: [Int]) -> CSVRecordIndex
 }
 
 internal struct CompactCSVField: CSVIndexField {
+    static var maximumEndOffset: Int { Int(Int32.max) }
     private let startOffset: UInt32
     private let encodedLength: Int32
 

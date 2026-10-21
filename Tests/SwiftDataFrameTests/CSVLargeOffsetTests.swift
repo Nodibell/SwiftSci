@@ -21,6 +21,15 @@ struct CSVLargeOffsetTests {
                 bytes.advanced(by: start).update(from: source.baseAddress!, count: source.count)
             }
             let buffer = UnsafeBufferPointer(start: bytes, count: size)
+            payload.withUnsafeBufferPointer { source in
+                bytes.update(from: source.baseAddress!, count: source.count)
+            }
+            let batch = try SystemsCSVParser().scanBatch(buffer: buffer, maximumRows: 1)
+            #expect(batch.records.count == 1)
+            #expect(batch.nextOffset == payload.count)
+            #expect(batch.records.withCompactFields { _ in true } == true)
+            #expect(batch.records.field(row: 0, column: 1)?.startOffset == 4)
+            #expect(batch.records.field(row: 0, column: 1)?.escapedQuotesPresent == true)
             let index = SystemsCSVParser().scanIndex(buffer: buffer, range: start..<size)
             #expect(index.count == 1)
             #expect(index.field(row: 0, column: 0)?.startOffset == start)

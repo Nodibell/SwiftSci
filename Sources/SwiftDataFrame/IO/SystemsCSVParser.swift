@@ -199,17 +199,59 @@ public final class SystemsCSVParser: Sendable {
     internal func scanIndex<Field: CSVIndexField>(
         buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, fieldType: Field.Type
     ) -> CSVRecordIndex {
+        guard case .batch(let batch) = scanRecords(buffer: buffer, range: range,
+            fieldType: fieldType, maximumRows: nil) else {
+            preconditionFailure("The selected index field must represent the supplied range")
+        }
+        return batch.records
+    }
+
+    /// Discovers complete records without retaining metadata for the rest of the source.
+    /// Offsets are relative to the supplied buffer. A wide record retries with full-width fields.
+    internal func scanBatch(buffer: UnsafeBufferPointer<UInt8>, maximumRows: Int) throws -> CSVRecordBatch {
+        precondition(maximumRows > 0)
+        try Task.checkCancellation()
+        let compact = scanRecords(buffer: buffer, range: buffer.indices,
+            fieldType: CompactCSVField.self, maximumRows: maximumRows)
+        switch compact {
+        case .batch(let batch): return batch
+        case .cancelled: throw CancellationError()
+        case .widerOffsets:
+            switch scanRecords(buffer: buffer, range: buffer.indices,
+                fieldType: PackedCSVField.self, maximumRows: maximumRows) {
+            case .batch(let batch): return batch
+            case .cancelled: throw CancellationError()
+            case .widerOffsets: preconditionFailure("A buffer range must fit Int offsets")
+            }
+        }
+    }
+
+    private enum ScanResult {
+        case batch(CSVRecordBatch)
+        case widerOffsets
+        case cancelled
+    }
+
+    private func scanRecords<Field: CSVIndexField>(
+        buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, fieldType: Field.Type,
+        maximumRows: Int?
+    ) -> ScanResult {
         var fields = CSVFieldBlocks<Field>(byteCount: range.count)
         var rowStarts = [0]
-        rowStarts.reserveCapacity(min(range.count / 16, 100_000) + 1)
+        rowStarts.reserveCapacity(min(range.count / 16, maximumRows ?? 100_000, 100_000) + 1)
 
         let count = range.upperBound
         var index = range.lowerBound
         var fieldStart = range.lowerBound
         var insideQuotes = false
         var escapedQuotesFound = false
+        var lastCancellationCheck = index
 
         while index < count {
+            if maximumRows != nil, index - lastCancellationCheck >= 65_536 {
+                if Task.isCancelled { return .cancelled }
+                lastCancellationCheck = index
+            }
             let byte = buffer[index]
 
             if insideQuotes {
@@ -229,6 +271,7 @@ public final class SystemsCSVParser: Sendable {
                     insideQuotes = true
                 } else if byte == delimiterByte {
                     let len = index - fieldStart
+                    guard index <= Field.maximumEndOffset else { return .widerOffsets }
                     fields.append(Field(
                         startOffset: fieldStart,
                         length: max(0, len),
@@ -242,6 +285,7 @@ public final class SystemsCSVParser: Sendable {
                         endPosition -= 1
                     }
                     let len = endPosition - fieldStart
+                    guard endPosition <= Field.maximumEndOffset else { return .widerOffsets }
                     fields.append(Field(
                         startOffset: fieldStart,
                         length: max(0, len),
@@ -249,6 +293,11 @@ public final class SystemsCSVParser: Sendable {
                     ))
 
                     rowStarts.append(fields.count)
+                    if let maximumRows, rowStarts.count - 1 == maximumRows {
+                        return .batch(CSVRecordBatch(
+                            records: Field.recordIndex(blocks: fields, rowStarts: rowStarts),
+                            nextOffset: index + 1))
+                    }
 
                     fieldStart = index + 1
                     escapedQuotesFound = false
@@ -257,8 +306,10 @@ public final class SystemsCSVParser: Sendable {
             index += 1
         }
 
+        if maximumRows != nil, Task.isCancelled { return .cancelled }
         // Handle trailing line without newline
         if fieldStart < count {
+            guard count <= Field.maximumEndOffset else { return .widerOffsets }
             let len = count - fieldStart
             fields.append(Field(
                 startOffset: fieldStart,
@@ -271,8 +322,10 @@ public final class SystemsCSVParser: Sendable {
             fields.truncate(to: rowStarts.last!)
         }
 
-        return Field.recordIndex(blocks: fields, rowStarts: rowStarts)
+        return .batch(CSVRecordBatch(
+            records: Field.recordIndex(blocks: fields, rowStarts: rowStarts), nextOffset: count))
     }
+
 }
 
 // Buffers are borrowed until concurrentPerform joins. Each worker owns a

@@ -18,6 +18,15 @@ public struct CSVReadOptions: Sendable {
     /// Type overrides for specific columns by name.
     public var columnTypeOverrides: [String: ColumnDType] = [:]
 
+    /// Foundation date format patterns for columns explicitly overridden to `.date32`.
+    /// Parsing uses the Gregorian calendar, `en_US_POSIX` locale, and UTC.
+    /// For example, set `columnTypeOverrides["Date"] = .date32` and
+    /// `columnDateFormats["Date"] = "d/M/yyyy"` for day-first source dates.
+    /// Invalid dates become null, as with other explicit type conversions.
+    /// Entries for inferred or non-date columns have no effect. Without a format,
+    /// dates use `Date.parse(from:)`, including its month-first ambiguity rule.
+    public var columnDateFormats: [String: String] = [:]
+
     /// Type overrides for specific columns by name (alias for columnTypeOverrides).
     public var columnTypes: [String: ColumnDType] {
         get { columnTypeOverrides }

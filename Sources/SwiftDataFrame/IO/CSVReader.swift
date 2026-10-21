@@ -163,7 +163,8 @@ internal enum CSVReader {
             case .utf8:
                 return TypedColumn<String>(name: name, values: cells)
             case .date32:
-                return TypedColumn<Date>(name: name, values: cells.map { $0.flatMap(Date.parse) })
+                let parse = dateParser(name: name, options: options)
+                return TypedColumn<Date>(name: name, values: cells.map { $0.flatMap(parse) })
             }
         }
 
@@ -189,6 +190,17 @@ internal enum CSVReader {
         }
 
         return TypedColumn<String>(name: name, values: cells)
+    }
+
+    private static func dateParser(name: String, options: CSVReadOptions) -> (String) -> Date? {
+        guard let format = options.columnDateFormats[name] else { return Date.parse(from:) }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = format
+        formatter.isLenient = false
+        return { formatter.date(from: Date.cleanDateString($0)) }
     }
 
     // MARK: – Column Builder (Column-Parallel)
@@ -276,12 +288,13 @@ internal enum CSVReader {
                 }
                 return values.column(named: name)
             case .date32:
+                let parse = dateParser(name: name, options: options)
                 var values = CSVColumnBuilder<Date>(capacity: dataRowsToRead)
                 for r in 0..<dataRowsToRead {
                     let rowIdx = startRowIdx + r
                     if let offset = records.field(row: rowIdx, column: colIndex) {
                         let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-                        values.append(options.nullValues.contains(str) ? nil : Date.parse(from: str))
+                        values.append(options.nullValues.contains(str) ? nil : parse(str))
                     } else {
                         values.append(nil)
                     }

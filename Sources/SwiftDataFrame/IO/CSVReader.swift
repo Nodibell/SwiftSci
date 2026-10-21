@@ -48,30 +48,32 @@ internal enum CSVReader {
             let dataRowCount = records.count - startRow
             guard dataRowCount > 0, !headers.isEmpty else { return DataFrame.empty }
             let rowsToRead = options.maxRows.map { min(dataRowCount, $0) } ?? dataRowCount
-            var columns: [any AnyColumn] = Array(
-                repeating: TypedColumn<String>(name: "", values: []), count: headers.count
-            )
-            let sendableBuffer = UnsafeSendableBuffer(pointer: buffer)
-            let optionsBox = OptionsBox(options: options)
-            let headersBox = HeadersBox(headers: headers)
-
-            columns.withUnsafeMutableBufferPointer { columnBuffer in
-                guard let base = columnBuffer.baseAddress else { return }
-                let output = SendableColumnPointer(pointer: base)
-                DispatchQueue.concurrentPerform(iterations: headers.count) { column in
-                    output.pointer[column] = buildColumn(
-                        buffer: sendableBuffer.pointer,
-                        records: records,
-                        startRowIdx: startRow,
-                        dataRowsToRead: rowsToRead,
-                        colIndex: column,
-                        name: headersBox.headers[column],
-                        options: optionsBox.options
-                    )
-                }
-            }
-            return try DataFrame(columns: columns)
+            return try buildFrame(buffer: buffer, records: records, startRow: startRow,
+                rowCount: rowsToRead, headers: headers, options: options)
         }
+    }
+
+    internal static func buildFrame(
+        buffer: UnsafeBufferPointer<UInt8>, records: CSVRecordIndex, startRow: Int,
+        rowCount: Int, headers: [String], options: CSVReadOptions
+    ) throws -> DataFrame {
+        var columns: [any AnyColumn] = Array(
+            repeating: TypedColumn<String>(name: "", values: []), count: headers.count
+        )
+        let sendableBuffer = UnsafeSendableBuffer(pointer: buffer)
+        let optionsBox = OptionsBox(options: options)
+        let headersBox = HeadersBox(headers: headers)
+        columns.withUnsafeMutableBufferPointer { columnBuffer in
+            guard let base = columnBuffer.baseAddress else { return }
+            let output = SendableColumnPointer(pointer: base)
+            DispatchQueue.concurrentPerform(iterations: headers.count) { column in
+                output.pointer[column] = buildColumn(
+                    buffer: sendableBuffer.pointer, records: records, startRowIdx: startRow,
+                    dataRowsToRead: rowCount, colIndex: column,
+                    name: headersBox.headers[column], options: optionsBox.options)
+            }
+        }
+        return try DataFrame(columns: columns)
     }
 
     // MARK: – Core parser
@@ -471,81 +473,11 @@ internal enum CSVReader {
         return Double.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
     }
 
-    // MARK: – Streaming CSV Reader (v1.5 mmap-backed)
+    // MARK: – Demand-driven streaming CSV reader
 
     static func readStream(url: URL, options: CSVReadOptions, chunkSize: Int) -> AsyncThrowingStream<DataFrame, any Error> {
-        AsyncThrowingStream(DataFrame.self) { continuation in
-            let task = Task {
-                do {
-                    guard FileManager.default.fileExists(atPath: url.path) else {
-                        throw SwiftMLError.fileNotFound(url)
-                    }
-
-                    let mappedData = try Data(contentsOf: url, options: .alwaysMapped)
-                    try mappedData.withUnsafeBytes { rawBuffer in
-                        let buffer = rawBuffer.bindMemory(to: UInt8.self)
-                        let delimiter = UInt8(options.delimiter.utf8.first ?? 44)
-                        let records = SystemsCSVParser(delimiterByte: delimiter).parseIndex(buffer: buffer)
-                        guard !records.isEmpty else { return }
-
-                        let headers: [String]
-                        let startRow: Int
-                        if options.hasHeader {
-                            headers = deduplicateHeaders(records.row(at: 0).map {
-                                VectorizedByteParsers.parseString(buffer: buffer, offset: $0)
-                            })
-                            startRow = 1
-                        } else {
-                            headers = (0..<records.row(at: 0).count).map { "col\($0)" }
-                            startRow = 0
-                        }
-                        guard records.count > startRow, !headers.isEmpty else { return }
-
-                        let sendableBuffer = UnsafeSendableBuffer(pointer: buffer)
-                        let optionsBox = OptionsBox(options: options)
-                        let headersBox = HeadersBox(headers: headers)
-                        let rowsToRead = options.maxRows.map { min(records.count - startRow, $0) }
-                            ?? (records.count - startRow)
-                        let endRow = startRow + rowsToRead
-                        var currentOffset = startRow
-                        while currentOffset < endRow && !Task.isCancelled {
-                            let rowsInChunk = min(chunkSize, endRow - currentOffset)
-                            let offset = currentOffset
-                            var columns: [any AnyColumn] = Array(
-                                repeating: TypedColumn<String>(name: "", values: []), count: headers.count
-                            )
-                            columns.withUnsafeMutableBufferPointer { columnBuffer in
-                                guard let base = columnBuffer.baseAddress else { return }
-                                let output = SendableColumnPointer(pointer: base)
-                                DispatchQueue.concurrentPerform(iterations: headers.count) { column in
-                                    output.pointer[column] = buildColumn(
-                                        buffer: sendableBuffer.pointer,
-                                        records: records,
-                                        startRowIdx: offset,
-                                        dataRowsToRead: rowsInChunk,
-                                        colIndex: column,
-                                        name: headersBox.headers[column],
-                                        options: optionsBox.options
-                                    )
-                                }
-                            }
-                            continuation.yield(try DataFrame(columns: columns))
-                            currentOffset += rowsInChunk
-                        }
-                    }
-
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-
-            continuation.onTermination = { termination in
-                if case .cancelled = termination {
-                    task.cancel()
-                }
-            }
-        }
+        let cursor = CSVReadCursor(url: url, options: options, chunkSize: chunkSize)
+        return AsyncThrowingStream(unfolding: { try cursor.next() })
     }
 
     // MARK: – CSV row parser (RFC 4180 compliant)
@@ -624,7 +556,7 @@ internal enum CSVReader {
         return lines
     }
 
-    private static func deduplicateHeaders(_ rawHeaders: [String]) -> [String] {
+    internal static func deduplicateHeaders(_ rawHeaders: [String]) -> [String] {
         var counts: [String: Int] = [:]
         var used = Set<String>()
         var result: [String] = []

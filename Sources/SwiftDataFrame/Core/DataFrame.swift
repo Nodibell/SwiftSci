@@ -63,12 +63,14 @@ public struct DataFrame: Sendable {
         self = df
     }
 
-    /// Reads a CSV file as a stream of DataFrame chunks.
+    /// Reads a CSV file as owned chunks, creating each chunk on consumer demand.
+    /// The unfinished stream retains its mapped source. Returned chunks own their values.
+    /// Row counts limit each chunk, not its byte size. Retaining chunks retains their storage.
     /// - Parameters:
-    ///   - url: File or network URL endpoint.
-    ///   - chunkSize: Number of rows per streaming data partition chunk.
-    ///   - options: Configuration options controlling execution behavior.
-    /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
+    ///   - url: The CSV file URL.
+    ///   - chunkSize: Maximum rows per chunk. Must be positive.
+    ///   - options: CSV parsing, type inference, and row-limit options.
+    /// - Returns: A stream of frames that can throw file, parameter, or cancellation errors.
     public static func readCSVStream(
         contentsOf url: URL,
         chunkSize: Int = 10000,

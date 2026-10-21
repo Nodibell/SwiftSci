@@ -245,13 +245,23 @@ public final class SystemsCSVParser: Sendable {
         var fieldStart = range.lowerBound
         var insideQuotes = false
         var escapedQuotesFound = false
-        var lastCancellationCheck = index
+        guard !range.isEmpty else {
+            return .batch(CSVRecordBatch(
+                records: Field.recordIndex(blocks: fields, rowStarts: rowStarts), nextOffset: count))
+        }
+        var scanner = CSVStructuralScanner(bytes: buffer.baseAddress!, range: range,
+            delimiter: delimiterByte, quote: quoteByte)
+        var searchLimit = maximumRows == nil ? count : range.lowerBound + min(65_536, range.count)
 
-        while index < count {
-            if maximumRows != nil, index - lastCancellationCheck >= 65_536 {
+        while true {
+            guard let position = scanner.next(searchLimit: searchLimit) else {
+                if searchLimit == count { break }
                 if Task.isCancelled { return .cancelled }
-                lastCancellationCheck = index
+                searchLimit += min(65_536, count - searchLimit)
+                continue
             }
+            if position < index { continue }
+            index = position
             let byte = buffer[index]
 
             if insideQuotes {
@@ -356,10 +366,15 @@ private struct CSVStructuralScanner {
 
     @inline(__always)
     mutating func next() -> Int? {
+        next(searchLimit: end)
+    }
+
+    @inline(__always)
+    mutating func next(searchLimit: Int) -> Int? {
         while matches == 0 {
-            guard cursor < end else { return nil }
+            guard cursor < searchLimit else { return nil }
             blockStart = cursor
-            if end - cursor >= 16 {
+            if searchLimit - cursor >= 16 {
                 // The complete load stays inside this chunk, even at an unaligned row boundary.
                 let block = UnsafeRawPointer(bytes.advanced(by: cursor)).loadUnaligned(as: SIMD16<UInt8>.self)
                 var structural = (block .== SIMD16(repeating: delimiter)) .| (block .== SIMD16(repeating: 10))
@@ -369,7 +384,7 @@ private struct CSVStructuralScanner {
                 matches = UInt16(selected.lowHalf.wrappedSum()) | (UInt16(selected.highHalf.wrappedSum()) << 8)
                 cursor += 16
             } else {
-                while cursor < end {
+                while cursor < searchLimit {
                     let byte = bytes[cursor]
                     if byte == delimiter || byte == 10 || byte == quote {
                         matches |= UInt16(1) << (cursor - blockStart)

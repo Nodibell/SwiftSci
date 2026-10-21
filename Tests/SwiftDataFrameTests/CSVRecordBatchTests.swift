@@ -67,4 +67,35 @@ struct CSVRecordBatchTests {
         }
     }
 
+    @Test("Quotes and record boundaries span SIMD blocks", arguments: Array(0..<34))
+    func vectorBoundaries(_ padding: Int) throws {
+        let lead = String(repeating: "x", count: padding)
+        let escaped = "\"" + lead + "\"\"tail\nline\",value\r\nnext,last"
+        let expected = [[lead + "\"tail\nline", "value"], ["next", "last"]]
+        let bytes = Array(escaped.utf8)
+        try bytes.withUnsafeBufferPointer { buffer in
+            let parser = SystemsCSVParser()
+            let full = parser.parse(buffer: buffer)
+            let batch = try parser.scanBatch(buffer: buffer, maximumRows: 2)
+            let decoded = (0..<batch.records.count).map { row -> [String] in
+                batch.records.row(at: row).map {
+                    VectorizedByteParsers.parseString(buffer: buffer, offset: $0)
+                }
+            }
+            #expect(decoded == expected)
+            #expect(full.map { $0.map { VectorizedByteParsers.parseString(buffer: buffer, offset: $0) } } == expected)
+        }
+    }
+
+    @Test("Long fields cross cancellation windows without changing framing", arguments: [65_535, 65_536, 65_537])
+    func longPlainField(_ length: Int) throws {
+        let bytes = Array((String(repeating: "x", count: length) + "\nnext\n").utf8)
+        try bytes.withUnsafeBufferPointer { buffer in
+            let batch = try SystemsCSVParser().scanBatch(buffer: buffer, maximumRows: 1)
+            #expect(batch.records.count == 1)
+            #expect(batch.nextOffset == length + 1)
+            #expect(batch.records.field(row: 0, column: 0)?.length == length)
+        }
+    }
+
 }

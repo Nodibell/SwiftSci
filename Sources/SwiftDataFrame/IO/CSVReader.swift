@@ -502,9 +502,9 @@ internal enum CSVReader {
                         let headers: [String]
                         let startRow: Int
                         if options.hasHeader {
-                            headers = records.row(at: 0).map {
+                            headers = deduplicateHeaders(records.row(at: 0).map {
                                 VectorizedByteParsers.parseString(buffer: buffer, offset: $0)
-                            }
+                            })
                             startRow = 1
                         } else {
                             headers = (0..<records.row(at: 0).count).map { "col\($0)" }

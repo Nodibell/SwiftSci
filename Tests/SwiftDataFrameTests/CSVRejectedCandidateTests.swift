@@ -34,6 +34,17 @@ struct CSVRejectedCandidateTests {
         }
     }
 
+    @Test("A rejection beyond the first batch probes the original token")
+    func rebasedRejection() async throws {
+        let csv = "id,value\n" + String(repeating: "7,\"00042\"\n", count: 17_000) + "8,0.125\n"
+        try await check(csv) { frame in
+            let values = try #require(frame[column: "value", as: Double.self])
+            #expect(values.values.prefix(17_000).allSatisfy { $0 == 42 })
+            #expect(values.values.last == 0.125)
+            #expect(frame[column: "id", as: Int64.self]?.values.last == 8)
+        }
+    }
+
     private func check(_ csv: String, body: (DataFrame) throws -> Void) async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".csv")
         defer { try? FileManager.default.removeItem(at: url) }

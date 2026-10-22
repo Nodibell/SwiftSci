@@ -39,15 +39,16 @@ internal enum CSVEagerReader {
                 let bytes = UnsafeBufferPointer(rebasing: source[offset...])
                 let batch = try parser.scanBatch(buffer: bytes, maximumRows: min(batchRows, remaining))
                 guard !batch.records.isEmpty else { break }
-                append(buffer: bytes, records: batch.records, attempts: attempts, columns: active)
+                append(buffer: bytes, records: batch.records, attempts: attempts, columns: active, sourceOffset: offset)
                 offset += batch.nextOffset
                 rows += batch.records.count
             }
             var retry = [Int]()
             for column in active {
                 guard let attempt = attempts[column] else { preconditionFailure("Active CSV column has no attempt") }
-                if attempt.rejected {
-                    candidate[column] += 1
+                if let field = attempt.rejectedField {
+                    candidate[column] = plans[column].nextCandidate(after: candidate[column],
+                        buffer: source, rejectedField: field)
                     attempts[column] = plans[column].conversion(
                         type: plans[column].candidates[candidate[column]], capacity: initial.capacity)
                     retry.append(column)
@@ -100,14 +101,14 @@ internal enum CSVEagerReader {
 
     private static func append(
         buffer: UnsafeBufferPointer<UInt8>, records: CSVRecordIndex,
-        attempts: [CSVColumnConversion?], columns: [Int], rowCount: Int? = nil
+        attempts: [CSVColumnConversion?], columns: [Int], rowCount: Int? = nil, sourceOffset: Int = 0
     ) {
         let input = BatchInput(buffer: buffer, attempts: attempts)
         let count = rowCount ?? records.count
         DispatchQueue.concurrentPerform(iterations: columns.count) { index in
             let column = columns[index]
             input.attempts[column]?.appendIndexed(buffer: input.buffer, records: records,
-                startRow: 0, rowCount: count, column: column)
+                startRow: 0, rowCount: count, column: column, sourceOffset: sourceOffset)
         }
     }
 

@@ -205,13 +205,14 @@ internal enum CSVReader {
     ) -> any AnyColumn {
         let plan = CSVColumnPlan(buffer: buffer, records: records, startRow: startRowIdx,
             rowCount: dataRowsToRead, column: colIndex, name: name, options: options)
-        for type in plan.candidates {
-            let conversion = plan.conversion(type: type, capacity: dataRowsToRead)
+        var candidate = 0
+        while true {
+            let conversion = plan.conversion(type: plan.candidates[candidate], capacity: dataRowsToRead)
             conversion.append(buffer: buffer, records: records, startRow: startRowIdx,
                 rowCount: dataRowsToRead, column: colIndex)
-            if !conversion.rejected { return conversion.column(named: name) }
+            guard let field = conversion.rejectedField else { return conversion.column(named: name) }
+            candidate = plan.nextCandidate(after: candidate, buffer: buffer, rejectedField: field)
         }
-        preconditionFailure("CSV text conversion always succeeds")
     }
 
     // MARK: – Demand-driven streaming CSV reader

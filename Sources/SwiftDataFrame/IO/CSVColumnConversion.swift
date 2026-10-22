@@ -52,6 +52,20 @@ internal struct CSVColumnPlan {
         candidates = types
     }
 
+    /// A rejected original token can disprove later candidates, but cannot admit new ones.
+    func nextCandidate(after index: Int, buffer: UnsafeBufferPointer<UInt8>, rejectedField: CSVFieldOffset) -> Int {
+        let record = CSVRecordIndex(fields: [PackedCSVField(startOffset: rejectedField.startOffset,
+            length: rejectedField.length, escapedQuotesPresent: rejectedField.escapedQuotesPresent)], rowStarts: [0, 1])
+        var next = index + 1
+        while candidates[next] != .utf8 {
+            let probe = conversion(type: candidates[next], capacity: 1)
+            probe.appendIndexed(buffer: buffer, records: record, startRow: 0, rowCount: 1, column: 0)
+            if !probe.rejected { return next }
+            next += 1
+        }
+        return next
+    }
+
     func conversion(type: ColumnDType, capacity: Int) -> CSVColumnConversion {
         let nulls = CSVNullMatcher(nullValues)
         switch type {
@@ -84,41 +98,43 @@ internal enum CSVColumnConversion {
 
     func append<Records: CSVRecordAccess>(
         buffer: UnsafeBufferPointer<UInt8>, records: Records, startRow: Int,
-        rowCount: Int, column: Int
+        rowCount: Int, column: Int, sourceOffset: Int = 0
     ) {
         switch self {
-        case .integer(let attempt): attempt.append(buffer, records, startRow, rowCount, column)
-        case .double(let attempt): attempt.append(buffer, records, startRow, rowCount, column)
-        case .boolean(let attempt): attempt.append(buffer, records, startRow, rowCount, column)
-        case .date(let attempt): attempt.append(buffer, records, startRow, rowCount, column)
-        case .string(let attempt): attempt.append(buffer, records, startRow, rowCount, column)
+        case .integer(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+        case .double(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+        case .boolean(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+        case .date(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+        case .string(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         }
     }
 
     func appendIndexed(
         buffer: UnsafeBufferPointer<UInt8>, records: CSVRecordIndex,
-        startRow: Int, rowCount: Int, column: Int
+        startRow: Int, rowCount: Int, column: Int, sourceOffset: Int = 0
     ) {
         if records.withFlatFields({ view in
-            append(buffer: buffer, records: view, startRow: startRow, rowCount: rowCount, column: column)
+            append(buffer: buffer, records: view, startRow: startRow, rowCount: rowCount, column: column, sourceOffset: sourceOffset)
             return true
         }) == true { return }
         if records.withCompactFields({ view in
-            append(buffer: buffer, records: view, startRow: startRow, rowCount: rowCount, column: column)
+            append(buffer: buffer, records: view, startRow: startRow, rowCount: rowCount, column: column, sourceOffset: sourceOffset)
             return true
         }) == true { return }
-        append(buffer: buffer, records: records, startRow: startRow, rowCount: rowCount, column: column)
+        append(buffer: buffer, records: records, startRow: startRow, rowCount: rowCount, column: column, sourceOffset: sourceOffset)
     }
 
-    var rejected: Bool {
+    var rejectedField: CSVFieldOffset? {
         switch self {
-        case .integer(let attempt): attempt.rejected
-        case .double(let attempt): attempt.rejected
-        case .boolean(let attempt): attempt.rejected
-        case .date(let attempt): attempt.rejected
-        case .string(let attempt): attempt.rejected
+        case .integer(let attempt): attempt.rejectedField
+        case .double(let attempt): attempt.rejectedField
+        case .boolean(let attempt): attempt.rejectedField
+        case .date(let attempt): attempt.rejectedField
+        case .string(let attempt): attempt.rejectedField
         }
     }
+
+    var rejected: Bool { rejectedField != nil }
 
     func column(named name: String) -> any AnyColumn {
         switch self {
@@ -146,7 +162,8 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
     private let decoder: Decoder
     private let validates: Bool
     private var values: CSVColumnBuilder<Decoder.Value>
-    private(set) var rejected = false
+    private(set) var rejectedField: CSVFieldOffset?
+    var rejected: Bool { rejectedField != nil }
 
     init(decoder: Decoder, capacity: Int, validates: Bool) {
         self.decoder = decoder
@@ -156,12 +173,13 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
 
     func append<Records: CSVRecordAccess>(
         _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
-        _ startRow: Int, _ rowCount: Int, _ column: Int
+        _ startRow: Int, _ rowCount: Int, _ column: Int, sourceOffset: Int
     ) {
         guard !rejected else { return }
-        if !Self.appendRows(buffer, records, startRow, rowCount, column,
+        if let field = Self.appendRows(buffer, records, startRow, rowCount, column,
             decoder: decoder, validates: validates, into: &values) {
-            rejected = true
+            rejectedField = CSVFieldOffset(startOffset: sourceOffset + field.startOffset,
+                length: field.length, escapedQuotesPresent: field.escapedQuotesPresent)
             values = CSVColumnBuilder(capacity: 0)
         }
     }
@@ -172,7 +190,7 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
         _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
         _ startRow: Int, _ rowCount: Int, _ column: Int,
         decoder: Decoder, validates: Bool, into values: inout CSVColumnBuilder<Decoder.Value>
-    ) -> Bool {
+    ) -> CSVFieldOffset? {
         for row in startRow..<(startRow + rowCount) {
             guard let field = records.field(row: row, column: column) else {
                 values.append(nil)
@@ -182,11 +200,11 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
             case .value(let value): values.append(value)
             case .missing: values.append(nil)
             case .invalid:
-                if validates { return false }
+                if validates { return field }
                 values.append(nil)
             }
         }
-        return true
+        return nil
     }
 
     func column(named name: String) -> TypedColumn<Decoder.Value> {

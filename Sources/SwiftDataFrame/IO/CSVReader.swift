@@ -45,7 +45,7 @@ internal enum CSVReader {
         columns.withUnsafeMutableBufferPointer { columnBuffer in
             guard let base = columnBuffer.baseAddress else { return }
             let output = SendableColumnPointer(pointer: base)
-            DispatchQueue.concurrentPerform(iterations: headers.count) { column in
+            options.columnConversionMode.forEachColumn(count: headers.count) { column in
                 output.pointer[column] = buildColumn(
                     buffer: sendableBuffer.pointer, records: records, startRowIdx: startRow,
                     dataRowsToRead: rowCount, colIndex: column,

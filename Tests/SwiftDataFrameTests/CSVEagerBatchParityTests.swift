@@ -4,9 +4,10 @@ import Testing
 
 @Suite("Eager scoped and indexed CSV parity")
 struct CSVEagerBatchParityTests {
-    @Test("Batch boundaries preserve mixed native values and original token replay", arguments: [false, true])
-    func mixedReplay(_ headerless: Bool) throws {
+    @Test("Batch boundaries preserve mixed native values and original token replay", arguments: [false, true], [CSVColumnConversionMode.parallel, .serial])
+    func mixedReplay(_ headerless: Bool, _ mode: CSVColumnConversionMode) throws {
         var options = CSVReadOptions()
+        options.columnConversionMode = mode
         options.delimiter = ";"
         options.hasHeader = !headerless
         let header = headerless ? "" : "id;date;label;flag;value\r\n"
@@ -15,9 +16,10 @@ struct CSVEagerBatchParityTests {
         try compare(csv, options: options)
     }
 
-    @Test("Explicit types, numeric null tokens and ragged rows agree", arguments: [0, 10_001, 70_001])
-    func explicitTypes(_ limit: Int) throws {
+    @Test("Explicit types, numeric null tokens and ragged rows agree", arguments: [0, 10_001, 70_001], [CSVColumnConversionMode.parallel, .serial])
+    func explicitTypes(_ limit: Int, _ mode: CSVColumnConversionMode) throws {
         var options = CSVReadOptions()
+        options.columnConversionMode = mode
         options.maxRows = limit
         options.columnTypeOverrides = ["id": .int64, "date": .date32, "flag": .boolean, "value": .float64]
         options.columnDateFormats = ["date": "d/M/yyyy"]

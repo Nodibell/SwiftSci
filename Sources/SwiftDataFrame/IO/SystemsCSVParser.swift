@@ -199,8 +199,8 @@ public final class SystemsCSVParser: Sendable {
     internal func scanIndex<Field: CSVIndexField>(
         buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, fieldType: Field.Type
     ) -> CSVRecordIndex {
-        guard case .batch(let batch) = scanRecords(buffer: buffer, range: range,
-            fieldType: fieldType, maximumRows: nil) else {
+        guard case .complete(let batch) = scanRecords(buffer: buffer, range: range,
+            fieldType: fieldType, maximumRows: nil, output: CSVIndexOutput.self) else {
             preconditionFailure("The selected index field must represent the supplied range")
         }
         return batch.records
@@ -212,14 +212,14 @@ public final class SystemsCSVParser: Sendable {
         precondition(maximumRows > 0)
         try Task.checkCancellation()
         let compact = scanRecords(buffer: buffer, range: buffer.indices,
-            fieldType: CompactCSVField.self, maximumRows: maximumRows)
+            fieldType: CompactCSVField.self, maximumRows: maximumRows, output: CSVIndexOutput.self)
         switch compact {
-        case .batch(let batch): return batch
+        case .complete(let batch): return batch
         case .cancelled: throw CancellationError()
         case .widerOffsets:
             switch scanRecords(buffer: buffer, range: buffer.indices,
-                fieldType: PackedCSVField.self, maximumRows: maximumRows) {
-            case .batch(let batch): return batch
+                fieldType: PackedCSVField.self, maximumRows: maximumRows, output: CSVIndexOutput.self) {
+            case .complete(let batch): return batch
             case .cancelled: throw CancellationError()
             case .widerOffsets: preconditionFailure("A buffer range must fit Int offsets")
             }
@@ -230,50 +230,39 @@ public final class SystemsCSVParser: Sendable {
     internal func countRecords(buffer: UnsafeBufferPointer<UInt8>, maximumRows: Int? = nil) throws -> Int {
         guard maximumRows != 0 else { return 0 }
         try Task.checkCancellation()
-        var sink = CSVCountSink()
-        switch walkRecords(buffer: buffer, range: buffer.indices,
-            maximumRows: maximumRows ?? Int.max, sink: &sink) {
-        case .finished: return sink.rowCount
+        switch scanRecords(buffer: buffer, range: buffer.indices, fieldType: PackedCSVField.self,
+            maximumRows: maximumRows ?? Int.max, output: CSVCountOutput.self) {
+        case .complete(let count): return count
         case .cancelled: throw CancellationError()
         case .widerOffsets: preconditionFailure("Record counting stores no offsets")
         }
     }
 
-    private enum ScanResult {
-        case batch(CSVRecordBatch)
+    private enum ScanResult<Value> {
+        case complete(Value)
         case widerOffsets
         case cancelled
     }
 
-    private func scanRecords<Field: CSVIndexField>(
+    private func scanRecords<Field: CSVIndexField, Output: CSVScanOutput>(
         buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, fieldType: Field.Type,
-        maximumRows: Int?
-    ) -> ScanResult {
-        var sink = CSVIndexSink<Field>(byteCount: range.count, maximumRows: maximumRows)
-        switch walkRecords(buffer: buffer, range: range, maximumRows: maximumRows, sink: &sink) {
-        case .finished(let nextOffset):
-            return .batch(CSVRecordBatch(records: sink.records, nextOffset: nextOffset))
-        case .widerOffsets: return .widerOffsets
-        case .cancelled: return .cancelled
+        maximumRows: Int?, output: Output.Type
+    ) -> ScanResult<Output.Value> {
+        var fields = CSVFieldBlocks<Field>(byteCount: Output.keepsCoordinates ? range.count : 0)
+        var rowStarts = [Int]()
+        if Output.keepsCoordinates {
+            rowStarts = [0]
+            rowStarts.reserveCapacity(min(range.count / 16, maximumRows ?? 100_000, 100_000) + 1)
         }
-    }
+        var rowCount = 0
 
-    private enum WalkResult {
-        case finished(Int)
-        case widerOffsets
-        case cancelled
-    }
-
-    private func walkRecords<Sink: CSVScanSink>(
-        buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, maximumRows: Int?, sink: inout Sink
-    ) -> WalkResult {
         let count = range.upperBound
         var index = range.lowerBound
         var fieldStart = range.lowerBound
         var insideQuotes = false
         var escapedQuotesFound = false
         guard !range.isEmpty else {
-            return .finished(count)
+            return .complete(Output.finish(fields: fields, rowStarts: rowStarts, rowCount: rowCount, nextOffset: count))
         }
         var scanner = CSVStructuralScanner(bytes: buffer.baseAddress!, range: range,
             delimiter: delimiterByte, quote: quoteByte)
@@ -306,8 +295,12 @@ public final class SystemsCSVParser: Sendable {
                 if byte == quoteByte {
                     insideQuotes = true
                 } else if byte == delimiterByte {
-                    guard sink.appendField(start: fieldStart, end: index,
-                        escaped: escapedQuotesFound) else { return .widerOffsets }
+                    if Output.keepsCoordinates {
+                        let len = index - fieldStart
+                        guard index <= Field.maximumEndOffset else { return .widerOffsets }
+                        fields.append(Field(startOffset: fieldStart, length: max(0, len),
+                            escapedQuotesPresent: escapedQuotesFound))
+                    }
                     fieldStart = index + 1
                     escapedQuotesFound = false
                 } else if byte == lfByte {
@@ -315,11 +308,18 @@ public final class SystemsCSVParser: Sendable {
                     if endPosition > 0 && buffer[endPosition - 1] == crByte {
                         endPosition -= 1
                     }
-                    guard sink.appendField(start: fieldStart, end: endPosition,
-                        escaped: escapedQuotesFound) else { return .widerOffsets }
-                    sink.finishRow()
-                    if let maximumRows, sink.rowCount == maximumRows {
-                        return .finished(index + 1)
+                    if Output.keepsCoordinates {
+                        let len = endPosition - fieldStart
+                        guard endPosition <= Field.maximumEndOffset else { return .widerOffsets }
+                        fields.append(Field(startOffset: fieldStart, length: max(0, len),
+                            escapedQuotesPresent: escapedQuotesFound))
+                        rowStarts.append(fields.count)
+                    }
+                    if !Output.keepsCoordinates { rowCount += 1 }
+                    let discoveredRows = Output.keepsCoordinates ? rowStarts.count - 1 : rowCount
+                    if let maximumRows, discoveredRows == maximumRows {
+                        return .complete(Output.finish(fields: fields, rowStarts: rowStarts,
+                            rowCount: rowCount, nextOffset: index + 1))
                     }
 
                     fieldStart = index + 1
@@ -332,56 +332,50 @@ public final class SystemsCSVParser: Sendable {
         if maximumRows != nil, Task.isCancelled { return .cancelled }
         // Handle trailing line without newline
         if fieldStart < count {
-            guard sink.appendField(start: fieldStart, end: count,
-                escaped: escapedQuotesFound) else { return .widerOffsets }
-            sink.finishRow()
+            if Output.keepsCoordinates {
+                guard count <= Field.maximumEndOffset else { return .widerOffsets }
+                let len = count - fieldStart
+                fields.append(Field(startOffset: fieldStart, length: max(0, len),
+                    escapedQuotesPresent: escapedQuotesFound))
+                rowStarts.append(fields.count)
+            }
+            if !Output.keepsCoordinates { rowCount += 1 }
         } else {
             // Keep the public parser's existing EOF behavior for an unfinished row.
-            sink.discardIncompleteRow()
+            if Output.keepsCoordinates { fields.truncate(to: rowStarts.last!) }
         }
 
-        return .finished(count)
+        return .complete(Output.finish(fields: fields, rowStarts: rowStarts, rowCount: rowCount, nextOffset: count))
     }
 
 }
 
-// Concrete sinks share one grammar. Count specialization discards field events;
-// index specialization retains offsets with the existing width and EOF rules.
-private protocol CSVScanSink {
-    var rowCount: Int { get }
-    mutating func appendField(start: Int, end: Int, escaped: Bool) -> Bool
-    mutating func finishRow()
-    mutating func discardIncompleteRow()
+// Output mode is fixed for each specialization. The cell loop keeps its local
+// arrays for indexing; count-only specialization removes those arrays entirely.
+private protocol CSVScanOutput {
+    associatedtype Value
+    static var keepsCoordinates: Bool { get }
+    static func finish<Field: CSVIndexField>(
+        fields: CSVFieldBlocks<Field>, rowStarts: [Int], rowCount: Int, nextOffset: Int
+    ) -> Value
 }
 
-private struct CSVCountSink: CSVScanSink {
-    private(set) var rowCount = 0
-    @inline(__always) mutating func appendField(start: Int, end: Int, escaped: Bool) -> Bool { true }
-    @inline(__always) mutating func finishRow() { rowCount += 1 }
-    @inline(__always) mutating func discardIncompleteRow() {}
-}
-
-private struct CSVIndexSink<Field: CSVIndexField>: CSVScanSink {
-    private var fields: CSVFieldBlocks<Field>
-    private var rowStarts: [Int] = [0]
-
-    init(byteCount: Int, maximumRows: Int?) {
-        fields = CSVFieldBlocks(byteCount: byteCount)
-        rowStarts.reserveCapacity(min(byteCount / 16, maximumRows ?? 100_000, 100_000) + 1)
-    }
-
-    var rowCount: Int { rowStarts.count - 1 }
-    var records: CSVRecordIndex { Field.recordIndex(blocks: fields, rowStarts: rowStarts) }
-
+private enum CSVIndexOutput: CSVScanOutput {
+    static var keepsCoordinates: Bool { true }
     @inline(__always)
-    mutating func appendField(start: Int, end: Int, escaped: Bool) -> Bool {
-        guard end <= Field.maximumEndOffset else { return false }
-        fields.append(Field(startOffset: start, length: max(0, end - start), escapedQuotesPresent: escaped))
-        return true
+    static func finish<Field: CSVIndexField>(
+        fields: CSVFieldBlocks<Field>, rowStarts: [Int], rowCount: Int, nextOffset: Int
+    ) -> CSVRecordBatch {
+        CSVRecordBatch(records: Field.recordIndex(blocks: fields, rowStarts: rowStarts), nextOffset: nextOffset)
     }
+}
 
-    @inline(__always) mutating func finishRow() { rowStarts.append(fields.count) }
-    @inline(__always) mutating func discardIncompleteRow() { fields.truncate(to: rowStarts.last!) }
+private enum CSVCountOutput: CSVScanOutput {
+    static var keepsCoordinates: Bool { false }
+    @inline(__always)
+    static func finish<Field: CSVIndexField>(
+        fields: CSVFieldBlocks<Field>, rowStarts: [Int], rowCount: Int, nextOffset: Int
+    ) -> Int { rowCount }
 }
 
 // Buffers are borrowed until concurrentPerform joins. Each worker owns a

@@ -67,19 +67,18 @@ internal struct CSVColumnPlan {
     }
 
     func conversion(type: ColumnDType, capacity: Int) -> CSVColumnConversion {
-        let nulls = CSVNullMatcher(nullValues)
         switch type {
         case .int32, .int64:
-            return .integer(CSVColumnAttempt(decoder: CSVIntegerDecoder(nulls: nulls),
+            return .integer(CSVColumnAttempt(decoder: CSVIntegerDecoder(nulls: CSVNullMatcher(nullValues)),
                 capacity: capacity, validates: validates))
         case .float32, .float64:
-            return .double(CSVColumnAttempt(decoder: CSVDoubleDecoder(nulls: nulls),
+            return .double(CSVColumnAttempt(decoder: CSVDoubleDecoder(nulls: CSVNullMatcher(nullValues)),
                 capacity: capacity, validates: validates))
         case .boolean:
             return .boolean(CSVColumnAttempt(decoder: CSVBooleanDecoder(nullValues: nullValues),
                 capacity: capacity, validates: validates))
         case .date32:
-            return .date(CSVColumnAttempt(decoder: CSVDateDecoder(nulls: nulls,
+            return .date(CSVColumnAttempt(decoder: CSVDateDecoder(nulls: CSVNullMatcher(nullValues),
                 parser: CSVDateParser(format: dateFormat)), capacity: capacity, validates: validates))
         case .utf8:
             if let decoder = CSVSmallStringDecoder(nullValues: nullValues) {

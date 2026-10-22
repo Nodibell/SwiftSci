@@ -307,8 +307,31 @@ internal struct CSVBooleanDecoder: CSVValueDecoder {
     }
 }
 
+private enum CSVStringNulls: Sendable {
+    case linear([String])
+    case hashed(Set<String>)
+
+    init(_ values: Set<String>) {
+        // Small nonempty sets need at most two String comparisons. Empty and
+        // larger sets retain hashed lookup, including canonical Unicode equality.
+        self = !values.isEmpty && values.count <= 2 ? .linear(Array(values)) : .hashed(values)
+    }
+
+    @inline(__always)
+    func contains(_ value: String) -> Bool {
+        switch self {
+        case .linear(let values): values.contains(value)
+        case .hashed(let values): values.contains(value)
+        }
+    }
+}
+
 internal struct CSVStringDecoder: CSVValueDecoder {
-    let nullValues: Set<String>
+    private let nullValues: CSVStringNulls
+
+    init(nullValues: Set<String>) {
+        self.nullValues = CSVStringNulls(nullValues)
+    }
 
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<String> {

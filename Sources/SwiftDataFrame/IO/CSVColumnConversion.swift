@@ -156,6 +156,17 @@ internal enum CSVDecodedValue<Value> {
 internal protocol CSVValueDecoder {
     associatedtype Value: SupportedType
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Value>
+    /// Explicit schemas turn both missing and invalid fields into nil.
+    func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Value?
+}
+
+internal extension CSVValueDecoder {
+    func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Value? {
+        switch decode(buffer: buffer, offset: offset) {
+        case .value(let value): value
+        case .missing, .invalid: nil
+        }
+    }
 }
 
 internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
@@ -191,6 +202,17 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
         _ startRow: Int, _ rowCount: Int, _ column: Int,
         decoder: Decoder, validates: Bool, into values: inout CSVColumnBuilder<Decoder.Value>
     ) -> CSVFieldOffset? {
+        // Choose the validation contract once per batch. Inference keeps the
+        // classified result; an explicit schema only needs an optional value.
+        if !validates {
+            for row in startRow..<(startRow + rowCount) {
+                let value = records.field(row: row, column: column).flatMap {
+                    decoder.decodeValue(buffer: buffer, offset: $0)
+                }
+                values.append(value)
+            }
+            return nil
+        }
         for row in startRow..<(startRow + rowCount) {
             guard let field = records.field(row: row, column: column) else {
                 values.append(nil)
@@ -199,9 +221,7 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
             switch decoder.decode(buffer: buffer, offset: field) {
             case .value(let value): values.append(value)
             case .missing: values.append(nil)
-            case .invalid:
-                if validates { return field }
-                values.append(nil)
+            case .invalid: return field
             }
         }
         return nil
@@ -262,6 +282,14 @@ internal struct CSVStringDecoder: CSVValueDecoder {
 internal struct CSVDateDecoder: CSVValueDecoder {
     let nulls: CSVNullMatcher
     let parser: CSVDateParser
+
+    // Returning Foundation's optional directly avoids an additional generic
+    // result tag on the explicit-schema path.
+    @inline(__always)
+    func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Date? {
+        if nulls.contains(buffer: buffer, offset: offset) { return nil }
+        return parser.parse(buffer: buffer, offset: offset)
+    }
 
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Date> {

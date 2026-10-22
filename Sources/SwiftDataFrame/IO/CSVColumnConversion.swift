@@ -195,10 +195,12 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
         _ startRow: Int, _ rowCount: Int, _ column: Int, sourceOffset: Int
     ) {
         guard !rejected else { return }
-        if let field = Self.appendRows(buffer, records, startRow, rowCount, column,
-            decoder: decoder, validates: validates, into: &values) {
-            reject(field, sourceOffset: sourceOffset)
-        }
+        var batchValues = CSVColumnBuilder<Decoder.Value>(capacity: 0)
+        swap(&batchValues, &values)
+        let field = Self.appendRows(buffer, records, startRow, rowCount, column,
+            decoder: decoder, validates: validates, into: &batchValues)
+        swap(&batchValues, &values)
+        if let field { reject(field, sourceOffset: sourceOffset) }
     }
 
     // Keep Double visible in the validating loop so decoder calls can be direct.
@@ -211,10 +213,12 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
             return
         }
         guard !rejected else { return }
-        if let field = appendValidatedDoubles(buffer, records, startRow, rowCount, column,
-            decoder: decoder, into: &values) {
-            reject(field, sourceOffset: sourceOffset)
-        }
+        var batchValues = CSVColumnBuilder<Double>(capacity: 0)
+        swap(&batchValues, &values)
+        let field = appendValidatedDoubles(buffer, records, startRow, rowCount, column,
+            decoder: decoder, into: &batchValues)
+        swap(&batchValues, &values)
+        if let field { reject(field, sourceOffset: sourceOffset) }
     }
 
     private func reject(_ field: CSVFieldOffset, sourceOffset: Int) {
@@ -223,8 +227,7 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
         values = CSVColumnBuilder(capacity: 0)
     }
 
-    // Borrow the builder once per batch, rather than opening a mutable class
-    // property access for each value in the cell loop.
+    // Row loops mutate a local builder instead of a class property.
     private static func appendRows<Records: CSVRecordAccess>(
         _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
         _ startRow: Int, _ rowCount: Int, _ column: Int,

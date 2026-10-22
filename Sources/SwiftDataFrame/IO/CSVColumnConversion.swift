@@ -235,6 +235,16 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
 internal struct CSVIntegerDecoder: CSVValueDecoder {
     let nulls: CSVNullMatcher
 
+    // Explicit schemas consume optional values directly. Inference retains
+    // its classified decoder so missing fields do not need a second parse.
+    @inline(__always)
+    func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Int64? {
+        if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
+        if let value = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) { return Int64(value) }
+        if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
+        return Int64.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
+    }
+
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Int64> {
         if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
@@ -247,6 +257,14 @@ internal struct CSVIntegerDecoder: CSVValueDecoder {
 
 internal struct CSVDoubleDecoder: CSVValueDecoder {
     let nulls: CSVNullMatcher
+
+    @inline(__always)
+    func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Double? {
+        if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
+        if let value = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) { return value }
+        if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
+        return Double.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
+    }
 
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Double> {

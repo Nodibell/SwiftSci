@@ -102,7 +102,7 @@ internal enum CSVColumnConversion {
     ) {
         switch self {
         case .integer(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
-        case .double(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+        case .double(let attempt): attempt.appendDouble(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .boolean(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .date(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .string(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
@@ -189,10 +189,30 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
         guard !rejected else { return }
         if let field = Self.appendRows(buffer, records, startRow, rowCount, column,
             decoder: decoder, validates: validates, into: &values) {
-            rejectedField = CSVFieldOffset(startOffset: sourceOffset + field.startOffset,
-                length: field.length, escapedQuotesPresent: field.escapedQuotesPresent)
-            values = CSVColumnBuilder(capacity: 0)
+            reject(field, sourceOffset: sourceOffset)
         }
+    }
+
+    // Keep Double visible in the validating loop so decoder calls can be direct.
+    func appendDouble<Records: CSVRecordAccess>(
+        _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
+        _ startRow: Int, _ rowCount: Int, _ column: Int, sourceOffset: Int
+    ) where Decoder == CSVDoubleDecoder {
+        guard validates else {
+            append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+            return
+        }
+        guard !rejected else { return }
+        if let field = appendValidatedDoubles(buffer, records, startRow, rowCount, column,
+            decoder: decoder, into: &values) {
+            reject(field, sourceOffset: sourceOffset)
+        }
+    }
+
+    private func reject(_ field: CSVFieldOffset, sourceOffset: Int) {
+        rejectedField = CSVFieldOffset(startOffset: sourceOffset + field.startOffset,
+            length: field.length, escapedQuotesPresent: field.escapedQuotesPresent)
+        values = CSVColumnBuilder(capacity: 0)
     }
 
     // Borrow the builder once per batch, rather than opening a mutable class
@@ -314,4 +334,23 @@ internal struct CSVDateDecoder: CSVValueDecoder {
         if nulls.contains(buffer: buffer, offset: offset) { return .missing }
         return parser.parse(buffer: buffer, offset: offset).map(CSVDecodedValue.value) ?? .invalid
     }
+}
+
+private func appendValidatedDoubles<Records: CSVRecordAccess>(
+    _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
+    _ startRow: Int, _ rowCount: Int, _ column: Int,
+    decoder: CSVDoubleDecoder, into values: inout CSVColumnBuilder<Double>
+) -> CSVFieldOffset? {
+    for row in startRow..<(startRow + rowCount) {
+        guard let field = records.field(row: row, column: column) else {
+            values.append(nil)
+            continue
+        }
+        switch decoder.decode(buffer: buffer, offset: field) {
+        case .value(let value): values.append(value)
+        case .missing: values.append(nil)
+        case .invalid: return field
+        }
+    }
+    return nil
 }

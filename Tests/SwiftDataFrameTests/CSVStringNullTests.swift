@@ -9,7 +9,7 @@ struct CSVStringNullTests {
         let largeValues: [String] = (0..<2_048).map { (index: Int) -> String in "missing-\(index)" }
         let medium = Set<String>(mediumValues)
         let large = Set<String>(largeValues)
-        return [[], ["NA"], ["", "NA"], ["é", "K"], CSVReadOptions.default.nullValues, medium, large]
+        return [[], ["NA"], ["", "NA"], ["é", "K"], ["é", "K", "NA"], CSVReadOptions.default.nullValues, medium, large]
     }
 
     @Test("String decoding retains Set equality across null-set sizes")

@@ -207,7 +207,7 @@ internal enum CSVReader {
             rowCount: dataRowsToRead, column: colIndex, name: name, options: options)
         var candidate = 0
         while true {
-            let conversion = plan.conversion(type: plan.candidates[candidate], capacity: dataRowsToRead)
+            let conversion = plan.conversion(type: plan.candidates[candidate], selectedRowCount: dataRowsToRead)
             conversion.append(buffer: buffer, records: records, startRow: startRowIdx,
                 rowCount: dataRowsToRead, column: colIndex)
             guard let field = conversion.rejectedField else { return conversion.column(named: name) }

@@ -58,7 +58,7 @@ internal struct CSVColumnPlan {
             length: rejectedField.length, escapedQuotesPresent: rejectedField.escapedQuotesPresent)], rowStarts: [0, 1])
         var next = index + 1
         while candidates[next] != .utf8 {
-            let probe = conversion(type: candidates[next], capacity: 1)
+            let probe = conversion(type: candidates[next], selectedRowCount: 1)
             probe.appendIndexed(buffer: buffer, records: record, startRow: 0, rowCount: 1, column: 0)
             if !probe.rejected { return next }
             next += 1
@@ -66,27 +66,31 @@ internal struct CSVColumnPlan {
         return next
     }
 
-    func conversion(type: ColumnDType, capacity: Int) -> CSVColumnConversion {
+    func conversion(type: ColumnDType, selectedRowCount: Int) -> CSVColumnConversion {
         switch type {
         case .int32, .int64:
             return .integer(CSVColumnAttempt(decoder: CSVIntegerDecoder(nulls: CSVNullMatcher(nullValues)),
-                capacity: capacity, validates: validates))
+                capacity: selectedRowCount, validates: validates))
         case .float32, .float64:
             return .double(CSVColumnAttempt(decoder: CSVDoubleDecoder(nulls: CSVNullMatcher(nullValues)),
-                capacity: capacity, validates: validates))
+                capacity: selectedRowCount, validates: validates))
         case .boolean:
             return .boolean(CSVColumnAttempt(decoder: CSVBooleanDecoder(nullValues: nullValues),
-                capacity: capacity, validates: validates))
+                capacity: selectedRowCount, validates: validates))
         case .date32:
             return .date(CSVColumnAttempt(decoder: CSVDateDecoder(nulls: CSVNullMatcher(nullValues),
-                parser: CSVDateParser(format: dateFormat)), capacity: capacity, validates: validates))
+                parser: CSVDateParser(format: dateFormat)), capacity: selectedRowCount, validates: validates))
         case .utf8:
             if let decoder = CSVSmallStringDecoder(nullValues: nullValues) {
                 return .stringWithSmallNullSet(CSVColumnAttempt(
-                    decoder: decoder, capacity: capacity, validates: false))
+                    decoder: decoder, capacity: selectedRowCount, validates: false))
+            }
+            if let decoder = CSVASCIIPrefixStringDecoder(nullValues: nullValues, selectedRowCount: selectedRowCount) {
+                return .stringWithASCIIPrefix(CSVColumnAttempt(
+                    decoder: decoder, capacity: selectedRowCount, validates: false))
             }
             return .string(CSVColumnAttempt(decoder: CSVStringDecoder(nullValues: nullValues),
-                capacity: capacity, validates: false))
+                capacity: selectedRowCount, validates: false))
         }
     }
 }
@@ -99,6 +103,7 @@ internal enum CSVColumnConversion {
     case date(CSVColumnAttempt<CSVDateDecoder>)
     case string(CSVColumnAttempt<CSVStringDecoder>)
     case stringWithSmallNullSet(CSVColumnAttempt<CSVSmallStringDecoder>)
+    case stringWithASCIIPrefix(CSVColumnAttempt<CSVASCIIPrefixStringDecoder>)
 
     func append<Records: CSVRecordAccess>(
         buffer: UnsafeBufferPointer<UInt8>, records: Records, startRow: Int,
@@ -111,6 +116,7 @@ internal enum CSVColumnConversion {
         case .date(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .string(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .stringWithSmallNullSet(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+        case .stringWithASCIIPrefix(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         }
     }
 
@@ -137,6 +143,7 @@ internal enum CSVColumnConversion {
         case .date(let attempt): attempt.rejectedField
         case .string(let attempt): attempt.rejectedField
         case .stringWithSmallNullSet(let attempt): attempt.rejectedField
+        case .stringWithASCIIPrefix(let attempt): attempt.rejectedField
         }
     }
 
@@ -150,6 +157,7 @@ internal enum CSVColumnConversion {
         case .date(let attempt): attempt.column(named: name)
         case .string(let attempt): attempt.column(named: name)
         case .stringWithSmallNullSet(let attempt): attempt.column(named: name)
+        case .stringWithASCIIPrefix(let attempt): attempt.column(named: name)
         }
     }
 }

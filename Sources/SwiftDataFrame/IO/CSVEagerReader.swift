@@ -51,7 +51,7 @@ internal enum CSVEagerReader {
                     candidate[column] = plans[column].nextCandidate(after: candidate[column],
                         buffer: source, rejectedField: field)
                     attempts[column] = plans[column].conversion(
-                        type: plans[column].candidates[candidate[column]], capacity: initial.capacity)
+                        type: plans[column].candidates[candidate[column]], selectedRowCount: initial.totalRows)
                     retry.append(column)
                 } else {
                     completed[column] = attempt.column(named: headers[column])
@@ -71,7 +71,7 @@ internal enum CSVEagerReader {
 
     private struct Initial {
         let plans: [CSVColumnPlan]
-        let capacity: Int
+        let totalRows: Int
         let attempts: [CSVColumnConversion?]
         let nextOffset: Int
         let rows: Int
@@ -88,17 +88,17 @@ internal enum CSVEagerReader {
         let rows = options.maxRows == 0 ? 0 : batch.records.count
         let remainder = UnsafeBufferPointer(rebasing: source[batch.nextOffset...])
         let remaining = options.maxRows.map { max(0, $0 - rows) }
-        let capacity = rows + (try parser.countRecords(buffer: remainder, maximumRows: remaining))
+        let totalRows = rows + (try parser.countRecords(buffer: remainder, maximumRows: remaining))
         let plans = headers.enumerated().map { column, name in
             CSVColumnPlan(buffer: source, records: batch.records, startRow: 0,
                 rowCount: rows, column: column, name: name, options: options)
         }
         let attempts: [CSVColumnConversion?] = plans.map {
-            $0.conversion(type: $0.candidates[0], capacity: capacity)
+            $0.conversion(type: $0.candidates[0], selectedRowCount: totalRows)
         }
         append(buffer: source, records: batch.records, attempts: attempts, columns: Array(headers.indices),
             mode: options.columnConversionMode, rowCount: rows)
-        return Initial(plans: plans, capacity: capacity, attempts: attempts, nextOffset: batch.nextOffset, rows: rows)
+        return Initial(plans: plans, totalRows: totalRows, attempts: attempts, nextOffset: batch.nextOffset, rows: rows)
     }
 
     private static func append(

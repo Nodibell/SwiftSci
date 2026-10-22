@@ -1,4 +1,5 @@
 import Foundation
+import simd
 
 /// Coordinates of a CSV field within an un-copied byte buffer.
 public struct CSVFieldOffset: Sendable {
@@ -424,9 +425,13 @@ private struct CSVStructuralScanner {
                 let block = UnsafeRawPointer(bytes.advanced(by: cursor)).loadUnaligned(as: SIMD16<UInt8>.self)
                 var structural = (block .== SIMD16(repeating: delimiter)) .| (block .== SIMD16(repeating: 10))
                 if let quote { structural = structural .| (block .== SIMD16(repeating: quote)) }
-                let weights = SIMD16<UInt8>(1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128)
-                let selected = SIMD16<UInt8>.zero.replacing(with: weights, where: structural)
-                matches = UInt16(selected.lowHalf.wrappedSum()) | (UInt16(selected.highHalf.wrappedSum()) << 8)
+                // Each disjoint byte-weight sum is at most 255. Full-width platform
+                // reductions keep mask packing vectorized instead of extracting lanes.
+                let lowWeights = SIMD16<UInt8>(1, 2, 4, 8, 16, 32, 64, 128, 0, 0, 0, 0, 0, 0, 0, 0)
+                let highWeights = SIMD16<UInt8>(0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 16, 32, 64, 128)
+                let low = SIMD16<UInt8>.zero.replacing(with: lowWeights, where: structural)
+                let high = SIMD16<UInt8>.zero.replacing(with: highWeights, where: structural)
+                matches = UInt16(simd_reduce_add(low)) | (UInt16(simd_reduce_add(high)) << 8)
                 cursor += 16
             } else {
                 while cursor < searchLimit {

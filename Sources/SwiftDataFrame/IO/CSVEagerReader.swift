@@ -67,22 +67,6 @@ internal enum CSVEagerReader {
         })
     }
 
-    private static func countRows(
-        source: UnsafeBufferPointer<UInt8>, parser: SystemsCSVParser, maximum: Int?
-    ) throws -> Int {
-        var rows = 0
-        var offset = 0
-        while offset < source.count && maximum.map({ rows < $0 }) != false {
-            let bytes = UnsafeBufferPointer(rebasing: source[offset...])
-            let remaining = maximum.map { $0 - rows } ?? batchRows
-            let batch = try parser.scanBatch(buffer: bytes, maximumRows: min(batchRows, remaining))
-            guard !batch.records.isEmpty else { break }
-            rows += batch.records.count
-            offset += batch.nextOffset
-        }
-        return rows
-    }
-
     private struct Initial {
         let plans: [CSVColumnPlan]
         let capacity: Int
@@ -102,7 +86,7 @@ internal enum CSVEagerReader {
         let rows = options.maxRows == 0 ? 0 : batch.records.count
         let remainder = UnsafeBufferPointer(rebasing: source[batch.nextOffset...])
         let remaining = options.maxRows.map { max(0, $0 - rows) }
-        let capacity = rows + (try countRows(source: remainder, parser: parser, maximum: remaining))
+        let capacity = rows + (try parser.countRecords(buffer: remainder, maximumRows: remaining))
         let plans = headers.enumerated().map { column, name in
             CSVColumnPlan(buffer: source, records: batch.records, startRow: 0,
                 rowCount: rows, column: column, name: name, options: options)

@@ -226,6 +226,20 @@ public final class SystemsCSVParser: Sendable {
         }
     }
 
+    internal func countRecords(buffer: UnsafeBufferPointer<UInt8>, maximumRows: Int? = nil) throws -> Int {
+        var rows = 0
+        var offset = 0
+        while offset < buffer.count && maximumRows.map({ rows < $0 }) != false {
+            let bytes = UnsafeBufferPointer(rebasing: buffer[offset...])
+            let remaining = maximumRows.map { $0 - rows } ?? 16_384
+            let batch = try scanBatch(buffer: bytes, maximumRows: min(16_384, remaining))
+            guard !batch.records.isEmpty else { break }
+            rows += batch.records.count
+            offset += batch.nextOffset
+        }
+        return rows
+    }
+
     private enum ScanResult {
         case batch(CSVRecordBatch)
         case widerOffsets

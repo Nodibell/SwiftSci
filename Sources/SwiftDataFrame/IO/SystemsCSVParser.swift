@@ -264,8 +264,9 @@ public final class SystemsCSVParser: Sendable {
         guard !range.isEmpty else {
             return .complete(Output.finish(fields: fields, rowStarts: rowStarts, rowCount: rowCount, nextOffset: count))
         }
+        // Counting needs quote and row boundaries, not individual delimiters.
         var scanner = CSVStructuralScanner(bytes: buffer.baseAddress!, range: range,
-            delimiter: delimiterByte, quote: quoteByte)
+            delimiter: Output.keepsCoordinates ? delimiterByte : lfByte, quote: quoteByte)
         var searchLimit = maximumRows == nil ? count : range.lowerBound + min(65_536, range.count)
 
         while true {
@@ -330,6 +331,10 @@ public final class SystemsCSVParser: Sendable {
         }
 
         if maximumRows != nil, Task.isCancelled { return .cancelled }
+        // Count-only scanning skips delimiter events. Preserve the unfinished
+        // trailing-empty-field behavior without visiting earlier delimiters.
+        if !Output.keepsCoordinates && !insideQuotes && delimiterByte != quoteByte
+            && buffer[count - 1] == delimiterByte { fieldStart = count }
         // Handle trailing line without newline
         if fieldStart < count {
             if Output.keepsCoordinates {

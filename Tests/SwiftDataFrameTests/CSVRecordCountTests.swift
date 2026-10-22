@@ -32,6 +32,13 @@ struct CSVRecordCountTests {
         try compare(Array(text.utf8), delimiter: 44, quote: 34)
     }
 
+    @Test("Count preserves trailing fields after skipped delimiters across search windows",
+          arguments: ["tail,", "\"tail,", "tail,\"\"", "tail, ", "\"tail,\"", "tail,\"\"\""])
+    func trailingField(_ suffix: String) throws {
+        let text = String(repeating: "x", count: 65_536) + ",1\n" + suffix
+        try compare(Array(text.utf8), delimiter: 44, quote: 34)
+    }
+
     @Test("Record counting checks cancellation")
     func cancellation() async throws {
         let bytes = Array("a,b\n1,2\n".utf8)

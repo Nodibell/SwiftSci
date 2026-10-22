@@ -82,6 +82,10 @@ internal struct CSVColumnPlan {
             return .date(CSVColumnAttempt(decoder: CSVDateDecoder(nulls: nulls,
                 parser: CSVDateParser(format: dateFormat)), capacity: capacity, validates: validates))
         case .utf8:
+            if let decoder = CSVSmallStringDecoder(nullValues: nullValues) {
+                return .stringWithSmallNullSet(CSVColumnAttempt(
+                    decoder: decoder, capacity: capacity, validates: false))
+            }
             return .string(CSVColumnAttempt(decoder: CSVStringDecoder(nullValues: nullValues),
                 capacity: capacity, validates: false))
         }
@@ -95,6 +99,7 @@ internal enum CSVColumnConversion {
     case boolean(CSVColumnAttempt<CSVBooleanDecoder>)
     case date(CSVColumnAttempt<CSVDateDecoder>)
     case string(CSVColumnAttempt<CSVStringDecoder>)
+    case stringWithSmallNullSet(CSVColumnAttempt<CSVSmallStringDecoder>)
 
     func append<Records: CSVRecordAccess>(
         buffer: UnsafeBufferPointer<UInt8>, records: Records, startRow: Int,
@@ -106,6 +111,7 @@ internal enum CSVColumnConversion {
         case .boolean(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .date(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .string(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+        case .stringWithSmallNullSet(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         }
     }
 
@@ -131,6 +137,7 @@ internal enum CSVColumnConversion {
         case .boolean(let attempt): attempt.rejectedField
         case .date(let attempt): attempt.rejectedField
         case .string(let attempt): attempt.rejectedField
+        case .stringWithSmallNullSet(let attempt): attempt.rejectedField
         }
     }
 
@@ -143,6 +150,7 @@ internal enum CSVColumnConversion {
         case .boolean(let attempt): attempt.column(named: name)
         case .date(let attempt): attempt.column(named: name)
         case .string(let attempt): attempt.column(named: name)
+        case .stringWithSmallNullSet(let attempt): attempt.column(named: name)
         }
     }
 }
@@ -307,36 +315,32 @@ internal struct CSVBooleanDecoder: CSVValueDecoder {
     }
 }
 
-private enum CSVStringNulls: Sendable {
-    case linear([String])
-    case hashed(Set<String>)
-
-    init(_ values: Set<String>) {
-        // Small nonempty sets need at most two String comparisons. Empty and
-        // larger sets retain hashed lookup, including canonical Unicode equality.
-        self = !values.isEmpty && values.count <= 2 ? .linear(Array(values)) : .hashed(values)
-    }
-
-    @inline(__always)
-    func contains(_ value: String) -> Bool {
-        switch self {
-        case .linear(let values): values.contains(value)
-        case .hashed(let values): values.contains(value)
-        }
-    }
-}
-
 internal struct CSVStringDecoder: CSVValueDecoder {
-    private let nullValues: CSVStringNulls
-
-    init(nullValues: Set<String>) {
-        self.nullValues = CSVStringNulls(nullValues)
-    }
+    let nullValues: Set<String>
 
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<String> {
         let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
         return nullValues.contains(text) ? .missing : .value(text)
+    }
+}
+
+internal struct CSVSmallStringDecoder: CSVValueDecoder, Sendable {
+    private let first: String
+    private let second: String?
+
+    init?(nullValues: Set<String>) {
+        guard nullValues.count <= 2 else { return nil }
+        var iterator = nullValues.makeIterator()
+        guard let first = iterator.next() else { return nil }
+        self.first = first
+        second = iterator.next()
+    }
+
+    @inline(__always)
+    func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<String> {
+        let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
+        return first == text || second == text ? .missing : .value(text)
     }
 }
 

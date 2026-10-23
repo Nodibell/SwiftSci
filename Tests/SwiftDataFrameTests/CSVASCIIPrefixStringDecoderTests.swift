@@ -7,18 +7,25 @@ struct CSVASCIIPrefixStringDecoderTests {
     @Test("Preparation uses the selected row budget and rejects unsuitable sets")
     func eligibility() {
         let tokens: Set<String> = ["", "NA", "null"]
-        #expect(CSVASCIIPrefixStringDecoder(nullValues: tokens, selectedRowCount: 8) == nil)
-        #expect(CSVASCIIPrefixStringDecoder(nullValues: tokens, selectedRowCount: 9) != nil)
-        #expect(CSVASCIIPrefixStringDecoder(nullValues: tokens, selectedRowCount: 10) != nil)
+        #expect(CSVASCIIPrefixStringDecoder(nullValues: tokens, selectedRowCount: 11) == nil)
+        #expect(CSVASCIIPrefixStringDecoder(nullValues: tokens, selectedRowCount: 12) != nil)
+        #expect(CSVASCIIPrefixStringDecoder(nullValues: tokens, selectedRowCount: 13) != nil)
         let rejected: [Set<String>] = [[], ["NA"], ["", "NA"], ["", "NA", "é"]]
         for values in rejected {
             #expect(CSVASCIIPrefixStringDecoder(nullValues: values, selectedRowCount: 1_000) == nil)
         }
+        let units = [unichar](repeating: 0x0100, count: 128)
+        let cocoa = units.withUnsafeBufferPointer { pointer in
+            NSString(characters: pointer.baseAddress!, length: pointer.count)
+        }
+        let bridged = cocoa as String
+        let bridgedTokens: Set<String> = ["", "NA", bridged]
+        #expect(CSVASCIIPrefixStringDecoder(nullValues: bridgedTokens, selectedRowCount: 1_000) == nil)
         let long: Set<String> = ["", "NA", String(repeating: "x", count: 10_000)]
         #expect(CSVASCIIPrefixStringDecoder(nullValues: long, selectedRowCount: 64) == nil)
         var saturated = Set<String>()
         for byte in UInt8(0)...UInt8(127) { saturated.insert(String(UnicodeScalar(byte))) }
-        #expect(CSVASCIIPrefixStringDecoder(nullValues: saturated, selectedRowCount: 256) == nil)
+        #expect(CSVASCIIPrefixStringDecoder(nullValues: saturated, selectedRowCount: 384) == nil)
     }
 
     @Test("Prepared keys own values and preserve parsed String membership")

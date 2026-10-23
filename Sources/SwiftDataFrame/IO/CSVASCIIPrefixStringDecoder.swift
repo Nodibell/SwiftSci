@@ -7,16 +7,21 @@ internal struct CSVASCIIPrefixStringDecoder: CSVValueDecoder, Sendable {
     private let highStarts: UInt64
 
     init?(nullValues: Set<String>, selectedRowCount: Int) {
-        guard nullValues.count > 2, nullValues.count <= selectedRowCount else { return nil }
-        // Bound token visits plus inspected bytes by the work selected for this attempt.
-        var remaining = selectedRowCount - nullValues.count
+        guard nullValues.count > 2, nullValues.count <= selectedRowCount / 2 else { return nil }
+        // Admit two token traversals and one byte scan before preparing any masks.
+        var remaining = selectedRowCount - nullValues.count - nullValues.count
+        for token in nullValues {
+            guard token.isContiguousUTF8 else { return nil }
+            let count = token.utf8.count
+            guard count <= remaining else { return nil }
+            remaining -= count
+        }
         var low: UInt64 = 0
         var high: UInt64 = 0
         for token in nullValues {
             var first = true
             for byte in token.utf8 {
-                guard remaining > 0, byte < 128 else { return nil }
-                remaining -= 1
+                guard byte < 128 else { return nil }
                 if first {
                     if byte < 64 { low |= UInt64(1) << byte }
                     else { high |= UInt64(1) << (byte - 64) }

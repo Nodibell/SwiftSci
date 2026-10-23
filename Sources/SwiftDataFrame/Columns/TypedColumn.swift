@@ -482,13 +482,12 @@ private func sortIndicesDouble<Values: RandomAccessCollection>(
     _ values: Values, nullCount: Int, ascending: Bool
 ) -> [Int] where Values.Element == Double?, Values.Index == Int {
     let validCount = values.count - nullCount
-    // Sparse columns do not amortize a full-row radix key buffer.
+    // Sparse columns do not amortize a full-row sort key buffer.
     if validCount < 1_024 || validCount < values.count / 20 {
         return sortIndicesPrimitiveFast(values, nullCount: nullCount, ascending: ascending)
     }
     var previous: Double?
     var direction = 0
-    var runs = 1
     var requiresComparisonFallback = false
     // Probe monotonic order before allocating keys.
     let runLimit = max(8, validCount / 64)
@@ -501,27 +500,15 @@ private func sortIndicesDouble<Values: RandomAccessCollection>(
         if let previous, value != previous {
             let nextDirection = value > previous ? 1 : -1
             if direction != 0 && direction != nextDirection {
-                runs += 1
-                // Row-addressed 8-byte keys fit within 16-byte valid-row tuples.
-                if runs == 2 && nullCount <= validCount {
-                    let resume = (nextRow: index + 1, previous: value, direction: nextDirection, runs: runs)
-                    if let prepared = prepareDoubleSortKeys(values, ascending: ascending,
-                                                            resume: resume, runLimit: runLimit) {
-                        return sortedDoubleRows(prepared, validCount: validCount)
-                    }
-                    requiresComparisonFallback = true
-                    break
+                let resume = (nextRow: index + 1, previous: value, direction: nextDirection, runs: 2)
+                if let prepared = prepareDoubleSortKeys(values, ascending: ascending,
+                                                        resume: resume, runLimit: runLimit) {
+                    return sortedDoubleRows(prepared, validCount: validCount)
                 }
+                requiresComparisonFallback = true
+                break
             }
             direction = nextDirection
-        }
-        if runs > runLimit {
-            if let prepared = prepareDoubleSortKeys(values, ascending: ascending,
-                                                    resume: nil, runLimit: runLimit) {
-                return sortedDoubleRows(prepared, validCount: validCount)
-            }
-            requiresComparisonFallback = true
-            break
         }
         previous = value
     }
@@ -530,11 +517,8 @@ private func sortIndicesDouble<Values: RandomAccessCollection>(
         sortIndices(&indices, ascending: ascending) { values[$0] }
         return indices
     }
-    if runs == 1 {
-        return monotonicIndicesDouble(values, nullCount: nullCount,
-                                      reverse: direction != 0 && (direction > 0) != ascending)
-    }
-    return sortIndicesPrimitiveFast(values, nullCount: nullCount, ascending: ascending)
+    return monotonicIndicesDouble(values, nullCount: nullCount,
+                                  reverse: direction != 0 && (direction > 0) != ascending)
 }
 
 private func monotonicIndicesDouble<Values: RandomAccessCollection>(

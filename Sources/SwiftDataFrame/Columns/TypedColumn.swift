@@ -197,6 +197,12 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     /// Gathers elements at the specified row indices using typed indexed loops, placing nil where index is nil.
     public func gatheredWithNulls(at indices: [Int?], newName: String? = nil) -> any AnyColumn {
+        if let column = self as? TypedColumn<Double>, column.compactNumericStorage != nil {
+            let output = CompactNumericColumn(count: indices.count) { position in
+                indices[position].flatMap { column[$0] }
+            }
+            return TypedColumn<Double>(name: newName ?? name, compactColumn: output)
+        }
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
         var gatheredNullCount = 0
@@ -232,6 +238,15 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     ) -> any AnyColumn {
         guard let typedRight = rightColumn as? TypedColumn<T> else {
             return (self as any AnyColumn).gatheredJoinKey(leftIndices: leftIndices, rightColumn: rightColumn, rightIndices: rightIndices, name: name)
+        }
+        if let left = self as? TypedColumn<Double>, let right = typedRight as? TypedColumn<Double>,
+           left.compactNumericStorage != nil || right.compactNumericStorage != nil {
+            let output = CompactNumericColumn(count: leftIndices.count) { position in
+                if let row = leftIndices[position] { return left[row] }
+                if let row = rightIndices[position] { return right[row] }
+                return nil
+            }
+            return TypedColumn<Double>(name: name, compactColumn: output)
         }
         let n = leftIndices.count
         var result = Array<T?>(repeating: nil, count: n)

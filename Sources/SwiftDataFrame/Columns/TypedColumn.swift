@@ -615,6 +615,14 @@ import Accelerate
 // MARK: – Double column filter & vDSP vectorised reductions fast path
 
 extension TypedColumn where T == Double {
+    internal var compactNumericStorage: CompactNumericColumn? {
+        guard case .dense(let values, let validity) = storage else { return nil }
+        var result = CompactNumericColumn(values)
+        result.validity = validity
+        result.nullCount = _nullCount
+        return result
+    }
+
     internal init(name: String, compactColumn: CompactNumericColumn) {
         self.init(name: name, storage: .dense(compactColumn.values, validity: compactColumn.validity),
                   nullCount: compactColumn.nullCount)

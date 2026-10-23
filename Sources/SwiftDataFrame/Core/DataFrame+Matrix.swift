@@ -34,6 +34,9 @@ extension DataFrame {
         let selected = try featureColumns(columns)
         let rows = shape.rows
         let cols = selected.count
+        if selected.count == 1, case .dense(let column) = selected[0], column.nullCount == 0 {
+            return (column.values, rows, 1)
+        }
         var flat = [Double](repeating: 0.0, count: rows * cols)
         for (index, column) in selected.enumerated() {
             column.write(to: &flat, offset: index, stride: cols, count: rows)
@@ -82,6 +85,11 @@ extension DataFrame {
             }
         }
         let count = rows?.count ?? sourceCount
+        if rows == nil, selected.count == 1,
+           case .dense(let column) = selected[0], column.nullCount == 0 {
+            return PreparedNumericMatrix(values: column.values, columnNames: columns,
+                rowCount: count, order: order, sourceRows: nil)
+        }
         let (elements, overflow) = count.multipliedReportingOverflow(by: selected.count)
         guard !overflow else { throw SwiftMLError.invalidParameter("Matrix element count overflows Int") }
         var values = [Double](repeating: 0, count: elements)
@@ -105,7 +113,10 @@ extension DataFrame {
             throw SwiftMLError.columnNotFound(name)
         }
         return try names.map { name in
-            if let column = self[column: name, as: Double.self] { return .double(column.values) }
+            if let column = self[column: name, as: Double.self] {
+                if let dense = column.compactNumericStorage { return .dense(dense) }
+                return .double(column.values)
+            }
             if let column = self[column: name, as: Int64.self] { return .integer(column.values) }
             if let column = self[column: name, as: Bool.self] { return .boolean(column.values) }
             throw SwiftMLError.castFailed(column: name, targetType: "Double")
@@ -150,12 +161,14 @@ private func writeFeatureMatrix<Rows: RandomAccessCollection>(
 
 private enum FeatureColumn {
     case double([Double?])
+    case dense(CompactNumericColumn)
     case integer([Int64?])
     case boolean([Bool?])
 
     func compact() -> CompactNumericColumn {
         switch self {
         case .double(let values): return CompactNumericColumn(values, transform: { $0 })
+        case .dense(let column): return column
         case .integer(let values): return CompactNumericColumn(values, transform: Double.init)
         case .boolean(let values): return CompactNumericColumn(values, transform: { $0 ? 1 : 0 })
         }
@@ -164,6 +177,8 @@ private enum FeatureColumn {
     func write(to output: inout [Double], offset: Int, stride: Int, count: Int) {
         // Keep strided writes in a direct loop so the compiler can optimize the flat layout.
         switch self {
+        case .dense(let column):
+            for row in 0..<count { output[row * stride + offset] = column[row] ?? .nan }
         case .double(let values):
             for row in 0..<count { output[row * stride + offset] = values[row] ?? .nan }
         case .integer(let values):
@@ -177,6 +192,16 @@ private enum FeatureColumn {
                                         rows: Rows, missing: NumericMissingValuePolicy, name: String) throws
     where Rows.Element == Int {
         switch self {
+        case .dense(let column):
+            for (destination, row) in rows.enumerated() {
+                if let value = column[row] {
+                    output[destination * stride + offset] = value
+                } else if missing == .reject {
+                    throw SwiftMLError.invalidParameter("Column \(name) contains missing values")
+                } else {
+                    output[destination * stride + offset] = .nan
+                }
+            }
         case .double(let values):
             try write(values, transform: { $0 })
         case .integer(let values):
@@ -200,6 +225,8 @@ private enum FeatureColumn {
 
     func forEachValue(_ body: (Int, Double) -> Void) {
         switch self {
+        case .dense(let column):
+            for row in column.values.indices { body(row, column[row] ?? .nan) }
         case .double(let values):
             for (row, value) in values.enumerated() { body(row, value ?? .nan) }
         case .integer(let values):

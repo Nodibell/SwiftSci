@@ -486,24 +486,17 @@ private func sortIndicesDouble<Values: RandomAccessCollection>(
     if validCount < 1_024 || validCount < values.count / 20 {
         return sortIndicesPrimitiveFast(values, nullCount: nullCount, ascending: ascending)
     }
-    var tagged: [(index: Int, value: Double)] = []
-    var missing: [Int] = []
-    tagged.reserveCapacity(validCount)
-    missing.reserveCapacity(nullCount)
     var previous: Double?
     var direction = 0
     var runs = 1
-    // Keep adaptive comparison sorting when monotone runs span at least 64 values on average.
+    var requiresComparisonFallback = false
+    // Choose the path before allocating cached comparison keys.
     let runLimit = max(8, validCount / 64)
-    for (index, optional) in values.enumerated() {
-        guard let value = optional else {
-            missing.append(index)
-            continue
-        }
+    for optional in values {
+        guard let value = optional else { continue }
         if value.isNaN {
-            var indices = Array(0..<values.count)
-            sortIndices(&indices, ascending: ascending) { values[$0] }
-            return indices
+            requiresComparisonFallback = true
+            break
         }
         if let previous, value != previous {
             let nextDirection = value > previous ? 1 : -1
@@ -511,22 +504,20 @@ private func sortIndicesDouble<Values: RandomAccessCollection>(
             direction = nextDirection
         }
         if runs > runLimit {
-            tagged.removeAll(keepingCapacity: false)
-            missing.removeAll(keepingCapacity: false)
             if let indices = radixIndicesDouble(values, nullCount: nullCount, ascending: ascending) {
                 return indices
             }
-            var indices = Array(0..<values.count)
-            sortIndices(&indices, ascending: ascending) { values[$0] }
-            return indices
+            requiresComparisonFallback = true
+            break
         }
         previous = value
-        tagged.append((index, value))
     }
-    tagged.sort { ascending ? $0.value < $1.value : $0.value > $1.value }
-    var indices = tagged.map { $0.index }
-    indices.append(contentsOf: missing)
-    return indices
+    if requiresComparisonFallback {
+        var indices = Array(0..<values.count)
+        sortIndices(&indices, ascending: ascending) { values[$0] }
+        return indices
+    }
+    return sortIndicesPrimitiveFast(values, nullCount: nullCount, ascending: ascending)
 }
 
 private func radixIndicesDouble<Values: RandomAccessCollection>(

@@ -297,6 +297,10 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         default: break
         }
         if let column = self as? TypedColumn<Double> {
+            if let compact = column.compactNumericStorage {
+                return filterIndicesFloating(values: CompactFilterValues(column: compact),
+                                             nullCount: column.nullCount, condition: condition)
+            }
             return filterIndicesFloating(values: column.values, nullCount: column.nullCount, condition: condition)
         }
         if let column = self as? TypedColumn<Int64> {
@@ -753,7 +757,16 @@ extension TypedColumn where T == Double {
 
 // MARK: – Typed filter indices
 
-private func filterIndicesFloating<T: BinaryFloatingPoint>(values: [T?], nullCount: Int, condition: FilterCondition) -> [Int]? {
+private struct CompactFilterValues: RandomAccessCollection {
+    let column: CompactNumericColumn
+    var startIndex: Int { 0 }
+    var endIndex: Int { column.values.count }
+    subscript(index: Int) -> Double? { column[index] }
+}
+
+private func filterIndicesFloating<Values: RandomAccessCollection, T: BinaryFloatingPoint>(
+    values: Values, nullCount: Int, condition: FilterCondition
+) -> [Int]? where Values.Element == T?, Values.Index == Int {
     switch condition {
     case .isNull: return values.indices.filter { values[$0] == nil }
     case .isNotNull: return selectedIndices(values) { _ in true }
@@ -808,7 +821,9 @@ private func numericComparison(_ condition: FilterCondition) -> (NumericComparis
     }
 }
 
-private func selectedIndices<T>(_ values: [T?], where predicate: (T) -> Bool) -> [Int] {
+private func selectedIndices<Values: Collection, T>(
+    _ values: Values, where predicate: (T) -> Bool
+) -> [Int] where Values.Element == T? {
     var result: [Int] = []
     result.reserveCapacity(values.count / 2)
     for (index, value) in values.enumerated() {

@@ -668,6 +668,9 @@ extension TypedColumn where T == Double {
     ///   - indices: Array of row or column integer indices.
     /// - Returns: A strongly-typed column containing the computed values.
     public func vGather(at indices: [Int]) -> TypedColumn<Double> {
+        if let compact = compactNumericStorage {
+            return TypedColumn(name: name, compactColumn: compact.gathered(at: indices))
+        }
         let n = indices.count
         guard n > 0 else { return TypedColumn<Double>(name: name, values: []) }
 

@@ -23,6 +23,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     // MARK: – Storage
 
     /// Optional values. Dense storage materializes an array on each request.
+    @inlinable
     public var values: [T?] {
         switch storage {
         case .optional(let values): return values
@@ -34,11 +35,13 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         }
     }
 
-    private enum Storage: Sendable {
+    @usableFromInline
+    internal enum Storage: Sendable {
         case optional([T?])
         case dense([T], validity: [UInt64]?)
     }
-    private let storage: Storage
+    @usableFromInline
+    internal let storage: Storage
 
     private let _nullCount: Int
 

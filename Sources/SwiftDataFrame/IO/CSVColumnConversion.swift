@@ -170,9 +170,15 @@ internal enum CSVDecodedValue<Value> {
 
 internal protocol CSVValueDecoder {
     associatedtype Value: SupportedType
+    associatedtype Builder: CSVColumnBuilding = CSVColumnBuilder<Value> where Builder.Value == Value
+    func makeBuilder(capacity: Int) -> Builder
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Value>
     /// Explicit schemas turn both missing and invalid fields into nil.
     func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Value?
+}
+
+internal extension CSVValueDecoder where Builder == CSVColumnBuilder<Value> {
+    func makeBuilder(capacity: Int) -> Builder { Builder(capacity: capacity) }
 }
 
 internal extension CSVValueDecoder {
@@ -187,14 +193,14 @@ internal extension CSVValueDecoder {
 internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
     private let decoder: Decoder
     private let validates: Bool
-    private var values: CSVColumnBuilder<Decoder.Value>
+    private var values: Decoder.Builder
     private(set) var rejectedField: CSVFieldOffset?
     var rejected: Bool { rejectedField != nil }
 
     init(decoder: Decoder, capacity: Int, validates: Bool) {
         self.decoder = decoder
         self.validates = validates
-        values = CSVColumnBuilder(capacity: capacity)
+        values = decoder.makeBuilder(capacity: capacity)
     }
 
     func append<Records: CSVRecordAccess>(
@@ -202,7 +208,7 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
         _ startRow: Int, _ rowCount: Int, _ column: Int, sourceOffset: Int
     ) {
         guard !rejected else { return }
-        var batchValues = CSVColumnBuilder<Decoder.Value>(capacity: 0)
+        var batchValues = decoder.makeBuilder(capacity: 0)
         swap(&batchValues, &values)
         let field = Self.appendRows(buffer, records, startRow, rowCount, column,
             decoder: decoder, validates: validates, into: &batchValues)
@@ -220,7 +226,7 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
             return
         }
         guard !rejected else { return }
-        var batchValues = CSVColumnBuilder<Double>(capacity: 0)
+        var batchValues = decoder.makeBuilder(capacity: 0)
         swap(&batchValues, &values)
         let field = appendValidatedDoubles(buffer, records, startRow, rowCount, column,
             decoder: decoder, into: &batchValues)
@@ -231,14 +237,14 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
     private func reject(_ field: CSVFieldOffset, sourceOffset: Int) {
         rejectedField = CSVFieldOffset(startOffset: sourceOffset + field.startOffset,
             length: field.length, escapedQuotesPresent: field.escapedQuotesPresent)
-        values = CSVColumnBuilder(capacity: 0)
+        values = decoder.makeBuilder(capacity: 0)
     }
 
     // Row loops mutate a local builder instead of a class property.
     private static func appendRows<Records: CSVRecordAccess>(
         _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
         _ startRow: Int, _ rowCount: Int, _ column: Int,
-        decoder: Decoder, validates: Bool, into values: inout CSVColumnBuilder<Decoder.Value>
+        decoder: Decoder, validates: Bool, into values: inout Decoder.Builder
     ) -> CSVFieldOffset? {
         // Choose the validation contract once per batch. Inference keeps the
         // classified result; an explicit schema only needs an optional value.
@@ -294,6 +300,8 @@ internal struct CSVIntegerDecoder: CSVValueDecoder {
 }
 
 internal struct CSVDoubleDecoder: CSVValueDecoder {
+    typealias Builder = CSVCompactDoubleBuilder
+    func makeBuilder(capacity: Int) -> Builder { Builder(capacity: capacity) }
     let nulls: CSVNullMatcher
 
     @inline(__always)
@@ -376,7 +384,7 @@ internal struct CSVDateDecoder: CSVValueDecoder {
 private func appendValidatedDoubles<Records: CSVRecordAccess>(
     _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
     _ startRow: Int, _ rowCount: Int, _ column: Int,
-    decoder: CSVDoubleDecoder, into values: inout CSVColumnBuilder<Double>
+    decoder: CSVDoubleDecoder, into values: inout CSVCompactDoubleBuilder
 ) -> CSVFieldOffset? {
     for row in startRow..<(startRow + rowCount) {
         guard let field = records.field(row: row, column: column) else {

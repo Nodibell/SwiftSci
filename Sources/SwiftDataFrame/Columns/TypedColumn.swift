@@ -11,14 +11,34 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// The dtype.
     public let dtype: ColumnDType
     /// The count.
-    public var count: Int     { values.count }
+    public var count: Int {
+        switch storage {
+        case .optional(let values): values.count
+        case .dense(let values, _): values.count
+        }
+    }
     /// The null count.
     public var nullCount: Int { _nullCount }
 
     // MARK: – Storage
 
-    /// Raw values — `nil` means null.
-    public let values: [T?]
+    /// Optional values. Dense storage materializes an array on each request.
+    public var values: [T?] {
+        switch storage {
+        case .optional(let values): return values
+        case .dense(let values, let validity):
+            guard let validity else { return values.map(Optional.some) }
+            return values.indices.map { row in
+                validity[row >> 6] & (UInt64(1) << (row & 63)) == 0 ? nil : values[row]
+            }
+        }
+    }
+
+    private enum Storage: Sendable {
+        case optional([T?])
+        case dense([T], validity: [UInt64]?)
+    }
+    private let storage: Storage
 
     private let _nullCount: Int
 
@@ -38,9 +58,13 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     @usableFromInline
     internal init(name: String, values: [T?], nullCount: Int) {
+        self.init(name: name, storage: .optional(values), nullCount: nullCount)
+    }
+
+    private init(name: String, storage: Storage, nullCount: Int) {
         self.name = name
         self.dtype = T.columnDType
-        self.values = values
+        self.storage = storage
         self._nullCount = nullCount
     }
 
@@ -59,7 +83,14 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// Accesses the element at the given index.
     /// - Parameters:
     ///   - index: The index.
-    public subscript(index: Int) -> T? { values[index] }
+    public subscript(index: Int) -> T? {
+        switch storage {
+        case .optional(let values): return values[index]
+        case .dense(let values, let validity):
+            if let validity, validity[index >> 6] & (UInt64(1) << (index & 63)) == 0 { return nil }
+            return values[index]
+        }
+    }
 
     // MARK: – AnyColumn conformance
 
@@ -95,7 +126,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         var seen: Set<T> = []
         var seenNull = false
         var uniqueValues: [T?] = []
-        uniqueValues.reserveCapacity(values.count)
+        uniqueValues.reserveCapacity(count)
         
         for val in values {
             if let v = val {
@@ -241,9 +272,9 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         switch condition {
         case .isNull:
             if _nullCount == 0 { return [] }
-            if _nullCount == count { return Array(values.indices) }
+            if _nullCount == count { return Array(0..<count) }
         case .isNotNull:
-            if _nullCount == 0 { return Array(values.indices) }
+            if _nullCount == 0 { return Array(0..<count) }
             if _nullCount == count { return [] }
         default: break
         }
@@ -273,7 +304,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Returns: Value at row index or `nil` if null or out of bounds.
     public func value(at index: Int) -> Any? {
         guard index >= 0 && index < count else { return nil }
-        return values[index] as Any?
+        return self[index] as Any?
     }
 
     /// Converts numeric column values into an array of non-null `Double` values.
@@ -303,7 +334,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter newName: Target column name.
     /// - Returns: Renamed column instance.
     public func renamed(to newName: String) -> any AnyColumn {
-        TypedColumn<T>(name: newName, values: values, nullCount: _nullCount)
+        TypedColumn<T>(name: newName, storage: storage, nullCount: _nullCount)
     }
 
     /// Computes a stable row permutation sorted by column values, with nulls last.
@@ -327,7 +358,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let column = self as? TypedColumn<Int> {
             return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
-        var indices = Array(0..<values.count)
+        var indices = Array(0..<count)
         let vals = values
         if let strings = vals as? [String?] {
             sortIndices(&indices, ascending: ascending) { strings[$0] }
@@ -387,14 +418,14 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if offset > 0 {
             if offset < count {
                 for i in offset..<count {
-                    newValues[i] = values[i - offset]
+                    newValues[i] = self[i - offset]
                 }
             }
         } else if offset < 0 {
             let absOffset = abs(offset)
             if absOffset < count {
                 for i in 0..<(count - absOffset) {
-                    newValues[i] = values[i + absOffset]
+                    newValues[i] = self[i + absOffset]
                 }
             }
         } else {
@@ -442,7 +473,7 @@ private func sortIndicesDouble(_ values: [Double?], nullCount: Int, ascending: B
             continue
         }
         if value.isNaN {
-            var indices = Array(values.indices)
+            var indices = Array(0..<values.count)
             sortIndices(&indices, ascending: ascending) { values[$0] }
             return indices
         }
@@ -457,7 +488,7 @@ private func sortIndicesDouble(_ values: [Double?], nullCount: Int, ascending: B
             if let indices = radixIndicesDouble(values, nullCount: nullCount, ascending: ascending) {
                 return indices
             }
-            var indices = Array(values.indices)
+            var indices = Array(0..<values.count)
             sortIndices(&indices, ascending: ascending) { values[$0] }
             return indices
         }
@@ -581,6 +612,11 @@ import Accelerate
 // MARK: – Double column filter & vDSP vectorised reductions fast path
 
 extension TypedColumn where T == Double {
+    internal init(name: String, compactColumn: CompactNumericColumn) {
+        self.init(name: name, storage: .dense(compactColumn.values, validity: compactColumn.validity),
+                  nullCount: compactColumn.nullCount)
+    }
+
     /// Computes sample mean using Accelerate vDSP.
     /// - Returns: The computed arithmetic mean value.
     public func mean() -> Double {
@@ -856,11 +892,11 @@ extension TypedColumn: Equatable where T: Equatable {
 private extension TypedColumn {
     func gatheredNumeric(at indices: [Int]) -> TypedColumn<T> {
         if _nullCount == 0 {
-            return TypedColumn<T>(name: name, values: indices.map { values[$0] }, nullCount: 0)
+            return TypedColumn<T>(name: name, values: indices.map { self[$0] }, nullCount: 0)
         }
         var gatheredNullCount = 0
         let result = indices.map { index in
-            let value = values[index]
+            let value = self[index]
             if case nil = value { gatheredNullCount += 1 }
             return value
         }

@@ -11,7 +11,7 @@ struct CSVBatchBuilderStateTests {
         bytes.withUnsafeBufferPointer { buffer in
             let records = SystemsCSVParser().parseIndex(buffer: buffer)
             let decoder = CSVIntegerDecoder(nulls: CSVNullMatcher(["?"]))
-            let attempt = CSVColumnAttempt(decoder: decoder, capacity: 3, validates: true)
+            let attempt = CSVColumnAttempt(decoder: decoder, builder: CSVColumnBuilder<Int64>(capacity: 3), validates: true)
             attempt.append(buffer, records, 0, 2, 0, sourceOffset: 0)
             attempt.append(buffer, records, 2, 1, 0, sourceOffset: 0)
             let prefix = attempt.column(named: "value")
@@ -39,7 +39,7 @@ struct CSVBatchBuilderStateTests {
         bytes.withUnsafeBufferPointer { buffer in
             let records = SystemsCSVParser().parseIndex(buffer: buffer)
             let decoder = CSVDoubleDecoder(nulls: CSVNullMatcher(["?"]))
-            let attempt = CSVColumnAttempt(decoder: decoder, capacity: 3, validates: true)
+            let attempt = CSVColumnAttempt(decoder: decoder, builder: CSVCompactDoubleBuilder(capacity: 3), validates: true)
             attempt.appendDouble(buffer, records, 0, 2, 0, sourceOffset: 0)
             attempt.appendDouble(buffer, records, 2, 1, 0, sourceOffset: 0)
             let prefix = attempt.column(named: "value")

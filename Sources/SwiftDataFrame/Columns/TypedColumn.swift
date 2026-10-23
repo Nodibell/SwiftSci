@@ -517,7 +517,54 @@ private func sortIndicesDouble<Values: RandomAccessCollection>(
         sortIndices(&indices, ascending: ascending) { values[$0] }
         return indices
     }
+    if runs == 1 {
+        return monotonicIndicesDouble(values, nullCount: nullCount,
+                                      reverse: direction != 0 && (direction > 0) != ascending)
+    }
     return sortIndicesPrimitiveFast(values, nullCount: nullCount, ascending: ascending)
+}
+
+private func monotonicIndicesDouble<Values: RandomAccessCollection>(
+    _ values: Values, nullCount: Int, reverse: Bool
+) -> [Int] where Values.Element == Double?, Values.Index == Int {
+    if !reverse && nullCount == 0 { return Array(0..<values.count) }
+    let validCount = values.count - nullCount
+    return [Int](unsafeUninitializedCapacity: values.count) { buffer, initializedCount in
+        var present = 0
+        var missing = validCount
+        for (index, value) in values.enumerated() {
+            if value != nil {
+                buffer[present] = index
+                present += 1
+            } else {
+                buffer[missing] = index
+                missing += 1
+            }
+        }
+        initializedCount = values.count
+        guard reverse else { return }
+        var left = 0
+        var right = validCount - 1
+        while left < right {
+            buffer.swapAt(left, right)
+            left += 1
+            right -= 1
+        }
+        // Reversing equal groups restores the input order of ties, including signed zero.
+        var start = 0
+        while start < validCount {
+            var end = start + 1
+            while end < validCount && values[buffer[start]] == values[buffer[end]] { end += 1 }
+            left = start
+            right = end - 1
+            while left < right {
+                buffer.swapAt(left, right)
+                left += 1
+                right -= 1
+            }
+            start = end
+        }
+    }
 }
 
 private func radixIndicesDouble<Values: RandomAccessCollection>(

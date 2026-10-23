@@ -490,9 +490,9 @@ private func sortIndicesDouble<Values: RandomAccessCollection>(
     var direction = 0
     var runs = 1
     var requiresComparisonFallback = false
-    // Choose the path before allocating cached comparison keys.
+    // Probe monotonic order before allocating keys.
     let runLimit = max(8, validCount / 64)
-    for optional in values {
+    for (index, optional) in values.enumerated() {
         guard let value = optional else { continue }
         if value.isNaN {
             requiresComparisonFallback = true
@@ -500,12 +500,25 @@ private func sortIndicesDouble<Values: RandomAccessCollection>(
         }
         if let previous, value != previous {
             let nextDirection = value > previous ? 1 : -1
-            if direction != 0 && direction != nextDirection { runs += 1 }
+            if direction != 0 && direction != nextDirection {
+                runs += 1
+                // Row-addressed 8-byte keys fit within 16-byte valid-row tuples.
+                if runs == 2 && nullCount <= validCount {
+                    let resume = (nextRow: index + 1, previous: value, direction: nextDirection, runs: runs)
+                    if let prepared = prepareDoubleSortKeys(values, ascending: ascending,
+                                                            resume: resume, runLimit: runLimit) {
+                        return sortedDoubleRows(prepared, validCount: validCount)
+                    }
+                    requiresComparisonFallback = true
+                    break
+                }
+            }
             direction = nextDirection
         }
         if runs > runLimit {
-            if let indices = radixIndicesDouble(values, nullCount: nullCount, ascending: ascending) {
-                return indices
+            if let prepared = prepareDoubleSortKeys(values, ascending: ascending,
+                                                    resume: nil, runLimit: runLimit) {
+                return sortedDoubleRows(prepared, validCount: validCount)
             }
             requiresComparisonFallback = true
             break
@@ -567,32 +580,84 @@ private func monotonicIndicesDouble<Values: RandomAccessCollection>(
     }
 }
 
-private func radixIndicesDouble<Values: RandomAccessCollection>(
-    _ values: Values, nullCount: Int, ascending: Bool
-) -> [Int]? where Values.Element == Double?, Values.Index == Int {
-    var keys = [UInt64](repeating: 0, count: values.count)
-    var indices: [Int] = []
-    var missing: [Int] = []
-    indices.reserveCapacity(values.count)
-    missing.reserveCapacity(nullCount)
+private struct DoubleSortKeys {
+    let keys: [UInt64]
+    let differingBits: UInt64
+    let requiresRadix: Bool
+}
+
+private func orderedDoubleKey(_ value: Double, ascending: Bool) -> UInt64? {
+    guard !value.isNaN else { return nil }
+    let bits = value == 0 ? UInt64(0) : value.bitPattern
+    let key = bits >> 63 == 0 ? bits ^ (UInt64(1) << 63) : ~bits
+    return ascending ? key : ~key
+}
+
+private func prepareDoubleSortKeys<Values: RandomAccessCollection>(
+    _ values: Values, ascending: Bool,
+    resume: (nextRow: Int, previous: Double, direction: Int, runs: Int)?, runLimit: Int
+) -> DoubleSortKeys? where Values.Element == Double?, Values.Index == Int {
+    // Non-NaN keys in either direction exclude UInt64.max, reserved for missing rows.
+    var keys = [UInt64](repeating: .max, count: values.count)
     var differingBits: UInt64 = 0
     var firstKey: UInt64?
+    var requiresRadix = resume == nil
+    var previous = resume?.previous ?? 0
+    var direction = resume?.direction ?? 0
+    var runs = resume?.runs ?? 1
+    let nextRow = resume?.nextRow ?? values.count
     for (index, optional) in values.enumerated() {
-        guard let value = optional else {
-            missing.append(index)
-            continue
-        }
-        guard !value.isNaN else { return nil }
-        let bits = value == 0 ? UInt64(0) : value.bitPattern
-        var key = bits >> 63 == 0 ? bits ^ (UInt64(1) << 63) : ~bits
-        if !ascending { key = ~key }
+        guard let value = optional else { continue }
+        guard let key = orderedDoubleKey(value, ascending: ascending) else { return nil }
         keys[index] = key
         if let firstKey { differingBits |= key ^ firstKey } else { firstKey = key }
-        indices.append(index)
+        if !requiresRadix && index >= nextRow {
+            if value != previous {
+                let nextDirection = value > previous ? 1 : -1
+                if direction != nextDirection { runs += 1 }
+                direction = nextDirection
+                if runs > runLimit { requiresRadix = true }
+            }
+            previous = value
+        }
     }
-    var scratch = [Int](repeating: 0, count: indices.count)
+    return DoubleSortKeys(keys: keys, differingBits: differingBits, requiresRadix: requiresRadix)
+}
+
+private func sortedDoubleRows(_ prepared: DoubleSortKeys, validCount: Int) -> [Int] {
+    var indices = [Int](unsafeUninitializedCapacity: prepared.keys.count) { buffer, initializedCount in
+        var present = 0
+        var missing = validCount
+        for (index, key) in prepared.keys.enumerated() {
+            if key == .max {
+                buffer[missing] = index
+                missing += 1
+            } else {
+                buffer[present] = index
+                present += 1
+            }
+        }
+        initializedCount = prepared.keys.count
+    }
+    if prepared.requiresRadix {
+        radixDoubleRows(prepared.keys, indices: &indices, validCount: validCount,
+                        differingBits: prepared.differingBits)
+    } else {
+        prepared.keys.withUnsafeBufferPointer { keys in
+            indices.withUnsafeMutableBufferPointer { rows in
+                var present = UnsafeMutableBufferPointer(rebasing: rows[..<validCount])
+                present.sort { keys[$0] < keys[$1] }
+            }
+        }
+    }
+    return indices
+}
+
+private func radixDoubleRows(_ keys: [UInt64], indices: inout [Int],
+                             validCount: Int, differingBits: UInt64) {
+    var scratch = [Int](repeating: 0, count: validCount)
     var offsets = [Int](repeating: 0, count: 2_048)
-    let count = indices.count
+    let count = validCount
     // Source indices originate in values.indices; each histogram partitions exactly count rows.
     // Keep all disjoint buffers borrowed until the final permutation is complete.
     let resultInScratch = keys.withUnsafeBufferPointer { keys in
@@ -629,9 +694,17 @@ private func radixIndicesDouble<Values: RandomAccessCollection>(
             }
         }
     }
-    if resultInScratch { swap(&indices, &scratch) }
-    indices.append(contentsOf: missing)
-    return indices
+    if resultInScratch {
+        if validCount == indices.count {
+            swap(&indices, &scratch)
+        } else {
+            indices.withUnsafeMutableBufferPointer { rows in
+                scratch.withUnsafeBufferPointer { sorted in
+                    rows.baseAddress!.update(from: sorted.baseAddress!, count: validCount)
+                }
+            }
+        }
+    }
 }
 
 /// Sorts cached non-null keys once and appends missing rows in their original order.

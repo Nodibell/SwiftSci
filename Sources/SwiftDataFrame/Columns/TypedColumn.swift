@@ -298,7 +298,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         }
         if let column = self as? TypedColumn<Double> {
             if let compact = column.compactNumericStorage {
-                return filterIndicesFloating(values: CompactFilterValues(column: compact),
+                return filterIndicesFloating(values: CompactColumnValues(column: compact),
                                              nullCount: column.nullCount, condition: condition)
             }
             return filterIndicesFloating(values: column.values, nullCount: column.nullCount, condition: condition)
@@ -366,6 +366,10 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         // Specialize common Comparable element types without constraining SupportedType
         // (Bool is Hashable but not Comparable).
         if let column = self as? TypedColumn<Double> {
+            if let compact = column.compactNumericStorage {
+                return sortIndicesDouble(CompactColumnValues(column: compact),
+                                         nullCount: column.nullCount, ascending: ascending)
+            }
             return sortIndicesDouble(column.values, nullCount: column.nullCount, ascending: ascending)
         }
         if let column = self as? TypedColumn<Float> {
@@ -474,7 +478,9 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     public var nonNullValues: [T] { values.compactMap { $0 } }
 }
 
-private func sortIndicesDouble(_ values: [Double?], nullCount: Int, ascending: Bool) -> [Int] {
+private func sortIndicesDouble<Values: RandomAccessCollection>(
+    _ values: Values, nullCount: Int, ascending: Bool
+) -> [Int] where Values.Element == Double?, Values.Index == Int {
     let validCount = values.count - nullCount
     // Sparse columns do not amortize a full-row radix key buffer.
     if validCount < 1_024 || validCount < values.count / 20 {
@@ -523,7 +529,9 @@ private func sortIndicesDouble(_ values: [Double?], nullCount: Int, ascending: B
     return indices
 }
 
-private func radixIndicesDouble(_ values: [Double?], nullCount: Int, ascending: Bool) -> [Int]? {
+private func radixIndicesDouble<Values: RandomAccessCollection>(
+    _ values: Values, nullCount: Int, ascending: Bool
+) -> [Int]? where Values.Element == Double?, Values.Index == Int {
     var keys = [UInt64](repeating: 0, count: values.count)
     var indices: [Int] = []
     var missing: [Int] = []
@@ -589,7 +597,9 @@ private func radixIndicesDouble(_ values: [Double?], nullCount: Int, ascending: 
 }
 
 /// Sorts cached non-null keys once and appends missing rows in their original order.
-private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], nullCount: Int, ascending: Bool) -> [Int] {
+private func sortIndicesPrimitiveFast<Values: RandomAccessCollection, T: Comparable>(
+    _ vals: Values, nullCount: Int, ascending: Bool
+) -> [Int] where Values.Element == T?, Values.Index == Int {
     var tagged: [(index: Int, value: T)] = []
     var missing: [Int] = []
     tagged.reserveCapacity(vals.count - nullCount)
@@ -757,7 +767,7 @@ extension TypedColumn where T == Double {
 
 // MARK: – Typed filter indices
 
-private struct CompactFilterValues: RandomAccessCollection {
+private struct CompactColumnValues: RandomAccessCollection {
     let column: CompactNumericColumn
     var startIndex: Int { 0 }
     var endIndex: Int { column.values.count }

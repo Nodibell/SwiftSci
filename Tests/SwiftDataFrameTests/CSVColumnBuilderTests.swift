@@ -16,6 +16,21 @@ struct CSVColumnBuilderTests {
         }
     }
 
+    @Test("Finalization preserves typed values and resets temporary storage")
+    func reusableBuilder() {
+        var builder = CSVColumnBuilder<String>(capacity: 5)
+        let expected: [String?] = ["a", nil, "c", "d", nil]
+        for value in expected { builder.append(value) }
+        let column = builder.column(named: "value")
+        #expect(column.values == expected)
+        #expect(column.nullCount == 2)
+        builder.append("new")
+        let next = builder.column(named: "next")
+        #expect(next.values == ["new"])
+        #expect(next.nullCount == 0)
+        #expect(column.values == expected)
+    }
+
     @Test("CSV null counts include explicit nulls, conversion failures and absent fields")
     func parsedNullCounts() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("csv-null-count-\(UUID().uuidString).csv")
@@ -37,16 +52,17 @@ struct CSVColumnBuilderTests {
         #expect(strings.nullCount == 0)
     }
 
-    @Test("Inference counts incompatible values after the sample as missing")
+    @Test("Inference preserves incompatible values after the sample as text")
     func lateInvalidValue() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("csv-late-null-\(UUID().uuidString).csv")
         defer { try? FileManager.default.removeItem(at: url) }
         let csv = "value\n" + String(repeating: "42\n", count: 1_001) + "invalid\n"
         try Data(csv.utf8).write(to: url)
         let frame = try await DataFrame(csv: url)
-        let column = try #require(frame[column: "value", as: Int64.self])
+        let column = try #require(frame[column: "value", as: String.self])
         #expect(column.count == 1_002)
-        #expect(column.values.last! == nil)
-        #expect(column.nullCount == 1)
+        #expect(column.values.prefix(1_001).allSatisfy { $0 == "42" })
+        #expect(column.values.last! == "invalid")
+        #expect(column.nullCount == 0)
     }
 }

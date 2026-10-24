@@ -13,19 +13,28 @@ import acceptance
 from acceptance import POLICY, execute, inspect_run, load_policy
 from contracts import ContractError, digest, identity, read_json, write_json
 from datasets import binary, cache_path
+from csv_contract import MATCHED_OPERATIONS, WINE_FEATURES, schema_for
 
 
 class AcceptanceTests(unittest.TestCase):
-    def fixture(self, directory, failed=False, missing_response=False):
+    def fixture(self, directory, failed=False, missing_response=False, operation='row-sum'):
         root = directory / 'repository'
         source = dict(commit='a'*40, tree_sha256='b'*64, files={})
-        case = dict(id='tiny', dataset='tiny', workload='row-sum-v1')
+        case = dict(id='tiny', dataset='tiny',
+                    workload=operation+('-v2' if operation in MATCHED_OPERATIONS else '-v1'))
         profile = dict(id='example', cases=[case], batches=1, samples=1, warmups=0,
                        timeout_seconds=5)
         data = b'id,group,x,y\n0,0,1,2\n'
-        dataset = dict(id='tiny', kind='table-v1', rows=1,
+        kind = 'table-v1'
+        if operation == 'wine-pipeline':
+            kind = 'wine-quality-v1'
+            data = (','.join(['id', *WINE_FEATURES, 'quality']) + '\n'
+                    + ','.join(['0', *(['1'] * len(WINE_FEATURES)), '6']) + '\n').encode()
+        dataset = dict(id='tiny', kind=kind, rows=1,
                        sha256=digest(data), size_bytes=len(data))
-        workload = dict(operation='row-sum', atol=0, rtol=0)
+        workload = dict(operation=operation, atol=0, rtol=0)
+        if operation in MATCHED_OPERATIONS:
+            workload.update(id=case['workload'], csv_schema=schema_for(kind))
         input_path = cache_path(root, dataset)
         input_path.parent.mkdir(parents=True)
         input_path.write_bytes(data)
@@ -35,8 +44,8 @@ class AcceptanceTests(unittest.TestCase):
         spec = dict(case=case, dataset=copy.deepcopy(dataset), workload=copy.deepcopy(workload))
         spec['case_key'] = identity(spec)
         key = spec['case_key']
-        request = dict(schema_version=1, case_key=key, operation='row-sum',
-                       dataset_kind='table-v1', input_path=str(input_path),
+        request = dict(schema_version=1, case_key=key, operation=operation,
+                       dataset_kind=kind, input_path=str(input_path),
                        input_sha256=dataset['sha256'], input_bytes=len(data),
                        expected_path=str(expected_path), expected_sha256=digest(expected),
                        rows=1, warmups=0, samples=1, atol=0, rtol=0)
@@ -44,6 +53,9 @@ class AcceptanceTests(unittest.TestCase):
                         samples=[] if failed else [dict(elapsed_ns=1000, output_sha256=digest(expected),
                                                        maximum_absolute_error=0, validated=True)],
                         peak_rss_bytes=1024, engine_version='test')
+        if operation in MATCHED_OPERATIONS:
+            request['csv_schema'] = schema_for(dataset['kind'])
+            response['csv_schema'] = dict(request['csv_schema'])
         if failed:
             response['error'] = 'Output mismatch'
         event = dict(case_id='tiny', engine='swiftsci', batch=0,
@@ -91,6 +103,29 @@ class AcceptanceTests(unittest.TestCase):
             self.assertEqual(result['status'], 'passed')
             self.assertTrue(result['coverage_complete'])
             self.assertEqual(result['passed'], 1)
+
+    def test_matched_csv_requests_preserve_complete_schema(self):
+        for operation in sorted(MATCHED_OPERATIONS):
+            with self.subTest(operation=operation), tempfile.TemporaryDirectory() as temporary:
+                result = self.inspect(self.fixture(Path(temporary), operation=operation))
+                self.assertEqual(result['status'], 'passed')
+                self.assertTrue(result['coverage_complete'])
+                self.assertEqual(result['passed'], 1)
+
+    def test_matched_csv_requests_reject_missing_or_changed_schema(self):
+        for mutation in ('missing', 'wrong-type', 'extra-column'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                fixture = self.fixture(Path(temporary), operation='csv-read')
+                request = read_json(fixture.request_path)
+                if mutation == 'missing':
+                    del request['csv_schema']
+                elif mutation == 'wrong-type':
+                    request['csv_schema']['x'] = 'String'
+                else:
+                    request['csv_schema']['unexpected'] = 'Double'
+                write_json(fixture.request_path, request)
+                with self.assertRaises(ContractError):
+                    self.inspect(fixture)
 
     def test_failed_response_stays_failed_with_complete_coverage(self):
         with tempfile.TemporaryDirectory() as temporary:

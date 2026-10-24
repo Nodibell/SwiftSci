@@ -115,6 +115,9 @@ def resolve_workload(dataset, workload):
         return dict(workload, **dataset["tolerances"])
     require((operation in H2O_QUERIES) == (kind == "h2o-group-v1"), "H2O workload/dataset mismatch")
     require((operation == "wine-pipeline") == (kind == "wine-quality-v1"), "Wine workload/dataset mismatch")
+    from csv_contract import MATCHED_OPERATIONS, schema_for
+    if workload.get("id") in {op + "-v2" for op in MATCHED_OPERATIONS}:
+        return dict(workload, csv_schema=schema_for(kind))
     if dataset["kind"] != "nist-univariate-v1":
         return workload
     operation = workload["operation"]

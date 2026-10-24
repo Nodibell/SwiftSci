@@ -85,6 +85,11 @@ import SwiftStats
       let expected = try decodeDoubles(
         verifiedData(path: request.expected_path, sha256: request.expected_sha256))
       let op = request.operation
+      let csvOptions = try matchedCSVOptions(request)
+      var csvSchema: [String: String]?
+      if let csvOptions, op != "csv-read" {
+        csvSchema = try await preflightCSV(request, options: csvOptions)
+      }
       let numericalInputs = try NumericalInputs.decode(
         input, operation: op, datasetKind: request.dataset_kind, rows: request.rows)
       let frame: DataFrame?
@@ -122,9 +127,10 @@ import SwiftStats
         if let numericalInputs {
           output = try await executeNumerical(numericalInputs, artifactDirectory: outputURL.appendingPathExtension("sample\(index)"))
         } else if op == "wine-pipeline" {
-          output = try await winePipeline(path: request.input_path, rows: request.rows)
+          output = try await winePipeline(path: request.input_path, rows: request.rows, options: csvOptions!)
         } else if op == "csv-read" {
-          output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path)))
+          output = .frame(try await DataFrame(csv: URL(fileURLWithPath: request.input_path),
+                                             options: csvOptions!))
         } else if op == "sqlite-ingest" {
           output = .frame(try await sqliteIngest())
         } else if op == "parquet-read" {
@@ -138,7 +144,7 @@ import SwiftStats
           var chunks = [DataFrame]()
           var inputRows = [Int]()
           for try await chunk in DataFrame.readCSVStream(
-            contentsOf: URL(fileURLWithPath: request.input_path), chunkSize: 10000)
+            contentsOf: URL(fileURLWithPath: request.input_path), chunkSize: 10000, options: csvOptions!)
           {
             inputRows.append(chunk.shape.rows)
             switch op {
@@ -167,6 +173,9 @@ import SwiftStats
           actual = try canonicalCosineFixtureValues(matches, entryCount: input.entryCount, expectedCount: input.topK)
         case .text(let text): actual = text.utf8.map(Double.init)
         case .frame(let result):
+          if csvOptions != nil {
+            csvSchema = try checkedCSVSchema(result, request: request)
+          }
           actual = try canonical(result, operation: op, mixed: request.dataset_kind != "table-v1")
         case .written(let path):
           actual = try canonical(try await ParquetReader.read(url: path), operation: op, mixed: true)
@@ -188,7 +197,7 @@ import SwiftStats
           rtol: request.rtol)
         if index >= request.warmups { samples.append(sample) }
       }
-      try JSONEncoder().encode(BenchmarkResponse(key: key, samples: samples)).write(
+      try JSONEncoder().encode(BenchmarkResponse(key: key, samples: samples, csvSchema: csvSchema)).write(
         to: outputURL, options: .atomic)
     } catch {
       try? JSONEncoder().encode(

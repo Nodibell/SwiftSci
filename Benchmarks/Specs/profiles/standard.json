@@ -4,7 +4,7 @@
     {
       "dataset": "medium",
       "id": "medium-csv-read",
-      "workload": "csv-read-v1"
+      "workload": "csv-read-v2"
     },
     {
       "dataset": "medium",

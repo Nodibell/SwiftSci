@@ -1,4 +1,5 @@
 import Foundation
+import simd
 
 /// Coordinates of a CSV field within an un-copied byte buffer.
 public struct CSVFieldOffset: Sendable {
@@ -51,7 +52,7 @@ public final class SystemsCSVParser: Sendable {
     }
 
     internal func parseIndex(
-        buffer: UnsafeBufferPointer<UInt8>, minimumParallelBytes: Int = 4 * 1024 * 1024
+        buffer: UnsafeBufferPointer<UInt8>, minimumParallelBytes: Int = 1024 * 1024
     ) -> CSVRecordIndex {
         if buffer.count >= minimumParallelBytes,
            let records = parseParallelIndex(buffer: buffer) {
@@ -68,8 +69,12 @@ public final class SystemsCSVParser: Sendable {
         var boundaries = [0]
         for worker in 1..<workers {
             var position = buffer.count / workers * worker
-            while position < buffer.count && buffer[position - 1] != lfByte { position += 1 }
-            if position < buffer.count && position > boundaries.last! { boundaries.append(position) }
+            let limit = worker == workers - 1 ? buffer.count : buffer.count / workers * (worker + 1)
+            // A later window finds any newline beyond this one, without rescanning its bytes.
+            while position < limit && buffer[position - 1] != lfByte { position += 1 }
+            if position < buffer.count && buffer[position - 1] == lfByte && position > boundaries.last! {
+                boundaries.append(position)
+            }
         }
         boundaries.append(buffer.count)
         let ranges = zip(boundaries, boundaries.dropFirst()).map { $0..<$1 }
@@ -116,13 +121,15 @@ public final class SystemsCSVParser: Sendable {
     }
 
     private func countUnquoted(buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>) -> CSVChunkCount? {
+        let bytes = buffer.baseAddress!
         var fields = 0
         var rows = 0
         var pendingFields = 0
         var fieldStart = range.lowerBound
         var recordEnd = range.lowerBound
-        for index in range {
-            let byte = buffer[index]
+        var scanner = CSVStructuralScanner(bytes: bytes, range: range, delimiter: delimiterByte, quote: quoteByte)
+        while let index = scanner.next() {
+            let byte = bytes[index]
             if byte == quoteByte { return nil }
             if byte == delimiterByte {
                 pendingFields += 1
@@ -149,15 +156,17 @@ public final class SystemsCSVParser: Sendable {
         fieldBase: Int, rowBase: Int
     ) {
         guard count.rows > 0 else { return }
+        let bytes = buffer.baseAddress!
         var field = fieldBase
         var row = rowBase
         var fieldStart = range.lowerBound
         rows[row] = field
-        for index in range {
-            let byte = buffer[index]
+        var scanner = CSVStructuralScanner(bytes: bytes, range: range, delimiter: delimiterByte, quote: nil)
+        while let index = scanner.next() {
+            let byte = bytes[index]
             if byte == delimiterByte || byte == lfByte {
                 let isNewline = byte == lfByte
-                let end = isNewline && index > 0 && buffer[index - 1] == crByte ? index - 1 : index
+                let end = isNewline && index > 0 && bytes[index - 1] == crByte ? index - 1 : index
                 fields.advanced(by: field).initialize(to: PackedCSVField(
                     startOffset: fieldStart, length: max(0, end - fieldStart), escapedQuotesPresent: false
                 ))
@@ -179,21 +188,101 @@ public final class SystemsCSVParser: Sendable {
         assert(field == fieldBase + count.fields && row == rowBase + count.rows)
     }
 
-    private func scanIndex(
+    internal func scanIndex(
         buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>
     ) -> CSVRecordIndex {
-        var fields = [PackedCSVField]()
-        fields.reserveCapacity(min(range.count / 8, 100_000))
-        var rowStarts = [0]
-        rowStarts.reserveCapacity(min(range.count / 16, 100_000) + 1)
+        if CompactCSVField.canRepresent(endOffset: range.upperBound) {
+            return scanIndex(buffer: buffer, range: range, fieldType: CompactCSVField.self)
+        }
+        return scanIndex(buffer: buffer, range: range, fieldType: PackedCSVField.self)
+    }
+
+    internal func scanIndex<Field: CSVIndexField>(
+        buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, fieldType: Field.Type
+    ) -> CSVRecordIndex {
+        guard case .complete(let batch) = scanRecords(buffer: buffer, range: range,
+            fieldType: fieldType, maximumRows: nil, output: CSVIndexOutput.self) else {
+            preconditionFailure("The selected index field must represent the supplied range")
+        }
+        return batch.records
+    }
+
+    /// Discovers complete records without retaining metadata for the rest of the source.
+    /// Offsets are relative to the supplied buffer. A wide record retries with full-width fields.
+    internal func scanBatch(buffer: UnsafeBufferPointer<UInt8>, maximumRows: Int) throws -> CSVRecordBatch {
+        try scanBatch(buffer: buffer, maximumRows: maximumRows, fieldType: CompactCSVField.self)
+    }
+
+    internal func scanBatch<Field: CSVIndexField>(
+        buffer: UnsafeBufferPointer<UInt8>, maximumRows: Int, fieldType: Field.Type
+    ) throws -> CSVRecordBatch {
+        precondition(maximumRows > 0)
+        try Task.checkCancellation()
+        var result = scanRecords(buffer: buffer, range: buffer.indices,
+            fieldType: fieldType, maximumRows: maximumRows, output: CSVIndexOutput.self)
+        if case .widerOffsets = result {
+            result = scanRecords(buffer: buffer, range: buffer.indices,
+                fieldType: PackedCSVField.self, maximumRows: maximumRows, output: CSVIndexOutput.self)
+        }
+        switch result {
+        case .complete(let batch): return batch
+        case .cancelled: throw CancellationError()
+        case .widerOffsets: preconditionFailure("A buffer range must fit Int offsets")
+        }
+    }
+
+    /// Counts complete records with the same grammar, without allocating field coordinates.
+    internal func countRecords(buffer: UnsafeBufferPointer<UInt8>, maximumRows: Int? = nil) throws -> Int {
+        guard maximumRows != 0 else { return 0 }
+        try Task.checkCancellation()
+        switch scanRecords(buffer: buffer, range: buffer.indices, fieldType: PackedCSVField.self,
+            maximumRows: maximumRows ?? Int.max, output: CSVCountOutput.self) {
+        case .complete(let count): return count
+        case .cancelled: throw CancellationError()
+        case .widerOffsets: preconditionFailure("Record counting stores no offsets")
+        }
+    }
+
+    private enum ScanResult<Value> {
+        case complete(Value)
+        case widerOffsets
+        case cancelled
+    }
+
+    private func scanRecords<Field: CSVIndexField, Output: CSVScanOutput>(
+        buffer: UnsafeBufferPointer<UInt8>, range: Range<Int>, fieldType: Field.Type,
+        maximumRows: Int?, output: Output.Type
+    ) -> ScanResult<Output.Value> {
+        var fields = CSVFieldBlocks<Field>(byteCount: Output.keepsCoordinates ? range.count : 0)
+        var rowStarts = [Int]()
+        if Output.keepsCoordinates {
+            rowStarts = [0]
+            rowStarts.reserveCapacity(min(range.count / 16, maximumRows ?? 100_000, 100_000) + 1)
+        }
+        var rowCount = 0
 
         let count = range.upperBound
         var index = range.lowerBound
         var fieldStart = range.lowerBound
         var insideQuotes = false
         var escapedQuotesFound = false
+        guard !range.isEmpty else {
+            return .complete(Output.finish(fields: fields, rowStarts: rowStarts, rowCount: rowCount, nextOffset: count))
+        }
+        // Counting needs quote and row boundaries, not individual delimiters.
+        var scanner = CSVStructuralScanner(bytes: buffer.baseAddress!, range: range,
+            delimiter: Output.keepsCoordinates ? delimiterByte : lfByte, quote: quoteByte)
+        var searchLimit = maximumRows == nil ? count : range.lowerBound + min(65_536, range.count)
 
-        while index < count {
+        while true {
+            guard let position = scanner.next(searchLimit: searchLimit) else {
+                if searchLimit == count { break }
+                if Task.isCancelled { return .cancelled }
+                searchLimit += min(65_536, count - searchLimit)
+                continue
+            }
+            if position < index { continue }
+            index = position
             let byte = buffer[index]
 
             if insideQuotes {
@@ -212,12 +301,12 @@ public final class SystemsCSVParser: Sendable {
                 if byte == quoteByte {
                     insideQuotes = true
                 } else if byte == delimiterByte {
-                    let len = index - fieldStart
-                    fields.append(PackedCSVField(
-                        startOffset: fieldStart,
-                        length: max(0, len),
-                        escapedQuotesPresent: escapedQuotesFound
-                    ))
+                    if Output.keepsCoordinates {
+                        let len = index - fieldStart
+                        guard index <= Field.maximumEndOffset else { return .widerOffsets }
+                        fields.append(Field(startOffset: fieldStart, length: max(0, len),
+                            escapedQuotesPresent: escapedQuotesFound))
+                    }
                     fieldStart = index + 1
                     escapedQuotesFound = false
                 } else if byte == lfByte {
@@ -225,14 +314,19 @@ public final class SystemsCSVParser: Sendable {
                     if endPosition > 0 && buffer[endPosition - 1] == crByte {
                         endPosition -= 1
                     }
-                    let len = endPosition - fieldStart
-                    fields.append(PackedCSVField(
-                        startOffset: fieldStart,
-                        length: max(0, len),
-                        escapedQuotesPresent: escapedQuotesFound
-                    ))
-
-                    rowStarts.append(fields.count)
+                    if Output.keepsCoordinates {
+                        let len = endPosition - fieldStart
+                        guard endPosition <= Field.maximumEndOffset else { return .widerOffsets }
+                        fields.append(Field(startOffset: fieldStart, length: max(0, len),
+                            escapedQuotesPresent: escapedQuotesFound))
+                        rowStarts.append(fields.count)
+                    }
+                    if !Output.keepsCoordinates { rowCount += 1 }
+                    let discoveredRows = Output.keepsCoordinates ? rowStarts.count - 1 : rowCount
+                    if let maximumRows, discoveredRows == maximumRows {
+                        return .complete(Output.finish(fields: fields, rowStarts: rowStarts,
+                            rowCount: rowCount, nextOffset: index + 1))
+                    }
 
                     fieldStart = index + 1
                     escapedQuotesFound = false
@@ -241,22 +335,57 @@ public final class SystemsCSVParser: Sendable {
             index += 1
         }
 
+        if maximumRows != nil, Task.isCancelled { return .cancelled }
+        // Count-only scanning skips delimiter events. Preserve the unfinished
+        // trailing-empty-field behavior without visiting earlier delimiters.
+        if !Output.keepsCoordinates && !insideQuotes && delimiterByte != quoteByte
+            && buffer[count - 1] == delimiterByte { fieldStart = count }
         // Handle trailing line without newline
         if fieldStart < count {
-            let len = count - fieldStart
-            fields.append(PackedCSVField(
-                startOffset: fieldStart,
-                length: max(0, len),
-                escapedQuotesPresent: escapedQuotesFound
-            ))
-            rowStarts.append(fields.count)
+            if Output.keepsCoordinates {
+                guard count <= Field.maximumEndOffset else { return .widerOffsets }
+                let len = count - fieldStart
+                fields.append(Field(startOffset: fieldStart, length: max(0, len),
+                    escapedQuotesPresent: escapedQuotesFound))
+                rowStarts.append(fields.count)
+            }
+            if !Output.keepsCoordinates { rowCount += 1 }
         } else {
             // Keep the public parser's existing EOF behavior for an unfinished row.
-            fields.removeSubrange(rowStarts.last!..<fields.count)
+            if Output.keepsCoordinates { fields.truncate(to: rowStarts.last!) }
         }
 
-        return CSVRecordIndex(fields: fields, rowStarts: rowStarts)
+        return .complete(Output.finish(fields: fields, rowStarts: rowStarts, rowCount: rowCount, nextOffset: count))
     }
+
+}
+
+// Output mode is fixed for each specialization. The cell loop keeps its local
+// arrays for indexing; count-only specialization removes those arrays entirely.
+private protocol CSVScanOutput {
+    associatedtype Value
+    static var keepsCoordinates: Bool { get }
+    static func finish<Field: CSVIndexField>(
+        fields: CSVFieldBlocks<Field>, rowStarts: [Int], rowCount: Int, nextOffset: Int
+    ) -> Value
+}
+
+private enum CSVIndexOutput: CSVScanOutput {
+    static var keepsCoordinates: Bool { true }
+    @inline(__always)
+    static func finish<Field: CSVIndexField>(
+        fields: CSVFieldBlocks<Field>, rowStarts: [Int], rowCount: Int, nextOffset: Int
+    ) -> CSVRecordBatch {
+        CSVRecordBatch(records: Field.recordIndex(blocks: fields, rowStarts: rowStarts), nextOffset: nextOffset)
+    }
+}
+
+private enum CSVCountOutput: CSVScanOutput {
+    static var keepsCoordinates: Bool { false }
+    @inline(__always)
+    static func finish<Field: CSVIndexField>(
+        fields: CSVFieldBlocks<Field>, rowStarts: [Int], rowCount: Int, nextOffset: Int
+    ) -> Int { rowCount }
 }
 
 // Buffers are borrowed until concurrentPerform joins. Each worker owns a
@@ -266,3 +395,60 @@ private struct CSVChunkCount: Sendable { let fields: Int; let rows: Int; let end
 private struct CSVCountSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<CSVChunkCount?> }
 private struct CSVFieldSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<PackedCSVField> }
 private struct CSVRowSlots: @unchecked Sendable { let pointer: UnsafeMutablePointer<Int> }
+
+/// Visits structural bytes without branching over every ordinary character.
+private struct CSVStructuralScanner {
+    let bytes: UnsafePointer<UInt8>
+    let end: Int
+    let delimiter: UInt8
+    let quote: UInt8?
+    var cursor: Int
+    var blockStart = 0
+    var matches: UInt16 = 0
+
+    init(bytes: UnsafePointer<UInt8>, range: Range<Int>, delimiter: UInt8, quote: UInt8?) {
+        self.bytes = bytes
+        self.end = range.upperBound
+        self.cursor = range.lowerBound
+        self.delimiter = delimiter
+        self.quote = quote
+    }
+
+    @inline(__always)
+    mutating func next() -> Int? {
+        next(searchLimit: end)
+    }
+
+    @inline(__always)
+    mutating func next(searchLimit: Int) -> Int? {
+        while matches == 0 {
+            guard cursor < searchLimit else { return nil }
+            blockStart = cursor
+            if searchLimit - cursor >= 16 {
+                // The complete load stays inside this chunk, even at an unaligned row boundary.
+                let block = UnsafeRawPointer(bytes.advanced(by: cursor)).loadUnaligned(as: SIMD16<UInt8>.self)
+                var structural = (block .== SIMD16(repeating: delimiter)) .| (block .== SIMD16(repeating: 10))
+                if let quote { structural = structural .| (block .== SIMD16(repeating: quote)) }
+                // Each disjoint byte-weight sum is at most 255. Full-width platform
+                // reductions keep mask packing vectorized instead of extracting lanes.
+                let lowWeights = SIMD16<UInt8>(1, 2, 4, 8, 16, 32, 64, 128, 0, 0, 0, 0, 0, 0, 0, 0)
+                let highWeights = SIMD16<UInt8>(0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 16, 32, 64, 128)
+                let low = SIMD16<UInt8>.zero.replacing(with: lowWeights, where: structural)
+                let high = SIMD16<UInt8>.zero.replacing(with: highWeights, where: structural)
+                matches = UInt16(simd_reduce_add(low)) | (UInt16(simd_reduce_add(high)) << 8)
+                cursor += 16
+            } else {
+                while cursor < searchLimit {
+                    let byte = bytes[cursor]
+                    if byte == delimiter || byte == 10 || byte == quote {
+                        matches |= UInt16(1) << (cursor - blockStart)
+                    }
+                    cursor += 1
+                }
+            }
+        }
+        let position = matches.trailingZeroBitCount
+        matches &= matches - 1
+        return blockStart + position
+    }
+}

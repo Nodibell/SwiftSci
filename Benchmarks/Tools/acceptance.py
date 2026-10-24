@@ -83,6 +83,8 @@ def inspect_run(directory, profile, source, engines, root):
             atol=workload['atol'], rtol=workload['rtol'])
         if 'execution' in run['plan']:
             expected_request.update(execution_mode=run['plan']['execution']['mode'], engine=key[1])
+        if 'csv_schema' in workload:
+            expected_request['csv_schema'] = workload['csv_schema']
         if dataset['kind'] == 'nist-univariate-v1': expected_request['input_skip_rows'] = dataset['data_start_line'] - 1
         require(request == expected_request, 'Request contract differs')
         response_path = directory / (token + '.response.json')

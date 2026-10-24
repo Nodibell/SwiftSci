@@ -8,27 +8,31 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     /// The element type of each streamed chunk.
     public typealias Element = DataFrame
 
-    private let streamProducer: @Sendable () -> AsyncThrowingStream<DataFrame, any Error>
+    private let iteratorProducer: @Sendable () -> AsyncIterator
 
     /// Initializes a `ChunkedDataFrame` from a stream generator closure.
     ///
     /// - Parameter streamProducer: A closure returning a new `AsyncThrowingStream` of `DataFrame` chunks.
     public init(streamProducer: @escaping @Sendable () -> AsyncThrowingStream<DataFrame, any Error>) {
-        self.streamProducer = streamProducer
+        self.iteratorProducer = { AsyncIterator(iterator: streamProducer().makeAsyncIterator()) }
+    }
+
+    private init(iteratorProducer: @escaping @Sendable () -> AsyncIterator) {
+        self.iteratorProducer = iteratorProducer
     }
 
     /// Initializes a `ChunkedDataFrame` from an in-memory array of `DataFrame` chunks.
     ///
     /// - Parameter chunks: An array of `DataFrame` chunks.
     public init(chunks: [DataFrame]) {
-        self.streamProducer = {
+        self.init(streamProducer: {
             AsyncThrowingStream { continuation in
                 for chunk in chunks {
                     continuation.yield(chunk)
                 }
                 continuation.finish()
             }
-        }
+        })
     }
 
     /// Initializes a `ChunkedDataFrame` from a single `DataFrame`.
@@ -42,24 +46,55 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
 
     /// The async iterator for streaming DataFrame chunks.
     public struct AsyncIterator: AsyncIteratorProtocol {
-        private var iterator: AsyncThrowingStream<DataFrame, any Error>.AsyncIterator
+        private indirect enum State {
+            case source(AsyncThrowingStream<DataFrame, any Error>.Iterator)
+            case transformed(AsyncIterator, @Sendable (DataFrame) async throws -> DataFrame?)
+            case finished
+        }
 
-        init(iterator: AsyncThrowingStream<DataFrame, any Error>.AsyncIterator) {
-            self.iterator = iterator
+        private var state: State
+
+        init(iterator: AsyncThrowingStream<DataFrame, any Error>.Iterator) {
+            state = .source(iterator)
+        }
+
+        fileprivate init(upstream: AsyncIterator,
+                         transform: @escaping @Sendable (DataFrame) async throws -> DataFrame?) {
+            state = .transformed(upstream, transform)
         }
 
         /// Fetches the next DataFrame chunk in the sequence.
         /// - Throws: `SwiftMLError` or `DataFrameError` if column lengths mismatch, names collide, or I/O fails.
         /// - Returns: A new `DataFrame` containing the transformed columns and computed results.
         public mutating func next() async throws -> DataFrame? {
-            try await iterator.next()
+            let current = state
+            state = .finished
+            try Task.checkCancellation()
+            switch current {
+            case .finished: return nil
+            case .source(var iterator):
+                let result = try await iterator.next()
+                try Task.checkCancellation()
+                if result != nil { state = .source(iterator) }
+                return result
+            case .transformed(var upstream, let transform):
+                while let chunk = try await upstream.next() {
+                    try Task.checkCancellation()
+                    if let result = try await transform(chunk) {
+                        try Task.checkCancellation()
+                        state = .transformed(upstream, transform)
+                        return result
+                    }
+                }
+                return nil
+            }
         }
     }
 
     /// Creates an asynchronous iterator over the DataFrame chunks.
     /// - Returns: The computed AsyncIterator result instance.
     public func makeAsyncIterator() -> AsyncIterator {
-        AsyncIterator(iterator: streamProducer().makeAsyncIterator())
+        iteratorProducer()
     }
 
     // MARK: – Factory Methods
@@ -88,27 +123,9 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     /// - Parameter predicate: A closure evaluating each row.
     /// - Returns: A new `ChunkedDataFrame` emitting filtered chunks.
     public func filter(_ predicate: @escaping @Sendable (DataFrameRow) -> Bool) -> ChunkedDataFrame {
-        let upstream = self.streamProducer
-        return ChunkedDataFrame {
-            AsyncThrowingStream { continuation in
-                let task = Task {
-                    do {
-                        for try await chunk in upstream() {
-                            try Task.checkCancellation()
-                            let filtered = chunk.filter(predicate)
-                            if filtered.rowCount > 0 {
-                                continuation.yield(filtered)
-                            }
-                        }
-                        continuation.finish()
-                    } catch {
-                        continuation.finish(throwing: error)
-                    }
-                }
-                continuation.onTermination = { @Sendable _ in
-                    task.cancel()
-                }
-            }
+        transformed { chunk in
+            let filtered = chunk.filter(predicate)
+            return filtered.rowCount > 0 ? filtered : nil
         }
     }
 
@@ -117,26 +134,7 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     /// - Parameter columns: The column names to retain.
     /// - Returns: A new `ChunkedDataFrame` emitting chunks with the selected columns.
     public func select(_ columns: [String]) -> ChunkedDataFrame {
-        let upstream = self.streamProducer
-        return ChunkedDataFrame {
-            AsyncThrowingStream { continuation in
-                let task = Task {
-                    do {
-                        for try await chunk in upstream() {
-                            try Task.checkCancellation()
-                            let projected = try chunk.select(columns)
-                            continuation.yield(projected)
-                        }
-                        continuation.finish()
-                    } catch {
-                        continuation.finish(throwing: error)
-                    }
-                }
-                continuation.onTermination = { @Sendable _ in
-                    task.cancel()
-                }
-            }
-        }
+        transformed { try $0.select(columns) }
     }
 
     /// Lazily selects a subset of columns from each chunk via variadic arguments.
@@ -155,26 +153,16 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
     public func mapChunk(
         _ transform: @escaping @Sendable (DataFrame) async throws -> DataFrame
     ) -> ChunkedDataFrame {
-        let upstream = self.streamProducer
-        return ChunkedDataFrame {
-            AsyncThrowingStream { continuation in
-                let task = Task {
-                    do {
-                        for try await chunk in upstream() {
-                            try Task.checkCancellation()
-                            let mapped = try await transform(chunk)
-                            continuation.yield(mapped)
-                        }
-                        continuation.finish()
-                    } catch {
-                        continuation.finish(throwing: error)
-                    }
-                }
-                continuation.onTermination = { @Sendable _ in
-                    task.cancel()
-                }
-            }
-        }
+        transformed { try await transform($0) }
+    }
+
+    private func transformed(
+        _ transform: @escaping @Sendable (DataFrame) async throws -> DataFrame?
+    ) -> ChunkedDataFrame {
+        let upstream = iteratorProducer
+        return ChunkedDataFrame(iteratorProducer: {
+            AsyncIterator(upstream: upstream(), transform: transform)
+        })
     }
 
     // MARK: – Terminal Operations
@@ -237,32 +225,17 @@ public struct ChunkedDataFrame: AsyncSequence, Sendable {
         on key: String,
         how: JoinKind = .inner
     ) -> ChunkedDataFrame {
-        let upstream = self.streamProducer
-        return ChunkedDataFrame {
-            AsyncThrowingStream { continuation in
-                let task = Task {
-                    do {
-                        guard how == .inner || how == .left else {
-                            throw SwiftMLError.unsupportedOperation(
-                                "Streaming join only supports .inner and .left against an in-memory dimension table. " +
-                                "(.right and .outer require global tracking of right-side matches to avoid duplicating unmatched rows per chunk)"
-                            )
-                        }
-                        for try await chunk in upstream() {
-                            try Task.checkCancellation()
-                            let joinedChunk = try chunk.join(other, on: key, how: how)
-                            continuation.yield(joinedChunk)
-                        }
-                        continuation.finish()
-                    } catch {
-                        continuation.finish(throwing: error)
-                    }
-                }
-                continuation.onTermination = { @Sendable _ in
-                    task.cancel()
-                }
+        guard how == .inner || how == .left else {
+            return ChunkedDataFrame {
+                AsyncThrowingStream(unfolding: {
+                    throw SwiftMLError.unsupportedOperation(
+                        "Streaming join only supports .inner and .left against an in-memory dimension table. " +
+                        "(.right and .outer require global tracking of right-side matches to avoid duplicating unmatched rows per chunk)"
+                    )
+                })
             }
         }
+        return transformed { try $0.join(other, on: key, how: how) }
     }
 }
 

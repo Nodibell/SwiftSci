@@ -210,20 +210,24 @@ public final class SystemsCSVParser: Sendable {
     /// Discovers complete records without retaining metadata for the rest of the source.
     /// Offsets are relative to the supplied buffer. A wide record retries with full-width fields.
     internal func scanBatch(buffer: UnsafeBufferPointer<UInt8>, maximumRows: Int) throws -> CSVRecordBatch {
+        try scanBatch(buffer: buffer, maximumRows: maximumRows, fieldType: CompactCSVField.self)
+    }
+
+    internal func scanBatch<Field: CSVIndexField>(
+        buffer: UnsafeBufferPointer<UInt8>, maximumRows: Int, fieldType: Field.Type
+    ) throws -> CSVRecordBatch {
         precondition(maximumRows > 0)
         try Task.checkCancellation()
-        let compact = scanRecords(buffer: buffer, range: buffer.indices,
-            fieldType: CompactCSVField.self, maximumRows: maximumRows, output: CSVIndexOutput.self)
-        switch compact {
+        var result = scanRecords(buffer: buffer, range: buffer.indices,
+            fieldType: fieldType, maximumRows: maximumRows, output: CSVIndexOutput.self)
+        if case .widerOffsets = result {
+            result = scanRecords(buffer: buffer, range: buffer.indices,
+                fieldType: PackedCSVField.self, maximumRows: maximumRows, output: CSVIndexOutput.self)
+        }
+        switch result {
         case .complete(let batch): return batch
         case .cancelled: throw CancellationError()
-        case .widerOffsets:
-            switch scanRecords(buffer: buffer, range: buffer.indices,
-                fieldType: PackedCSVField.self, maximumRows: maximumRows, output: CSVIndexOutput.self) {
-            case .complete(let batch): return batch
-            case .cancelled: throw CancellationError()
-            case .widerOffsets: preconditionFailure("A buffer range must fit Int offsets")
-            }
+        case .widerOffsets: preconditionFailure("A buffer range must fit Int offsets")
         }
     }
 

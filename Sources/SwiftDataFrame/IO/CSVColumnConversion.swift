@@ -283,6 +283,15 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder, Builder: CSVColu
     }
 }
 
+// Keep empty rejection and String conversion out of the inlined numeric decoders.
+@inline(never)
+private func parseCSVNumericFallback<Value: SupportedType>(
+    _ type: Value.Type, buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset
+) -> Value? {
+    guard offset.length > 0 else { return nil }
+    return Value.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
+}
+
 internal struct CSVIntegerDecoder: CSVValueDecoder {
     let nulls: CSVNullMatcher
 
@@ -293,7 +302,7 @@ internal struct CSVIntegerDecoder: CSVValueDecoder {
         if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
         if let value = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) { return Int64(value) }
         if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
-        return Int64.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
+        return parseCSVNumericFallback(Int64.self, buffer: buffer, offset: offset)
     }
 
     @inline(__always)
@@ -301,8 +310,8 @@ internal struct CSVIntegerDecoder: CSVValueDecoder {
         if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
         if let value = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) { return .value(Int64(value)) }
         if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
-        let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-        return Int64.parse(from: text).map(CSVDecodedValue.value) ?? .invalid
+        return parseCSVNumericFallback(Int64.self, buffer: buffer, offset: offset)
+            .map(CSVDecodedValue.value) ?? .invalid
     }
 }
 
@@ -314,7 +323,7 @@ internal struct CSVDoubleDecoder: CSVValueDecoder {
         if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
         if let value = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) { return value }
         if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
-        return Double.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
+        return parseCSVNumericFallback(Double.self, buffer: buffer, offset: offset)
     }
 
     @inline(__always)
@@ -322,8 +331,8 @@ internal struct CSVDoubleDecoder: CSVValueDecoder {
         if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
         if let value = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) { return .value(value) }
         if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
-        let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
-        return Double.parse(from: text).map(CSVDecodedValue.value) ?? .invalid
+        return parseCSVNumericFallback(Double.self, buffer: buffer, offset: offset)
+            .map(CSVDecodedValue.value) ?? .invalid
     }
 }
 

@@ -7,8 +7,9 @@ struct PreparedDoubleSortingTests {
     func firstTurnPreservesStableRows(position: Int, compact: Bool) throws {
         for missing in [false, true] {
             for reversed in [false, true] {
-                var values: [Double?] = (0..<8193).map { row in
-                    missing && row % 31 == 0 ? nil : Double(row / 4 - 1024)
+                var values: [Double?] = (0..<8193).map { (row: Int) -> Double? in
+                    if missing && row % 31 == 0 { return nil }
+                    return Double(row / 4 - 1024)
                 }
                 if reversed { values.reverse() }
                 let turn = reversed ? position + 1 : position

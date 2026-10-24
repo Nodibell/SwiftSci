@@ -27,7 +27,10 @@ struct SortAllocationDispatchTests {
 
     @Test(arguments: [0, 129, 8192], [false, true])
     func nanBeforeOrAfterDispatchKeepsComparisonFallback(position: Int, compact: Bool) {
-        var values: [Double?] = (0..<8193).map { row in row % 31 == 0 ? nil : Double((row * 7919) % 4093) }
+        var values: [Double?] = (0..<8193).map { (row: Int) -> Double? in
+            if row % 31 == 0 { return nil }
+            return Double((row * 7919) % 4093)
+        }
         values[position] = Double(bitPattern: 0x7ff8000000000042)
         let column = makeColumn(values, compact: compact)
         for ascending in [false, true] {

@@ -404,7 +404,7 @@ private struct CSVStructuralScanner {
     let quote: UInt8?
     var cursor: Int
     var blockStart = 0
-    var matches: UInt16 = 0
+    var matches: UInt64 = 0
 
     init(bytes: UnsafePointer<UInt8>, range: Range<Int>, delimiter: UInt8, quote: UInt8?) {
         self.bytes = bytes
@@ -429,25 +429,24 @@ private struct CSVStructuralScanner {
                 let block = UnsafeRawPointer(bytes.advanced(by: cursor)).loadUnaligned(as: SIMD16<UInt8>.self)
                 var structural = (block .== SIMD16(repeating: delimiter)) .| (block .== SIMD16(repeating: 10))
                 if let quote { structural = structural .| (block .== SIMD16(repeating: quote)) }
-                // Each disjoint byte-weight sum is at most 255. Full-width platform
-                // reductions keep mask packing vectorized instead of extracting lanes.
-                let lowWeights = SIMD16<UInt8>(1, 2, 4, 8, 16, 32, 64, 128, 0, 0, 0, 0, 0, 0, 0, 0)
-                let highWeights = SIMD16<UInt8>(0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 16, 32, 64, 128)
-                let low = SIMD16<UInt8>.zero.replacing(with: lowWeights, where: structural)
-                let high = SIMD16<UInt8>.zero.replacing(with: highWeights, where: structural)
-                matches = UInt16(simd_reduce_add(low)) | (UInt16(simd_reduce_add(high)) << 8)
+                // Two byte flags become two nibbles in each narrowed lane.
+                // Keep one bit per nibble so a trailing-zero count locates a byte.
+                let flags = SIMD16<UInt8>.zero.replacing(with: SIMD16(repeating: 255), where: structural)
+                let words = unsafeBitCast(flags, to: SIMD8<UInt16>.self)
+                let nibbles = SIMD8<UInt8>(truncatingIfNeeded: words &>> 4)
+                matches = unsafeBitCast(nibbles, to: UInt64.self) & 0x1111_1111_1111_1111
                 cursor += 16
             } else {
                 while cursor < searchLimit {
                     let byte = bytes[cursor]
                     if byte == delimiter || byte == 10 || byte == quote {
-                        matches |= UInt16(1) << (cursor - blockStart)
+                        matches |= UInt64(1) << ((cursor - blockStart) * 4)
                     }
                     cursor += 1
                 }
             }
         }
-        let position = matches.trailingZeroBitCount
+        let position = matches.trailingZeroBitCount / 4
         matches &= matches - 1
         return blockStart + position
     }

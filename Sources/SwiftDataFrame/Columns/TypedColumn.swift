@@ -11,14 +11,37 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// The dtype.
     public let dtype: ColumnDType
     /// The count.
-    public var count: Int     { values.count }
+    public var count: Int {
+        switch storage {
+        case .optional(let values): values.count
+        case .dense(let values, _): values.count
+        }
+    }
     /// The null count.
     public var nullCount: Int { _nullCount }
 
     // MARK: – Storage
 
-    /// Raw values — `nil` means null.
-    public let values: [T?]
+    /// Optional values. Dense storage materializes an array on each request.
+    @inlinable
+    public var values: [T?] {
+        switch storage {
+        case .optional(let values): return values
+        case .dense(let values, let validity):
+            guard let validity else { return values.map(Optional.some) }
+            return values.indices.map { row in
+                validity[row >> 6] & (UInt64(1) << (row & 63)) == 0 ? nil : values[row]
+            }
+        }
+    }
+
+    @usableFromInline
+    internal enum Storage: Sendable {
+        case optional([T?])
+        case dense([T], validity: [UInt64]?)
+    }
+    @usableFromInline
+    internal let storage: Storage
 
     private let _nullCount: Int
 
@@ -38,9 +61,13 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     @usableFromInline
     internal init(name: String, values: [T?], nullCount: Int) {
+        self.init(name: name, storage: .optional(values), nullCount: nullCount)
+    }
+
+    private init(name: String, storage: Storage, nullCount: Int) {
         self.name = name
         self.dtype = T.columnDType
-        self.values = values
+        self.storage = storage
         self._nullCount = nullCount
     }
 
@@ -59,7 +86,14 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// Accesses the element at the given index.
     /// - Parameters:
     ///   - index: The index.
-    public subscript(index: Int) -> T? { values[index] }
+    public subscript(index: Int) -> T? {
+        switch storage {
+        case .optional(let values): return values[index]
+        case .dense(let values, let validity):
+            if let validity, validity[index >> 6] & (UInt64(1) << (index & 63)) == 0 { return nil }
+            return values[index]
+        }
+    }
 
     // MARK: – AnyColumn conformance
 
@@ -95,7 +129,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         var seen: Set<T> = []
         var seenNull = false
         var uniqueValues: [T?] = []
-        uniqueValues.reserveCapacity(values.count)
+        uniqueValues.reserveCapacity(count)
         
         for val in values {
             if let v = val {
@@ -131,6 +165,16 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let column = self as? TypedColumn<Float> {
             return column.gatheredNumeric(at: indices)
         }
+        if let column = self as? TypedColumn<String> {
+            return column.gatheredScalar(at: indices)
+        }
+        if let column = self as? TypedColumn<Bool> {
+            return column.gatheredScalar(at: indices)
+        }
+        return gatheredScalar(at: indices)
+    }
+
+    private func gatheredScalar(at indices: [Int]) -> TypedColumn<T> {
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
         var gatheredNullCount = 0
@@ -153,6 +197,12 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
 
     /// Gathers elements at the specified row indices using typed indexed loops, placing nil where index is nil.
     public func gatheredWithNulls(at indices: [Int?], newName: String? = nil) -> any AnyColumn {
+        if let column = self as? TypedColumn<Double>, column.compactNumericStorage != nil {
+            let output = CompactNumericColumn(count: indices.count) { position in
+                indices[position].flatMap { column[$0] }
+            }
+            return TypedColumn<Double>(name: newName ?? name, compactColumn: output)
+        }
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
         var gatheredNullCount = 0
@@ -188,6 +238,15 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     ) -> any AnyColumn {
         guard let typedRight = rightColumn as? TypedColumn<T> else {
             return (self as any AnyColumn).gatheredJoinKey(leftIndices: leftIndices, rightColumn: rightColumn, rightIndices: rightIndices, name: name)
+        }
+        if let left = self as? TypedColumn<Double>, let right = typedRight as? TypedColumn<Double>,
+           left.compactNumericStorage != nil || right.compactNumericStorage != nil {
+            let output = CompactNumericColumn(count: leftIndices.count) { position in
+                if let row = leftIndices[position] { return left[row] }
+                if let row = rightIndices[position] { return right[row] }
+                return nil
+            }
+            return TypedColumn<Double>(name: name, compactColumn: output)
         }
         let n = leftIndices.count
         var result = Array<T?>(repeating: nil, count: n)
@@ -231,13 +290,17 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         switch condition {
         case .isNull:
             if _nullCount == 0 { return [] }
-            if _nullCount == count { return Array(values.indices) }
+            if _nullCount == count { return Array(0..<count) }
         case .isNotNull:
-            if _nullCount == 0 { return Array(values.indices) }
+            if _nullCount == 0 { return Array(0..<count) }
             if _nullCount == count { return [] }
         default: break
         }
         if let column = self as? TypedColumn<Double> {
+            if let compact = column.compactNumericStorage {
+                return filterIndicesFloating(values: CompactColumnValues(column: compact),
+                                             nullCount: column.nullCount, condition: condition)
+            }
             return filterIndicesFloating(values: column.values, nullCount: column.nullCount, condition: condition)
         }
         if let column = self as? TypedColumn<Int64> {
@@ -263,7 +326,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Returns: Value at row index or `nil` if null or out of bounds.
     public func value(at index: Int) -> Any? {
         guard index >= 0 && index < count else { return nil }
-        return values[index] as Any?
+        return self[index] as Any?
     }
 
     /// Converts numeric column values into an array of non-null `Double` values.
@@ -293,16 +356,21 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter newName: Target column name.
     /// - Returns: Renamed column instance.
     public func renamed(to newName: String) -> any AnyColumn {
-        TypedColumn<T>(name: newName, values: values, nullCount: _nullCount)
+        TypedColumn<T>(name: newName, storage: storage, nullCount: _nullCount)
     }
 
     /// Computes a stable row permutation sorted by column values, with nulls last.
     /// - Parameter ascending: Sort order direction (`true` for ascending, `false` for descending).
     /// - Returns: Array of row indices sorted by column values.
     public func sortedIndices(ascending: Bool) -> [Int] {
+        if nullCount == count { return Array(0..<count) }
         // Specialize common Comparable element types without constraining SupportedType
         // (Bool is Hashable but not Comparable).
         if let column = self as? TypedColumn<Double> {
+            if let compact = column.compactNumericStorage {
+                return sortIndicesDouble(CompactColumnValues(column: compact),
+                                         nullCount: column.nullCount, ascending: ascending)
+            }
             return sortIndicesDouble(column.values, nullCount: column.nullCount, ascending: ascending)
         }
         if let column = self as? TypedColumn<Float> {
@@ -317,7 +385,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let column = self as? TypedColumn<Int> {
             return sortIndicesPrimitiveFast(column.values, nullCount: column.nullCount, ascending: ascending)
         }
-        var indices = Array(0..<values.count)
+        var indices = Array(0..<count)
         let vals = values
         if let strings = vals as? [String?] {
             sortIndices(&indices, ascending: ascending) { strings[$0] }
@@ -377,14 +445,14 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if offset > 0 {
             if offset < count {
                 for i in offset..<count {
-                    newValues[i] = values[i - offset]
+                    newValues[i] = self[i - offset]
                 }
             }
         } else if offset < 0 {
             let absOffset = abs(offset)
             if absOffset < count {
                 for i in 0..<(count - absOffset) {
-                    newValues[i] = values[i + absOffset]
+                    newValues[i] = self[i + absOffset]
                 }
             }
         } else {
@@ -411,99 +479,223 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     public var nonNullValues: [T] { values.compactMap { $0 } }
 }
 
-private func sortIndicesDouble(_ values: [Double?], nullCount: Int, ascending: Bool) -> [Int] {
+private func sortIndicesDouble<Values: RandomAccessCollection>(
+    _ values: Values, nullCount: Int, ascending: Bool
+) -> [Int] where Values.Element == Double?, Values.Index == Int {
     let validCount = values.count - nullCount
-    // Sparse columns do not amortize a full-row radix key buffer.
+    // Sparse columns do not amortize a full-row sort key buffer.
     if validCount < 1_024 || validCount < values.count / 20 {
         return sortIndicesPrimitiveFast(values, nullCount: nullCount, ascending: ascending)
     }
-    var tagged: [(index: Int, value: Double)] = []
-    var missing: [Int] = []
-    tagged.reserveCapacity(validCount)
-    missing.reserveCapacity(nullCount)
     var previous: Double?
     var direction = 0
-    var runs = 1
-    // Keep adaptive comparison sorting when monotone runs span at least 64 values on average.
+    var requiresComparisonFallback = false
+    // Probe monotonic order before allocating keys.
     let runLimit = max(8, validCount / 64)
     for (index, optional) in values.enumerated() {
-        guard let value = optional else {
-            missing.append(index)
-            continue
-        }
+        guard let value = optional else { continue }
         if value.isNaN {
-            var indices = Array(values.indices)
-            sortIndices(&indices, ascending: ascending) { values[$0] }
-            return indices
+            requiresComparisonFallback = true
+            break
         }
         if let previous, value != previous {
             let nextDirection = value > previous ? 1 : -1
-            if direction != 0 && direction != nextDirection { runs += 1 }
+            if direction != 0 && direction != nextDirection {
+                let resume = (nextRow: index + 1, previous: value, direction: nextDirection, runs: 2)
+                if let prepared = prepareDoubleSortKeys(values, ascending: ascending,
+                                                        resume: resume, runLimit: runLimit) {
+                    return sortedDoubleRows(prepared, validCount: validCount)
+                }
+                requiresComparisonFallback = true
+                break
+            }
             direction = nextDirection
         }
-        if runs > runLimit {
-            tagged.removeAll(keepingCapacity: false)
-            missing.removeAll(keepingCapacity: false)
-            if let indices = radixIndicesDouble(values, nullCount: nullCount, ascending: ascending) {
-                return indices
-            }
-            var indices = Array(values.indices)
-            sortIndices(&indices, ascending: ascending) { values[$0] }
-            return indices
-        }
         previous = value
-        tagged.append((index, value))
     }
-    tagged.sort { ascending ? $0.value < $1.value : $0.value > $1.value }
-    var indices = tagged.map { $0.index }
-    indices.append(contentsOf: missing)
+    if requiresComparisonFallback {
+        var indices = Array(0..<values.count)
+        sortIndices(&indices, ascending: ascending) { values[$0] }
+        return indices
+    }
+    return monotonicIndicesDouble(values, nullCount: nullCount,
+                                  reverse: direction != 0 && (direction > 0) != ascending)
+}
+
+private func monotonicIndicesDouble<Values: RandomAccessCollection>(
+    _ values: Values, nullCount: Int, reverse: Bool
+) -> [Int] where Values.Element == Double?, Values.Index == Int {
+    if !reverse && nullCount == 0 { return Array(0..<values.count) }
+    let validCount = values.count - nullCount
+    return [Int](unsafeUninitializedCapacity: values.count) { buffer, initializedCount in
+        var present = 0
+        var missing = validCount
+        for (index, value) in values.enumerated() {
+            if value != nil {
+                buffer[present] = index
+                present += 1
+            } else {
+                buffer[missing] = index
+                missing += 1
+            }
+        }
+        initializedCount = values.count
+        guard reverse else { return }
+        var left = 0
+        var right = validCount - 1
+        while left < right {
+            buffer.swapAt(left, right)
+            left += 1
+            right -= 1
+        }
+        // Reversing equal groups restores the input order of ties, including signed zero.
+        var start = 0
+        while start < validCount {
+            var end = start + 1
+            while end < validCount && values[buffer[start]] == values[buffer[end]] { end += 1 }
+            left = start
+            right = end - 1
+            while left < right {
+                buffer.swapAt(left, right)
+                left += 1
+                right -= 1
+            }
+            start = end
+        }
+    }
+}
+
+private struct DoubleSortKeys {
+    let keys: [UInt64]
+    let differingBits: UInt64
+    let requiresRadix: Bool
+}
+
+private func orderedDoubleKey(_ value: Double, ascending: Bool) -> UInt64? {
+    guard !value.isNaN else { return nil }
+    let bits = value == 0 ? UInt64(0) : value.bitPattern
+    let key = bits >> 63 == 0 ? bits ^ (UInt64(1) << 63) : ~bits
+    return ascending ? key : ~key
+}
+
+private func prepareDoubleSortKeys<Values: RandomAccessCollection>(
+    _ values: Values, ascending: Bool,
+    resume: (nextRow: Int, previous: Double, direction: Int, runs: Int)?, runLimit: Int
+) -> DoubleSortKeys? where Values.Element == Double?, Values.Index == Int {
+    // Non-NaN keys in either direction exclude UInt64.max, reserved for missing rows.
+    var keys = [UInt64](repeating: .max, count: values.count)
+    var differingBits: UInt64 = 0
+    var firstKey: UInt64?
+    var requiresRadix = resume == nil
+    var previous = resume?.previous ?? 0
+    var direction = resume?.direction ?? 0
+    var runs = resume?.runs ?? 1
+    let nextRow = resume?.nextRow ?? values.count
+    for (index, optional) in values.enumerated() {
+        guard let value = optional else { continue }
+        guard let key = orderedDoubleKey(value, ascending: ascending) else { return nil }
+        keys[index] = key
+        if let firstKey { differingBits |= key ^ firstKey } else { firstKey = key }
+        if !requiresRadix && index >= nextRow {
+            if value != previous {
+                let nextDirection = value > previous ? 1 : -1
+                if direction != nextDirection { runs += 1 }
+                direction = nextDirection
+                if runs > runLimit { requiresRadix = true }
+            }
+            previous = value
+        }
+    }
+    return DoubleSortKeys(keys: keys, differingBits: differingBits, requiresRadix: requiresRadix)
+}
+
+private func sortedDoubleRows(_ prepared: DoubleSortKeys, validCount: Int) -> [Int] {
+    var indices = [Int](unsafeUninitializedCapacity: prepared.keys.count) { buffer, initializedCount in
+        var present = 0
+        var missing = validCount
+        for (index, key) in prepared.keys.enumerated() {
+            if key == .max {
+                buffer[missing] = index
+                missing += 1
+            } else {
+                buffer[present] = index
+                present += 1
+            }
+        }
+        initializedCount = prepared.keys.count
+    }
+    if prepared.requiresRadix {
+        radixDoubleRows(prepared.keys, indices: &indices, validCount: validCount,
+                        differingBits: prepared.differingBits)
+    } else {
+        prepared.keys.withUnsafeBufferPointer { keys in
+            indices.withUnsafeMutableBufferPointer { rows in
+                var present = UnsafeMutableBufferPointer(rebasing: rows[..<validCount])
+                present.sort { keys[$0] < keys[$1] }
+            }
+        }
+    }
     return indices
 }
 
-private func radixIndicesDouble(_ values: [Double?], nullCount: Int, ascending: Bool) -> [Int]? {
-    var keys = [UInt64](repeating: 0, count: values.count)
-    var indices: [Int] = []
-    var missing: [Int] = []
-    indices.reserveCapacity(values.count)
-    missing.reserveCapacity(nullCount)
-    var differingBits: UInt64 = 0
-    var firstKey: UInt64?
-    for (index, optional) in values.enumerated() {
-        guard let value = optional else {
-            missing.append(index)
-            continue
+private func radixDoubleRows(_ keys: [UInt64], indices: inout [Int],
+                             validCount: Int, differingBits: UInt64) {
+    var scratch = [Int](repeating: 0, count: validCount)
+    var offsets = [Int](repeating: 0, count: 2_048)
+    let count = validCount
+    // Source indices originate in values.indices; each histogram partitions exactly count rows.
+    // Keep all disjoint buffers borrowed until the final permutation is complete.
+    let resultInScratch = keys.withUnsafeBufferPointer { keys in
+        indices.withUnsafeMutableBufferPointer { original in
+            scratch.withUnsafeMutableBufferPointer { temporary in
+                offsets.withUnsafeMutableBufferPointer { offsets in
+                    var source = original.baseAddress!
+                    var destination = temporary.baseAddress!
+                    let buckets = offsets.baseAddress!
+                    let keys = keys.baseAddress!
+                    var resultInScratch = false
+                    for shift in stride(from: 0, to: 64, by: 11) where ((differingBits >> shift) & 2_047) != 0 {
+                        buckets.update(repeating: 0, count: 2_048)
+                        for position in 0..<count {
+                            buckets[Int((keys[source[position]] >> shift) & 2_047)] += 1
+                        }
+                        var next = 0
+                        for bucket in 0..<2_048 {
+                            let size = buckets[bucket]
+                            buckets[bucket] = next
+                            next += size
+                        }
+                        for position in 0..<count {
+                            let index = source[position]
+                            let bucket = Int((keys[index] >> shift) & 2_047)
+                            destination[buckets[bucket]] = index
+                            buckets[bucket] += 1
+                        }
+                        swap(&source, &destination)
+                        resultInScratch.toggle()
+                    }
+                    return resultInScratch
+                }
+            }
         }
-        guard !value.isNaN else { return nil }
-        let bits = value == 0 ? UInt64(0) : value.bitPattern
-        var key = bits >> 63 == 0 ? bits ^ (UInt64(1) << 63) : ~bits
-        if !ascending { key = ~key }
-        keys[index] = key
-        if let firstKey { differingBits |= key ^ firstKey } else { firstKey = key }
-        indices.append(index)
     }
-    var scratch = [Int](repeating: 0, count: indices.count)
-    for shift in stride(from: 0, to: 64, by: 8) where ((differingBits >> shift) & 255) != 0 {
-        var offsets = [Int](repeating: 0, count: 256)
-        for index in indices { offsets[Int((keys[index] >> shift) & 255)] += 1 }
-        var next = 0
-        for bucket in offsets.indices {
-            let count = offsets[bucket]
-            offsets[bucket] = next
-            next += count
+    if resultInScratch {
+        if validCount == indices.count {
+            swap(&indices, &scratch)
+        } else {
+            indices.withUnsafeMutableBufferPointer { rows in
+                scratch.withUnsafeBufferPointer { sorted in
+                    rows.baseAddress!.update(from: sorted.baseAddress!, count: validCount)
+                }
+            }
         }
-        for index in indices {
-            let bucket = Int((keys[index] >> shift) & 255)
-            scratch[offsets[bucket]] = index
-            offsets[bucket] += 1
-        }
-        swap(&indices, &scratch)
     }
-    indices.append(contentsOf: missing)
-    return indices
 }
 
 /// Sorts cached non-null keys once and appends missing rows in their original order.
-private func sortIndicesPrimitiveFast<T: Comparable>(_ vals: [T?], nullCount: Int, ascending: Bool) -> [Int] {
+private func sortIndicesPrimitiveFast<Values: RandomAccessCollection, T: Comparable>(
+    _ vals: Values, nullCount: Int, ascending: Bool
+) -> [Int] where Values.Element == T?, Values.Index == Int {
     var tagged: [(index: Int, value: T)] = []
     var missing: [Int] = []
     tagged.reserveCapacity(vals.count - nullCount)
@@ -548,6 +740,19 @@ import Accelerate
 // MARK: – Double column filter & vDSP vectorised reductions fast path
 
 extension TypedColumn where T == Double {
+    internal var compactNumericStorage: CompactNumericColumn? {
+        guard case .dense(let values, let validity) = storage else { return nil }
+        var result = CompactNumericColumn(values)
+        result.validity = validity
+        result.nullCount = _nullCount
+        return result
+    }
+
+    internal init(name: String, compactColumn: CompactNumericColumn) {
+        self.init(name: name, storage: .dense(compactColumn.values, validity: compactColumn.validity),
+                  nullCount: compactColumn.nullCount)
+    }
+
     /// Computes sample mean using Accelerate vDSP.
     /// - Returns: The computed arithmetic mean value.
     public func mean() -> Double {
@@ -588,6 +793,9 @@ extension TypedColumn where T == Double {
     ///   - indices: Array of row or column integer indices.
     /// - Returns: A strongly-typed column containing the computed values.
     public func vGather(at indices: [Int]) -> TypedColumn<Double> {
+        if let compact = compactNumericStorage {
+            return TypedColumn(name: name, compactColumn: compact.gathered(at: indices))
+        }
         let n = indices.count
         guard n > 0 else { return TypedColumn<Double>(name: name, values: []) }
 
@@ -655,7 +863,16 @@ extension TypedColumn where T == Double {
 
 // MARK: – Typed filter indices
 
-private func filterIndicesFloating<T: BinaryFloatingPoint>(values: [T?], nullCount: Int, condition: FilterCondition) -> [Int]? {
+private struct CompactColumnValues: RandomAccessCollection {
+    let column: CompactNumericColumn
+    var startIndex: Int { 0 }
+    var endIndex: Int { column.values.count }
+    subscript(index: Int) -> Double? { column[index] }
+}
+
+private func filterIndicesFloating<Values: RandomAccessCollection, T: BinaryFloatingPoint>(
+    values: Values, nullCount: Int, condition: FilterCondition
+) -> [Int]? where Values.Element == T?, Values.Index == Int {
     switch condition {
     case .isNull: return values.indices.filter { values[$0] == nil }
     case .isNotNull: return selectedIndices(values) { _ in true }
@@ -710,7 +927,9 @@ private func numericComparison(_ condition: FilterCondition) -> (NumericComparis
     }
 }
 
-private func selectedIndices<T>(_ values: [T?], where predicate: (T) -> Bool) -> [Int] {
+private func selectedIndices<Values: Collection, T>(
+    _ values: Values, where predicate: (T) -> Bool
+) -> [Int] where Values.Element == T? {
     var result: [Int] = []
     result.reserveCapacity(values.count / 2)
     for (index, value) in values.enumerated() {
@@ -823,11 +1042,11 @@ extension TypedColumn: Equatable where T: Equatable {
 private extension TypedColumn {
     func gatheredNumeric(at indices: [Int]) -> TypedColumn<T> {
         if _nullCount == 0 {
-            return TypedColumn<T>(name: name, values: indices.map { values[$0] }, nullCount: 0)
+            return TypedColumn<T>(name: name, values: indices.map { self[$0] }, nullCount: 0)
         }
         var gatheredNullCount = 0
         let result = indices.map { index in
-            let value = values[index]
+            let value = self[index]
             if case nil = value { gatheredNullCount += 1 }
             return value
         }

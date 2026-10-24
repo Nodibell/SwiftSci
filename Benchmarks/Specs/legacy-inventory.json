@@ -284,7 +284,7 @@
       "replacements": [
         {
           "operation": "csv-read",
-          "workload": "csv-read-v1",
+          "workload": "csv-read-v2",
           "profiles": [
             "migration-smoke",
             "migration"
@@ -301,7 +301,7 @@
       "replacements": [
         {
           "operation": "csv-stream-filter",
-          "workload": "csv-stream-filter-v1",
+          "workload": "csv-stream-filter-v2",
           "profiles": [
             "migration-smoke",
             "migration"
@@ -318,7 +318,7 @@
       "replacements": [
         {
           "operation": "csv-stream-group",
-          "workload": "csv-stream-group-v1",
+          "workload": "csv-stream-group-v2",
           "profiles": [
             "migration-smoke",
             "migration"
@@ -335,7 +335,7 @@
       "replacements": [
         {
           "operation": "csv-stream-read",
-          "workload": "csv-stream-read-v1",
+          "workload": "csv-stream-read-v2",
           "profiles": [
             "migration-smoke",
             "migration"
@@ -1056,7 +1056,7 @@
       "replacements": [
         {
           "operation": "csv-read",
-          "workload": "csv-read-v1",
+          "workload": "csv-read-v2",
           "profiles": [
             "migration-smoke",
             "migration"
@@ -1073,7 +1073,7 @@
       "replacements": [
         {
           "operation": "csv-stream-filter",
-          "workload": "csv-stream-filter-v1",
+          "workload": "csv-stream-filter-v2",
           "profiles": [
             "migration-smoke",
             "migration"
@@ -1090,7 +1090,7 @@
       "replacements": [
         {
           "operation": "csv-stream-group",
-          "workload": "csv-stream-group-v1",
+          "workload": "csv-stream-group-v2",
           "profiles": [
             "migration-smoke",
             "migration"
@@ -1107,7 +1107,7 @@
       "replacements": [
         {
           "operation": "csv-stream-read",
-          "workload": "csv-stream-read-v1",
+          "workload": "csv-stream-read-v2",
           "profiles": [
             "migration-smoke",
             "migration"

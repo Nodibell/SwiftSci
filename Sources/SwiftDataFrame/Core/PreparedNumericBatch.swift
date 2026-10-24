@@ -151,15 +151,19 @@ package struct CompactNumericColumn: Sendable {
     }
 
     package init<T>(_ source: [T?], transform: (T) -> Double) {
-        values = [Double](repeating: .nan, count: source.count)
+        self.init(count: source.count) { source[$0].map(transform) }
+    }
+
+    package init(count: Int, valueAt: (Int) -> Double?) {
+        values = [Double](repeating: .nan, count: count)
         validity = nil
         nullCount = 0
-        for (index, value) in source.enumerated() {
-            if let value {
-                values[index] = transform(value)
+        for index in 0..<count {
+            if let value = valueAt(index) {
+                values[index] = value
             } else {
                 if validity == nil {
-                    validity = [UInt64](repeating: .max, count: (source.count + 63) / 64)
+                    validity = [UInt64](repeating: .max, count: (count + 63) / 64)
                 }
                 validity![index >> 6] &= ~(UInt64(1) << (index & 63))
                 nullCount += 1

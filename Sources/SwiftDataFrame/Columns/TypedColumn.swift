@@ -363,6 +363,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     /// - Parameter ascending: Sort order direction (`true` for ascending, `false` for descending).
     /// - Returns: Array of row indices sorted by column values.
     public func sortedIndices(ascending: Bool) -> [Int] {
+        if nullCount == count { return Array(0..<count) }
         // Specialize common Comparable element types without constraining SupportedType
         // (Bool is Hashable but not Comparable).
         if let column = self as? TypedColumn<Double> {

@@ -131,6 +131,16 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
         if let column = self as? TypedColumn<Float> {
             return column.gatheredNumeric(at: indices)
         }
+        if let column = self as? TypedColumn<String> {
+            return column.gatheredScalar(at: indices)
+        }
+        if let column = self as? TypedColumn<Bool> {
+            return column.gatheredScalar(at: indices)
+        }
+        return gatheredScalar(at: indices)
+    }
+
+    private func gatheredScalar(at indices: [Int]) -> TypedColumn<T> {
         let n = indices.count
         var result = Array<T?>(repeating: nil, count: n)
         var gatheredNullCount = 0
@@ -482,22 +492,45 @@ private func radixIndicesDouble(_ values: [Double?], nullCount: Int, ascending: 
         indices.append(index)
     }
     var scratch = [Int](repeating: 0, count: indices.count)
-    for shift in stride(from: 0, to: 64, by: 8) where ((differingBits >> shift) & 255) != 0 {
-        var offsets = [Int](repeating: 0, count: 256)
-        for index in indices { offsets[Int((keys[index] >> shift) & 255)] += 1 }
-        var next = 0
-        for bucket in offsets.indices {
-            let count = offsets[bucket]
-            offsets[bucket] = next
-            next += count
+    var offsets = [Int](repeating: 0, count: 2_048)
+    let count = indices.count
+    // Source indices originate in values.indices; each histogram partitions exactly count rows.
+    // Keep all disjoint buffers borrowed until the final permutation is complete.
+    let resultInScratch = keys.withUnsafeBufferPointer { keys in
+        indices.withUnsafeMutableBufferPointer { original in
+            scratch.withUnsafeMutableBufferPointer { temporary in
+                offsets.withUnsafeMutableBufferPointer { offsets in
+                    var source = original.baseAddress!
+                    var destination = temporary.baseAddress!
+                    let buckets = offsets.baseAddress!
+                    let keys = keys.baseAddress!
+                    var resultInScratch = false
+                    for shift in stride(from: 0, to: 64, by: 11) where ((differingBits >> shift) & 2_047) != 0 {
+                        buckets.update(repeating: 0, count: 2_048)
+                        for position in 0..<count {
+                            buckets[Int((keys[source[position]] >> shift) & 2_047)] += 1
+                        }
+                        var next = 0
+                        for bucket in 0..<2_048 {
+                            let size = buckets[bucket]
+                            buckets[bucket] = next
+                            next += size
+                        }
+                        for position in 0..<count {
+                            let index = source[position]
+                            let bucket = Int((keys[index] >> shift) & 2_047)
+                            destination[buckets[bucket]] = index
+                            buckets[bucket] += 1
+                        }
+                        swap(&source, &destination)
+                        resultInScratch.toggle()
+                    }
+                    return resultInScratch
+                }
+            }
         }
-        for index in indices {
-            let bucket = Int((keys[index] >> shift) & 255)
-            scratch[offsets[bucket]] = index
-            offsets[bucket] += 1
-        }
-        swap(&indices, &scratch)
     }
+    if resultInScratch { swap(&indices, &scratch) }
     indices.append(contentsOf: missing)
     return indices
 }

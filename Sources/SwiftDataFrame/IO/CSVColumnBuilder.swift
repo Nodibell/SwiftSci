@@ -12,7 +12,8 @@ internal struct CSVColumnBuilder<T: SupportedType> {
         if case nil = value { nullCount += 1 }
     }
 
-    func column(named name: String) -> TypedColumn<T> {
-        TypedColumn(name: name, values: values, nullCount: nullCount)
+    mutating func column(named name: String) -> TypedColumn<T> {
+        defer { self = CSVColumnBuilder(capacity: 0) }
+        return TypedColumn(name: name, values: values, nullCount: nullCount)
     }
 }

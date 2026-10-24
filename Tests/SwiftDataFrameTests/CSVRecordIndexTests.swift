@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import SwiftDataFrame
 
-@Suite("Flat CSV record index")
+@Suite("CSV record index")
 struct CSVRecordIndexTests {
     @Test("Flat and public records preserve field boundaries and decoded values")
     func recordBoundaries() {
@@ -26,9 +26,9 @@ struct CSVRecordIndexTests {
                 let index = parser.parseIndex(buffer: buffer)
                 let publicRows = parser.parse(buffer: buffer)
                 #expect(index.count == expected.count)
-                #expect(index.fields.count == expected.reduce(0) { $0 + $1.count })
+                #expect(index.testFields.count == expected.reduce(0) { $0 + $1.count })
                 #expect(index.rowStarts.first == 0)
-                #expect(index.rowStarts.last == index.fields.count)
+                #expect(index.rowStarts.last == index.testFields.count)
                 #expect(publicRows.count == expected.count)
                 for row in expected.indices {
                     let fields = Array(index.row(at: row))
@@ -55,9 +55,9 @@ struct CSVRecordIndexTests {
         data.withUnsafeBytes { raw in
             let index = SystemsCSVParser().parseIndex(buffer: raw.bindMemory(to: UInt8.self))
             #expect(index.rowStarts == [0, 2, 4])
-            #expect(index.fields.map(\.startOffset) == [0, 2, 5, 12])
-            #expect(index.fields.map(\.length) == [1, 1, 6, 1])
-            #expect(index.fields.map(\.escapedQuotesPresent) == [false, false, true, false])
+            #expect(index.testFields.map(\.startOffset) == [0, 2, 5, 12])
+            #expect(index.testFields.map(\.length) == [1, 1, 6, 1])
+            #expect(index.testFields.map(\.escapedQuotesPresent) == [false, false, true, false])
         }
     }
 

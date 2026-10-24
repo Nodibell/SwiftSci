@@ -1,0 +1,10 @@
+{
+  "atol": 0,
+  "id": "csv-read-v2",
+  "operation": "csv-read",
+  "output": "finite little-endian float64 sequence; column order declared in semantics",
+  "rtol": 0,
+  "schema_version": 1,
+  "scope": "ingestion",
+  "semantics": "Complete provided schema, no type inference: id/group Int64 and x/y Float64; mixed fixtures use String group and Bool flag. Comma delimiter, header, valid finite non-null input, all rows and columns in source order. Include file opening, parsing and full materialization; exclude canonical export and validation; warm filesystem cache. Workers must report actual output types."
+}

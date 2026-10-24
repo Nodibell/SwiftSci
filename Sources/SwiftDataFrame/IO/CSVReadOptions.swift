@@ -18,6 +18,10 @@ public struct CSVReadOptions: Sendable {
     /// Serial conversion can reduce CPU work at the cost of longer elapsed time.
     /// This choice does not change type inference, row batches, or output values.
     public var columnConversionMode: CSVColumnConversionMode = .parallel
+    /// Storage for native Double columns in eager and streamed reads.
+    /// Optional arrays preserve shared `.values` exports. Compact buffers reduce
+    /// numerical payload storage, but each `.values` access materializes an array.
+    public var doubleStorage: CSVDoubleStorage = .optional
     /// Maximum number of rows to read (nil = unlimited).
     public var maxRows: Int? = nil
     /// Type overrides for specific columns by name.
@@ -61,4 +65,13 @@ public enum CSVColumnConversionMode: Sendable {
             for column in 0..<count { body(column) }
         }
     }
+}
+
+/// Physical storage for native Double columns. Values, nulls and native types are unchanged.
+public enum CSVDoubleStorage: Sendable, Equatable {
+    /// Retain optional arrays so `.values` exports share their storage through copy-on-write.
+    case optional
+    /// Retain dense Doubles and validity bits for direct numerical preparation.
+    /// Retaining `.values` exports alongside the column retains both representations.
+    case compact
 }

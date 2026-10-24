@@ -6,12 +6,14 @@ internal struct CSVColumnPlan {
     private let validates: Bool
     private let nullValues: Set<String>
     private let dateFormat: String?
+    private let doubleStorage: CSVDoubleStorage
 
     init<Records: CSVRecordAccess>(
         buffer: UnsafeBufferPointer<UInt8>, records: Records, startRow: Int,
         rowCount: Int, column: Int, name: String, options: CSVReadOptions
     ) {
         nullValues = options.nullValues
+        doubleStorage = options.doubleStorage
         if let type = options.columnTypeOverrides[name] {
             candidates = [type]
             validates = false
@@ -70,40 +72,48 @@ internal struct CSVColumnPlan {
         switch type {
         case .int32, .int64:
             return .integer(CSVColumnAttempt(decoder: CSVIntegerDecoder(nulls: CSVNullMatcher(nullValues)),
-                capacity: selectedRowCount, validates: validates))
+                builder: CSVColumnBuilder<Int64>(capacity: selectedRowCount), validates: validates))
         case .float32, .float64:
-            return .double(CSVColumnAttempt(decoder: CSVDoubleDecoder(nulls: CSVNullMatcher(nullValues)),
-                capacity: selectedRowCount, validates: validates))
+            let decoder = CSVDoubleDecoder(nulls: CSVNullMatcher(nullValues))
+            switch doubleStorage {
+            case .optional:
+                return .double(CSVColumnAttempt(decoder: decoder,
+                    builder: CSVColumnBuilder<Double>(capacity: selectedRowCount), validates: validates))
+            case .compact:
+                return .compactDouble(CSVColumnAttempt(decoder: decoder,
+                    builder: CSVCompactDoubleBuilder(capacity: selectedRowCount), validates: validates))
+            }
         case .boolean:
             return .boolean(CSVColumnAttempt(decoder: CSVBooleanDecoder(nullValues: nullValues),
-                capacity: selectedRowCount, validates: validates))
+                builder: CSVColumnBuilder<Bool>(capacity: selectedRowCount), validates: validates))
         case .date32:
             return .date(CSVColumnAttempt(decoder: CSVDateDecoder(nulls: CSVNullMatcher(nullValues),
-                parser: CSVDateParser(format: dateFormat)), capacity: selectedRowCount, validates: validates))
+                parser: CSVDateParser(format: dateFormat)), builder: CSVColumnBuilder<Date>(capacity: selectedRowCount), validates: validates))
         case .utf8:
             if let decoder = CSVSmallStringDecoder(nullValues: nullValues) {
                 return .stringWithSmallNullSet(CSVColumnAttempt(
-                    decoder: decoder, capacity: selectedRowCount, validates: false))
+                    decoder: decoder, builder: CSVColumnBuilder<String>(capacity: selectedRowCount), validates: false))
             }
             if let decoder = CSVASCIIPrefixStringDecoder(nullValues: nullValues, selectedRowCount: selectedRowCount) {
                 return .stringWithASCIIPrefix(CSVColumnAttempt(
-                    decoder: decoder, capacity: selectedRowCount, validates: false))
+                    decoder: decoder, builder: CSVColumnBuilder<String>(capacity: selectedRowCount), validates: false))
             }
             return .string(CSVColumnAttempt(decoder: CSVStringDecoder(nullValues: nullValues),
-                capacity: selectedRowCount, validates: false))
+                builder: CSVColumnBuilder<String>(capacity: selectedRowCount), validates: false))
         }
     }
 }
 
 /// Dispatches once per column and batch. Each reference owns one growing typed array.
 internal enum CSVColumnConversion {
-    case integer(CSVColumnAttempt<CSVIntegerDecoder>)
-    case double(CSVColumnAttempt<CSVDoubleDecoder>)
-    case boolean(CSVColumnAttempt<CSVBooleanDecoder>)
-    case date(CSVColumnAttempt<CSVDateDecoder>)
-    case string(CSVColumnAttempt<CSVStringDecoder>)
-    case stringWithSmallNullSet(CSVColumnAttempt<CSVSmallStringDecoder>)
-    case stringWithASCIIPrefix(CSVColumnAttempt<CSVASCIIPrefixStringDecoder>)
+    case integer(CSVColumnAttempt<CSVIntegerDecoder, CSVColumnBuilder<Int64>>)
+    case double(CSVColumnAttempt<CSVDoubleDecoder, CSVColumnBuilder<Double>>)
+    case compactDouble(CSVColumnAttempt<CSVDoubleDecoder, CSVCompactDoubleBuilder>)
+    case boolean(CSVColumnAttempt<CSVBooleanDecoder, CSVColumnBuilder<Bool>>)
+    case date(CSVColumnAttempt<CSVDateDecoder, CSVColumnBuilder<Date>>)
+    case string(CSVColumnAttempt<CSVStringDecoder, CSVColumnBuilder<String>>)
+    case stringWithSmallNullSet(CSVColumnAttempt<CSVSmallStringDecoder, CSVColumnBuilder<String>>)
+    case stringWithASCIIPrefix(CSVColumnAttempt<CSVASCIIPrefixStringDecoder, CSVColumnBuilder<String>>)
 
     func append<Records: CSVRecordAccess>(
         buffer: UnsafeBufferPointer<UInt8>, records: Records, startRow: Int,
@@ -112,6 +122,7 @@ internal enum CSVColumnConversion {
         switch self {
         case .integer(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .double(let attempt): attempt.appendDouble(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
+        case .compactDouble(let attempt): attempt.appendDouble(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .boolean(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .date(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
         case .string(let attempt): attempt.append(buffer, records, startRow, rowCount, column, sourceOffset: sourceOffset)
@@ -139,6 +150,7 @@ internal enum CSVColumnConversion {
         switch self {
         case .integer(let attempt): attempt.rejectedField
         case .double(let attempt): attempt.rejectedField
+        case .compactDouble(let attempt): attempt.rejectedField
         case .boolean(let attempt): attempt.rejectedField
         case .date(let attempt): attempt.rejectedField
         case .string(let attempt): attempt.rejectedField
@@ -153,6 +165,7 @@ internal enum CSVColumnConversion {
         switch self {
         case .integer(let attempt): attempt.column(named: name)
         case .double(let attempt): attempt.column(named: name)
+        case .compactDouble(let attempt): attempt.column(named: name)
         case .boolean(let attempt): attempt.column(named: name)
         case .date(let attempt): attempt.column(named: name)
         case .string(let attempt): attempt.column(named: name)
@@ -184,17 +197,17 @@ internal extension CSVValueDecoder {
     }
 }
 
-internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
+internal final class CSVColumnAttempt<Decoder: CSVValueDecoder, Builder: CSVColumnBuilding> where Decoder.Value == Builder.Value {
     private let decoder: Decoder
     private let validates: Bool
-    private var values: CSVColumnBuilder<Decoder.Value>
+    private var values: Builder
     private(set) var rejectedField: CSVFieldOffset?
     var rejected: Bool { rejectedField != nil }
 
-    init(decoder: Decoder, capacity: Int, validates: Bool) {
+    init(decoder: Decoder, builder: Builder, validates: Bool) {
         self.decoder = decoder
         self.validates = validates
-        values = CSVColumnBuilder(capacity: capacity)
+        values = builder
     }
 
     func append<Records: CSVRecordAccess>(
@@ -202,7 +215,7 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
         _ startRow: Int, _ rowCount: Int, _ column: Int, sourceOffset: Int
     ) {
         guard !rejected else { return }
-        var batchValues = CSVColumnBuilder<Decoder.Value>(capacity: 0)
+        var batchValues = Builder(capacity: 0)
         swap(&batchValues, &values)
         let field = Self.appendRows(buffer, records, startRow, rowCount, column,
             decoder: decoder, validates: validates, into: &batchValues)
@@ -220,7 +233,7 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
             return
         }
         guard !rejected else { return }
-        var batchValues = CSVColumnBuilder<Double>(capacity: 0)
+        var batchValues = Builder(capacity: 0)
         swap(&batchValues, &values)
         let field = appendValidatedDoubles(buffer, records, startRow, rowCount, column,
             decoder: decoder, into: &batchValues)
@@ -231,14 +244,14 @@ internal final class CSVColumnAttempt<Decoder: CSVValueDecoder> {
     private func reject(_ field: CSVFieldOffset, sourceOffset: Int) {
         rejectedField = CSVFieldOffset(startOffset: sourceOffset + field.startOffset,
             length: field.length, escapedQuotesPresent: field.escapedQuotesPresent)
-        values = CSVColumnBuilder(capacity: 0)
+        values = Builder(capacity: 0)
     }
 
     // Row loops mutate a local builder instead of a class property.
     private static func appendRows<Records: CSVRecordAccess>(
         _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
         _ startRow: Int, _ rowCount: Int, _ column: Int,
-        decoder: Decoder, validates: Bool, into values: inout CSVColumnBuilder<Decoder.Value>
+        decoder: Decoder, validates: Bool, into values: inout Builder
     ) -> CSVFieldOffset? {
         // Choose the validation contract once per batch. Inference keeps the
         // classified result; an explicit schema only needs an optional value.
@@ -373,11 +386,11 @@ internal struct CSVDateDecoder: CSVValueDecoder {
     }
 }
 
-private func appendValidatedDoubles<Records: CSVRecordAccess>(
+private func appendValidatedDoubles<Records: CSVRecordAccess, Builder: CSVColumnBuilding>(
     _ buffer: UnsafeBufferPointer<UInt8>, _ records: Records,
     _ startRow: Int, _ rowCount: Int, _ column: Int,
-    decoder: CSVDoubleDecoder, into values: inout CSVColumnBuilder<Double>
-) -> CSVFieldOffset? {
+    decoder: CSVDoubleDecoder, into values: inout Builder
+) -> CSVFieldOffset? where Builder.Value == Double {
     for row in startRow..<(startRow + rowCount) {
         guard let field = records.field(row: row, column: column) else {
             values.append(nil)

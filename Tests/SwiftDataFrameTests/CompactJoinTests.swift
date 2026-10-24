@@ -51,10 +51,13 @@ struct CompactJoinTests {
 
     private func frame(right: Bool, native: Bool) throws -> DataFrame {
         let count = right ? 133 : 130
-        let keys: [Double?] = (0..<count).map { row in
-            row % 19 == 0 ? nil : Double(row % 17 + (right ? 7 : 0))
+        let keyOffset: Int = right ? 7 : 0
+        let keys: [Double?] = (0..<count).map { (row: Int) -> Double? in
+            if row % 19 == 0 { return nil }
+            let key: Int = row % 17 + keyOffset
+            return Double(key)
         }
-        let values: [Double?] = (0..<count).map { row in
+        let values: [Double?] = (0..<count).map { (row: Int) -> Double? in
             if row % 11 == 0 { return nil }
             if row % 11 == 1 { return Double(bitPattern: 0x7ff8000000000042) }
             if row % 11 == 2 { return -0.0 }

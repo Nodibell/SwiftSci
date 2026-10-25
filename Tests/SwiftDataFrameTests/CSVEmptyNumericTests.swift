@@ -4,11 +4,11 @@ import Testing
 
 @Suite("Empty numeric CSV fields")
 struct CSVEmptyNumericTests {
-    @Test("Numeric inference distinguishes undeclared empties from missing fields",
-          arguments: [false, true])
-    func classification(_ declaredNull: Bool) {
-        let bytes: [UInt8] = []
-        let field = CSVFieldOffset(startOffset: 0, length: 0, escapedQuotesPresent: false)
+    @Test("Numeric inference distinguishes normalized empties from missing fields",
+          arguments: ["", "\"\"", " \t", "\" \t\""], [false, true])
+    func classification(_ text: String, _ declaredNull: Bool) {
+        let bytes = Array(text.utf8)
+        let field = CSVFieldOffset(startOffset: 0, length: bytes.count, escapedQuotesPresent: false)
         let nulls = CSVNullMatcher(declaredNull ? [""] : ["?"])
         bytes.withUnsafeBufferPointer { buffer in
             let integer = CSVIntegerDecoder(nulls: nulls)
@@ -47,9 +47,10 @@ struct CSVEmptyNumericTests {
         #expect(doubles.nullCount == 3)
     }
 
-    @Test("An undeclared empty after the inference sample preserves original text")
-    func lateEmpty() async throws {
-        let csv = "i,x,label\n" + String(repeating: "0042,1.25,value\n", count: 1001) + ",,empty\n"
+    @Test("An undeclared normalized empty after the inference sample preserves text",
+          arguments: ["", "\"\"", " \t", "\" \t\""])
+    func lateEmpty(_ empty: String) async throws {
+        let csv = "i,x,label\n" + String(repeating: "0042,1.25,value\n", count: 1001) + "\(empty),\(empty),empty\n"
         let url = try write(csv)
         defer { try? FileManager.default.removeItem(at: url) }
         var options = CSVReadOptions()

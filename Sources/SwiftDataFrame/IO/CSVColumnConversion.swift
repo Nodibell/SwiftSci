@@ -289,7 +289,9 @@ private func parseCSVNumericFallback<Value: SupportedType>(
     _ type: Value.Type, buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset
 ) -> Value? {
     guard offset.length > 0 else { return nil }
-    return Value.parse(from: VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
+    let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
+    guard !text.isEmpty else { return nil }
+    return Value.parse(from: text)
 }
 
 internal struct CSVIntegerDecoder: CSVValueDecoder {

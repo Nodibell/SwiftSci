@@ -307,11 +307,11 @@ public struct GroupedDataFrame: Sendable {
             return refineGroups(prefixes, values: typed.values)
         case let typed as TypedColumn<Float>:
             return refineGroups(prefixes, count: typed.count) { row in
-                typed.values[row].map { Self.groupBits($0) }
+                typed[row].map { Self.groupBits($0) }
             }
         case let typed as TypedColumn<Double>:
             return refineGroups(prefixes, count: typed.count) { row in
-                typed.values[row].map { Self.groupBits($0) }
+                typed[row].map { Self.groupBits($0) }
             }
         default:
             return refineGroups(prefixes, count: column.count) { row in
@@ -529,39 +529,39 @@ public struct GroupedDataFrame: Sendable {
 
     private func aggregateNumeric(col: any AnyColumn, groups: GroupIndex, agg: Aggregation) -> [Double?] {
         if let typed = col as? TypedColumn<Double> {
-            return applyNumeric(agg, to: typed.values, groups: groups)
+            return applyNumeric(agg, groups: groups) { typed[$0] }
         }
         if let typed = col as? TypedColumn<Float> {
-            return applyNumeric(agg, to: typed.values, groups: groups)
+            return applyNumeric(agg, groups: groups) { typed[$0] }
         }
         if let typed = col as? TypedColumn<Int64> {
-            return applyNumeric(agg, to: typed.values, groups: groups)
+            return applyNumeric(agg, groups: groups) { typed[$0] }
         }
         if let typed = col as? TypedColumn<Int32> {
-            return applyNumeric(agg, to: typed.values, groups: groups)
+            return applyNumeric(agg, groups: groups) { typed[$0] }
         }
         if let typed = col as? TypedColumn<Int> {
-            return applyNumeric(agg, to: typed.values, groups: groups)
+            return applyNumeric(agg, groups: groups) { typed[$0] }
         }
         let values = groups.rowGroups.indices.map { col.value(at: $0).flatMap { toDouble($0) } }
-        let result = applyNumeric(agg, to: values, groups: groups)
+        let result = applyNumeric(agg, groups: groups) { values[$0] }
         // The fallback historically returns nil when no values convert to Double.
         return agg == .count ? result.map { $0 == 0 ? nil : $0 } : result
     }
 
-    private func applyNumeric<T: SupportedType>(_ agg: Aggregation, to vals: [T?], groups: GroupIndex) -> [Double?] {
+    private func applyNumeric<T: SupportedType>(_ agg: Aggregation, groups: GroupIndex, valueAt: (Int) -> T?) -> [Double?] {
         let ids = groups.rowGroups
         switch agg {
         case .count:
             var counts = [Int](repeating: 0, count: groups.count)
-            for row in ids.indices where vals[row] != nil { counts[ids[row]] += 1 }
+            for row in ids.indices where valueAt(row) != nil { counts[ids[row]] += 1 }
             return counts.map { Double($0) }
         case .sum, .mean:
             var sums = [Double](repeating: 0, count: groups.count)
             var corrections = [Double](repeating: 0, count: groups.count)
             var counts = [Int](repeating: 0, count: groups.count)
             for row in ids.indices {
-                if let value = vals[row]?.doubleValue {
+                if let value = valueAt(row)?.doubleValue {
                     let group = ids[row]
                     let sum = sums[group]
                     let next = sum + value
@@ -586,7 +586,7 @@ public struct GroupedDataFrame: Sendable {
         case .min, .max:
             var result = [Double?](repeating: nil, count: groups.count)
             for row in ids.indices {
-                guard let value = vals[row]?.doubleValue else { continue }
+                guard let value = valueAt(row)?.doubleValue else { continue }
                 let group = ids[row]
                 if result[group] == nil || (agg == .min ? value < result[group]! : value > result[group]!) {
                     result[group] = value
@@ -598,7 +598,7 @@ public struct GroupedDataFrame: Sendable {
             var remaining = groups.count
             for row in ids.indices {
                 let group = ids[row]
-                if result[group] == nil, let value = vals[row]?.doubleValue {
+                if result[group] == nil, let value = valueAt(row)?.doubleValue {
                     result[group] = value
                     remaining -= 1
                     if remaining == 0 { break }
@@ -610,7 +610,7 @@ public struct GroupedDataFrame: Sendable {
             var remaining = groups.count
             for row in ids.indices.reversed() {
                 let group = ids[row]
-                if result[group] == nil, let value = vals[row]?.doubleValue {
+                if result[group] == nil, let value = valueAt(row)?.doubleValue {
                     result[group] = value
                     remaining -= 1
                     if remaining == 0 { break }

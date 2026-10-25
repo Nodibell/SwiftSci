@@ -32,14 +32,6 @@ extension DataFrame {
         let leftCount = self.rowCount
         let rightCount = other.rowCount
 
-        // Fast path for empty inputs
-        if leftCount == 0 && (how == .inner || how == .left) {
-            return DataFrame.empty
-        }
-        if rightCount == 0 && (how == .inner || how == .right) {
-            return DataFrame.empty
-        }
-
         // Match index pairs (leftIdx, rightIdx)
         let (leftIndices, rightIndices) = try computeJoinIndices(
             leftKeyCol: leftKeyCol,
@@ -48,9 +40,6 @@ extension DataFrame {
             rightCount: rightCount,
             how: how
         )
-
-        let totalResultRows = leftIndices.count
-        guard totalResultRows > 0 else { return DataFrame.empty }
 
         // Assemble result columns using direct typed gathered indexing (zero boxing)
         var resultColumns: [any AnyColumn] = []
@@ -89,6 +78,10 @@ extension DataFrame {
         rightCount: Int,
         how: JoinKind
     ) throws -> (leftIndices: [Int?], rightIndices: [Int?]) {
+        if leftCount == 0 {
+            let rows = how == .right || how == .outer ? rightCount : 0
+            return ([Int?](repeating: nil, count: rows), (0..<rows).map(Optional.some))
+        }
         switch leftKeyCol.dtype {
         case .int64:
             if let lCol = leftKeyCol as? TypedColumn<Int64>,

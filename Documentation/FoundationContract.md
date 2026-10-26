@@ -31,7 +31,7 @@ Concrete batch preprocessing overloads avoid nested row arrays. Consuming transf
 | Consumer | Ownership and conversion boundary |
 | --- | --- |
 | CPU numerical APIs | Owned arrays or scoped buffer pointers feed Accelerate operations. Borrowed pointers remain valid only within their access closure. Precision selection applies to the operation that exposes it. Double storage alone does not guarantee an exact result. |
-| Supported MLX GPU paths | Scoped reads retain their input owners and synchronize submitted work before releasing them. Results become owned CPU values within the supported scope. Float GPU paths convert Double values to Float with the existing rounding, underflow, and overflow behavior. |
+| Supported MLX GPU paths | Scoped reads retain their input owners and synchronize submitted work before releasing them. Results become owned CPU values within the supported scope. Float GPU paths convert Double values to Float with the existing rounding, underflow, and overflow behavior. PCA fitting validates finite inputs and rejects values that overflow Float conversion before entering its native solver. |
 | Prepared Core ML input | Preparation owns model-compatible storage and row provenance. Float16, Float32, and Double conversion obey the model's declared type, including finite-value and overflow checks. This is a separate contract from legacy GPU conversion. |
 | Core ML pool and batch pipeline | Slots remain exclusive through native completion. The pipeline bounds loaded but unconsumed batches and consumes predictions in source order. Cancellation and errors drain outstanding structured work and native callbacks before releasing owned capacity. Earlier consumer effects remain committed. |
 

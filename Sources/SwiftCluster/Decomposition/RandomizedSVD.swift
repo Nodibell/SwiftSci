@@ -2,36 +2,6 @@
 import Foundation
 import Accelerate
 
-// MARK: - LAPACK Wrappers (RandomizedSVD)
-
-private func dgemm_rsvd(
-    _ transa: UnsafeMutablePointer<Int8>,
-    _ transb: UnsafeMutablePointer<Int8>,
-    _ m: UnsafeMutablePointer<Int32>,
-    _ n: UnsafeMutablePointer<Int32>,
-    _ k: UnsafeMutablePointer<Int32>,
-    _ alpha: UnsafeMutablePointer<Double>,
-    _ a: UnsafePointer<Double>,
-    _ lda: UnsafeMutablePointer<Int32>,
-    _ b: UnsafePointer<Double>,
-    _ ldb: UnsafeMutablePointer<Int32>,
-    _ beta: UnsafeMutablePointer<Double>,
-    _ c: UnsafeMutablePointer<Double>,
-    _ ldc: UnsafeMutablePointer<Int32>
-) {
-    cblas_dgemm(
-        CblasColMajor,
-        transa.pointee == Int8(78) ? CblasNoTrans : CblasTrans,
-        transb.pointee == Int8(78) ? CblasNoTrans : CblasTrans,
-        Int32(m.pointee), Int32(n.pointee), Int32(k.pointee),
-        alpha.pointee,
-        a, Int32(lda.pointee),
-        b, Int32(ldb.pointee),
-        beta.pointee,
-        c, Int32(ldc.pointee)
-    )
-}
-
 /// Randomized Singular Value Decomposition using the Halko et al. (2011) algorithm.
 ///
 /// Computes an approximate rank-k SVD of an M×N matrix A:
@@ -86,22 +56,35 @@ public enum RandomizedSVD {
         guard !X.isEmpty, !X[0].isEmpty else {
             throw RandomizedSVDError.invalidDimensions(rows: X.count, cols: X.first?.count ?? 0)
         }
-        let M = X.count
-        let N = X[0].count
+        let rows = X.count, columns = X[0].count
+        guard X.allSatisfy({ $0.count == columns }) else {
+            throw RandomizedSVDError.invalidDimensions(rows: rows, cols: columns)
+        }
+        var values = [Double](repeating: 0, count: rows * columns)
+        for row in 0..<rows {
+            for column in 0..<columns { values[column * rows + row] = X[row][column] }
+        }
+        return try compute(columnMajor: values, rows: rows, columns: columns, nComponents: k,
+                           nOversamples: p, nPowerIter: q, seed: seed, computeLeftVectors: true)
+    }
 
+    // PCA needs only right vectors; public compute still returns complete U, S and Vt.
+    static func compute(columnMajor A: [Double], rows M: Int, columns N: Int,
+                        nComponents k: Int, nOversamples p: Int = 10,
+                        nPowerIter q: Int = 2, seed: UInt64 = 42,
+                        computeLeftVectors: Bool) throws -> Result {
+        let (count, overflow) = M.multipliedReportingOverflow(by: N)
+        guard M > 0, N > 0, M <= Int32.max, N <= Int32.max, !overflow, A.count == count else {
+            throw RandomizedSVDError.invalidDimensions(rows: M, cols: N)
+        }
         guard k > 0, k <= min(M, N) else {
             throw RandomizedSVDError.invalidComponents(k: k, minDim: min(M, N))
         }
-
-        let l = min(k + p, min(M, N)) // sketch size, bounded by matrix dimensions
-
-        // --- Flatten X to column-major [M×N] ---
-        var A = [Double](repeating: 0.0, count: M * N)
-        for r in 0..<M {
-            for c in 0..<N {
-                A[c * M + r] = X[r][c]  // column-major
-            }
+        let (sketch, sketchOverflow) = k.addingReportingOverflow(p)
+        guard p >= 0, q >= 0, !sketchOverflow else {
+            throw ClusterError.invalidParameter("Randomized SVD requires nonnegative oversampling and power iterations.")
         }
+        let l = min(sketch, min(M, N))
 
         // --- Step 1: Random Gaussian sketch Ω ∈ ℝ^{N×l} (column-major) ---
         let omega = randomGaussian(count: N * l, seed: seed)
@@ -145,18 +128,28 @@ public enum RandomizedSVD {
         var lwork = Int32(-1)
         var workQ = [Double](repeating: 0.0, count: 1)
         dgeqrf_(&mLap, &nLap, &Y, &ldLap, &tau, &workQ, &lwork, &infoInt)
-        lwork = Int32(workQ[0])
+        guard infoInt == 0 else { throw ClusterError.svdFailed(info: infoInt) }
+        guard let workspace = Int32(exactly: workQ[0]), workspace > 0 else {
+            throw ClusterError.invalidParameter("Randomized SVD QR workspace exceeds backend limits.")
+        }
+        lwork = workspace
         var work = [Double](repeating: 0.0, count: Int(lwork))
         dgeqrf_(&mLap, &nLap, &Y, &ldLap, &tau, &work, &lwork, &infoInt)
+
+        guard infoInt == 0 else { throw ClusterError.svdFailed(info: infoInt) }
 
         // Extract Q from Y (in-place Householder reflectors)
         var nQ = Int32(l)
         lwork = -1
         var workQR = [Double](repeating: 0.0, count: 1)
         dorgqr_(&mLap, &nQ, &nQ, &Y, &ldLap, &tau, &workQR, &lwork, &infoInt)
-        lwork = Int32(workQR[0])
+        guard infoInt == 0, let qrWorkspace = Int32(exactly: workQR[0]), qrWorkspace > 0 else {
+            throw ClusterError.invalidParameter("Randomized SVD Q workspace is invalid.")
+        }
+        lwork = qrWorkspace
         var workQ2 = [Double](repeating: 0.0, count: Int(lwork))
         dorgqr_(&mLap, &nQ, &nQ, &Y, &ldLap, &tau, &workQ2, &lwork, &infoInt)
+        guard infoInt == 0 else { throw ClusterError.svdFailed(info: infoInt) }
         let Q = Y  // Q is now M×l column-major
 
         // --- Step 4: B = Qᵀ·A  → shape [l×N] ---
@@ -184,29 +177,29 @@ public enum RandomizedSVD {
         dgesdd_(&jobz, &mSVD, &nSVD, &B, &ldB2,
                 &sVals, &uMat, &ldU, &vtMat, &ldVt,
                 &workSVD, &lwork, &iwork, &infoInt)
-        lwork = Int32(workSVD[0])
+        guard infoInt == 0 else { throw ClusterError.svdFailed(info: infoInt) }
+        guard let svdWorkspace = Int32(exactly: workSVD[0]), svdWorkspace > 0 else {
+            throw ClusterError.invalidParameter("Randomized SVD workspace exceeds backend limits.")
+        }
+        lwork = svdWorkspace
         var workFull = [Double](repeating: 0.0, count: Int(lwork))
         dgesdd_(&jobz, &mSVD, &nSVD, &B, &ldB2,
                 &sVals, &uMat, &ldU, &vtMat, &ldVt,
                 &workFull, &lwork, &iwork, &infoInt)
 
-        // --- Step 6: Back-project U = Q·Ũ  → shape [M×k] ---
-        var Ufull = [Double](repeating: 0.0, count: M * minDim)
-        let mU = Int32(M), nU = Int32(minDim), kU = Int32(l)
-        let ldU2 = Int32(M)
-        cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                    mU, nU, kU,
-                    alpha, Q, ldQ,
-                    uMat, ldU,
-                    beta, &Ufull, ldU2)
-
-        // --- Extract top-k components ---
+        guard infoInt == 0 else { throw ClusterError.svdFailed(info: infoInt) }
         var uRows = [[Double]]()
-        uRows.reserveCapacity(M)
-        for r in 0..<M {
-            var row = [Double](repeating: 0.0, count: k)
-            for c in 0..<k { row[c] = Ufull[c * M + r] }
-            uRows.append(row)
+        if computeLeftVectors {
+            var Ufull = [Double](repeating: 0.0, count: M * minDim)
+            cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+                        Int32(M), Int32(minDim), Int32(l),
+                        alpha, Q, ldQ, uMat, ldU, beta, &Ufull, Int32(M))
+            uRows.reserveCapacity(M)
+            for r in 0..<M {
+                var row = [Double](repeating: 0.0, count: k)
+                for c in 0..<k { row[c] = Ufull[c * M + r] }
+                uRows.append(row)
+            }
         }
 
         let sTop = Array(sVals.prefix(k))
@@ -219,7 +212,7 @@ public enum RandomizedSVD {
             vtRows.append(row)
         }
 
-        var uOpt: [[Double]]? = uRows
+        var uOpt: [[Double]]? = computeLeftVectors ? uRows : nil
         svdFlip(u: &uOpt, vt: &vtRows, uBasedDecision: false)
 
         return Result(U: uOpt ?? uRows, S: sTop, Vt: vtRows)

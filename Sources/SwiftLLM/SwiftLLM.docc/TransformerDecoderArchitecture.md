@@ -219,6 +219,24 @@ not a normal stop reason. The legacy `generate` method throws request errors bef
 returning its nonthrowing stream; that stream cannot report errors during iteration.
 Use the detailed throwing stream for completion metadata and error handling.
 
+`TransformerDecoder` also conforms to `CompletionReportingLLMModel`, an optional
+refinement of `LLMModel` exposing the same detailed method. Custom models can adopt
+this protocol and construct `GenerationCompletionInfo` with their exact counts.
+Existing text-only `LLMModel` conformers need no changes.
+
+`ReActAgent.run(query:model:options:)` detects this capability through an
+`any LLMModel` value. It waits for normal stream termination and exactly one final
+completion record before parsing the response. Only `.stop` permits tool execution
+or a completed answer. Length, cancelled, missing or duplicate metadata, text after
+metadata, and throwing streams fail the run. A throw after a `.stop` record still
+fails. Accepted steps retain the exact record in `AgentStep.completionInfo`.
+Legacy models and String closures keep their existing behavior and record nil
+metadata, because their stop reason and token counts are unknown.
+
+This completion check does not change the outer agent stream's task-cancellation
+lifecycle. A failed generation does not create an accepted step; consume the model's
+detailed stream directly if you need metadata for rejected responses.
+
 This changes the former oversized-input behavior: generation no longer silently
 drops the beginning of a prompt or emits a token beyond the configured capacity.
 Existing method signatures and the `LLMModel` protocol remain unchanged.

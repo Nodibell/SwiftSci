@@ -233,9 +233,17 @@ fails. Accepted steps retain the exact record in `AgentStep.completionInfo`.
 Legacy models and String closures keep their existing behavior and record nil
 metadata, because their stop reason and token counts are unknown.
 
-This completion check does not change the outer agent stream's task-cancellation
-lifecycle. A failed generation does not create an accepted step; consume the model's
-detailed stream directly if you need metadata for rejected responses.
+A failed generation does not create an accepted step; consume the model's detailed
+stream directly if you need metadata for rejected responses.
+
+Cancelling `ReActAgent.run` throws `CancellationError` and requests cancellation of
+its reasoning producer. Cancelling an awaiting agent-stream consumer also cancels
+that producer. Pre-cancelled calls start no reasoning work. The agent checks
+cancellation after awaited model and tool work, before parsing late output or
+starting another turn. Cancellation is cooperative: it cannot interrupt arbitrary
+noncooperative model or tool code, undo an already-started side effect, or guarantee
+that such work has drained before `run` returns. A model reporting `.cancelled`
+without cancellation of the caller remains a failed model completion.
 
 This changes the former oversized-input behavior: generation no longer silently
 drops the beginning of a prompt or emits a token beyond the configured capacity.

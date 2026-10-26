@@ -32,14 +32,6 @@ extension DataFrame {
         let leftCount = self.rowCount
         let rightCount = other.rowCount
 
-        // Fast path for empty inputs
-        if leftCount == 0 && (how == .inner || how == .left) {
-            return DataFrame.empty
-        }
-        if rightCount == 0 && (how == .inner || how == .right) {
-            return DataFrame.empty
-        }
-
         // Match index pairs (leftIdx, rightIdx)
         let (leftIndices, rightIndices) = try computeJoinIndices(
             leftKeyCol: leftKeyCol,
@@ -48,9 +40,6 @@ extension DataFrame {
             rightCount: rightCount,
             how: how
         )
-
-        let totalResultRows = leftIndices.count
-        guard totalResultRows > 0 else { return DataFrame.empty }
 
         // Assemble result columns using direct typed gathered indexing (zero boxing)
         var resultColumns: [any AnyColumn] = []
@@ -89,6 +78,10 @@ extension DataFrame {
         rightCount: Int,
         how: JoinKind
     ) throws -> (leftIndices: [Int?], rightIndices: [Int?]) {
+        if leftCount == 0 {
+            let rows = how == .right || how == .outer ? rightCount : 0
+            return ([Int?](repeating: nil, count: rows), (0..<rows).map(Optional.some))
+        }
         switch leftKeyCol.dtype {
         case .int64:
             if let lCol = leftKeyCol as? TypedColumn<Int64>,
@@ -115,13 +108,22 @@ extension DataFrame {
         case .float64:
             if let lCol = leftKeyCol as? TypedColumn<Double>,
                let rCol = rightKeyCol as? TypedColumn<Double> {
-                return buildAndProbeHashTable(
-                    leftValues: lCol.values,
-                    rightValues: rCol.values,
-                    leftCount: leftCount,
-                    rightCount: rightCount,
-                    how: how
-                )
+                switch (lCol.compactNumericStorage, rCol.compactNumericStorage) {
+                case let (left?, right?):
+                    return buildAndProbeHashTable(leftValues: CompactColumnValues(column: left),
+                        rightValues: CompactColumnValues(column: right), leftCount: leftCount,
+                        rightCount: rightCount, how: how)
+                case let (left?, nil):
+                    return buildAndProbeHashTable(leftValues: CompactColumnValues(column: left),
+                        rightValues: rCol.values, leftCount: leftCount, rightCount: rightCount, how: how)
+                case let (nil, right?):
+                    return buildAndProbeHashTable(leftValues: lCol.values,
+                        rightValues: CompactColumnValues(column: right), leftCount: leftCount,
+                        rightCount: rightCount, how: how)
+                case (nil, nil):
+                    return buildAndProbeHashTable(leftValues: lCol.values,
+                        rightValues: rCol.values, leftCount: leftCount, rightCount: rightCount, how: how)
+                }
             }
         case .float32:
             if let lCol = leftKeyCol as? TypedColumn<Float>,
@@ -179,13 +181,14 @@ extension DataFrame {
         )
     }
 
-    private func buildAndProbeHashTable<T: Hashable>(
-        leftValues: [T?],
-        rightValues: [T?],
+    private func buildAndProbeHashTable<Left: RandomAccessCollection, Right: RandomAccessCollection, T: Hashable>(
+        leftValues: Left,
+        rightValues: Right,
         leftCount: Int,
         rightCount: Int,
         how: JoinKind
-    ) -> (leftIndices: [Int?], rightIndices: [Int?]) {
+    ) -> (leftIndices: [Int?], rightIndices: [Int?])
+    where Left.Index == Int, Right.Index == Int, Left.Element == T?, Right.Element == T? {
         guard rightCount > 0 else {
             if how == .left || how == .outer {
                 return ((0..<leftCount).map { Optional($0) }, [Int?](repeating: nil, count: leftCount))

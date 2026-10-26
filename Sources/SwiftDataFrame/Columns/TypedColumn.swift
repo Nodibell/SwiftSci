@@ -863,7 +863,7 @@ extension TypedColumn where T == Double {
 
 // MARK: – Typed filter indices
 
-private struct CompactColumnValues: RandomAccessCollection {
+struct CompactColumnValues: RandomAccessCollection {
     let column: CompactNumericColumn
     var startIndex: Int { 0 }
     var endIndex: Int { column.values.count }

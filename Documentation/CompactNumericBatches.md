@@ -2,6 +2,8 @@
 
 `PreparedNumericBatch` provides owned Double columns between a dataframe and numerical consumers. It stores each column in a contiguous Swift array and allocates a validity bitmap only when that column contains missing entries. It is an additive API. `TypedColumn.values`, the heterogeneous dataframe representation, and existing matrix APIs retain their contracts.
 
+The [data and memory foundation contract](FoundationContract.md) describes native dataframe paths, intentional compatibility copies, compute ownership, and memory-accounting limits.
+
 ## Prepare and reuse numerical inputs
 
 ```swift

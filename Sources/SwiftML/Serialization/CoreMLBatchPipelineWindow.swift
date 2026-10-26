@@ -11,13 +11,13 @@ extension CoreMLBatchPipeline {
         }
     }
 
-    private static func sourceCapacity(_ source: PreparedNumericBatch) throws -> Int {
+    static func sourceCapacity(_ source: PreparedNumericBatch) throws -> Int {
         var capacities: [Int] = []
         for column in source.columns {
             capacities.append(try coreMLByteCount(column.values.capacity, MemoryLayout<Double>.stride))
             capacities.append(try coreMLByteCount(column.validity?.capacity ?? 0, MemoryLayout<UInt64>.stride))
         }
-        capacities.append(try coreMLByteCount(source.originalRowIndices.capacity, MemoryLayout<Int>.stride))
+        capacities.append(try coreMLByteCount(source.provenanceStorageCapacity, MemoryLayout<Int>.stride))
         capacities.append(try coreMLByteCount(source.columnNames.capacity, MemoryLayout<String>.stride))
         capacities.append(contentsOf: source.columnNames.map { $0.utf8.count })
         return try MemoryEstimate(capacities: capacities).bytes

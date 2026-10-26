@@ -101,6 +101,15 @@ public protocol DataTransformer: Sendable {
 
 /// Protocol representing a supervised classifier estimator.
 public protocol ClassifierEstimator: Sendable {
+    /// Fits prepared columns. The default converts once for legacy classifiers.
+    func fit(features: PreparedNumericBatch, targets: [Double]) async throws
+
+    /// Predicts labels from prepared columns through native or compatibility dispatch.
+    func predict(features: PreparedNumericBatch) async throws -> [Int]
+
+    /// Predicts class probabilities from prepared columns.
+    func predictProbability(features: PreparedNumericBatch) async throws -> [[Double]]
+
     /// Fits the classifier model on the provided features and targets.
     func fit(features: [[Double]], targets: [Double]) async throws
 
@@ -144,6 +153,37 @@ public struct ProbabilityMatrix: RandomAccessCollection, ExpressibleByArrayLiter
 }
 
 extension ClassifierEstimator {
+    /// Compatibility implementation for classifiers accepting nested row arrays.
+    public func fit(features: PreparedNumericBatch, targets: [Double]) async throws {
+        try features.requireFinite()
+        guard features.rowCount == targets.count, targets.allSatisfy(\.isFinite) else {
+            throw SwiftMLError.invalidParameter("Classification targets must be finite and match the feature rows")
+        }
+        try await fit(features: features.rowValues(), targets: targets)
+    }
+
+    /// Compatibility implementation retaining existing label prediction behavior.
+    public func predict(features: PreparedNumericBatch) async throws -> [Int] {
+        try features.requireFinite()
+        return try await predict(features: features.rowValues())
+    }
+
+    /// Compatibility implementation retaining unsupported-probability errors.
+    public func predictProbability(features: PreparedNumericBatch) async throws -> [[Double]] {
+        try features.requireFinite()
+        return try await predictProbability(features: features.rowValues())
+    }
+
+    /// Fits features and targets selected together from one prepared snapshot.
+    public func fit(_ data: PreparedSupervisedBatch) async throws {
+        try await fit(features: data.features, targets: data.targets)
+    }
+
+    /// Predicts prepared class probabilities with the existing convenience wrapper.
+    public func predictProba(features: PreparedNumericBatch) async throws -> ProbabilityMatrix {
+        ProbabilityMatrix(try await predictProbability(features: features))
+    }
+
     /// Default implementation for classifiers that do not support probability estimation.
     /// - Parameters:
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.
@@ -163,6 +203,34 @@ extension ClassifierEstimator {
     public func predictProba(features: [[Double]]) async throws -> ProbabilityMatrix {
         let raw = try await predictProbability(features: features)
         return ProbabilityMatrix(raw)
+    }
+}
+
+extension ClassifierEstimator {
+    /// Reserves a caller-supplied estimate covering inputs, workspace, copies and model state.
+    public func fit(features: PreparedNumericBatch, targets: [Double],
+                    budget: MemoryBudget, estimate: MemoryEstimate) async throws {
+        try await budget.withReservation(estimate) {
+            try await self.fit(features: features, targets: targets)
+        }
+    }
+
+    /// Fits jointly selected features and targets under an explicit reservation.
+    public func fit(_ data: PreparedSupervisedBatch, budget: MemoryBudget,
+                    estimate: MemoryEstimate) async throws {
+        try await fit(features: data.features, targets: data.targets, budget: budget, estimate: estimate)
+    }
+
+    /// Returned labels outlive this reservation and remain the caller's responsibility.
+    public func predict(features: PreparedNumericBatch, budget: MemoryBudget,
+                        estimate: MemoryEstimate) async throws -> [Int] {
+        try await budget.withReservation(estimate) { try await self.predict(features: features) }
+    }
+
+    /// Returned probabilities outlive this reservation and remain the caller's responsibility.
+    public func predictProbability(features: PreparedNumericBatch, budget: MemoryBudget,
+                                   estimate: MemoryEstimate) async throws -> [[Double]] {
+        try await budget.withReservation(estimate) { try await self.predictProbability(features: features) }
     }
 }
 

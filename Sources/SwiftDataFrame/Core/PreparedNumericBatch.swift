@@ -12,6 +12,7 @@ public struct PreparedNumericBatch: Sendable {
     public var originalRowIndices: [Int] { sourceRows ?? Array(0..<rowCount) }
 
     package func originalRowIndex(at row: Int) -> Int { sourceRows?[row] ?? row }
+    package var originalRowMapping: [Int]? { sourceRows }
     package var provenanceStorageCapacity: Int { sourceRows?.capacity ?? 0 }
 
     package init(columnNames: [String], columns: [CompactNumericColumn], rowCount: Int, sourceRows: [Int]? = nil) {
@@ -266,7 +267,7 @@ extension PreparedNumericBatch {
 
     package func requireFinite() throws {
         guard columns.allSatisfy({ $0.nullCount == 0 && $0.values.allSatisfy(\.isFinite) }) else {
-            throw SwiftMLError.invalidParameter("Regression input contains missing or nonfinite values")
+            throw SwiftMLError.invalidParameter("Numeric input contains missing or nonfinite values")
         }
     }
 

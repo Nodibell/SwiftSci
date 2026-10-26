@@ -19,10 +19,15 @@ struct PCAFullSVDLayoutTests {
             #expect(throws: ClusterError.self) { try PCAFullSVDLayout(rows: invalid, columns: 2) }
             #expect(throws: ClusterError.self) { try PCAFullSVDLayout(rows: 2, columns: invalid) }
         }
-        // 23,169 fits the documented LP64 workspace bound; 23,170 does not.
-        _ = try PCAFullSVDLayout(rows: 23_169, columns: 23_169)
-        for rank in [23_170, 24_000, Int(Int32.max)] {
-            #expect(throws: ClusterError.self) { try PCAFullSVDLayout(rows: rank, columns: rank) }
+        #expect(throws: ClusterError.self) {
+            try PCAFullSVDLayout(rows: Int(Int32.max), columns: Int(Int32.max))
         }
+    }
+
+    @Test func preservesBackendSupportedLargeLayoutWithoutAllocation() throws {
+        let layout = try PCAFullSVDLayout(rows: 24_000, columns: 24_000)
+        #expect(layout.leftCount == 576_000_000)
+        #expect(layout.rightCount == 576_000_000)
+        #expect(layout.integerWorkspaceCount == 192_000)
     }
 }

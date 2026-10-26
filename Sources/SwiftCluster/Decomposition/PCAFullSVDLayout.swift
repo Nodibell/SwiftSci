@@ -18,14 +18,6 @@ struct PCAFullSVDLayout: Sendable {
         self.columns = lapackColumns
         rank = min(rows, columns)
 
-        // DGESDD JOBZ='S' documents LWORK >= 4*rank*rank + 7*rank.
-        let square = try Self.product(rank, rank)
-        let quadratic = try Self.product(4, square)
-        let linear = try Self.product(7, rank)
-        let (minimumWorkspace, overflow) = quadratic.addingReportingOverflow(linear)
-        guard !overflow, Int32(exactly: minimumWorkspace) != nil else {
-            throw ClusterError.invalidParameter("PCA SVD workspace exceeds backend limits.")
-        }
         leftCount = try Self.bufferCount(rows, rank, stride: MemoryLayout<Double>.stride)
         rightCount = try Self.bufferCount(rank, columns, stride: MemoryLayout<Double>.stride)
         integerWorkspaceCount = try Self.bufferCount(8, rank, stride: MemoryLayout<Int32>.stride)

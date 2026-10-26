@@ -87,8 +87,8 @@ extension DataFrame {
             if let lCol = leftKeyCol as? TypedColumn<Int64>,
                let rCol = rightKeyCol as? TypedColumn<Int64> {
                 return buildAndProbeHashTable(
-                    leftValues: lCol,
-                    rightValues: rCol,
+                    leftValues: lCol.values,
+                    rightValues: rCol.values,
                     leftCount: leftCount,
                     rightCount: rightCount,
                     how: how
@@ -98,8 +98,8 @@ extension DataFrame {
             if let lCol = leftKeyCol as? TypedColumn<Int32>,
                let rCol = rightKeyCol as? TypedColumn<Int32> {
                 return buildAndProbeHashTable(
-                    leftValues: lCol,
-                    rightValues: rCol,
+                    leftValues: lCol.values,
+                    rightValues: rCol.values,
                     leftCount: leftCount,
                     rightCount: rightCount,
                     how: how
@@ -108,20 +108,29 @@ extension DataFrame {
         case .float64:
             if let lCol = leftKeyCol as? TypedColumn<Double>,
                let rCol = rightKeyCol as? TypedColumn<Double> {
-                return buildAndProbeHashTable(
-                    leftValues: lCol,
-                    rightValues: rCol,
-                    leftCount: leftCount,
-                    rightCount: rightCount,
-                    how: how
-                )
+                switch (lCol.compactNumericStorage, rCol.compactNumericStorage) {
+                case let (left?, right?):
+                    return buildAndProbeHashTable(leftValues: CompactColumnValues(column: left),
+                        rightValues: CompactColumnValues(column: right), leftCount: leftCount,
+                        rightCount: rightCount, how: how)
+                case let (left?, nil):
+                    return buildAndProbeHashTable(leftValues: CompactColumnValues(column: left),
+                        rightValues: rCol.values, leftCount: leftCount, rightCount: rightCount, how: how)
+                case let (nil, right?):
+                    return buildAndProbeHashTable(leftValues: lCol.values,
+                        rightValues: CompactColumnValues(column: right), leftCount: leftCount,
+                        rightCount: rightCount, how: how)
+                case (nil, nil):
+                    return buildAndProbeHashTable(leftValues: lCol.values,
+                        rightValues: rCol.values, leftCount: leftCount, rightCount: rightCount, how: how)
+                }
             }
         case .float32:
             if let lCol = leftKeyCol as? TypedColumn<Float>,
                let rCol = rightKeyCol as? TypedColumn<Float> {
                 return buildAndProbeHashTable(
-                    leftValues: lCol,
-                    rightValues: rCol,
+                    leftValues: lCol.values,
+                    rightValues: rCol.values,
                     leftCount: leftCount,
                     rightCount: rightCount,
                     how: how
@@ -131,8 +140,8 @@ extension DataFrame {
             if let lCol = leftKeyCol as? TypedColumn<String>,
                let rCol = rightKeyCol as? TypedColumn<String> {
                 return buildAndProbeHashTable(
-                    leftValues: lCol,
-                    rightValues: rCol,
+                    leftValues: lCol.values,
+                    rightValues: rCol.values,
                     leftCount: leftCount,
                     rightCount: rightCount,
                     how: how
@@ -142,8 +151,8 @@ extension DataFrame {
             if let lCol = leftKeyCol as? TypedColumn<Bool>,
                let rCol = rightKeyCol as? TypedColumn<Bool> {
                 return buildAndProbeHashTable(
-                    leftValues: lCol,
-                    rightValues: rCol,
+                    leftValues: lCol.values,
+                    rightValues: rCol.values,
                     leftCount: leftCount,
                     rightCount: rightCount,
                     how: how
@@ -153,8 +162,8 @@ extension DataFrame {
             if let lCol = leftKeyCol as? TypedColumn<Date>,
                let rCol = rightKeyCol as? TypedColumn<Date> {
                 return buildAndProbeHashTable(
-                    leftValues: lCol,
-                    rightValues: rCol,
+                    leftValues: lCol.values,
+                    rightValues: rCol.values,
                     leftCount: leftCount,
                     rightCount: rightCount,
                     how: how
@@ -172,13 +181,14 @@ extension DataFrame {
         )
     }
 
-    private func buildAndProbeHashTable<T: SupportedType>(
-        leftValues: TypedColumn<T>,
-        rightValues: TypedColumn<T>,
+    private func buildAndProbeHashTable<Left: RandomAccessCollection, Right: RandomAccessCollection, T: Hashable>(
+        leftValues: Left,
+        rightValues: Right,
         leftCount: Int,
         rightCount: Int,
         how: JoinKind
-    ) -> (leftIndices: [Int?], rightIndices: [Int?]) {
+    ) -> (leftIndices: [Int?], rightIndices: [Int?])
+    where Left.Index == Int, Right.Index == Int, Left.Element == T?, Right.Element == T? {
         guard rightCount > 0 else {
             if how == .left || how == .outer {
                 return ((0..<leftCount).map { Optional($0) }, [Int?](repeating: nil, count: leftCount))

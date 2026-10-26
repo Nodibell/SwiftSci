@@ -112,14 +112,15 @@ enum PCAComputation {
 
     private static func fullSVD(_ values: inout [Double], rows: Int, columns: Int,
                                 components k: Int) throws -> ([Double], [[Double]]) {
+        let layout = try PCAFullSVDLayout(rows: rows, columns: columns)
         var job: Int8 = 83
-        var m = Int32(rows), n = Int32(columns), lda = m, ldu = m
-        let rank = min(rows, columns)
-        var ldvt = Int32(rank), info: Int32 = 0, lwork: Int32 = -1
+        var m = layout.rows, n = layout.columns, lda = m, ldu = m
+        let rank = layout.rank
+        var ldvt = min(m, n), info: Int32 = 0, lwork: Int32 = -1
         var singular = [Double](repeating: 0, count: rank)
-        var u = [Double](repeating: 0, count: rows * rank)
-        var vt = [Double](repeating: 0, count: rank * columns)
-        var iwork = [Int32](repeating: 0, count: 8 * rank)
+        var u = [Double](repeating: 0, count: layout.leftCount)
+        var vt = [Double](repeating: 0, count: layout.rightCount)
+        var iwork = [Int32](repeating: 0, count: layout.integerWorkspaceCount)
         var query = [Double](repeating: 0, count: 1)
         dgesdd_(&job, &m, &n, &values, &lda, &singular, &u, &ldu, &vt, &ldvt, &query, &lwork, &iwork, &info)
         guard info == 0 else { throw ClusterError.svdFailed(info: info) }

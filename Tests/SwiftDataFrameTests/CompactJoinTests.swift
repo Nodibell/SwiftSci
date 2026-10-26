@@ -49,6 +49,29 @@ struct CompactJoinTests {
         }
     }
 
+    @Test func floatingKeyEqualityMatchesOptionalInputs() throws {
+        let leftKeys: [Double?] = [-0.0, .nan, nil, 1]
+        let rightKeys: [Double?] = [0.0, .nan, nil, 1]
+        let identifiers = TypedColumn<Int64>(name: "id", values: [1, 2, 3, 4])
+        for compactLeft in [false, true] {
+            for compactRight in [false, true] {
+                let lhs = compactLeft ? dense(leftKeys, name: "key")
+                    : TypedColumn<Double>(name: "key", values: leftKeys)
+                let rhs = compactRight ? dense(rightKeys, name: "key")
+                    : TypedColumn<Double>(name: "key", values: rightKeys)
+                let left = try DataFrame(columns: [lhs, identifiers])
+                let right = try DataFrame(columns: [rhs, identifiers])
+                let result = try left.join(right, on: "key")
+                #expect(result.rowCount == 2)
+                #expect(result[column: "id_x", as: Int64.self]?.values == [1, 4])
+                #expect(result[column: "id_y", as: Int64.self]?.values == [1, 4])
+                let keys = try #require(result[column: "key", as: Double.self])
+                #expect(keys[0]?.bitPattern == (-0.0).bitPattern)
+                #expect(keys[1] == 1)
+            }
+        }
+    }
+
     private func frame(right: Bool, native: Bool) throws -> DataFrame {
         let count = right ? 133 : 130
         let keyOffset: Int = right ? 7 : 0

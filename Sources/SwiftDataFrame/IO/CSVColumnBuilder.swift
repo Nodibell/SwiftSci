@@ -28,31 +28,46 @@ internal struct CSVColumnBuilder<T: SupportedType>: CSVColumnBuilding {
 
 /// Experimental direct construction using the numerical pipeline's existing buffers.
 internal struct CSVCompactDoubleBuilder: CSVColumnBuilding {
-    private var output = CompactNumericColumn([])
+    private var values = [Double]()
+    private var validity: [UInt64]?
+    private var nullCount = 0
+    private var pendingValidity: UInt64 = .max
     private let expectedRows: Int
 
     init(capacity: Int) {
         expectedRows = capacity
-        output.values.reserveCapacity(capacity)
+        values.reserveCapacity(capacity)
     }
 
     mutating func append(_ value: Double?) {
-        let row = output.values.count
-        output.values.append(value ?? .nan)
-        if output.validity != nil, row >> 6 == output.validity!.count {
-            output.validity!.append(.max)
-        }
+        let row = values.count
+        values.append(value ?? .nan)
         if value == nil {
-            if output.validity == nil {
-                output.validity = [UInt64](repeating: .max, count: (max(expectedRows, row + 1) + 63) / 64)
-            }
-            output.validity![row >> 6] &= ~(UInt64(1) << (row & 63))
-            output.nullCount += 1
+            pendingValidity &= ~(UInt64(1) << (row & 63))
+            nullCount += 1
         }
+        if row & 63 == 63 { finishValidityWord(at: row >> 6) }
+    }
+
+    private mutating func finishValidityWord(at index: Int) {
+        if validity == nil {
+            guard pendingValidity != .max else { return }
+            validity = [UInt64](repeating: .max, count: (max(expectedRows, values.count) + 63) / 64)
+        }
+        if index == validity!.count {
+            validity!.append(pendingValidity)
+        } else {
+            validity![index] = pendingValidity
+        }
+        pendingValidity = .max
     }
 
     mutating func column(named name: String) -> TypedColumn<Double> {
         defer { self = CSVCompactDoubleBuilder(capacity: 0) }
+        if values.count & 63 != 0 { finishValidityWord(at: values.count >> 6) }
+        var output = CompactNumericColumn(values)
+        output.validity = validity
+        output.nullCount = nullCount
         return TypedColumn(name: name, compactColumn: output)
     }
 }

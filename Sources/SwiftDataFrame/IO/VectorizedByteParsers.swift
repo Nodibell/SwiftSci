@@ -116,7 +116,7 @@ public enum VectorizedByteParsers {
         if length <= 0 { return nil }
 
         var value = 0
-        var sign = 1
+        var negative = false
         var idx = start
         let endIdx = start + length
 
@@ -126,7 +126,7 @@ public enum VectorizedByteParsers {
 
         if idx < endIdx {
             if buffer[idx] == 45 {
-                sign = -1
+                negative = true
                 idx += 1
             } else if buffer[idx] == 43 {
                 idx += 1
@@ -137,7 +137,11 @@ public enum VectorizedByteParsers {
         while idx < endIdx {
             let byte = buffer[idx]
             if byte >= 48 && byte <= 57 {
-                value = value * 10 + Int(byte - 48)
+                let (scaled, multiplyOverflow) = value.multipliedReportingOverflow(by: 10)
+                guard !multiplyOverflow else { return nil }
+                let (next, subtractOverflow) = scaled.subtractingReportingOverflow(Int(byte - 48))
+                guard !subtractOverflow else { return nil }
+                value = next
                 digitsFound = true
                 idx += 1
             } else {
@@ -149,7 +153,9 @@ public enum VectorizedByteParsers {
             idx += 1
         }
         guard digitsFound && idx == endIdx else { return nil }
-        return value * sign
+        if negative { return value }
+        let (positive, overflow) = 0.subtractingReportingOverflow(value)
+        return overflow ? nil : positive
     }
 
     /// Constructs a `String` from raw buffer coordinates, unescaping double quote sequences (`""`).

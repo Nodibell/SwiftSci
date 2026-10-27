@@ -103,13 +103,27 @@ public struct AgentStep: Sendable, Equatable {
     public let actionInput: String?
     /// The result observed from tool execution.
     public let observation: String?
+    /// Exact producer metadata for an accepted rich-model response, or nil for text-only completions.
+    public let completionInfo: GenerationCompletionInfo?
 
     /// Creates an AgentStep.
     public init(thought: String, action: String? = nil, actionInput: String? = nil, observation: String? = nil) {
+        self.init(thought: thought, action: action, actionInput: actionInput, observation: observation, completionInfo: nil)
+    }
+
+    /// Creates a step with the originating model's completion record.
+    /// - Parameters:
+    ///   - thought: The agent's reasoning text.
+    ///   - action: Selected tool name, if any.
+    ///   - actionInput: Input supplied to the tool.
+    ///   - observation: Tool result or final answer.
+    ///   - completionInfo: Producer metadata, or nil when the producer supplies only text.
+    public init(thought: String, action: String? = nil, actionInput: String? = nil, observation: String? = nil, completionInfo: GenerationCompletionInfo?) {
         self.thought = thought
         self.action = action
         self.actionInput = actionInput
         self.observation = observation
+        self.completionInfo = completionInfo
     }
 }
 
@@ -118,6 +132,11 @@ public struct AgentStep: Sendable, Equatable {
 /// `ReActAgent` orchestrates dynamic Tool usage by prompting an LLM or reasoning engine to iteratively
 /// generate `Thought -> Action -> Action Input -> Observation` sequences until reaching a `Final Answer`.
 public actor ReActAgent {
+    private struct Response: Sendable {
+        let text: String
+        let completionInfo: GenerationCompletionInfo?
+    }
+
     /// Mapping of registered tool names to tool instances.
     public private(set) var tools: [String: any AgentTool]
     /// Maximum allowed reasoning steps before termination.
@@ -275,16 +294,27 @@ public actor ReActAgent {
     ///   - query: The target user question or goal.
     ///   - llm: Async block producing model completions given a prompt.
     /// - Returns: Final answer and complete trajectory trace of agent steps.
-    /// - Throws: `AgentError` or `SwiftMLError` if tool execution, AST evaluation, or reasoning fails.
+    /// - Throws: `CancellationError` when the caller is cancelled, or `AgentError` when reasoning fails.
     public func run(
         query: String,
         llm: @escaping @Sendable (String) async throws -> String
     ) async throws -> (finalAnswer: String, trace: [AgentStep]) {
-        let stream = self.stream(query: query, llm: llm)
+        try await run(query: query, completion: { prompt in
+            Response(text: try await llm(prompt), completionInfo: nil)
+        })
+    }
+
+    private func run(
+        query: String,
+        completion: @escaping @Sendable (String) async throws -> Response
+    ) async throws -> (finalAnswer: String, trace: [AgentStep]) {
+        try Task.checkCancellation()
+        let stream = self.stream(query: query, completion: completion)
         var finalAnswer: String = ""
         var trajectory: [AgentStep] = []
 
         for await event in stream {
+            try Task.checkCancellation()
             switch event {
             case .completed(let ans, let trace):
                 finalAnswer = ans
@@ -296,10 +326,15 @@ public actor ReActAgent {
             }
         }
 
+        try Task.checkCancellation()
         return (finalAnswer: finalAnswer, trace: trajectory)
     }
 
     /// Streams real-time reasoning thoughts, tool execution states, and answer deltas.
+    ///
+    /// Cancelling an awaiting consumer requests producer cancellation. A pre-cancelled
+    /// caller receives a finished stream. Model and tool code must cooperate with
+    /// cancellation; already-started side effects cannot be undone.
     ///
     /// - Parameters:
     ///   - query: Analytical prompt or question.
@@ -309,9 +344,20 @@ public actor ReActAgent {
         query: String,
         llm: @escaping @Sendable (String) async throws -> String
     ) -> AsyncStream<AgentStreamEvent> {
-        AsyncStream { continuation in
-            Task {
+        stream(query: query, completion: { prompt in
+            Response(text: try await llm(prompt), completionInfo: nil)
+        })
+    }
+
+    private func stream(
+        query: String,
+        completion: @escaping @Sendable (String) async throws -> Response
+    ) -> AsyncStream<AgentStreamEvent> {
+        guard !Task.isCancelled else { return AsyncStream { $0.finish() } }
+        return AsyncStream { continuation in
+            let producer = Task {
                 do {
+                    try Task.checkCancellation()
                     // Record user input to memory if available
                     try? await memory?.record(content: query, role: "user", metadata: [:])
 
@@ -331,6 +377,7 @@ public actor ReActAgent {
                     }
 
                     for _ in 0..<maxSteps {
+                        try Task.checkCancellation()
                         var prompt = "You are an autonomous AI analyst answering the following question: '\(query)'.\n\n"
                         if !pastContext.isEmpty {
                             prompt += pastContext
@@ -359,8 +406,9 @@ public actor ReActAgent {
                             }
                         }
 
-                        let response = try await llm(prompt)
-                        let parsed = parseResponse(response)
+                        let response = try await completion(prompt)
+                        try Task.checkCancellation()
+                        let parsed = parseResponse(response.text)
 
                         if !parsed.thought.isEmpty {
                             continuation.yield(.thoughtDelta(parsed.thought + "\n"))
@@ -368,9 +416,10 @@ public actor ReActAgent {
 
                         if let answer = parsed.finalAnswer {
                             continuation.yield(.answerDelta(answer))
-                            let step = AgentStep(thought: parsed.thought, observation: answer)
+                            let step = AgentStep(thought: parsed.thought, observation: answer, completionInfo: response.completionInfo)
                             trace.append(step)
                             try? await memory?.record(content: answer, role: "assistant", metadata: [:])
+                            try Task.checkCancellation()
                             continuation.yield(.completed(finalAnswer: answer, trajectory: trace))
                             continuation.finish()
                             return
@@ -388,7 +437,7 @@ public actor ReActAgent {
                                 hint = " Did you mean '\(closest)'?"
                             }
                             let errorMsg = "Error: Tool '\(unknown)' not recognized.\(hint) Available tools: [\(available)]."
-                            let fallbackStep = AgentStep(thought: parsed.thought, action: parsed.action, actionInput: parsed.actionInput, observation: errorMsg)
+                            let fallbackStep = AgentStep(thought: parsed.thought, action: parsed.action, actionInput: parsed.actionInput, observation: errorMsg, completionInfo: response.completionInfo)
                             trace.append(fallbackStep)
                             continue
                         }
@@ -398,6 +447,7 @@ public actor ReActAgent {
                         let repeatedCount = (invocationCounts[toolCallKey] ?? 0) + 1
                         invocationCounts[toolCallKey] = repeatedCount
 
+                        try Task.checkCancellation()
                         let callId = UUID().uuidString
                         continuation.yield(.toolCallScheduled(callId: callId, tool: actTool.name, arguments: ["input": input]))
 
@@ -438,18 +488,23 @@ public actor ReActAgent {
                                 obs = try await executeWithTimeout(tool: actTool, input: input, timeoutSeconds: toolTimeoutSeconds)
                             }
                         } catch {
+                            try Task.checkCancellation()
                             obs = "Error: \(error.localizedDescription)"
                         }
+                        try Task.checkCancellation()
                         let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
                         let out = AgentToolOutput(text: obs, durationMs: duration)
                         continuation.yield(.toolExecutionCompleted(callId: callId, tool: actTool.name, output: out, durationMs: duration))
 
-                        let step = AgentStep(thought: parsed.thought, action: actTool.name, actionInput: input, observation: obs)
+                        let step = AgentStep(thought: parsed.thought, action: actTool.name, actionInput: input, observation: obs, completionInfo: response.completionInfo)
                         trace.append(step)
                     }
 
+                    try Task.checkCancellation()
                     let fallbackAnswer = trace.last?.observation ?? "Max steps reached without conclusive answer."
                     continuation.yield(.completed(finalAnswer: fallbackAnswer, trajectory: trace))
+                    continuation.finish()
+                } catch is CancellationError where Task.isCancelled {
                     continuation.finish()
                 } catch let err as AgentError {
                     continuation.yield(.error(err))
@@ -459,6 +514,7 @@ public actor ReActAgent {
                     continuation.finish()
                 }
             }
+            continuation.onTermination = { _ in producer.cancel() }
         }
     }
 
@@ -468,13 +524,15 @@ public actor ReActAgent {
         toolName: String,
         operation: @escaping @Sendable () async throws -> T
     ) async throws -> T {
+        try Task.checkCancellation()
         guard timeoutSeconds > 0 else {
             return try await operation()
         }
 
         return try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask {
-                try await operation()
+                try Task.checkCancellation()
+                return try await operation()
             }
 
             group.addTask {
@@ -521,24 +579,74 @@ public actor ReActAgent {
 
     /// Executes the ReAct reasoning cycle directly using a native `LLMModel` (e.g. `TransformerDecoder`).
     ///
+    /// Models conforming to `CompletionReportingLLMModel` must finish normally with one
+    /// final `.stop` record before their text is parsed or tools execute. Length,
+    /// cancelled, malformed and throwing completions fail the run. Text-only models
+    /// retain their existing behavior and have nil step metadata.
+    /// Cancelling the caller requests producer cancellation and throws without waiting
+    /// for noncooperative model or tool work to drain.
+    ///
     /// - Parameters:
     ///   - query: Analytical question or directive to execute.
     ///   - model: A local LLMModel instance executing natively on Apple Silicon.
     ///   - options: Inference options (temperature, topP, maxTokens).
     /// - Returns: Tuple with final answer and complete reasoning step trace.
-    /// - Throws: `AgentError` or `SwiftMLError` if tool execution, AST evaluation, or reasoning fails.
+    /// - Throws: `CancellationError` when the caller is cancelled, or `AgentError` when reasoning fails.
     public func run(
         query: String,
         model: any LLMModel,
         options: LLMOptions = LLMOptions(temperature: 0.2, maxTokens: 256)
     ) async throws -> (finalAnswer: String, trace: [AgentStep]) {
-        return try await run(query: query) { prompt in
+        try await run(query: query, completion: { prompt in
+            try await Self.generateResponse(prompt: prompt, model: model, options: options)
+        })
+    }
+
+    private nonisolated static func generateResponse(
+        prompt: String,
+        model: any LLMModel,
+        options: LLMOptions
+    ) async throws -> Response {
+        try Task.checkCancellation()
+        guard let detailed = model as? any CompletionReportingLLMModel else {
             let stream = try await model.generate(prompt: prompt, options: options)
             var generated = ""
             for await token in stream {
                 generated += token
             }
-            return generated
+            try Task.checkCancellation()
+            return Response(text: generated, completionInfo: nil)
+        }
+
+        var text = ""
+        var info: GenerationCompletionInfo?
+        for try await event in detailed.generateDetails(prompt: prompt, options: options) {
+            switch event {
+            case .chunk(let chunk):
+                guard info == nil else {
+                    throw AgentError.executionFailed("Model completion contains text after final metadata.")
+                }
+                text += chunk
+            case .info(let completion):
+                guard info == nil else {
+                    throw AgentError.executionFailed("Model completion contains multiple metadata records.")
+                }
+                info = completion
+            }
+        }
+        try Task.checkCancellation()
+        guard let info else {
+            throw AgentError.executionFailed("Model completion is missing final metadata.")
+        }
+        switch info.stopReason {
+        case .stop:
+            return Response(text: text, completionInfo: info)
+        case .length(.maxTokens):
+            throw AgentError.executionFailed("Model completion reached the output token limit before a stop.")
+        case .length(.contextWindow):
+            throw AgentError.executionFailed("Model completion reached the context limit before a stop.")
+        case .cancelled:
+            throw AgentError.executionFailed("Model completion was cancelled.")
         }
     }
 

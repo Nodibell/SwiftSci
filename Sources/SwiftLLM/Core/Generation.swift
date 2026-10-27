@@ -29,6 +29,17 @@ public struct GenerationCompletionInfo: Sendable, Equatable {
     public let generationTokenCount: Int
     /// Why generation ended.
     public let stopReason: GenerationStopReason
+
+    /// Creates a completion record using counts supplied by the generation producer.
+    /// - Parameters:
+    ///   - promptTokenCount: Input token count, including any producer-defined fallback.
+    ///   - generationTokenCount: Generated non-stop token count, including buffered text tokens.
+    ///   - stopReason: The reason generation ended.
+    public init(promptTokenCount: Int, generationTokenCount: Int, stopReason: GenerationStopReason) {
+        self.promptTokenCount = promptTokenCount
+        self.generationTokenCount = generationTokenCount
+        self.stopReason = stopReason
+    }
 }
 
 /// A text fragment or the final completion record from a generation operation.

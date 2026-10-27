@@ -31,6 +31,7 @@ let package = Package(
         .library(name: "SwiftDatabase",      targets: ["SwiftDatabase"]),
         .library(name: "SwiftAgent",         targets: ["SwiftAgent"]),
         .executable(name: "swiftsci",        targets: ["SwiftSciCLI"]),
+        .executable(name: "ScientificWorkflow", targets: ["ScientificWorkflow"]),
     ],
     dependencies: [
         .package(
@@ -470,6 +471,19 @@ let package = Package(
                 "SwiftVisualization",
             ],
             path: "Benchmarks/Swift",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+
+        .executableTarget(
+            name: "ScientificWorkflow",
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                "SwiftDataFrame", "SwiftPreprocessing", "SwiftCluster", "SwiftML", "SwiftOptimize"
+            ],
+            path: "Examples/NumericalWorkflow",
+            exclude: ["README.md", "verify.py"],
+            resources: [.copy("Data")],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),

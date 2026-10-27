@@ -87,6 +87,10 @@ print("Sentiment compound score:", score.compound)
 
 ---
 
+For a complete CSV-to-predictions workflow with training-only preprocessing, PCA,
+classification and row-aligned result export, run the
+[numerical workflow example](Examples/NumericalWorkflow/README.md).
+
 ## 🧩 The 14 Core Modules
 
 | Module | Purpose & Capabilities | Documentation |

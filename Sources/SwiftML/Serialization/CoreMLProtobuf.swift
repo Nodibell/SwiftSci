@@ -59,7 +59,7 @@ private enum NeuralNetworkLayerField {
     static let output: Int = 3         // repeated string
     static let activation: Int = 130   // ActivationParams
     static let innerProduct: Int = 140 // InnerProductLayerParams
-    static let softmax: Int = 175      // SoftmaxLayerParams
+    static let softmaxND: Int = 950    // SoftmaxNDLayerParams
     static let concat: Int = 320       // ConcatLayerParams
 }
 
@@ -80,6 +80,10 @@ private enum ActivationParamsField {
     static let reLU: Int = 10
     static let tanh: Int = 30
     static let sigmoid: Int = 40
+}
+
+private enum SoftmaxNDLayerParamsField {
+    static let axis: Int = 1 // int64
 }
 
 private enum ModelDescriptionField {
@@ -686,17 +690,25 @@ internal func buildNeuralNetworkModel(
             actLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.output, value: finalLayerOut)
 
             var actParams = ProtobufWriter()
+            let activationField: Int
             switch actType.lowercased() {
+            case "softmax":
+                actParams.writeVarintField(fieldNumber: SoftmaxNDLayerParamsField.axis,
+                                           value: UInt64(bitPattern: Int64(-1)))
+                activationField = NeuralNetworkLayerField.softmaxND
             case "relu":
                 actParams.writeBytesField(fieldNumber: ActivationParamsField.reLU, bytes: Data())
+                activationField = NeuralNetworkLayerField.activation
             case "sigmoid":
                 actParams.writeBytesField(fieldNumber: ActivationParamsField.sigmoid, bytes: Data())
+                activationField = NeuralNetworkLayerField.activation
             case "tanh":
                 actParams.writeBytesField(fieldNumber: ActivationParamsField.tanh, bytes: Data())
+                activationField = NeuralNetworkLayerField.activation
             default:
-                break
+                activationField = NeuralNetworkLayerField.activation
             }
-            actLayer.writeBytesField(fieldNumber: NeuralNetworkLayerField.activation, bytes: actParams.data)
+            actLayer.writeBytesField(fieldNumber: activationField, bytes: actParams.data)
             nnMsg.writeBytesField(fieldNumber: NeuralNetworkField.layers, bytes: actLayer.data)
             currentInputs = [finalLayerOut]
         } else {

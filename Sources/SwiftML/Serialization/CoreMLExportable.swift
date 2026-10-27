@@ -302,9 +302,11 @@ extension LogisticRegression: CoreMLExportable {
 
 extension MLPClassifier: CoreMLExportable {
     /// Exports the fitted Multi-Layer Perceptron classifier as a binary `.mlmodel` (`NeuralNetwork`).
+    /// The output is a probability vector in `trainedClasses` order for multiclass models,
+    /// or the probability of the second class for binary models.
     /// - Parameters:
     ///   - featureNames: Names of the input features.
-    ///   - outputName: Name of the predicted label output.
+    ///   - outputName: Name of the probability output.
     /// - Throws: `SwiftMLError.modelNotFitted` if the network has not been trained.
     /// - Returns: Binary `.mlmodel` artifact data.
     public func exportCoreML(featureNames: [String], outputName: String = "label") async throws -> Data {

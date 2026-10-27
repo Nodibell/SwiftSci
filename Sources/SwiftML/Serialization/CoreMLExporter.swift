@@ -510,13 +510,14 @@ public enum CoreMLExporter {
     // MARK: - Binary Multi-Layer Perceptron (NeuralNetwork)
 
     /// Encodes a fitted Multi-Layer Perceptron classifier as a binary Apple Core ML `.mlmodel` artifact.
+    /// The output is a probability vector, or a single positive-class probability for binary models.
     /// - Parameters:
     ///   - name: Name or identifier string.
     ///   - inputNames: Names of the model input features or layers.
     ///   - outputName: Name assigned to the output layer or feature.
     ///   - layers: Ordered collection of neural network layer weight definitions.
     ///   - activation: Non-linear activation function identifier (e.g., relu, tanh, sigmoid).
-    ///   - classLabels: Ordered string names corresponding to target class indices.
+    ///   - classLabels: Accepted for compatibility; label metadata is not encoded in the probability output.
     /// - Returns: Raw serialized binary data representation.
     public static func exportBinaryMLPClassifier(
         name: String = "SwiftSciMLPClassifier",

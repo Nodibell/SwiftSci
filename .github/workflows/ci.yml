@@ -126,20 +126,8 @@ jobs:
       - name: Export coverage
         run: |
           BUILD_DIR=$(swift build --show-bin-path -c debug)
-          PROFDATA=".build/debug/codecov/default.profdata"
-
-          TEST_BINS=$(
-            find "$BUILD_DIR" -name "*.xctest" -type d |
-            while read -r d; do
-              echo "$d/Contents/MacOS/$(basename "${d%.xctest}")"
-            done |
-            tr '\n' ' '
-          )
-
-          xcrun llvm-cov export \
-            -format="lcov" \
-            -instr-profile="$PROFDATA" \
-            $TEST_BINS > coverage.lcov || true
+          python3 scripts/export_coverage.py \
+            "$BUILD_DIR" ".build/debug/codecov/default.profdata" > coverage.lcov
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7

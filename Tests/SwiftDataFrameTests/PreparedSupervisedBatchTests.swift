@@ -55,7 +55,7 @@ struct PreparedSupervisedBatchTests {
         let supervised = try PreparedSupervisedBatch(batch, targetColumn: "target")
         #expect(supervised.targets[2].isNaN)
         #expect(supervised.features.nullCount(inColumn: 0) == 1)
-        let expected = SwiftMLError.invalidParameter("Regression input contains missing or nonfinite values")
+        let expected = SwiftMLError.invalidParameter("Numeric input contains missing or nonfinite values")
         #expect(throws: expected) { try batch.requireFinite() }
         for value in [Double.nan, .infinity, -.infinity] {
             let nonfinite = try PreparedNumericBatch(columnNames: ["x"], columns: [[value]])

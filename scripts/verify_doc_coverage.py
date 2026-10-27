@@ -43,8 +43,12 @@ def check_doc_coverage(sources_dir):
                             rel_path = os.path.relpath(filepath, sources_dir)
                             missing_docs.append((rel_path, idx + 1, line.strip()))
 
-    coverage = (documented_public / total_public * 100) if total_public > 0 else 0
-    print(f"📊 DocC Public API Coverage: {coverage:.2f}% ({documented_public}/{total_public} symbols documented)")
+    if total_public:
+        coverage = documented_public / total_public * 100
+        print(f"API documentation declaration scan: {coverage:.2f}% ({documented_public}/{total_public} matched declarations documented)")
+    else:
+        print("API documentation declaration scan: N/A. No public/open declarations matched.")
+    print("This heuristic scan is not DocC symbol-graph coverage.")
 
     # Check for placeholder markers like <#description#>
     placeholders = []
@@ -67,7 +71,7 @@ def check_doc_coverage(sources_dir):
         print("\nCI BUILD FAILED: Documentation contains unresolved Xcode placeholders.")
         sys.exit(1)
 
-    print("✅ 100.00% DocC Public API Coverage Verified (Zero Placeholders)!")
+    print("No unresolved documentation placeholders found.")
     sys.exit(0)
 
 if __name__ == "__main__":

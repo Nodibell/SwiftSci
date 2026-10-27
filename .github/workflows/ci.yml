@@ -201,7 +201,10 @@ jobs:
 
           echo "✓ Documentation generated successfully."
 
-      - name: Verify Public API Documentation Coverage (100%)
+      - name: Test documentation reporting
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+
+      - name: Report API documentation and check placeholders
         run: |
           python3 scripts/verify_doc_coverage.py
 

@@ -137,7 +137,7 @@ final class ZeroShotTextClassifierTests: XCTestCase {
         let classifier = ZeroShotTextClassifier(embeddingProvider: localEngine)
 
         let labels = ["technology", "food"]
-        let text = "neural network processor computation software algorithm"
+        let text = "This text is about technology."
         let result = try await classifier.classify(text: text, candidateLabels: labels)
 
         XCTAssertEqual(result.predictedLabel, "technology")

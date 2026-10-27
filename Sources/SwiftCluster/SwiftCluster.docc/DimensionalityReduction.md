@@ -121,20 +121,21 @@ for point in coordinates2D.prefix(5) {
 
 ## 4. Hardware Routing & Device Selection
 
-``PCA`` supports automatic device dispatching via ``ComputeDevice``:
+``PCA`` accepts an `ExecutionDevice`. See <doc:PreparedPCA> for numerical precision and ownership details.
 
-| Device Mode | Description |
-|:---|:---|
-| `.auto` | Dynamically selects between CPU Accelerate and Metal GPU shaders based on matrix dimensions and unified memory availability. |
-| `.cpu` | Forces multi-threaded Apple Accelerate LAPACK (`dgesdd_` / `cblas_dgemm`). Optimal for small-to-medium matrices ($M, N \le 2048$). |
-| `.umaGPU` | Offloads dense matrix multiplications to Metal Shading Language pipelines, maximizing memory bandwidth on Apple Silicon M-series chips. |
+| Device mode | Behavior |
+| --- | --- |
+| `.auto` | Uses the existing hardware router to choose a fitting device. |
+| `.cpu` | Uses Double Accelerate LAPACK or randomized SVD, according to the selected solver. |
+| `.gpu` | Uses Float MLX conversion and centering, then SVD on the CPU stream. |
+| `.ane` | Uses the existing router fallback for unsupported ANE execution. |
 
 ---
 
 ## Topics
 
 ### Dimensionality Reduction
+- <doc:PreparedPCA>
 - ``PCA``
 - ``RandomizedSVD``
 - ``TSNE``
-- ``ComputeDevice``

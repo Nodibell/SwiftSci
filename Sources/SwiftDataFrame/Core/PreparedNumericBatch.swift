@@ -249,6 +249,13 @@ public struct PreparedNumericMatrix: Sendable {
         values.withUnsafeMutableBufferPointer { body($0) }
     }
 
+    /// Replaces feature values while keeping layout and private row provenance.
+    package func replacingValues(_ values: [Double], columnNames: [String]) -> PreparedNumericMatrix {
+        precondition(values.count == rowCount * columnNames.count)
+        return PreparedNumericMatrix(values: values, columnNames: columnNames, rowCount: rowCount,
+                                     order: order, sourceRows: sourceRows)
+    }
+
     /// Reads an element in either layout. Indices must be in bounds.
     public subscript(row: Int, column: Int) -> Double {
         precondition(row >= 0 && row < rowCount && column >= 0 && column < columnCount)

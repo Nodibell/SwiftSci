@@ -3,6 +3,53 @@ import Testing
 
 @Suite("Prepared matrix ownership and layout")
 struct PreparedMatrixTests {
+    @Test(arguments: [NumericMatrixOrder.rowMajor, .columnMajor])
+    func replacementPreservesLayoutProvenanceAndSnapshots(_ order: NumericMatrixOrder) throws {
+        let batch = try DataFrame(columns: [
+            TypedColumn<Double>(name: "a", values: [1, 2, 3]),
+            TypedColumn<Double>(name: "b", values: [10, 20, 30]),
+            TypedColumn<Double>(name: "c", values: [100, 200, 300])
+        ]).prepareNumericBatch(["a", "b", "c"])
+        let matrices = [
+            try batch.matrix(order: order),
+            try batch.selectingRows([2, 0, 2]).matrix(order: order),
+            try batch.selectingRows([]).matrix(order: order)
+        ]
+        let provenance: [[Int]] = [[0, 1, 2], [2, 0, 2], []]
+        for (index, source) in matrices.enumerated() {
+            let originalValues = source.values
+            let expected: [[Double]] = (0..<source.rowCount).map { row -> [Double] in
+                let base: Double = Double(row * 10)
+                return [base + 1, base + 2]
+            }
+            var values: [Double] = []
+            if order == .rowMajor {
+                for row in expected { values.append(contentsOf: row) }
+            } else {
+                for column in 0..<2 {
+                    for row in expected { values.append(row[column]) }
+                }
+            }
+            var output = source.replacingValues(values, columnNames: ["PC1", "PC2"])
+            let snapshot = output
+            #expect(output.rowCount == source.rowCount && output.columnCount == 2)
+            #expect(output.columnNames == ["PC1", "PC2"] && output.order == order)
+            #expect(output.originalRowIndices == provenance[index])
+            for row in expected.indices {
+                for column in 0..<2 { #expect(output[row, column] == expected[row][column]) }
+            }
+            if !values.isEmpty {
+                values[0] = -100
+                #expect(output[0, 0] == 1)
+                output.withMutableValues { $0[0] = -200 }
+                #expect(snapshot[0, 0] == 1 && output[0, 0] == -200)
+            } else {
+                #expect(output.values.isEmpty)
+            }
+            #expect(source.values == originalValues && source.columnNames == ["a", "b", "c"])
+        }
+    }
+
     @Test func selectionCompositionAndLayout() throws {
         let frame = try DataFrame(columns: [
             TypedColumn<Double>(name: "a", values: [1, 2, 3, 4]),

@@ -88,6 +88,27 @@ final class RandomizedSVDTests: XCTestCase {
         XCTAssertEqual(comps!.count, k)
     }
 
+    func testFlatKernelPreservesPublicDecomposition() throws {
+        let rows: [[Double]] = [[1, 4, 2], [2, -1, 3], [5, 2, -4], [3, 0, 1]]
+        let values = (0..<3).flatMap { column in rows.map { $0[column] } }
+        let original = try RandomizedSVD.compute(X: rows, nComponents: 3)
+        let right = try RandomizedSVD.compute(columnMajor: values, rows: 4, columns: 3,
+                                              nComponents: 3, computeLeftVectors: false)
+        XCTAssertEqual(original.S, right.S)
+        XCTAssertEqual(original.Vt, right.Vt)
+        XCTAssertTrue(right.U.isEmpty)
+        for row in 0..<4 {
+            for column in 0..<3 {
+                var reconstructed = 0.0
+                for k in 0..<3 { reconstructed += original.U[row][k] * original.S[k] * original.Vt[k][column] }
+                XCTAssertEqual(reconstructed, rows[row][column], accuracy: 1e-10)
+            }
+        }
+        XCTAssertThrowsError(try RandomizedSVD.compute(X: [[1, 2], [3]], nComponents: 1))
+        XCTAssertThrowsError(try RandomizedSVD.compute(X: rows, nComponents: 1, nOversamples: -1))
+        XCTAssertThrowsError(try RandomizedSVD.compute(X: rows, nComponents: 1, nPowerIter: -1))
+    }
+
     func testRandomizedSVDInvalidK() throws {
         let X = [[Double]](repeating: [1.0, 2.0, 3.0], count: 4)
         // k > min(M=4, N=3) = 3 → should throw

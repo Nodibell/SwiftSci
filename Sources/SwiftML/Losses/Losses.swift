@@ -11,11 +11,9 @@ internal enum Losses {
     }
     
     /// Computes the numerically stable Binary Cross Entropy (BCE) loss from logits:
-    /// loss = mean(max(logits, 0) - logits * targets + log(1 + exp(-abs(logits))))
+    /// Uses log-add-exp so the derivative is sigmoid(logits) - targets, including at zero.
     static func binaryCrossEntropy(logits: MLXArray, targets: MLXArray) -> MLXArray {
-        let maxLogits = maximum(logits, 0.0)
-        let absLogits = abs(logits)
-        return mean(maxLogits - logits * targets + log(1.0 + exp(-absLogits)))
+        mean(logAddExp(0, logits) - logits * targets)
     }
 }
 #endif // os(macOS)

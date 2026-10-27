@@ -8,6 +8,9 @@ import Accelerate
 /// ``LocalEmbeddingEngine`` projects arbitrary natural language strings into fixed-dimensional
 /// dense vectors (\(\mathbb{R}^d\)) with \(L_2\) unit normalization (\(\|v\|_2 = 1.0\)).
 /// The produced vectors can be stored and queried directly using `SwiftCluster.VectorStore`.
+/// Word and n-gram coordinates use deterministic FNV-1a hashing across process restarts.
+/// Similarity reflects text overlap; this engine has no trained semantic model.
+/// Regenerate stored vectors and indexes created with the earlier randomized hashing.
 ///
 /// ## Features
 /// - **Zero API Dependencies**: Operates 100% locally and offline without external network calls.
@@ -63,18 +66,20 @@ public final class LocalEmbeddingEngine: SentenceEmbeddingProvider, Sendable {
             let wordChars = Array(word)
 
             // Word-level hash contribution
-            let wordHash = abs(word.hashValue) % dimension
-            let wordSign: Double = ((word.hashValue & 1) == 0) ? 1.0 : -1.0
-            vec[wordHash] += wordSign * 2.0
+            let wordHash = fnv1aTokenHash(word)
+            let wordBucket = Int(wordHash.magnitude % UInt(dimension))
+            let wordSign: Double = ((wordHash & 1) == 0) ? 1.0 : -1.0
+            vec[wordBucket] += wordSign * 2.0
 
             // Subword character n-gram contributions
             if wordChars.count >= minNGram {
                 for n in minNGram...min(maxNGram, wordChars.count) {
                     for i in 0...(wordChars.count - n) {
                         let ngram = String(wordChars[i..<(i + n)])
-                        let h = abs(ngram.hashValue) % dimension
-                        let sign: Double = ((ngram.hashValue & 1) == 0) ? 1.0 : -1.0
-                        vec[h] += sign * 1.0
+                        let hash = fnv1aTokenHash(ngram)
+                        let bucket = Int(hash.magnitude % UInt(dimension))
+                        let sign: Double = ((hash & 1) == 0) ? 1.0 : -1.0
+                        vec[bucket] += sign * 1.0
                     }
                 }
             }

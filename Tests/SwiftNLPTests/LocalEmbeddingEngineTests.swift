@@ -27,6 +27,21 @@ final class LocalEmbeddingEngineTests: XCTestCase {
         XCTAssertEqual(v1, v2)
     }
 
+    func testEmbeddingsUseStableHashCoordinates() {
+        let engine = LocalEmbeddingEngine(dimension: 16)
+        let asciiExpected: [Double] = [0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        XCTAssertEqual(engine.embed("abc"), asciiExpected)
+
+        let norm = sqrt(11.0)
+        let unicodeExpected: [Double] = [
+            0, 0, 0, -1 / norm, 0, 0, 1 / norm, 0,
+            0, -3 / norm, 0, 0, 0, 0, 0, 0
+        ]
+        for (actual, expected) in zip(engine.embed("café"), unicodeExpected) {
+            XCTAssertEqual(actual, expected, accuracy: 1e-12)
+        }
+    }
+
     func testBatchEmbeddings() {
         let engine = LocalEmbeddingEngine(dimension: 32)
         let texts = [

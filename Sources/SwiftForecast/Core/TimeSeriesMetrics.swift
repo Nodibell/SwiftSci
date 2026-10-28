@@ -149,6 +149,12 @@ public enum TimeSeriesMetrics {
         }
     }
 
+    private static func validateEpsilon(_ epsilon: Double) throws {
+        guard epsilon.isFinite, epsilon >= 0.0 else {
+            throw ForecastError.invalidParameter("epsilon must be finite and non-negative, got \(epsilon)")
+        }
+    }
+
     /// Evaluates Root Mean Squared Error (RMSE), throwing on empty inputs or length mismatches.
     public static func evaluateRMSE(actual: [Double], forecast: [Double]) throws -> Double {
         try validateInputs(actual: actual, forecast: forecast)
@@ -164,12 +170,14 @@ public enum TimeSeriesMetrics {
     /// Evaluates Mean Absolute Percentage Error (MAPE), throwing on empty inputs or length mismatches.
     public static func evaluateMAPE(actual: [Double], forecast: [Double], epsilon: Double = 1e-12) throws -> Double {
         try validateInputs(actual: actual, forecast: forecast)
+        try validateEpsilon(epsilon)
         return mape(actual: actual, forecast: forecast, epsilon: epsilon)
     }
 
     /// Evaluates Symmetric Mean Absolute Percentage Error (SMAPE), throwing on empty inputs or length mismatches.
     public static func evaluateSMAPE(actual: [Double], forecast: [Double], epsilon: Double = 1e-12) throws -> Double {
         try validateInputs(actual: actual, forecast: forecast)
+        try validateEpsilon(epsilon)
         return smape(actual: actual, forecast: forecast, epsilon: epsilon)
     }
 
@@ -177,6 +185,7 @@ public enum TimeSeriesMetrics {
     /// or NaN/Infinity.
     public static func evaluateWAPE(actual: [Double], forecast: [Double], epsilon: Double = 1e-12) throws -> Double {
         try validateInputs(actual: actual, forecast: forecast)
+        try validateEpsilon(epsilon)
         return wape(actual: actual, forecast: forecast, epsilon: epsilon)
     }
 

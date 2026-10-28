@@ -256,17 +256,32 @@ public enum SwiftSciToolbox {
                 throw AgentError.executionFailed("Parameter 'query' is required.")
             }
 
-            // Sentry: Enforce read-only semantics
-            let blockedKeywords = ["drop", "delete", "update", "insert", "alter", "truncate", "create"]
-            let lowerQuery = query.lowercased()
+            // Sentry Layer 1: Tokenized word-boundary check (avoids false positives on identifiers like `created_at`)
+            let blockedKeywords = [
+                "drop", "delete", "update", "insert", "alter", "truncate",
+                "create", "replace", "attach", "detach", "vacuum", "reindex", "pragma"
+            ]
+            let strippedLiterals = Self.stripSQLQuotedLiterals(query).lowercased()
+            let tokens = strippedLiterals.split { !($0.isLetter || $0.isNumber || $0 == "_") }
             for keyword in blockedKeywords {
-                if lowerQuery.contains(keyword) {
-                    throw AgentError.executionFailed("Security Violation: Disallowed mutation keyword '\(keyword.uppercased())' in query. Only read-only SELECT statements are permitted.")
+                if tokens.contains(Substring(keyword)) {
+                    throw AgentError.executionFailed(
+                        "Security Violation: Disallowed mutation keyword '\(keyword.uppercased())' in query. Only read-only SELECT statements are permitted."
+                    )
                 }
             }
 
+            // Sentry Layer 2: SQLite C API read-only connection + sqlite3_stmt_readonly + single-statement enforcement
             let connection = SQLiteConnection(databasePath: databasePath)
-            let result = try await connection.executeQuery(query)
+            let result: SQLQueryResult
+            do {
+                result = try await connection.executeReadOnlyQuery(query)
+            } catch {
+                if error.localizedDescription.contains("Security Violation") {
+                    throw AgentError.executionFailed(error.localizedDescription)
+                }
+                throw error
+            }
             let elapsed = (CFAbsoluteTimeGetCurrent() - start) * 1000.0
 
             var out = "Query executed successfully (\(result.rows.count) rows returned):\n"
@@ -279,6 +294,34 @@ public enum SwiftSciToolbox {
                 out += "- ... (\(result.rows.count - 3) more rows)\n"
             }
             return AgentToolOutput(text: out, durationMs: elapsed)
+        }
+
+        private static func stripSQLQuotedLiterals(_ sql: String) -> String {
+            var out = ""
+            out.reserveCapacity(sql.count)
+            var inSingleQuote = false
+            var inDoubleQuote = false
+            var iter = sql.makeIterator()
+            while let ch = iter.next() {
+                if inSingleQuote {
+                    if ch == "'" { inSingleQuote = false }
+                    out.append(" ")
+                } else if inDoubleQuote {
+                    if ch == "\"" { inDoubleQuote = false }
+                    out.append(" ")
+                } else {
+                    if ch == "'" {
+                        inSingleQuote = true
+                        out.append(" ")
+                    } else if ch == "\"" {
+                        inDoubleQuote = true
+                        out.append(" ")
+                    } else {
+                        out.append(ch)
+                    }
+                }
+            }
+            return out
         }
     }
 

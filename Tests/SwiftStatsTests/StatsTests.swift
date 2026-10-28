@@ -388,6 +388,18 @@ struct StatsRobustnessTests {
             try Stats.mean([Float(1.0), Float.infinity], checkNaN: true)
         }
     }
+
+    @Test("spearmanCorrelation rejects NaN and positive/negative infinity")
+    func testSpearmanRejectsNonFiniteInputs() {
+        for badValue in [Double.nan, Double.infinity, -Double.infinity] {
+            #expect(throws: StatsError.self) {
+                _ = try Stats.spearmanCorrelation([1.0, badValue, 2.0], [1.0, 2.0, 3.0])
+            }
+            #expect(throws: StatsError.self) {
+                _ = try Stats.spearmanCorrelation([1.0, 2.0, 3.0], [1.0, badValue, 3.0])
+            }
+        }
+    }
 }
 
 

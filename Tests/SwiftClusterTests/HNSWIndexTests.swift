@@ -108,4 +108,40 @@ struct HNSWIndexTests {
         #expect(searchRes.count == 3)
         #expect(searchRes[0].id == "task_25")
     }
+
+    @Test("HNSWIndex enforces dimension invariant via addValidated/searchValidated and prevents silent prefix truncation")
+    func testDimensionInvariantAndValidatedAPIs() async throws {
+        let index = HNSWIndex(metric: .euclideanDistance, M: 8, efConstruction: 32, efSearch: 16, seed: 42)
+        #expect(await index.dimension == nil)
+
+        // Empty vector throws in addValidated
+        await #expect(throws: HNSWError.emptyVector) {
+            try await index.addValidated(id: "empty", vector: [])
+        }
+
+        // First valid insertion establishes 3D dimension
+        try await index.addValidated(id: "A", vector: [0.0, 0.0, 1000.0])
+        try await index.addValidated(id: "B", vector: [0.0, 0.0, 0.0])
+        #expect(await index.dimension == 3)
+        #expect(await index.count == 2)
+
+        // Mismatched 2D insertion throws in addValidated and is ignored in non-throwing add
+        await #expect(throws: HNSWError.dimensionMismatch(expected: 3, actual: 2)) {
+            try await index.addValidated(id: "bad2d", vector: [1.0, 2.0])
+        }
+        await index.add(id: "bad2d_nonthrowing", vector: [1.0, 2.0])
+        #expect(await index.count == 2)
+
+        // Mismatched 2D query throws in searchValidated and returns [] in non-throwing search
+        await #expect(throws: HNSWError.dimensionMismatch(expected: 3, actual: 2)) {
+            _ = try await index.searchValidated(query: [0.0, 0.0], topK: 2)
+        }
+        #expect(await index.search(query: [0.0, 0.0], topK: 2).isEmpty)
+
+        // Valid 3D query distinguishes B ([0,0,0]) from A ([0,0,1000])
+        let validResults = try await index.searchValidated(query: [0.0, 0.0, 1.0], topK: 2)
+        #expect(validResults.count == 2)
+        #expect(validResults[0].id == "B")
+        #expect(validResults[1].id == "A")
+    }
 }

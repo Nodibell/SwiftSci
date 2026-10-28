@@ -47,6 +47,7 @@ public enum AutoMLError: Error, LocalizedError, Sendable, Equatable {
     /// Every candidate failed on at least one fold.
     case allCandidatesFailed([AutoMLCandidateFailure])
 
+    /// Localized human-readable error message.
     public var errorDescription: String? {
         switch self {
         case .invalidInput(let msg):

@@ -65,6 +65,7 @@ public enum GenerationError: Error, Sendable, Equatable, LocalizedError {
     /// The tokenized prompt exceeds the configured capacity.
     case promptTooLong(promptTokens: Int, capacity: Int)
 
+    /// Localized human-readable error message.
     public var errorDescription: String? {
         switch self {
         case .invalidMaxTokens(let value):

@@ -20,10 +20,15 @@ public enum SVDSolver: Sendable {
 public actor PCA {
     /// Complete immutable projection state, including variance omitted by the selected components.
     public struct Parameters: Sendable {
+        /// Per-feature empirical mean vector subtracted prior to projection.
         public let mean: [Double]
+        /// Principal axes in feature space of shape `[nComponents, nFeatures]`.
         public let components: [[Double]]
+        /// Variance explained by each selected principal component.
         public let explainedVariance: [Double]
+        /// Total variance across all input features prior to dimensionality reduction.
         public let totalVariance: Double
+        /// Optional ordered feature column names learned from a prepared batch.
         public let featureNames: [String]?
 
         /// Validates supplied coefficients without recomputing or normalizing them.

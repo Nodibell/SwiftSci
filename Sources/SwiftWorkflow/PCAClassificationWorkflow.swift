@@ -13,7 +13,9 @@ public struct PCAClassificationWorkflow: Sendable {
 
     /// Prediction arrays share the original source-row order of the supplied batch.
     public struct Predictions: Sendable {
+        /// Original row indices in the source DataFrame at preparation time.
         public let sourceRowIndices: [Int]
+        /// Predicted binary class labels (`0` or `1`).
         public let labels: [Int]
         /// Each pair contains probabilities for class 0 and class 1, respectively.
         public let probabilities: [[Double]]

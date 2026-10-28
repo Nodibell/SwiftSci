@@ -2,8 +2,11 @@
 /// Missing values have separate validity bits. Valid NaNs remain distinct from missing values.
 /// Copies preserve snapshots through Swift array copy-on-write.
 public struct PreparedNumericBatch: Sendable {
+    /// Ordered feature column names in the prepared batch.
     public let columnNames: [String]
+    /// Number of rows in each prepared column.
     public let rowCount: Int
+    /// Number of feature columns in the prepared batch.
     public var columnCount: Int { columns.count }
     package var columns: [CompactNumericColumn]
     fileprivate let sourceRows: [Int]?
@@ -27,6 +30,7 @@ public struct PreparedNumericBatch: Sendable {
     /// Reads a value without materializing an optional array. Indices must be in bounds.
     public subscript(row: Int, column: Int) -> Double? { columns[column][row] }
 
+    /// Returns the number of missing (`nil`) entries in the specified column.
     public func nullCount(inColumn column: Int) -> Int { columns[column].nullCount }
 
     /// Materializes an optional column for callers that require the existing array representation.
@@ -227,12 +231,18 @@ public enum NumericMissingValuePolicy: Sendable {
 /// A contiguous Double matrix with value ownership and original row positions.
 /// Swift copy-on-write preserves this matrix if its source batch is later mutated.
 public struct PreparedNumericMatrix: Sendable {
+    /// Contiguous flat array of numerical matrix elements.
     public private(set) var values: [Double]
+    /// Ordered column names represented in the matrix.
     public let columnNames: [String]
+    /// Number of rows in the matrix.
     public let rowCount: Int
+    /// Number of columns in the matrix.
     public var columnCount: Int { columnNames.count }
+    /// Memory layout order (row-major or column-major).
     public let order: NumericMatrixOrder
     private let sourceRows: [Int]?
+    /// Original row indices from the source DataFrame at preparation time.
     public var originalRowIndices: [Int] { sourceRows ?? Array(0..<rowCount) }
 
     package init(values: [Double], columnNames: [String], rowCount: Int,

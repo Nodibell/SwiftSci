@@ -3,6 +3,7 @@ import Foundation
 /// High-performance text cleaner and normalizer for NLP pipelines.
 public struct TextCleaner: Sendable {
     
+    /// Creates a new `TextCleaner` instance.
     public init() {}
     
     /// Normalizes and cleans raw text according to configurable pipeline rules.

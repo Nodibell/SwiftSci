@@ -55,4 +55,23 @@ struct SwiftVisualizationTests {
         #expect(!cmHTML.contains("<title></title><script>"))
         #expect(cmHTML.contains("col\\\"with'quotes"))
     }
+
+    @Test("plotCorrelationHeatmap preserves pairwise row alignment when missing values are on different rows")
+    func testCorrelationHeatmapPairwiseCompleteAlignment() throws {
+        // Complete pairs are row 0: (1, 1) and row 3: (3, 3) -> Pearson r = 1.000
+        let colA = TypedColumn<Double>(name: "A", values: [1.0, nil, 10.0, 3.0])
+        let colB = TypedColumn<Double>(name: "B", values: [1.0, 2.0, nil, 3.0])
+        let df = try DataFrame(columns: [colA, colB])
+
+        let html = try ChartExporter.plotCorrelationHeatmap(df: df)
+        #expect(html.contains("[[1.000,1.000],[1.000,1.000]]"))
+    }
+
+    @Test("plotROCCurve groups tied scores so AUC is invariant to sample order")
+    func testROCCurveTiedScoresOrderInvariance() {
+        let htmlOrder1 = ChartExporter.plotROCCurve(yTrue: [1, 0], yScores: [0.5, 0.5])
+        let htmlOrder2 = ChartExporter.plotROCCurve(yTrue: [0, 1], yScores: [0.5, 0.5])
+        #expect(htmlOrder1.contains("AUC = 0.5000"))
+        #expect(htmlOrder2.contains("AUC = 0.5000"))
+    }
 }

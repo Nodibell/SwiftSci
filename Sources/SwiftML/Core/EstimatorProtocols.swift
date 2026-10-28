@@ -121,34 +121,45 @@ public protocol ClassifierEstimator: Sendable {
 }
 
 /// Represents predicted class probability matrices with safe indexing and convenient ergonomics.
-public struct ProbabilityMatrix: RandomAccessCollection, ExpressibleByArrayLiteral, CustomStringConvertible, Sendable {
+public struct ProbabilityMatrix: RandomAccessCollection, ExpressibleByArrayLiteral, CustomStringConvertible, Equatable, Sendable {
+    /// Probability distribution row element type (`[Double]`).
     public typealias Element = [Double]
+    /// Integer row index type.
     public typealias Index = Int
 
+    /// Underlying 2D array of class probability rows of shape `[N, K]`.
     public let rows: [[Double]]
 
+    /// Creates a probability matrix from a 2D array of probability rows.
+    /// - Parameter rows: 2D array of predicted class probabilities.
     public init(_ rows: [[Double]]) {
         self.rows = rows
     }
 
+    /// Creates a probability matrix from an array literal of probability rows.
+    /// - Parameter elements: Variadic probability row vectors.
     public init(arrayLiteral elements: [Double]...) {
         self.rows = elements
     }
 
+    /// The index of the first probability row (`0`).
     public var startIndex: Int { 0 }
-    public var endIndex: Int { Swift.max(rows.count, 6) }
+    /// The collection's "past the end" row index (`rows.count`).
+    public var endIndex: Int { rows.count }
 
+    /// Accesses the probability vector at the specified row index.
+    /// - Parameter position: Valid row index in `0..<endIndex`.
     public subscript(position: Int) -> [Double] {
-        if position < rows.count {
-            return rows[position]
-        }
-        return rows.first ?? []
+        precondition(position >= 0 && position < rows.count, "ProbabilityMatrix row index out of range")
+        return rows[position]
     }
 
+    /// Textual representation of the probability matrix rows.
     public var description: String {
         rows.description
     }
 
+    /// Returns the underlying 2D array of probability rows.
     public var asArray: [[Double]] { rows }
 }
 

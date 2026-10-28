@@ -419,4 +419,290 @@ struct WireProtocolMockTests {
         #expect(dfFromSQL.shape.rows == 2)
         #expect(dfFromSQL.shape.columns == 7)
     }
+
+    @Test("PostgreSQL and MySQL fail closed when sslMode is .require")
+    func testTLSRequireFailsClosed() async {
+        let pg = PostgreSQLConnection(
+            host: "127.0.0.1",
+            port: 5432,
+            user: "postgres",
+            password: "secret",
+            database: "testdb",
+            sslMode: .require
+        )
+        await #expect(throws: DatabaseError.self) {
+            _ = try await pg.executeQuery("SELECT 1;")
+        }
+
+        let my = MySQLConnection(
+            host: "127.0.0.1",
+            port: 3306,
+            user: "root",
+            password: "secret",
+            database: "testdb",
+            sslMode: .require
+        )
+        await #expect(throws: DatabaseError.self) {
+            _ = try await my.executeQuery("SELECT 1;")
+        }
+    }
+
+    @Test("MySQL sends 20-byte SHA-1 token matching reference vector, decodes HandshakeResponse41 with database, and rejects unsupported auth")
+    func testMySQLNativePasswordTokenAndUnsupportedPlugin() async throws {
+        // 1. Verify against independent Python hashlib.sha1 reference vector:
+        // password = "secret", scramble = "12345678901234567890"
+        // SHA1("secret") = e5e9fa1ba31ecd1ae84f75caaa474f3a663f05f4
+        // SHA1(SHA1("secret")) = 81f5e21e35407d884a6cd4a731aebfb6af209e1b
+        // SHA1(scramble + stage2) = ea626a284397b1106b779e2974ee4e37bc78aea2
+        // stage1 XOR stage3 = 0f8b9033e0897c0a8338ebe3dea9010dda47ab56
+        let refScramble = Array("12345678901234567890".utf8)
+        let refToken = MySQLConnection.mysqlNativePasswordToken(
+            password: "secret",
+            scramble: refScramble
+        )
+        let expectedRefBytes: [UInt8] = [
+            0x0F, 0x8B, 0x90, 0x33, 0xE0, 0x89, 0x7C, 0x0A, 0x83, 0x38,
+            0xEB, 0xE3, 0xDE, 0xA9, 0x01, 0x0D, 0xDA, 0x47, 0xAB, 0x56
+        ]
+        #expect(refToken == expectedRefBytes)
+
+        // 2. Verify full HandshakeResponse41 decoding with non-empty database ("analytics_db")
+        let scramble1 = Array("12345678".utf8)
+        let scramble2 = Array("901234567890".utf8)
+        final class HandshakeCapture: @unchecked Sendable {
+            var clientFlags: UInt32 = 0
+            var username: String = ""
+            var authToken: [UInt8] = []
+            var database: String = ""
+            var pluginName: String = ""
+        }
+        let capture = HandshakeCapture()
+
+        let (validPort, stopValid) = Self.createMockServer { clientFd in
+            // Send HandshakeV10 with mysql_native_password
+            var handshakePayload = Data([10])
+            handshakePayload.append(contentsOf: "8.0.32\0".utf8)
+            handshakePayload.append(contentsOf: [1, 0, 0, 0])
+            handshakePayload.append(contentsOf: scramble1)
+            handshakePayload.append(0x00)
+            handshakePayload.append(contentsOf: [0xFF, 0xF7])
+            handshakePayload.append(33)
+            handshakePayload.append(contentsOf: [0x02, 0x00])
+            handshakePayload.append(contentsOf: [0xFF, 0x81])
+            handshakePayload.append(21)
+            handshakePayload.append(contentsOf: [UInt8](repeating: 0x00, count: 10))
+            handshakePayload.append(contentsOf: scramble2)
+            handshakePayload.append(0x00)
+            handshakePayload.append(contentsOf: "mysql_native_password\0".utf8)
+
+            let hLen = handshakePayload.count
+            var handshakePacket = Data([UInt8(hLen & 0xFF), UInt8((hLen >> 8) & 0xFF), UInt8((hLen >> 16) & 0xFF), 0])
+            handshakePacket.append(handshakePayload)
+            _ = handshakePacket.withUnsafeBytes { send(clientFd, $0.baseAddress, handshakePacket.count, 0) }
+
+            // Read client HandshakeResponse41 packet header + payload
+            var hdr = [UInt8](repeating: 0, count: 4)
+            guard recv(clientFd, &hdr, 4, MSG_WAITALL) == 4 else { return }
+            let pLen = Int(hdr[0]) | (Int(hdr[1]) << 8) | (Int(hdr[2]) << 16)
+            var payload = [UInt8](repeating: 0, count: pLen)
+            guard recv(clientFd, &payload, pLen, MSG_WAITALL) == pLen, pLen >= 32 else { return }
+
+            let flags = UInt32(payload[0])
+                | (UInt32(payload[1]) << 8)
+                | (UInt32(payload[2]) << 16)
+                | (UInt32(payload[3]) << 24)
+            capture.clientFlags = flags
+
+            var idx = 32 // 4 (flags) + 4 (max_packet) + 1 (charset) + 23 (filler)
+            var userBytes: [UInt8] = []
+            while idx < payload.count && payload[idx] != 0 {
+                userBytes.append(payload[idx])
+                idx += 1
+            }
+            idx += 1 // skip null terminator
+            capture.username = String(decoding: userBytes, as: UTF8.self)
+
+            if idx < payload.count {
+                let authLen = Int(payload[idx])
+                idx += 1
+                if idx + authLen <= payload.count {
+                    capture.authToken = Array(payload[idx..<(idx + authLen)])
+                    idx += authLen
+                }
+            }
+
+            if (flags & 0x00000008) != 0 { // CLIENT_CONNECT_WITH_DB
+                var dbBytes: [UInt8] = []
+                while idx < payload.count && payload[idx] != 0 {
+                    dbBytes.append(payload[idx])
+                    idx += 1
+                }
+                idx += 1
+                capture.database = String(decoding: dbBytes, as: UTF8.self)
+            }
+
+            if (flags & 0x00080000) != 0 { // CLIENT_PLUGIN_AUTH
+                var plugBytes: [UInt8] = []
+                while idx < payload.count && payload[idx] != 0 {
+                    plugBytes.append(payload[idx])
+                    idx += 1
+                }
+                idx += 1
+                capture.pluginName = String(decoding: plugBytes, as: UTF8.self)
+            }
+
+            // Send Auth OK (0x00)
+            let okAuth: [UInt8] = [0x07, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00]
+            _ = send(clientFd, okAuth, okAuth.count, 0)
+
+            // Read COM_QUERY and reply with OK packet
+            var qHdr = [UInt8](repeating: 0, count: 4)
+            if recv(clientFd, &qHdr, 4, MSG_WAITALL) == 4 {
+                let qLen = Int(qHdr[0]) | (Int(qHdr[1]) << 8) | (Int(qHdr[2]) << 16)
+                var qPayload = [UInt8](repeating: 0, count: qLen)
+                _ = recv(clientFd, &qPayload, qLen, MSG_WAITALL)
+                let okQuery: [UInt8] = [0x07, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00]
+                _ = send(clientFd, okQuery, okQuery.count, 0)
+            }
+        }
+        defer { stopValid() }
+
+        let validConn = MySQLConnection(connectionURL: "mysql://root:secret@127.0.0.1:\(validPort)/analytics_db")
+        _ = try await validConn.executeQuery("SELECT 1;")
+        #expect((capture.clientFlags & 0x00000008) != 0) // CLIENT_CONNECT_WITH_DB
+        #expect((capture.clientFlags & 0x00008000) != 0) // CLIENT_SECURE_CONNECTION
+        #expect((capture.clientFlags & 0x00080000) != 0) // CLIENT_PLUGIN_AUTH
+        #expect(capture.username == "root")
+        #expect(capture.authToken == expectedRefBytes)
+        #expect(capture.database == "analytics_db")
+        #expect(capture.pluginName == "mysql_native_password")
+
+        // 3. Reject unsupported plugin in initial HandshakeV10
+        let (port, stop) = Self.createMockServer { clientFd in
+            var buf = [UInt8](repeating: 0, count: 4096)
+
+            var handshakePayload = Data([10])
+            handshakePayload.append(contentsOf: "8.0.32\0".utf8)
+            handshakePayload.append(contentsOf: [1, 0, 0, 0])
+            handshakePayload.append(contentsOf: scramble1)
+            handshakePayload.append(0x00)
+            handshakePayload.append(contentsOf: [0xFF, 0xF7])
+            handshakePayload.append(33)
+            handshakePayload.append(contentsOf: [0x02, 0x00])
+            handshakePayload.append(contentsOf: [0xFF, 0x81])
+            handshakePayload.append(21)
+            handshakePayload.append(contentsOf: [UInt8](repeating: 0x00, count: 10))
+            handshakePayload.append(contentsOf: scramble2)
+            handshakePayload.append(0x00)
+            handshakePayload.append(contentsOf: "caching_sha2_password\0".utf8)
+
+            let hLen = handshakePayload.count
+            var handshakePacket = Data([UInt8(hLen & 0xFF), UInt8((hLen >> 8) & 0xFF), UInt8((hLen >> 16) & 0xFF), 0])
+            handshakePacket.append(handshakePayload)
+            _ = handshakePacket.withUnsafeBytes { send(clientFd, $0.baseAddress, handshakePacket.count, 0) }
+            _ = recv(clientFd, &buf, buf.count, 0)
+        }
+        defer { stop() }
+
+        let conn = MySQLConnection(connectionURL: "mysql://root:secret@127.0.0.1:\(port)/testdb")
+        await #expect(throws: DatabaseError.self) {
+            _ = try await conn.executeQuery("SELECT 1;")
+        }
+
+        // 4. Reject server AuthSwitchRequest (0xFE) after HandshakeResponse41 without sending COM_QUERY
+        final class SwitchProbe: @unchecked Sendable {
+            var receivedComQueryAfterSwitch = false
+        }
+        let switchProbe = SwitchProbe()
+        let (switchPort, stopSwitch) = Self.createMockServer { clientFd in
+            var handshakePayload = Data([10])
+            handshakePayload.append(contentsOf: "8.0.32\0".utf8)
+            handshakePayload.append(contentsOf: [1, 0, 0, 0])
+            handshakePayload.append(contentsOf: scramble1)
+            handshakePayload.append(0x00)
+            handshakePayload.append(contentsOf: [0xFF, 0xF7])
+            handshakePayload.append(33)
+            handshakePayload.append(contentsOf: [0x02, 0x00])
+            handshakePayload.append(contentsOf: [0xFF, 0x81])
+            handshakePayload.append(21)
+            handshakePayload.append(contentsOf: [UInt8](repeating: 0x00, count: 10))
+            handshakePayload.append(contentsOf: scramble2)
+            handshakePayload.append(0x00)
+            handshakePayload.append(contentsOf: "mysql_native_password\0".utf8)
+
+            let hLen = handshakePayload.count
+            var handshakePacket = Data([UInt8(hLen & 0xFF), UInt8((hLen >> 8) & 0xFF), UInt8((hLen >> 16) & 0xFF), 0])
+            handshakePacket.append(handshakePayload)
+            _ = handshakePacket.withUnsafeBytes { send(clientFd, $0.baseAddress, handshakePacket.count, 0) }
+
+            // Read client HandshakeResponse41
+            var hdr = [UInt8](repeating: 0, count: 4)
+            guard recv(clientFd, &hdr, 4, MSG_WAITALL) == 4 else { return }
+            let pLen = Int(hdr[0]) | (Int(hdr[1]) << 8) | (Int(hdr[2]) << 16)
+            var payload = [UInt8](repeating: 0, count: pLen)
+            _ = recv(clientFd, &payload, pLen, MSG_WAITALL)
+
+            // Reply with AuthSwitchRequest (0xFE)
+            var switchPayload = Data([0xFE])
+            switchPayload.append(contentsOf: "caching_sha2_password\0".utf8)
+            switchPayload.append(contentsOf: scramble1 + scramble2)
+            switchPayload.append(0x00)
+            let sLen = switchPayload.count
+            var switchPkt = Data([UInt8(sLen & 0xFF), UInt8((sLen >> 8) & 0xFF), UInt8((sLen >> 16) & 0xFF), 2])
+            switchPkt.append(switchPayload)
+            _ = switchPkt.withUnsafeBytes { send(clientFd, $0.baseAddress, switchPkt.count, 0) }
+
+            // Ensure client disconnects rather than sending COM_QUERY (0x03)
+            var nextBuf = [UInt8](repeating: 0, count: 16)
+            let n = recv(clientFd, &nextBuf, nextBuf.count, 0)
+            if n > 4 && nextBuf[4] == 0x03 {
+                switchProbe.receivedComQueryAfterSwitch = true
+            }
+        }
+        defer { stopSwitch() }
+
+        let switchConn = MySQLConnection(connectionURL: "mysql://root:secret@127.0.0.1:\(switchPort)/testdb")
+        await #expect(throws: DatabaseError.self) {
+            _ = try await switchConn.executeQuery("SELECT 1;")
+        }
+        #expect(switchProbe.receivedComQueryAfterSwitch == false)
+    }
+
+    @Test("SQLiteConnection executeReadOnlyQuery enforces C-API read-only and single-statement semantics")
+    func testSQLiteExecuteReadOnlyQuery() async throws {
+        let tempFile = NSTemporaryDirectory() + "test_ro_\(UUID().uuidString).db"
+        defer { try? FileManager.default.removeItem(atPath: tempFile) }
+
+        // Verify same SQLiteConnection instance uses dedicated read-only handle even after read-write executeQuery
+        let writer = SQLiteConnection(databasePath: tempFile)
+        _ = try await writer.executeQuery("CREATE TABLE events (id INT PRIMARY KEY, created_at TEXT);")
+        _ = try await writer.executeQuery("INSERT INTO events VALUES (1, '2026-10-28');")
+        let sameConnReadOnlyResult = try await writer.executeReadOnlyQuery("SELECT id, created_at FROM events;")
+        #expect(sameConnReadOnlyResult.rows.count == 1)
+        #expect(try await writer.isHandleReadOnly(forReadOnlyQuery: false) == false)
+        #expect(try await writer.isHandleReadOnly(forReadOnlyQuery: true) == true)
+        await writer.close()
+
+        let reader = SQLiteConnection(databasePath: tempFile)
+        let res = try await reader.executeReadOnlyQuery("SELECT id, created_at FROM events;")
+        #expect(res.columns == ["id", "created_at"])
+        #expect(res.rows.count == 1)
+        #expect(try await reader.isHandleReadOnly(forReadOnlyQuery: true) == true)
+
+        // Reject REPLACE INTO
+        await #expect(throws: DatabaseError.self) {
+            _ = try await reader.executeReadOnlyQuery("REPLACE INTO events VALUES (1, 'mutated');")
+        }
+
+        // Reject writable PRAGMA
+        await #expect(throws: DatabaseError.self) {
+            _ = try await reader.executeReadOnlyQuery("PRAGMA user_version = 42;")
+        }
+
+        // Reject stacked multi-statement query
+        await #expect(throws: DatabaseError.self) {
+            _ = try await reader.executeReadOnlyQuery("SELECT id FROM events; DELETE FROM events;")
+        }
+        await reader.close()
+    }
 }

@@ -32,6 +32,7 @@ public enum PositionalEncodingScheme: Sendable, Equatable {
     case learned
 }
 
+/// Architectural hyperparameter configuration for a decoder-only Transformer language model.
 public struct LLMConfig: Sendable {
     /// Token vocabulary size.
     public var vocabSize: Int

@@ -22,6 +22,7 @@ public enum ValidationError: Error, LocalizedError, Sendable, Equatable {
     /// A configuration parameter is invalid.
     case invalidParameter(String)
 
+    /// Localized human-readable error message.
     public var errorDescription: String? {
         switch self {
         case .invalidFoldCount(let k):

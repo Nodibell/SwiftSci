@@ -14,6 +14,7 @@ public struct QuantizedLayoutMetadata: Sendable, Equatable {
     /// Format of scales within the block layout.
     public var scaleLayout: ScaleLayout
 
+    /// Block scale encoding layout inside a quantized weight buffer.
     public enum ScaleLayout: Sendable, Equatable {
         /// 2-byte FP16 scale prefixed before nibbles/bytes in each block (Q4_0, Q8_0).
         case embeddedFp16Prefix
@@ -23,16 +24,22 @@ public struct QuantizedLayoutMetadata: Sendable, Equatable {
         case none
     }
 
+    /// Creates layout metadata for a quantized or unquantized tensor block format.
     public init(blockSize: Int, bytesPerBlock: Int, scaleLayout: ScaleLayout) {
         self.blockSize = blockSize
         self.bytesPerBlock = bytesPerBlock
         self.scaleLayout = scaleLayout
     }
 
+    /// Standard Q4_0 layout metadata (32 weights per 18-byte block).
     public static let q4_0 = QuantizedLayoutMetadata(blockSize: 32, bytesPerBlock: 18, scaleLayout: .embeddedFp16Prefix)
+    /// Standard Q4_1 layout metadata (32 weights per 20-byte block with min).
     public static let q4_1 = QuantizedLayoutMetadata(blockSize: 32, bytesPerBlock: 20, scaleLayout: .embeddedFp16WithMin)
+    /// Standard Q8_0 layout metadata (32 weights per 34-byte block).
     public static let q8_0 = QuantizedLayoutMetadata(blockSize: 32, bytesPerBlock: 34, scaleLayout: .embeddedFp16Prefix)
+    /// Unquantized 32-bit float layout metadata.
     public static let float32 = QuantizedLayoutMetadata(blockSize: 1, bytesPerBlock: 4, scaleLayout: .none)
+    /// Unquantized 16-bit float layout metadata.
     public static let float16 = QuantizedLayoutMetadata(blockSize: 1, bytesPerBlock: 2, scaleLayout: .none)
 }
 
@@ -49,10 +56,12 @@ public struct QuantizedTensor: @unchecked Sendable {
     /// Scheme-specific block layout metadata.
     public let layoutMetadata: QuantizedLayoutMetadata
 
+    /// Total number of logical elements across all tensor dimensions.
     public var elementCount: Int {
         shape.reduce(1, *)
     }
 
+    /// Creates a quantized tensor wrapper with raw storage and layout metadata.
     public init(
         name: String,
         shape: [Int],

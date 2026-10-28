@@ -4,6 +4,7 @@ import Foundation
 import SwiftDataFrame
 import SwiftPreprocessing
 import SwiftCluster
+import SwiftML
 import SwiftWorkflow
 
 @Suite("Fitted workflow persistence", .serialized)
@@ -62,7 +63,8 @@ struct WorkflowPersistenceTests {
         #expect(valid["trainingTargets"] == nil && valid["rawRows"] == nil)
         let mutations: [(String, Any)] = [("version", 99), ("weights", [1.0]),
             ("scalingStd", [1.0, 0.0, 1.0]), ("featureNames", ["signal", "signal", "constant"]),
-            ("pcaComponents", [[1.0, 0.0]]), ("pcaTotalVariance", -1.0)]
+            ("pcaComponents", [[1.0, 0.0]]), ("pcaTotalVariance", -1.0),
+            ("pcaTotalVariance", 0.0), ("pcaTotalVariance", 0.5)]
         for (key, value) in mutations {
             var bad = valid
             bad[key] = value
@@ -93,6 +95,63 @@ struct WorkflowPersistenceTests {
         #expect(parameters.totalVariance > parameters.explainedVariance[0])
         #expect(throws: SwiftMLError.self) {
             _ = try PCA.Parameters(mean: [0], components: [[.nan]], explainedVariance: [1], totalVariance: 1)
+        }
+    }
+
+    @Test func pcaParametersConserveVariance() async throws {
+        for total in [0.0, 1.0] {
+            #expect(throws: SwiftMLError.self) {
+                _ = try PCA.Parameters(mean: [0, 0], components: [[1, 0], [0, 1]],
+                    explainedVariance: [1, 1], totalVariance: total)
+            }
+        }
+        #expect(throws: SwiftMLError.self) {
+            _ = try PCA.Parameters(mean: [0, 0], components: [[1, 0], [0, 1]],
+                explainedVariance: [1e308, 1e308], totalVariance: 1e308)
+        }
+        for scale in [0.0, 1e-250, 1.0, 1e250] {
+            let parameters = try PCA.Parameters(mean: [0, 0], components: [[1, 0], [0, 1]],
+                explainedVariance: [scale, scale], totalVariance: 2 * scale, featureNames: ["x", "x"])
+            let restored = PCA(parameters: parameters)
+            let ratios = await restored.explainedVarianceRatio
+            #expect(ratios == (scale == 0 ? [0, 0] : [0.5, 0.5]))
+        }
+        _ = try PCA.Parameters(mean: [0, 0], components: [[1, 0], [0, 1]],
+            explainedVariance: [0.5, 0.5], totalVariance: 1.0.nextDown)
+        let values = (0..<512).map { Double($0 % 23) }
+        let input = try PreparedNumericBatch(columnNames: ["a", "b", "c"],
+            columns: [values, values.map { 2 * $0 }, Array(repeating: 7, count: values.count)])
+        for solver in [SVDSolver.full, .randomized] {
+            let fitted = try PCA(nComponents: 1, svdSolver: solver, device: .cpu)
+            let expected = try await fitted.fitTransform(input)
+            let restored = PCA(parameters: try await fitted.parameters())
+            let actual = try await restored.transform(input)
+            #expect(actual.rowValues() == expected.rowValues())
+        }
+    }
+
+    @Test func classificationThresholdMatchesLogisticRegression() async throws {
+        let source = try fixture()
+        let workflow = try await PCAClassificationWorkflow.train(
+            training: source.selectingRows(Array(0..<8)), epochs: 0)
+        let query = try source.selectingRows([11, 10, 9, 8]).features
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: file) }
+        try workflow.save(to: file)
+        var artifact = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let weights = try #require(artifact["weights"] as? [Double])
+        #expect(weights.allSatisfy { $0 == 0 })
+        for (bias, expected) in [(-1e-12, 0), (0.0, 0), (1e-12, 1)] {
+            artifact["bias"] = bias
+            try JSONSerialization.data(withJSONObject: artifact).write(to: file)
+            let restored = try PCAClassificationWorkflow.load(from: file)
+            let actual = try await restored.predict(query)
+            let reference = LogisticRegression(weights: weights, bias: bias, device: .cpu)
+            let expectedLabels = try await reference.predict(features:
+                Array(repeating: Array(repeating: 0.0, count: weights.count), count: query.rowCount))
+            #expect(actual.labels == expectedLabels)
+            #expect(actual.labels == Array(repeating: expected, count: query.rowCount))
+            if bias == 0 { #expect(actual.probabilities.allSatisfy { $0[1] == 0.5 }) }
         }
     }
 }

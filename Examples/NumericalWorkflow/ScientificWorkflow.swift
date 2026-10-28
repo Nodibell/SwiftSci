@@ -9,7 +9,7 @@ struct ScientificWorkflow: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ScientificWorkflow",
         abstract: "Train, save and reuse a complete fitted numerical workflow.",
-        subcommands: [Train.self, Predict.self], defaultSubcommand: Train.self)
+        subcommands: [Train.self, Predict.self, Evaluate.self], defaultSubcommand: Train.self)
 
     static let defaultFeatureNames = ["signal", "companion", "constant"]
 
@@ -142,6 +142,61 @@ struct ScientificWorkflow: AsyncParsableCommand {
             try await outputFrame.writeCSV(to: outputURL)
             print("Predicted rows: \(result.labels.count)")
             print("Predictions: \(outputURL.path)")
+        }
+    }
+
+    struct Evaluate: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(abstract: "Evaluate a saved workflow on labeled CSV rows without retraining.")
+        @Option(help: "Saved model.json workflow artifact.") var model: String
+        @Option(help: "CSV containing the saved features and a binary target column.") var input: String
+        @Option(help: "Ground-truth column containing 0 and 1.") var target = "class"
+        @Option(help: "Directory for predictions.csv and evaluation.json; those files are replaced.")
+        var output = ".build/evaluation"
+
+        private struct Report: Encodable {
+            let schemaVersion = 1
+            let targetColumn: String
+            let querySourceRows: [Int]
+            let evaluation: ClassificationEvaluation
+        }
+
+        func validate() throws {
+            guard !target.isEmpty else { throw ValidationError("--target must name a nonempty column.") }
+        }
+
+        func run() async throws {
+            let modelURL = URL(fileURLWithPath: model)
+            let inputURL = URL(fileURLWithPath: input)
+            let directory = URL(fileURLWithPath: output, isDirectory: true)
+            let csvURL = directory.appendingPathComponent("predictions.csv")
+            let reportURL = directory.appendingPathComponent("evaluation.json")
+            try ScientificWorkflow.protect([modelURL, inputURL], from: [csvURL, reportURL])
+            let workflow = try PCAClassificationWorkflow.load(from: modelURL)
+            guard !workflow.featureNames.contains(target) else {
+                throw ValidationError("--target must be separate from the saved feature columns.")
+            }
+            let frame = try await ScientificWorkflow.readCSV(inputURL)
+            let source = try frame.prepareNumericBatch(workflow.featureNames + [target])
+            let supervised = try PreparedSupervisedBatch(source, targetColumn: target)
+            guard supervised.targets.allSatisfy({ $0 == 0 || $0 == 1 }) else {
+                throw ValidationError("Every target value must be 0 or 1, without missing values.")
+            }
+            let result = try await workflow.predict(supervised.features)
+            let evaluation = try EvaluationHarness.evaluateClassification(
+                yTrue: supervised.targets.map { Int($0) }, yPred: result.labels)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let json = try encoder.encode(Report(targetColumn: target,
+                querySourceRows: result.sourceRowIndices, evaluation: evaluation))
+            let predictions = try ScientificWorkflow.predictionFrame(result, actual: supervised.targets)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try await predictions.writeCSV(to: csvURL)
+            try json.write(to: reportURL, options: .atomic)
+            print("Evaluated rows: \(result.labels.count)")
+            print("Accuracy: \(evaluation.accuracy)")
+            print("Macro F1: \(evaluation.macroF1)")
+            print("Predictions: \(csvURL.path)")
+            print("Evaluation: \(reportURL.path)")
         }
     }
 }

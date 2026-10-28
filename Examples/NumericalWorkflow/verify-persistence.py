@@ -1,4 +1,4 @@
-"""Exercise default and configurable training across fresh CLI processes."""
+"""Exercise training, saved prediction and labeled evaluation across fresh CLI processes."""
 
 import argparse
 import csv
@@ -152,6 +152,70 @@ with tempfile.TemporaryDirectory(prefix="swiftsci-persistence-") as temporary:
     assert all(int(row["predicted"]) == 0 and float(row["probability_class_1"]) == 0.5
                for row in initialized_results)
 
+    # An imperfect fixture distinguishes macro F1 from support-weighted F1.
+    evaluation_input = root / "evaluation.csv"
+    selected_rows = [11, 10, 9, 8, 11, 10]
+    ground_truth = [0, 0, 0, 0, 1, 1]
+    evaluation_rows = [{**custom_rows[index], "outcome": label}
+                       for index, label in zip(selected_rows, ground_truth)]
+
+    def write_evaluation(data):
+        with evaluation_input.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=["outcome", "notes", *reversed(custom_features)])
+            writer.writeheader()
+            writer.writerows(data)
+
+    write_evaluation(evaluation_rows)
+    evaluation_output = root / "evaluation-output"
+    evaluation_options = ["evaluate", "--model", custom_model, "--input", evaluation_input,
+                          "--target", "outcome", "--output", evaluation_output]
+    run(*evaluation_options)
+    evaluation_report = evaluation_output / "evaluation.json"
+    evaluation_csv = evaluation_output / "predictions.csv"
+    summary = json.loads(evaluation_report.read_bytes())
+    assert summary["schemaVersion"] == 1 and summary["targetColumn"] == "outcome"
+    assert summary["querySourceRows"] == list(range(6))
+    evaluation = summary["evaluation"]
+    assert evaluation["classLabels"] == [0, 1] and evaluation["confusionMatrix"] == [[2, 2], [1, 1]]
+    for name, expected in dict(accuracy=0.5, macroPrecision=0.5, macroRecall=0.5,
+                               macroF1=17 / 35, weightedF1=18 / 35).items():
+        assert math.isfinite(evaluation[name]) and abs(evaluation[name] - expected) <= 1e-12
+    evaluated = rows(evaluation_csv)
+    assert len(evaluated) == 6 and [int(row["actual"]) for row in evaluated] == ground_truth
+    assert [int(row["predicted"]) for row in evaluated] == [0, 1, 1, 0, 0, 1]
+    for index, row in enumerate(evaluated):
+        assert int(row["source_row"]) == index
+        expected = float(custom_results[selected_rows[index]]["probability_class_1"])
+        assert abs(float(row["probability_class_1"]) - expected) <= 1e-12
+    assert custom_model.read_bytes() == custom_saved
+    original_report, original_csv = evaluation_report.read_bytes(), evaluation_csv.read_bytes()
+    for invalid_label in [2, "NaN", ""]:
+        write_evaluation([{**row, "outcome": invalid_label} if index == 0 else row
+                          for index, row in enumerate(evaluation_rows)])
+        run(*evaluation_options, success=False)
+        assert evaluation_report.read_bytes() == original_report and evaluation_csv.read_bytes() == original_csv
+    for invalid in [["--target", ""], ["--target", custom_features[0]], ["--input", custom_query]]:
+        run(*evaluation_options, *invalid, success=False)
+    write_evaluation(evaluation_rows)
+    protected_directory = root / "protected-evaluation"
+    protected_directory.mkdir()
+    protected_input = protected_directory / "predictions.csv"
+    protected_input.write_bytes(evaluation_input.read_bytes())
+    protected_model = protected_directory / "evaluation.json"
+    protected_model.write_bytes(custom_saved)
+    run("evaluate", "--model", custom_model, "--input", protected_input, "--target", "outcome",
+        "--output", protected_directory, success=False)
+    run("evaluate", "--model", protected_model, "--input", evaluation_input, "--target", "outcome",
+        "--output", protected_directory, success=False)
+    assert protected_input.read_bytes() == evaluation_input.read_bytes()
+    assert protected_model.read_bytes() == custom_saved
+    write_evaluation([{**custom_rows[11], "outcome": 0}])
+    run("evaluate", "--model", single_model, "--input", evaluation_input, "--target", "outcome",
+        "--output", evaluation_output)
+    single_evaluation = json.loads(evaluation_report.read_bytes())["evaluation"]
+    assert single_evaluation["classLabels"] == [0] and single_evaluation["confusionMatrix"] == [[1]]
+    assert single_evaluation["accuracy"] == single_evaluation["macroF1"] == 1
+
     artifact = json.loads(saved)
     artifact["bias"] += 0.1
     model.write_text(json.dumps(artifact), encoding="utf-8")
@@ -162,4 +226,5 @@ with tempfile.TemporaryDirectory(prefix="swiftsci-persistence-") as temporary:
 print(json.dumps({"status": "passed", "prediction_rows": len(sample),
                   "fresh_process_reload": True, "reordered_csv": True,
                   "configurable_training": True, "independent_classifier_updates": True,
+                  "saved_model_evaluation": True, "independent_confusion_metrics": True,
                   "invalid_inputs_rejected": True, "oracle_negative_control": True}, indent=2))

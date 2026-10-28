@@ -24,6 +24,15 @@ public struct Imputer: PreprocessingTransformer, Sendable {
     public init(strategy: Strategy = .mean) {
         self.strategy = strategy
     }
+
+    /// Restores fitted replacements without learning from prediction data.
+    public init(strategy: Strategy = .mean, statistics: [Double]) throws {
+        guard !statistics.isEmpty, statistics.allSatisfy(\.isFinite) else {
+            throw PreprocessingError.invalidParameter("Imputation statistics must be nonempty and finite.")
+        }
+        self.strategy = strategy
+        self.statistics = statistics
+    }
     
     /// Fits the imputer by calculating the chosen statistic for each column.
     /// - Parameters:

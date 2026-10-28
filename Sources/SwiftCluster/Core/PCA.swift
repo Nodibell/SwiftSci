@@ -18,6 +18,45 @@ public enum SVDSolver: Sendable {
 /// Principal component analysis with explicit CPU solver and device choices.
 /// Prepared inputs retain feature identity and return named, provenance-preserving scores.
 public actor PCA {
+    /// Complete immutable projection state, including variance omitted by the selected components.
+    public struct Parameters: Sendable {
+        public let mean: [Double]
+        public let components: [[Double]]
+        public let explainedVariance: [Double]
+        public let totalVariance: Double
+        public let featureNames: [String]?
+
+        /// Validates supplied coefficients without recomputing or normalizing them.
+        /// Selected variance may exceed the total only within 1e-12 relative rounding.
+        public init(mean: [Double], components: [[Double]], explainedVariance: [Double],
+                    totalVariance: Double, featureNames: [String]? = nil) throws {
+            guard !mean.isEmpty, mean.allSatisfy(\.isFinite), !components.isEmpty,
+                  components.count <= mean.count,
+                  components.allSatisfy({ $0.count == mean.count && $0.allSatisfy(\.isFinite) }),
+                  explainedVariance.count == components.count,
+                  explainedVariance.allSatisfy({ $0.isFinite && $0 >= 0 }),
+                  totalVariance.isFinite, totalVariance >= 0,
+                  featureNames == nil || featureNames?.count == mean.count else {
+                throw ClusterError.invalidParameter("PCA parameters must have matching finite dimensions and nonnegative variances.")
+            }
+            let varianceMatchesTotal: Bool
+            if totalVariance == 0 {
+                varianceMatchesTotal = explainedVariance.allSatisfy { $0 == 0 }
+            } else {
+                let retainedFraction = explainedVariance.reduce(0) { $0 + $1 / totalVariance }
+                varianceMatchesTotal = retainedFraction <= 1 + 1e-12
+            }
+            guard varianceMatchesTotal else {
+                throw ClusterError.invalidParameter("Selected PCA variances cannot exceed total input variance.")
+            }
+            self.mean = mean
+            self.components = components
+            self.explainedVariance = explainedVariance
+            self.totalVariance = totalVariance
+            self.featureNames = featureNames
+        }
+    }
+
     /// Number of components to retain.
     public let nComponents: Int
     /// Solver used when fitting on the CPU.
@@ -31,6 +70,25 @@ public actor PCA {
         let featureNames: [String]?
     }
     private var fitted: FittedState?
+
+    /// Restores a CPU projection. A subsequent fit uses the full CPU solver.
+    public init(parameters: Parameters) {
+        nComponents = parameters.components.count
+        svdSolver = .full
+        requestedDevice = .cpu
+        fitted = FittedState(result: PCAFitResult(mean: parameters.mean,
+            components: parameters.components, variance: parameters.explainedVariance,
+            totalVariance: parameters.totalVariance), device: .cpu,
+            featureNames: parameters.featureNames)
+    }
+
+    /// Captures one successful fit atomically, including its ordered prepared schema.
+    public func parameters() throws -> Parameters {
+        guard let fitted else { throw ClusterError.fittingRequired }
+        return try Parameters(mean: fitted.result.mean, components: fitted.result.components,
+            explainedVariance: fitted.result.variance, totalVariance: fitted.result.totalVariance,
+            featureNames: fitted.featureNames)
+    }
 
     /// Device resolved for the last successful fit.
     public var resolvedDevice: ExecutionDevice? { fitted?.device }

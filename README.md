@@ -88,8 +88,12 @@ print("Sentiment compound score:", score.compound)
 ---
 
 For a complete CSV-to-predictions workflow with training-only preprocessing, PCA,
-classification and row-aligned result export, run the
+classification, saved models and prediction on unlabeled data, run the
 [numerical workflow example](Examples/NumericalWorkflow/README.md).
+
+The optional `SwiftWorkflow` module composes these stages through
+`PCAClassificationWorkflow`. It saves the fitted parameters and feature schema
+in one versioned JSON artifact. The 14 core modules remain independently usable.
 
 ## 🧩 The 14 Core Modules
 

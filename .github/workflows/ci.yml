@@ -106,7 +106,8 @@ jobs:
             --skip SwiftPreprocessingTests \
             --skip SwiftOptimizeTests \
             --skip SwiftLLMTests \
-            --skip SwiftVisionTests
+            --skip SwiftVisionTests \
+            --skip SwiftWorkflowTests
 
           # GPU-dependent suites are skipped because GitHub macOS runners
           # do not provide the Metal GPU environment required by MLX.
@@ -122,6 +123,9 @@ jobs:
           #
           # SwiftVisionTests:
           #   YOLOv8 / U-Net forward passes require MLX Metal GPU.
+          #
+          # SwiftWorkflowTests:
+          #   CPU workflow fits/restores still initialize MLX parameter arrays.
 
       - name: Export coverage
         run: |

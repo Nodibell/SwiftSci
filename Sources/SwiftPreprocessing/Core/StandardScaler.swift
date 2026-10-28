@@ -43,6 +43,16 @@ public struct StandardScaler: PreprocessingTransformer, @unchecked Sendable {
     /// Creates a new StandardScaler.
     public init() {}
 
+    /// Restores effective fitted deviations, including the constant-column fallback of 1.
+    public init(mean: [Double], std: [Double]) throws {
+        guard !mean.isEmpty, mean.count == std.count,
+              mean.allSatisfy(\.isFinite), std.allSatisfy({ $0.isFinite && $0 > 0 }) else {
+            throw PreprocessingError.invalidParameter("Scaling means and positive deviations must have matching finite widths.")
+        }
+        self.mean = mean
+        self.std = std
+    }
+
     // MARK: - fit
 
     /// Computes the per-column mean and standard deviation from `data`.

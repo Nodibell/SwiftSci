@@ -1,11 +1,10 @@
-# Run a complete numerical workflow
+# Train and reuse a numerical workflow
 
-This example reads CSV data, fits preprocessing and a classifier on training rows,
-then exports held-out predictions with their original row positions. It uses the
-public APIs in SwiftDataFrame, SwiftPreprocessing, SwiftCluster, SwiftML and
-SwiftOptimize. ArgumentParser provides the command-line interface.
+Train a CSV classifier, save its fitted preprocessing and model, then predict
+unlabeled rows in a separate process. This example uses `SwiftWorkflow` to compose
+mean imputation, standard scaling, CPU PCA and CPU logistic regression.
 
-## Run the bundled sample
+## Build the executable
 
 Use Apple silicon macOS 14 or later with Xcode selected. From the repository root:
 
@@ -13,88 +12,110 @@ Use Apple silicon macOS 14 or later with Xcode selected. From the repository roo
 xcodebuild -scheme ScientificWorkflow -configuration Release \
   -destination 'platform=macOS,arch=arm64' -derivedDataPath .build-native \
   MTL_FAST_MATH=NO MTL_MATH_MODE=SAFE MTL_MATH_FP32_FUNCTIONS=PRECISE build
-.build-native/Build/Products/Release/ScientificWorkflow --output .build/numerical-workflow
+```
+
+Xcode compiles the linked MLX dependency's Metal shaders. If Xcode reports a
+missing Metal Toolchain, install that component with
+`xcodebuild -downloadComponent MetalToolchain`. Execution needs an accessible
+Metal environment even though this workflow requests CPU computation.
+
+## Train and save the bundled sample
+
+```sh
+.build-native/Build/Products/Release/ScientificWorkflow train --output .build/numerical-workflow
 python3 Examples/NumericalWorkflow/verify.py .build/numerical-workflow
 ```
 
-The executable prints the training/test counts, held-out accuracy and two output
-paths. The verifier checks the bundled sample independently and prints a JSON
-result. Python is needed only for this optional verification step.
-
-The sample's first output lines are:
+Omitting `train` preserves the original command syntax. The sample prints:
 
 ```text
 Training rows: 8; held-out rows: 4
 Held-out accuracy: 1.0
 ```
 
-Use Xcode for the final build because command-line SwiftPM does not compile the
-linked MLX dependency's Metal shaders. The dependency also needs an accessible
-Metal environment even though this example requests CPU execution. A headless or restricted launch can fail
-before the workflow starts. Normal CI builds compile the example; full numerical
-execution is qualified on an Apple silicon Mac with Metal access.
+The output directory contains:
 
-## Follow the stages
+- `model.json`: version-1 fitted parameters and ordered feature names. It contains
+  no training rows or targets.
+- `predictions.csv`: `source_row`, `actual`, `predicted`, `probability_class_0`
+  and `probability_class_1` for held-out rows.
+- `report.json`: schema version 2, training and query row selections, and accuracy.
 
-1. Read `Data/sample.csv` with compact Double storage. The named features are
-   `signal`, `companion` and `constant`; `class` is a separate binary target.
-2. Select features and targets together using `PreparedSupervisedBatch`. The first
-   two thirds of the rows train the model. The remaining rows are queried in
-   reverse order, making source-row alignment visible.
-3. Fit `Imputer` on training features and reuse its mean replacements for both
-   sets. The sample contains one missing cell and one numeric NaN. Both receive
-   the fitted replacement, while the original source snapshot stays unchanged.
-4. Fit `StandardScaler` on imputed training features. Reuse its parameters for
-   held-out features, including the sample's constant column.
-5. Fit two-component CPU `PCA` on scaled training features. Transform held-out
-   features using that fitted state.
-6. Fit CPU `LogisticRegression` on prepared training scores and their selected
-   targets, using 64 updates at learning rate 0.125. Predict labels and both class
-   probabilities from the held-out score batch.
-7. Associate the returned arrays with `queryScores.originalRowIndices`, evaluate
-   `Metrics.accuracy` and export a DataFrame with `writeCSV`.
+The first two thirds of the rows train every learned stage. The remaining rows
+are queried in reverse order, making row alignment visible. Missing cells and
+numeric NaNs receive training-only mean replacements. The constant feature uses
+the scaler's fitted deviation of 1. The classifier uses two PCA components and
+64 updates at learning rate 0.125. The target never enters preprocessing.
 
-No learned stage is fitted on held-out rows, and the target never enters feature
-preprocessing. The PCA-to-classifier handoff stays prepared. Diagnostic row
-exports are made afterwards for the JSON stage report.
+The verifier independently computes the bundled sample's preprocessing, PCA and
+logistic updates. It checks saved parameters and CSV predictions with
+`abs(error) <= 1e-12 + 1e-12 * abs(reference)`, allowing PCA sign changes.
+Python is needed only for this optional verification.
 
-## Inspect the results
-
-`predictions.csv` contains `source_row`, `actual`, `predicted`,
-`probability_class_0` and `probability_class_1`. Source rows are zero-based data-row
-positions, excluding the header. They are positions in this input snapshot,
-not business identifiers. The bundled sample has eight training rows and four
-held-out rows, exported in source order 11, 10, 9, 8.
-
-`report.json` contains fitted imputation/scaling parameters, PCA components and
-variance, stage values, classifier weights, probabilities, row selections and
-accuracy. JSON represents missing values and NaNs as `null` in the diagnostic
-raw rows; separate counters retain their distinction.
-
-The verifier independently computes training-only preprocessing, a closed-form
-two-feature PCA eigensystem and scalar logistic updates. It checks both output
-files with `abs(error) <= 1e-12 + 1e-12 * abs(reference)`, allowing PCA sign changes.
-It validates this bundled fixture, not arbitrary replacement datasets.
-
-## Use another CSV
+To exercise saving and prediction across separate processes, run:
 
 ```sh
-.build-native/Build/Products/Release/ScientificWorkflow --input /path/to/data.csv --output .build/my-results
+python3 Examples/NumericalWorkflow/verify-persistence.py .build-native/Build/Products/Release/ScientificWorkflow
 ```
 
-Provide the same four named numeric columns and at least six data rows. Every
-`class` value must be 0 or 1 and the training portion must contain both classes.
-Each feature must have a numeric value within the CSV reader's first 1,000 data
-rows so type inference can establish its numeric type. Entirely missing feature
-columns, or columns whose first numeric value appears after that sample, are
-rejected before imputation. Missing or NaN cells in numeric columns are imputed;
-infinite features, invalid text and invalid labels need correction in the input. Change the feature names, row selection, PCA width or
-training settings in `ScientificWorkflow.swift` for a different problem.
+This check also covers reordered CSV columns, invalid artifacts, output path
+protection and a deliberately changed coefficient that the verifier must reject.
 
-Each successful run replaces only `predictions.csv` and `report.json` in the
-chosen directory. Use `.build-native/Build/Products/Release/ScientificWorkflow --help` for the CLI options.
+## Predict unlabeled rows
 
-The small sample and ordered split demonstrate integration. Their accuracy does
-not measure generalization on a representative dataset. This example makes no
-speed, accelerator-placement or memory-bound claim; the stage report retains
-additional diagnostic arrays.
+Provide a CSV with the saved numeric feature names, `signal`, `companion` and
+`constant`. The `class` column is unnecessary. Physical CSV column order may
+change because the command selects columns by their saved names.
+
+```sh
+.build-native/Build/Products/Release/ScientificWorkflow predict \
+  --model .build/numerical-workflow/model.json \
+  --input /path/to/unlabeled.csv --output .build/new-predictions.csv
+```
+
+Prediction loads the saved parameters without fitting any stage. The output
+contains the four prediction columns above, without `actual`. `source_row` is the
+zero-based data-row position in this prediction input, excluding its header.
+These positions are not business identifiers. The library also preserves row
+selections, their order and duplicate row IDs in prepared batches.
+
+The loader rejects unsupported artifact versions, invalid parameter values and
+incompatible stage dimensions. Prediction rejects missing features, nonnumeric
+columns and infinity. Numeric missing values and NaNs use the saved replacements.
+Input and model files cannot be chosen as output paths.
+
+## Train another dataset
+
+```sh
+.build-native/Build/Products/Release/ScientificWorkflow train \
+  --input /path/to/data.csv --output .build/my-results
+```
+
+Provide the same four named numeric columns and at least six data rows. Each
+`class` value must be 0 or 1, and the training portion must contain both classes.
+Each feature needs a numeric value in the reader's first 1,000 data rows for type
+inference. Entirely missing feature columns are rejected before imputation.
+The same inference requirement applies to prediction CSVs.
+
+Training replaces `model.json`, `predictions.csv` and `report.json` in the chosen
+directory. Prediction replaces its output CSV. Use `ScientificWorkflow --help`,
+`train --help` or `predict --help` for options.
+
+For other named features or training settings, use the library API:
+
+```swift
+import SwiftWorkflow
+
+let fitted = try await PCAClassificationWorkflow.train(training: trainingBatch)
+try fitted.save(to: modelURL)
+let loaded = try PCAClassificationWorkflow.load(from: modelURL)
+let predictions = try await loaded.predict(queryFeatures)
+```
+
+`trainingBatch` is a `PreparedSupervisedBatch`. `queryFeatures` is a
+`PreparedNumericBatch` whose names match `loaded.featureNames` in order.
+Published workflows expose no mutable stages. Saves contain one captured set of
+fitted parameters, and prediction never changes that set.
+
+The bundled sample and ordered split demonstrate integration. Their accuracy
+does not measure generalization on a representative dataset.

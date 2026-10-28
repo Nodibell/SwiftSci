@@ -9,6 +9,7 @@ It seamlessly blends hardware-accelerated tensor operations on the Apple Silicon
 [![codecov](https://codecov.io/gh/Nodibell/SwiftSci/graph/badge.svg)](https://codecov.io/gh/Nodibell/SwiftSci)
 [![Documentation Coverage](https://img.shields.io/badge/API%20Doc%20Coverage-100%25-brightgreen)](https://nodibell.github.io/SwiftSci/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/Nodibell/badge.svg)](https://hub.xerj.org/contributors/Nodibell)
 
 ---
 

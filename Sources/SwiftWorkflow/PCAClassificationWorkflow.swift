@@ -95,6 +95,7 @@ public struct PCAClassificationWorkflow: Sendable {
 
     /// Applies fitted stages without learning from the supplied rows.
     /// Prepared names must match exactly; dataframe callers can select `featureNames` in that order.
+    /// Class 1 requires P(1) > 0.5; ties are class 0, matching `LogisticRegression.predict`.
     public func predict(_ features: PreparedNumericBatch) async throws -> Predictions {
         guard features.columnNames == featureNames else {
             throw SwiftMLError.invalidParameter("Prediction feature names and order must match the saved workflow.")

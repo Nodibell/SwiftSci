@@ -485,7 +485,7 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftWorkflowTests",
-            dependencies: ["SwiftWorkflow", "SwiftDataFrame", "SwiftPreprocessing", "SwiftCluster"],
+            dependencies: ["SwiftWorkflow", "SwiftDataFrame", "SwiftPreprocessing", "SwiftCluster", "SwiftML"],
             path: "Tests/SwiftWorkflowTests",
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings

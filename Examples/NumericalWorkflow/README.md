@@ -39,7 +39,8 @@ The output directory contains:
   no training rows or targets.
 - `predictions.csv`: `source_row`, `actual`, `predicted`, `probability_class_0`
   and `probability_class_1` for held-out rows.
-- `report.json`: schema version 2, training and query row selections, and accuracy.
+- `report.json`: schema version 2, training and query row selections, accuracy
+  and the selected training options.
 
 The first two thirds of the rows train every learned stage. The remaining rows
 are queried in reverse order, making row alignment visible. Missing cells and
@@ -58,13 +59,15 @@ To exercise saving and prediction across separate processes, run:
 python3 Examples/NumericalWorkflow/verify-persistence.py .build-native/Build/Products/Release/ScientificWorkflow
 ```
 
-This check also covers reordered CSV columns, invalid artifacts, output path
-protection and a deliberately changed coefficient that the verifier must reject.
+This check also covers custom feature/target names, configurable classifier
+updates, reordered CSV columns, invalid options/artifacts and output path
+protection. A deliberately changed coefficient must fail the independent verifier.
 
 ## Predict unlabeled rows
 
-Provide a CSV with the saved numeric feature names, `signal`, `companion` and
-`constant`. The `class` column is unnecessary. Physical CSV column order may
+Provide a CSV with the model's saved numeric feature names. For the default
+sample, these are `signal`, `companion` and `constant`. A target column is
+unnecessary. Physical CSV column order may
 change because the command selects columns by their saved names.
 
 ```sh
@@ -88,20 +91,35 @@ Input and model files cannot be chosen as output paths.
 
 ```sh
 .build-native/Build/Products/Release/ScientificWorkflow train \
-  --input /path/to/data.csv --output .build/my-results
+  --input /path/to/data.csv --output .build/my-results \
+  --feature temperature --feature pressure --feature humidity --target outcome \
+  --components 2 --learning-rate 0.125 --epochs 64
 ```
 
-Provide the same four named numeric columns and at least six data rows. Each
-`class` value must be 0 or 1, and the training portion must contain both classes.
+Repeat `--feature` for each numeric input column in fitted order. Use quotes for
+names containing spaces or commas, such as `--feature "pressure,kPa"`. Other CSV
+columns may contain text and remain unused. The target must be separate from all
+selected features. Without these options, training uses `signal`, `companion`,
+`constant` and target `class`, preserving the bundled example's defaults.
+
+Provide at least six data rows. Each target value must be 0 or 1, and the first
+two thirds of the rows must contain both classes. This command supports binary
+classification, with the remaining rows held out in reverse order.
 Each feature needs a numeric value in the reader's first 1,000 data rows for type
 inference. Entirely missing feature columns are rejected before imputation.
 The same inference requirement applies to prediction CSVs.
+
+`--components` defaults to 2 and cannot exceed the feature count or training row
+count. For a single feature, use `--components 1`. `--learning-rate` must be finite
+and positive. `--epochs` must be nonnegative; zero saves a classifier initialized
+with zero weights and bias. The report records the settings actually used.
+Prediction reads the saved feature names and requires no repeated training options.
 
 Training replaces `model.json`, `predictions.csv` and `report.json` in the chosen
 directory. Prediction replaces its output CSV. Use `ScientificWorkflow --help`,
 `train --help` or `predict --help` for options.
 
-For other named features or training settings, use the library API:
+To train from prepared data in your application, use the library API:
 
 ```swift
 import SwiftWorkflow

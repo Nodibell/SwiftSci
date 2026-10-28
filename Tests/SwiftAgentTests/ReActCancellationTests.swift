@@ -55,20 +55,11 @@ private enum ProducerContext {
     @TaskLocal static var lifetime: ProducerLifetime?
 }
 
-@Suite("ReAct consumer cancellation")
+@Suite("ReAct consumer cancellation", .timeLimit(.minutes(2)))
 struct ReActCancellationTests {
-    // The timer is a deadlock guard. Handshake signals determine execution order.
+    // Readiness is a handshake; the suite deadline guards against deadlock.
     private func observed(_ signal: CancellationSignal) async -> Bool {
-        await withTaskGroup(of: Bool.self) { group in
-            group.addTask { await signal.wait() }
-            group.addTask {
-                try? await Task.sleep(for: .seconds(5))
-                return false
-            }
-            let result = await group.next() ?? false
-            group.cancelAll()
-            return result
-        }
+        await signal.wait()
     }
 
     @Test("A pre-cancelled run throws instead of returning empty success")
@@ -226,8 +217,10 @@ struct ReActCancellationTests {
         #expect(await counters.modelCalls == 0)
     }
 
-    @Test("Consumer cancellation reaches running tools and stops the next turn", arguments: [0.0, 30.0])
-    func runningTool(timeout: Double) async throws {
+    @Test("Consumer cancellation reaches running tools and stops the next turn", arguments: [
+        (0.0, 0.0), (30.0, 0.0), (30.0, 6.0)
+    ])
+    func runningTool(timeout: Double, startupDelay: Double) async throws {
         let entered = CancellationSignal()
         let cancelled = CancellationSignal()
         let released = CancellationSignal()
@@ -250,6 +243,7 @@ struct ReActCancellationTests {
                 do {
                     _ = try await agent.run(query: "Test", llm: { prompt in
                         await counters.modelStarted()
+                        if startupDelay > 0 { try await Task.sleep(for: .seconds(startupDelay)) }
                         return prompt.contains("Previous History:") ? "Final Answer: unexpected" : "Action: Echo\nAction Input: wait"
                     })
                     return false

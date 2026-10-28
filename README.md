@@ -129,51 +129,59 @@ Because GitHub-hosted `macos-latest` runners operate in virtualized environments
 
 ---
 
-## 📊 Performance Comparison: SwiftSci 3.11.0 vs 3.10.3 vs Python
+## 📊 Performance Comparison: SwiftSci 3.12.0 vs 3.11.0 vs 3.10.3 vs Python
 
-The following benchmark metrics reflect the standardized, certified dual-language automated test harness run on Apple Silicon (M-series, macOS 15, IEEE 754 64-bit Double Precision, Swift 6 Release vs Python with Pandas, NumPy, Scikit-Learn, and Statsmodels). All workloads execute on byte-identical shared fixtures with synchronized hyperparameters under **Benchmark Methodology v2**:
+The following benchmark metrics reflect the standardized, certified dual-language automated test harness (`Benchmarks/Runs/standard-3.12.0` and `Benchmarks/Runs/migration-3.12.0`) run on Apple Silicon (M4 Pro, IEEE 754 64-bit Double Precision, Swift 6 Release vs Python with Pandas, NumPy, Scikit-Learn, SciPy, and Statsmodels). All workloads execute on byte-identical shared fixtures with synchronized hyperparameters and independent output validation under **Benchmark Methodology v2**:
 
-### ⚡ Side-by-Side: SwiftSci 3.11.0 vs 3.10.3 vs 3.10.2 (100k Rows / ML Fixtures)
+### ⚡ Side-by-Side: SwiftSci 3.12.0 vs 3.11.0 vs 3.10.3 (100k Rows / ML Fixtures)
 
-| Benchmark Scenario | SwiftSci 3.10.2 | SwiftSci 3.10.3 | SwiftSci 3.11.0 | Python Baseline | 3.11 vs 3.10.3 | 3.11 vs Python |
+| Benchmark Scenario | SwiftSci 3.10.3 | SwiftSci 3.11.0 | SwiftSci 3.12.0 | Python Baseline | 3.12 vs 3.11 | 3.12 vs Python |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **CSV Read** (100k rows × 5 cols) | `12.95 ms` | `6.80 ms` | **`3.76 ms`** | `10.42 ms` (*Pandas*) | ⚡ **1.81× faster** | **SwiftSci 2.77×** |
-| **MinMaxScaler (Fit + Transform)** (100k) | `33.17 ms` | `0.75 ms` | **`0.73 ms`** | `0.79 ms` (*Scikit-Learn*) | Same | **SwiftSci 1.08×** |
-| **StandardScaler (Fit + Transform)** (100k) | `28.39 ms` | `2.79 ms` | **`1.97 ms`** | `0.85 ms` (*Scikit-Learn*) | ⚡ **1.42× faster** | Python 2.31× |
-| **Direct Prepared Matrix Pipeline** (100k) | `—` | `3.54 ms` | **`2.70 ms`** | `1.64 ms` (*Scipy/Sklearn*) | ⚡ **1.31× faster** | Consuming zero-copy |
-| **Target Vector Extraction** (100k) | `3.96 ms` | `0.055 ms` | **`0.051 ms`** | `0.091 ms` (*NumPy*) | Same | **SwiftSci 1.78×** |
-| **Flat Feature Matrix Extraction** (100k) | `0.131 ms` | `0.106 ms` | **`0.113 ms`** | `0.599 ms` (*NumPy*) | Same | **SwiftSci 5.30×** |
-| **Row Filtering (Boolean mask)** (100k) | `1.62 ms` | `0.22 ms` | **`0.23 ms`** | `0.75 ms` (*Pandas*) | Same | **SwiftSci 3.23×** |
-| **Sort Double Column** (100k rows) | `5.22 ms` | `2.78 ms` | **`2.75 ms`** | `2.64 ms` (*NumPy*) | Same | Parity 1.04× |
-| **GroupBy + Aggregation** (100k rows) | `1.59 ms` | `0.37 ms` | **`0.37 ms`** | `0.51 ms` (*Pandas*) | Same | **SwiftSci 1.36×** |
-| **DataFrame SIMD Hash Join** (100k rows) | `—` | `35.20 ms` | **`8.47 ms`** | `0.46 ms` (*Pandas*) | ⚡ **4.15× faster** | Vectorized SIMD probe |
-| **RandomForest Fit** (1k×4, 50 trees) | `4.22 ms` | `2.32 ms` | **`2.21 ms`** | `31.18 ms` (*Scikit-Learn*) | Same | **SwiftSci 14.11×** |
-| **GBDT Regressor Fit** (1k×4, 50 est) | `8.96 ms` | `4.75 ms` | **`4.68 ms`** | `32.35 ms` (*Scikit-Learn*) | Same | **SwiftSci 6.91×** |
-| **OLS Linear Fit + Predict** (1k × 3) | `0.42 ms` | `0.086 ms` | **`0.080 ms`** | `0.85 ms` (*Scikit-Learn*) | Same | **SwiftSci 10.63×** |
-| **Peak Resident Memory (RSS)** (100k) | `186.4 MiB` | `34.4 MiB` | **`16.2 MiB`** | `172.6 MiB` (*Pandas*) | ⚡ **2.1× less RAM** | **10.7× less RAM** |
+| **CSV Read** (100k rows × 5 cols) | `6.80 ms` | `3.76 ms` | **`2.20 ms`** | `9.92 ms` (*Pandas*) | ⚡ **1.70× faster** | **SwiftSci 4.50×** |
+| **CSV Stream Read** (100k rows, 10k chunks) | `47.49 ms` | `46.80 ms` | **`2.21 ms`** | `12.82 ms` (*Pandas*) | ⚡ **21.2× faster** | **SwiftSci 5.81×** |
+| **CSV Stream Filter** (100k rows, 10k chunks) | `—` | `—` | **`2.58 ms`** | `14.15 ms` (*Pandas*) | New in 3.12 | **SwiftSci 5.49×** |
+| **CSV Stream GroupBy** (100k rows, 10k chunks)| `—` | `—` | **`2.94 ms`** | `24.26 ms` (*Pandas*) | New in 3.12 | **SwiftSci 8.27×** |
+| **Sort Double Column** (100k rows) | `2.78 ms` | `2.75 ms` | **`2.14 ms`** | `2.90 ms` (*NumPy*) | ⚡ **1.29× faster** | **SwiftSci 1.35×** |
+| **MinMaxScaler (Fit + Transform)** (100k) | `0.75 ms` | `0.73 ms` | **`0.74 ms`** | `0.75 ms` (*Scikit-Learn*) | Parity | **SwiftSci 1.01×** |
+| **StandardScaler (Fit + Transform)** (100k) | `2.79 ms` | `1.97 ms` | **`1.97 ms`** | `0.88 ms` (*Scikit-Learn*) | Parity (1.42× vs 3.10.3) | Python 2.22× |
+| **Direct Prepared Matrix Pipeline** (100k) | `3.54 ms` | `2.70 ms` | **`2.70 ms`** | `1.64 ms` (*Scipy/Sklearn*) | Parity (1.31× vs 3.10.3) | Consuming zero-copy |
+| **Target Vector Extraction** (100k) | `0.055 ms` | `0.051 ms` | **`0.057 ms`** | `0.045 ms` (*NumPy*) | Parity | Parity (1.27×) |
+| **Flat Feature Matrix Extraction** (100k) | `0.106 ms` | `0.113 ms` | **`0.112 ms`** | `0.659 ms` (*NumPy*) | Parity | **SwiftSci 5.88×** |
+| **Row Filtering (Boolean mask)** (100k) | `0.22 ms` | `0.23 ms` | **`0.23 ms`** | `0.64 ms` (*Pandas*) | Parity | **SwiftSci 2.82×** |
+| **GroupBy + Aggregation** (100k rows) | `0.37 ms` | `0.37 ms` | **`0.38 ms`** | `0.51 ms` (*Pandas*) | Parity | **SwiftSci 1.34×** |
+| **GroupBy Multi-Output (Sum + Mean)** (100k) | `—` | `—` | **`0.49 ms`** | `1.60 ms` (*Pandas*) | New in 3.12 | **SwiftSci 3.29×** |
+| **Row-wise Horizontal Sum** (100k rows) | `—` | `—` | **`3.85 ms`** | `18.96 ms` (*Pandas*) | New in 3.12 | **SwiftSci 4.92×** |
+| **DataFrame SIMD Hash Join** (100k rows) | `35.20 ms` | `8.47 ms` | **`8.47 ms`** | `0.46 ms` (*Pandas*) | Parity (4.15× vs 3.10.3) | Vectorized SIMD probe |
+| **RandomForest Fit** (1k×4, 50 trees) | `2.32 ms` | `2.21 ms` | **`2.21 ms`** | `31.18 ms` (*Scikit-Learn*) | Parity | **SwiftSci 14.11×** |
+| **GBDT Regressor Fit** (1k×4, 50 est) | `4.75 ms` | `4.68 ms` | **`4.68 ms`** | `32.35 ms` (*Scikit-Learn*) | Parity | **SwiftSci 6.91×** |
+| **OLS Linear Fit + Predict** (1k × 3) | `0.086 ms` | `0.080 ms` | **`0.080 ms`** | `0.85 ms` (*Scikit-Learn*) | Parity | **SwiftSci 10.63×** |
+| **Peak Resident Memory (CSV 100k RSS)** | `51.4 MiB` | `48.7 MiB` | **`32.2 MiB`** | `211.6 MiB` (*Pandas*) | ⚡ **1.51× less RAM** | **6.57× less RAM** |
 
-### 📊 Full Workload Matrix (SwiftSci 3.11.0 vs Reference Baseline)
+### 📊 Full Workload Matrix (SwiftSci 3.12.0 vs Reference Baseline)
 
-| Domain / Scenario | SwiftSci 3.11.0 | Python Reference Stack | Relative Performance | Scope / Implementation |
+| Domain / Scenario | SwiftSci 3.12.0 | Python Reference Stack | Relative Performance | Scope / Implementation |
 | :--- | :---: | :---: | :---: | :--- |
 | **Holt-Winters Fit** (50k pts, s=12) | **`0.601 ms`** | `3,299.06 ms` (*Statsmodels*) | **SwiftSci >5000×** | Native Nelder-Mead simplex optimizer |
 | **ARIMA(1,1,1) Fit** (50k pts) | **`0.041 ms`** | `392.75 ms` (*Statsmodels Kalman MLE*) | **SwiftSci >9000×** | Vectorized Hannan-Rissanen conditional OLS solver (see methodology note) |
 | **NaiveBayes Fit** (1k×100, 3 classes) | **`0.047 ms`** | `0.410 ms` (*Scikit-Learn*) | **SwiftSci 8.72×** | Accelerate `vDSP_dotprD` SIMD dot-product |
 | **SQLite DataFrame Ingestion** | **`0.025 ms`** | `0.443 ms` (*Pandas*) | **SwiftSci 17.90×** | Persistent in-memory C-API (63× less RAM) |
-| **RandomForest Fit** (1k×4, 50 trees, d=4, gini) | **`2.319 ms`** | `31.18 ms` (*Scikit-Learn*) | **SwiftSci 13.45×** | Data-Oriented Design (DOD) tree buffers |
-| **GBDT Regressor Fit** (1k×4, 50 est.) | **`4.754 ms`** | `32.35 ms` (*Scikit-Learn*) | **SwiftSci 6.80×** | Contiguous gradient-boosted ensembles |
+| **RandomForest Fit** (1k×4, 50 trees, d=4, gini) | **`2.210 ms`** | `31.18 ms` (*Scikit-Learn*) | **SwiftSci 14.11×** | Data-Oriented Design (DOD) tree buffers |
+| **GBDT Regressor Fit** (1k×4, 50 est.) | **`4.680 ms`** | `32.35 ms` (*Scikit-Learn*) | **SwiftSci 6.91×** | Contiguous gradient-boosted ensembles |
+| **CSV Stream GroupBy** (100k rows, 10k chunks) | **`2.935 ms`** | `24.26 ms` (*Pandas*) | **SwiftSci 8.27×** | On-demand streaming chunks & compact grouping (11.8× less RAM) |
+| **CSV Stream Read** (100k rows, 10k chunks) | **`2.206 ms`** | `12.82 ms` (*Pandas*) | **SwiftSci 5.81×** | Scoped record batch discovery & SIMD structural scan (21.2× vs 3.11.0) |
+| **CSV Read** (100k rows × 5 cols) | **`2.203 ms`** | `9.92 ms` (*Pandas*) | **SwiftSci 4.50×** | Vectorized unquoted CSV scan & compact `Double` retention (1.70× vs 3.11.0) |
 | **OneHotEncoder** (50k rows) | **`4.912 ms`** | `27.64 ms` (*Scikit-Learn*) | **SwiftSci 5.63×** | SIMD categorical bitmask transform |
-| **Classification ROC-AUC** (50k preds) | **`2.590 ms`** | `5.20 ms` (*Scikit-Learn*) | **SwiftSci 2.01×** | Single-pass sorted trapezoidal integration |
+| **Classification ROC-AUC** (50k preds) | **`2.115 ms`** | `2.08 ms` (*Scikit-Learn*) | **Parity 1.02×** | Single-pass sorted trapezoidal integration (1.22× faster than 3.11.0) |
 | **KernelSHAP Explain** (100 coalitions) | **`0.189 ms`** | `0.434 ms` (*SHAP*) | **SwiftSci 2.30×** | Zero-division guarded coalitional sampling |
-| **Two-Sample T-Test** (100k samples) | **`0.261 ms`** | `0.391 ms` (*SciPy*) | **SwiftSci 1.50×** | Accelerate vDSP Welch's t-test |
-| **Pearson Correlation** (500k pairs) | **`0.795 ms`** | `1.202 ms` (*NumPy*) | **SwiftSci 1.51×** | SIMD dot-product covariance |
-| **Mean Reduction** (vDSP 1M doubles) | **`0.071 ms`** | `0.116 ms` (*NumPy*) | **SwiftSci 1.63×** | Apple Accelerate `vDSP_meanvD` |
-| **CSV Read** (100k rows) | **`6.795 ms`** | `10.38 ms` (*Pandas*) | **SwiftSci 1.53×** | POSIX `mmap` zero-copy chunk parsing (PR #45) |
-| **SortBy Double Column** (100k rows) | **`2.784 ms`** | `2.740 ms` (*NumPy*) | **Parity 1.02×** | Adaptive radix sort with pre-cached keys |
+| **Two-Sample Welch T-Test** (100k samples) | **`0.284 ms`** | `0.632 ms` (*SciPy*) | **SwiftSci 2.22×** | Accelerate vDSP Welch's t-test (7.9× less RAM) |
+| **Student / Paired / ANOVA** (100k samples) | **`0.272–0.402 ms`** | `0.540–0.811 ms` (*SciPy*) | **SwiftSci 2.02–2.38×** | Compensated blocked moments & Accelerate distributions |
+| **Pearson Correlation** (100k / 500k pairs) | **`0.148 / 0.791 ms`** | `0.254 / 1.202 ms` (*NumPy*) | **SwiftSci 1.52–1.72×** | SIMD dot-product covariance |
+| **Mean Reduction** (vDSP 1M doubles) | **`0.081 ms`** | `0.118 ms` (*NumPy*) | **SwiftSci 1.46×** | Apple Accelerate `vDSP_meanvD` |
+| **SortBy Double Column** (100k rows) | **`2.140 ms`** | `2.896 ms` (*NumPy*) | **SwiftSci 1.35×** | Compact `Double` adaptive radix sort (1.29× faster than 3.11.0) |
 | **LinearSVC Fit** (1k×4, 100 epochs, Metal GPU) | **`0.751 ms`** | `0.384 ms` (*Scikit-Learn*) | **Python 1.95×** | Apple Metal GPU kernel vs LibLinear C |
 | **PCA SVD fitTransform** (1k×100 → 10 comps) | **`0.027 ms`** | `0.758 ms` (*Scikit-Learn*) | **SwiftSci 28.07×** | Accelerate LAPACK `dgesdd_` SVD spectrum |
 | **KMeans Fit** (10k×4, 3 clusters, 50 iters) | **`14.20 ms`** | `6.94 ms` (*Scikit-Learn*) | **Python 2.05×** | Underflow-clamped SIMD distance vs Cython k-means |
-| **DataFrame SIMD Hash Join** (100k rows) | **`8.47 ms`** | `0.456 ms` (*Pandas*) | **Python 18.57×** | Zero-boxing flat chained hash table + direct typed buffer gather (PR #48; 4.15× speedup from 35.2 ms) |
+| **DataFrame SIMD Hash Join** (100k rows) | **`8.47 ms`** | `0.456 ms` (*Pandas*) | **Python 18.57×** | Zero-boxing flat chained hash table + direct typed buffer gather (4.15× speedup from 35.2 ms) |
 | **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | **`0.125 ms`** | `1.450 ms` (*Full Forward*) | **SwiftSci 11.60×** | Architectural comparison: single-token incremental decode with cached K/V ($O(N)$ attention) vs full-sequence forward recomputation ($O(N^2)$); $\Delta \le 1.03 \times 10^{-7}$ |
 | **Metal MSL gemv_q4_0 Kernel** (1024d) | **`0.015 ms`** | `0.045 ms` (*Float32 Dequant*) | **SwiftSci 3.00×** | Zero-copy packed Q4_0 evaluation |
 | **AutoARIMA Zero-Variance Guard** (1000 pts) | **`< 0.01 ms`** | Divergent loop | **Instant Exit** | Zero-variance fast exit + bounded optimization iterations |

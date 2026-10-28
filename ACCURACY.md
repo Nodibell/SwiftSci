@@ -1,8 +1,23 @@
-# SwiftSci 3.11.0 Accuracy & Validation Report
+# SwiftSci 3.12.0 Accuracy & Validation Report
 
-Use the [standardized benchmark guide](Benchmarks/README.md) for current runs, audits and comparisons. The results below include audited accuracy records for SwiftSci 3.11.0 release builds alongside historical research records. Preserve their original values when reproducing or discussing this report.
+Use the [standardized benchmark guide](Benchmarks/README.md) for current runs, audits and comparisons. The results below include audited accuracy records for SwiftSci 3.12.0 release builds (`Benchmarks/Runs/standard-3.12.0` and `Benchmarks/Runs/migration-3.12.0`) alongside historical research records. Preserve their original values when reproducing or discussing this report.
 
-Numerical, predictive and statistical parity measurements comparing **SwiftSci 3.11.0** (Swift 6, Apple Silicon Accelerate BLAS/LAPACK & Metal) against Python reference libraries (**NumPy 2.3.5**, **Scikit-Learn 1.8.0**, **SciPy 1.17.1**, **Statsmodels 0.14.6**, **NLTK 3.10.3**, **SHAP 0.46.0**, **PyTorch 2.11.0**).
+Numerical, predictive and statistical parity measurements comparing **SwiftSci 3.12.0** (Swift 6, Apple Silicon Accelerate BLAS/LAPACK & Metal) against Python reference libraries (**NumPy 2.5.3**, **Pandas 3.0.6**, **Scikit-Learn 1.8.0**, **SciPy 1.18.1**, **Statsmodels 0.14.6**, **NLTK 3.10.3**, **SHAP 0.46.0**, **PyTorch 2.11.0**).
+
+---
+
+## 🔬 Numerical, Algorithmic & Security Enhancements in SwiftSci 3.12.0 (PR #80–#102)
+
+| Subsystem | SwiftSci 3.11.0 Behavior | SwiftSci 3.12.0 Enhancement | Mathematical & Protocol Impact |
+| :--- | :--- | :--- | :--- |
+| **`ProbabilityMatrix` (`SwiftML`)** | `endIndex` used `Swift.max(rows.count, 6)` and `subscript` clamped to `rows.last`, repeating rows on $0 < N < 6$. | Fixed `endIndex == rows.count` and strict bounds-checked `subscript`; added `Equatable`. | Exact collection cardinality across all batch sizes $N \ge 0$ (PR #102). |
+| **GPU Binary Cross-Entropy (`SwiftML`)** | Analytical BCE gradient at exact zero/extreme logits suffered sign/precision drift. | Corrected GPU BCE analytical gradient formulation at zero and saturated logits; encoded multiclass Core ML softmax on output axis. | Exact gradient parity at $z=0$ and faithful multiclass Core ML export (PR #90, #91). |
+| **PCA SVD & Restored Variance (`SwiftCluster`)**| Restored PCA parameters did not validate `totalVariance`; SVD workspace used heuristic sizing. | Preserved native LAPACK SVD workspace query limits and validated positive finite `totalVariance` on restore. | Guaranteed explained-variance ratio consistency across persisted models (PR #89, #101). |
+| **Local Text Embeddings (`SwiftNLP`)** | Used process-randomized Swift `Hasher`, producing different embeddings across runs. | Replaced `Hasher` with deterministic 64-bit FNV-1a token hashing. | Bit-identical cross-process local embedding vectors (PR #96). |
+| **Class-Aware YOLOv8 NMS (`SwiftVision`)** | `YOLOv8Detector` used class-agnostic suppression, dropping co-located objects of different classes. | Delegated to class-aware `NonMaximumSuppression.filter` (`b1.classIndex == b2.classIndex`). | Preserves overlapping detections of distinct object classes (PR #102). |
+| **`HNSWIndex` Dimensionality (`SwiftCluster`)**| Distance helpers used `min(a.count, b.count)`, silently truncating mismatched vectors. | Added `dimension: Int?` invariant and throwing `addValidated` / `searchValidated` (`HNSWError`). | Rejects empty and dimension-mismatched vectors without silent truncation (PR #102). |
+| **Correlation & Metrics (`SwiftStats`, `SwiftForecast`, `SwiftVisualization`)** | `spearmanCorrelation` lacked `requireNoNaN`; `plotCorrelationHeatmap` dropped NaNs independently per column; `plotROCCurve` was order-dependent on tied scores. | Added `requireNoNaN` to Spearman, finite non-negative `epsilon` checks to `TimeSeriesMetrics` (`WAPE`/`MAPE`/`SMAPE`), pairwise-complete heatmap filtering, and tied-score grouping in ROC curves. | Order-invariant ROC curves, aligned pairwise correlations, and strict NaN/Inf rejection (PR #80, #102). |
+| **Wire-Protocol & SQLite Security (`SwiftDatabase`, `SwiftAgent`)** | `SSLMode.require` connected over plaintext; MySQL handshake lacked `CLIENT_CONNECT_WITH_DB`; SQLite reused read-write handles. | Fail-closed `SSLMode.require`, dynamic `HandshakeResponse41` capability flags + `mysql_native_password` SHA-1 + `OK_Packet` validation, isolated `SQLITE_OPEN_READONLY` handle (`readOnlyDbBox`), and tokenized SQL guard in `SafeDatabaseQueryTool`. | Protocol-compliant MySQL authentication and C-API enforced read-only SQLite isolation (PR #102). |
 
 ---
 
@@ -211,33 +226,36 @@ Numerical parity verification between incremental generation loops, full-context
 
 ---
 
-## ⚡ Runtime Performance Context: SwiftSci 3.11.0 vs 3.10.3 vs 3.10.2 vs Python
+## ⚡ Runtime Performance Context: SwiftSci 3.12.0 vs 3.11.0 vs 3.10.3 vs Python
 
 These execution time benchmarks compare successive SwiftSci releases on Apple Silicon arm64 (Release builds, identical datasets). See [PERFORMANCE.md](PERFORMANCE.md) for the complete performance suite and [Benchmarks/README.md](Benchmarks/README.md) for reproducible standardized runs:
 
-| Benchmark Scenario | SwiftSci 3.10.2 | SwiftSci 3.10.3 | SwiftSci 3.11.0 | Python Baseline | Notes & Speedup |
+| Benchmark Scenario | SwiftSci 3.10.3 | SwiftSci 3.11.0 | SwiftSci 3.12.0 | Python Baseline | Notes & Speedup |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| **OLS Linear Fit + Predict** (1000 × 3) | 0.424 ms | 0.086 ms | **0.084 ms** | ~2.8 ms (*Scikit-Learn*) | Accelerate LAPACK `dgels_` (⚡ **5.05× vs 3.10.2**, **33× vs Python**) |
-| **PCA SVD Decomposition** (500 × 5 $\rightarrow$ 2) | 0.521 ms | 0.027 ms | **0.026 ms** | ~3.1 ms (*Scikit-Learn*) | Accelerate LAPACK `dgesvd_` (⚡ **20.0× vs 3.10.2**, **119× vs Python**) |
-| **StandardScaler Fit + Transform** (1000 × 3) | 0.574 ms | 0.058 ms | **0.051 ms** | ~1.8 ms (*Scikit-Learn*) | Zero-copy consuming matrix path (⚡ **11.2× vs 3.10.2**, **35× vs Python**) |
-| **MinMaxScaler Fit + Transform** (1000 × 3) | 0.667 ms | 0.063 ms | **0.058 ms** | ~2.1 ms (*Scikit-Learn*) | Vectorized vDSP bounds scaling (⚡ **11.5× vs 3.10.2**) |
-| **K-Means Fit + Predict** ($N=600, k=3$) | 3.461 ms | 0.110 ms | **0.108 ms** | ~18.5 ms (*Scikit-Learn*) | Underflow-clamped Euclidean distance (⚡ **32.0× vs 3.10.2**) |
-| **DecisionTree Regressor Fit + Predict** (1k samples) | 6.120 ms | 0.241 ms | **0.238 ms** | ~14.2 ms (*Scikit-Learn*) | Recursive binary partitioning with pruning (⚡ **25.7× vs 3.10.2**) |
-| **DecisionTree Classifier Fit + Predict** (1k samples) | 6.990 ms | 0.436 ms | **0.429 ms** | ~16.5 ms (*Scikit-Learn*) | Shannon entropy splitting (⚡ **16.3× vs 3.10.2**) |
-| **RandomForest Classifier** (30 trees) | 27.230 ms | 2.319 ms | **2.285 ms** | ~58.0 ms (*Scikit-Learn*) | Parallelized tree ensemble (⚡ **11.9× vs 3.10.2**) |
-| **HistGBDT Regressor** (30 trees, 256 bins) | 49.570 ms | 1.284 ms | **1.260 ms** | ~82.0 ms (*Scikit-Learn*) | 256-bin histogram splitting (⚡ **39.3× vs 3.10.2**) |
-| **HistGBDT Classifier** (30 trees, 256 bins) | — | 1.193 ms | **1.175 ms** | ~74.0 ms (*Scikit-Learn*) | 256-bin histogram classification |
-| **GBDT Regressor** (30 trees, depth = 4) | 89.978 ms | 4.754 ms | **4.680 ms** | ~188.0 ms (*Scikit-Learn*) | Gradient boosting on residual surface (⚡ **19.2× vs 3.10.2**) |
-| **Holt-Winters Fit + Forecast** ($N=500, h=24$) | 5.676 ms | 0.601 ms | **0.582 ms** | ~12.0 ms (*Statsmodels*) | Nelder-Mead Gaussian likelihood optimization (⚡ **9.75× vs 3.10.2**) |
-| **ARIMA(1,1,1) Fit + Forecast** ($N=500, h=24$) | 1.241 ms | 0.041 ms | **0.040 ms** | ~213.0 ms (*Statsmodels*) | Likelihood recursion optimization (⚡ **31.0× vs 3.10.2**) |
-| **Hypothesis Tests Suite** ($t$, ANOVA, $r$, $\rho$) | 2.268 ms | 0.082 ms | **0.081 ms** | ~8.4 ms (*SciPy*) | Vectorized incomplete beta/gamma functions (⚡ **28.0× vs 3.10.2**) |
-| **VADER Sentiment Analysis** (3 sentences) | 0.018 ms | 0.007 ms | **0.006 ms** | ~0.45 ms (*NLTK*) | FNV-1a token hashing lexicon lookup (⚡ **3.0× vs 3.10.2**) |
-| **Medium CSV Read (100,000 rows)** | — | 6.80 ms | **3.76 ms** | 10.42 ms (*Pandas*) | Optimized buffer ingestion (⚡ **1.81× vs 3.10.3**, **2.77× vs Pandas**) |
-| **Medium Standard Scale (100,000 rows)** | — | 2.79 ms | **1.97 ms** | 2.45 ms (*Scikit-Learn*) | Direct matrix consuming pipeline (⚡ **1.42× vs 3.10.3**) |
-| **SIMD Hash Inner Join (100,000 rows)** | — | 11.20 ms | **2.70 ms** | 9.80 ms (*Pandas*) | Vectorized probe & contiguous buffer dispatch (⚡ **4.15× vs 3.10.3**) |
-| **Preprocessed Heap Allocations (100k rows)** | — | 42 MiB | **16 MiB** | ~35 MiB (*Pandas*) | Direct `PreparedNumericMatrix` pipeline (⚡ **2.6× heap reduction**) |
-| **SwiftLLM Single-Token Incremental Step** | 0.125 ms | 0.125 ms | **0.121 ms** | 1.450 ms (*Full Forward*) | Architectural comparison: single-token cached K/V attention |
-| **Metal MSL gemv_q4_0 Matrix-Vector** | 0.015 ms | 0.015 ms | **0.014 ms** | 0.045 ms (*Float32 Reference*) | Zero-copy packed Q4_0 GPU evaluation |
+| **OLS Linear Fit + Predict** (1000 × 3) | 0.086 ms | 0.084 ms | **0.080 ms** | ~2.8 ms (*Scikit-Learn*) | Accelerate LAPACK `dgels_` (⚡ **35× vs Python**) |
+| **PCA SVD Decomposition** (500 × 5 $\rightarrow$ 2) | 0.027 ms | 0.026 ms | **0.026 ms** | ~3.1 ms (*Scikit-Learn*) | Accelerate LAPACK `dgesvd_` (⚡ **119× vs Python**) |
+| **StandardScaler Fit + Transform** (1000 × 3) | 0.058 ms | 0.051 ms | **0.051 ms** | ~1.8 ms (*Scikit-Learn*) | Zero-copy consuming matrix path (⚡ **35× vs Python**) |
+| **MinMaxScaler Fit + Transform** (1000 × 3) | 0.063 ms | 0.058 ms | **0.058 ms** | ~2.1 ms (*Scikit-Learn*) | Vectorized vDSP bounds scaling |
+| **K-Means Fit + Predict** ($N=600, k=3$) | 0.110 ms | 0.108 ms | **0.108 ms** | ~18.5 ms (*Scikit-Learn*) | Underflow-clamped Euclidean distance |
+| **DecisionTree Regressor Fit + Predict** (1k samples) | 0.241 ms | 0.238 ms | **0.238 ms** | ~14.2 ms (*Scikit-Learn*) | Recursive binary partitioning with pruning |
+| **DecisionTree Classifier Fit + Predict** (1k samples) | 0.436 ms | 0.429 ms | **0.429 ms** | ~16.5 ms (*Scikit-Learn*) | Shannon entropy splitting |
+| **RandomForest Classifier** (30 trees) | 2.319 ms | 2.285 ms | **2.210 ms** | ~58.0 ms (*Scikit-Learn*) | Parallelized tree ensemble |
+| **HistGBDT Regressor** (30 trees, 256 bins) | 1.284 ms | 1.260 ms | **1.260 ms** | ~82.0 ms (*Scikit-Learn*) | 256-bin histogram splitting |
+| **HistGBDT Classifier** (30 trees, 256 bins) | 1.193 ms | 1.175 ms | **1.175 ms** | ~74.0 ms (*Scikit-Learn*) | 256-bin histogram classification |
+| **GBDT Regressor** (30 trees, depth = 4) | 4.754 ms | 4.680 ms | **4.680 ms** | ~188.0 ms (*Scikit-Learn*) | Gradient boosting on residual surface |
+| **Holt-Winters Fit + Forecast** ($N=500, h=24$) | 0.601 ms | 0.582 ms | **0.582 ms** | ~12.0 ms (*Statsmodels*) | Nelder-Mead Gaussian likelihood optimization |
+| **ARIMA(1,1,1) Fit + Forecast** ($N=500, h=24$) | 0.041 ms | 0.040 ms | **0.040 ms** | ~213.0 ms (*Statsmodels*) | Likelihood recursion optimization |
+| **Hypothesis Tests Suite** ($t$, ANOVA, $r$, $\rho$) | 0.082 ms | 0.081 ms | **0.081 ms** | ~8.4 ms (*SciPy*) | Vectorized incomplete beta/gamma functions |
+| **VADER Sentiment Analysis** (3 sentences) | 0.007 ms | 0.006 ms | **0.006 ms** | ~0.45 ms (*NLTK*) | FNV-1a token hashing lexicon lookup |
+| **Medium CSV Read (100,000 rows)** | 6.80 ms | 3.76 ms | **2.20 ms** | 9.92 ms (*Pandas*) | Vectorized SIMD scan & compact `Double` (⚡ **1.70× vs 3.11.0**, **4.50× vs Pandas**) |
+| **Medium CSV Stream Read (100k, 10k chunks)** | 47.49 ms | 46.80 ms | **2.21 ms** | 12.82 ms (*Pandas*) | Scoped record batch discovery (⚡ **21.2× vs 3.11.0**, **5.81× vs Pandas**) |
+| **Medium Sort Double Column (100,000 rows)** | 2.78 ms | 2.75 ms | **2.14 ms** | 2.90 ms (*NumPy*) | Compact `Double` adaptive radix sort (⚡ **1.29× vs 3.11.0**, **1.35× vs Python**) |
+| **Medium Standard Scale (100,000 rows)** | 2.79 ms | 1.97 ms | **1.97 ms** | 0.88 ms (*Scikit-Learn*) | Direct matrix consuming pipeline (⚡ **1.42× vs 3.10.3**) |
+| **SIMD Hash Inner Join (100,000 rows)** | 11.20 ms | 2.70 ms | **2.70 ms** | 9.80 ms (*Pandas*) | Vectorized probe & contiguous buffer dispatch (⚡ **4.15× vs 3.10.3**) |
+| **Preprocessed Heap Allocations (100k rows)** | 42 MiB | 16 MiB | **16 MiB** | ~35 MiB (*Pandas*) | Direct `PreparedNumericMatrix` pipeline (⚡ **2.6× heap reduction**) |
+| **CSV 100k Peak Resident Memory (RSS)** | 51.4 MiB | 48.7 MiB | **32.2 MiB** | 211.6 MiB (*Pandas*) | Bounded CSV field metadata & compact `Double` (⚡ **6.57× less RAM than Pandas**) |
+| **SwiftLLM Single-Token Incremental Step** | 0.125 ms | 0.121 ms | **0.121 ms** | 1.450 ms (*Full Forward*) | Architectural comparison: single-token cached K/V attention |
+| **Metal MSL gemv_q4_0 Matrix-Vector** | 0.015 ms | 0.014 ms | **0.014 ms** | 0.045 ms (*Float32 Reference*) | Zero-copy packed Q4_0 GPU evaluation |
 | **AutoARIMA Zero-Variance Exit** | < 0.01 ms | < 0.01 ms | **< 0.01 ms** | Unconstrained search loop | Guard validation: non-diverging fast exit on constant series |
 
 ---

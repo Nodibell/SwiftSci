@@ -1,7 +1,7 @@
 # Train and reuse a numerical workflow
 
 Train a CSV classifier, save its fitted preprocessing and model, then predict
-unlabeled rows in a separate process. This example uses `SwiftWorkflow` to compose
+unlabeled rows or evaluate new labeled data in a separate process. This example uses `SwiftWorkflow` to compose
 mean imputation, standard scaling, CPU PCA and CPU logistic regression.
 
 ## Build the executable
@@ -62,6 +62,8 @@ python3 Examples/NumericalWorkflow/verify-persistence.py .build-native/Build/Pro
 This check also covers custom feature/target names, configurable classifier
 updates, reordered CSV columns, invalid options/artifacts and output path
 protection. A deliberately changed coefficient must fail the independent verifier.
+Saved-model evaluation checks an imperfect prediction fixture against independent
+confusion-matrix and macro/weighted F1 values, including single-row/single-class data.
 
 ## Predict unlabeled rows
 
@@ -86,6 +88,37 @@ The loader rejects unsupported artifact versions, invalid parameter values and
 incompatible stage dimensions. Prediction rejects missing features, nonnumeric
 columns and infinity. Numeric missing values and NaNs use the saved replacements.
 Input and model files cannot be chosen as output paths.
+
+## Evaluate a saved model on labeled data
+
+Provide the saved feature columns and a ground-truth column containing 0 or 1:
+
+```sh
+.build-native/Build/Products/Release/ScientificWorkflow evaluate \
+  --model .build/my-results/model.json --input /path/to/labeled.csv \
+  --target outcome --output .build/evaluation
+```
+
+`--target` defaults to `class`. Use the column name in the evaluation CSV; it
+cannot also be a saved feature. Evaluation uses every supplied row without
+fitting or changing the saved model. To assess generalization, supply data that
+was not used for training. A single labeled row is sufficient to run this command.
+
+The output directory contains:
+
+- `predictions.csv`: source-row positions, actual labels, predicted labels and
+  both class probabilities, in evaluation-input order.
+- `evaluation.json`: schema version 1, target column, source-row positions and
+  the existing `SwiftOptimize.ClassificationEvaluation` result. It includes
+  accuracy, macro precision/recall/F1, support-weighted F1 and a confusion matrix.
+
+`classLabels` lists the sorted labels observed in ground truth or predictions.
+The confusion matrix uses that order for actual-label rows and predicted-label
+columns. Macro metrics give each observed class equal weight; weighted F1 uses
+ground-truth class frequencies. For single-class data, the matrix may be 1 by 1.
+
+Missing, nonnumeric or nonbinary labels fail before result files are written.
+The command rejects output paths that would overwrite its input or saved model.
 
 ## Train another dataset
 
@@ -117,7 +150,7 @@ Prediction reads the saved feature names and requires no repeated training optio
 
 Training replaces `model.json`, `predictions.csv` and `report.json` in the chosen
 directory. Prediction replaces its output CSV. Use `ScientificWorkflow --help`,
-`train --help` or `predict --help` for options.
+`train --help`, `predict --help` or `evaluate --help` for options.
 
 To train from prepared data in your application, use the library API:
 

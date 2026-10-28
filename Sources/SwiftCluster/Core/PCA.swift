@@ -27,6 +27,7 @@ public actor PCA {
         public let featureNames: [String]?
 
         /// Validates supplied coefficients without recomputing or normalizing them.
+        /// Selected variance may exceed the total only within 1e-12 relative rounding.
         public init(mean: [Double], components: [[Double]], explainedVariance: [Double],
                     totalVariance: Double, featureNames: [String]? = nil) throws {
             guard !mean.isEmpty, mean.allSatisfy(\.isFinite), !components.isEmpty,
@@ -37,6 +38,16 @@ public actor PCA {
                   totalVariance.isFinite, totalVariance >= 0,
                   featureNames == nil || featureNames?.count == mean.count else {
                 throw ClusterError.invalidParameter("PCA parameters must have matching finite dimensions and nonnegative variances.")
+            }
+            let varianceMatchesTotal: Bool
+            if totalVariance == 0 {
+                varianceMatchesTotal = explainedVariance.allSatisfy { $0 == 0 }
+            } else {
+                let retainedFraction = explainedVariance.reduce(0) { $0 + $1 / totalVariance }
+                varianceMatchesTotal = retainedFraction <= 1 + 1e-12
+            }
+            guard varianceMatchesTotal else {
+                throw ClusterError.invalidParameter("Selected PCA variances cannot exceed total input variance.")
             }
             self.mean = mean
             self.components = components

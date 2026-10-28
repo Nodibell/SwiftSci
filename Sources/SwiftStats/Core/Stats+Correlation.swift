@@ -47,6 +47,8 @@ extension Stats {
     public static func spearmanCorrelation(_ x: [Double], _ y: [Double]) throws -> Double {
         try requireNonEmpty(x)
         try requireSameSize(x, y)
+        try requireNoNaN(x)
+        try requireNoNaN(y)
         let rx = rank(x)
         let ry = rank(y)
         return try pearsonCorrelation(rx, ry)

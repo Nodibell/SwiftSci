@@ -101,7 +101,6 @@ jobs:
           swift test --enable-code-coverage -v \
             --skip SwiftMLTests \
             --skip SwiftClusterTests \
-            --skip SwiftForecastTests \
             --skip SwiftExplainTests \
             --skip SwiftPreprocessingTests \
             --skip SwiftOptimizeTests \
@@ -109,23 +108,18 @@ jobs:
             --skip SwiftVisionTests \
             --skip SwiftWorkflowTests
 
-          # GPU-dependent suites are skipped because GitHub macOS runners
-          # do not provide the Metal GPU environment required by MLX.
+          # Two-Tier Testing Policy:
+          # - Tier 1 (GitHub Actions): Debug/Release compilation, DocC generation,
+          #   and pure-CPU unit suites (SwiftDataFrame, SwiftStats, SwiftForecast,
+          #   SwiftNLP, SwiftDatabase, SwiftAgent, SwiftVisualization).
+          # - Tier 2 (Local Apple Silicon): Full Debug/Release test suite including
+          #   MLX/Metal GPU suites and end-to-end integration tests.
           #
-          # SwiftPreprocessingTests:
-          #   SwiftPreprocessing links MLX directly and may crash at load time.
-          #
-          # SwiftOptimizeTests:
-          #   SwiftOptimize -> SwiftML -> SwiftPreprocessing -> MLX.
-          #
-          # SwiftLLMTests:
-          #   Tests create MLX arrays at runtime.
-          #
-          # SwiftVisionTests:
-          #   YOLOv8 / U-Net forward passes require MLX Metal GPU.
-          #
-          # SwiftWorkflowTests:
-          #   CPU workflow fits/restores still initialize MLX parameter arrays.
+          # GPU-dependent suites are skipped here because GitHub macOS runners
+          # do not provide the Metal GPU environment required by MLX:
+          # - SwiftPreprocessingTests, SwiftMLTests, SwiftClusterTests,
+          #   SwiftExplainTests, SwiftOptimizeTests, SwiftLLMTests,
+          #   SwiftVisionTests, SwiftWorkflowTests.
 
       - name: Export coverage
         run: |
@@ -182,7 +176,8 @@ jobs:
             --target SwiftVisualization \
             --target SwiftVision \
             --target SwiftDatabase \
-            --target SwiftAgent
+            --target SwiftAgent \
+            --target SwiftWorkflow
 
       - name: Verify documentation was generated
         run: |

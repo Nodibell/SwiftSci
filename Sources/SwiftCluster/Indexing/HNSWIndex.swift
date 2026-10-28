@@ -1,6 +1,24 @@
 import Foundation
 import Accelerate
 
+/// Errors thrown during validated HNSW index insertion or search operations.
+public enum HNSWError: Error, LocalizedError, Sendable, Equatable {
+    /// Thrown when an empty vector is supplied.
+    case emptyVector
+    /// Thrown when a vector's dimensionality does not match the established index dimension.
+    case dimensionMismatch(expected: Int, actual: Int)
+
+    /// Human-readable error description.
+    public var errorDescription: String? {
+        switch self {
+        case .emptyVector:
+            return "HNSW vector cannot be empty."
+        case .dimensionMismatch(let expected, let actual):
+            return "HNSW vector dimension mismatch: expected \(expected), got \(actual)."
+        }
+    }
+}
+
 /// A hierarchical navigable small world graph index for sub-millisecond approximate nearest neighbor search.
 ///
 /// ## Scalability
@@ -67,6 +85,9 @@ public actor HNSWIndex {
     /// Internal PRNG state for deterministic level assignments.
     private var rngState: UInt64
 
+    /// Dimensionality of vectors stored in this index, established on first insertion.
+    public private(set) var dimension: Int?
+
     // MARK: - Initialization
 
     /// Creates a new Hierarchical Navigable Small World index.
@@ -130,6 +151,21 @@ public actor HNSWIndex {
         return idToIndex[id] != nil
     }
 
+    /// Inserts a new vector embedding into the hierarchical graph index, throwing on empty vectors or dimension mismatch.
+    ///
+    /// - Parameters:
+    ///   - id: Unique identifier for the vector.
+    ///   - vector: Dense numerical embedding array.
+    ///   - metadata: Optional key-value metadata associated with the vector.
+    /// - Throws: ``HNSWError`` if `vector` is empty or its dimension does not match the index dimension.
+    public func addValidated(id: String, vector: [Double], metadata: [String: String] = [:]) throws {
+        guard !vector.isEmpty else { throw HNSWError.emptyVector }
+        if let expectedDim = dimension, vector.count != expectedDim {
+            throw HNSWError.dimensionMismatch(expected: expectedDim, actual: vector.count)
+        }
+        add(id: id, vector: vector, metadata: metadata)
+    }
+
     /// Inserts a new vector embedding into the hierarchical graph index.
     ///
     /// - Parameters:
@@ -144,6 +180,11 @@ public actor HNSWIndex {
     /// \(O(M \cdot \log N)\) average time per insertion.
     public func add(id: String, vector: [Double], metadata: [String: String] = [:]) {
         guard !vector.isEmpty else { return }
+        if let expectedDim = dimension {
+            guard vector.count == expectedDim else { return }
+        } else {
+            dimension = vector.count
+        }
 
         if let existingIdx = idToIndex[id] {
             // Replace existing node vector and metadata
@@ -220,6 +261,22 @@ public actor HNSWIndex {
         }
     }
 
+    /// Queries the hierarchical index for the Top-K approximate nearest neighbors, throwing on empty query or dimension mismatch.
+    ///
+    /// - Parameters:
+    ///   - query: Dense numerical query embedding vector.
+    ///   - topK: Number of nearest neighbors to retrieve. Default is `10`.
+    ///   - efSearch: Dynamic candidate queue depth during traversal. Overrides the default when specified.
+    /// - Throws: ``HNSWError`` if `query` is empty or its dimension does not match the index dimension.
+    /// - Returns: An ordered array of `VectorSearchResult` instances, sorted closest to farthest.
+    public func searchValidated(query: [Double], topK: Int = 10, efSearch: Int? = nil) throws -> [VectorSearchResult] {
+        guard !query.isEmpty else { throw HNSWError.emptyVector }
+        if let expectedDim = dimension, query.count != expectedDim {
+            throw HNSWError.dimensionMismatch(expected: expectedDim, actual: query.count)
+        }
+        return search(query: query, topK: topK, efSearch: efSearch)
+    }
+
     /// Queries the hierarchical index for the Top-K approximate nearest neighbors.
     ///
     /// - Parameters:
@@ -235,6 +292,7 @@ public actor HNSWIndex {
     /// \(O(\log N)\) average time over high-dimensional datasets.
     public func search(query: [Double], topK: Int = 10, efSearch: Int? = nil) -> [VectorSearchResult] {
         guard !nodes.isEmpty, let ep = enterPoint else { return [] }
+        if let expectedDim = dimension, query.count != expectedDim { return [] }
         precondition(topK > 0, "topK must be positive")
 
         let effectiveEf = max(topK, efSearch ?? self.efSearch)
@@ -350,6 +408,7 @@ public actor HNSWIndex {
     // MARK: - Distance Calculations via Accelerate vDSP
 
     private func distance(_ a: [Double], _ b: [Double]) -> Double {
+        guard a.count == b.count, !a.isEmpty else { return .infinity }
         switch metric {
         case .euclideanDistance:
             return euclideanDistance(a, b)
@@ -361,8 +420,8 @@ public actor HNSWIndex {
     }
 
     private func euclideanDistance(_ a: [Double], _ b: [Double]) -> Double {
-        let count = min(a.count, b.count)
-        guard count > 0 else { return 0.0 }
+        guard a.count == b.count, !a.isEmpty else { return .infinity }
+        let count = a.count
         let n = vDSP_Length(count)
         var diff = [Double](repeating: 0.0, count: count)
         vDSP_vsubD(b, 1, a, 1, &diff, 1, n)
@@ -372,8 +431,8 @@ public actor HNSWIndex {
     }
 
     private func cosineDistance(_ a: [Double], _ b: [Double]) -> Double {
-        let count = min(a.count, b.count)
-        guard count > 0 else { return 1.0 }
+        guard a.count == b.count, !a.isEmpty else { return .infinity }
+        let count = a.count
         let n = vDSP_Length(count)
         var dot = 0.0
         vDSP_dotprD(a, 1, b, 1, &dot, n)
@@ -388,8 +447,8 @@ public actor HNSWIndex {
     }
 
     private func dotProductDistance(_ a: [Double], _ b: [Double]) -> Double {
-        let count = min(a.count, b.count)
-        guard count > 0 else { return 0.0 }
+        guard a.count == b.count, !a.isEmpty else { return .infinity }
+        let count = a.count
         let n = vDSP_Length(count)
         var dot = 0.0
         vDSP_dotprD(a, 1, b, 1, &dot, n)

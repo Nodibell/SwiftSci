@@ -130,6 +130,7 @@ public enum EvaluationError: Error, LocalizedError, Sendable, Equatable {
     /// Evaluation parameter is outside valid domain (e.g. numFeatures >= n - 1 for adjusted R^2).
     case invalidParameter(String)
 
+    /// Localized human-readable error message.
     public var errorDescription: String? {
         switch self {
         case .emptyData(let msg): return "Evaluation data is empty: \(msg)"

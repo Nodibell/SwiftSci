@@ -183,6 +183,11 @@ public final class BorderlineSMOTE: Sendable, ResamplingEstimator {
         self.seed = seed
     }
     
+    /// Generates synthetic minority samples focused on borderline ("DANGER") instances.
+    /// - Parameters:
+    ///   - features: Input feature matrix of shape `[N, P]`.
+    ///   - targets: Target class labels of length `N`.
+    /// - Returns: Resampled dataset with balanced class distributions.
     public func fitResample(features: [[Double]], targets: [Double]) throws -> ResampledDataset {
         guard !features.isEmpty, features.count == targets.count else {
             throw PreprocessingError.emptyInput
@@ -288,6 +293,11 @@ public final class ADASYN: Sendable, ResamplingEstimator {
         self.seed = seed
     }
     
+    /// Generates adaptive synthetic minority samples weighted by local learning difficulty.
+    /// - Parameters:
+    ///   - features: Input feature matrix of shape `[N, P]`.
+    ///   - targets: Target class labels of length `N`.
+    /// - Returns: Resampled dataset with balanced class distributions.
     public func fitResample(features: [[Double]], targets: [Double]) throws -> ResampledDataset {
         guard !features.isEmpty, features.count == targets.count else {
             throw PreprocessingError.emptyInput

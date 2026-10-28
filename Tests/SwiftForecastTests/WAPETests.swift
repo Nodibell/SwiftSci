@@ -92,6 +92,19 @@ struct WAPETests {
         #expect(throws: ForecastError.self) {
             try TimeSeriesMetrics.evaluateWAPE(actual: [1.0, 2.0], forecast: [Double.infinity, 2.0])
         }
+
+        // Invalid epsilon (negative, NaN, infinity) across evaluateMAPE, evaluateSMAPE, evaluateWAPE
+        for badEpsilon in [-1.0, -1e-9, Double.nan, Double.infinity, -Double.infinity] {
+            #expect(throws: ForecastError.self) {
+                try TimeSeriesMetrics.evaluateMAPE(actual: [0.0, 2.0], forecast: [1.0, 2.0], epsilon: badEpsilon)
+            }
+            #expect(throws: ForecastError.self) {
+                try TimeSeriesMetrics.evaluateSMAPE(actual: [0.0, 2.0], forecast: [0.0, 2.0], epsilon: badEpsilon)
+            }
+            #expect(throws: ForecastError.self) {
+                try TimeSeriesMetrics.evaluateWAPE(actual: [0.0, 2.0], forecast: [1.0, 2.0], epsilon: badEpsilon)
+            }
+        }
     }
 
     @Test("Backtester result includes WAPE in fold and summary metrics")

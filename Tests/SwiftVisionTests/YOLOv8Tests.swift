@@ -196,4 +196,21 @@ struct YOLOv8Tests {
         // Non-existent key → nil
         #expect(loader.get("nonexistent.key") == nil)
     }
+
+    @Test("YOLOv8Detector nonMaximumSuppression is class-aware across identical bounding boxes")
+    func testYOLOv8ClassAwareNMS() async {
+        let detector = YOLOv8Detector(confidenceThreshold: 0.25, iouThreshold: 0.45)
+        let boxA = BoundingBox(xMin: 0, yMin: 0, xMax: 100, yMax: 100, confidence: 0.90, classLabel: "person")
+        let boxASameClass = BoundingBox(xMin: 0, yMin: 0, xMax: 100, yMax: 100, confidence: 0.80, classLabel: "person")
+        let boxBDiffClass = BoundingBox(xMin: 0, yMin: 0, xMax: 100, yMax: 100, confidence: 0.85, classLabel: "bicycle")
+
+        let sameClassFiltered = await detector.nonMaximumSuppression(boxes: [boxA, boxASameClass])
+        #expect(sameClassFiltered.count == 1)
+        #expect(sameClassFiltered[0].classLabel == "person")
+        #expect(sameClassFiltered[0].confidence == 0.90)
+
+        let multiClassFiltered = await detector.nonMaximumSuppression(boxes: [boxA, boxBDiffClass, boxASameClass])
+        #expect(multiClassFiltered.count == 2)
+        #expect(multiClassFiltered.map(\.classLabel) == ["person", "bicycle"])
+    }
 }

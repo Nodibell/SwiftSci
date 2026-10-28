@@ -19,10 +19,16 @@ public enum ChartExporter {
         var matrix = [[Double]]()
         for c1 in numericCols {
             var row = [Double]()
-            let v1 = c1.values.compactMap { $0 }
             for c2 in numericCols {
-                let v2 = c2.values.compactMap { $0 }
-                let corr = (v1.count == v2.count && !v1.isEmpty) ? (try? Stats.pearsonCorrelation(v1, v2)) ?? 0.0 : 0.0
+                var v1: [Double] = []
+                var v2: [Double] = []
+                for (a, b) in zip(c1.values, c2.values) {
+                    if let a, let b, a.isFinite, b.isFinite {
+                        v1.append(a)
+                        v2.append(b)
+                    }
+                }
+                let corr = v1.count >= 2 ? ((try? Stats.pearsonCorrelation(v1, v2)) ?? 0.0) : 0.0
                 row.append(corr)
             }
             matrix.append(row)
@@ -85,11 +91,16 @@ public enum ChartExporter {
                 var tp = 0.0
                 var fp = 0.0
 
-                for (_, label) in paired {
-                    if label == 1 {
-                        tp += 1.0
-                    } else {
-                        fp += 1.0
+                var idx = 0
+                while idx < paired.count {
+                    let thresholdScore = paired[idx].0
+                    while idx < paired.count && paired[idx].0 == thresholdScore {
+                        if paired[idx].1 == 1 {
+                            tp += 1.0
+                        } else {
+                            fp += 1.0
+                        }
+                        idx += 1
                     }
                     computedTPR.append(tp / totalPositives)
                     computedFPR.append(fp / totalNegatives)

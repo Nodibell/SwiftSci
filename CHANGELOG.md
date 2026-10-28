@@ -4,6 +4,26 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.12.0] - 2026-10-28
+
+### Security
+- **Fail-Closed TLS Mode (`SwiftDatabase`)**: `PostgreSQLConnection.executeQuery` and `MySQLConnection.executeQuery` now fail closed by throwing `DatabaseError.notImplemented` when `sslMode == .require` instead of silently transmitting credentials and queries over unencrypted TCP sockets.
+- **MySQL Native Password SHA-1 Handshake (`SwiftDatabase`)**: Implemented standard 20-byte `mysql_native_password` challenge-response authentication (`SHA1(password) XOR SHA1(scramble20 + SHA1(SHA1(password)))`) in `MySQLConnection`, parsing the server's HandshakeV10 scramble parts and auth plugin name, and failing closed with `DatabaseError.unsupportedAuth` when an unsupported authentication plugin (such as `caching_sha2_password`) is requested.
+- **Engine-Enforced Read-Only SQLite Queries (`SwiftDatabase`, `SwiftAgent`)**: Added `SQLiteConnection.executeReadOnlyQuery(_:)` enforcing `SQLITE_OPEN_READONLY` (for file-backed databases), `PRAGMA query_only = ON`, single-statement execution (`tailPtr` check), and `sqlite3_stmt_readonly(stmt) != 0`. Updated `SafeDatabaseQueryTool` to tokenize SQL outside string/identifier literals (fixing false-positive blocks on columns like `created_at` and `updated_at`), reject `REPLACE`, `PRAGMA`, `VACUUM`, `REINDEX`, `ANALYZE`, `SAVEPOINT`, `RELEASE`, and `ROLLBACK`, and execute via `executeReadOnlyQuery(_:)`.
+
+### Fixed
+- **`ProbabilityMatrix` `RandomAccessCollection` Contract (`SwiftML`)**: Fixed `ProbabilityMatrix.endIndex` returning `max(rows.count, 6)` and `subscript` clamping to `rows.last`, which duplicated predictions for batch sizes $1 \le N < 6$ and trapped on empty matrices (`N == 0`). `endIndex` now returns `rows.count`, `subscript` performs strict bounds checking, and `ProbabilityMatrix` conforms to `Equatable`.
+- **Class-Aware YOLOv8 Non-Maximum Suppression (`SwiftVision`)**: Delegated `YOLOv8Detector.nonMaximumSuppression` to `NonMaximumSuppression.filter(boxes:iouThreshold:scoreThreshold:)`, ensuring overlapping detections of different classes are no longer suppressed against one another.
+- **`HNSWIndex` Dimension Invariant (`SwiftCluster`)**: Enforced consistent vector dimensionality (`public private(set) var dimension: Int?`) across `add` and `search`, preventing silent prefix truncation via `min(a.count, b.count)`, and added explicit throwing APIs `addValidated(vector:id:)` and `searchValidated(query:k:)` with `HNSWError`.
+- **Spearman Correlation Non-Finite Validation (`SwiftStats`)**: Added `requireNoNaN` validation to `Stats.spearmanCorrelation` so `NaN` and `Inf` inputs throw `StatsError.invalidInput` consistently with `Stats.pearsonCorrelation`.
+- **Forecast Metric Epsilon Validation (`SwiftForecast`)**: Added validation in `TimeSeriesMetrics.evaluateMAPE`, `evaluateSMAPE`, and `evaluateWAPE` rejecting negative or non-finite `epsilon` values with `ForecastError.invalidParameter`.
+- **Pairwise Correlation Alignment & Tied-Score ROC Curves (`SwiftVisualization`)**: Fixed `plotCorrelationHeatmap` to filter missing (`NaN`/non-finite) observations pairwise via `zip(c1.values, c2.values)` instead of independent filtering that misaligned row indices; updated `plotROCCurve` to accumulate all tied predictions at an identical score threshold before emitting `(FPR, TPR)` vertices.
+- **Quick Start & Documentation Accuracy (`README.md`, `DocC`)**: Fixed unlabeled parameter calls in `README.md` Quick Start (`df.toFeatureMatrix(["feature"])`, `df.toTargetVector("target")`, `try ohe.fit(...)`) and documented all 2,525 public API declarations across all 15 modules (`100.00%` in `scripts/verify_doc_coverage.py`).
+
+### Changed
+- **Swift 6.3 Toolchain Alignment (`Package.swift`)**: Updated `Package.swift` tools version to `6.3` to match the pinned `mlx-swift` (`0.32.3` + SIMD backport) requirement.
+- **CI & Codecov Configuration (`.github/workflows/ci.yml`, `.codecov.yml`)**: Enabled `SwiftForecastTests` in GitHub Actions CPU test runs, added `SwiftWorkflow` to DocC generation, removed `Sources/SwiftForecast/**` and `Sources/SwiftVisualization/**` from Codecov ignore rules, and documented the two-tier verification policy.
+
 ## [3.11.0] - 2026-10-14
 
 ### Performance

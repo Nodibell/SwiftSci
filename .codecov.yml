@@ -17,13 +17,11 @@ ignore:
   # Exclude GPU/MLX-dependent source modules skipped in CI runner
   - "Sources/SwiftML/**"
   - "Sources/SwiftCluster/**"
-  - "Sources/SwiftForecast/**"
   - "Sources/SwiftPrivacy/**"
   - "Sources/SwiftExplain/**"
   - "Sources/SwiftPreprocessing/**"
   - "Sources/SwiftOptimize/**"
   - "Sources/SwiftLLM/**"
-  - "Sources/SwiftVisualization/**"
   - "Sources/SwiftVision/**"
   - "Sources/SwiftWorkflow/**"
   # Exclude test files from code coverage calculation

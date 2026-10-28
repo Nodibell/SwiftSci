@@ -34,6 +34,7 @@ public struct DecisionTreeModelState: Codable, Sendable {
     /// The splitting impurity criterion ("gini", "entropy", "mse").
     public let criterion: String?
 
+    /// Creates a serialized decision tree model state.
     public init(
         maxDepth: Int,
         minSamplesSplit: Int,
@@ -76,6 +77,7 @@ public struct RandomForestModelState: Codable, Sendable {
     /// The random seed.
     public let randomState: Int?
 
+    /// Creates a serialized random forest model state.
     public init(
         nEstimators: Int,
         maxDepth: Int,

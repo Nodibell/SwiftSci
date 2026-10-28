@@ -50,7 +50,10 @@ public enum SSLMode: String, Sendable, Codable {
     case disable
     /// Attempts encrypted TLS connection with fallback to plaintext.
     case prefer
-    /// Enforces TLS encrypted connection (fails if server does not support TLS).
+    /// Requires an encrypted TLS connection.
+    ///
+    /// > Important: Native TLS wire negotiation is not yet implemented in `PostgreSQLConnection` or `MySQLConnection`.
+    /// > Setting `.require` fails closed by throwing ``DatabaseError/notImplemented(_:)`` rather than downgrading to plaintext.
     case require
 }
 
@@ -173,10 +176,13 @@ public actor SQLiteConnection: DatabaseConnection {
         dbBox = nil
     }
 
-    private func getOrOpenHandle() throws -> OpaquePointer {
+    private func getOrOpenHandle(readOnly: Bool = false) throws -> OpaquePointer {
         if let box = dbBox, let h = box.handle { return h }
         var db: OpaquePointer?
-        let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI
+        let isMemory = databasePath == ":memory:" || databasePath.contains("mode=memory")
+        let flags = (readOnly && !isMemory)
+            ? (SQLITE_OPEN_READONLY | SQLITE_OPEN_URI)
+            : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI)
         if sqlite3_open_v2(databasePath, &db, flags, nil) != SQLITE_OK {
             let msg = db != nil ? String(cString: sqlite3_errmsg(db)) : "Unknown error"
             if let db { sqlite3_close_v2(db) }
@@ -184,6 +190,25 @@ public actor SQLiteConnection: DatabaseConnection {
         }
         self.dbBox = SQLiteHandleBox(handle: db)
         return db!
+    }
+
+    /// Executes a SQL statement in strict read-only mode, verifying at the SQLite C API level
+    /// (`sqlite3_stmt_readonly` and `PRAGMA query_only = ON`) that no database mutation occurs.
+    ///
+    /// - Parameter sql: A single read-only SQLite SQL query (such as `SELECT`).
+    /// - Throws: `DatabaseError.connectionFailed` or `DatabaseError.queryFailed` if the query is not read-only or contains stacked statements.
+    /// - Returns: `SQLQueryResult` with column names and typed rows.
+    public func executeReadOnlyQuery(_ sql: String) async throws -> SQLQueryResult {
+        let trimmed = sql.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw DatabaseError.queryFailed("SQL query cannot be empty")
+        }
+        let db = try getOrOpenHandle(readOnly: true)
+        _ = sqlite3_exec(db, "PRAGMA query_only = ON;", nil, nil, nil)
+        defer {
+            _ = sqlite3_exec(db, "PRAGMA query_only = OFF;", nil, nil, nil)
+        }
+        return try executePreparedStatement(sql: trimmed, on: db, enforceReadOnly: true)
     }
 
     /// Executes a SQL statement and returns the result set, reading rows in 1024-row column-buffered pages.
@@ -198,17 +223,35 @@ public actor SQLiteConnection: DatabaseConnection {
     /// ## Complexity
     /// O(N) rows read with 1024-row page buffering, amortizing `reserveCapacity` overhead.
     public func executeQuery(_ sql: String) async throws -> SQLQueryResult {
-        let db = try getOrOpenHandle()
+        let db = try getOrOpenHandle(readOnly: false)
+        return try executePreparedStatement(sql: sql, on: db, enforceReadOnly: false)
+    }
 
+    private func executePreparedStatement(sql: String, on db: OpaquePointer, enforceReadOnly: Bool) throws -> SQLQueryResult {
         var stmt: OpaquePointer?
         defer {
             if let stmt {
                 sqlite3_finalize(stmt)
             }
         }
-        if sqlite3_prepare_v2(db, sql, -1, &stmt, nil) != SQLITE_OK {
-            let msg = String(cString: sqlite3_errmsg(db))
-            throw DatabaseError.queryFailed(msg)
+        try sql.withCString { cSql in
+            var tailPtr: UnsafePointer<CChar>?
+            if sqlite3_prepare_v2(db, cSql, -1, &stmt, &tailPtr) != SQLITE_OK {
+                let msg = String(cString: sqlite3_errmsg(db))
+                throw DatabaseError.queryFailed(msg)
+            }
+            if enforceReadOnly, let tailPtr {
+                let tail = String(cString: tailPtr).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !tail.isEmpty {
+                    throw DatabaseError.queryFailed("Security Violation: Multiple SQL statements are not permitted in read-only mode.")
+                }
+            }
+        }
+
+        if enforceReadOnly {
+            guard let stmt, sqlite3_stmt_readonly(stmt) != 0 else {
+                throw DatabaseError.queryFailed("Security Violation: Only read-only SQL statements are permitted.")
+            }
         }
 
         let colCount = sqlite3_column_count(stmt)
@@ -395,6 +438,11 @@ public actor PostgreSQLConnection: DatabaseConnection {
         }
         guard !sql.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw DatabaseError.queryFailed("SQL query cannot be empty")
+        }
+        if sslMode == .require {
+            throw DatabaseError.notImplemented(
+                "TLS transport (sslMode: .require) is not implemented for PostgreSQL raw socket connections."
+            )
         }
 
         // Establish TCP connection
@@ -871,6 +919,11 @@ public actor MySQLConnection: DatabaseConnection {
         guard !sql.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw DatabaseError.queryFailed("SQL query cannot be empty")
         }
+        if sslMode == .require {
+            throw DatabaseError.notImplemented(
+                "TLS transport (sslMode: .require) is not implemented for MySQL raw socket connections."
+            )
+        }
 
         let sockfd = socket(AF_INET, SOCK_STREAM, 0)
         guard sockfd >= 0 else {
@@ -932,6 +985,23 @@ public actor MySQLConnection: DatabaseConnection {
             throw DatabaseError.connectionFailed("MySQL error in greeting")
         }
 
+        let parsedHandshake = Self.parseMySQLHandshakeV10(greeting)
+        let authResponseBytes: [UInt8]
+        if password.isEmpty {
+            authResponseBytes = []
+        } else {
+            let plugin = parsedHandshake.pluginName
+            if !plugin.isEmpty && plugin != "mysql_native_password" {
+                throw DatabaseError.unsupportedAuth(
+                    "MySQL authentication plugin '\(plugin)' is not supported. Configure the account to use 'mysql_native_password'."
+                )
+            }
+            guard parsedHandshake.scramble.count == 20 else {
+                throw DatabaseError.connectionFailed("MySQL handshake: missing 20-byte authentication scramble")
+            }
+            authResponseBytes = Self.mysqlNativePasswordToken(password: password, scramble: parsedHandshake.scramble)
+        }
+
         // --- Send Handshake Response ---
         var responsePayload = Data()
         responsePayload.append(contentsOf: [0x85, 0xA2, 0x1E, 0x00]) // capabilities
@@ -939,9 +1009,13 @@ public actor MySQLConnection: DatabaseConnection {
         responsePayload.append(33)                                    // charset utf8
         responsePayload.append(contentsOf: [UInt8](repeating: 0, count: 23))
         responsePayload.append(contentsOf: "\(user)\0".utf8)
-        responsePayload.append(0x00) // auth_response length (empty password)
+        responsePayload.append(UInt8(authResponseBytes.count))
+        responsePayload.append(contentsOf: authResponseBytes)
         if !database.isEmpty {
             responsePayload.append(contentsOf: "\(database)\0".utf8)
+        }
+        if !parsedHandshake.pluginName.isEmpty {
+            responsePayload.append(contentsOf: "\(parsedHandshake.pluginName)\0".utf8)
         }
         let pLen = responsePayload.count
         var handshakePacket = Data([
@@ -1053,6 +1127,66 @@ public actor MySQLConnection: DatabaseConnection {
         }
 
         return SQLQueryResult(columns: columns, rows: rows)
+    }
+
+    // MARK: - MySQL Handshake & Native Password Authentication Helpers
+
+    private static func parseMySQLHandshakeV10(_ greeting: Data) -> (scramble: [UInt8], pluginName: String) {
+        let bytes = [UInt8](greeting)
+        guard bytes.count > 1, bytes[0] == 10 else { return ([], "") }
+        var idx = 1
+        // Skip null-terminated server version string
+        while idx < bytes.count && bytes[idx] != 0 {
+            idx += 1
+        }
+        idx += 1 // skip null byte
+        // thread_id (4 bytes) + auth_plugin_data_part_1 (8 bytes) + filler (1 byte)
+        guard idx + 13 <= bytes.count else { return ([], "") }
+        idx += 4 // thread_id
+        var scramble = Array(bytes[idx..<(idx + 8)])
+        idx += 8
+        idx += 1 // filler (0x00)
+
+        // capability_flags_1 (2) + charset (1) + status_flags (2) + capability_flags_2 (2) + auth_plugin_data_len (1) + reserved (10)
+        guard idx + 18 <= bytes.count else { return (scramble, "") }
+        idx += 7
+        let authPluginDataLen = Int(bytes[idx])
+        idx += 1
+        idx += 10 // reserved
+
+        let part2FieldLen = max(13, authPluginDataLen - 8)
+        if idx + 12 <= bytes.count {
+            scramble.append(contentsOf: bytes[idx..<(idx + 12)])
+        }
+        idx += min(part2FieldLen, max(0, bytes.count - idx))
+
+        var pluginBytes: [UInt8] = []
+        while idx < bytes.count && bytes[idx] != 0 {
+            pluginBytes.append(bytes[idx])
+            idx += 1
+        }
+        let pluginName = String(decoding: pluginBytes, as: UTF8.self)
+        return (scramble, pluginName)
+    }
+
+    /// Computes the 20-byte `mysql_native_password` authentication response:
+    /// `SHA1(password) XOR SHA1(scramble20 + SHA1(SHA1(password)))`
+    internal static func mysqlNativePasswordToken(password: String, scramble: [UInt8]) -> [UInt8] {
+        func sha1(_ input: [UInt8]) -> [UInt8] {
+            #if canImport(CryptoKit)
+            return Array(Insecure.SHA1.hash(data: Data(input)))
+            #elseif canImport(CommonCrypto)
+            var digest = [UInt8](repeating: 0, count: Int(CC_SHA1_DIGEST_LENGTH))
+            _ = input.withUnsafeBytes { CC_SHA1($0.baseAddress, CC_LONG(input.count), &digest) }
+            return digest
+            #else
+            return [UInt8](repeating: 0, count: 20)
+            #endif
+        }
+        let stage1 = sha1(Array(password.utf8))
+        let stage2 = sha1(stage1)
+        let stage3 = sha1(scramble + stage2)
+        return zip(stage1, stage3).map { $0 ^ $1 }
     }
 }
 

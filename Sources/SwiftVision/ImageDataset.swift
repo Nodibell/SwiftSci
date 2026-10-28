@@ -437,26 +437,15 @@ public actor YOLOv8Detector {
         return nonMaximumSuppression(boxes: candidateBoxes)
     }
 
-    /// Non maximum suppression.
+    /// Non maximum suppression using class-aware filtering.
     /// - Parameters:
-    ///   - boxes: The boxes.
-    /// - Returns: A `[BoundingBox]` result.
+    ///   - boxes: The candidate bounding boxes.
+    /// - Returns: A `[BoundingBox]` result filtered by per-class IoU threshold.
     public func nonMaximumSuppression(boxes: [BoundingBox]) -> [BoundingBox] {
-        let sorted = boxes.sorted { $0.confidence > $1.confidence }
-        var selected: [BoundingBox] = []
-
-        for box in sorted {
-            var keep = true
-            for prev in selected {
-                if box.iou(with: prev) > iouThreshold {
-                    keep = false
-                    break
-                }
-            }
-            if keep {
-                selected.append(box)
-            }
-        }
-        return selected
+        NonMaximumSuppression.filter(
+            boxes: boxes,
+            iouThreshold: iouThreshold,
+            scoreThreshold: 0.0
+        )
     }
 }

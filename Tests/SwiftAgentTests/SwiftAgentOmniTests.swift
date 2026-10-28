@@ -305,7 +305,7 @@ final class SwiftAgentOmniTests: XCTestCase {
         XCTAssertFalse(tool.requiresApproval)
 
         // Mutating statement blocked by sentry
-        let blockedWords = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE", "CREATE"]
+        let blockedWords = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE", "CREATE", "REPLACE", "PRAGMA"]
         for w in blockedWords {
             do {
                 _ = try await tool.executeStructured(arguments: [
@@ -316,6 +316,13 @@ final class SwiftAgentOmniTests: XCTestCase {
                 XCTAssertTrue(error.localizedDescription.contains("Security Violation"))
             }
         }
+
+        // Identifiers containing substrings like 'create' or 'update' (e.g. created_at, updated_at) must NOT be false-positively blocked
+        let identifierSafe = try await tool.executeStructured(arguments: [
+            "query": "SELECT 1 AS created_at, 2 AS updated_at;"
+        ])
+        XCTAssertTrue(identifierSafe.text.contains("created_at"))
+        XCTAssertTrue(identifierSafe.text.contains("updated_at"))
 
         // Missing query parameter
         do {

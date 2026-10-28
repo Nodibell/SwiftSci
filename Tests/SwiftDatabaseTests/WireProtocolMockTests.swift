@@ -419,4 +419,106 @@ struct WireProtocolMockTests {
         #expect(dfFromSQL.shape.rows == 2)
         #expect(dfFromSQL.shape.columns == 7)
     }
+
+    @Test("PostgreSQL and MySQL fail closed when sslMode is .require")
+    func testTLSRequireFailsClosed() async {
+        let pg = PostgreSQLConnection(
+            host: "127.0.0.1",
+            port: 5432,
+            user: "postgres",
+            password: "secret",
+            database: "testdb",
+            sslMode: .require
+        )
+        await #expect(throws: DatabaseError.self) {
+            _ = try await pg.executeQuery("SELECT 1;")
+        }
+
+        let my = MySQLConnection(
+            host: "127.0.0.1",
+            port: 3306,
+            user: "root",
+            password: "secret",
+            database: "testdb",
+            sslMode: .require
+        )
+        await #expect(throws: DatabaseError.self) {
+            _ = try await my.executeQuery("SELECT 1;")
+        }
+    }
+
+    @Test("MySQL sends 20-byte SHA-1 token for mysql_native_password and rejects unsupported auth plugin")
+    func testMySQLNativePasswordTokenAndUnsupportedPlugin() async throws {
+        let scramble1 = [UInt8](repeating: 0x41, count: 8)
+        let scramble2 = [UInt8](repeating: 0x42, count: 12)
+        let expectedToken = MySQLConnection.mysqlNativePasswordToken(
+            password: "secret",
+            scramble: scramble1 + scramble2
+        )
+        #expect(expectedToken.count == 20)
+
+        let (port, stop) = Self.createMockServer { clientFd in
+            var buf = [UInt8](repeating: 0, count: 4096)
+
+            // 1. Send HandshakeV10 requesting caching_sha2_password
+            var handshakePayload = Data([10])
+            handshakePayload.append(contentsOf: "8.0.32\0".utf8)
+            handshakePayload.append(contentsOf: [1, 0, 0, 0])
+            handshakePayload.append(contentsOf: scramble1)
+            handshakePayload.append(0x00)
+            handshakePayload.append(contentsOf: [0xFF, 0xF7])
+            handshakePayload.append(33)
+            handshakePayload.append(contentsOf: [0x02, 0x00])
+            handshakePayload.append(contentsOf: [0xFF, 0x81])
+            handshakePayload.append(21)
+            handshakePayload.append(contentsOf: [UInt8](repeating: 0x00, count: 10))
+            handshakePayload.append(contentsOf: scramble2)
+            handshakePayload.append(0x00)
+            handshakePayload.append(contentsOf: "caching_sha2_password\0".utf8)
+
+            let hLen = handshakePayload.count
+            var handshakePacket = Data([UInt8(hLen & 0xFF), UInt8((hLen >> 8) & 0xFF), UInt8((hLen >> 16) & 0xFF), 0])
+            handshakePacket.append(handshakePayload)
+            _ = handshakePacket.withUnsafeBytes { send(clientFd, $0.baseAddress, handshakePacket.count, 0) }
+            _ = recv(clientFd, &buf, buf.count, 0)
+        }
+        defer { stop() }
+
+        let conn = MySQLConnection(connectionURL: "mysql://root:secret@127.0.0.1:\(port)/testdb")
+        await #expect(throws: DatabaseError.self) {
+            _ = try await conn.executeQuery("SELECT 1;")
+        }
+    }
+
+    @Test("SQLiteConnection executeReadOnlyQuery enforces C-API read-only and single-statement semantics")
+    func testSQLiteExecuteReadOnlyQuery() async throws {
+        let tempFile = NSTemporaryDirectory() + "test_ro_\(UUID().uuidString).db"
+        defer { try? FileManager.default.removeItem(atPath: tempFile) }
+
+        let writer = SQLiteConnection(databasePath: tempFile)
+        _ = try await writer.executeQuery("CREATE TABLE events (id INT PRIMARY KEY, created_at TEXT);")
+        _ = try await writer.executeQuery("INSERT INTO events VALUES (1, '2026-10-28');")
+        await writer.close()
+
+        let reader = SQLiteConnection(databasePath: tempFile)
+        let res = try await reader.executeReadOnlyQuery("SELECT id, created_at FROM events;")
+        #expect(res.columns == ["id", "created_at"])
+        #expect(res.rows.count == 1)
+
+        // Reject REPLACE INTO
+        await #expect(throws: DatabaseError.self) {
+            _ = try await reader.executeReadOnlyQuery("REPLACE INTO events VALUES (1, 'mutated');")
+        }
+
+        // Reject writable PRAGMA
+        await #expect(throws: DatabaseError.self) {
+            _ = try await reader.executeReadOnlyQuery("PRAGMA user_version = 42;")
+        }
+
+        // Reject stacked multi-statement query
+        await #expect(throws: DatabaseError.self) {
+            _ = try await reader.executeReadOnlyQuery("SELECT id FROM events; DELETE FROM events;")
+        }
+        await reader.close()
+    }
 }

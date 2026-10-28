@@ -65,6 +65,7 @@ public enum SchemaValidationError: Error, LocalizedError, Sendable, Equatable {
     case invalidJSON(String)
     case utf8ConversionFailed
 
+    /// Localized human-readable error message.
     public var errorDescription: String? {
         switch self {
         case .missingRequired(let req):

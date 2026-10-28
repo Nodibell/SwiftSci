@@ -55,4 +55,58 @@ struct LogisticRegressionTests {
             _ = try await model.predict(features: [[1.0]])
         }
     }
+
+    @Test("ProbabilityMatrix honors RandomAccessCollection contract across empty, single, and multi-row shapes")
+    func testProbabilityMatrixCollectionContract() async throws {
+        // 1. Empty matrix
+        let empty = ProbabilityMatrix([])
+        #expect(empty.isEmpty)
+        #expect(empty.count == 0)
+        #expect(empty.startIndex == 0)
+        #expect(empty.endIndex == 0)
+        #expect(Array(empty).isEmpty)
+        #expect(empty.asArray.isEmpty)
+
+        // 2. Single-row matrix (previously padded to 6 rows)
+        let single: ProbabilityMatrix = [[0.25, 0.75]]
+        #expect(!single.isEmpty)
+        #expect(single.count == 1)
+        #expect(single.startIndex == 0)
+        #expect(single.endIndex == 1)
+        #expect(single[single.startIndex] == [0.25, 0.75])
+        #expect(single[single.index(before: single.endIndex)] == [0.25, 0.75])
+        #expect(single.map { $0[1] } == [0.75])
+        #expect(single == ProbabilityMatrix([[0.25, 0.75]]))
+
+        // 3. Multi-row matrices on both sides of the old 6-row threshold
+        for rowCount in [2, 5, 6, 8] {
+            let rawRows = (0..<rowCount).map { i -> [Double] in
+                let p = Double(i) / Double(max(1, rowCount))
+                return [1.0 - p, p]
+            }
+            let matrix = ProbabilityMatrix(rawRows)
+            #expect(matrix.count == rowCount)
+            #expect(matrix.startIndex == 0)
+            #expect(matrix.endIndex == rowCount)
+            #expect(matrix[matrix.startIndex] == rawRows.first)
+            #expect(matrix[matrix.index(before: matrix.endIndex)] == rawRows.last)
+            #expect(Array(matrix) == rawRows)
+            #expect(matrix.asArray == rawRows)
+            #expect(matrix.description == rawRows.description)
+        }
+
+        // 4. End-to-end predictProba parity with predictProbability
+        let model = LogisticRegression(weights: [2.0, -3.0], bias: 1.0, device: .cpu)
+        let singleBatch = [[1.0, 1.0]]
+        let probaSingle = try await model.predictProba(features: singleBatch)
+        let rawSingle = try await model.predictProbability(features: singleBatch)
+        #expect(probaSingle.count == 1)
+        #expect(probaSingle.asArray == rawSingle)
+
+        let twoRowBatch = [[1.0, 1.0], [0.0, 0.0]]
+        let probaTwo = try await model.predictProba(features: twoRowBatch)
+        let rawTwo = try await model.predictProbability(features: twoRowBatch)
+        #expect(probaTwo.count == 2)
+        #expect(probaTwo.asArray == rawTwo)
+    }
 }

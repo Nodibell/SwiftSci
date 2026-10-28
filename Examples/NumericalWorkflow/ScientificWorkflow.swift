@@ -11,7 +11,7 @@ struct ScientificWorkflow: AsyncParsableCommand {
         abstract: "Train, save and reuse a complete fitted numerical workflow.",
         subcommands: [Train.self, Predict.self], defaultSubcommand: Train.self)
 
-    static let featureNames = ["signal", "companion", "constant"]
+    static let defaultFeatureNames = ["signal", "companion", "constant"]
 
     static func readCSV(_ url: URL) async throws -> DataFrame {
         var options = CSVReadOptions()
@@ -44,10 +44,34 @@ struct ScientificWorkflow: AsyncParsableCommand {
 
     struct Train: AsyncParsableCommand {
         static let configuration = CommandConfiguration(abstract: "Fit training rows, evaluate held-out rows and save model.json.")
-        @Option(help: "CSV with signal, companion, constant and binary class; defaults to the bundled sample.")
+        @Option(help: "Training CSV; defaults to the bundled sample.")
         var input: String?
         @Option(help: "Directory for model.json, predictions.csv and report.json; those files are replaced.")
         var output = ".build/numerical-workflow"
+        @Option(name: .customLong("feature"), help: "Numeric feature column. Repeat in fitted order; defaults to signal, companion, constant.")
+        var features: [String] = []
+        @Option(help: "Binary target column, containing 0 and 1.") var target = "class"
+        @Option(help: "Number of PCA components, at most the number of selected features and training rows.")
+        var components = 2
+        @Option(help: "Positive finite logistic learning rate.") var learningRate: Float = 0.125
+        @Option(help: "Number of logistic updates. Zero saves an initialized classifier.") var epochs = 64
+
+        var featureNames: [String] { features.isEmpty ? ScientificWorkflow.defaultFeatureNames : features }
+
+        func validate() throws {
+            guard featureNames.allSatisfy({ !$0.isEmpty }), Set(featureNames).count == featureNames.count else {
+                throw ValidationError("Each --feature must name a different, nonempty column.")
+            }
+            guard !target.isEmpty, !featureNames.contains(target) else {
+                throw ValidationError("--target must be nonempty and separate from every --feature.")
+            }
+            guard components > 0, components <= featureNames.count else {
+                throw ValidationError("--components must be between 1 and the number of selected features.")
+            }
+            guard learningRate.isFinite, learningRate > 0, epochs >= 0 else {
+                throw ValidationError("--learning-rate must be finite and positive; --epochs must be nonnegative.")
+            }
+        }
 
         func run() async throws {
             let inputURL: URL
@@ -65,24 +89,27 @@ struct ScientificWorkflow: AsyncParsableCommand {
             let reportURL = directory.appendingPathComponent("report.json")
             try ScientificWorkflow.protect([inputURL], from: [modelURL, csvURL, reportURL])
             let frame = try await ScientificWorkflow.readCSV(inputURL)
-            let source = try frame.prepareNumericBatch(ScientificWorkflow.featureNames + ["class"])
+            let source = try frame.prepareNumericBatch(featureNames + [target])
             guard source.rowCount >= 6 else {
                 throw ValidationError("This example needs at least six data rows for its training/test split.")
             }
-            let supervised = try PreparedSupervisedBatch(source, targetColumn: "class")
+            let supervised = try PreparedSupervisedBatch(source, targetColumn: target)
             let count = source.rowCount * 2 / 3
             let trainingIDs = Array(0..<count)
             let queryIDs = Array((count..<source.rowCount).reversed())
             let training = try supervised.selectingRows(trainingIDs)
             let query = try supervised.selectingRows(queryIDs)
             guard query.targets.allSatisfy({ $0 == 0 || $0 == 1 }) else {
-                throw ValidationError("Every class value must be 0 or 1, without missing values.")
+                throw ValidationError("Every target value must be 0 or 1, without missing values.")
             }
-            let workflow = try await PCAClassificationWorkflow.train(training: training)
+            let workflow = try await PCAClassificationWorkflow.train(training: training, components: components,
+                learningRate: learningRate, epochs: epochs)
             let result = try await workflow.predict(query.features)
             let accuracy = Metrics.accuracy(yTrue: query.targets.map { Int($0) }, yPred: result.labels)
             let report: [String: Any] = ["schemaVersion": 2, "trainingSourceRows": trainingIDs,
-                "querySourceRows": result.sourceRowIndices, "accuracy": accuracy]
+                "querySourceRows": result.sourceRowIndices, "accuracy": accuracy,
+                "trainingOptions": ["featureNames": featureNames, "targetColumn": target,
+                    "components": components, "learningRate": Double(learningRate), "epochs": epochs]]
             let json = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try workflow.save(to: modelURL)

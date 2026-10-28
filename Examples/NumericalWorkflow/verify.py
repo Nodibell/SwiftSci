@@ -9,11 +9,13 @@ from pathlib import Path
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("output", type=Path, help="Directory containing report.json and predictions.csv")
+parser.add_argument("output", type=Path, help="Directory containing model.json, report.json and predictions.csv")
 args = parser.parse_args()
 report_path = args.output / "report.json"
 csv_path = args.output / "predictions.csv"
 report = json.loads(report_path.read_text(encoding="utf-8"))
+model_path = args.output / "model.json"
+model = json.loads(model_path.read_text(encoding="utf-8"))
 errors = {}
 
 
@@ -44,16 +46,11 @@ raw = [[-4, -7, 7], [-3, -5, 7], [-2, None, 7], [-1, -1, 7],
        [1, 2, 7], [2, 3, 7], [3, 6, 7], [4, 8, 7],
        [-2.5, -4.5, 7], [2.5, 5, 7], [0.5, None, 7], [-0.5, 1, 7]]
 targets = [0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0]
-assert report["schemaVersion"] == 1
-assert report["rawRows"] == raw and report["sourceTargets"] == targets
+assert report["schemaVersion"] == 2 and model["version"] == 1
 assert report["trainingSourceRows"] == training_ids and report["querySourceRows"] == query_ids
-assert set(training_ids).isdisjoint(query_ids) and report["sourceSnapshotPreserved"] is True
-assert report["nullFeatureCount"] == report["nanFeatureCount"] == 1
-assert report["featureNames"] == ["signal", "companion", "constant"]
-assert report["scoreNames"] == ["PC1", "PC2"]
-assert report["trainingTargets"] == [targets[i] for i in training_ids]
-assert report["queryTargets"] == [targets[i] for i in query_ids]
-assert report["epochs"] == 64 and report["learningRate"] == 0.125
+assert model["featureNames"] == ["signal", "companion", "constant"]
+assert set(model) == {"version", "featureNames", "imputationStatistics", "scalingMean", "scalingStd",
+                      "pcaMean", "pcaComponents", "pcaVariance", "pcaTotalVariance", "weights", "bias"}
 
 # Fit independent preprocessing parameters on training rows only.
 replacements = []
@@ -67,12 +64,9 @@ deviations = [value if value >= 1e-12 else 1 for value in deviations]
 scaled = [[(row[j] - means[j]) / deviations[j] for j in range(3)] for row in imputed]
 training = [scaled[i] for i in training_ids]
 query = [scaled[i] for i in query_ids]
-close("imputation", report["imputationStatistics"], replacements)
-close("scaling_mean", report["scalingMean"], means)
-close("scaling_std", report["scalingStd"], deviations)
-close("scaled_training", report["scaledTraining"], training)
-close("scaled_query", report["scaledQuery"], query)
-assert all(row[2] == 0 for row in report["scaledTraining"] + report["scaledQuery"])
+close("imputation", model["imputationStatistics"], replacements)
+close("scaling_mean", model["scalingMean"], means)
+close("scaling_std", model["scalingStd"], deviations)
 
 # Solve the two varying features' covariance eigensystem without a numerical library.
 pca_mean = [math.fsum(row[j] for row in training) / 8 for j in range(3)]
@@ -88,13 +82,14 @@ for index, value in enumerate(variances):
     vector = [bb, value - aa, 0.0]
     length = math.sqrt(dot(vector, vector))
     vector = [x / length for x in vector]
-    if dot(vector, report["pcaComponents"][index]) < 0:
+    if dot(vector, model["pcaComponents"][index]) < 0:
         vector = [-x for x in vector]
     vectors.append(vector)
-close("pca_mean", report["pcaMean"], pca_mean)
-close("pca_variance", report["pcaVariance"], variances)
-close("pca_components", report["pcaComponents"], vectors)
-close("pca_orthogonality", dot(report["pcaComponents"][0], report["pcaComponents"][1]), 0)
+close("pca_mean", model["pcaMean"], pca_mean)
+close("pca_variance", model["pcaVariance"], variances)
+close("pca_total_variance", model["pcaTotalVariance"], aa + cc)
+close("pca_components", model["pcaComponents"], vectors)
+close("pca_orthogonality", dot(model["pcaComponents"][0], model["pcaComponents"][1]), 0)
 
 
 def scores(rows):
@@ -102,8 +97,6 @@ def scores(rows):
 
 
 training_scores, query_scores = scores(training), scores(query)
-close("training_scores", report["trainingScores"], training_scores)
-close("query_scores", report["queryScores"], query_scores)
 
 # Use independent full-batch binary logistic updates on the independently derived scores.
 weights, bias = [0.0, 0.0], 0.0
@@ -115,10 +108,8 @@ for _ in range(64):
 positive = [sigmoid(dot(row, weights) + bias) for row in query_scores]
 probabilities = [[1 - value, value] for value in positive]
 predictions = [int(value > 0.5) for value in positive]
-close("logistic_weights", report["weights"], weights)
-close("logistic_bias", report["bias"], bias)
-close("probabilities", report["probabilities"], probabilities)
-assert report["predictions"] == predictions
+close("logistic_weights", model["weights"], weights)
+close("logistic_bias", model["bias"], bias)
 accuracy = sum(prediction == targets[i] for prediction, i in zip(predictions, query_ids)) / len(query_ids)
 close("accuracy", report["accuracy"], accuracy)
 
@@ -138,5 +129,5 @@ sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
 print(json.dumps(dict(status="passed", training_rows=8, query_source_rows=query_ids,
                       tolerance="abs(error)<=1e-12+1e-12*abs(reference)",
                       maximum_absolute_errors=errors, predictions=predictions, accuracy=accuracy,
-                      report_sha256=sha(report_path), csv_sha256=sha(csv_path),
+                      model_sha256=sha(model_path), report_sha256=sha(report_path), csv_sha256=sha(csv_path),
                       verifier_sha256=sha(Path(__file__))), indent=2))

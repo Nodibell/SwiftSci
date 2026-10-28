@@ -30,6 +30,7 @@ let package = Package(
         .library(name: "SwiftVision",        targets: ["SwiftVision"]),
         .library(name: "SwiftDatabase",      targets: ["SwiftDatabase"]),
         .library(name: "SwiftAgent",         targets: ["SwiftAgent"]),
+        .library(name: "SwiftWorkflow",      targets: ["SwiftWorkflow"]),
         .executable(name: "swiftsci",        targets: ["SwiftSciCLI"]),
         .executable(name: "ScientificWorkflow", targets: ["ScientificWorkflow"]),
     ],
@@ -475,14 +476,28 @@ let package = Package(
             swiftSettings: globalSwiftSettings
         ),
 
+        .target(
+            name: "SwiftWorkflow",
+            dependencies: ["SwiftDataFrame", "SwiftPreprocessing", "SwiftCluster", "SwiftML"],
+            path: "Sources/SwiftWorkflow",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftWorkflowTests",
+            dependencies: ["SwiftWorkflow", "SwiftDataFrame", "SwiftPreprocessing", "SwiftCluster"],
+            path: "Tests/SwiftWorkflowTests",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
         .executableTarget(
             name: "ScientificWorkflow",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                "SwiftDataFrame", "SwiftPreprocessing", "SwiftCluster", "SwiftML", "SwiftOptimize"
+                "SwiftDataFrame", "SwiftWorkflow", "SwiftOptimize"
             ],
             path: "Examples/NumericalWorkflow",
-            exclude: ["README.md", "verify.py"],
+            exclude: ["README.md", "verify.py", "verify-persistence.py"],
             resources: [.copy("Data")],
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings

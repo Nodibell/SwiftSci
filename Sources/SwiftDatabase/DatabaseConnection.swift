@@ -48,7 +48,10 @@ public enum SQLWriteMode: String, Sendable, Codable {
 public enum SSLMode: String, Sendable, Codable {
     /// Plaintext TCP socket connection (no encryption).
     case disable
-    /// Attempts encrypted TLS connection with fallback to plaintext.
+    /// Prefers an encrypted TLS connection with fallback to plaintext TCP.
+    ///
+    /// > Note: Native TLS wire negotiation is not yet implemented in `PostgreSQLConnection` or `MySQLConnection`.
+    /// > In v3.12.0, `.prefer` does not perform TLS negotiation and connects over unencrypted TCP; use `.require` to enforce fail-closed rejection of unencrypted connections.
     case prefer
     /// Requires an encrypted TLS connection.
     ///
@@ -160,6 +163,7 @@ public actor SQLiteConnection: DatabaseConnection {
     /// The database path.
     nonisolated public let databasePath: String
     private var dbBox: SQLiteHandleBox?
+    private var readOnlyDbBox: SQLiteHandleBox?
 
     /// Creates a new SQLiteConnection.
     /// - Parameter databasePath: Path to the SQLite file, or `":memory:"` for an in-memory DB.
@@ -174,13 +178,25 @@ public actor SQLiteConnection: DatabaseConnection {
             box.handle = nil
         }
         dbBox = nil
+        if let roBox = readOnlyDbBox, let roHandle = roBox.handle {
+            sqlite3_close_v2(roHandle)
+            roBox.handle = nil
+        }
+        readOnlyDbBox = nil
     }
 
     private func getOrOpenHandle(readOnly: Bool = false) throws -> OpaquePointer {
-        if let box = dbBox, let h = box.handle { return h }
-        var db: OpaquePointer?
         let isMemory = databasePath == ":memory:" || databasePath.contains("mode=memory")
-        let flags = (readOnly && !isMemory)
+        let useDedicatedReadOnlyHandle = readOnly && !isMemory
+
+        if useDedicatedReadOnlyHandle {
+            if let box = readOnlyDbBox, let h = box.handle { return h }
+        } else {
+            if let box = dbBox, let h = box.handle { return h }
+        }
+
+        var db: OpaquePointer?
+        let flags = useDedicatedReadOnlyHandle
             ? (SQLITE_OPEN_READONLY | SQLITE_OPEN_URI)
             : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI)
         if sqlite3_open_v2(databasePath, &db, flags, nil) != SQLITE_OK {
@@ -188,8 +204,18 @@ public actor SQLiteConnection: DatabaseConnection {
             if let db { sqlite3_close_v2(db) }
             throw DatabaseError.connectionFailed("\(databasePath): \(msg)")
         }
-        self.dbBox = SQLiteHandleBox(handle: db)
+        if useDedicatedReadOnlyHandle {
+            self.readOnlyDbBox = SQLiteHandleBox(handle: db)
+        } else {
+            self.dbBox = SQLiteHandleBox(handle: db)
+        }
         return db!
+    }
+
+    /// Returns whether the active handle for the specified mode is opened in SQLite C-API read-only mode (`sqlite3_db_readonly == 1`).
+    internal func isHandleReadOnly(forReadOnlyQuery: Bool) throws -> Bool {
+        let db = try getOrOpenHandle(readOnly: forReadOnlyQuery)
+        return sqlite3_db_readonly(db, "main") == 1
     }
 
     /// Executes a SQL statement in strict read-only mode, verifying at the SQLite C API level
@@ -1002,9 +1028,22 @@ public actor MySQLConnection: DatabaseConnection {
             authResponseBytes = Self.mysqlNativePasswordToken(password: password, scramble: parsedHandshake.scramble)
         }
 
-        // --- Send Handshake Response ---
+        // --- Send Handshake Response (Protocol::HandshakeResponse41) ---
+        var clientFlags: UInt32 = 0x0006A285 // LONG_PASSWORD | LONG_FLAG | LOCAL_FILES | PROTOCOL_41 | TRANSACTIONS | SECURE_CONNECTION | MULTI_RESULTS | PS_MULTI_RESULTS
+        if !database.isEmpty {
+            clientFlags |= 0x00000008 // CLIENT_CONNECT_WITH_DB
+        }
+        if !parsedHandshake.pluginName.isEmpty {
+            clientFlags |= 0x00080000 // CLIENT_PLUGIN_AUTH
+        }
+
         var responsePayload = Data()
-        responsePayload.append(contentsOf: [0x85, 0xA2, 0x1E, 0x00]) // capabilities
+        responsePayload.append(contentsOf: [
+            UInt8(clientFlags & 0xFF),
+            UInt8((clientFlags >> 8) & 0xFF),
+            UInt8((clientFlags >> 16) & 0xFF),
+            UInt8((clientFlags >> 24) & 0xFF)
+        ])
         responsePayload.append(contentsOf: [0x00, 0x00, 0x00, 0x01]) // max_packet_size
         responsePayload.append(33)                                    // charset utf8
         responsePayload.append(contentsOf: [UInt8](repeating: 0, count: 23))
@@ -1029,6 +1068,16 @@ public actor MySQLConnection: DatabaseConnection {
         }
         if authResp[0] == 0xFF {
             throw DatabaseError.connectionFailed("MySQL auth failed")
+        }
+        if authResp[0] == 0xFE || authResp[0] == 0x01 {
+            throw DatabaseError.unsupportedAuth(
+                "MySQL server requested authentication switch or continuation (header: 0x\(String(format: "%02X", authResp[0]))), which is not supported."
+            )
+        }
+        guard authResp[0] == 0x00 else {
+            throw DatabaseError.connectionFailed(
+                "Unexpected MySQL authentication response packet header: 0x\(String(format: "%02X", authResp[0]))"
+            )
         }
 
         // --- Send COM_QUERY ---

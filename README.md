@@ -199,20 +199,24 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
 
 ## 🚀 What's New in v3.12.0
 
-- **`ProbabilityMatrix` Collection Contract Fix (`SwiftML`)**: Fixed `RandomAccessCollection` conformance in `ProbabilityMatrix` (`endIndex == rows.count`, strict bounds-checked `subscript`), eliminating duplicate row predictions on $0 < N < 6$ batches and out-of-bounds traps on empty batches; added `Equatable` conformance.
+- **Persisted ML Workflows & `SwiftWorkflow` Module (`SwiftWorkflow`, `Examples/NumericalWorkflow`)**: Introduced the 15th module (`PCAClassificationWorkflow`) and the `ScientificWorkflow` CLI, composing training-only imputation, standardization, PCA projection, and classification into a versioned JSON artifact with strict feature schema validation, configurable CSV training, and labeled evaluation of saved models (PR #98–#101).
+- **Prepared Classification, PCA & Reusable CPU MLP (`SwiftML`, `SwiftCluster`, `SwiftPreprocessing`)**: End-to-end `PreparedNumericBatch` fitting, projection, and prediction for `PCA`, `LogisticRegression`, `LinearSVC`, `ClassificationPipeline`, and reusable standardized CPU `MLP` inference with provenance accounting and high-throughput tile preprocessing (PR #82, #83, #84, #89, #90, #91, #93).
+- **Vectorized & Streaming CSV Overhaul + Compact `Double` Retention (`SwiftDataFrame`)**: SIMD structural scans for unquoted CSV records, scoped record batch discovery, on-demand streaming chunks, explicit per-column date formats, and zero-expansion compact `Double` retention across CSV decoding, gathering, nullable joins, filtering, and adaptive radix sorting (PR #85, #86, #87, #88).
+- **WAPE Metric, Zero-Shot Classification & Deterministic Embeddings (`SwiftForecast`, `SwiftNLP`, `SwiftAgent`)**: Added SIMD-accelerated `TimeSeriesMetrics.evaluateWAPE` (G-029), `ZeroShotClassifier` (G-025), cross-process deterministic FNV-1a local embeddings, and producer-linked `ReActAgent` stream cancellation (PR #80, #95, #96).
+- **`ProbabilityMatrix` Collection Contract Fix (`SwiftML`)**: Fixed `RandomAccessCollection` conformance in `ProbabilityMatrix` (`endIndex == rows.count`, strict bounds-checked `subscript`), eliminating duplicate row predictions on $0 < N < 6$ batches and out-of-bounds traps on empty batches; added `Equatable` conformance (PR #102).
 - **Database Security & Read-Only Enforcement (`SwiftDatabase`, `SwiftAgent`)**:
-  - `PostgreSQLConnection` and `MySQLConnection` now fail closed (`DatabaseError.notImplemented`) when `sslMode == .require` (rejecting connections rather than silently downgrading to plaintext TCP while native TLS negotiation is not yet implemented).
-  - Implemented standard 20-byte `mysql_native_password` SHA-1 challenge-response authentication (`SHA1(password) XOR SHA1(scramble20 + SHA1(SHA1(password)))`) and explicit fail-closed rejection (`DatabaseError.unsupportedAuth`) when the server requests other authentication plugins (such as `caching_sha2_password`).
-  - Added engine-enforced `SQLiteConnection.executeReadOnlyQuery(_:)` (`SQLITE_OPEN_READONLY`, `PRAGMA query_only = ON`, single-statement check, `sqlite3_stmt_readonly`) and tokenized SQL keyword validation in `SafeDatabaseQueryTool` (resolving false-positive rejections on identifiers like `created_at` / `updated_at`).
+  - `PostgreSQLConnection` and `MySQLConnection` now fail closed (`DatabaseError.notImplemented`) when `sslMode == .require` (rejecting connections rather than silently downgrading to plaintext TCP while native TLS negotiation is not yet implemented) (PR #102).
+  - Implemented standard 20-byte `mysql_native_password` SHA-1 challenge-response authentication (`SHA1(password) XOR SHA1(scramble20 + SHA1(SHA1(password)))`) and explicit fail-closed rejection (`DatabaseError.unsupportedAuth`) when the server requests other authentication plugins (such as `caching_sha2_password`) (PR #102).
+  - Added engine-enforced `SQLiteConnection.executeReadOnlyQuery(_:)` (`SQLITE_OPEN_READONLY`, `PRAGMA query_only = ON`, single-statement check, `sqlite3_stmt_readonly`) and tokenized SQL keyword validation in `SafeDatabaseQueryTool` (resolving false-positive rejections on identifiers like `created_at` / `updated_at`) (PR #102).
 - **Class-Aware YOLOv8 NMS & Validated HNSW Indexing (`SwiftVision`, `SwiftCluster`)**:
-  - `YOLOv8Detector` now applies class-aware Non-Maximum Suppression via `NonMaximumSuppression.filter`, preserving co-located detections of distinct classes.
-  - `HNSWIndex` enforces vector dimensionality invariants (`dimension: Int?`) across `add` and `search`, and introduces validated throwing APIs (`addValidated`, `searchValidated`, `HNSWError`).
+  - `YOLOv8Detector` now applies class-aware Non-Maximum Suppression via `NonMaximumSuppression.filter`, preserving co-located detections of distinct classes, and supports standard ONNX tensor wire fields (PR #80, #81, #102).
+  - `HNSWIndex` enforces vector dimensionality invariants (`dimension: Int?`) across `add`, `search`, and internal distance functions (removing `min(a.count, b.count)`), and introduces validated throwing APIs (`addValidated`, `searchValidated`, `HNSWError`) (PR #102).
 - **Statistical & Visualization Hardening (`SwiftStats`, `SwiftForecast`, `SwiftVisualization`)**:
-  - Added `NaN`/`Inf` input guards to `Stats.spearmanCorrelation` and finite non-negative `epsilon` validation to `TimeSeriesMetrics` (`evaluateMAPE`, `evaluateSMAPE`, `evaluateWAPE`).
-  - Fixed pairwise-complete index alignment in `plotCorrelationHeatmap` and tied-score grouping in `plotROCCurve`.
+  - Added `NaN`/`Inf` input guards to `Stats.spearmanCorrelation` and finite non-negative `epsilon` validation to `TimeSeriesMetrics` (`evaluateMAPE`, `evaluateSMAPE`, `evaluateWAPE`) (PR #102).
+  - Fixed pairwise-complete index alignment in `plotCorrelationHeatmap` and tied-score grouping in `plotROCCurve` (PR #102).
 - **Toolchain Alignment & 100% API Documentation (`Package.swift`, `DocC`, `CI`)**:
-  - Aligned `Package.swift` to `swift-tools-version: 6.3` matching `mlx-swift` 0.32.3+ requirements.
-  - Achieved **100.00% (2,525/2,525)** public declaration documentation coverage across all 15 modules (including `SwiftWorkflow`) and enabled `SwiftForecastTests` in GitHub Actions CPU CI.
+  - Aligned `Package.swift` to `swift-tools-version: 6.3` matching `mlx-swift` 0.32.3+ requirements (PR #102).
+  - Achieved **100.00% (2,525/2,525)** public declaration documentation coverage across all 15 modules (including `SwiftWorkflow`), expanded multi-section DocC tutorials, exported multi-binary LCOV coverage, and enabled `SwiftForecastTests` in GitHub Actions CPU CI (PR #80, #92, #97, #102).
 
 ## 🚀 What's New in v3.11.0
 

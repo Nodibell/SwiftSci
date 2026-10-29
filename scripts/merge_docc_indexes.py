@@ -18,7 +18,8 @@ def merge_docc_indexes(tmp_dir, output_index_file, output_metadata_file=None):
         "SwiftVisualization",
         "SwiftVision",
         "SwiftDatabase",
-        "SwiftAgent"
+        "SwiftAgent",
+        "SwiftWorkflow"
     ]
     
     combined_identifiers = []

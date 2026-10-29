@@ -23,6 +23,7 @@ TARGETS=(
   "SwiftVision"
   "SwiftDatabase"
   "SwiftAgent"
+  "SwiftWorkflow"
 )
 
 # 1. Build DocC archive for each target into separate temp folders

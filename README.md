@@ -289,8 +289,8 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
 
 ## 📚 Documentation & Resources
 
-- **API Reference**: [Interactive DocC Documentation](https://nodibell.github.io/SwiftSci/) (100% verified coverage)
-- **The SwiftSci Book**: [Comprehensive Guides & Theory](Book/README.md)
+- **API Reference**: [Interactive DocC Documentation](https://nodibell.github.io/SwiftSci/) (100% verified coverage across all 15 modules)
+- **Engineering Handbook & Practical Cookbook**: [SwiftSci 3.12.0 Complete Engineering Handbook & Practical Cookbook](https://github.com/Nodibell/SwiftSci/releases/tag/v3.12.0) ([PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.12.0/SwiftSci_Handbook_3.12.0.pdf) · [EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.12.0/SwiftSci_Handbook_3.12.0.epub)) (114 pages, 64 verified recipes)
 - **Benchmarking Suite**: [PERFORMANCE.md](PERFORMANCE.md) & [ACCURACY.md](ACCURACY.md)
 - **Release History**: [CHANGELOG.md](CHANGELOG.md)
 - **Roadmap**: [ROADMAP.md](ROADMAP.md)

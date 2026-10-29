@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwiftSci 3.11.0 — Native Swift Data Science & Machine Learning Ecosystem</title>
+  <title>SwiftSci 3.12.0 — Native Swift Data Science & Machine Learning Ecosystem</title>
   <meta name="description"
-    content="Official documentation portal for SwiftSci 3.11.0 — 14 core scientific computing, statistics, dataframe, forecasting, local LLM runtime, MLX and machine learning modules for Swift 6 on macOS.">
+    content="Official documentation portal for SwiftSci 3.12.0 — 15 core scientific computing, statistics, dataframe, forecasting, local LLM runtime, MLX, computer vision, and machine learning modules for Swift 6 on Apple Silicon.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -250,6 +250,97 @@
       gap: 4px;
     }
 
+    .handbook-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.16) 0%, rgba(168, 85, 247, 0.12) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 20px;
+      padding: 32px;
+      margin: 0 0 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    @media (min-width: 860px) {
+      .handbook-banner {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .handbook-info {
+      flex: 1;
+    }
+
+    .handbook-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #a5b4fc;
+      margin-bottom: 8px;
+    }
+
+    .handbook-info h3 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+
+    .handbook-info p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .handbook-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
     footer {
       border-top: 1px solid rgba(255, 255, 255, 0.08);
       padding: 32px 24px;
@@ -273,13 +364,13 @@
 <body>
 
   <header>
-    <div class="badge">🚀 SwiftSci v3.11.0 — 100% DocC Coverage</div>
+    <div class="badge">🚀 SwiftSci v3.12.0 — 100% DocC Coverage</div>
     <h1>Apple Silicon Data Science & ML</h1>
-    <p class="subtitle">A unified, high-performance C/vDSP/MLX accelerated data analytics ecosystem for Apple Silicon. 100% DocC API Coverage — v3.11.0 SIMD Hash Join (4.15×), Direct Matrix Pipelines, Native Llama 3.2, YOLOv8 Object Detection, Modular AutoML, and Mathematical Robustness across 14 Modules.</p>
+    <p class="subtitle">A unified, high-performance C/vDSP/MLX accelerated data analytics ecosystem for Apple Silicon. 100% DocC API Coverage across all 15 Modules — pure-Swift Apache Parquet, SIMD Hash Joins, GPU/CPU ML, Time Series ARIMA, Local LLM runtime, YOLOv8 Vision, ReAct Agents, and persisted ML Workflows.</p>
 
     <div class="stats-bar">
       <div class="stat-item">
-        <span class="stat-value">14</span>
+        <span class="stat-value">15</span>
         <span class="stat-label">Core Modules</span>
       </div>
       <div class="stat-item">
@@ -290,10 +381,27 @@
         <span class="stat-value">100%</span>
         <span class="stat-label">DocC Coverage</span>
       </div>
+      <div class="stat-item">
+        <span class="stat-value">64</span>
+        <span class="stat-label">Verified Recipes</span>
+      </div>
     </div>
   </header>
 
   <main>
+    <div class="handbook-banner">
+      <div class="handbook-info">
+        <span class="handbook-tag">📖 Engineering Handbook & Practical Cookbook</span>
+        <h3>SwiftSci 3.12.0 Complete Handbook (114 Pages)</h3>
+        <p>The definitive guide to scientific computing on Apple Silicon: unified memory architecture, strict concurrency, 15 core modules deep-dive, audited benchmarks vs Python, and 64 verified cookbook recipes.</p>
+      </div>
+      <div class="handbook-actions">
+        <a href="https://github.com/Nodibell/SwiftSci/releases/download/v3.12.0/SwiftSci_Handbook_3.12.0.pdf" class="btn btn-primary" download>Download PDF (6.6 MB)</a>
+        <a href="https://github.com/Nodibell/SwiftSci/releases/download/v3.12.0/SwiftSci_Handbook_3.12.0.epub" class="btn btn-secondary" download>Download EPUB</a>
+        <a href="https://github.com/Nodibell/SwiftSci/releases/tag/v3.12.0" class="btn btn-secondary" target="_blank">Release v3.12.0 ↗</a>
+      </div>
+    </div>
+
     <h2 class="section-title">Explore Documentation Modules</h2>
 
     <div class="grid">
@@ -457,11 +565,22 @@
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
+      <!-- 15. SwiftWorkflow -->
+      <a href="https://github.com/Nodibell/SwiftSci/releases/tag/v3.12.0" class="card" target="_blank">
+        <div class="card-header">
+          <div class="card-icon">🔄</div>
+          <span class="card-tag">Workflows</span>
+        </div>
+        <h3 class="card-title">SwiftWorkflow <span class="arrow">→</span></h3>
+        <p class="card-desc">Production end-to-end ML workflows: training-only imputation, standardization, PCA projection, logistic classification, versioned JSON artifact persistence, and zero test-leakage evaluation.</p>
+        <div class="card-footer">Explore in v3.12.0 ↗</div>
+      </a>
+
     </div>
   </main>
 
   <footer>
-    <p>SwiftSci 3.11.0 Ecosystem — Licensed under the MIT License. Built for Apple Silicon UMA.</p>
+    <p>SwiftSci 3.12.0 Ecosystem — Licensed under the MIT License. Built for Apple Silicon UMA.</p>
     <p style="margin-top: 12px; display: flex; gap: 1rem; justify-content: center; align-items: center;">
       <a href="https://github.com/Nodibell/SwiftSci" target="_blank">View Project on GitHub</a>
     </p>

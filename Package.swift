@@ -48,8 +48,8 @@ let package = Package(
             from: "21.0.0"
         ),
         .package(
-            url: "https://github.com/crabel99/mlx-swift.git",
-            revision: "4657976edcdd2c60642424985d474b45ddddb390"
+            url: "https://github.com/ml-explore/mlx-swift.git",
+            from: "0.33.0"
         ),
         .package(
             url: "https://github.com/swiftlang/swift-docc-plugin",

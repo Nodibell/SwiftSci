@@ -383,6 +383,15 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
 
     private var compiledForwardCache: [Int: (MLXArray) -> MLXArray] = [:]
 
+    // MARK: Cross-shard quantized staging
+
+    private var pendingQuantizedTensors: [String: MLXArray] = [:]
+    private var quantizedModulePaths: Set<String> = []
+    private var activeQuantization: AffineQuantizationConfig?
+
+    var hasPendingQuantizedTensors: Bool { !pendingQuantizedTensors.isEmpty }
+    var pendingQuantizedKeys: [String] { pendingQuantizedTensors.keys.sorted() }
+
     // MARK: - Init
 
     /// Creates an N-layer TransformerDecoder.
@@ -546,7 +555,11 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
     /// memory instead of expanding them to dense floating point.
     @discardableResult
     public func loadWeights(_ weights: [String: MLXArray]) -> [String] {
-        if weights.keys.contains(where: { $0.hasSuffix(".scales") }) {
+        let hasQuantizedHint = !pendingQuantizedTensors.isEmpty ||
+            !quantizedModulePaths.isEmpty ||
+            weights.keys.contains(where: { $0.hasSuffix(".scales") || $0.hasSuffix(".biases") }) ||
+            weights.values.contains(where: { $0.dtype == .uint32 })
+        if hasQuantizedHint {
             return loadQuantizedWeights(weights)
         }
         var params: [String: MLXArray] = [:]
@@ -599,6 +612,7 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
         if !params.isEmpty {
             self.update(parameters: NestedDictionary.unflattened(params))
         }
+        compiledForwardCache.removeAll()
 
         return missing
     }
@@ -613,6 +627,11 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
     /// 15 GB of Float16. Modules without `scales` (for example norms) load densely.
     /// The embedding table is quantized as well when `model.embed_tokens.scales` exists.
     ///
+    /// When a sharded checkpoint splits `.weight`, `.scales`, or `.biases` across
+    /// calls, partial module tensors are staged internally until the matching pair
+    /// arrives in a later shard, while still reporting the module's weight as missing
+    /// until loading completes.
+    ///
     /// - Parameters:
     ///   - weights: Tensors keyed by HuggingFace Llama names, for example the output of
     ///     ``SafeTensorsParser/parse(url:)``.
@@ -626,6 +645,10 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
         _ weights: [String: MLXArray],
         quantization: AffineQuantizationConfig? = nil
     ) -> [String] {
+        let combined = pendingQuantizedTensors.isEmpty
+            ? weights
+            : pendingQuantizedTensors.merging(weights) { _, incoming in incoming }
+
         // (source module, destination module, input features, required)
         var modules: [(src: String, dst: String, inDim: Int, required: Bool)] = [
             ("model.embed_tokens", "embedding", config.hiddenDim, true)
@@ -644,40 +667,84 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
         }
         if lmHead != nil { modules.append(("lm_head", "lmHead", config.hiddenDim, true)) }
 
-        // Infer or validate the quantization parameters from the first quantized module.
-        var resolved = quantization
+        // Infer or validate the quantization parameters from any complete quantized pair.
+        var resolved = quantization ?? activeQuantization
         if resolved == nil,
-           let first = modules.first(where: { weights[$0.src + ".scales"] != nil }),
-           let packed = weights[first.src + ".weight"], let scales = weights[first.src + ".scales"],
+           let first = modules.first(where: {
+               combined[$0.src + ".scales"] != nil && combined[$0.src + ".weight"] != nil
+           }),
+           let packed = combined[first.src + ".weight"],
+           let scales = combined[first.src + ".scales"],
            packed.ndim >= 1, scales.ndim >= 1, packed.dim(-1) > 0, scales.dim(-1) > 0,
            (packed.dim(-1) * 32) % first.inDim == 0, first.inDim % scales.dim(-1) == 0 {
-            resolved = AffineQuantizationConfig(groupSize: first.inDim / scales.dim(-1),
-                                                bits: packed.dim(-1) * 32 / first.inDim)
+            resolved = AffineQuantizationConfig(
+                groupSize: first.inDim / scales.dim(-1),
+                bits: packed.dim(-1) * 32 / first.inDim
+            )
         }
         let quant = resolved ?? AffineQuantizationConfig()
 
         var params: [String: MLXArray] = [:]
         var missing: [String] = []
-        var quantizedPaths = Set<String>()
+        var newQuantizedPaths = Set<String>()
+
+        func clearPending(_ keys: String...) {
+            for key in keys { pendingQuantizedTensors.removeValue(forKey: key) }
+        }
 
         for m in modules {
-            if let scales = weights[m.src + ".scales"], let packed = weights[m.src + ".weight"] {
+            let weightKey = m.src + ".weight"
+            let scalesKey = m.src + ".scales"
+            let biasesKey = m.src + ".biases"
+            let biasKey = m.src + ".bias"
+
+            let weight = combined[weightKey]
+            let scales = combined[scalesKey]
+            let biases = combined[biasesKey]
+            let bias = combined[biasKey]
+
+            if let scales, let packed = weight {
                 let packedOK = packed.ndim >= 1 && packed.dim(-1) * 32 == m.inDim * quant.bits
                 let scalesOK = scales.ndim >= 1 && scales.dim(-1) * quant.groupSize == m.inDim
+                clearPending(weightKey, scalesKey, biasesKey, biasKey)
                 guard packedOK && scalesOK else {
-                    missing.append(m.src + ".weight (incompatible quantization)")
+                    missing.append(weightKey + " (incompatible quantization)")
                     continue
                 }
-                quantizedPaths.insert(m.dst)
+                if !quantizedModulePaths.contains(m.dst) {
+                    newQuantizedPaths.insert(m.dst)
+                }
+                quantizedModulePaths.insert(m.dst)
                 params[m.dst + ".weight"] = packed
                 params[m.dst + ".scales"] = scales
-                if let biases = weights[m.src + ".biases"] { params[m.dst + ".biases"] = biases }
-                if let bias = weights[m.src + ".bias"] { params[m.dst + ".bias"] = bias }
-            } else if let w = weights[m.src + ".weight"] {
-                params[m.dst + ".weight"] = w
-                if let bias = weights[m.src + ".bias"] { params[m.dst + ".bias"] = bias }
+                if let biases { params[m.dst + ".biases"] = biases }
+                if let bias { params[m.dst + ".bias"] = bias }
+            } else if quantizedModulePaths.contains(m.dst) {
+                if let biases {
+                    params[m.dst + ".biases"] = biases
+                    pendingQuantizedTensors.removeValue(forKey: biasesKey)
+                }
+                if let bias {
+                    params[m.dst + ".bias"] = bias
+                    pendingQuantizedTensors.removeValue(forKey: biasKey)
+                }
+                if m.required && weight == nil {
+                    missing.append(weightKey)
+                }
+            } else if scales != nil || biases != nil || weight?.dtype == .uint32 {
+                if let w = weight, w.dtype == .uint32 { pendingQuantizedTensors[weightKey] = w }
+                if let scales { pendingQuantizedTensors[scalesKey] = scales }
+                if let biases { pendingQuantizedTensors[biasesKey] = biases }
+                if let bias { pendingQuantizedTensors[biasKey] = bias }
+                if m.required {
+                    missing.append(weightKey)
+                }
+            } else if let denseWeight = weight {
+                params[m.dst + ".weight"] = denseWeight
+                if let bias { params[m.dst + ".bias"] = bias }
+                clearPending(weightKey, scalesKey, biasesKey, biasKey)
             } else if m.required {
-                missing.append(m.src + ".weight")
+                missing.append(weightKey)
             }
         }
 
@@ -688,9 +755,10 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
         }
         if let w = weights["model.norm.weight"] { params["finalNorm.weight"] = w } else { missing.append("model.norm.weight") }
 
-        if !quantizedPaths.isEmpty {
+        if !newQuantizedPaths.isEmpty {
+            activeQuantization = quant
             quantize(model: self, groupSize: quant.groupSize, bits: quant.bits,
-                     filter: { path, _ in quantizedPaths.contains(path) })
+                     filter: { path, _ in newQuantizedPaths.contains(path) })
         }
         if !params.isEmpty {
             self.update(parameters: NestedDictionary.unflattened(params))

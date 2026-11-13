@@ -1,4 +1,4 @@
-# SwiftSci 3.12.0
+# SwiftSci 3.13.0
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -29,7 +29,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.12.0")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.13.0")
 ]
 ```
 
@@ -46,7 +46,7 @@ Or add individual targeted modules to your target dependencies:
 )
 ```
 
-> **Platform & Toolchain Requirements:** macOS 14+ (Apple Silicon M-Series), Swift 6.3+ (Xcode 26.3+, required by `mlx-swift` 0.32.3+).
+> **Platform & Toolchain Requirements:** macOS 14+ (Apple Silicon M-Series), Swift 6.3+ (Xcode 26.3+, required by `mlx-swift` 0.33.0+).
 
 ---
 
@@ -82,7 +82,7 @@ let explanation = await lime.explain(model: { $0.reduce(0.0, +) }, instance: [1.
 
 // 5. Native Sentiment Analysis
 let vader = VADERSentimentAnalyzer()
-let score = vader.polarityScores(text: "SwiftSci 3.12.0 is incredibly fast, memory efficient, and robust!")
+let score = vader.polarityScores(text: "SwiftSci 3.13.0 is incredibly fast, memory efficient, and robust!")
 print("Sentiment compound score:", score.compound)
 ```
 
@@ -129,37 +129,37 @@ Because GitHub-hosted `macos-latest` runners operate in virtualized environments
 
 ---
 
-## 📊 Performance Comparison: SwiftSci 3.12.0 vs 3.11.0 vs 3.10.3 vs Python
+## 📊 Performance Comparison: SwiftSci 3.13.0 vs 3.12.0 vs 3.11.0 vs Python
 
-The following benchmark metrics reflect the standardized, certified dual-language automated test harness (`Benchmarks/Runs/standard-3.12.0` and `Benchmarks/Runs/migration-3.12.0`) run on Apple Silicon (M4 Pro, IEEE 754 64-bit Double Precision, Swift 6 Release vs Python with Pandas, NumPy, Scikit-Learn, SciPy, and Statsmodels). All workloads execute on byte-identical shared fixtures with synchronized hyperparameters and independent output validation under **Benchmark Methodology v2**:
+The following benchmark metrics reflect the standardized, certified dual-language automated test harness (`Benchmarks/Runs/standard-3.12.0` and `Benchmarks/Runs/migration-3.12.0`) run on Apple Silicon (M4 Pro, IEEE 754 64-bit Double Precision, Swift 6 Release vs Python with Pandas, NumPy, Scikit-Learn, SciPy, and Statsmodels) under **Benchmark Methodology v2**. Because **SwiftSci 3.13.0** focuses on upstream `mlx-swift 0.33.0` alignment, native packed quantized LLM loading, and `SwiftLLM`/`SwiftNLP` hardening without changes to CPU, DataFrame, preprocessing, statistical, or classical ML paths, tabular and ML benchmarks carry forward the audited `3.12.0` baseline:
 
-### ⚡ Side-by-Side: SwiftSci 3.12.0 vs 3.11.0 vs 3.10.3 (100k Rows / ML Fixtures)
+### ⚡ Side-by-Side: SwiftSci 3.13.0 vs 3.12.0 vs 3.11.0 (100k Rows / ML Fixtures)
 
-| Benchmark Scenario | SwiftSci 3.10.3 | SwiftSci 3.11.0 | SwiftSci 3.12.0 | Python Baseline | 3.12 vs 3.11 | 3.12 vs Python |
+| Benchmark Scenario | SwiftSci 3.11.0 | SwiftSci 3.12.0 | SwiftSci 3.13.0 | Python Baseline | 3.13 vs 3.11 | 3.13 vs Python |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **CSV Read** (100k rows × 5 cols) | `6.80 ms` | `3.76 ms` | **`2.20 ms`** | `9.92 ms` (*Pandas*) | ⚡ **1.70× faster** | **SwiftSci 4.50×** |
-| **CSV Stream Read** (100k rows, 10k chunks) | `47.49 ms` | `46.80 ms` | **`2.21 ms`** | `12.82 ms` (*Pandas*) | ⚡ **21.2× faster** | **SwiftSci 5.81×** |
-| **CSV Stream Filter** (100k rows, 10k chunks) | `—` | `—` | **`2.58 ms`** | `14.15 ms` (*Pandas*) | New in 3.12 | **SwiftSci 5.49×** |
-| **CSV Stream GroupBy** (100k rows, 10k chunks)| `—` | `—` | **`2.94 ms`** | `24.26 ms` (*Pandas*) | New in 3.12 | **SwiftSci 8.27×** |
-| **Sort Double Column** (100k rows) | `2.78 ms` | `2.75 ms` | **`2.14 ms`** | `2.90 ms` (*NumPy*) | ⚡ **1.29× faster** | **SwiftSci 1.35×** |
-| **MinMaxScaler (Fit + Transform)** (100k) | `0.75 ms` | `0.73 ms` | **`0.74 ms`** | `0.75 ms` (*Scikit-Learn*) | Parity | **SwiftSci 1.01×** |
-| **StandardScaler (Fit + Transform)** (100k) | `2.79 ms` | `1.97 ms` | **`1.97 ms`** | `0.88 ms` (*Scikit-Learn*) | Parity (1.42× vs 3.10.3) | Python 2.22× |
-| **Direct Prepared Matrix Pipeline** (100k) | `3.54 ms` | `2.70 ms` | **`2.70 ms`** | `1.64 ms` (*Scipy/Sklearn*) | Parity (1.31× vs 3.10.3) | Consuming zero-copy |
-| **Target Vector Extraction** (100k) | `0.055 ms` | `0.051 ms` | **`0.057 ms`** | `0.045 ms` (*NumPy*) | Parity | Parity (1.27×) |
-| **Flat Feature Matrix Extraction** (100k) | `0.106 ms` | `0.113 ms` | **`0.112 ms`** | `0.659 ms` (*NumPy*) | Parity | **SwiftSci 5.88×** |
-| **Row Filtering (Boolean mask)** (100k) | `0.22 ms` | `0.23 ms` | **`0.23 ms`** | `0.64 ms` (*Pandas*) | Parity | **SwiftSci 2.82×** |
-| **GroupBy + Aggregation** (100k rows) | `0.37 ms` | `0.37 ms` | **`0.38 ms`** | `0.51 ms` (*Pandas*) | Parity | **SwiftSci 1.34×** |
-| **GroupBy Multi-Output (Sum + Mean)** (100k) | `—` | `—` | **`0.49 ms`** | `1.60 ms` (*Pandas*) | New in 3.12 | **SwiftSci 3.29×** |
-| **Row-wise Horizontal Sum** (100k rows) | `—` | `—` | **`3.85 ms`** | `18.96 ms` (*Pandas*) | New in 3.12 | **SwiftSci 4.92×** |
-| **DataFrame SIMD Hash Join** (100k rows) | `35.20 ms` | `8.47 ms` | **`8.47 ms`** | `0.46 ms` (*Pandas*) | Parity (4.15× vs 3.10.3) | Vectorized SIMD probe |
-| **RandomForest Fit** (1k×4, 50 trees) | `2.32 ms` | `2.21 ms` | **`2.21 ms`** | `31.18 ms` (*Scikit-Learn*) | Parity | **SwiftSci 14.11×** |
-| **GBDT Regressor Fit** (1k×4, 50 est) | `4.75 ms` | `4.68 ms` | **`4.68 ms`** | `32.35 ms` (*Scikit-Learn*) | Parity | **SwiftSci 6.91×** |
-| **OLS Linear Fit + Predict** (1k × 3) | `0.086 ms` | `0.080 ms` | **`0.080 ms`** | `0.85 ms` (*Scikit-Learn*) | Parity | **SwiftSci 10.63×** |
-| **Peak Resident Memory (CSV 100k RSS)** | `51.4 MiB` | `48.7 MiB` | **`32.2 MiB`** | `211.6 MiB` (*Pandas*) | ⚡ **1.51× less RAM** | **6.57× less RAM** |
+| **CSV Read** (100k rows × 5 cols) | `3.76 ms` | `2.20 ms` | **`2.20 ms`** | `9.92 ms` (*Pandas*) | ⚡ **1.70× faster** | **SwiftSci 4.50×** |
+| **CSV Stream Read** (100k rows, 10k chunks) | `46.80 ms` | `2.21 ms` | **`2.21 ms`** | `12.82 ms` (*Pandas*) | ⚡ **21.2× faster** | **SwiftSci 5.81×** |
+| **CSV Stream Filter** (100k rows, 10k chunks) | `—` | `2.58 ms` | **`2.58 ms`** | `14.15 ms` (*Pandas*) | Added in 3.12 | **SwiftSci 5.49×** |
+| **CSV Stream GroupBy** (100k rows, 10k chunks)| `—` | `2.94 ms` | **`2.94 ms`** | `24.26 ms` (*Pandas*) | Added in 3.12 | **SwiftSci 8.27×** |
+| **Sort Double Column** (100k rows) | `2.75 ms` | `2.14 ms` | **`2.14 ms`** | `2.90 ms` (*NumPy*) | ⚡ **1.29× faster** | **SwiftSci 1.35×** |
+| **MinMaxScaler (Fit + Transform)** (100k) | `0.73 ms` | `0.74 ms` | **`0.74 ms`** | `0.75 ms` (*Scikit-Learn*) | Parity | **SwiftSci 1.01×** |
+| **StandardScaler (Fit + Transform)** (100k) | `1.97 ms` | `1.97 ms` | **`1.97 ms`** | `0.88 ms` (*Scikit-Learn*) | Parity | Python 2.22× |
+| **Direct Prepared Matrix Pipeline** (100k) | `2.70 ms` | `2.70 ms` | **`2.70 ms`** | `1.64 ms` (*Scipy/Sklearn*) | Parity | Consuming zero-copy |
+| **Target Vector Extraction** (100k) | `0.051 ms` | `0.057 ms` | **`0.057 ms`** | `0.045 ms` (*NumPy*) | Parity | Parity (1.27×) |
+| **Flat Feature Matrix Extraction** (100k) | `0.113 ms` | `0.112 ms` | **`0.112 ms`** | `0.659 ms` (*NumPy*) | Parity | **SwiftSci 5.88×** |
+| **Row Filtering (Boolean mask)** (100k) | `0.23 ms` | `0.23 ms` | **`0.23 ms`** | `0.64 ms` (*Pandas*) | Parity | **SwiftSci 2.82×** |
+| **GroupBy + Aggregation** (100k rows) | `0.37 ms` | `0.38 ms` | **`0.38 ms`** | `0.51 ms` (*Pandas*) | Parity | **SwiftSci 1.34×** |
+| **GroupBy Multi-Output (Sum + Mean)** (100k) | `—` | `0.49 ms` | **`0.49 ms`** | `1.60 ms` (*Pandas*) | Added in 3.12 | **SwiftSci 3.29×** |
+| **Row-wise Horizontal Sum** (100k rows) | `—` | `3.85 ms` | **`3.85 ms`** | `18.96 ms` (*Pandas*) | Added in 3.12 | **SwiftSci 4.92×** |
+| **DataFrame SIMD Hash Join** (100k rows) | `8.47 ms` | `8.47 ms` | **`8.47 ms`** | `0.46 ms` (*Pandas*) | Parity | Vectorized SIMD probe |
+| **RandomForest Fit** (1k×4, 50 trees) | `2.21 ms` | `2.21 ms` | **`2.21 ms`** | `31.18 ms` (*Scikit-Learn*) | Parity | **SwiftSci 14.11×** |
+| **GBDT Regressor Fit** (1k×4, 50 est) | `4.68 ms` | `4.68 ms` | **`4.68 ms`** | `32.35 ms` (*Scikit-Learn*) | Parity | **SwiftSci 6.91×** |
+| **OLS Linear Fit + Predict** (1k × 3) | `0.080 ms` | `0.080 ms` | **`0.080 ms`** | `0.85 ms` (*Scikit-Learn*) | Parity | **SwiftSci 10.63×** |
+| **Peak Resident Memory (CSV 100k RSS)** | `48.7 MiB` | `32.2 MiB` | **`32.2 MiB`** | `211.6 MiB` (*Pandas*) | ⚡ **1.51× less RAM** | **6.57× less RAM** |
 
-### 📊 Full Workload Matrix (SwiftSci 3.12.0 vs Reference Baseline)
+### 📊 Full Workload Matrix (SwiftSci 3.13.0 Baseline vs Reference Stack)
 
-| Domain / Scenario | SwiftSci 3.12.0 | Python Reference Stack | Relative Performance | Scope / Implementation |
+| Domain / Scenario | SwiftSci 3.13.0 | Python Reference Stack | Relative Performance | Scope / Implementation |
 | :--- | :---: | :---: | :---: | :--- |
 | **Holt-Winters Fit** (50k pts, s=12) | **`0.601 ms`** | `3,299.06 ms` (*Statsmodels*) | **SwiftSci >5000×** | Native Nelder-Mead simplex optimizer |
 | **ARIMA(1,1,1) Fit** (50k pts) | **`0.041 ms`** | `392.75 ms` (*Statsmodels Kalman MLE*) | **SwiftSci >9000×** | Vectorized Hannan-Rissanen conditional OLS solver (see methodology note) |
@@ -206,6 +206,19 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
   └────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+## 🚀 What's New in v3.13.0
+
+- **Upstream `mlx-swift 0.33.0` Alignment (`Package.swift`)**: Switched dependency from forked `mlx-swift` to upstream `https://github.com/ml-explore/mlx-swift.git` (`0.33.0+`), keeping strict source compatibility for all existing SwiftSci callers.
+- **Native Packed Quantized LLM Execution (`SwiftLLM`)**:
+  - `TransformerDecoder.loadWeights(_:)` auto-detects `<module>.scales`, `<module>.biases`, and bit-packed `UInt32` weights (including across sharded files) and routes through `loadQuantizedWeights(_:quantization:)` so 4-bit/8-bit checkpoints stay packed on GPU via `quantized_matmul` instead of expanding to Float16.
+  - Added `AffineQuantizationConfig` (with `init?(configJSON:)` and automatic shape inference) and cross-shard split-tensor staging so shard-by-shard callers get bit-exact outputs even when `.weight`, `.scales`, and `.biases` cross shard boundaries.
+- **Zero-Configuration Model Download & Load (`SwiftLLM`)**: Added `ModelDownloader`, `LLMConfig(huggingFaceConfigJSON:maxSeqLen:)`, and streaming sharded `TransformerDecoder.load(directory:maxSeqLen:)`.
+- **Parser & Tokenizer Hardening (`SwiftLLM`, `SwiftNLP`)**:
+  - Added `U8`, `U16`, `U32`, `U64`, `I16`, and `BOOL` to `SafeTensorsParser`, plus bounds checks against hostile headers, inverted offsets, negative/overflowing tensor shapes, and payload length mismatches.
+  - Fixed `GGUFParser` 1-byte boolean metadata alignment and added range/overflow checks on arrays, strings, dimensions, and offsets.
+  - Updated `BPETokenizer(llama3TokenizerJSON:)` to accept bare `ByteLevel` `post_processor` configurations from community MLX exports.
+- **Thread-Safe Sentence Embeddings (`SwiftNLP`)**: Serialized `NLEmbedding` vector lookups and switched `AppleSentenceEmbeddingEngine.embedBatch(_:)` to sequential cancellable execution, eliminating CoreFoundation `SIGSEGV` crashes on batches exceeding 16 texts.
+
 ## 🚀 What's New in v3.12.0
 
 - **Persisted ML Workflows & `SwiftWorkflow` Module (`SwiftWorkflow`, `Examples/NumericalWorkflow`)**: Introduced the 15th module (`PCAClassificationWorkflow`) and the `ScientificWorkflow` CLI, composing training-only imputation, standardization, PCA projection, and classification into a versioned JSON artifact with strict feature schema validation, configurable CSV training, and labeled evaluation of saved models (PR #98–#101).
@@ -239,58 +252,14 @@ SwiftSci incorporates an automated validation scorecard confirming numerical par
 - **Mathematical & Algorithmic Audit Remediations (Audits 1–15)**: Exact Efficiency Axiom TreeSHAP ($\sum \phi_i = f(x) - \mathbb{E}[f(X)]$) and constrained WLS KernelSHAP (`SwiftExplain`), Nelder-Mead simplex ETS parameter optimization and KalmanFilter covariance symmetry (`SwiftForecast`), DecisionTree entropy corrections and LinearRegression SVD pseudo-inverse (`SwiftML`), TargetEncoder empirical Bayes smoothing (`SwiftPreprocessing`), thread-safe vectorizers with `NSLock`, WordNet 3-color DFS taxonomy cycle validation, and calibrated VADER sentiment analysis (`SwiftNLP`) (PR #73–#78).
 - **Comprehensive Test Suite**: 1,336 tests across 14 modules passing with 0 warnings under Swift 6 strict concurrency.
 
-## 🚀 What's New in v3.10.3
-
-- **Compact Numeric Storage (`SwiftDataFrame`)**: High-performance contiguous numerical buffers with separate null validity bitmasks (`CompactNumericColumn`). Accelerates DataFrame scaling (StandardScaler & MinMaxScaler) by up to 10–40× and slashes peak resident memory by 4–5× (PR #45).
-- **Compensated Numerical Precision (`SwiftStats`, `SwiftML`)**: Blocked centered moments in ANOVA, bounded SIMD reductions for variance, and compensated dot-product policies to eliminate numerical drift and cancellation (PR #44).
-- **Swift 6 & Swift Package Index Compatibility (`Benchmarks`)**: Resolved Swift 6 strict compiler error in `AccuracyBenchmarks.swift`, unblocking automated builds on the Swift Package Index (PR #47).
-- **Parquet Interoperability (`SwiftDataFrame`)**: Robust standard page layouts, dictionary decoding, and packed boolean bit unpacking for Apache Parquet files (PR #42).
-- **Correctness & Certification Repairs (`SwiftCluster`, `SwiftML`, `SwiftStats`, `SwiftLLM`)**: Fixed PCA explained variance normalization, guarded cosine similarity against zero-magnitude vectors, ensured state initialization in linear/logistic regression, eliminated large-offset ANOVA cancellation, and corrected LLM single-token rotary encoding batch coverage (PR #43).
-- **Reproducible Benchmark Suite (`Benchmarks`)**: Dual-language automated test harness (`bench.py`) with 84 execution cases, NIST conformance verification, and cryptographic audit certificates (PR #41).
-
-## 🚀 What's New in v3.10.2
-
-- **Typed Numeric Filtering (`SwiftDataFrame`)**: Type dispatch moved outside the row loop with exact integer/float comparisons, cached null predicates and parallel gather. Corrects NaN and precision-boundary behavior (PR #39).
-- **Adaptive Typed Sorting (`SwiftDataFrame`)**: Stable sort with pre-cached typed keys; radix path for large Dense Double inputs with NaN fallback (PR #39).
-- **Compact Group Key Identity (`SwiftDataFrame`)**: First-seen flat group IDs, bounded integer lookup and typed composite-key identity — eliminates per-row String allocation and sentinel collisions (PR #39).
-- **Compensated Group Aggregates (`SwiftDataFrame`)**: Kahan-compensated floating sums and means; new `sumChecked()` for exact `Int64` totals with overflow errors (PR #39).
-- **CSV Reader Overhaul (`SwiftDataFrame`)**: Flat field metadata, lifetime-scoped mapped bytes, parallel unquoted scanning, exact-capacity allocation, fused null counting, corrected decimal rounding. 1M-row CSV: ~39 ms → ~14 ms, peak RSS −40% (PR #39).
-
-## 🚀 What's New in v3.10.1
-
-- **Descending Sort with Missing Values (`SwiftDataFrame`)**: Preserved descending order for non-null values while keeping null elements sorted last, working around a Swift 6 compiler closure constraint with `any Comparable` (PR #38).
-- **Benchmark Methodology v2 (`Benchmarks`)**: Byte-identical deterministic IEEE-754 `.bin` fixtures with SHA-256 validation, synchronized hyperparameters across Swift and Python runners, and 3-tier categorization with `Relative Performance` metrics.
-- **GBDT Benchmark Dimension Fix (`SwiftML`)**: Fixed feature and target dimension alignment on 1k×4 fixtures, measuring real wall-clock fit (9.09 ms in Swift vs 32.82 ms in Scikit-Learn, 3.61× speedup).
-- **Streamlined Repository & Documentation**: Removed legacy presentation slides and artifacts.
-
----
-
-## 🚀 What's New in v3.10.0
-
-- **Verified Native Local LLM Runtime Pipeline (`SwiftLLM`)**:
-  - `SamplingConfiguration`: Fully decoupled sampling configuration (temperature, topK, topP, repetitionPenalty) operating strictly at the logits level prior to softmax.
-  - `RoPEEmbedding`: Rotary Positional Embeddings with dynamic `positionOffset` support for incremental token decoding.
-  - `TransformerDecoder`: Two-stage inference pipeline with full prompt prefill and incremental single-token decoding with accumulated KV-cache.
-  - `QuantizedTensor` & Metal GEMV: Direct retention of packed Q4_0 and Q8_0 weights from GGUF into native buffers without artificial dequantization; verified parity against Apple Metal MSL GEMV kernels (`gemv_q4_0`, `gemv_q8_0`).
-  - `MLX.compile`: Integrated single-token decode graph compilation with exact parity verification against uncompiled execution.
-- **Resilient Time-Series Forecasting (`SwiftForecast`)**:
-  - `AutoARIMA`: Added zero-variance detection for constant series and enforced `maxIterations = 500` loop termination cap, preventing infinite optimization loops.
-- **Chat Template Integration Layer (`SwiftNLP`)**:
-  - `ChatMessage` & `ChatTemplate`: Native formatting for modern LLM chat formats (Llama-3 `<|begin_of_text|>...<|eot_id|>`, ChatML `<|im_start|>...<|im_end|>`, Mistral `[INST]...[/INST]`) with direct `encode` tokenization integration.
-- **Robust Autonomous Agents (`SwiftAgent`)**:
-  - `AgentParameterSchema`: JSON schema validation and structured parsing (`validate(arguments:)`, `parseAndValidate(jsonString:)`).
-  - `ReActAgent`: Resilient error handling feeding malformed tool inputs back into the reasoning trajectory for self-correction without crashing the agent loop.
-- **Hardened C-Pointer Memory Safety (`SwiftDatabase`)**:
-  - SQLite zero-copy connector upgraded to `sqlite3_close_v2`, explicit `close()` lifecycle, and hardened statement finalization, verified clean under AddressSanitizer.
-
-> For earlier release notes and historical changes (v3.9.0 and earlier), see [CHANGELOG.md](CHANGELOG.md).
+> For earlier release notes and historical changes (`v3.10.x` and earlier), see [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
 ## 📚 Documentation & Resources
 
 - **API Reference**: [Interactive DocC Documentation](https://nodibell.github.io/SwiftSci/) (100% verified coverage across all 15 modules)
-- **Engineering Handbook & Practical Cookbook**: [SwiftSci 3.12.0 Complete Engineering Handbook & Practical Cookbook](https://github.com/Nodibell/SwiftSci/releases/tag/v3.12.0) ([PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.12.0/SwiftSci_Handbook_3.12.0.pdf) · [EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.12.0/SwiftSci_Handbook_3.12.0.epub)) (114 pages, 64 verified recipes)
+- **Engineering Handbook & Practical Cookbook**: [SwiftSci 3.13.0 Complete Engineering Handbook & Practical Cookbook](https://github.com/Nodibell/SwiftSci/releases/tag/v3.13.0) ([PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.0/SwiftSci_Handbook_3.13.0.pdf) · [EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.0/SwiftSci_Handbook_3.13.0.epub)) (118 pages, 67 verified recipes)
 - **Benchmarking Suite**: [PERFORMANCE.md](PERFORMANCE.md) & [ACCURACY.md](ACCURACY.md)
 - **Release History**: [CHANGELOG.md](CHANGELOG.md)
 - **Roadmap**: [ROADMAP.md](ROADMAP.md)

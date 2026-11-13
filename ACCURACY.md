@@ -1,8 +1,18 @@
-# SwiftSci 3.12.0 Accuracy & Validation Report
+# SwiftSci 3.13.0 Accuracy & Validation Report
 
-Use the [standardized benchmark guide](Benchmarks/README.md) for current runs, audits and comparisons. The results below include audited accuracy records for SwiftSci 3.12.0 release builds (`Benchmarks/Runs/standard-3.12.0` and `Benchmarks/Runs/migration-3.12.0`) alongside historical research records. Preserve their original values when reproducing or discussing this report.
+Use the [standardized benchmark guide](Benchmarks/README.md) for current runs, audits and comparisons. The results below carry forward audited accuracy records from SwiftSci 3.12.0 release builds (`Benchmarks/Runs/standard-3.12.0` and `Benchmarks/Runs/migration-3.12.0`)—unchanged across CPU, tabular, statistical, and classical ML engines in 3.13.0—alongside new `3.13.0` LLM quantization and parser hardening checks. Preserve original historical values when reproducing or discussing this report.
 
-Numerical, predictive and statistical parity measurements comparing **SwiftSci 3.12.0** (Swift 6, Apple Silicon Accelerate BLAS/LAPACK & Metal) against Python reference libraries (**NumPy 2.5.3**, **Pandas 3.0.6**, **Scikit-Learn 1.8.0**, **SciPy 1.18.1**, **Statsmodels 0.14.6**, **NLTK 3.10.3**, **SHAP 0.46.0**, **PyTorch 2.11.0**).
+Numerical, predictive and statistical parity measurements comparing **SwiftSci 3.13.0 / 3.12.0** (Swift 6, Apple Silicon Accelerate BLAS/LAPACK, Metal & MLX 0.33.0) against Python reference libraries (**NumPy 2.5.3**, **Pandas 3.0.6**, **Scikit-Learn 1.8.0**, **SciPy 1.18.1**, **Statsmodels 0.14.6**, **NLTK 3.10.3**, **SHAP 0.46.0**, **PyTorch 2.11.0**).
+
+---
+
+## 🔬 Additions & Hardening in SwiftSci 3.13.0
+
+| Subsystem | SwiftSci 3.12.0 Behavior | SwiftSci 3.13.0 Enhancement | Mathematical & Protocol Impact |
+| :--- | :--- | :--- | :--- |
+| **Native Packed Quantized LLM (`SwiftLLM`)** | `SafeTensorsParser` lacked unsigned dtypes (`U32`) and `loadWeights` loaded dense weights only. | Added `U8`/`U16`/`U32`/`U64`/`I16`/`BOOL` SafeTensors parsing, `AffineQuantizationConfig` + `loadQuantizedWeights`, automatic detection in `loadWeights`, cross-shard split staging, and `ModelDownloader`. | Keeps packed 4-bit/8-bit weights in `QuantizedLinear` / `QuantizedEmbedding` with $\Delta < 10^{-3}$ parity vs dequantized Float16/Float32 dense models and bit-identical sharded vs single-shard logits. |
+| **Binary Parser Bounds (`SwiftLLM`)** | `SafeTensorsParser` lacked shape/byte validation before `MLXArray`; `GGUFParser` read bool metadata as 4 bytes and missed array/offset bounds. | Enforced overflow-checked non-negative shape & payload byte-count validation in `SafeTensorsParser` and 1-byte bool + header/array/tensor bounds in `GGUFParser`. | Malformed or hostile files throw `SwiftMLError.invalidInput` cleanly without trapping or multi-billion-iteration loops. |
+| **Embeddings & Tokenizers (`SwiftNLP`)** | `AppleSentenceEmbeddingEngine.embedBatch` ran concurrent `NLEmbedding` lookups in a task group; `BPETokenizer` rejected bare `ByteLevel` `post_processor`. | Serialized `embed(_:)` with `NSLock` + sequential cancellable `embedBatch`, and accepted bare `ByteLevel` `post_processor` with `<|begin_of_text|>` validation. | Eliminates `SIGSEGV` crashes on $>16$ batch embeddings and supports community MLX Llama 3 tokenizer exports. |
 
 ---
 
@@ -226,9 +236,9 @@ Numerical parity verification between incremental generation loops, full-context
 
 ---
 
-## ⚡ Runtime Performance Context: SwiftSci 3.12.0 vs 3.11.0 vs 3.10.3 vs Python
+## ⚡ Runtime Performance Context: SwiftSci 3.13.0 (3.12.0 Baseline) vs 3.11.0 vs 3.10.3 vs Python
 
-These execution time benchmarks compare successive SwiftSci releases on Apple Silicon arm64 (Release builds, identical datasets). See [PERFORMANCE.md](PERFORMANCE.md) for the complete performance suite and [Benchmarks/README.md](Benchmarks/README.md) for reproducible standardized runs:
+These execution time benchmarks compare successive SwiftSci releases on Apple Silicon arm64 (Release builds, identical datasets; `3.13.0` retains the audited `3.12.0` tabular/ML timings unchanged). See [PERFORMANCE.md](PERFORMANCE.md) for the complete performance suite and [Benchmarks/README.md](Benchmarks/README.md) for reproducible standardized runs:
 
 | Benchmark Scenario | SwiftSci 3.10.3 | SwiftSci 3.11.0 | SwiftSci 3.12.0 | Python Baseline | Notes & Speedup |
 | :--- | :---: | :---: | :---: | :---: | :--- |

@@ -50,7 +50,7 @@ For MLX-owned buffers, use MLX's existing `Memory` controls for cache limits, al
 
 For MLX wired-memory coordination, use the module-qualified `MLX.WiredMemoryManager` and `MLX.WiredMemoryTicket`. They are separate from SwiftSci's deprecated types with the same names. A wired limit controls memory that can remain resident; it is not SwiftSci's estimated-byte reservation budget.
 
-MLX 0.32.3's built-in sum and max policies do not impose an admission cap. Admission is grouped by policy identity and does not provide SwiftSci's strict FIFO ordering. If using MLX's `withWiredLimit` helper, check task cancellation inside the body before starting work: the helper can invoke the body after admission is cancelled. Preserve oversized-request validation when defining a bounded policy. See [MLX's wired-memory implementation](https://github.com/ml-explore/mlx-swift/blob/0.32.3/Source/MLX/WiredMemory.swift) for its lifecycle contract.
+MLX 0.33.0's built-in sum and max policies do not impose an admission cap. Admission is grouped by policy identity and does not provide SwiftSci's strict FIFO ordering. If using MLX's `withWiredLimit` helper, check task cancellation inside the body before starting work: the helper can invoke the body after admission is cancelled. Preserve oversized-request validation when defining a bounded policy. See [MLX's wired-memory implementation](https://github.com/ml-explore/mlx-swift/blob/0.33.0/Source/MLX/WiredMemory.swift) for its lifecycle contract.
 
 Cache clearing is not a completion fence. Keep resources alive until their consumers finish. Choose cache policy independently from ticket cleanup; MLX already recycles released buffers.
 

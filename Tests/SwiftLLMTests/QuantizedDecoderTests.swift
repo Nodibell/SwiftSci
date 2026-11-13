@@ -130,6 +130,52 @@ struct QuantizedDecoderTests {
         #expect(decoder.loadWeights(makeDenseWeights(cfg)).isEmpty)
         #expect(!(decoder.layers[0].ffn.gate is MLXNN.QuantizedLinear))
     }
+
+    @Test("Sharded quantized checkpoints match single-dict loading even when weight/scales/biases split across shards")
+    func crossShardSplitQuantizedPairs() throws {
+        MLXRandom.seed(19)
+        let cfg = config()
+        let (packed, _) = quantize(makeDenseWeights(cfg), groupSize: 64, bits: 4)
+        let tokenizer = BPETokenizer(vocab: ["a</w>": 1], merges: [])
+
+        let single = TransformerDecoder(config: cfg, tokenizer: tokenizer)
+        #expect(single.loadWeights(packed).isEmpty)
+
+        // Split q_proj (`weight` in shard1, `scales` + `biases` in shard2) and
+        // k_proj (`weight` + `scales` in shard1, `biases` in shard2), leaving
+        // shard2 with no `.scales` only for late `.biases` coverage too.
+        var shard1: [String: MLXArray] = [:]
+        var shard2: [String: MLXArray] = [:]
+        let half = packed.count / 2
+        for (idx, (key, value)) in packed.sorted(by: { $0.key < $1.key }).enumerated() {
+            if key == "model.layers.0.self_attn.q_proj.weight" {
+                shard1[key] = value
+            } else if key == "model.layers.0.self_attn.q_proj.scales" || key == "model.layers.0.self_attn.q_proj.biases" {
+                shard2[key] = value
+            } else if key == "model.layers.0.self_attn.k_proj.weight" || key == "model.layers.0.self_attn.k_proj.scales" {
+                shard1[key] = value
+            } else if key == "model.layers.0.self_attn.k_proj.biases" {
+                shard2[key] = value
+            } else if idx < half {
+                shard1[key] = value
+            } else {
+                shard2[key] = value
+            }
+        }
+
+        let sharded = TransformerDecoder(config: cfg, tokenizer: tokenizer)
+        let m1 = Set(sharded.loadWeights(shard1))
+        #expect(m1.contains("model.layers.0.self_attn.q_proj.weight"), "q_proj should stay missing until scales arrive")
+        let m2 = Set(sharded.loadWeights(shard2))
+        #expect(m1.intersection(m2).isEmpty)
+
+        let input = MLXArray([1, 2, 3, 4], [1, 4])
+        let outSingle = single(input)
+        let outSharded = sharded(input)
+        eval(outSingle, outSharded)
+        let delta = abs(outSingle - outSharded).max().item(Float.self)
+        #expect(delta == 0, "expected bit-exact sharded output, got max delta \(delta)")
+    }
 }
 
 @Suite("SafeTensors dtypes and hardening")
@@ -171,7 +217,7 @@ struct SafeTensorsHardeningTests {
         #expect(t["e"]?.dtype == .bool && t["e"]?.asArray(Bool.self) == [true, false])
     }
 
-    @Test("Unknown dtypes, hostile header lengths, and inverted offsets throw instead of trapping")
+    @Test("Unknown dtypes, hostile header lengths, negative/overflow shapes, and truncated payloads throw instead of trapping")
     func malformed() throws {
         let unknown = try file(header: #"{"x":{"dtype":"F8_E4M3","shape":[1],"data_offsets":[0,1]}}"#,
                                payload: Data([0]))
@@ -179,13 +225,19 @@ struct SafeTensorsHardeningTests {
                                 payload: Data([0, 0, 0, 0]))
         let negative = try file(header: #"{"x":{"dtype":"U8","shape":[1],"data_offsets":[-1,1]}}"#,
                                 payload: Data([0, 0]))
+        let negativeShape = try file(header: #"{"x":{"dtype":"F32","shape":[-1,4],"data_offsets":[0,4]}}"#,
+                                     payload: Data([0, 0, 0, 0]))
+        let truncatedPayload = try file(header: #"{"x":{"dtype":"F32","shape":[2,2],"data_offsets":[0,8]}}"#,
+                                        payload: Data(repeating: 0, count: 8))
+        let overflowShape = try file(header: #"{"x":{"dtype":"F32","shape":[4611686018427387904,4],"data_offsets":[0,4]}}"#,
+                                     payload: Data([0, 0, 0, 0]))
         var hostile = Data()
         var huge = UInt64.max.littleEndian
         withUnsafeBytes(of: &huge) { hostile.append(contentsOf: $0) }
         hostile.append(Data(repeating: 0, count: 8))
         let hostileURL = FileManager.default.temporaryDirectory.appendingPathComponent("st-\(UUID().uuidString).safetensors")
         try hostile.write(to: hostileURL)
-        for url in [unknown, inverted, negative, hostileURL] {
+        for url in [unknown, inverted, negative, negativeShape, truncatedPayload, overflowShape, hostileURL] {
             defer { try? FileManager.default.removeItem(at: url) }
             #expect(throws: (any Error).self) { try SafeTensorsParser.parse(url: url) }
         }

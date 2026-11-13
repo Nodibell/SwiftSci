@@ -17,3 +17,4 @@ builder:
         - SwiftVision
         - SwiftDatabase
         - SwiftAgent
+        - SwiftWorkflow

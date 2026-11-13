@@ -18,6 +18,7 @@ public enum LLMModelLoadingError: Error, LocalizedError, Sendable, Equatable {
     /// The server answered with a non-success HTTP status.
     case httpStatus(Int, String)
 
+    /// Human-readable description of the loading failure.
     public var errorDescription: String? {
         switch self {
         case .missingFile(let name): return "Checkpoint file '\(name)' is missing."
@@ -142,24 +143,30 @@ extension TransformerDecoder {
             guard fm.fileExists(atPath: url.path) else { throw LLMModelLoadingError.missingFile(name) }
             return try Data(contentsOf: url)
         }
-        let config = try LLMConfig(huggingFaceConfigJSON: read("config.json"), maxSeqLen: maxSeqLen)
+        let configData = try read("config.json")
+        let config = try LLMConfig(huggingFaceConfigJSON: configData, maxSeqLen: maxSeqLen)
         let tokenizer = try BPETokenizer(llama3TokenizerJSON: read("tokenizer.json"))
         let shards = try ModelDownloader.shardNames(in: directory)
+        let quantization = AffineQuantizationConfig(configJSON: configData)
 
-        var weights: [String: MLXArray] = [:]
-        for shard in shards {
-            for (key, value) in try SafeTensorsParser.parse(url: directory.appendingPathComponent(shard)) {
-                weights[key] = value
-            }
-        }
         let decoder = TransformerDecoder(config: config, tokenizer: tokenizer)
-        let missing: [String]
-        if let quantization = AffineQuantizationConfig(configJSON: try read("config.json")) {
-            missing = decoder.loadQuantizedWeights(weights, quantization: quantization)
-        } else {
-            missing = decoder.loadWeights(weights)
+        var missingAcrossShards: Set<String>?
+        for shard in shards {
+            let shardWeights = try SafeTensorsParser.parse(url: directory.appendingPathComponent(shard))
+            let missing = if let quantization {
+                decoder.loadQuantizedWeights(shardWeights, quantization: quantization)
+            } else {
+                decoder.loadWeights(shardWeights)
+            }
+            let shardMissing = Set(missing)
+            missingAcrossShards = missingAcrossShards.map { $0.intersection(shardMissing) } ?? shardMissing
         }
-        guard missing.isEmpty else { throw LLMModelLoadingError.missingWeights(missing) }
+        let missing = (missingAcrossShards.map { $0.sorted() }) ?? ["model.safetensors"]
+        guard missingAcrossShards != nil, missing.isEmpty, !decoder.hasPendingQuantizedTensors else {
+            throw LLMModelLoadingError.missingWeights(
+                missing.isEmpty ? decoder.pendingQuantizedKeys : missing
+            )
+        }
         eval(decoder)
         return decoder
     }

@@ -72,37 +72,23 @@ public enum SafeTensorsParser {
             }
             
             let tensorData = fileData.subdata(in: start..<end)
-            
-            let array: MLXArray
+
+            let mlxDType: DType
             switch dtype {
-            case "F32":
-                array = MLXArray(tensorData, shape, dtype: .float32)
-            case "F16":
-                array = MLXArray(tensorData, shape, dtype: .float16)
-            case "I32":
-                array = MLXArray(tensorData, shape, dtype: .int32)
-            case "I64":
-                array = MLXArray(tensorData, shape, dtype: .int64)
-            case "BF16":
-                // BF16 is stored as raw UInt16 bytes — reinterpret as float16
-                // and rely on MLX's BFloat16 dtype when available.
-                array = MLXArray(tensorData, shape, dtype: .bfloat16)
-            case "I8":
-                array = MLXArray(tensorData, shape, dtype: .int8)
+            case "F32": mlxDType = .float32
+            case "F16": mlxDType = .float16
+            case "I32": mlxDType = .int32
+            case "I64": mlxDType = .int64
+            case "BF16": mlxDType = .bfloat16
+            case "I8": mlxDType = .int8
             // Unsigned types appear in MLX-quantized checkpoints, where `U32`
             // stores bit-packed weights alongside `scales` / `biases` tensors.
-            case "U8":
-                array = MLXArray(tensorData, shape, dtype: .uint8)
-            case "U16":
-                array = MLXArray(tensorData, shape, dtype: .uint16)
-            case "U32":
-                array = MLXArray(tensorData, shape, dtype: .uint32)
-            case "U64":
-                array = MLXArray(tensorData, shape, dtype: .uint64)
-            case "I16":
-                array = MLXArray(tensorData, shape, dtype: .int16)
-            case "BOOL":
-                array = MLXArray(tensorData, shape, dtype: .bool)
+            case "U8": mlxDType = .uint8
+            case "U16": mlxDType = .uint16
+            case "U32": mlxDType = .uint32
+            case "U64": mlxDType = .uint64
+            case "I16": mlxDType = .int16
+            case "BOOL": mlxDType = .bool
             default:
                 // Strict validation: unknown dtypes must NOT be silently coerced
                 // to float32 — this would cause silent data corruption.
@@ -111,8 +97,33 @@ public enum SafeTensorsParser {
                     "Supported: F32, F16, BF16, I8, I16, I32, I64, U8, U16, U32, U64, BOOL."
                 )
             }
-            
-            tensors[name] = array
+
+            // MLXArray(data, shape, dtype:) traps in shapePrecondition on negative
+            // dims, integer overflow, or mismatched byte lengths; validate up front.
+            var elementCount = 1
+            for dim in shape {
+                guard dim >= 0 else {
+                    throw SwiftMLError.invalidInput(
+                        "SafeTensors: negative dimension \(dim) in shape \(shape) for tensor '\(name)'."
+                    )
+                }
+                let (product, overflow) = elementCount.multipliedReportingOverflow(by: dim)
+                guard !overflow else {
+                    throw SwiftMLError.invalidInput(
+                        "SafeTensors: shape \(shape) overflows element count for tensor '\(name)'."
+                    )
+                }
+                elementCount = product
+            }
+            let (expectedBytes, byteOverflow) = elementCount.multipliedReportingOverflow(by: mlxDType.size)
+            guard !byteOverflow, expectedBytes == tensorData.count else {
+                throw SwiftMLError.invalidInput(
+                    "SafeTensors: byte count mismatch for tensor '\(name)' (\(dtype) \(shape)): " +
+                    "expected \(byteOverflow ? "overflow" : "\(expectedBytes)") bytes, got \(tensorData.count)."
+                )
+            }
+
+            tensors[name] = MLXArray(tensorData, shape, dtype: mlxDType)
         }
         
         return tensors

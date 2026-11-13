@@ -64,10 +64,10 @@ public enum GGUFParser {
             }
             let len = readInt(UInt64.self, from: fileData, offset: &offset)
             
-            let end = offset + Int(len)
-            guard end <= fileData.count else {
+            guard len <= UInt64(fileData.count - offset) else {
                 throw SwiftMLError.invalidInput("Unexpected EOF reading GGUF string content")
             }
+            let end = offset + Int(len)
             let strData = fileData.subdata(in: offset..<end)
             offset = end
             guard let str = String(data: strData, encoding: .utf8) else {
@@ -76,13 +76,21 @@ public enum GGUFParser {
             return str
         }
         
+        func skipFixed(_ size: Int) throws {
+            guard size <= fileData.count - offset else {
+                throw SwiftMLError.invalidInput("Unexpected EOF skipping GGUF metadata value")
+            }
+            offset += size
+        }
+        
         func skipValue(type: UInt32) throws {
             switch type {
-            case 0...5: // UInt8, Int8, UInt16, Int16, UInt32, Int32
-                let valSizes: [UInt32: Int] = [0: 1, 1: 1, 2: 2, 3: 2, 4: 4, 5: 4]
-                offset += valSizes[type] ?? 4
-            case 6, 7: // Float32, Bool
-                offset += 4
+            case 0, 1, 7: // UInt8, Int8, Bool (one byte each in GGUF)
+                try skipFixed(1)
+            case 2, 3: // UInt16, Int16
+                try skipFixed(2)
+            case 4, 5, 6: // UInt32, Int32, Float32
+                try skipFixed(4)
             case 8: // String
                 _ = try readString()
             case 9: // Array
@@ -91,11 +99,16 @@ public enum GGUFParser {
                 }
                 let itemType = readInt(UInt32.self, from: fileData, offset: &offset)
                 let len = readInt(UInt64.self, from: fileData, offset: &offset)
+                // Every element occupies at least one byte, so a longer count cannot be valid
+                // (and would otherwise spin for up to 2^64 iterations).
+                guard len <= UInt64(fileData.count - offset) else {
+                    throw SwiftMLError.invalidInput("GGUF array length exceeds file bounds")
+                }
                 for _ in 0..<len {
                     try skipValue(type: itemType)
                 }
-            case 10...13: // UInt64, Int64, Float64
-                offset += 8
+            case 10...12: // UInt64, Int64, Float64
+                try skipFixed(8)
             default:
                 throw SwiftMLError.invalidInput("Unknown GGUF metadata type: \(type)")
             }
@@ -127,6 +140,9 @@ public enum GGUFParser {
             }
             for _ in 0..<dimsCount {
                 let dim = readInt(UInt64.self, from: fileData, offset: &offset)
+                guard dim <= UInt64(Int32.max) else {
+                    throw SwiftMLError.invalidInput("GGUF tensor '\(name)' has an out-of-range dimension")
+                }
                 dims.append(Int(dim))
             }
             
@@ -145,8 +161,18 @@ public enum GGUFParser {
         
         var tensors: [String: QuantizedTensor] = [:]
         for info in tensorInfos {
+            guard info.offset <= UInt64(fileData.count) else {
+                throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' offset out of bounds")
+            }
             let start = binaryStart + Int(info.offset)
-            let elementCount = info.shape.reduce(1, *)
+            var elementCount = 1
+            for dim in info.shape {
+                let (product, overflow) = elementCount.multipliedReportingOverflow(by: dim)
+                guard !overflow, product <= Int.max / 8 else {
+                    throw SwiftMLError.invalidInput("GGUF tensor '\(info.name)' element count overflows")
+                }
+                elementCount = product
+            }
             let scheme: QuantizationScheme?
             let metadata: QuantizedLayoutMetadata
             let totalBytes: Int

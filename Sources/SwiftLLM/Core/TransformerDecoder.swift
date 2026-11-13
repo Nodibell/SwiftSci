@@ -32,6 +32,35 @@ public enum PositionalEncodingScheme: Sendable, Equatable {
     case learned
 }
 
+/// Affine group quantization parameters of an MLX-format checkpoint.
+///
+/// These match the `quantization` block of an MLX `config.json`
+/// (`{"group_size": 64, "bits": 4}`). Quantized tensors are stored as bit-packed
+/// `uint32` weights plus per-group `scales` and `biases`.
+public struct AffineQuantizationConfig: Sendable, Equatable {
+    /// Number of consecutive input features sharing one scale and bias.
+    public var groupSize: Int
+    /// Bits per stored weight (for example 2, 3, 4, 6 or 8).
+    public var bits: Int
+
+    /// Creates quantization parameters.
+    public init(groupSize: Int = 64, bits: Int = 4) {
+        self.groupSize = groupSize
+        self.bits = bits
+    }
+
+    /// Reads `quantization` (or `quantization_config`) from a checkpoint `config.json`.
+    /// - Parameter data: Raw `config.json` bytes.
+    /// - Returns: The parameters, or `nil` when the checkpoint is not quantized.
+    public init?(configJSON data: Data) {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let block = (root["quantization"] ?? root["quantization_config"]) as? [String: Any],
+              let group = block["group_size"] as? Int, let bits = block["bits"] as? Int,
+              group > 0, bits > 0 else { return nil }
+        self.init(groupSize: group, bits: bits)
+    }
+}
+
 /// Architectural hyperparameter configuration for a decoder-only Transformer language model.
 public struct LLMConfig: Sendable {
     /// Token vocabulary size.
@@ -510,8 +539,16 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
     ///
     /// - Parameter weights: Weight dictionary keyed by parameter path.
     /// - Returns: List of expected parameter keys that were missing in the input.
+    ///
+    /// Checkpoints that contain `<module>.scales` entries (MLX affine quantization)
+    /// are detected automatically and loaded through
+    /// ``loadQuantizedWeights(_:quantization:)``, which keeps the weights packed in
+    /// memory instead of expanding them to dense floating point.
     @discardableResult
     public func loadWeights(_ weights: [String: MLXArray]) -> [String] {
+        if weights.keys.contains(where: { $0.hasSuffix(".scales") }) {
+            return loadQuantizedWeights(weights)
+        }
         var params: [String: MLXArray] = [:]
         var missing: [String] = []
 
@@ -563,6 +600,102 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
             self.update(parameters: NestedDictionary.unflattened(params))
         }
 
+        return missing
+    }
+
+    // MARK: - Native quantized loading
+
+    /// Loads an MLX-format affine-quantized checkpoint without dequantizing it.
+    ///
+    /// Every projection that has a `<module>.scales` entry is swapped for an MLX
+    /// quantized layer that runs `quantized_matmul` directly on the packed weights,
+    /// so an 8B model stays near 4.5–5.5 GB in 4-bit instead of expanding to about
+    /// 15 GB of Float16. Modules without `scales` (for example norms) load densely.
+    /// The embedding table is quantized as well when `model.embed_tokens.scales` exists.
+    ///
+    /// - Parameters:
+    ///   - weights: Tensors keyed by HuggingFace Llama names, for example the output of
+    ///     ``SafeTensorsParser/parse(url:)``.
+    ///   - quantization: Group size and bit width. When `nil` they are inferred from the
+    ///     tensor shapes, which are unambiguous because the input width of every
+    ///     projection is known from the model configuration.
+    /// - Returns: Source keys that were missing or whose shapes did not match the
+    ///   quantization parameters; an empty array means a complete load.
+    @discardableResult
+    public func loadQuantizedWeights(
+        _ weights: [String: MLXArray],
+        quantization: AffineQuantizationConfig? = nil
+    ) -> [String] {
+        // (source module, destination module, input features, required)
+        var modules: [(src: String, dst: String, inDim: Int, required: Bool)] = [
+            ("model.embed_tokens", "embedding", config.hiddenDim, true)
+        ]
+        for i in 0..<layers.count {
+            let s = "model.layers.\(i)", d = "layers.\(i)"
+            modules += [
+                ("\(s).self_attn.q_proj", "\(d).attention.query_proj", config.hiddenDim, true),
+                ("\(s).self_attn.k_proj", "\(d).attention.key_proj", config.hiddenDim, true),
+                ("\(s).self_attn.v_proj", "\(d).attention.value_proj", config.hiddenDim, true),
+                ("\(s).self_attn.o_proj", "\(d).attention.out_proj", config.hiddenDim, true),
+                ("\(s).mlp.gate_proj", "\(d).ffn.gate", config.hiddenDim, true),
+                ("\(s).mlp.up_proj", "\(d).ffn.up", config.hiddenDim, true),
+                ("\(s).mlp.down_proj", "\(d).ffn.down", config.intermediateSize, true)
+            ]
+        }
+        if lmHead != nil { modules.append(("lm_head", "lmHead", config.hiddenDim, true)) }
+
+        // Infer or validate the quantization parameters from the first quantized module.
+        var resolved = quantization
+        if resolved == nil,
+           let first = modules.first(where: { weights[$0.src + ".scales"] != nil }),
+           let packed = weights[first.src + ".weight"], let scales = weights[first.src + ".scales"],
+           packed.ndim >= 1, scales.ndim >= 1, packed.dim(-1) > 0, scales.dim(-1) > 0,
+           (packed.dim(-1) * 32) % first.inDim == 0, first.inDim % scales.dim(-1) == 0 {
+            resolved = AffineQuantizationConfig(groupSize: first.inDim / scales.dim(-1),
+                                                bits: packed.dim(-1) * 32 / first.inDim)
+        }
+        let quant = resolved ?? AffineQuantizationConfig()
+
+        var params: [String: MLXArray] = [:]
+        var missing: [String] = []
+        var quantizedPaths = Set<String>()
+
+        for m in modules {
+            if let scales = weights[m.src + ".scales"], let packed = weights[m.src + ".weight"] {
+                let packedOK = packed.ndim >= 1 && packed.dim(-1) * 32 == m.inDim * quant.bits
+                let scalesOK = scales.ndim >= 1 && scales.dim(-1) * quant.groupSize == m.inDim
+                guard packedOK && scalesOK else {
+                    missing.append(m.src + ".weight (incompatible quantization)")
+                    continue
+                }
+                quantizedPaths.insert(m.dst)
+                params[m.dst + ".weight"] = packed
+                params[m.dst + ".scales"] = scales
+                if let biases = weights[m.src + ".biases"] { params[m.dst + ".biases"] = biases }
+                if let bias = weights[m.src + ".bias"] { params[m.dst + ".bias"] = bias }
+            } else if let w = weights[m.src + ".weight"] {
+                params[m.dst + ".weight"] = w
+                if let bias = weights[m.src + ".bias"] { params[m.dst + ".bias"] = bias }
+            } else if m.required {
+                missing.append(m.src + ".weight")
+            }
+        }
+
+        if let w = weights["model.pos_embed.weight"] { params["posEmbedding.weight"] = w }
+        for i in 0..<layers.count {
+            if let w = weights["model.layers.\(i).input_layernorm.weight"] { params["layers.\(i).norm1.weight"] = w }
+            if let w = weights["model.layers.\(i).post_attention_layernorm.weight"] { params["layers.\(i).norm2.weight"] = w }
+        }
+        if let w = weights["model.norm.weight"] { params["finalNorm.weight"] = w } else { missing.append("model.norm.weight") }
+
+        if !quantizedPaths.isEmpty {
+            quantize(model: self, groupSize: quant.groupSize, bits: quant.bits,
+                     filter: { path, _ in quantizedPaths.contains(path) })
+        }
+        if !params.isEmpty {
+            self.update(parameters: NestedDictionary.unflattened(params))
+        }
+        compiledForwardCache.removeAll()
         return missing
     }
 

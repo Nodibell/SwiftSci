@@ -267,22 +267,38 @@ Manages attention Key-Value projection states in fixed-size contiguous memory pa
 import Foundation
 import SwiftLLM
 
-// 1. Parse SafeTensors weight metadata
+// 1. Parse SafeTensors tensors (F32/F16/BF16, signed and unsigned integers, BOOL)
 let safeTensorsURL = URL(fileURLWithPath: "model.safetensors")
-let (tensors, metadata) = try SafeTensorsParser.parse(fileURL: safeTensorsURL)
+let tensors = try SafeTensorsParser.parse(url: safeTensorsURL)
 
-print("Found \(tensors.count) tensor layers in SafeTensors archive.")
-for (tensorName, info) in tensors.prefix(5) {
-    print("Layer '\(tensorName)': dtype=\(info.dtype), shape=\(info.shape)")
+print("Found \(tensors.count) tensors in SafeTensors archive.")
+for (tensorName, array) in tensors.prefix(5) {
+    print("Layer '\(tensorName)': dtype=\(array.dtype), shape=\(array.shape)")
 }
 
-// 2. Parse GGUF Quantized Binary Archive (Zero-Copy)
-let ggufURL = URL(fileURLWithPath: "llama-3-8b.Q4_K_M.gguf")
-let ggufModel = try GGUFParser.parse(fileURL: ggufURL)
-print("Loaded GGUF Model with \(ggufModel.tensors.count) quantized tensors.")
+// 2. Parse GGUF Quantized Binary Archive
+let ggufURL = URL(fileURLWithPath: "llama-3-8b.Q4_0.gguf")
+let ggufTensors = try GGUFParser.parse(url: ggufURL)
+print("Loaded GGUF model with \(ggufTensors.count) tensors.")
 ```
 
 ---
+
+### Quantized checkpoints and one-call loading
+
+MLX affine-quantized checkpoints (4-bit `U32` weights with `scales` and `biases`) are executed natively: ``TransformerDecoder/loadWeights(_:)-(_:)`` detects them and keeps the weights packed, so an 8B model needs roughly 4.5–5.5 GB instead of about 15 GB of Float16.
+
+```swift
+let downloader = ModelDownloader()
+let folder = try await downloader.download(repo: "mlx-community/Llama-3.2-1B-Instruct-4bit")
+let decoder = try TransformerDecoder.load(directory: folder)
+
+for try await chunk in decoder.generateStream(prompt: "Hello", options: LLMOptions(maxTokens: 64)) {
+    print(chunk, terminator: "")
+}
+```
+
+Weights are downloaded on first use and cached under Application Support rather than bundled with the package.
 
 ### Tied input and output embeddings
 

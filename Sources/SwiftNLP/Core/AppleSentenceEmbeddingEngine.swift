@@ -16,6 +16,8 @@ public final class AppleSentenceEmbeddingEngine: SentenceEmbeddingProvider, @unc
 
     #if canImport(NaturalLanguage)
     private let embedding: NLEmbedding
+    /// Serializes lookups: a shared `NLEmbedding` instance is not thread-safe.
+    private let lookupLock = NSLock()
     #endif
 
     /// Initializes a sentence embedding engine using the specified language.
@@ -52,6 +54,9 @@ public final class AppleSentenceEmbeddingEngine: SentenceEmbeddingProvider, @unc
 
     /// Computes an $L_2$-normalized dense embedding vector for the given text.
     ///
+    /// This method is safe to call from multiple threads; lookups on the underlying
+    /// `NLEmbedding` are serialized.
+    ///
     /// - Parameter text: Input string to embed.
     /// - Throws: `NLPError` if embedding lookup fails.
     /// - Returns: Dense numerical vector of length ``dimension`` with unit $L_2$ norm.
@@ -62,7 +67,10 @@ public final class AppleSentenceEmbeddingEngine: SentenceEmbeddingProvider, @unc
         }
 
         #if canImport(NaturalLanguage)
-        guard let rawVec = embedding.vector(for: trimmed) else {
+        lookupLock.lock()
+        let lookedUp = embedding.vector(for: trimmed)
+        lookupLock.unlock()
+        guard let rawVec = lookedUp else {
             return [Double](repeating: 0.0, count: dimension)
         }
 
@@ -86,32 +94,21 @@ public final class AppleSentenceEmbeddingEngine: SentenceEmbeddingProvider, @unc
 
     /// Computes dense $L_2$-normalized embedding vectors for a batch of text strings.
     ///
-    /// If the batch contains more than 16 items, processing is automatically parallelized
-    /// across available CPU cores via structured Swift concurrency.
+    /// `NLEmbedding` instances are not safe for concurrent lookups: calling
+    /// `vector(for:)` from several threads on one instance can crash the process.
+    /// The batch is therefore evaluated sequentially on a single instance, and
+    /// cancellation is honored between items.
     ///
     /// - Parameter texts: Array of input strings.
-    /// - Throws: `NLPError` if embedding computation fails.
+    /// - Throws: `NLPError` if embedding computation fails, or `CancellationError`.
     /// - Returns: Array of dense embedding vectors in the same order as `texts`.
     public func embedBatch(_ texts: [String]) async throws -> [[Double]] {
-        guard !texts.isEmpty else { return [] }
-
-        if texts.count <= 16 {
-            return try texts.map { try embed($0) }
+        var results = [[Double]]()
+        results.reserveCapacity(texts.count)
+        for text in texts {
+            try Task.checkCancellation()
+            results.append(try embed(text))
         }
-
-        return try await withThrowingTaskGroup(of: (Int, [Double]).self) { group in
-            for (index, text) in texts.enumerated() {
-                group.addTask {
-                    let vec = try self.embed(text)
-                    return (index, vec)
-                }
-            }
-
-            var results = [[Double]](repeating: [], count: texts.count)
-            for try await (index, vec) in group {
-                results[index] = vec
-            }
-            return results
-        }
+        return results
     }
 }

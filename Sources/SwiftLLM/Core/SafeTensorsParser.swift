@@ -29,7 +29,12 @@ public enum SafeTensorsParser {
         let headerLen = UInt64(littleEndian: headerLenVal)
         
         let headerStart = 8
-        let headerEnd = 8 + Int(headerLen)
+        // Reject hostile lengths before converting to Int (the conversion or the
+        // addition would otherwise trap on 64-bit overflow).
+        guard headerLen <= UInt64(fileData.count - headerStart) else {
+            throw SwiftMLError.invalidInput("SafeTensors header size exceeds file bounds")
+        }
+        let headerEnd = headerStart + Int(headerLen)
         
         guard fileData.count >= headerEnd else {
             throw SwiftMLError.invalidInput("SafeTensors header size exceeds file bounds")
@@ -55,6 +60,10 @@ public enum SafeTensorsParser {
                 continue
             }
             
+            guard offsets[0] >= 0, offsets[0] <= offsets[1],
+                  offsets[1] <= fileData.count - binaryStart else {
+                throw SwiftMLError.invalidInput("Tensor '\(name)' offset out of bounds")
+            }
             let start = binaryStart + offsets[0]
             let end = binaryStart + offsets[1]
             
@@ -80,12 +89,26 @@ public enum SafeTensorsParser {
                 array = MLXArray(tensorData, shape, dtype: .bfloat16)
             case "I8":
                 array = MLXArray(tensorData, shape, dtype: .int8)
+            // Unsigned types appear in MLX-quantized checkpoints, where `U32`
+            // stores bit-packed weights alongside `scales` / `biases` tensors.
+            case "U8":
+                array = MLXArray(tensorData, shape, dtype: .uint8)
+            case "U16":
+                array = MLXArray(tensorData, shape, dtype: .uint16)
+            case "U32":
+                array = MLXArray(tensorData, shape, dtype: .uint32)
+            case "U64":
+                array = MLXArray(tensorData, shape, dtype: .uint64)
+            case "I16":
+                array = MLXArray(tensorData, shape, dtype: .int16)
+            case "BOOL":
+                array = MLXArray(tensorData, shape, dtype: .bool)
             default:
                 // Strict validation: unknown dtypes must NOT be silently coerced
                 // to float32 — this would cause silent data corruption.
                 throw SwiftMLError.invalidInput(
                     "SafeTensors: unsupported dtype '\(dtype)' for tensor '\(name)'. " +
-                    "Supported: F32, F16, BF16, I32, I64, I8."
+                    "Supported: F32, F16, BF16, I8, I16, I32, I64, U8, U16, U32, U64, BOOL."
                 )
             }
             

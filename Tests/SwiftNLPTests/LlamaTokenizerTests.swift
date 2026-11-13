@@ -232,4 +232,34 @@ struct LlamaTokenizerTests {
         #expect(tokenizer.encode(text: "hello", addSpecialTokens: true) == tokenizer.encode(text: "hello"))
     }
 
+    @Test("Bare ByteLevel post-processor from community exports is accepted and still prepends BOS")
+    func bareByteLevelPostProcessor() throws {
+        let data = try changed { root in
+            root["post_processor"] = ["type": "ByteLevel", "add_prefix_space": true,
+                                      "trim_offsets": false, "use_regex": true]
+        }
+        let tokenizer = try BPETokenizer(llama3TokenizerJSON: data)
+        #expect(tokenizer.encode(text: "hello") == [256])
+        #expect(tokenizer.encode(text: "hello", addSpecialTokens: true) == [1000, 256])
+
+        let minimal = try changed { $0["post_processor"] = ["type": "ByteLevel"] }
+        #expect(try BPETokenizer(llama3TokenizerJSON: minimal).encode(text: "hello", addSpecialTokens: true) == [1000, 256])
+    }
+
+    @Test("Bare ByteLevel post-processor with unsupported offsets and missing BOS stay rejected")
+    func bareByteLevelStillValidated() throws {
+        let badFlags = try changed { $0["post_processor"] = ["type": "ByteLevel", "trim_offsets": true] }
+        #expect(throws: BPETokenizerConfigurationError.unsupported("post-processor byte offsets")) {
+            try BPETokenizer(llama3TokenizerJSON: badFlags)
+        }
+        let noBOS = try changed { root in
+            root["post_processor"] = ["type": "ByteLevel"]
+            var tokens = root["added_tokens"] as! [[String: Any]]
+            tokens.removeFirst()
+            root["added_tokens"] = tokens
+        }
+        #expect(throws: BPETokenizerConfigurationError.unsupported("beginning-of-text token")) {
+            try BPETokenizer(llama3TokenizerJSON: noBOS)
+        }
+    }
 }

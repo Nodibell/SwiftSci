@@ -4,6 +4,21 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 3.13.0
+
+All changes are source-compatible: no public symbol was removed or changed, and existing call sites compile and behave as before (apart from the crash and hang fixes below).
+
+### Added — Native quantized LLM loading (`SwiftLLM`, `SwiftNLP`)
+- **MLX-quantized checkpoints stay packed in memory (G-031, G-030)**: `TransformerDecoder.loadWeights(_:)` now detects `<module>.scales` entries and routes to the new `loadQuantizedWeights(_:quantization:)`, which swaps projections and embeddings for MLX quantized layers that run `quantized_matmul` on the packed weights. An 8B 4-bit model stays near 4.5–5.5 GB instead of about 15 GB of Float16. Group size and bit width are inferred from tensor shapes or supplied via the new `AffineQuantizationConfig` (including `init?(configJSON:)`).
+- **`SafeTensorsParser` dtypes (G-030)**: Added `U8`, `U16`, `U32`, `U64`, `I16`, and `BOOL`, so MLX 4-bit checkpoints (bit-packed `U32` weights) parse directly.
+- **Zero-configuration model download and loading (G-026)**: `ModelDownloader` fetches HuggingFace-style repositories into a local cache with unsafe-identifier checks, `LLMConfig(huggingFaceConfigJSON:maxSeqLen:)` maps `config.json`, and `TransformerDecoder.load(directory:maxSeqLen:)` builds a ready decoder (config, tokenizer, sharded weights). Weights are downloaded rather than bundled, which keeps the package small.
+- **Bare `ByteLevel` post-processor (G-032)**: `BPETokenizer(llama3TokenizerJSON:)` accepts the flattened `post_processor` written by community MLX exports and applies the standard Llama 3 BOS template; unsupported offset flags and a missing `<|begin_of_text|>` are still rejected.
+
+### Fixed
+- **`AppleSentenceEmbeddingEngine` crash (G-034)**: `embedBatch` no longer calls the shared `NLEmbedding` from a task group (SIGSEGV for more than 16 texts); it runs sequentially, honors cancellation, and `embed(_:)` serializes lookups so concurrent callers are safe.
+- **`SafeTensorsParser` traps**: Header lengths above the file size, negative or inverted `data_offsets` now throw `SwiftMLError.invalidInput` instead of trapping.
+- **`GGUFParser`**: Boolean metadata is one byte (it was skipped as four, misaligning every later entry); hostile array/string lengths no longer cause multi-billion-iteration loops or integer-conversion traps; tensor dimensions, element counts and offsets are range-checked.
+
 ## [3.12.0] - 2026-10-28
 
 ### Added — End-to-End Workflows, Forecasting & NLP (PR #80, #89, #93, #98–#101)

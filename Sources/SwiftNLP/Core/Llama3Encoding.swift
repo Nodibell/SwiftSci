@@ -116,19 +116,33 @@ extension BPETokenizer {
         guard let bos = special["<|begin_of_text|>"] else {
             throw BPETokenizerConfigurationError.unsupported("beginning-of-text token")
         }
-        guard let post = root["post_processor"] as? [String: Any], post["type"] as? String == "Sequence",
-              let processors = post["processors"] as? [[String: Any]], processors.count == 2 else {
+        guard let post = root["post_processor"] as? [String: Any] else {
             throw BPETokenizerConfigurationError.unsupported("post-processor sequence")
         }
-        try require(matches(processors[0], ["type": "ByteLevel", "add_prefix_space": true,
-                                           "trim_offsets": false, "use_regex": true]), "post-processor byte offsets")
-        var template = processors[1]
-        // Paired inputs are outside this API; only the single-sequence template is executed.
-        template.removeValue(forKey: "pair")
-        try require(matches(template, ["type": "TemplateProcessing",
-            "single": [["SpecialToken": ["id": "<|begin_of_text|>", "type_id": 0]], ["Sequence": ["id": "A", "type_id": 0]]],
-            "special_tokens": ["<|begin_of_text|>": ["id": "<|begin_of_text|>", "ids": [bos], "tokens": ["<|begin_of_text|>"]]]
-        ]), "single-sequence BOS template")
+        if post["type"] as? String == "ByteLevel" {
+            // Community exports (for example MLX-quantized checkpoints) flatten the
+            // post-processor to a bare ByteLevel step. ByteLevel only adjusts offsets,
+            // so token IDs are unaffected; the standard Llama 3 single-sequence BOS
+            // template is applied because `<|begin_of_text|>` is a declared special token.
+            try require(post["add_prefix_space"] as? Bool ?? true == true
+                        && post["trim_offsets"] as? Bool ?? false == false
+                        && post["use_regex"] as? Bool ?? true == true,
+                        "post-processor byte offsets")
+        } else {
+            guard post["type"] as? String == "Sequence",
+                  let processors = post["processors"] as? [[String: Any]], processors.count == 2 else {
+                throw BPETokenizerConfigurationError.unsupported("post-processor sequence")
+            }
+            try require(matches(processors[0], ["type": "ByteLevel", "add_prefix_space": true,
+                                               "trim_offsets": false, "use_regex": true]), "post-processor byte offsets")
+            var template = processors[1]
+            // Paired inputs are outside this API; only the single-sequence template is executed.
+            template.removeValue(forKey: "pair")
+            try require(matches(template, ["type": "TemplateProcessing",
+                "single": [["SpecialToken": ["id": "<|begin_of_text|>", "type_id": 0]], ["Sequence": ["id": "A", "type_id": 0]]],
+                "special_tokens": ["<|begin_of_text|>": ["id": "<|begin_of_text|>", "ids": [bos], "tokens": ["<|begin_of_text|>"]]]
+            ]), "single-sequence BOS template")
+        }
         let merges = try rawMerges.map { value -> String in
             let parts: [String]
             if let string = value as? String {

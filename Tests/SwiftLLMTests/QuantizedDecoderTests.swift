@@ -176,6 +176,46 @@ struct QuantizedDecoderTests {
         let delta = abs(outSingle - outSharded).max().item(Float.self)
         #expect(delta == 0, "expected bit-exact sharded output, got max delta \(delta)")
     }
+
+    @Test("Multi-layer sharded checkpoints tolerate skipped layer indices across shards")
+    func sparseLayerShardsAcrossFourLayers() throws {
+        MLXRandom.seed(42)
+        let cfg = LLMConfig(vocabSize: 128, numLayers: 4, hiddenDim: 128, numHeads: 4, maxSeqLen: 64)
+        let (packed, _) = quantize(makeDenseWeights(cfg), groupSize: 64, bits: 4)
+        let tokenizer = BPETokenizer(vocab: ["a</w>": 1], merges: [])
+
+        let single = TransformerDecoder(config: cfg, tokenizer: tokenizer)
+        #expect(single.loadWeights(packed).isEmpty)
+
+        // Shard 1 touches layers.0 (partial q_proj) and layers.3 (skipping layers.1 & 2).
+        // Shard 2 touches layers.2 only (skipping index 0 completely).
+        // Shard 3 finishes layers.0.q_proj.biases and layers.1.
+        var shards: [[String: MLXArray]] = [[:], [:], [:]]
+        for (key, value) in packed {
+            if key == "model.layers.0.self_attn.q_proj.biases" || key.hasPrefix("model.layers.1.") || key == "model.norm.weight" {
+                shards[2][key] = value
+            } else if key.hasPrefix("model.layers.2.") {
+                shards[1][key] = value
+            } else {
+                shards[0][key] = value
+            }
+        }
+
+        let sharded = TransformerDecoder(config: cfg, tokenizer: tokenizer)
+        var cumulativeMissing: Set<String>?
+        for shard in shards {
+            let m = Set(sharded.loadWeights(shard))
+            cumulativeMissing = cumulativeMissing.map { $0.intersection(m) } ?? m
+        }
+        #expect(cumulativeMissing == [])
+
+        let input = MLXArray([1, 2, 3, 4], [1, 4])
+        let outSingle = single(input)
+        let outSharded = sharded(input)
+        eval(outSingle, outSharded)
+        let delta = abs(outSingle - outSharded).max().item(Float.self)
+        #expect(delta == 0, "expected bit-exact sparse-shard output, got max delta \(delta)")
+    }
 }
 
 @Suite("SafeTensors dtypes and hardening")

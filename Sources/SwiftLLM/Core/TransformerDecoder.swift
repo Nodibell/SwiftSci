@@ -759,8 +759,26 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
 
         if !newQuantizedPaths.isEmpty {
             activeQuantization = quant
-            quantize(model: self, groupSize: quant.groupSize, bits: quant.bits,
-                     filter: { path, _ in newQuantizedPaths.contains(path) })
+            // Quantize non-array modules on `self` and each touched `layers[i]` directly:
+            // upstream MLXNN's `Module.update(modules:)` traps if sparse array holes (`.none`) appear in `layers`.
+            let topLevelPaths = newQuantizedPaths.filter { !$0.hasPrefix("layers.") }
+            if !topLevelPaths.isEmpty {
+                quantize(model: self, groupSize: quant.groupSize, bits: quant.bits,
+                         filter: { path, _ in topLevelPaths.contains(path) })
+            }
+            var layerSubpaths: [Int: Set<String>] = [:]
+            for path in newQuantizedPaths where path.hasPrefix("layers.") {
+                let tail = path.dropFirst("layers.".count)
+                if let dot = tail.firstIndex(of: "."),
+                   let layerIdx = Int(tail[..<dot]),
+                   layers.indices.contains(layerIdx) {
+                    layerSubpaths[layerIdx, default: []].insert(String(tail[tail.index(after: dot)...]))
+                }
+            }
+            for (layerIdx, subPaths) in layerSubpaths.sorted(by: { $0.key < $1.key }) {
+                quantize(model: layers[layerIdx], groupSize: quant.groupSize, bits: quant.bits,
+                         filter: { path, _ in subPaths.contains(path) })
+            }
         }
         if !params.isEmpty {
             self.update(parameters: NestedDictionary.unflattened(params))

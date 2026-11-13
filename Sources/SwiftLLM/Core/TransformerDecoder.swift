@@ -628,7 +628,7 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
     /// The embedding table is quantized as well when `model.embed_tokens.scales` exists.
     ///
     /// When a sharded checkpoint splits `.weight`, `.scales`, or `.biases` across
-    /// calls, partial module tensors are staged internally until the matching pair
+    /// calls, partial module tensors are staged internally until the complete affine tensor set
     /// arrives in a later shard, while still reporting the module's weight as missing
     /// until loading completes.
     ///
@@ -703,7 +703,7 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
             let biases = combined[biasesKey]
             let bias = combined[biasKey]
 
-            if let scales, let packed = weight {
+            if let scales, let packed = weight, let biases {
                 let packedOK = packed.ndim >= 1 && packed.dim(-1) * 32 == m.inDim * quant.bits
                 let scalesOK = scales.ndim >= 1 && scales.dim(-1) * quant.groupSize == m.inDim
                 clearPending(weightKey, scalesKey, biasesKey, biasKey)
@@ -717,7 +717,7 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
                 quantizedModulePaths.insert(m.dst)
                 params[m.dst + ".weight"] = packed
                 params[m.dst + ".scales"] = scales
-                if let biases { params[m.dst + ".biases"] = biases }
+                params[m.dst + ".biases"] = biases
                 if let bias { params[m.dst + ".bias"] = bias }
             } else if quantizedModulePaths.contains(m.dst) {
                 if let biases {
@@ -751,7 +751,9 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
         if let w = weights["model.pos_embed.weight"] { params["posEmbedding.weight"] = w }
         for i in 0..<layers.count {
             if let w = weights["model.layers.\(i).input_layernorm.weight"] { params["layers.\(i).norm1.weight"] = w }
+            else { missing.append("model.layers.\(i).input_layernorm.weight") }
             if let w = weights["model.layers.\(i).post_attention_layernorm.weight"] { params["layers.\(i).norm2.weight"] = w }
+            else { missing.append("model.layers.\(i).post_attention_layernorm.weight") }
         }
         if let w = weights["model.norm.weight"] { params["finalNorm.weight"] = w } else { missing.append("model.norm.weight") }
 

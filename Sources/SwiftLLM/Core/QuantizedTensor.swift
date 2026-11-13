@@ -162,7 +162,8 @@ public struct QuantizedTensor: @unchecked Sendable {
             let singleMant = mant << 13
             return Float(bitPattern: sign | singleExp | singleMant)
         } else {
-            let singleExp = (exp - 15 + 127) << 23
+            // Rebase in one addition: exp is unsigned and may be less than 15.
+            let singleExp = (exp + 112) << 23
             let singleMant = mant << 13
             return Float(bitPattern: sign | singleExp | singleMant)
         }

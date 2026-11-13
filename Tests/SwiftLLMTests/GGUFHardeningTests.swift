@@ -38,6 +38,24 @@ struct GGUFHardeningTests {
         #expect(tensors["t"]?.asArray(Float.self) == [2.5])
     }
 
+    @Test("GGML type 8 decodes Q8_0 and type 7 is not misread as Q8_0", arguments: [UInt32(8), UInt32(7)])
+    func quantizedTypeIDs(type: UInt32) throws {
+        var data = Data([0x47, 0x47, 0x55, 0x46]) + le(UInt32(3)) + le(UInt64(1)) + le(UInt64(0))
+        data += string("output.weight") + le(UInt32(1)) + le(UInt64(32)) + le(type) + le(UInt64(0))
+        while data.count % 32 != 0 { data.append(0) }
+        data += le(Float16(0.5).bitPattern)
+        data += Data((0..<32).map { UInt8(bitPattern: Int8($0 - 16)) })
+        let url = try write(data)
+        defer { try? FileManager.default.removeItem(at: url) }
+        if type == 8 {
+            let tensor = try #require(GGUFParser.parse(url: url)["output.weight"])
+            #expect(tensor.scheme == .q8_0)
+            #expect(tensor.asArray(Float.self) == (0..<32).map { Float($0 - 16) * 0.5 })
+        } else {
+            #expect(throws: (any Error).self) { try GGUFParser.parse(url: url) }
+        }
+    }
+
     @Test("Hostile array lengths, string lengths, and dimensions throw instead of hanging or trapping")
     func hostileInputs() throws {
         let hugeArray = string("a") + le(UInt32(9)) + le(UInt32(0)) + le(UInt64.max)

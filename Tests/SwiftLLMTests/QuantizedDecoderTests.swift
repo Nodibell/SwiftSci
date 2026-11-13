@@ -231,13 +231,16 @@ struct SafeTensorsHardeningTests {
                                         payload: Data(repeating: 0, count: 8))
         let overflowShape = try file(header: #"{"x":{"dtype":"F32","shape":[4611686018427387904,4],"data_offsets":[0,4]}}"#,
                                      payload: Data([0, 0, 0, 0]))
+        let oversizedDimension = try file(
+            header: #"{"x":{"dtype":"U8","shape":[0,2147483648],"data_offsets":[0,0]}}"#,
+            payload: Data())
         var hostile = Data()
         var huge = UInt64.max.littleEndian
         withUnsafeBytes(of: &huge) { hostile.append(contentsOf: $0) }
         hostile.append(Data(repeating: 0, count: 8))
         let hostileURL = FileManager.default.temporaryDirectory.appendingPathComponent("st-\(UUID().uuidString).safetensors")
         try hostile.write(to: hostileURL)
-        for url in [unknown, inverted, negative, negativeShape, truncatedPayload, overflowShape, hostileURL] {
+        for url in [unknown, inverted, negative, negativeShape, truncatedPayload, overflowShape, oversizedDimension, hostileURL] {
             defer { try? FileManager.default.removeItem(at: url) }
             #expect(throws: (any Error).self) { try SafeTensorsParser.parse(url: url) }
         }
@@ -316,6 +319,57 @@ struct ModelLoadingTests {
         // A second call reuses the cached files.
         try fm.removeItem(at: remote)
         _ = try await downloader.download(repo: "acme/tiny")
+    }
+
+    @Test("Missing affine biases or layer norms reject a checkpoint", arguments: [
+        ("model.layers.0.self_attn.q_proj.biases", true),
+        ("model.layers.0.input_layernorm.weight", true),
+        ("model.layers.0.post_attention_layernorm.weight", true),
+        ("model.layers.0.input_layernorm.weight", false),
+        ("model.layers.0.post_attention_layernorm.weight", false)
+    ])
+    func incompleteWeights(key: String, quantized: Bool) throws {
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appendingPathComponent("incomplete-\(UUID().uuidString)")
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: dir) }
+        try Data(configJSON.utf8).write(to: dir.appendingPathComponent("config.json"))
+        try llama3Tokenizer().write(to: dir.appendingPathComponent("tokenizer.json"))
+        let cfg = try LLMConfig(huggingFaceConfigJSON: Data(configJSON.utf8))
+        let dense = makeDenseWeights(cfg)
+        var weights = quantized ? quantize(dense, groupSize: 64, bits: 4).packed : dense
+        #expect(weights.removeValue(forKey: key) != nil)
+        try MLX.save(arrays: weights, url: dir.appendingPathComponent("model.safetensors"))
+        #expect(throws: LLMModelLoadingError.self) {
+            _ = try TransformerDecoder.load(directory: dir)
+        }
+    }
+
+    @Test("Different revisions have independent caches and reuse their own files")
+    func revisionCaches() async throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("revisions-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        for revision in ["version-a", "version-b"] {
+            let remote = root.appendingPathComponent("remote/acme/tiny/resolve/\(revision)")
+            try fm.createDirectory(at: remote, withIntermediateDirectories: true)
+            for file in ["config.json", "tokenizer.json", "model.safetensors"] {
+                try Data(revision.utf8).write(to: remote.appendingPathComponent(file))
+            }
+        }
+        let downloader = ModelDownloader(endpoint: root.appendingPathComponent("remote"),
+                                         cacheDirectory: root.appendingPathComponent("cache"))
+        let a = try await downloader.download(repo: "acme/tiny", revision: "version-a")
+        let b = try await downloader.download(repo: "acme/tiny", revision: "version-b")
+        #expect(a != b)
+        for (folder, revision) in [(a, "version-a"), (b, "version-b")] {
+            #expect(try String(contentsOf: folder.appendingPathComponent("model.safetensors"),
+                               encoding: .utf8) == revision)
+        }
+        try fm.removeItem(at: root.appendingPathComponent("remote"))
+        // Index files are optional and probed again; file:// missing files are supported.
+        #expect(try await downloader.download(repo: "acme/tiny", revision: "version-a") == a)
+        #expect(try await downloader.download(repo: "acme/tiny", revision: "version-b") == b)
     }
 
     @Test("Loading an incomplete directory reports the missing file")

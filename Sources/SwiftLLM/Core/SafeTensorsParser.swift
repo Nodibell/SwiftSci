@@ -102,9 +102,9 @@ public enum SafeTensorsParser {
             // dims, integer overflow, or mismatched byte lengths; validate up front.
             var elementCount = 1
             for dim in shape {
-                guard dim >= 0 else {
+                guard dim >= 0, dim <= Int32.max else {
                     throw SwiftMLError.invalidInput(
-                        "SafeTensors: negative dimension \(dim) in shape \(shape) for tensor '\(name)'."
+                        "SafeTensors: out-of-range dimension \(dim) in shape \(shape) for tensor '\(name)'."
                     )
                 }
                 let (product, overflow) = elementCount.multipliedReportingOverflow(by: dim)

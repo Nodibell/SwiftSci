@@ -151,8 +151,13 @@ extension TransformerDecoder {
 
         let decoder = TransformerDecoder(config: config, tokenizer: tokenizer)
         var missingAcrossShards: Set<String>?
+        var missingNorms = Set((0..<config.numLayers).flatMap {
+            ["model.layers.\($0).input_layernorm.weight",
+             "model.layers.\($0).post_attention_layernorm.weight"]
+        })
         for shard in shards {
             let shardWeights = try SafeTensorsParser.parse(url: directory.appendingPathComponent(shard))
+            missingNorms.subtract(shardWeights.keys)
             let missing = if let quantization {
                 decoder.loadQuantizedWeights(shardWeights, quantization: quantization)
             } else {
@@ -161,7 +166,7 @@ extension TransformerDecoder {
             let shardMissing = Set(missing)
             missingAcrossShards = missingAcrossShards.map { $0.intersection(shardMissing) } ?? shardMissing
         }
-        let missing = (missingAcrossShards.map { $0.sorted() }) ?? ["model.safetensors"]
+        let missing = (missingAcrossShards.map { $0.union(missingNorms).sorted() }) ?? ["model.safetensors"]
         guard missingAcrossShards != nil, missing.isEmpty, !decoder.hasPendingQuantizedTensors else {
             throw LLMModelLoadingError.missingWeights(
                 missing.isEmpty ? decoder.pendingQuantizedKeys : missing
@@ -228,8 +233,9 @@ public struct ModelDownloader: Sendable {
                          progress: (@Sendable (Double) -> Void)? = nil) async throws -> URL {
         guard Self.isSafeRepo(repo) else { throw LLMModelLoadingError.invalidIdentifier(repo) }
         guard Self.isSafeComponent(revision) else { throw LLMModelLoadingError.invalidIdentifier(revision) }
-        let directory = cacheDirectory.appendingPathComponent(repo.replacingOccurrences(of: "/", with: "--"),
-                                                              isDirectory: true)
+        let directory = cacheDirectory
+            .appendingPathComponent(repo, isDirectory: true)
+            .appendingPathComponent(revision, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         try await fetch("config.json", repo: repo, revision: revision, into: directory)

@@ -196,7 +196,7 @@ public enum GGUFParser {
                 metadata = .q4_1
                 let numBlocks = (elementCount + 31) / 32
                 totalBytes = numBlocks * 20
-            case 7: // Q8_0 (32 weights per block: 2 bytes fp16 scale + 32 bytes int8)
+            case 8: // Q8_0 (32 weights per block: 2 bytes fp16 scale + 32 bytes int8)
                 scheme = .q8_0
                 metadata = .q8_0
                 let numBlocks = (elementCount + 31) / 32

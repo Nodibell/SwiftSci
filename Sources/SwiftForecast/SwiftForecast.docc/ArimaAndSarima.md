@@ -6,7 +6,7 @@ Forecast univariate time series with trends and periodic seasonalities using Aut
 
 Time series observations often display temporal autocorrelation, stochastic drift, and repetitive seasonal cycles. `SwiftForecast` provides high-performance, actor-isolated statistical models optimized with Apple Accelerate SIMD linear algebra:
 
-1. **``ARIMAModel``**: Models non-seasonal series using $(p, d, q)$ specifications with vectorized two-stage Hannan-Rissanen conditional least-squares parameter estimation.
+1. **``ARIMAModel``**: Models non-seasonal series using $(p, d, q)$ specifications with vectorized two-stage Hannan-Rissanen conditional least-squares parameter estimation (`aic()`/`bic()` evaluate the Gaussian residual-MSE criterion from conditional OLS residuals, rather than exact state-space MLE).
 2. **``SARIMAModel``**: Extends ARIMA to capture multiplicative seasonal cycles $(p, d, q) \times (P, D, Q)_s$ via polynomial cross-term refinement.
 3. **``AutoARIMA``**: Performs parallelized grid search over potential order permutations, selecting optimal configurations via AIC or BIC criteria.
 

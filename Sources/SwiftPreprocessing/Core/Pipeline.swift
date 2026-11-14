@@ -34,6 +34,20 @@ public struct Pipeline: PreprocessingTransformer, Sendable {
             current = try steps[i].transform(current)
         }
     }
+
+    /// Fits all steps and returns transformed training data using each step's `fitTransform`
+    /// implementation so out-of-fold transformers (such as `TargetEncoder`) avoid training leakage.
+    /// - Parameters:
+    ///   - data: Raw input data array or matrix for fitting and transformation.
+    /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
+    /// - Returns: 2D numerical matrix emitted by the final pipeline step.
+    public mutating func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
+        var current = data
+        for i in 0..<steps.count {
+            current = try steps[i].fitTransform(current)
+        }
+        return current
+    }
     
     /// Transforms the data through all steps in the pipeline sequentially.
     /// - Parameters:
@@ -61,6 +75,20 @@ public struct Pipeline: PreprocessingTransformer, Sendable {
             try steps[i].fit(current)
             current = try steps[i].transform(consuming: consume current)
         }
+    }
+
+    /// Fits compact steps and returns transformed training columns, preserving `fitTransform`
+    /// dispatch when delegating to legacy matrix steps.
+    public mutating func fitTransform(_ data: PreparedNumericBatch) throws -> PreparedNumericBatch {
+        guard supportsNativePreparedBatches else {
+            return try data.replacingRows(fitTransform(data.rowValues()))
+        }
+        var current = data
+        for i in steps.indices {
+            try steps[i].fit(current)
+            current = try steps[i].transform(consuming: consume current)
+        }
+        return current
     }
 
     /// Transforms prepared columns while preserving the caller's input snapshot.

@@ -464,6 +464,10 @@ public final class QuantizedLinear: Module, @unchecked Sendable {
 
     /// Performs the forward pass linear transformation on input activations via MLX unified GPU runtime.
     ///
+    /// - Important: This layer **dequantizes the whole weight matrix to a dense tensor on every call**
+    ///   (`dequantize()` + `matmul`). It is *not* the packed `quantized_matmul` path. Checkpoints loaded through
+    ///   `TransformerDecoder.loadWeights(_: [String: MLXArray])` with `.scales`/`.biases` keep weights packed on the GPU instead.
+    ///
     /// - Parameter x: Input activation tensor of shape `[..., inFeatures]`.
     /// - Returns: Output activation tensor of shape `[..., outFeatures]`.
     public func callAsFunction(_ x: MLXArray) -> MLXArray {

@@ -8,17 +8,17 @@ Black-box machine learning models—such as deep neural networks, random forests
 
 `SwiftExplain` provides mathematically grounded, axiomatic interpretability algorithms:
 
-1. **``TreeSHAP``**: Fast, exact polynomial-time Shapley attributions for tree-based models (`DecisionTreeClassifier`, `RandomForestClassifier`, `RandomForestRegressor`) adhering to the four Shapley efficiency and consistency axioms.
+1. **``TreeSHAP``**: Path-dependent Shapley attributions for tree-based models (`DecisionTreeClassifier`, `RandomForestClassifier`, `RandomForestRegressor`). Solves trees with `K <= TreeSHAP.maxExactFeatures` (`12`) distinct split features exactly via $2^K$ coalition enumeration, and uses deterministic seeded Monte Carlo permutation sampling (`approximationSamples = 2048`) with exact additive efficiency enforcement ($\sum_i \phi_i = f(x) - \mathbb{E}[f(X)]$) for larger $K$.
 2. **``KernelSHAP``**: Model-agnostic explainer solving constrained weighted linear regression against an empirical background dataset for any arbitrary asynchronous prediction function.
 3. **``LIMEExplainer``**: Local Interpretable Model-agnostic Explanations fitting ridge linear surrogate models around perturbed neighborhoods.
 
 ```mermaid
 graph TD
     Model[Trained Model / Ensemble] --> ModelType{Model Architecture}
-    ModelType -->|Tree Ensemble / Forest| Tree[TreeSHAP: Exact Lundberg Algorithm]
+    ModelType -->|Tree Ensemble / Forest| Tree[TreeSHAP: Exact K<=12 / Seeded MC K>12]
     ModelType -->|Arbitrary Black-Box / Pipeline| Kernel[KernelSHAP: Empirical Regression]
     ModelType -->|Local Linear Surrogate| LIME[LIMEExplainer: Perturbation Neighborhood]
-    Tree --> Attributions[Exact Shapley Values: sum phi_i = f(x) - E(f)]
+    Tree --> Attributions[Shapley Attributions: sum phi_i = f(x) - E(f)]
     Kernel --> Attributions
     LIME --> SurrogateWeights[Local Coefficients + R^2 Goodness of Fit]
     Attributions --> FeatureRanking[Feature Importance Ranking & Waterfall Breakdown]
@@ -26,9 +26,12 @@ graph TD
 
 ---
 
-## 1. Exact TreeSHAP for Tree Ensembles
+## 1. Path-Dependent TreeSHAP for Tree Ensembles
 
-TreeSHAP (Lundberg et al., 2018; Nature Machine Intelligence) optimizes exponential subset evaluation into polynomial time $O(T L D^2)$ by recursively tracking conditional expectations along decision tree splitting paths.
+``TreeSHAP`` evaluates path-dependent conditional expectations over a tree's internal sample weights (Lundberg et al., 2018; Nature Machine Intelligence):
+
+- When a tree splits on `K <= TreeSHAP.maxExactFeatures` (`12`) distinct features, ``TreeSHAP`` enumerates all $2^K$ coalitions to return **exact** path-dependent Shapley values.
+- When `K > 12`, ``TreeSHAP`` switches to deterministic Monte Carlo permutation sampling (`TreeSHAP.approximationSamples = 2048` with `permutationSeed`), renormalizing any efficiency discrepancy evenly across active features. Use `treeShap.isExact(tree:numFeatures:)` to inspect which regime a tree uses.
 
 ```swift
 import SwiftML

@@ -19,12 +19,28 @@ internal struct CSVNullMatcher {
     }
 
     func contains(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Bool {
+        guard !VectorizedByteParsers.isQuoted(buffer: buffer, offset: offset) else {
+            return false
+        }
+        return matchesInnerToken(buffer: buffer, offset: offset, isQuoted: false)
+    }
+
+    func matchesQuotedToken(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Bool {
+        guard VectorizedByteParsers.isQuoted(buffer: buffer, offset: offset) else {
+            return false
+        }
+        return matchesInnerToken(buffer: buffer, offset: offset, isQuoted: true)
+    }
+
+    private func matchesInnerToken(
+        buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset, isQuoted: Bool
+    ) -> Bool {
         if requiresString || offset.escapedQuotesPresent {
             return nullValues.contains(VectorizedByteParsers.parseString(buffer: buffer, offset: offset))
         }
         var start = offset.startOffset
         var end = start + offset.length
-        if end - start >= 2 && buffer[start] == 34 && buffer[end - 1] == 34 {
+        if isQuoted {
             start += 1
             end -= 1
         }

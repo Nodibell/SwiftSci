@@ -34,7 +34,7 @@ public enum LLMModelLoadingError: Error, LocalizedError, Sendable, Equatable {
 // MARK: - Config parsing
 
 extension LLMConfig {
-    /// Builds a configuration from a HuggingFace Llama `config.json`.
+    /// Builds a configuration from a HuggingFace Llama, Mistral, or Gemma 2 `config.json`.
     ///
     /// - Parameters:
     ///   - data: Raw `config.json` bytes.
@@ -46,6 +46,8 @@ extension LLMConfig {
         guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw LLMModelLoadingError.invalidConfig("not a JSON object")
         }
+        let textConfig = (root["text_config"] as? [String: Any]) ?? root
+
         func number(_ dict: [String: Any], _ key: String) -> Double? {
             guard let n = dict[key] as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID() else { return nil }
             return n.doubleValue
@@ -54,34 +56,77 @@ extension LLMConfig {
             guard let d = number(dict, key), d.rounded() == d, abs(d) < 1e12 else { return nil }
             return Int(d)
         }
+        func numVal(_ key: String) -> Double? { number(textConfig, key) ?? number(root, key) }
+        func intVal(_ key: String) -> Int? { integer(textConfig, key) ?? integer(root, key) }
+        func boolVal(_ key: String) -> Bool? { (textConfig[key] as? Bool) ?? (root[key] as? Bool) }
+        func dictVal(_ key: String) -> [String: Any]? { (textConfig[key] as? [String: Any]) ?? (root[key] as? [String: Any]) }
+        func positive(_ key: String, default fallback: Double) throws -> Float {
+            let value = Float(numVal(key) ?? fallback)
+            guard value.isFinite, value > 0 else { throw LLMModelLoadingError.invalidConfig("invalid \(key)") }
+            return value
+        }
         func required(_ key: String) throws -> Int {
-            guard let value = integer(root, key), value > 0 else {
+            guard let value = intVal(key), value > 0 else {
                 throw LLMModelLoadingError.invalidConfig("'\(key)' is missing or not a positive integer")
             }
             return value
         }
+
+        let rawType = (textConfig["model_type"] as? String) ?? (root["model_type"] as? String) ?? "llama"
+        let architecture: DecoderArchitecture
+        switch rawType {
+        case "llama": architecture = .llama
+        case "mistral": architecture = .mistral
+        case "gemma2": architecture = .gemma2
+        case "gemma3", "gemma3_text": architecture = .gemma3
+        case "gemma4", "gemma4_text", "gemma4_unified", "gemma4_unified_text": architecture = .gemma4
+        default: throw LLMModelLoadingError.invalidConfig("unsupported model_type '\(rawType)'")
+        }
+
         let hidden = try required("hidden_size")
         let layers = try required("num_hidden_layers")
         let heads = try required("num_attention_heads")
         let intermediate = try required("intermediate_size")
         let vocab = try required("vocab_size")
-        let kvHeads = integer(root, "num_key_value_heads")
-        guard hidden % heads == 0 else {
-            throw LLMModelLoadingError.invalidConfig("hidden_size must be divisible by num_attention_heads")
+        let kvHeads = intVal("num_key_value_heads")
+        let explicitHeadDim = intVal("head_dim")
+
+        if let explicitHeadDim {
+            guard explicitHeadDim > 0, explicitHeadDim <= Int(Int32.max) / heads, explicitHeadDim.isMultiple(of: 2) else {
+                throw LLMModelLoadingError.invalidConfig("head_dim must be positive, even and in range")
+            }
+        } else {
+            guard hidden % heads == 0 else {
+                throw LLMModelLoadingError.invalidConfig("hidden_size must be divisible by num_attention_heads")
+            }
         }
         if let kvHeads, kvHeads <= 0 || heads % kvHeads != 0 {
             throw LLMModelLoadingError.invalidConfig("num_attention_heads must be divisible by num_key_value_heads")
         }
-        if let type = root["model_type"] as? String, type != "llama" {
-            throw LLMModelLoadingError.invalidConfig("unsupported model_type '\(type)'")
+
+        if architecture != .llama {
+            let activation = (textConfig["hidden_activation"] as? String)
+                ?? (textConfig["hidden_act"] as? String)
+                ?? (root["hidden_activation"] as? String)
+                ?? (root["hidden_act"] as? String)
+            let isGemma = architecture == .gemma2 || architecture == .gemma3 || architecture == .gemma4
+            let expected = isGemma ? "gelu_pytorch_tanh" : "silu"
+            guard activation == nil || activation == expected,
+                  boolVal("attention_bias") != true,
+                  boolVal("mlp_bias") != true else {
+                throw LLMModelLoadingError.invalidConfig("unsupported activation or biased projections")
+            }
         }
-        let declaredContext = integer(root, "max_position_embeddings") ?? 2048
+
+        let declaredContext = intVal("max_position_embeddings") ?? 2048
         let context = maxSeqLen ?? min(declaredContext, 8192)
         guard context > 0 else { throw LLMModelLoadingError.invalidConfig("maxSeqLen must be positive") }
 
-        let theta = Float(number(root, "rope_theta") ?? 10_000)
+        let defaultTheta: Double = architecture == .gemma3 ? 1_000_000 : 10_000
+        let theta = Float(numVal("rope_theta") ?? defaultTheta)
         var encoding = PositionalEncodingScheme.rope(base: theta)
-        if let scaling = root["rope_scaling"] as? [String: Any] {
+        var parsedLinearScale: Float?
+        if let scaling = dictVal("rope_scaling") {
             let kind = (scaling["rope_type"] ?? scaling["type"]) as? String
             if kind == "llama3" {
                 guard let factor = number(scaling, "factor"), factor.isFinite, factor >= 1 else {
@@ -99,32 +144,170 @@ extension LLMConfig {
                 encoding = .llama3RoPE(base: theta, scaling: Llama3RoPEScaling(
                     factor: Float(factor), lowFrequencyFactor: low, highFrequencyFactor: high,
                     originalContextLength: original))
+            } else if kind == "linear" {
+                guard let factor = number(scaling, "factor"), factor.isFinite, factor >= 1 else {
+                    throw LLMModelLoadingError.invalidConfig("rope_scaling.factor must be at least 1")
+                }
+                parsedLinearScale = Float(1.0 / factor)
             } else if let kind, kind != "default" {
                 throw LLMModelLoadingError.invalidConfig("unsupported rope_scaling type '\(kind)'")
             }
         }
 
         var eos = Set<Int>()
-        if let single = integer(root, "eos_token_id") {
-            eos.insert(single)
-        } else if let many = root["eos_token_id"] as? [Any] {
-            for case let value as NSNumber in many { eos.insert(value.intValue) }
+        for container in [textConfig["eos_token_id"], root["eos_token_id"]] {
+            if let num = container as? NSNumber, CFGetTypeID(num) != CFBooleanGetTypeID() {
+                eos.insert(num.intValue)
+            } else if let many = container as? [Any] {
+                for case let value as NSNumber in many where CFGetTypeID(value) != CFBooleanGetTypeID() {
+                    eos.insert(value.intValue)
+                }
+            }
         }
 
+        let isGemmaFamily = architecture == .gemma2 || architecture == .gemma3 || architecture == .gemma4
+        let defaultEps: Double = isGemmaFamily ? 1e-6 : 1e-5
+        let defaultHeadDim: Int? = isGemmaFamily ? 256 : nil
+        let resolvedHeadDim = explicitHeadDim ?? defaultHeadDim
+
         self.init(
-            vocabSize: vocab, numLayers: layers, hiddenDim: hidden, numHeads: heads,
-            numKVHeads: kvHeads, intermediateSize: intermediate, maxSeqLen: context,
-            rmsNormEps: Float(number(root, "rms_norm_eps") ?? 1e-5),
+            vocabSize: vocab,
+            numLayers: layers,
+            hiddenDim: hidden,
+            numHeads: heads,
+            numKVHeads: kvHeads,
+            intermediateSize: intermediate,
+            maxSeqLen: context,
+            rmsNormEps: Float(numVal("rms_norm_eps") ?? defaultEps),
             positionalEncoding: encoding,
-            tieWordEmbeddings: (root["tie_word_embeddings"] as? Bool) ?? false,
-            eosTokenIDs: eos)
+            tieWordEmbeddings: boolVal("tie_word_embeddings") ?? isGemmaFamily,
+            eosTokenIDs: eos,
+            checkpointHeadDim: resolvedHeadDim
+        )
+        self.architecture = architecture
+        self.linearRoPEScale = parsedLinearScale
+
+        if architecture != .llama, let window = intVal("sliding_window") {
+            guard window > 0 else { throw LLMModelLoadingError.invalidConfig("sliding_window must be positive") }
+            self.slidingWindow = window
+        }
+
+        switch architecture {
+        case .llama, .mistral:
+            break
+        case .gemma2:
+            self.slidingWindow = slidingWindow ?? 4096
+            self.attentionSoftcap = try positive("attn_logit_softcapping", default: 50)
+            self.finalSoftcap = try positive("final_logit_softcapping", default: 30)
+            self.queryScale = 1 / (try positive("query_pre_attn_scalar", default: 256)).squareRoot()
+        case .gemma3:
+            let pattern = intVal("sliding_window_pattern") ?? intVal("_sliding_window_pattern") ?? 6
+            guard pattern > 0 else { throw LLMModelLoadingError.invalidConfig("sliding_window_pattern must be positive") }
+            self.slidingWindowPattern = pattern
+            self.slidingWindow = slidingWindow ?? 512
+            self.queryScale = 1 / (try positive("query_pre_attn_scalar", default: 256)).squareRoot()
+            let ropeParams = dictVal("rope_parameters")
+            let slidingDict = ropeParams?["sliding_attention"] as? [String: Any]
+            let fullDict = ropeParams?["full_attention"] as? [String: Any]
+            self.gemma3LocalRopeTheta = Float(
+                (slidingDict.flatMap { number($0, "rope_theta") })
+                ?? numVal("rope_local_base_freq")
+                ?? 10_000
+            )
+            self.gemma3GlobalRopeTheta = Float(
+                (fullDict.flatMap { number($0, "rope_theta") })
+                ?? Double(theta)
+            )
+            if let fullFactor = fullDict.flatMap({ number($0, "factor") }), fullFactor.isFinite, fullFactor >= 1 {
+                self.gemma3GlobalRopeScale = Float(1.0 / fullFactor)
+            } else {
+                self.gemma3GlobalRopeScale = parsedLinearScale ?? 1.0
+            }
+        case .gemma4:
+            let pattern = intVal("sliding_window_pattern") ?? 5
+            guard pattern > 0 else { throw LLMModelLoadingError.invalidConfig("sliding_window_pattern must be positive") }
+            self.slidingWindowPattern = pattern
+            self.slidingWindow = slidingWindow ?? 512
+            self.finalSoftcap = try positive("final_logit_softcapping", default: 30)
+
+            let globalHeadDim = intVal("global_head_dim") ?? (resolvedHeadDim ?? 512)
+            guard globalHeadDim > 0, globalHeadDim.isMultiple(of: 2) else {
+                throw LLMModelLoadingError.invalidConfig("global_head_dim must be positive and even")
+            }
+            let attentionKEqV = boolVal("attention_k_eq_v") ?? false
+            let numGlobalKVHeads = intVal("num_global_key_value_heads")
+            if let gkv = numGlobalKVHeads {
+                guard gkv > 0, heads % gkv == 0 else {
+                    throw LLMModelLoadingError.invalidConfig("num_attention_heads must be divisible by num_global_key_value_heads")
+                }
+            }
+            let numKVShared = intVal("num_kv_shared_layers") ?? 0
+            guard numKVShared >= 0, numKVShared < layers else {
+                throw LLMModelLoadingError.invalidConfig("num_kv_shared_layers out of range")
+            }
+            let enableMoE = boolVal("enable_moe_block") ?? false
+            let numExperts = intVal("num_experts") ?? 0
+            let topKExperts = intVal("top_k_experts") ?? 0
+            if enableMoE {
+                guard numExperts > 0, topKExperts > 0, topKExperts <= numExperts else {
+                    throw LLMModelLoadingError.invalidConfig("invalid Gemma 4 MoE expert configuration")
+                }
+            }
+
+            let layerTypes: [String]
+            if let explicit = textConfig["layer_types"] as? [String], explicit.count == layers {
+                layerTypes = explicit
+            } else {
+                layerTypes = (0..<layers).map { idx in
+                    (idx + 1) % pattern == 0 ? "full_attention" : "sliding_attention"
+                }
+            }
+
+            let ropeParams = dictVal("rope_parameters") ?? [:]
+            func parseRoPE(_ key: String, defaultTheta: Float, defaultType: String, defaultPartial: Float) throws -> Gemma4Config.RoPEParameters {
+                let d = ropeParams[key] as? [String: Any] ?? [:]
+                let rTheta = Float(number(d, "rope_theta") ?? Double(defaultTheta))
+                let rType = (d["rope_type"] as? String) ?? defaultType
+                let rPartial = Float(number(d, "partial_rotary_factor") ?? Double(defaultPartial))
+                let factor = number(d, "factor") ?? 1.0
+                guard factor.isFinite, factor >= 1 else {
+                    throw LLMModelLoadingError.invalidConfig("rope_parameters.\(key).factor must be at least 1")
+                }
+                return Gemma4Config.RoPEParameters(
+                    ropeTheta: rTheta,
+                    ropeType: rType,
+                    partialRotaryFactor: rPartial,
+                    scale: Float(1.0 / factor)
+                )
+            }
+            let defaultPartial = Float(numVal("global_partial_rotary_factor") ?? 0.25)
+            let slidingRoPE = try parseRoPE("sliding_attention", defaultTheta: 10_000, defaultType: "default", defaultPartial: 1.0)
+            let fullRoPE = try parseRoPE("full_attention", defaultTheta: 1_000_000, defaultType: "proportional", defaultPartial: defaultPartial)
+
+            self.gemma4 = Gemma4Config(
+                layerTypes: layerTypes,
+                globalHeadDim: globalHeadDim,
+                attentionKEqV: attentionKEqV,
+                numGlobalKVHeads: numGlobalKVHeads,
+                numKVSharedLayers: numKVShared,
+                useDoubleWideMLP: boolVal("use_double_wide_mlp") ?? false,
+                hiddenSizePerLayerInput: intVal("hidden_size_per_layer_input") ?? 0,
+                vocabSizePerLayerInput: intVal("vocab_size_per_layer_input") ?? vocab,
+                enableMoEBlock: enableMoE,
+                numExperts: numExperts,
+                topKExperts: topKExperts,
+                moeIntermediateSize: intVal("moe_intermediate_size") ?? intermediate,
+                slidingRoPE: slidingRoPE,
+                fullRoPE: fullRoPE
+            )
+        }
     }
 }
 
 // MARK: - Directory loading
 
 extension TransformerDecoder {
-    /// Loads a complete HuggingFace-style Llama checkpoint directory.
+    /// Loads a complete HuggingFace-style Llama, Mistral, Gemma 2, Gemma 3, or Gemma 4 checkpoint directory.
     ///
     /// The directory must contain `config.json`, `tokenizer.json`, and either
     /// `model.safetensors` or the shards listed by `model.safetensors.index.json`.
@@ -145,18 +328,21 @@ extension TransformerDecoder {
         }
         let configData = try read("config.json")
         let config = try LLMConfig(huggingFaceConfigJSON: configData, maxSeqLen: maxSeqLen)
-        let tokenizer = try BPETokenizer(llama3TokenizerJSON: read("tokenizer.json"))
+        let tokenizer: any Tokenizer
+        if config.architecture == .llama {
+            tokenizer = try BPETokenizer(llama3TokenizerJSON: read("tokenizer.json"))
+        } else {
+            tokenizer = try SentencePieceBPETokenizer(tokenizerJSON: read("tokenizer.json"))
+        }
         let shards = try ModelDownloader.shardNames(in: directory)
         let quantization = AffineQuantizationConfig(configJSON: configData)
 
         let decoder = TransformerDecoder(config: config, tokenizer: tokenizer)
         var missingAcrossShards: Set<String>?
-        var missingNorms = Set((0..<config.numLayers).flatMap {
-            ["model.layers.\($0).input_layernorm.weight",
-             "model.layers.\($0).post_attention_layernorm.weight"]
-        })
+        var missingNorms = Set(decoder.expectedDenseParameterKeys)
         for shard in shards {
-            let shardWeights = try SafeTensorsParser.parse(url: directory.appendingPathComponent(shard))
+            let rawShard = try SafeTensorsParser.parse(url: directory.appendingPathComponent(shard))
+            let shardWeights = CheckpointKeyNormalizer.normalizeWeights(rawShard)
             missingNorms.subtract(shardWeights.keys)
             let missing = if let quantization {
                 decoder.loadQuantizedWeights(shardWeights, quantization: quantization)

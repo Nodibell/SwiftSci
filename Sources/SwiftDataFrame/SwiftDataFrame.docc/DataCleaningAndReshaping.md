@@ -45,11 +45,36 @@ let longDF = try wideDF.melt(
 )
 ```
 
-## 3. Deduplication with `DataFrame.unique`
+## 3. Deduplication with `DataFrame.unique` and `TypedColumn.typedUnique`
+
+`DataFrame.unique` and `TypedColumn.typedUnique` deduplicate using canonical typed keys (`CanonicalUniqueKey`) rather than string interpolation:
+
+- All floating-point `NaN` payloads canonicalize to a single distinct `NaN` value, separate from `nil` (missing).
+- `-0.0` and `+0.0` canonicalize together.
+- Typed `Int64`, `Double`, `String`, `Bool`, `Date`, and `nil` cells never collide with string `"nil"` or separator substrings.
 
 ```swift
 // Remove identical duplicate rows across all columns
 let uniqueDF = df.unique
+
+// Deduplicate a single strongly typed column preserving first appearance
+let uniqueStations = (df[column: "station"] as? TypedColumn<String>)?.typedUnique
+```
+
+## 4. CSV Serialization & Quoted Null-Token Round-Trip
+
+Under `CSVReadOptions.default`, unquoted configured null tokens (`"NA"`, `"null"`, `"NaN"`, `"None"`, and empty unquoted fields) decode as `nil`. To prevent data corruption across write/read cycles:
+
+- `writeCSV(to:)` automatically quotes string values that are empty (`""`) or match an active null token after whitespace trimming.
+- `DataFrame(csv:options:)` and streaming readers preserve quoted empty strings and quoted null tokens as literal `String` values across eager, streaming, and chunked paths, while interpreting unquoted tokens and unquoted empty fields as missing (`nil`).
+
+```swift
+let original = try DataFrame(columns: [
+    TypedColumn<String>(name: "token", values: ["text", "NA", "null", "NaN", "", nil, "None"])
+])
+try await original.writeCSV(to: csvURL)
+let reloaded = try await DataFrame(csv: csvURL)
+// reloaded["token"] preserves all literal strings and restores only index 5 as nil.
 ```
 
 ## Topics
@@ -58,3 +83,6 @@ let uniqueDF = df.unique
 - ``DataFrame/pivot(index:columns:values:aggFunc:)``
 - ``DataFrame/melt(idVars:valueVars:varName:valueName:)``
 - ``DataFrame/unique``
+- ``TypedColumn/typedUnique``
+- ``DataFrame/writeCSV(to:)``
+- ``DataFrame/init(csv:options:)``

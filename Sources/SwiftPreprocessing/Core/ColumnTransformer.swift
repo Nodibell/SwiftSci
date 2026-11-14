@@ -53,25 +53,36 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
     /// - Parameters:
     ///   - data: Raw input data matrix `[rows, cols]`.
     public func fit(_ data: [[Double]]) throws {
-        guard !data.isEmpty, !data[0].isEmpty else {
-            throw PreprocessingError.emptyInput
-        }
-        let numCols = data[0].count
-        for row in data where row.count != numCols {
-            throw PreprocessingError.dimensionMismatch(expected: numCols, got: row.count)
-        }
+        let numCols = try validateFitInputs(data)
 
         for i in 0..<routes.count {
-            for colIdx in routes[i].columnIndices {
-                guard colIdx >= 0 && colIdx < numCols else {
-                    throw PreprocessingError.invalidInput("Column index \(colIdx) out of bounds (0..<\(numCols))")
-                }
-            }
             let slicedData = sliceColumns(data, indices: routes[i].columnIndices)
             try routes[i].transformer.fit(slicedData)
         }
         self.fittedColumnCount = numCols
         self.isFitted = true
+    }
+
+    /// Fits all route transformers and returns transformed training output, invoking each
+    /// route's `fitTransform` so out-of-fold encoders protect training rows from target leakage.
+    /// - Throws: `PreprocessingError.emptyInput`, `dimensionMismatch`, or `invalidInput`.
+    /// - Parameters:
+    ///   - data: Raw input data matrix `[rows, cols]`.
+    /// - Returns: Horizontally concatenated matrix of fitted-and-transformed features.
+    public func fitTransform(_ data: [[Double]]) throws -> [[Double]] {
+        let numCols = try validateFitInputs(data)
+
+        var transformedRoutes = [[[Double]]]()
+        transformedRoutes.reserveCapacity(routes.count)
+        for i in 0..<routes.count {
+            let slicedData = sliceColumns(data, indices: routes[i].columnIndices)
+            let transformed = try routes[i].transformer.fitTransform(slicedData)
+            transformedRoutes.append(transformed)
+        }
+
+        self.fittedColumnCount = numCols
+        self.isFitted = true
+        return try assembleOutput(transformedRoutes: transformedRoutes, originalData: data, numCols: numCols)
     }
 
     /// Transforms data across all configured routes.
@@ -92,13 +103,40 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
         }
 
         var transformedRoutes = [[[Double]]]()
+        transformedRoutes.reserveCapacity(routes.count)
         for route in routes {
             let slicedData = sliceColumns(data, indices: route.columnIndices)
             let transformed = try route.transformer.transform(slicedData)
             transformedRoutes.append(transformed)
         }
 
-        let numRows = data.count
+        return try assembleOutput(transformedRoutes: transformedRoutes, originalData: data, numCols: numCols)
+    }
+
+    private func validateFitInputs(_ data: [[Double]]) throws -> Int {
+        guard !data.isEmpty, !data[0].isEmpty else {
+            throw PreprocessingError.emptyInput
+        }
+        let numCols = data[0].count
+        for row in data where row.count != numCols {
+            throw PreprocessingError.dimensionMismatch(expected: numCols, got: row.count)
+        }
+        for route in routes {
+            for colIdx in route.columnIndices {
+                guard colIdx >= 0 && colIdx < numCols else {
+                    throw PreprocessingError.invalidInput("Column index \(colIdx) out of bounds (0..<\(numCols))")
+                }
+            }
+        }
+        return numCols
+    }
+
+    private func assembleOutput(transformedRoutes: [[[Double]]], originalData: [[Double]], numCols: Int) throws -> [[Double]] {
+        let numRows = originalData.count
+        for routeData in transformedRoutes where routeData.count != numRows {
+            throw PreprocessingError.dimensionMismatch(expected: numRows, got: routeData.count)
+        }
+
         var result = [[Double]](repeating: [], count: numRows)
         for r in 0..<numRows {
             var combinedRow = [Double]()
@@ -114,7 +152,7 @@ public final class ColumnTransformer: PreprocessingTransformer, @unchecked Senda
             if !unroutedIndices.isEmpty {
                 for r in 0..<numRows {
                     for c in unroutedIndices {
-                        result[r].append(data[r][c])
+                        result[r].append(originalData[r][c])
                     }
                 }
             }

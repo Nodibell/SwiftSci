@@ -61,13 +61,28 @@ public struct ChatTemplate: Sendable, Equatable {
         case mistral
     }
 
+    private enum CustomFormat: Sendable, Hashable {
+        case gemma
+        case gemma4
+    }
+
     /// The template formatting style.
-    public var style: Style
+    public var style: Style {
+        didSet { customFormat = nil }
+    }
+
+    private var customFormat: CustomFormat?
 
     /// Creates a chat template with the given style.
     /// - Parameter style: Formatting style (default `.llama3`).
     public init(style: Style = .llama3) {
         self.style = style
+        self.customFormat = nil
+    }
+
+    private init(customFormat: CustomFormat) {
+        self.style = .chatML
+        self.customFormat = customFormat
     }
 
     /// Preconfigured template using Llama 3 format.
@@ -83,6 +98,10 @@ public struct ChatTemplate: Sendable, Equatable {
     public static let chatML = ChatTemplate(style: .chatML)
     /// Preconfigured template using Mistral format.
     public static let mistral = ChatTemplate(style: .mistral)
+    /// Preconfigured template using Gemma 2 and Gemma 3 Instruct format.
+    public static let gemma = ChatTemplate(customFormat: .gemma)
+    /// Preconfigured template using Gemma 4 Instruct format.
+    public static let gemma4 = ChatTemplate(customFormat: .gemma4)
 
     /// Renders messages into a formatted prompt string.
     /// - Parameters:
@@ -90,6 +109,14 @@ public struct ChatTemplate: Sendable, Equatable {
     ///   - addGenerationPrompt: Whether to append the trailing assistant header to initiate generation.
     /// - Returns: Formatted prompt string.
     public func render(messages: [ChatMessage], addGenerationPrompt: Bool = true) -> String {
+        switch customFormat {
+        case .gemma:
+            return Self.renderGemma(messages: messages, addGenerationPrompt: addGenerationPrompt)
+        case .gemma4:
+            return Self.renderGemma4(messages: messages, addGenerationPrompt: addGenerationPrompt)
+        case nil:
+            break
+        }
         switch style {
         case .llama32Instruct(let date):
             return Self.renderLlama32(messages: messages, date: date, addGenerationPrompt: addGenerationPrompt)
@@ -190,6 +217,50 @@ public struct ChatTemplate: Sendable, Equatable {
         while start < end, whitespace(scalars[start]) { scalars.formIndex(after: &start) }
         while start < end, whitespace(scalars[scalars.index(before: end)]) { scalars.formIndex(before: &end) }
         return String(scalars[start..<end])
+    }
+
+    private static func renderGemma(messages: [ChatMessage], addGenerationPrompt: Bool) -> String {
+        var output = ""
+        var pendingSystem: String?
+        var bodyStart = 0
+        if messages.first?.role == .system {
+            pendingSystem = trimLlamaContent(messages[0].content)
+            bodyStart = 1
+        }
+        for msg in messages.dropFirst(bodyStart) {
+            let role: String
+            var content = trimLlamaContent(msg.content)
+            switch msg.role {
+            case .assistant:
+                role = "model"
+            case .user, .system, .tool:
+                role = "user"
+                if let sys = pendingSystem, !sys.isEmpty {
+                    content = "\(sys)\n\n\(content)"
+                    pendingSystem = nil
+                }
+            }
+            output += "<start_of_turn>\(role)\n\(content)<end_of_turn>\n"
+        }
+        if let sys = pendingSystem, !sys.isEmpty {
+            output += "<start_of_turn>user\n\(sys)<end_of_turn>\n"
+        }
+        if addGenerationPrompt {
+            output += "<start_of_turn>model\n"
+        }
+        return output
+    }
+
+    private static func renderGemma4(messages: [ChatMessage], addGenerationPrompt: Bool) -> String {
+        var output = "<bos>"
+        for msg in messages {
+            let role = msg.role == .assistant ? "model" : msg.role.rawValue
+            output += "<|turn>\(role)\n\(msg.content)<turn|>\n"
+        }
+        if addGenerationPrompt {
+            output += "<|turn>model\n"
+        }
+        return output
     }
 
     private static func quoteLlamaToolResult(_ text: String) -> String {

@@ -76,7 +76,7 @@ public enum TimeSeriesAnomalyDetector {
     ///   - series: Input temporal series.
     ///   - period: Seasonal period (optional; auto-estimated if nil).
     ///   - maxAnomaliesRatio: Maximum fraction of points to flag as anomalies (in (0, 0.5], default: 0.10).
-    ///   - thresholdZ: Robust Z-score threshold (> 0, default: 3.0 for ~99.7% confidence).
+    ///   - thresholdZ: Robust Z-score threshold (> 0, default: 3.0; a heuristic cut-off on the MAD-scaled residual, not a guaranteed confidence level).
     /// - Returns: AnomalyDetectionResult with flagged anomalies and test statistics.
     public static func detectAnomalies(
         series: [Double],

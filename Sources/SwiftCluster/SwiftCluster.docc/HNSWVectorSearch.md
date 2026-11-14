@@ -1,12 +1,12 @@
 # High-Dimensional Vector Search with HNSW
 
-Scale approximate nearest neighbor (ANN) retrieval logarithmically using Hierarchical Navigable Small World graphs.
+Scale approximate nearest neighbor (ANN) retrieval using Hierarchical Navigable Small World graphs with empirical logarithmic query scaling under navigable graph structure.
 
 ## Overview
 
-When vector collections expand beyond tens of thousands of items, exact \(O(N)\) linear scans become a major latency bottleneck for real-time recommendation and retrieval-augmented generation (RAG) systems.
+When vector collections expand beyond tens of thousands of items, exact \(O(N \cdot d)\) linear scans become a major latency bottleneck for real-time recommendation and retrieval-augmented generation (RAG) systems.
 
-The `HNSWIndex` actor provides a hierarchical graph-based spatial partitioning index with sub-millisecond query latency and logarithmic \(O(\log N)\) search scaling.
+The `HNSWIndex` actor provides a hierarchical graph-based spatial partitioning index with low query latency and empirical \(O(\log N \cdot M \cdot d)\) search scaling on well-behaved distributions of bounded intrinsic dimensionality (with recall/work traded explicitly via `M`, `efConstruction`, and `efSearch`, rather than a worst-case logarithmic bound in arbitrary dimensions).
 
 ## Hierarchical Navigable Small World Architecture
 

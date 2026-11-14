@@ -98,9 +98,10 @@ internal enum CSVReader {
         let colCount = headers.count
         // rawCells[col][row]
         var rawCells: [[String?]] = Array(repeating: [], count: colCount)
+        var quotedNullMask: [[Bool]] = Array(repeating: [], count: colCount)
 
         for (lineOffset, line) in dataLines.enumerated() {
-            let row = parseRow(line, delimiter: delim)
+            let row = parseRowCells(line, delimiter: delim)
             let lineNumber = dataStartLine + lineOffset + 1
 
             guard row.count == colCount else {
@@ -111,8 +112,14 @@ internal enum CSVReader {
             }
 
             for (ci, cell) in row.enumerated() {
-                let trimmed = cell.trimmingCharacters(in: .whitespaces)
-                rawCells[ci].append(options.nullValues.contains(trimmed) ? nil : trimmed)
+                let trimmed = cell.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if cell.wasQuoted {
+                    rawCells[ci].append(trimmed)
+                    quotedNullMask[ci].append(options.nullValues.contains(trimmed))
+                } else {
+                    rawCells[ci].append(options.nullValues.contains(trimmed) ? nil : trimmed)
+                    quotedNullMask[ci].append(false)
+                }
             }
         }
 
@@ -121,7 +128,7 @@ internal enum CSVReader {
         for (ci, name) in headers.enumerated() {
             let cells = rawCells[ci]
             let col   = options.inferTypes
-                ? inferColumn(name: name, cells: cells, options: options)
+                ? inferColumn(name: name, cells: cells, quotedNullMask: quotedNullMask[ci], options: options)
                 : TypedColumn<String>(name: name, values: cells)
             columns.append(col)
         }
@@ -132,21 +139,38 @@ internal enum CSVReader {
     // MARK: – Type inference
 
     /// Infers the best ColumnDType by trying types in priority order or respecting columnTypeOverrides.
-    internal static func inferColumn(name: String, cells: [String?], options: CSVReadOptions = .default) -> any AnyColumn {
+    internal static func inferColumn(
+        name: String,
+        cells: [String?],
+        quotedNullMask: [Bool] = [],
+        options: CSVReadOptions = .default
+    ) -> any AnyColumn {
         if let overrideType = options.columnTypeOverrides[name] {
+            let overrideCells: [String?]
+            if quotedNullMask.contains(true) && overrideType != .utf8 {
+                overrideCells = cells.enumerated().map { index, value in
+                    (index < quotedNullMask.count && quotedNullMask[index]) ? nil : value
+                }
+            } else {
+                overrideCells = cells
+            }
             switch overrideType {
             case .int32, .int64:
-                return TypedColumn<Int64>(name: name, values: cells.map { $0.flatMap(Int64.parse) })
+                return TypedColumn<Int64>(name: name, values: overrideCells.map { $0.flatMap(Int64.parse) })
             case .float32, .float64:
-                return TypedColumn<Double>(name: name, values: cells.map { $0.flatMap(Double.parse) })
+                return TypedColumn<Double>(name: name, values: overrideCells.map { $0.flatMap(Double.parse) })
             case .boolean:
-                return TypedColumn<Bool>(name: name, values: cells.map { $0.flatMap(Bool.parse) })
+                return TypedColumn<Bool>(name: name, values: overrideCells.map { $0.flatMap(Bool.parse) })
             case .utf8:
                 return TypedColumn<String>(name: name, values: cells)
             case .date32:
                 let parser = CSVDateParser(format: options.columnDateFormats[name])
-                return TypedColumn<Date>(name: name, values: cells.map { $0.flatMap(parser.parse) })
+                return TypedColumn<Date>(name: name, values: overrideCells.map { $0.flatMap(parser.parse) })
             }
+        }
+
+        if quotedNullMask.contains(true) {
+            return TypedColumn<String>(name: name, values: cells)
         }
 
         let nonNull = cells.compactMap { $0 }
@@ -226,9 +250,15 @@ internal enum CSVReader {
 
     /// Splits a single CSV line respecting quoted fields.
     static func parseRow(_ line: String, delimiter: Character) -> [String] {
-        var fields: [String] = []
+        parseRowCells(line, delimiter: delimiter).map(\.text)
+    }
+
+    /// Splits a single CSV line respecting quoted fields while preserving each field's quoted state.
+    internal static func parseRowCells(_ line: String, delimiter: Character) -> [(text: String, wasQuoted: Bool)] {
+        var fields: [(text: String, wasQuoted: Bool)] = []
         var current    = ""
         var inQuotes   = false
+        var wasQuoted  = false
         var i          = line.startIndex
 
         while i < line.endIndex {
@@ -246,10 +276,12 @@ internal enum CSVReader {
                     }
                 } else {
                     inQuotes = true
+                    wasQuoted = true
                 }
             } else if c == delimiter && !inQuotes {
-                fields.append(current)
+                fields.append((current, wasQuoted))
                 current = ""
+                wasQuoted = false
             } else {
                 current.append(c)
             }
@@ -257,7 +289,7 @@ internal enum CSVReader {
             i = line.index(after: i)
         }
 
-        fields.append(current)
+        fields.append((current, wasQuoted))
         return fields
     }
 

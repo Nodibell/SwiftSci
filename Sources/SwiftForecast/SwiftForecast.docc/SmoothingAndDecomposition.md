@@ -112,9 +112,9 @@ for (step, z) in noisyMeasurements.enumerated() {
 
 ---
 
-## 3. Classical Seasonal Decomposition (STL)
+## 3. Classical Moving-Average Seasonal Decomposition
 
-Separate series into Trend, Seasonal, and Residual components:
+Separate series into Trend, Seasonal, and Residual components using a centered finite-impulse-response moving-average trend filter and equal-phase seasonal averaging (classical decomposition, **not** LOESS-based STL):
 
 ```swift
 let decomp = TimeSeriesDecomposition.decompose(series: series, period: 12, type: .additive)

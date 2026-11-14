@@ -13,16 +13,17 @@ struct CSVEmptyNumericTests {
         bytes.withUnsafeBufferPointer { buffer in
             let integer = CSVIntegerDecoder(nulls: nulls)
             let double = CSVDoubleDecoder(nulls: nulls)
+            let isUnquotedNull = declaredNull && !VectorizedByteParsers.isQuoted(buffer: buffer, offset: field)
             #expect(integer.decodeValue(buffer: buffer, offset: field) == nil)
             #expect(double.decodeValue(buffer: buffer, offset: field) == nil)
             switch integer.decode(buffer: buffer, offset: field) {
-            case .missing: #expect(declaredNull)
-            case .invalid: #expect(!declaredNull)
+            case .missing: #expect(isUnquotedNull)
+            case .invalid: #expect(!isUnquotedNull)
             case .value: Issue.record("Empty integer field became a value")
             }
             switch double.decode(buffer: buffer, offset: field) {
-            case .missing: #expect(declaredNull)
-            case .invalid: #expect(!declaredNull)
+            case .missing: #expect(isUnquotedNull)
+            case .invalid: #expect(!isUnquotedNull)
             case .value: Issue.record("Empty Double field became a value")
             }
         }

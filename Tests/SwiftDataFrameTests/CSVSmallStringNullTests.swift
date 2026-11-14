@@ -28,10 +28,11 @@ struct CSVSmallStringNullTests {
                 bytes.withUnsafeBufferPointer { buffer in
                     let field = CSVFieldOffset(startOffset: 0, length: bytes.count, escapedQuotesPresent: bytes.contains(34))
                     let text = VectorizedByteParsers.parseString(buffer: buffer, offset: field)
+                    let isUnquotedNull = !VectorizedByteParsers.isQuoted(buffer: buffer, offset: field) && expectedTokens.contains(text)
                     switch decoder.decode(buffer: buffer, offset: field) {
-                    case .missing: #expect(expectedTokens.contains(text))
+                    case .missing: #expect(isUnquotedNull)
                     case .value(let value):
-                        #expect(!expectedTokens.contains(text))
+                        #expect(!isUnquotedNull)
                         #expect(value == text)
                     case .invalid: Issue.record("String conversion unexpectedly rejected a field")
                     }

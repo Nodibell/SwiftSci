@@ -38,6 +38,9 @@ internal struct CSVASCIIPrefixStringDecoder: CSVValueDecoder, Sendable {
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<String> {
         let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
+        if VectorizedByteParsers.isQuoted(buffer: buffer, offset: offset) {
+            return .value(text)
+        }
         if let first = text.utf8.first, first < 128 {
             let mask = first < 64 ? lowStarts : highStarts
             if mask & (UInt64(1) << (first & 63)) == 0 { return .value(text) }

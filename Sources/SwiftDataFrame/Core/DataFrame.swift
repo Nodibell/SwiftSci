@@ -322,25 +322,34 @@ public struct DataFrame: Sendable {
     }
 
     /// Returns a new `DataFrame` containing only unique rows (deduplicated), preserving order of first appearance.
+    /// Removes duplicate rows using structural typed keys across columns.
+    ///
+    /// - Policy: All `NaN` payloads compare equal to one another for row deduplication (distinct
+    ///   from `nil` missing values), signed zeros (`-0.0` and `+0.0`) compare equal, distinct
+    ///   column types and boundaries are preserved, and unknown non-`Hashable` values are retained.
     public var unique: DataFrame {
         guard shape.rows > 0 else { return self }
         
-        var seenRows = Set<String>()
+        var seenRows = Set<[CanonicalUniqueKey?]>()
         var keepIndices: [Int] = []
         keepIndices.reserveCapacity(shape.rows)
         
         for i in 0..<shape.rows {
-            var rowRepresentation = ""
+            var rowRepresentation: [CanonicalUniqueKey?] = []
+            rowRepresentation.reserveCapacity(_columnOrder.count)
+            var hashable = true
             for colName in _columnOrder {
-                if let col = _columns[colName] {
-                    if let val = col.value(at: i) {
-                        rowRepresentation.append("\(val)|")
-                    } else {
-                        rowRepresentation.append("nil|")
+                if let val = _columns[colName]?.value(at: i) {
+                    guard let key = CanonicalUniqueKey.make(val) else {
+                        hashable = false
+                        break
                     }
+                    rowRepresentation.append(key)
+                } else {
+                    rowRepresentation.append(nil)
                 }
             }
-            if seenRows.insert(rowRepresentation).inserted {
+            if !hashable || seenRows.insert(rowRepresentation).inserted {
                 keepIndices.append(i)
             }
         }

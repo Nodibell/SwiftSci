@@ -1,29 +1,29 @@
 # Fast Tabular Learning with Histogram Gradient Boosting
 
-Discretize continuous feature distributions into 256 compact bins to accelerate decision tree split evaluations from \(O(N \log N)\) to \(O(K)\).
+Discretize continuous feature distributions into up to 256 compact bins (`UInt8`) so tree-node split gain scans take $O(K \cdot p)$ time over $K \le 256$ bins after an $O(N_{\text{node}} \cdot p)$ histogram accumulation pass.
 
 ## Overview
 
-Traditional gradient boosted decision trees (GBDT) sort continuous feature values across all samples at every internal tree node to find optimal split thresholds. When datasets grow to millions of rows, sorting becomes the primary performance bottleneck.
+Traditional gradient boosted decision trees (GBDT) evaluate continuous threshold candidates by sorting or scanning exact values across all samples at every tree node. When datasets grow large, sorting becomes a major performance bottleneck.
 
-`HistGradientBoostingClassifier` and `HistGradientBoostingRegressor` implement histogram-based split optimization (inspired by LightGBM and scikit-learn's `HistGradientBoostingClassifier`). Continuous feature columns are discretized into at most 256 integer bins (`UInt8`).
+`HistGradientBoostingClassifier` and `HistGradientBoostingRegressor` implement histogram-based split optimization (inspired by LightGBM and scikit-learn's `HistGradientBoostingClassifier`). Continuous feature columns are pre-binned into at most 256 integer bins (`UInt8`).
 
 ## Algorithmic Architecture
 
 1. **Pre-Binning (Quantization)**:
    Feature quantiles are evaluated once before boosting begins, establishing up to 256 discrete bins per feature column. All feature values are mapped to compact `UInt8` memory arrays.
 2. **One-Pass Histogram Accumulation**:
-   For any internal tree node, first-order negative gradients \(g_i\) and second-order Hessians \(h_i\) are accumulated into a flat 256-bin histogram in a single linear pass over the node's samples:
+   For any internal tree node, first-order negative gradients \(g_i\) and second-order Hessians \(h_i\) are accumulated into flat 256-bin histograms in an \(O(N_{\text{node}} \cdot p)\) linear pass over the node's samples:
    $$G[k] = \sum_{i: b_i = k} g_i, \quad H[k] = \sum_{i: b_i = k} h_i$$
-3. **Constant-Time Split Finding**:
-   Evaluating all split candidates requires iterating over \(K \le 256\) bins, regardless of how many millions of samples reside in the node:
+3. **Histogram-Bin Split Scan**:
+   Once histograms are built, evaluating all candidate thresholds scans only the \(K \le 256\) populated bins per feature (\(O(K \cdot p)\)), rather than re-sorting \(N_{\text{node}}\) continuous values:
    $$\text{Gain} = \frac{1}{2} \left[ \frac{G_L^2}{H_L + \lambda} + \frac{G_R^2}{H_R + \lambda} - \frac{G_{\text{tot}}^2}{H_{\text{tot}} + \lambda} \right]$$
 
 ```
-Continuous Floats [0.14, 0.92, -0.45] ──► Quantization ──► UInt8 Bins [32, 215, 12]
-                                                                  │
+Continuous Floats [0.14, 0.92, -0.45] ──► Pre-Binning ──► UInt8 Bins [32, 215, 12]
+                                                                  │  O(N_node · p) build
                                                                   ▼
-Node Split Search: O(256) Bin Scan ◄─── Accumulated Histograms G[k], H[k]
+Node Split Scan: O(K · p), K <= 256 ◄─── Accumulated Histograms G[k], H[k]
 ```
 
 ## Example Usage

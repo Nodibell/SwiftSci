@@ -6,7 +6,10 @@ public struct CSVReadOptions: Sendable {
     public var delimiter: Character = ","
     /// Whether the first row contains column names.
     public var hasHeader: Bool = true
-    /// Strings that should be interpreted as null.
+    /// Strings that should be interpreted as missing (`nil`) when unquoted.
+    /// Unquoted empty fields map to `nil` when `""` is included, whereas
+    /// RFC 4180 quoted fields (such as `""`, `"NA"`, `"null"`, `"NaN"`, `"None"`)
+    /// retain their literal string value during type inference and string decoding.
     public var nullValues: Set<String> = ["", "NA", "na", "N/A", "n/a", "null", "NULL", "NaN", "nan", "None"]
     /// Whether to automatically infer column types.
     /// Sampled types are validated during conversion. Later incompatible values

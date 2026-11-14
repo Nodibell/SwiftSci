@@ -69,3 +69,45 @@ struct KMeansTests {
         }
     }
 }
+
+#if os(macOS)
+import Testing
+@testable import SwiftCluster
+
+@Suite("KMeans input validation and distance robustness (S-09)")
+struct KMeansRobustnessTests {
+    @Test func rejectsNonFiniteAndRaggedInput() async throws {
+        let km = try KMeans(nClusters: 2)
+        await #expect(throws: (any Error).self) { try await km.fit(features: [[0, 0], [1, .nan], [5, 5]]) }
+        await #expect(throws: (any Error).self) { try await km.fit(features: [[0, 0], [1, .infinity], [5, 5]]) }
+        await #expect(throws: (any Error).self) { try await km.fit(features: [[0, 0], [1], [5, 5]]) }
+
+        let fitted = try KMeans(nClusters: 2, device: .cpu)
+        try await fitted.fit(features: [[0, 0], [0.1, 0.1], [10, 10], [10.1, 10.1]])
+        await #expect(throws: (any Error).self) { try await fitted.predict(features: [[0, .nan]]) }
+        await #expect(throws: (any Error).self) { try await fitted.predict(features: [[0, 0], [1]]) }
+        await #expect(throws: (any Error).self) { try await fitted.predict(features: [[0, 0, 0]]) }
+    }
+
+    @Test func identicalPointsAndExtremeMagnitudesAreStable() async throws {
+        let same = [[Double]](repeating: [3, 3, 3], count: 6)
+        let km = try KMeans(nClusters: 2, device: .cpu)
+        try await km.fit(features: same)
+        let labels = try await km.predict(features: same)
+        #expect(Set(labels).count == 1)
+        let big: [[Double]] = [[1e150, 1e150], [1e150 + 1e134, 1e150], [-1e150, 1e150], [-1e150, 1e150 + 1e134]]
+        let km2 = try KMeans(nClusters: 2, device: .cpu)
+        try await km2.fit(features: big)
+        #expect(try await km2.predict(features: big).count == 4)
+    }
+
+    @Test func nearlyIdenticalLargeVectorsNeverGiveNegativeDistances() async throws {
+        // 20 features exercises the vDSP path; distances are direct sums of squares, hence >= 0.
+        let base = (0..<20).map { Double($0) * 1e8 }
+        let rows = (0..<8).map { i in base.map { $0 + Double(i) * 1e-8 } }
+        let km = try KMeans(nClusters: 2, device: .cpu)
+        try await km.fit(features: rows)
+        #expect(try await km.predict(features: rows).count == 8)
+    }
+}
+#endif

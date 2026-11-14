@@ -158,6 +158,15 @@ public enum VectorizedByteParsers {
         return overflow ? nil : positive
     }
 
+    /// Returns `true` when the raw CSV field in `buffer` is enclosed in RFC 4180 double quotes (`"`).
+    @inlinable
+    public static func isQuoted(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Bool {
+        let start = offset.startOffset
+        let length = offset.length
+        guard length >= 2, start >= 0, start + length <= buffer.count else { return false }
+        return buffer[start] == 34 && buffer[start + length - 1] == 34
+    }
+
     /// Constructs a `String` from raw buffer coordinates, unescaping double quote sequences (`""`).
     /// - Parameters:
     ///   - buffer: Underlying byte buffer or contiguous memory storage.

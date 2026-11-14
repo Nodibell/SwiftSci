@@ -32,10 +32,27 @@ internal struct CSVColumnPlan {
         var date = true
         var nonNull = false
         for row in startRow..<(startRow + min(rowCount, 1_000)) {
-            guard let field = records.field(row: row, column: column), field.length != 0 else { continue }
+            guard let field = records.field(row: row, column: column) else { continue }
+            let quoted = VectorizedByteParsers.isQuoted(buffer: buffer, offset: field)
+            if !quoted && field.length == 0 {
+                if nullValues.contains("") { continue }
+                nonNull = true
+                integer = false
+                double = false
+                boolean = false
+                date = false
+                break
+            }
             let text = VectorizedByteParsers.parseString(buffer: buffer, offset: field)
-            if nullValues.contains(text) { continue }
+            if !quoted && nullValues.contains(text) { continue }
             nonNull = true
+            if quoted && nullValues.contains(text) {
+                integer = false
+                double = false
+                boolean = false
+                date = false
+                break
+            }
             if integer && Int64.parse(from: text) == nil { integer = false }
             if double && VectorizedByteParsers.parseDouble(buffer: buffer, offset: field) == nil
                 && Double.parse(from: text) == nil { double = false }
@@ -301,17 +318,29 @@ internal struct CSVIntegerDecoder: CSVValueDecoder {
     // its classified decoder so missing fields do not need a second parse.
     @inline(__always)
     func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Int64? {
-        if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
+        if !nulls.canSkipNumericMatch
+            && (nulls.contains(buffer: buffer, offset: offset) || nulls.matchesQuotedToken(buffer: buffer, offset: offset)) {
+            return nil
+        }
         if let value = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) { return Int64(value) }
-        if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
+        if nulls.canSkipNumericMatch
+            && (nulls.contains(buffer: buffer, offset: offset) || nulls.matchesQuotedToken(buffer: buffer, offset: offset)) {
+            return nil
+        }
         return parseCSVNumericFallback(Int64.self, buffer: buffer, offset: offset)
     }
 
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Int64> {
-        if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
+        if !nulls.canSkipNumericMatch {
+            if nulls.contains(buffer: buffer, offset: offset) { return .missing }
+            if nulls.matchesQuotedToken(buffer: buffer, offset: offset) { return .invalid }
+        }
         if let value = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) { return .value(Int64(value)) }
-        if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
+        if nulls.canSkipNumericMatch {
+            if nulls.contains(buffer: buffer, offset: offset) { return .missing }
+            if nulls.matchesQuotedToken(buffer: buffer, offset: offset) { return .invalid }
+        }
         return parseCSVNumericFallback(Int64.self, buffer: buffer, offset: offset)
             .map(CSVDecodedValue.value) ?? .invalid
     }
@@ -322,17 +351,29 @@ internal struct CSVDoubleDecoder: CSVValueDecoder {
 
     @inline(__always)
     func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Double? {
-        if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
+        if !nulls.canSkipNumericMatch
+            && (nulls.contains(buffer: buffer, offset: offset) || nulls.matchesQuotedToken(buffer: buffer, offset: offset)) {
+            return nil
+        }
         if let value = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) { return value }
-        if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return nil }
+        if nulls.canSkipNumericMatch
+            && (nulls.contains(buffer: buffer, offset: offset) || nulls.matchesQuotedToken(buffer: buffer, offset: offset)) {
+            return nil
+        }
         return parseCSVNumericFallback(Double.self, buffer: buffer, offset: offset)
     }
 
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Double> {
-        if !nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
+        if !nulls.canSkipNumericMatch {
+            if nulls.contains(buffer: buffer, offset: offset) { return .missing }
+            if nulls.matchesQuotedToken(buffer: buffer, offset: offset) { return .invalid }
+        }
         if let value = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) { return .value(value) }
-        if nulls.canSkipNumericMatch && nulls.contains(buffer: buffer, offset: offset) { return .missing }
+        if nulls.canSkipNumericMatch {
+            if nulls.contains(buffer: buffer, offset: offset) { return .missing }
+            if nulls.matchesQuotedToken(buffer: buffer, offset: offset) { return .invalid }
+        }
         return parseCSVNumericFallback(Double.self, buffer: buffer, offset: offset)
             .map(CSVDecodedValue.value) ?? .invalid
     }
@@ -344,6 +385,10 @@ internal struct CSVBooleanDecoder: CSVValueDecoder {
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Bool> {
         let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
+        if VectorizedByteParsers.isQuoted(buffer: buffer, offset: offset) {
+            if nullValues.contains(text) { return .invalid }
+            return Bool.parse(from: text).map(CSVDecodedValue.value) ?? .invalid
+        }
         if nullValues.contains(text) { return .missing }
         return Bool.parse(from: text).map(CSVDecodedValue.value) ?? .invalid
     }
@@ -355,6 +400,9 @@ internal struct CSVStringDecoder: CSVValueDecoder {
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<String> {
         let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
+        if VectorizedByteParsers.isQuoted(buffer: buffer, offset: offset) {
+            return .value(text)
+        }
         return nullValues.contains(text) ? .missing : .value(text)
     }
 }
@@ -374,6 +422,9 @@ internal struct CSVSmallStringDecoder: CSVValueDecoder, Sendable {
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<String> {
         let text = VectorizedByteParsers.parseString(buffer: buffer, offset: offset)
+        if VectorizedByteParsers.isQuoted(buffer: buffer, offset: offset) {
+            return .value(text)
+        }
         return first == text || second == text ? .missing : .value(text)
     }
 }
@@ -386,13 +437,16 @@ internal struct CSVDateDecoder: CSVValueDecoder {
     // result tag on the explicit-schema path.
     @inline(__always)
     func decodeValue(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> Date? {
-        if nulls.contains(buffer: buffer, offset: offset) { return nil }
+        if nulls.contains(buffer: buffer, offset: offset) || nulls.matchesQuotedToken(buffer: buffer, offset: offset) {
+            return nil
+        }
         return parser.parse(buffer: buffer, offset: offset)
     }
 
     @inline(__always)
     func decode(buffer: UnsafeBufferPointer<UInt8>, offset: CSVFieldOffset) -> CSVDecodedValue<Date> {
         if nulls.contains(buffer: buffer, offset: offset) { return .missing }
+        if nulls.matchesQuotedToken(buffer: buffer, offset: offset) { return .invalid }
         return parser.parse(buffer: buffer, offset: offset).map(CSVDecodedValue.value) ?? .invalid
     }
 }

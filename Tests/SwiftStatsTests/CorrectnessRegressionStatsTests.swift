@@ -63,6 +63,24 @@ struct CorrectnessRegressionStatsTests {
         #expect(throws: (any Error).self) { try Stats.kolmogorovSmirnov([1, 2, 3, 4, .infinity]) }
         #expect(throws: (any Error).self) { try Stats.kolmogorovSmirnov([1, 2, 3, 4]) }
     }
+
+    @Test func normalityTestsAreInvariantUnderExtremeScaling() throws {
+        let sample = [-4.0, -2, -1, 0, 1, 2, 4]
+        let scaledSamples = [
+            sample.map { $0 * (Double.greatestFiniteMagnitude / 4) },
+            sample.map { $0 * Double.leastNonzeroMagnitude }
+        ]
+        let shapiro = try Stats.shapiroWilk(sample)
+        let lilliefors = try Stats.kolmogorovSmirnov(sample)
+        for scaled in scaledSamples {
+            let actualShapiro = try Stats.shapiroWilk(scaled)
+            let actualLilliefors = try Stats.kolmogorovSmirnov(scaled)
+            #expect(abs(actualShapiro.statistic - shapiro.statistic) < 1e-12)
+            #expect(abs(actualShapiro.pValue - shapiro.pValue) < 1e-12)
+            #expect(abs(actualLilliefors.statistic - lilliefors.statistic) < 1e-12)
+            #expect(abs(actualLilliefors.pValue - lilliefors.pValue) < 1e-12)
+        }
+    }
     @Test func shapiro500() throws {
         let values = (0..<500).map { Double(($0 * $0) % 17) + Double($0) * 0.13 }
         let result = try Stats.shapiroWilk(values)
@@ -116,6 +134,14 @@ struct CorrectnessRegressionStatsTests {
         #expect(Stats.regularisedIncompleteGamma(a: 0, x: 1).isNaN)
         #expect(Stats.regularisedIncompleteGamma(a: 2, x: .nan).isNaN)
         #expect(Stats.regularisedIncompleteGamma(a: 2, x: .infinity) == 1.0)
+    }
+
+    @Test func largeShapeChiSquarePreservesSubnormalUpperTail() {
+        // Reference from mpmath's regularized upper incomplete gamma at 50 decimal digits.
+        let expected: Double = 3.757582134819179e-316
+        let actual = Stats.chiSquareSurvival(chi2: 225_000, df: 200_000)
+        #expect(actual > 0)
+        #expect(abs(actual - expected) <= 8 * Double.leastNonzeroMagnitude)
     }
 
     @Test func chiSquareGoodnessOfFitValidationAndScaling() throws {

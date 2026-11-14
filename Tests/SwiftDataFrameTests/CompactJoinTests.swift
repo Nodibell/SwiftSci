@@ -66,6 +66,7 @@ struct CompactJoinTests {
                 #expect(result[column: "id_x", as: Int64.self]?.values == [1, 4])
                 #expect(result[column: "id_y", as: Int64.self]?.values == [1, 4])
                 let keys = try #require(result[column: "key", as: Double.self])
+                #expect((keys.compactNumericStorage != nil) == (compactLeft || compactRight))
                 #expect(keys[0]?.bitPattern == (-0.0).bitPattern)
                 #expect(keys[1] == 1)
             }

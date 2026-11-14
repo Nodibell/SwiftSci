@@ -16,7 +16,9 @@ struct DataFrameParquetCoverageTests {
         func toDoubles() -> [Double]? { nil }
         func toStrings() -> [String] { rawValues.map { $0 != nil ? "\($0!)" : "null" } }
         func filtered(by mask: [Bool]) throws -> any AnyColumn { self }
-        func gathered(at indices: [Int]) -> any AnyColumn { self }
+        func gathered(at indices: [Int]) -> any AnyColumn {
+            CustomGenericColumn(name: name, dtype: dtype, rawValues: indices.map { rawValues[$0] })
+        }
         func sortedIndices(ascending: Bool) -> [Int] { Array(0..<count) }
         var unique: any AnyColumn { self }
         func lagged(by offset: Int) -> any AnyColumn { self }

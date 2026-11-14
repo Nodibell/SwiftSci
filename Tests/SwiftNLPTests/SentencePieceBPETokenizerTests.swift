@@ -4,6 +4,31 @@ import Testing
 
 @Suite("SentencePiece BPE Tokenizer & Gemma Chat Templates")
 struct SentencePieceBPETokenizerTests {
+    @Test func escapedSupplementaryScalarInVocabulary() throws {
+        let json = try vocabularyFixture(escape: #"\uD83D\uDE00"#)
+        let tokenizer = try SentencePieceBPETokenizer(tokenizerJSON: json)
+        #expect(tokenizer.encode(text: "😀", addSpecialTokens: false) == [2, 7])
+        #expect(tokenizer.decode(tokens: [7]) == "😀")
+    }
+
+    @Test(arguments: [#"\uD83D"#, #"\uD83D\u0041"#, #"\uDE00"#, #"\uD83Z"#, #"\q"#])
+    func malformedVocabularyEscapesAreRejected(escape: String) throws {
+        let json = try vocabularyFixture(escape: escape)
+        #expect(throws: (any Error).self) {
+            try SentencePieceBPETokenizer(tokenizerJSON: json)
+        }
+    }
+
+    private func vocabularyFixture(escape: String) throws -> Data {
+        var vocab = ["<unk>": 0, "<s>": 1, "▁": 2, "ESCAPED_VOCAB_TOKEN": 7]
+        Self.addAllByteTokens(to: &vocab)
+        let fixture = try Self.makeTokenizerJSON(vocab: vocab)
+        let json = String(decoding: fixture, as: UTF8.self)
+            .replacingOccurrences(of: "ESCAPED_VOCAB_TOKEN", with: escape)
+        let metadata = #"{"metadata":{"negative":-2,"fraction":0.125,"exponent":1.25e-4},"#
+        return Data((metadata + json.dropFirst()).utf8)
+    }
+
     private static func makeTokenizerJSON(
         vocab: [String: Int],
         merges: [String] = [],

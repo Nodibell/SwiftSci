@@ -1,9 +1,10 @@
 import Foundation
 import SwiftML
 
-/// Explanation structure containing exact TreeSHAP attributions and baseline predictions.
+/// Explanation structure containing TreeSHAP attributions and baseline predictions
+/// (exact when `K <= TreeSHAP.maxExactFeatures`, seeded Monte Carlo permutation estimate otherwise).
 public struct TreeSHAPExplanation: Sendable, Codable, Equatable {
-    /// Exact Shapley attribution value for each feature.
+    /// Shapley attribution value for each feature (exact when `K <= TreeSHAP.maxExactFeatures`, permutation estimate otherwise).
     public let values: [Double]
     /// Expected base value (mean tree prediction over the training distribution).
     public let baseValue: Double
@@ -18,17 +19,48 @@ public struct TreeSHAPExplanation: Sendable, Codable, Equatable {
     }
 }
 
-/// Fast, exact TreeSHAP (Tree Shapley Additive Explanations) for decision trees and tree ensembles
+/// TreeSHAP (Tree Shapley Additive Explanations) for decision trees and tree ensembles
 /// (Lundberg et al., 2018; Nature Machine Intelligence).
 ///
-/// Computes exact Shapley values satisfying the efficiency axiom:
+/// The value function is the *path-dependent* conditional expectation over the tree's own sample
+/// weights (not a full observational conditional expectation).
+///
+/// - Exact: a tree that splits on `K <= maxExactFeatures` (12) distinct features is solved by
+///   enumerating all `2^K` coalitions, which yields the exact Shapley values.
+/// - Approximate: for `K > maxExactFeatures` the values are Monte-Carlo estimates from
+///   `approximationSamples` (2048) random feature permutations drawn from a seeded generator
+///   (`permutationSeed`, default 42), so results are reproducible but carry sampling error.
+///   Every permutation telescopes to `f(x) - E[f(X)]`, so the estimate satisfies the efficiency
+///   axiom up to floating-point rounding; this does not make individual attributions exact.
+///   Use ``isExact(tree:numFeatures:)`` to see which branch a tree takes.
+///
+/// Efficiency axiom:
 /// \[
 /// f(x) = \mathbb{E}[f(X)] + \sum_{i=1}^{M} \phi_i
 /// \]
 public struct TreeSHAP: Sendable {
     
-    /// Creates a new TreeSHAP explainer instance.
-    public init() {}
+    /// Largest number of distinct split features solved by exhaustive coalition enumeration.
+    public static let maxExactFeatures = 12
+    /// Number of random permutations used when a tree splits on more than ``maxExactFeatures`` features.
+    public static let approximationSamples = 2048
+    /// Seed of the permutation sampler used by the approximate (`K > 12`) branch.
+    public let permutationSeed: UInt64
+
+    /// Creates a new TreeSHAP explainer instance with the default permutation seed (42).
+    public init() { self.permutationSeed = 42 }
+
+    /// Creates an explainer whose approximate branch (`K > 12`) uses `permutationSeed` for reproducibility.
+    public init(permutationSeed: UInt64) { self.permutationSeed = permutationSeed }
+
+    /// Returns `true` when `tree` is solved exactly (at most ``maxExactFeatures`` distinct split features).
+    public func isExact(tree: [FlatTreeNode], numFeatures: Int) -> Bool {
+        var used = Set<Int>()
+        for node in tree where !node.isLeaf && node.featureIndex >= 0 && node.featureIndex < numFeatures {
+            used.insert(node.featureIndex)
+        }
+        return used.count <= Self.maxExactFeatures
+    }
 
     private static let weightsLUT: [[Double]] = {
         let maxM = 65
@@ -130,19 +162,24 @@ public struct TreeSHAP: Sendable {
         return tree[curr].value
     }
 
-    // MARK: - Exact TreeSHAP for FlatTreeNode arrays
+    // MARK: - Path-Dependent TreeSHAP for FlatTreeNode arrays
 
-    /// Computes exact Shapley values for a single decision tree and an input instance.
+    /// Computes TreeSHAP attributions for a single decision tree and an input instance.
+    ///
+    /// Exact via \(2^K\) coalition enumeration when the tree splits on at most ``maxExactFeatures``
+    /// (`12`) distinct features; seeded Monte Carlo permutation estimate otherwise.
+    ///
     /// - Parameters:
     ///   - tree: Flat array of `FlatTreeNode` nodes representing the fitted decision tree.
     ///   - instance: Feature vector of the instance to explain.
     ///   - numFeatures: Total number of features in the feature space.
-    /// - Returns: Exact Shapley values for each feature of length `numFeatures`.
+    /// - Returns: Shapley attributions for each feature of length `numFeatures`.
     public func explain(tree: [FlatTreeNode], instance: [Double], numFeatures: Int) -> [Double] {
         return explainDetailed(tree: tree, instance: instance, numFeatures: numFeatures).values
     }
 
-    /// Computes exact Shapley values and detailed baseline decomposition for a single decision tree.
+    /// Computes TreeSHAP attributions and detailed baseline decomposition for a single decision tree
+    /// (exact for `K <= maxExactFeatures`, seeded Monte Carlo permutation estimate for `K > maxExactFeatures`).
     public func explainDetailed(tree: [FlatTreeNode], instance: [Double], numFeatures: Int) -> TreeSHAPExplanation {
         guard !tree.isEmpty, !instance.isEmpty, numFeatures > 0 else {
             return TreeSHAPExplanation(
@@ -227,7 +264,7 @@ public struct TreeSHAP: Sendable {
         }
 
         // For small or moderate K (<= 12), compute exact 2^K subset evaluations
-        if K <= 12 {
+        if K <= Self.maxExactFeatures {
             let totalSubsets = 1 << K
             var v = [Double](repeating: 0.0, count: totalSubsets)
             for mask in 0..<totalSubsets {
@@ -250,8 +287,9 @@ public struct TreeSHAP: Sendable {
                 phi[feat] = phi_i
             }
         } else {
-            // For larger K (> 12), evaluate exact coalition sampling or single-path tree traversal
-            let numSamples = 2048
+            // K > 12: seeded Monte-Carlo permutation sampling (approximate, reproducible)
+            let numSamples = Self.approximationSamples
+            var rng = SeededRNG(seed: permutationSeed)
             var counts = [Double](repeating: 0.0, count: K)
             var sumDiffs = [Double](repeating: 0.0, count: K)
 
@@ -260,7 +298,7 @@ public struct TreeSHAP: Sendable {
 
             // Random permutations for unbiased Shapley estimation
             for _ in 0..<numSamples {
-                let perm = Array(0..<K).shuffled()
+                let perm = Array(0..<K).shuffled(using: &rng)
                 var currentMask = 0
                 var currentVal = vEmpty
                 for idx in perm {
@@ -280,7 +318,8 @@ public struct TreeSHAP: Sendable {
                 }
             }
 
-            // Enforce exact efficiency closure
+            // Residual closure: each permutation already telescopes to prediction - baseValue,
+            // so this only absorbs floating-point rounding.
             let rawSum = phi.reduce(0.0, +)
             let targetGain = prediction - baseValue
             let discrepancy = targetGain - rawSum
@@ -295,17 +334,21 @@ public struct TreeSHAP: Sendable {
         return TreeSHAPExplanation(values: phi, baseValue: baseValue, prediction: prediction)
     }
 
-    /// Computes exact Shapley values for an ensemble of trees (e.g. Random Forest).
+    /// Computes average TreeSHAP attributions for an ensemble of trees (e.g. Random Forest).
+    ///
+    /// Each tree uses exact \(2^K\) coalition enumeration when its distinct split feature count
+    /// `K <= maxExactFeatures`, or seeded Monte Carlo permutation estimation when `K > maxExactFeatures`.
     /// - Parameters:
     ///   - trees: Array of trees, where each tree is `[FlatTreeNode]`.
     ///   - instance: Feature vector of the instance to explain.
     ///   - numFeatures: Total number of features.
-    /// - Returns: Average exact Shapley values across the ensemble.
+    /// - Returns: Average Shapley attributions across the ensemble.
     public func explain(trees: [[FlatTreeNode]], instance: [Double], numFeatures: Int) -> [Double] {
         return explainDetailed(trees: trees, instance: instance, numFeatures: numFeatures).values
     }
 
-    /// Computes exact Shapley values and detailed decomposition for an ensemble of trees.
+    /// Computes TreeSHAP attributions and detailed decomposition for an ensemble of trees
+    /// (exact per tree for `K <= maxExactFeatures`, seeded Monte Carlo permutation estimate otherwise).
     public func explainDetailed(trees: [[FlatTreeNode]], instance: [Double], numFeatures: Int) -> TreeSHAPExplanation {
         guard !trees.isEmpty else {
             return TreeSHAPExplanation(
@@ -364,7 +407,8 @@ public struct TreeSHAP: Sendable {
 
     // MARK: - Concurrent Batch TreeSHAP
 
-    /// Computes exact Shapley values concurrently for a batch of input instances across CPU cores.
+    /// Computes TreeSHAP attributions concurrently for a batch of input instances across CPU cores
+    /// (exact per tree for `K <= maxExactFeatures`, seeded Monte Carlo permutation estimate otherwise).
     public func explainBatch(
         trees: [[FlatTreeNode]],
         instances: [[Double]],

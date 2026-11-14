@@ -351,10 +351,13 @@ public actor ARIMAModel {
         )
     }
     
-    /// Computes the Akaike Information Criterion (AIC) for the fitted model.
+    /// Computes the approximate Akaike Information Criterion (AIC) from conditional least-squares residuals.
+    ///
+    /// Uses the conditional Gaussian residual-MSE formula `-n/2 * (1 + ln(2*pi*MSE))` derived from the
+    /// Hannan-Rissanen two-stage OLS fit (not exact state-space / Kalman Gaussian MLE).
     ///
     /// - Throws: `ForecastError.notFitted` if model has not been fitted.
-    /// - Returns: AIC score as a `Double`.
+    /// - Returns: Conditional AIC score as a `Double`.
     ///
     /// ## Complexity
     /// O(1) over precomputed residuals.
@@ -367,10 +370,13 @@ public actor ARIMAModel {
         return 2.0 * k + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
     }
 
-    /// Computes the Bayesian Information Criterion (BIC) for the fitted model.
+    /// Computes the approximate Bayesian Information Criterion (BIC) from conditional least-squares residuals.
+    ///
+    /// Uses the conditional Gaussian residual-MSE formula derived from the Hannan-Rissanen two-stage
+    /// OLS fit (not exact state-space / Kalman Gaussian MLE).
     ///
     /// - Throws: `ForecastError.notFitted` if model has not been fitted.
-    /// - Returns: BIC score as a `Double`.
+    /// - Returns: Conditional BIC score as a `Double`.
     ///
     /// ## Complexity
     /// O(1) over precomputed residuals.

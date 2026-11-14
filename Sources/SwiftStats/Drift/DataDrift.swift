@@ -151,7 +151,7 @@ public enum PopulationStabilityIndex {
     ///   - expected: Baseline or training reference values.
     ///   - actual: Target or validation/test evaluation values.
     ///   - buckets: Number of quantile bins to partition the reference range into (defaults to 10).
-    ///   - epsilon: Small positive offset added to zero bins to guarantee numerical stability (defaults to 1e-4).
+    ///   - epsilon: Lower floor applied to each bin proportion independently (`max(p, epsilon)`, default 1e-4) so empty bins give a finite logarithm. The floored proportions are **not** renormalised, so with empty bins the result is an epsilon-stabilised PSI score rather than the exact symmetric (Jeffreys) divergence of two probability distributions.
     /// - Returns: A `PSIResult` containing total PSI score, severity rating, and bucket diagnostics.
     /// - Throws: `SwiftMLError.emptyInput` if either input is empty, or `SwiftMLError.invalidParameter` if buckets < 2.
     public static func compute(

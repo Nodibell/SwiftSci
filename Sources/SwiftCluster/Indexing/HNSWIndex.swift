@@ -22,7 +22,9 @@ public enum HNSWError: Error, LocalizedError, Sendable, Equatable {
 /// A hierarchical navigable small world graph index for sub-millisecond approximate nearest neighbor search.
 ///
 /// ## Scalability
-/// Scales logarithmically \(O(\log N)\) over high-dimensional vector embeddings, replacing brute-force \(O(N)\) cosine search.
+/// Achieves empirical sub-linear \(O(\log N \cdot d \cdot M)\) query routing on navigable datasets with bounded
+/// intrinsic dimensionality (replacing full \(O(N \cdot d)\) scans); worst-case traversal still depends on `efSearch`,
+/// dimension `d`, and degree distribution.
 ///
 /// ## Architecture
 /// HNSW constructs a multi-layer graph where upper layers contain sparse, long-distance links for fast geometric
@@ -177,7 +179,8 @@ public actor HNSWIndex {
     /// Thread-safe via actor isolation. Concurrent callers are serialized safely.
     ///
     /// ## Complexity
-    /// \(O(M \cdot \log N)\) average time per insertion.
+    /// Empirical \(O(M \cdot \log N \cdot d)\) average time per insertion on navigable graphs with
+    /// bounded intrinsic dimensionality (governed by `efConstruction`).
     public func add(id: String, vector: [Double], metadata: [String: String] = [:]) {
         guard !vector.isEmpty else { return }
         if let expectedDim = dimension {
@@ -289,7 +292,8 @@ public actor HNSWIndex {
     /// Thread-safe via actor isolation.
     ///
     /// ## Complexity
-    /// \(O(\log N)\) average time over high-dimensional datasets.
+    /// Empirical \(O(\log N \cdot M \cdot d))\) average time under navigable small-world graph structure
+    /// with bounded intrinsic dimensionality (governed by `efSearch` and dimension `d`; not a worst-case guarantee).
     public func search(query: [Double], topK: Int = 10, efSearch: Int? = nil) -> [VectorSearchResult] {
         guard !nodes.isEmpty, let ep = enterPoint else { return [] }
         if let expectedDim = dimension, query.count != expectedDim { return [] }

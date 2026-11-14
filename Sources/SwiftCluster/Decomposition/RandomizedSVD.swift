@@ -10,15 +10,22 @@ import Accelerate
 /// where U is M×k orthonormal, S is k-vector of singular values, Vᵀ is k×N.
 ///
 /// ## Complexity
-/// O(M·N·k) — dramatically faster than full `dgesdd_` O(M·N²) when k ≪ min(M, N).
+/// Range sketch + power iterations + projection run in \(O(M \cdot N \cdot l \cdot (q + 1))\) floating-point work
+/// (with QR on an \(M \times l\) sketch and exact SVD on an \(l \times N\) core matrix, where \(l = \min(\min(M, N), k + p)\)),
+/// dramatically faster than full `dgesdd_` \(O(M \cdot N \cdot \min(M, N))\) when \(k \ll \min(M, N)\).
 ///
 /// ## Algorithm (Halko 2011)
-/// 1. Draw random Gaussian matrix Ω ∈ ℝ^{N×(k+p)}  (p=10 oversampling).
-/// 2. Compute range sketch Y = A·Ω  via BLAS dgemm.
-/// 3. Orthonormalize Y via thin QR (dgeqrf + dorgqr).
-/// 4. Project B = Qᵀ·A  (small k×N matrix).
-/// 5. Compute small exact SVD of B with dgesdd_.
-/// 6. Back-project left singular vectors: U = Q·Ũ.
+/// 1. Draw random Gaussian matrix \(\Omega \in \mathbb{R}^{N \times l}\) where \(l = \min(\min(M, N), k + p)\).
+/// 2. Compute range sketch \(Y = A \cdot \Omega\) via BLAS `dgemm` with \(q\) subspace power iterations.
+/// 3. Orthonormalize \(Y\) via thin QR (`dgeqrf` + `dorgqr`).
+/// 4. Project \(B = Q^T \cdot A\) (small \(l \times N\) matrix).
+/// 5. Compute small exact SVD of \(B\) with `dgesdd_`.
+/// 6. Back-project left singular vectors: \(U = Q \cdot \tilde{U}\).
+///
+/// ## Accuracy
+/// Probabilistic error follows Halko, Martinsson, & Tropp (2011) bounds governed by singular-value decay,
+/// oversampling `nOversamples` (`p`), and power iterations `nPowerIter` (`q`); this is not an unconditional
+/// deterministic \(1 + \varepsilon\) guarantee for flat or slow-decay spectra.
 ///
 /// ## Reference
 /// Halko N., Martinsson P.G., Tropp J.A. (2011). Finding Structure with Randomness:
@@ -40,12 +47,12 @@ public enum RandomizedSVD {
     ///
     /// - Parameters:
     ///   - X: Input matrix, shape [M, N], row-major.
-    ///   - k: Number of singular values/vectors to compute (k).
-    ///   - p: Extra random columns for accuracy (default 10).
-    ///   - q: Number of power iterations for improved accuracy on slow-decay spectra (default 2).
-    ///   - seed: Seed for deterministic random sketch (default 42).
+    ///   - k: Number of singular values/vectors to compute (`nComponents`).
+    ///   - p: Extra random sketch columns (`nOversamples`, default `10`) for probabilistic accuracy; clamped so `k + p <= min(M, N)`.
+    ///   - q: Number of subspace power iterations (`nPowerIter`, default `2`) to tighten spectral approximation on slower-decaying spectra.
+    ///   - seed: Seed for deterministic random sketch (default `42`).
     /// - Returns: `RandomizedSVD.Result` with U [M×k], S [k], Vt [k×N].
-    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Throws: `SwiftMLError`, `ClusterError`, or `RandomizedSVDError` if dimensions or parameters are invalid.
     public static func compute(
         X: [[Double]],
         nComponents k: Int,

@@ -9,7 +9,13 @@ public actor HardwareRouter {
 
     private init() {}
 
-    /// Resolves `.auto` into a concrete device using plan-0.8 heuristics.
+    /// Resolves `.auto` into a concrete device using algorithm-specific heuristics.
+    ///
+    /// Thresholds are starting points, not universal optima: they depend on the Apple Silicon
+    /// configuration, matrix shape, dtype and GPU dispatch overhead. Current rules:
+    /// KMeans `n*p < 500_000` → CPU; PCA `n < 2_000 && p < 500` → CPU; LinearSVC `n*p < 50_000` → CPU;
+    /// Linear/LogisticRegression `n < 1_000` → CPU; MLP variants `n < 5_000` → CPU; tree models and others → CPU.
+    /// Non-positive dimensions resolve to `.cpu`; overflowing `n*p` is treated as very large without trapping.
     /// - Parameters:
     ///   - algorithm: Optimization or decomposition algorithm choice.
     ///   - sampleCount: Number of sample observations.
@@ -28,7 +34,12 @@ public actor HardwareRouter {
             return requestedDevice
         }
 
-        let cells = sampleCount * featureCount
+        // Contract for `.auto`: non-positive dimensions describe no work and resolve to `.cpu`.
+        // A product that overflows `Int` is far above every threshold and counts as "large",
+        // so it saturates to `Int.max` instead of trapping.
+        guard sampleCount > 0, featureCount > 0 else { return .cpu }
+        let (product, overflow) = sampleCount.multipliedReportingOverflow(by: featureCount)
+        let cells = overflow ? Int.max : product
         switch algorithm {
         case "KMeans":
             return cells < 500_000 ? .cpu : .gpu

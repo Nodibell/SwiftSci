@@ -6,13 +6,27 @@ import MLXNN
 final class GroupedQueryAttention: MultiHeadAttention {
     private let numKVHeads: Int
 
-    init(dimensions: Int, numHeads: Int, numKVHeads: Int) {
+    init(
+        dimensions: Int,
+        numHeads: Int,
+        numKVHeads: Int,
+        headDim: Int? = nil,
+        includeKeyProjection: Bool = true,
+        includeValueProjection: Bool = true
+    ) {
         self.numKVHeads = numKVHeads
         super.init(dimensions: dimensions, numHeads: numHeads)
-        let kvDimensions = dimensions / numHeads * numKVHeads
+        let width = headDim ?? dimensions / numHeads
+        let kvDimensions = width * numKVHeads
         let projections: [String: Module] = [
-            "key_proj": Linear(dimensions, kvDimensions, bias: false),
-            "value_proj": Linear(dimensions, kvDimensions, bias: false)
+            "query_proj": Linear(dimensions, numHeads * width, bias: false),
+            "out_proj": Linear(numHeads * width, dimensions, bias: false),
+            "key_proj": includeKeyProjection
+                ? Linear(dimensions, kvDimensions, bias: false)
+                : Linear(weight: MLXArray.zeros([1, 1])),
+            "value_proj": includeValueProjection
+                ? Linear(dimensions, kvDimensions, bias: false)
+                : Linear(weight: MLXArray.zeros([1, 1]))
         ]
         // MLX caches module metadata; replace registered children through its update API.
         update(modules: NestedDictionary.unflattened(projections))

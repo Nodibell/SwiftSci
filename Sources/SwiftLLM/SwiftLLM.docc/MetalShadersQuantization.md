@@ -102,6 +102,8 @@ let outputActivations: [Float] = try linear.forwardMetal(
 )
 ```
 
+> Note: `forwardMetal` runs packed Q4_0/Q8_0 Metal MSL kernels directly on packed bytes. Invoking `QuantizedLinear` via `callAsFunction` or `TransformerDecoder.loadWeights(_: [String: QuantizedTensor])` executes the Float32 `MLXArray` dequantized fallback; full-model packed 4-bit/8-bit execution in `TransformerDecoder` uses `loadWeights(_: [String: MLXArray])` / `loadQuantizedWeights(_:)` backed by `MLXNN.QuantizedLinear`.
+
 ## Topics
 
 ### Quantization & Metal Execution

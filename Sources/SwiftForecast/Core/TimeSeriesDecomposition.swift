@@ -13,7 +13,10 @@ public enum DecompositionModel: Sendable {
 /// Represents time series decomposition.
 public enum TimeSeriesDecomposition {
     
-    /// Classical additive/multiplicative decomposition of a time series.
+    /// Classical additive/multiplicative decomposition of a time series: a centred moving-average (FIR) trend,
+    /// and a seasonal component equal to the arithmetic mean of the detrended values for each position in the period.
+    /// This is **not** STL: there is no iterative LOESS smoothing and no robustness weights, so outliers
+    /// influence the seasonal means and trend edges are `NaN`.
     /// - Parameters:
     ///   - series: The input time series values.
     ///   - period: The seasonality period (e.g., 12 for monthly, 4 for quarterly).

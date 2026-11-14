@@ -20,7 +20,7 @@ import SwiftStats
 
 let data: [Double] = [12.5, 14.2, 15.8, 11.0, 16.3]
 let mean = data.mean()
-let tTest = Stats.ttest(groupA, groupB)
+let tTest = try Stats.tTest(sample1: groupA, sample2: groupB)
 ```
 
 ## Topics

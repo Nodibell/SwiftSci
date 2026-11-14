@@ -99,6 +99,42 @@ public final class RoPEEmbedding: Module, @unchecked Sendable {
         super.init()
     }
 
+    /// Creates proportional RoPE where only the first `rotatedDimensions` channels rotate
+    /// (with exponents divided by the full `dimensions`) and trailing pairs remain unrotated.
+    init(
+        dimensions: Int,
+        rotatedDimensions: Int,
+        base: Float = 10_000.0,
+        scale: Float = 1.0,
+        factor: Float = 1.0,
+        traditional: Bool = false
+    ) {
+        precondition(dimensions > 0 && dimensions.isMultiple(of: 2), "rotary dimensions must be positive and even")
+        precondition(rotatedDimensions > 0 && rotatedDimensions <= dimensions && rotatedDimensions.isMultiple(of: 2),
+                     "rotatedDimensions must be positive, even, and <= dimensions")
+        precondition(base.isFinite && base > 0, "base must be finite and positive")
+        precondition(factor.isFinite && factor > 0, "factor must be finite and positive")
+        self.dimensions = dimensions
+        self.base = base
+        self.scale = scale
+        self.traditional = traditional
+        self.scaling = nil
+        let frequencies = Device.withDefaultDevice(.cpu) {
+            let exponents = MLXArray(stride(from: 0, to: rotatedDimensions, by: 2)).asType(.float32) / Float(dimensions)
+            var freqs = MLX.pow(MLXArray(base), exponents) * factor
+            let remaining = (dimensions - rotatedDimensions) / 2
+            if remaining > 0 {
+                let pad = MLXArray.full([remaining], values: MLXArray(Float.infinity))
+                freqs = concatenated([freqs, pad], axis: 0)
+            }
+            eval(freqs)
+            return freqs
+        }
+        self._frequencies = frequencies
+        self.rope = RoPE(dimensions: dimensions, traditional: traditional, base: base, scale: scale)
+        super.init()
+    }
+
     /// Applies rotary positional encoding with an optional position offset.
     /// - Parameters:
     ///   - x: Input tensor of shape `[batch, numHeads, seqLen, headDim]` or `[batch, seqLen, headDim]`.

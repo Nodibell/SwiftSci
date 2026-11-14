@@ -286,7 +286,7 @@ print("Loaded GGUF model with \(ggufTensors.count) tensors.")
 
 ### Quantized checkpoints and one-call loading
 
-MLX affine-quantized checkpoints (4-bit `U32` weights with `scales` and `biases`) are executed natively: ``TransformerDecoder/loadWeights(_:)-(_:)`` detects them and keeps the weights packed, so an 8B model needs roughly 4.5–5.5 GB instead of about 15 GB of Float16.
+MLX affine-quantized checkpoints (4-bit `U32` weights with `scales` and `biases`) are executed natively: ``TransformerDecoder/loadWeights(_:)-([String:MLXArray])`` detects them and keeps the weights packed, so an 8B model needs roughly 4.5–5.5 GB instead of about 15 GB of Float16.
 
 ```swift
 let downloader = ModelDownloader()

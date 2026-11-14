@@ -66,7 +66,7 @@ for (index, ratio) in (pca.explainedVarianceRatio ?? []).enumerated() {
 
 ## 2. Approximate Low-Rank SVD (`RandomizedSVD`)
 
-When factorizing massive matrices where $k \ll \min(M, N)$, standard deterministic LAPACK SVD ($O(MN^2)$) becomes memory- and compute-prohibitive. ``RandomizedSVD`` computes an approximate rank-$k$ factorization $X \approx U \cdot \text{diag}(S) \cdot V^T$ in $O(MNk)$ using randomized sketching:
+When factorizing large matrices where $k \ll \min(M, N)$, full deterministic LAPACK SVD ($O(M N \cdot \min(M, N))$) can be compute-intensive. ``RandomizedSVD`` computes an approximate rank-$k$ factorization $X \approx U \cdot \text{diag}(S) \cdot V^T$ with sketching cost $O(M N l (q + 1))$ where $l = \min(\min(M, N), k + p)$ (plus QR and small $l \times N$ SVD); approximation quality depends on the matrix's singular-value decay, oversampling `nOversamples` (`p`), and power iterations `nPowerIter` (`q`):
 
 ```swift
 import SwiftCluster

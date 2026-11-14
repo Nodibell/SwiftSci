@@ -52,11 +52,11 @@ Fast centroid-based clustering using D² weighted probabilistic initialization f
 ```swift
 import SwiftCluster
 
-let kmeans = KMeans(nClusters: 3, maxIterations: 100, tolerance: 1e-4, randomSeed: 42)
+let kmeans = KMeans(nClusters: 3, maxIterations: 100, tolerance: 1e-4, seed: 42)
 try await kmeans.fit(features: points)
 
-let centroids = await kmeans.centroids
-print("Learned Centroids: \(centroids)")
+let centroids = await kmeans.getCentroids()
+print("Learned Centroids: \(centroids ?? [])")
 
 let clusterAssignments = try await kmeans.predict(features: points)
 let inertia = try await kmeans.inertia(features: points)

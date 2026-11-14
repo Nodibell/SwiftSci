@@ -68,17 +68,39 @@ public actor KMeans {
         self.requestedDevice = device
     }
 
+    private static func validateFiniteRectangular(
+        _ features: [[Double]],
+        expectedFeatures: Int? = nil
+    ) throws -> Int {
+        let numFeatures = features[0].count
+        guard numFeatures > 0 else {
+            throw ClusterError.emptyInput
+        }
+        if let expectedFeatures, numFeatures != expectedFeatures {
+            throw ClusterError.dimensionMismatch(expected: expectedFeatures, got: numFeatures)
+        }
+        for row in features {
+            guard row.count == numFeatures else {
+                throw ClusterError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
+            for value in row where !value.isFinite {
+                throw ClusterError.invalidParameter("K-Means features must be finite (found NaN or infinity).")
+            }
+        }
+        return numFeatures
+    }
+
     /// Fits K-Means on the input dataset (Sendable interface).
     /// - Parameters:
     ///   - features: 2D array of input feature vectors of shape `[N, P]`.
-    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient or cluster parameters are invalid.
+    /// - Throws: `SwiftMLError` or `ClusterError` if sample count is insufficient, rows are ragged, values are non-finite, or cluster parameters are invalid.
     public func fit(features: [[Double]]) async throws {
         guard !features.isEmpty else {
             throw ClusterError.emptyInput
         }
 
         let numSamples = features.count
-        let numFeatures = features[0].count
+        let numFeatures = try Self.validateFiniteRectangular(features)
         guard nClusters <= numSamples else {
             throw ClusterError.invalidParameter(
                 "nClusters (\(nClusters)) cannot be greater than the number of samples (\(numSamples))."
@@ -138,13 +160,20 @@ public actor KMeans {
         let flat = X.asArray(Float.self)
         let numSamples = shape[0]
         let numFeatures = shape[1]
+        guard numSamples > 0, numFeatures > 0 else {
+            throw ClusterError.emptyInput
+        }
         var features = [[Double]]()
         features.reserveCapacity(numSamples)
         for i in 0..<numSamples {
             var row = [Double]()
             row.reserveCapacity(numFeatures)
             for j in 0..<numFeatures {
-                row.append(Double(flat[i * numFeatures + j]))
+                let value = Double(flat[i * numFeatures + j])
+                guard value.isFinite else {
+                    throw ClusterError.invalidParameter("K-Means features must be finite (found NaN or infinity).")
+                }
+                row.append(value)
             }
             features.append(row)
         }
@@ -160,18 +189,22 @@ public actor KMeans {
         cpuCentroids = getCentroids()
     }
 
-    /// Predict.
+    /// Predicts cluster indices for each sample row.
     /// - Parameters:
-    ///   - features: The features.
-    /// - Throws: An error if the operation fails.
-    /// - Returns: A `[Int]` result.
+    ///   - features: 2D array of finite input feature vectors of shape `[N, P]`.
+    /// - Throws: `ClusterError.fittingRequired` if unfitted, `ClusterError.dimensionMismatch` on ragged rows or wrong column count, or `ClusterError.invalidParameter` on non-finite values.
+    /// - Returns: Predicted zero-based cluster index for each input row.
     public func predict(features: [[Double]]) throws -> [Int] {
         guard !features.isEmpty else { return [] }
+        guard cpuCentroids != nil || self.centroids != nil else {
+            throw ClusterError.fittingRequired
+        }
+        let expectedCols = cpuCentroids?.first?.count ?? self.centroids?.shape[1]
+        let numFeatures = try Self.validateFiniteRectangular(features, expectedFeatures: expectedCols)
         if let cpuCentroids, resolvedDevice == .cpu {
             return predictCPU(features: features, centroids: cpuCentroids)
         }
         let numSamples = features.count
-        let numFeatures = features[0].count
         let X = MLXArray(features.flatMap { $0.map { Float($0) } })
             .reshaped([numSamples, numFeatures])
         let labels = try predict(X: X)
@@ -384,6 +417,9 @@ public actor KMeans {
         return best
     }
 
+    /// Squared Euclidean distance computed as a direct sum of squared component differences, which is
+    /// non-negative for finite inputs; `max(0, ·)` is defensive sanitation, not a fix for cancellation.
+    /// `max(0.0, .nan)` evaluates to `0.0`, which is why `fit(features:)` rejects non-finite values up front.
     private static func distanceSquaredFlat(row: UnsafeBufferPointer<Double>, centroid: [Double]) -> Double {
         let count = centroid.count
         if count == 4 {

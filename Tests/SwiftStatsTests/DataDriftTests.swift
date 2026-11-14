@@ -75,3 +75,27 @@ struct DataDriftTests {
         }
     }
 }
+
+@Suite("PSI zero-bin behaviour (S-10)")
+struct PSIZeroBinTests {
+    @Test func emptyBinsStayFiniteAndNonNegative() throws {
+        let expected = (0..<1000).map { Double($0) / 100 }          // 0...9.99
+        let actual = (0..<1000).map { 20 + Double($0) / 100 }       // fully shifted: most bins empty
+        let r = try PopulationStabilityIndex.compute(expected: expected, actual: actual, buckets: 10)
+        #expect(r.psi.isFinite && r.psi > 0.2)
+        #expect(r.severity == .significant)
+    }
+
+    @Test func epsilonControlsMagnitudeOfEmptyBinPenalty() throws {
+        let expected = (0..<500).map { Double($0) }
+        let actual = (0..<500).map { Double($0) + 10_000 }
+        let big = try PopulationStabilityIndex.compute(expected: expected, actual: actual, buckets: 5, epsilon: 1e-2)
+        let small = try PopulationStabilityIndex.compute(expected: expected, actual: actual, buckets: 5, epsilon: 1e-8)
+        #expect(small.psi > big.psi)
+    }
+
+    @Test func identicalDistributionsGiveZero() throws {
+        let x = (0..<500).map { Double($0 % 50) }
+        #expect(try PopulationStabilityIndex.compute(expected: x, actual: x, buckets: 10).psi < 1e-12)
+    }
+}

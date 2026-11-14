@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.13.1] - 2026-11-14
 
 ### Native Model Support (`SwiftLLM`, `SwiftNLP`)
-- Added native decoder support for supported Gemma 2, Gemma 3, Gemma 4, and Mistral configurations, with architecture-specific attention and normalization.
-- Added SentencePiece BPE tokenization and Gemma chat templates.
+- **Mistral** uses grouped-query attention with a configurable sliding window, RMSNorm, and a SiLU feed-forward network. Tests compare cached decoding against a full forward pass, including beyond the sliding window.
+- **Gemma 2** uses offset RMSNorm, GELU, alternating local and global attention, and soft caps for both attention scores and output logits. Tests cover the attention window and check that cached decoding matches a full forward pass.
+- **Gemma 3 text decoding** reads nested `text_config` and explicit attention head dimensions. It applies query and key normalization, uses separate rotary position settings for local and global layers, and loads a separate output head when the checkpoint provides one.
+- **Gemma 4 text decoding** supports proportional rotary embeddings, shared key/value states, per-layer token inputs, and sparse mixture-of-experts routing. Tests cover the E2B configuration and mixed-bit MLX weights with packed 4-bit experts and an 8-bit router.
+- **Checkpoint loading** selects the decoder and tokenizer from the local Hugging Face configuration. The loader normalizes checkpoint tensor names across shards and can keep supported MLX weights packed during inference.
+- **SentencePiece BPE and chat templates** handle whitespace markers, UTF-8 byte fallback, and added tokens for supported Mistral and Gemma tokenizers. Gemma 2 and 3 fold the system message into the first user turn. Gemma 4 uses its own turn markers and follows the tokenizer's beginning-of-sequence rules to avoid inserting a duplicate token.
+- **Verification scope** covers text inference and architecture behavior with deterministic fixtures. Tests that compare against external Hugging Face checkpoints are optional.
 
 ### Scientific Correctness & Data Integrity (`SwiftStats`, `SwiftPreprocessing`, `SwiftDataFrame`)
 - **SwiftStats Hypothesis Testing & Normality Calibration (`Stats+HypothesisTesting.swift`)**:

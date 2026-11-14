@@ -37,6 +37,24 @@ extension PreprocessingTransformer {
 
 extension DataFrame {
     fileprivate func replacingFeatures(columns: [String], with result: [[Double]]) throws -> DataFrame {
+        guard result.count == shape.rows else {
+            throw PreprocessingError.dimensionMismatch(expected: shape.rows, got: result.count)
+        }
+        if let first = result.first {
+            let outCols = first.count
+            for row in result where row.count != outCols {
+                throw PreprocessingError.dimensionMismatch(expected: outCols, got: row.count)
+            }
+            guard outCols == columns.count else {
+                throw PreprocessingError.invalidInput(
+                    "DataFrame.replacingFeatures requires output column count (\(outCols)) to match selected columns (\(columns.count)); shape-changing transformers cannot overwrite columns in place"
+                )
+            }
+        } else {
+            guard columns.isEmpty else {
+                throw PreprocessingError.dimensionMismatch(expected: columns.count, got: 0)
+            }
+        }
         var output = self
         for (index, name) in columns.enumerated() {
             output = try output.withColumn(name, column: TypedColumn<Double>(
@@ -143,6 +161,68 @@ extension DataFrame {
         let intValues: [Int64?] = labels.map { Int64($0) }
         let newCol = TypedColumn<Int64>(name: name, values: intValues)
         let encodedDf = try withColumn(name, column: newCol)
+        return (encodedDf, encoder)
+    }
+
+    /// Out-of-fold target encodes a categorical column against a numeric target column.
+    ///
+    /// Training observations are encoded out-of-fold when `cv > 1`, preventing target leakage
+    /// while preserving full-dataset category statistics in the returned `TargetEncoder`.
+    /// - Parameters:
+    ///   - name: Categorical feature column name (`String`, `Int64`, or `Double`).
+    ///   - targetColumn: Numeric target column name (must contain finite non-null values).
+    ///   - outputColumn: Destination column name (defaults to `name`, leaving `targetColumn` untouched).
+    ///   - smoothing: Empirical Bayes smoothing strength (must be finite and non-negative).
+    ///   - cv: Number of cross-validation folds for out-of-fold encoding (pass `<= 1` to disable OOF).
+    /// - Returns: Encoded `DataFrame` and fitted `TargetEncoder` for downstream test data transforms.
+    public func targetEncode(
+        column name: String,
+        targetColumn: String,
+        outputColumn: String? = nil,
+        smoothing: Double = 10.0,
+        cv: Int = 5
+    ) throws -> (encoded: DataFrame, encoder: TargetEncoder) {
+        let categories: [String]
+        if let col = self[column: name, as: String.self] {
+            guard col.nullCount == 0 else {
+                throw PreprocessingError.invalidInput("Feature column '\(name)' must not contain missing values for targetEncode")
+            }
+            categories = col.values.map { $0! }
+        } else if let col = self[column: name, as: Int64.self] {
+            guard col.nullCount == 0 else {
+                throw PreprocessingError.invalidInput("Feature column '\(name)' must not contain missing values for targetEncode")
+            }
+            categories = col.values.map { String($0!) }
+        } else if let col = self[column: name, as: Double.self] {
+            guard col.nullCount == 0 else {
+                throw PreprocessingError.invalidInput("Feature column '\(name)' must not contain missing values for targetEncode")
+            }
+            categories = col.values.map { val in
+                let v = val!
+                if v.isNaN { return "nan" }
+                return String(v == 0.0 ? 0.0 : v)
+            }
+        } else if self[column: name] == nil {
+            throw SwiftMLError.columnNotFound(name)
+        } else {
+            throw SwiftMLError.castFailed(column: name, targetType: "String | Int64 | Double")
+        }
+
+        guard let targetCol = self[column: targetColumn] else {
+            throw SwiftMLError.columnNotFound(targetColumn)
+        }
+        guard targetCol.nullCount == 0 else {
+            throw PreprocessingError.invalidInput("Target column '\(targetColumn)' must not contain missing values for targetEncode")
+        }
+        guard let targets = targetCol.toDoubles(), targets.count == shape.rows else {
+            throw SwiftMLError.castFailed(column: targetColumn, targetType: "Double")
+        }
+
+        var encoder = TargetEncoder(smoothing: smoothing)
+        let encoded = try encoder.fitTransform(categories: categories, target: targets, cv: cv)
+        let destination = outputColumn ?? name
+        let encodedCol = TypedColumn<Double>(name: destination, values: encoded.map(Optional.some))
+        let encodedDf = try withColumn(destination, column: encodedCol)
         return (encodedDf, encoder)
     }
 

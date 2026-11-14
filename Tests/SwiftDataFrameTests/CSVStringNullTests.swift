@@ -24,10 +24,11 @@ struct CSVStringNullTests {
                 bytes.withUnsafeBufferPointer { buffer in
                     let field = CSVFieldOffset(startOffset: 0, length: bytes.count, escapedQuotesPresent: bytes.contains(34))
                     let text = VectorizedByteParsers.parseString(buffer: buffer, offset: field)
+                    let isUnquotedNull = !VectorizedByteParsers.isQuoted(buffer: buffer, offset: field) && tokens.contains(text)
                     switch decoder.decode(buffer: buffer, offset: field) {
-                    case .missing: #expect(tokens.contains(text))
+                    case .missing: #expect(isUnquotedNull)
                     case .value(let value):
-                        #expect(!tokens.contains(text))
+                        #expect(!isUnquotedNull)
                         #expect(value == text)
                     case .invalid: Issue.record("String conversion unexpectedly rejected a field")
                     }
@@ -36,33 +37,60 @@ struct CSVStringNullTests {
         }
     }
 
-    @Test("Eager and streamed String columns preserve configured nulls")
+    @Test("Eager and streamed String columns distinguish unquoted nulls from quoted literals")
     func publicReads() async throws {
         let values: [String] = ["value", "NA", "", "K", "K", "é", "e\u{301}", "a\"b", "汉字", "NaN", "missing-16", "missing-2047"]
-        let lines: [String] = values.enumerated().map { pair -> String in
+        let quotedLines: [String] = values.enumerated().map { pair -> String in
             let index: Int = pair.offset
             let value: String = pair.element
             let escaped = value.replacingOccurrences(of: "\"", with: "\"\"")
             return "\(index),\" \t\(escaped) \r\n\"\n"
         }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("csv-string-nulls-\(UUID().uuidString).csv")
-        defer { try? FileManager.default.removeItem(at: url) }
-        try Data(("id,text\n" + lines.joined()).utf8).write(to: url)
+        let unquotedLines: [String] = values.enumerated().map { pair -> String in
+            let index: Int = pair.offset
+            let value: String = pair.element
+            if value.contains("\"") {
+                let escaped = value.replacingOccurrences(of: "\"", with: "\"\"")
+                return "\(index),\"\(escaped)\"\n"
+            }
+            return value.isEmpty ? "\(index),\n" : "\(index), \t\(value) \n"
+        }
+        let quotedURL = FileManager.default.temporaryDirectory.appendingPathComponent("csv-string-quoted-\(UUID().uuidString).csv")
+        let unquotedURL = FileManager.default.temporaryDirectory.appendingPathComponent("csv-string-nulls-\(UUID().uuidString).csv")
+        defer {
+            try? FileManager.default.removeItem(at: quotedURL)
+            try? FileManager.default.removeItem(at: unquotedURL)
+        }
+        try Data(("id,text\n" + quotedLines.joined()).utf8).write(to: quotedURL)
+        try Data(("id,text\n" + unquotedLines.joined()).utf8).write(to: unquotedURL)
         for tokens in tokenSets {
-            let expected: [String?] = values.map { (value: String) -> String? in tokens.contains(value) ? nil : value }
+            let expectedQuoted: [String?] = values.map(Optional.some)
+            let expectedUnquoted: [String?] = values.map { (value: String) -> String? in
+                (!value.contains("\"") && tokens.contains(value)) ? nil : value
+            }
             for mode in [CSVColumnConversionMode.parallel, .serial] {
                 var options = CSVReadOptions()
                 options.nullValues = tokens
                 options.columnConversionMode = mode
                 options.columnTypeOverrides = ["id": .int64, "text": .utf8]
-                let frame = try await DataFrame(csv: url, options: options)
-                #expect(frame[column: "text", as: String.self]?.values == expected)
-                var actual: [String?] = []
-                for try await chunk in DataFrame.readCSVStream(contentsOf: url, chunkSize: 3, options: options) {
+
+                let quotedFrame = try await DataFrame(csv: quotedURL, options: options)
+                #expect(quotedFrame[column: "text", as: String.self]?.values == expectedQuoted)
+                var actualQuoted: [String?] = []
+                for try await chunk in DataFrame.readCSVStream(contentsOf: quotedURL, chunkSize: 3, options: options) {
                     let column = try #require(chunk[column: "text", as: String.self])
-                    actual.append(contentsOf: column.values)
+                    actualQuoted.append(contentsOf: column.values)
                 }
-                #expect(actual == expected)
+                #expect(actualQuoted == expectedQuoted)
+
+                let unquotedFrame = try await DataFrame(csv: unquotedURL, options: options)
+                #expect(unquotedFrame[column: "text", as: String.self]?.values == expectedUnquoted)
+                var actualUnquoted: [String?] = []
+                for try await chunk in DataFrame.readCSVStream(contentsOf: unquotedURL, chunkSize: 3, options: options) {
+                    let column = try #require(chunk[column: "text", as: String.self])
+                    actualUnquoted.append(contentsOf: column.values)
+                }
+                #expect(actualUnquoted == expectedUnquoted)
             }
         }
     }

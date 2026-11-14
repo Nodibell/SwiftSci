@@ -125,15 +125,19 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     }
 
     /// Strongly-typed property returning `TypedColumn<T>` containing only unique elements (preserving order of first appearance).
+    /// Returns a new column containing only unique elements (preserving order of first appearance).
+    ///
+    /// Enforces consistent deduplication: distinct `NaN` payloads deduplicate to the first `NaN`
+    /// while remaining distinct from `nil`, and `-0.0` deduplicates with `+0.0`.
     public var typedUnique: TypedColumn<T> {
-        var seen: Set<T> = []
+        var seen: Set<CanonicalUniqueKey> = []
         var seenNull = false
         var uniqueValues: [T?] = []
         uniqueValues.reserveCapacity(count)
         
         for val in values {
             if let v = val {
-                if seen.insert(v).inserted {
+                if let key = CanonicalUniqueKey.make(v), seen.insert(key).inserted {
                     uniqueValues.append(v)
                 }
             } else {
@@ -175,24 +179,7 @@ public struct TypedColumn<T: SupportedType>: AnyColumn {
     }
 
     private func gatheredScalar(at indices: [Int]) -> TypedColumn<T> {
-        let n = indices.count
-        var result = Array<T?>(repeating: nil, count: n)
-        var gatheredNullCount = 0
-        values.withUnsafeBufferPointer { srcBuf in
-            indices.withUnsafeBufferPointer { idxBuf in
-                result.withUnsafeMutableBufferPointer { dstBuf in
-                    guard let src = srcBuf.baseAddress,
-                          let idx = idxBuf.baseAddress,
-                          let dst = dstBuf.baseAddress else { return }
-                    for k in 0..<n {
-                        let value = src[idx[k]]
-                        dst[k] = value
-                        if _nullCount > 0, case nil = value { gatheredNullCount += 1 }
-                    }
-                }
-            }
-        }
-        return TypedColumn<T>(name: name, values: result, nullCount: gatheredNullCount)
+        gatheredNumeric(at: indices)
     }
 
     /// Gathers elements at the specified row indices using typed indexed loops, placing nil where index is nil.
@@ -763,29 +750,80 @@ extension TypedColumn where T == Double {
         return result
     }
 
-    /// Computes sample variance using two-pass vDSP operations with Bessel's correction.
-    /// - Returns: The calculated sample or population variance.
-    public func variance() -> Double {
+    /// Computes origin-shifted, scale-normalized sample variance components to prevent
+    /// catastrophic cancellation on large-offset inputs and overflow in intermediate products.
+    private func scaledSampleSpreadStats() -> (scale: Double, normalizedVariance: Double)? {
         let nonNulls = nonNullValues
+        guard nonNulls.allSatisfy(\.isFinite) else { return nil }
         let count = nonNulls.count
-        guard count > 1 else { return 0.0 }
+        guard count > 1 else { return (0.0, 0.0) }
+
+        let origin = nonNulls[0]
+        var shifted = [Double](repeating: 0.0, count: count)
+        var maxAbsShifted = 0.0
+        var shiftedOverflowed = false
+
+        for i in 0..<count {
+            let d = nonNulls[i] - origin
+            if !d.isFinite {
+                shiftedOverflowed = true
+                break
+            }
+            shifted[i] = d
+            let a = abs(d)
+            if a > maxAbsShifted {
+                maxAbsShifted = a
+            }
+        }
+
+        let scale: Double
+        let normalized: [Double]
+        if !shiftedOverflowed {
+            guard maxAbsShifted > 0.0 else { return (0.0, 0.0) }
+            scale = maxAbsShifted
+            normalized = shifted.map { $0 / scale }
+        } else {
+            var maxAbsValue = 0.0
+            for x in nonNulls {
+                let a = abs(x)
+                if a > maxAbsValue {
+                    maxAbsValue = a
+                }
+            }
+            guard maxAbsValue > 0.0 else { return (0.0, 0.0) }
+            scale = maxAbsValue
+            let scaledOrigin = origin / scale
+            normalized = nonNulls.map { ($0 / scale) - scaledOrigin }
+        }
+
         let length = vDSP_Length(count)
-
         var meanVal = 0.0
-        var meanSquareVal = 0.0
+        vDSP_meanvD(normalized, 1, &meanVal, length)
 
-        vDSP_meanvD(nonNulls, 1, &meanVal, length)
-        vDSP_measqvD(nonNulls, 1, &meanSquareVal, length)
+        let deviations = normalized.map { $0 - meanVal }
+        var sumSq = 0.0
+        vDSP_svesqD(deviations, 1, &sumSq, length)
 
-        let popVariance = meanSquareVal - (meanVal * meanVal)
-        let besselCorrection = Double(count) / Double(count - 1)
-        return max(0.0, popVariance * besselCorrection)
+        let normalizedVariance = max(0.0, sumSq / Double(count - 1))
+        return (scale, normalizedVariance)
     }
 
-    /// Computes sample standard deviation using Accelerate vDSP.
-    /// - Returns: The computed standard deviation.
+    /// Computes sample variance with origin shifting and scale normalization to avoid
+    /// catastrophic cancellation on large-offset data.
+    /// - Returns: The calculated sample variance, or `.nan` if any non-null element is non-finite.
+    public func variance() -> Double {
+        guard let stats = scaledSampleSpreadStats() else { return .nan }
+        guard stats.scale > 0.0 else { return 0.0 }
+        return stats.scale * (stats.scale * stats.normalizedVariance)
+    }
+
+    /// Computes sample standard deviation directly from the scaled variance so representable
+    /// standard deviations remain finite even when the variance itself would overflow.
+    /// - Returns: The computed standard deviation, or `.nan` if any non-null element is non-finite.
     public func stdDev() -> Double {
-        sqrt(variance())
+        guard let stats = scaledSampleSpreadStats() else { return .nan }
+        guard stats.scale > 0.0 else { return 0.0 }
+        return stats.scale * sqrt(stats.normalizedVariance)
     }
 
     /// Indexed gather for Double columns, preserving missing values.
@@ -858,6 +896,29 @@ extension TypedColumn where T == Double {
         case let x as Int:    return Double(x)
         default: return nil
         }
+    }
+}
+
+/// Canonical hashable representation for column and row deduplication.
+/// Normalizes all NaN payloads to a single key and canonicalizes `-0.0` and `+0.0`.
+internal enum CanonicalUniqueKey: Hashable {
+    case float32(UInt32)
+    case float64(UInt64)
+    case hashable(AnyHashable)
+
+    static func make(_ value: Any) -> CanonicalUniqueKey? {
+        if let d = value as? Double {
+            if d.isNaN { return .float64(Double.nan.bitPattern) }
+            return .float64(d == 0.0 ? 0 : d.bitPattern)
+        }
+        if let f = value as? Float {
+            if f.isNaN { return .float32(Float.nan.bitPattern) }
+            return .float32(f == 0.0 ? 0 : f.bitPattern)
+        }
+        if let h = value as? AnyHashable {
+            return .hashable(h)
+        }
+        return nil
     }
 }
 

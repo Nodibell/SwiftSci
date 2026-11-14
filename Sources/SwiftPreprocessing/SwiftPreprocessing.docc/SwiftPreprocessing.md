@@ -12,6 +12,7 @@ Feature Scaling, Categorical Encoders & Preprocessing Pipelines.
 - **Categorical Encoders**: `OneHotEncoder`, `TargetEncoder`, `OrdinalEncoder`, and `FrequencyEncoder`.
 - **Missing Value Imputation**: `Imputer` (mean/median/mode) and multi-variate `KNNImputer`.
 - **Pipeline Orchestration**: `Pipeline` and `ColumnTransformer` for multi-type feature engineering workflows.
+- **Fitted Model Preparation**: ``StandardPreprocessingPlan`` fits imputation and standard scaling once on training rows so `SwiftML` can prepare model-typed inputs directly.
 
 ### Example Usage
 
@@ -31,4 +32,4 @@ let X_scaled = try scaler.fitTransform(X)
 
 ### Fitted model preparation
 
-- ``StandardPreprocessingPlan`` fits imputation and standard scaling once on training rows. SwiftML uses the immutable plan to prepare model-typed input directly.
+- ``StandardPreprocessingPlan``

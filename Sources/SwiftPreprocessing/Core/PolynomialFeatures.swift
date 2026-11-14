@@ -30,12 +30,17 @@ public struct PolynomialFeatures: PreprocessingTransformer, Sendable {
     ///   - data: Raw input data array or matrix for transformation.
     /// - Throws: `PreprocessingError` or `SwiftMLError` if columns are missing, types are invalid, or arrays are empty.
     public mutating func fit(_ data: [[Double]]) throws {
-
+        guard degree >= 0 else {
+            throw PreprocessingError.invalidInput("Polynomial degree must be nonnegative")
+        }
         guard !data.isEmpty, !data[0].isEmpty else {
             throw PreprocessingError.emptyInput
         }
         
         let colCount = data[0].count
+        for row in data where row.count != colCount {
+            throw PreprocessingError.dimensionMismatch(expected: colCount, got: row.count)
+        }
         self.inputFeatureCount = colCount
         
         // Generate combinations

@@ -193,13 +193,20 @@ extension Stats {
     /// - Returns: `ChiSquareResult` containing chi-squared test statistic, p-value, and degrees of freedom.
     public static func chiSquareGoodnessOfFit(observed: [Double],
                                                expected: [Double]) throws -> ChiSquareResult {
-        try requireNonEmpty(observed)
+        try requireNonEmpty(observed, minimum: 2)
         try requireSameSize(observed, expected)
+        try requireNoNaN(observed)
+        try requireNoNaN(expected)
 
         var chi2 = 0.0
         for (o, e) in zip(observed, expected) {
+            guard o.isFinite, e.isFinite else { throw StatsError.containsInfinity }
+            guard o >= 0 else {
+                throw StatsError.invalidInput("chiSquare observed frequency must be non-negative")
+            }
             guard e > 0 else { throw StatsError.divisionByZero(context: "chiSquare expected=0") }
-            chi2 += pow(o - e, 2) / e
+            let diff = o - e
+            chi2 += diff * (diff / e)
         }
 
         let df     = observed.count - 1
@@ -210,7 +217,8 @@ extension Stats {
 
     // MARK: Normality Tests
 
-    /// Shapiro-Wilk normality test (Royston 1992, n ∈ [3, 5000]).
+    /// Shapiro-Wilk normality test (Royston AS R94, n ∈ [3, 5000]).
+    /// Constant samples and nonfinite observations are rejected.
     /// - Parameters:
     ///   - values: Numeric values array to be evaluated.
     /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
@@ -221,24 +229,21 @@ extension Stats {
         guard values.count <= 5000 else {
             throw StatsError.tooManySamples(limit: 5000, got: values.count)
         }
-        let (w, p) = shapiroWilkImpl(values)
+        let (w, p) = shapiroWilkImpl(try scaledNormalitySample(values))
         return NormalityTestResult(statistic: w, pValue: p)
     }
 
-    /// Kolmogorov-Smirnov test against standard normal (Lilliefors variant for unknown μ/σ).
-    /// - Parameters:
-    ///   - values: Numeric values array to be evaluated.
-    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
-    /// - Returns: Normality test diagnostic result evaluating distribution adherence.
+    /// Lilliefors normality test: KS distance from a normal distribution fitted to the sample.
+    /// Uses Dallal-Wilkinson's lower-tail approximation and Stephens' modified-statistic
+    /// approximation above p = 0.1. These are approximate p-values, not fixed-CDF KS values.
+    /// Requires at least five finite, nonconstant observations.
     public static func kolmogorovSmirnov(_ values: [Double]) throws -> NormalityTestResult {
-        try requireNonEmpty(values, minimum: 3)
+        try requireNonEmpty(values, minimum: 5)
         try requireNoNaN(values)
+        let sorted = try scaledNormalitySample(values)
+        let mu = vDSP.mean(sorted)
+        let s = try standardDeviation(sorted, ddof: 1)
 
-        let mu  = vDSP.mean(values)
-        let s   = try standardDeviation(values, ddof: 1)
-        guard s > 0 else { return NormalityTestResult(statistic: 0, pValue: 1.0) }
-
-        let sorted   = values.sorted()
         let n        = Double(sorted.count)
         var dPlus    = 0.0
         var dMinus   = 0.0
@@ -253,7 +258,7 @@ extension Stats {
         }
 
         let d      = Swift.max(dPlus, dMinus)
-        let pValue = ksTestPValue(d: d, n: Int(n))
+        let pValue = lillieforsPValue(d: d, n: Int(n))
 
         return NormalityTestResult(statistic: d, pValue: pValue)
     }
@@ -290,21 +295,41 @@ extension Stats {
     }
 
     /// Chi-square survival function P(χ² > chi2).
+    /// Uses Temme's uniform asymptotic expansion for large shape parameters (df >= 2e5)
+    /// to avoid series iteration caps and lgamma cancellation, and Lentz CF in the upper tail.
     internal static func chiSquareSurvival(chi2: Double, df: Double) -> Double {
+        guard df > 0, df.isFinite, !chi2.isNaN else { return .nan }
         guard chi2 > 0 else { return 1.0 }
-        return 1.0 - regularisedIncompleteGamma(a: df / 2, x: chi2 / 2)
+        if chi2 == .infinity { return 0 }
+        let a = df / 2, x = chi2 / 2
+        if a >= 1e5 {
+            return temmeIncompleteGamma(a: a, x: x).q
+        }
+        // Evaluate the upper tail directly to retain probabilities smaller than machine epsilon.
+        return x < a + 1 ? 1 - regularisedIncompleteGamma(a: a, x: x)
+                         : regularisedIncompleteGammaCF(a: a, x: x)
     }
 
-    /// KS test p-value approximation.
-    private static func ksTestPValue(d: Double, n: Int) -> Double {
-        let lambda = (Double(n).squareRoot() + 0.12 + 0.11 / Double(n).squareRoot()) * d
-        guard lambda > 0 else { return 1.0 }
-        var p = 0.0
-        for k in 1...100 {
-            let term = pow(-1.0, Double(k-1)) * exp(-2 * pow(Double(k) * lambda, 2))
-            p += term
+    /// Dallal & Wilkinson (1986) / Stephens (1974) normal Lilliefors calibration.
+    /// The polynomial coefficients approximate the distribution of the modified statistic.
+    private static func lillieforsPValue(d: Double, n: Int) -> Double {
+        let size = Double(n)
+        let effectiveN = Swift.min(size, 100)
+        let adjustedD = size > 100 ? d * pow(size / 100, 0.49) : d
+        var p = exp(-7.01256 * adjustedD * adjustedD * (effectiveN + 2.78019)
+            + 2.99587 * adjustedD * sqrt(effectiveN + 2.78019) - 0.122119
+            + 0.974598 / sqrt(effectiveN) + 1.67997 / effectiveN)
+        if p > 0.1 {
+            let k = (sqrt(size) - 0.01 + 0.85 / sqrt(size)) * d
+            switch k {
+            case ...0.302: p = 1
+            case ...0.5: p = poly([2.76773, -19.828315, 80.709644, -138.55152, 81.218052], k)
+            case ...0.9: p = poly([-4.901232, 40.662806, -97.490286, 94.029866, -32.355711], k)
+            case ...1.31: p = poly([6.198765, -19.558097, 23.186922, -12.234627, 2.423045], k)
+            default: p = 0
+            }
         }
-        return Swift.max(0, Swift.min(1, 2 * p))
+        return Swift.max(0, Swift.min(1, p))
     }
 
     /// Pooled standard deviation for Cohen's d.
@@ -378,18 +403,24 @@ extension Stats {
     }
 
     /// Regularised lower incomplete gamma P(a, x).
+    /// Delegates `a >= 1e5` to Temme's uniform asymptotic expansion to eliminate
+    /// series iteration truncation and `lgamma(a)` cancellation at large shapes.
     internal static func regularisedIncompleteGamma(a: Double, x: Double) -> Double {
-        guard x >= 0 else { return 0 }
+        guard a > 0, a.isFinite, x >= 0 else { return .nan }
         if x == 0 { return 0 }
+        if x == .infinity { return 1 }
+        if a >= 1e5 {
+            return temmeIncompleteGamma(a: a, x: x).p
+        }
 
-        // Series expansion for x < a + 1
+        // Series expansion for x < a + 1 (converges in < 2400 iterations for a < 1e5)
         if x < a + 1 {
             var term = 1.0 / a
             var sum  = term
-            for n in 1...300 {
+            for n in 1...10000 {
                 term *= x / (a + Double(n))
                 sum  += term
-                if abs(term) < 1e-12 * abs(sum) { break }
+                if abs(term) < 2e-15 * abs(sum) { break }
             }
             return sum * exp(-x + a * log(x) - lgamma(a))
         }
@@ -399,27 +430,126 @@ extension Stats {
     }
 
     private static func regularisedIncompleteGammaCF(a: Double, x: Double) -> Double {
-        var f   = 1.0 + (1 - a) / x
-        var C   = f
-        var D   = 1.0 / f
-        let eps = 1e-15
-
-        for i in 1...300 {
-            let di = Double(i)
-            // Even step: b_n = 1 + (2n - a) / x
-            let b = 1 + (2*di - a) / x
-            D = b + di * (a - di) * D
-            if abs(D) < eps { D = eps }
-            D = 1 / D
-
-            C = b + di * (a - di) / C
-            if abs(C) < eps { C = eps }
-
-            let delta = C * D
-            f *= delta
-            if abs(delta - 1) < 1e-12 { break }
+        // Modified Lentz evaluation of Q(a,x), valid in the x >= a + 1 region.
+        let tiny = 1e-300
+        var b = x + 1 - a
+        var c = 1 / tiny
+        var d = 1 / b
+        var h = d
+        for i in 1...10000 {
+            let coefficient = Double(i) * (a - Double(i))
+            b += 2
+            d = b + coefficient * d
+            if abs(d) < tiny { d = d < 0 ? -tiny : tiny }
+            c = b + coefficient / c
+            if abs(c) < tiny { c = c < 0 ? -tiny : tiny }
+            d = 1 / d
+            let delta = c * d
+            h *= delta
+            if abs(delta - 1) <= 2e-15 { break }
         }
-        return exp(-x + a * log(x) - lgamma(a)) / f
+        return exp(a * log(x) - x - lgamma(a)) * h
+    }
+
+    /// Temme's uniform asymptotic expansion for P(a, x) and Q(a, x) when a >= 1e5.
+    private static func temmeIncompleteGamma(a: Double, x: Double) -> (p: Double, q: Double) {
+        let mu = (x - a) / a
+        let eta: Double
+        let etaSqHalf: Double
+        if abs(mu) < 0.05 {
+            var s = 0.5
+            var t = 1.0
+            for k in 3..<35 {
+                t *= -mu
+                s += t / Double(k)
+            }
+            eta = mu * sqrt(2.0 * s)
+            etaSqHalf = mu * mu * s
+        } else {
+            etaSqHalf = mu > -0.5 ? mu - log1p(mu) : mu - log(x / a)
+            eta = copysign(sqrt(2.0 * etaSqHalf), mu)
+        }
+
+        let c0: Double
+        let c1: Double
+        let c2: Double
+        let c3: Double
+        if abs(eta) < 0.1 {
+            c0 = poly([
+                -1.0 / 3.0, 1.0 / 12.0, -2.0 / 135.0, 1.0 / 864.0, 1.0 / 2835.0,
+                -139.0 / 777600.0, 39.19263178522438e-6, -2.185448510679992e-6
+            ], eta)
+            c1 = poly([
+                -1.0 / 540.0, -1.0 / 288.0, 1.0 / 378.0, -77.0 / 77760.0, 1.0 / 4860.0,
+                -1.0 / 2488320.0, -1.8098550334489977e-5, 7.64916091608111e-6
+            ], eta)
+            c2 = poly([
+                25.0 / 6048.0, -139.0 / 51840.0, 1.0 / 1296.0, 1.0 / 497664.0,
+                -6199.0 / 57736800.0, 5531.0 / 104509440.0
+            ], eta)
+            c3 = poly([
+                101.0 / 155520.0, 571.0 / 2488320.0, -54179.0 / 115473600.0, 41969.0 / 156764160.0
+            ], eta)
+        } else {
+            @inline(__always)
+            func jetMul(_ p: [Double], _ q: [Double]) -> [Double] {
+                var r = [Double](repeating: 0, count: 5)
+                for i in 0..<5 {
+                    for j in 0..<(5 - i) { r[i + j] += p[i] * q[j] }
+                }
+                return r
+            }
+            @inline(__always)
+            func jetInv(_ p: [Double]) -> [Double] {
+                var r = [Double](repeating: 0, count: 5)
+                let inv0 = 1.0 / p[0]
+                r[0] = inv0
+                for k in 1..<5 {
+                    var s = 0.0
+                    for j in 1...k { s += p[j] * r[k - j] }
+                    r[k] = -s * inv0
+                }
+                return r
+            }
+
+            let etaJet = [eta, 1.0, 0.0, 0.0, 0.0]
+            var muJet = [mu, 0.0, 0.0, 0.0, 0.0]
+            for k in 0..<4 {
+                let gK = jetInv(muJet)
+                let qK = jetMul(etaJet, gK)
+                muJet[k + 1] = (etaJet[k] + qK[k]) / Double(k + 1)
+            }
+            let gJet = jetInv(muJet)
+            let vJet = jetInv(etaJet)
+            let lJet = jetMul(etaJet, gJet)
+            var c0Jet = [Double](repeating: 0, count: 5)
+            for k in 0..<5 { c0Jet[k] = gJet[k] - vJet[k] }
+
+            var num1 = [Double](repeating: 0, count: 5)
+            for k in 0..<4 { num1[k] = Double(k + 1) * c0Jet[k + 1] - (1.0 / 12.0) * lJet[k] }
+            let c1Jet = jetMul(num1, vJet)
+
+            var num2 = [Double](repeating: 0, count: 5)
+            for k in 0..<3 { num2[k] = Double(k + 1) * c1Jet[k + 1] + (1.0 / 288.0) * lJet[k] }
+            let c2Jet = jetMul(num2, vJet)
+
+            var num3 = [Double](repeating: 0, count: 5)
+            for k in 0..<2 { num3[k] = Double(k + 1) * c2Jet[k + 1] + (139.0 / 51840.0) * lJet[k] }
+            let c3Jet = jetMul(num3, vJet)
+
+            c0 = c0Jet[0]; c1 = c1Jet[0]; c2 = c2Jet[0]; c3 = c3Jet[0]
+        }
+
+        let series = c0 + (c1 + (c2 + c3 / a) / a) / a
+        let correction = exp(-a * etaSqHalf) / sqrt(2.0 * Double.pi * a) * series
+        let y = eta * sqrt(0.5 * a)
+        if eta >= 0 {
+            let q = Swift.min(1.0, Swift.max(0.0, 0.5 * erfc(y) + correction))
+            return (1.0 - q, q)
+        } else {
+            let p = Swift.min(1.0, Swift.max(0.0, 0.5 * erfc(-y) - correction))
+            return (p, 1.0 - p)
+        }
     }
 
     /// Standard normal CDF via complementary error function.
@@ -427,71 +557,82 @@ extension Stats {
         0.5 * erfc(-z / 2.0.squareRoot())
     }
 
-    // MARK: – Shapiro-Wilk implementation (Royston 1992)
+    // MARK: – Shapiro-Wilk implementation (Royston AS R94, 1995)
 
-    private static func shapiroWilkImpl(_ x: [Double]) -> (W: Double, p: Double) {
-        let sorted = x.sorted()
-        let n      = sorted.count
-
-        // Compute a-coefficients (polynomial approximation for n ≤ 2000)
-        let a = shapiroWilkCoefficients(n: n)
-
-        // Compute W statistic
-        var b = 0.0
-        let m  = n / 2
-        for i in 0..<m {
-            b += a[i] * (sorted[n - 1 - i] - sorted[i])
+    /// Affine rescaling preserves both normality statistics while avoiding square overflow.
+    private static func scaledNormalitySample(_ values: [Double]) throws -> [Double] {
+        guard values.allSatisfy(\.isFinite) else { throw StatsError.containsInfinity }
+        let sorted = values.sorted()
+        let lo = sorted[0], hi = sorted[sorted.count - 1]
+        guard lo < hi else { throw StatsError.divisionByZero(context: "normality test on a constant sample") }
+        let range = hi - lo
+        if range.isFinite, range >= Double.leastNormalMagnitude {
+            return sorted.map { ($0 - lo) / range }
         }
+        let scale = Swift.max(abs(lo), abs(hi))
+        let scaledLo = lo / scale
+        let scaledRange = hi / scale - scaledLo
+        return sorted.map { ($0 / scale - scaledLo) / scaledRange }
+    }
 
-        let centred = sorted.map { $0 - vDSP.mean(sorted) }
-        let ssq = vDSP.sumOfSquares(centred)
-        let W   = ssq > 0 ? (b * b) / ssq : 1.0
-
-        // p-value via log transform (Royston 1992)
+    private static func shapiroWilkImpl(_ sorted: [Double]) -> (W: Double, p: Double) {
+        let n = sorted.count
+        let a = shapiroWilkCoefficients(n: n)
+        var numerator = 0.0
+        for i in a.indices {
+            numerator += a[i] * (sorted[n - 1 - i] - sorted[i])
+        }
+        let mean = vDSP.mean(sorted)
+        let ssq = vDSP.sumOfSquares(sorted.map { $0 - mean })
+        let norm = 2 * vDSP.sumOfSquares(a)
+        let denominator = sqrt(norm * ssq)
+        // Factor 1-W before subtraction to improve the log-tail calculation near W=1.
+        let oneMinusW = Swift.max(0, (denominator - numerator) * (denominator + numerator) / (norm * ssq))
+        let w = 1 - oneMinusW
+        if n == 3 {
+            return (Swift.max(0.75, w), Swift.max(0, 1 - 6 / Double.pi * acos(sqrt(Swift.max(0.75, w)))))
+        }
+        guard oneMinusW > 0 else { return (1.0, 1.0) }
+        var y = log(oneMinusW)
         let mu: Double
         let sigma: Double
-        let gamma: Double
-        let lnN = log(Double(n))
-
         if n <= 11 {
-            let gamma_c: [Double] = [-2.273, 0.459]
-            gamma = gamma_c[0] + gamma_c[1] * Double(n)
-            let mu_c: [Double]    = [-0.0006714, 0.025054, -0.6714, 0.7240]
-            let sigma_c: [Double] = [-0.0020322, 0.04981, -0.1358, -0.2031]
-            mu    = poly(mu_c,    lnN)
-            sigma = exp(poly(sigma_c, lnN))
+            let size = Double(n)
+            let gamma = -2.273 + 0.459 * size
+            if y >= gamma { return (w, 1e-19) }
+            y = -log(gamma - y)
+            mu = poly([0.5440, -0.39978, 0.025054, -0.0006714], size)
+            sigma = exp(poly([1.3822, -0.77857, 0.062767, -0.0020322], size))
         } else {
-            let mu_c: [Double]    = [-1.2725, 1.0521]
-            let sigma_c: [Double] = [-1.1098, 1.5198]
-            mu    = poly(mu_c,    lnN)
-            sigma = exp(poly(sigma_c, lnN))
-            gamma = 0
+            let logN = log(Double(n))
+            mu = poly([-1.5861, -0.31082, -0.083751, 0.0038915], logN)
+            sigma = exp(poly([-0.4803, -0.082676, 0.0030302], logN))
         }
-
-        let lnW = log(1.0 - W)
-        let z   = (lnW - mu) / sigma - gamma
-        let p   = 1.0 - normalCDF(z)
-        return (W, Swift.max(0, Swift.min(1, p)))
+        return (w, 0.5 * erfc((y - mu) / (sigma * sqrt(2))))
     }
 
     private static func shapiroWilkCoefficients(n: Int) -> [Double] {
-        // Approximate half-normal order statistics (Blom 1958 formula)
-        var a = [Double](repeating: 0, count: n / 2)
-        let m   = n / 2
-        let nd  = Double(n)
-        var mtilde = [Double](repeating: 0, count: n)
-        for i in 0..<n {
-            // approximate expected order statistics of N(0,1)
-            let p = (Double(i + 1) - 0.375) / (nd + 0.25)
-            mtilde[i] = normalQuantile(p)
+        if n == 3 { return [sqrt(0.5)] }
+        let size = Double(n)
+        var a = (0..<(n / 2)).map { normalQuantile((Double($0 + 1) - 0.375) / (size + 0.25)) }
+        let sumSquares = 2 * vDSP.sumOfSquares(a)
+        let normalization = sqrt(sumSquares)
+        let inverseRootN = 1 / sqrt(size)
+        let first = -a[0] / normalization
+            + poly([0, 0.221157, -0.147981, -2.07119, 4.434685, -2.706056], inverseRootN)
+        let adjustedCount = n > 5 ? 2 : 1
+        var originalSquares = a[0] * a[0]
+        var adjustedSquares = first * first
+        if n > 5 {
+            let second = -a[1] / normalization
+                + poly([0, 0.042981, -0.293762, -1.752461, 5.682633, -3.582633], inverseRootN)
+            originalSquares += a[1] * a[1]
+            adjustedSquares += second * second
+            a[1] = second
         }
-        // Compute normalising constant
-        var c = [Double](repeating: 0, count: n)
-        vDSP.multiply(mtilde, mtilde, result: &c)
-        let cn = vDSP.sumOfSquares(mtilde).squareRoot()
-        for i in 0..<m {
-            a[i] = mtilde[n - 1 - i] / cn
-        }
+        let factor = sqrt((sumSquares - 2 * originalSquares) / (1 - 2 * adjustedSquares))
+        a[0] = first
+        for i in adjustedCount..<a.count { a[i] /= -factor }
         return a
     }
 
@@ -506,7 +647,7 @@ extension Stats {
         let y = p - 0.5
         if abs(y) < 0.42 {
             let r = y * y
-            return y * poly(a, r) / poly(b, r)
+            return y * poly(a, r) / (1 + r * poly(b, r))
         }
         let r = p < 0.5 ? log(-log(p)) : log(-log(1 - p))
         let x = poly(c, r)

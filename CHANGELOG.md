@@ -4,6 +4,39 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.1] - 2026-11-14
+
+### Native Model Support (`SwiftLLM`, `SwiftNLP`)
+- Added native decoder support for supported Gemma 2, Gemma 3, Gemma 4, and Mistral configurations, with architecture-specific attention and normalization.
+- Added SentencePiece BPE tokenization and Gemma chat templates.
+
+### Scientific Correctness & Data Integrity (`SwiftStats`, `SwiftPreprocessing`, `SwiftDataFrame`)
+- **SwiftStats Hypothesis Testing & Normality Calibration (`Stats+HypothesisTesting.swift`)**:
+  - Corrected upper-tail Chi-square survival/CDF evaluation via regularized incomplete gamma precision fixes so `chiSquareTest` / goodness-of-fit $p$-values match SciPy (`stat=156.274131, p=2.147307e-04`, **65.67×** faster at $N=100$ on clean idle hardware).
+  - Implemented Royston AS R94 Shapiro-Wilk `W` and calibrated $p$-value transformation across $n \in [3, 5000]$ (verified exact `W` and $p$-value match at $n = 100, 1000, 5000$).
+  - Calibrated Kolmogorov-Smirnov Lilliefors normal test (`ksTest` / normal parameters estimated from data) against empirical/regression-table Lilliefors critical-value curves (`d=0.044160` at $N=200$, `d=0.010317` at $N=2000$).
+- **SwiftPreprocessing Transformers (`FeatureSelection.swift`, `PolynomialFeatures.swift`, `TargetEncoder.swift`)**:
+  - Replaced naive sum-of-squares computation in `VarianceThreshold` with numerically stable mean-shifted variance, avoiding catastrophic cancellation on high-offset features (`1e12`).
+  - Added exact Bessel degrees-of-freedom handling and stable group variance accumulation in `SelectKBest` ANOVA $F$-test (`f_classif`).
+  - Corrected `RFE` surviving feature index remapping back to original feature coordinates.
+  - Enforced canonical non-decreasing multi-index ordering and bias-column semantics in `PolynomialFeatures`.
+  - Enforced genuine strictly out-of-fold (OOF) K-fold cross-fitting inside `TargetEncoder.fitTransform` (`DataFrame` and numeric matrix paths) to eliminate target leakage, with smooth prior blending and minimum sample thresholds.
+- **SwiftDataFrame Deduplication, Variance & CSV Quote/Null Round-Trip (`DataFrame+Operations.swift`, `TypedColumn.swift`, `CSVWriter.swift`, `CSVNullMatcher.swift`, `CSVReader.swift`, `CSVEagerReader.swift`, `CSVColumnBuilder.swift`, `SystemsCSVParser.swift`)**:
+  - Updated `DataFrame.unique` to distinguish heterogeneous typed keys canonicalized across column storages instead of lossy string coercion.
+  - Replaced naive `TypedColumn.variance()` / `stdDev()` paths with shifted/two-pass Welford formulation immune to $10^{12}$-offset cancellation.
+  - Fixed CSV quoting and null-token round-trip contract across writer, eager parser, and streaming parser: unquoted empty/null tokens (`""`, `NA`, `null`, `NaN`, `None`) decode as `nil`, whereas quoted empty strings and quoted literal null tokens preserve their string values (`wasQuoted` propagated distinctly from `escapedQuotesPresent`; `CSVWriter` automatically quotes literals colliding with active null tokens).
+
+### Performance Optimizations (`SwiftDataFrame`)
+- **Dedicated Compact Inner Hash Join (`DataFrame+SIMDJoin.swift`)**: Added a specialized `.inner` fast path without unnecessary `BitSet` / unmatched right-side tracking, promoted compact mixed-storage key handling, and consolidated output gathering:
+  - `medium-inner-join` (100k rows): **`11.155 ms` → `2.185 ms`** (**-80.4%** vs pre-opt; **-79.5%** vs `3.12.0` `10.635 ms`).
+  - `mixed-medium-inner-join` (100k rows): **`13.856 ms` → `2.209 ms`** (**-84.1%** vs pre-opt; **-84.0%** vs `3.12.0` `13.808 ms`).
+- **Compact Mixed-Storage Gather (`TypedColumn.swift`)**: Routed `gatheredScalar` through `gatheredNumeric` where contiguous numeric storage applies, improving `mixed-medium-filter` from `0.429 ms` to **`0.298 ms`** (**-30.5%** vs pre-opt; **-27.9%** vs `3.12.0`).
+- **Fast Pre-Reserved CSV Serialization (`CSVWriter.swift`)**: Replaced per-cell boxing with direct `ColumnAccessor` extraction and pre-reserved single `String` output buffer (`9.88 ms` numeric = **4.94×** faster than Pandas; `15.71 ms` null tokens = **3.64×**; `17.53 ms` plain strings = **3.45×** on clean idle runs; quoted null-token eager/streaming CSV reads **`3.51 / 3.33 ms`** = **3.02–3.92×** vs Pandas).
+
+### Verification, Conformance & Documentation
+- Audited standardized runs: `certification` (**27/27** passed, max abs err `5.588e-09`), `dataframe-conformance` (**24/24** passed, max err `0.000e+00`), `scientific-workflow` (**4/4** passed, max err `1.421e-14`), `standard` (**14/14** passed), and `migration` (**36/36** passed).
+- Restructured [`PERFORMANCE.md`](PERFORMANCE.md) and [`ACCURACY.md`](ACCURACY.md) into concise index landing pages backed by versioned archives (`PERFORMANCE/{3.10.3..3.13.1}.md` and `ACCURACY/{3.10.3..3.13.1}.md`), updated DocC articles, `SwiftSciCLI` (`3.13.1`), `BenchmarkMain` (`v3.13.1`), Engineering Handbook (`70/70` `CookbookVerification` recipes passed), `1,833` unit tests passing in Debug & Release (`0` failures, `3` optional skipped), and `100.00%` (`2,551/2,551`) heuristic public API documentation coverage.
+
 ## [3.13.0] - 2026-11-13
 
 All changes are source-compatible: no public symbol was removed or changed, and existing call sites compile and behave as before (apart from the crash, hang, and validation fixes below).

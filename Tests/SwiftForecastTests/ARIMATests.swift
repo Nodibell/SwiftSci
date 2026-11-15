@@ -164,4 +164,44 @@ extension ARIMATests {
             _ = try await arima.forecast(horizon: 3, exog: [])
         }
     }
+
+    @Test("ARIMA rejects non-invertible MA fits, resets state on failed refit, and rejects non-finite forecast overflow")
+    func testARIMANumericalSafetyAndMAInvertibility() async throws {
+        // Alternating exponentially weighted sequence induces |theta_1| >= 1 under Hannan-Rissanen MA(1)
+        let nonInvertibleSeries = (0..<40).map { t in
+            Double(t % 2 == 0 ? 1 : -1) * pow(1.2, Double(t % 6))
+        }
+        let maModel = try ARIMAModel(p: 0, d: 0, q: 1)
+        await #expect(throws: ForecastError.self) {
+            try await maModel.fit(series: nonInvertibleSeries)
+        }
+        #expect(await !maModel.isFitted)
+        await #expect(throws: ForecastError.notFitted) {
+            _ = try await maModel.forecast(horizon: 1)
+        }
+        await #expect(throws: ForecastError.notFitted) {
+            _ = try await maModel.aic()
+        }
+
+        // Valid fit followed by failed refit must leave isFitted == false
+        var rng = SimpleRNG(seed: 42)
+        let innovations = (0..<80).map { _ in rng.nextGaussian() }
+        let validInvertible = (0..<80).map { t -> Double in
+            innovations[t] + (t > 0 ? 0.3 * innovations[t - 1] : 0.0)
+        }
+        try await maModel.fit(series: validInvertible)
+        #expect(await maModel.isFitted)
+        await #expect(throws: ForecastError.self) {
+            try await maModel.fit(series: nonInvertibleSeries)
+        }
+        #expect(await !maModel.isFitted)
+
+        // Explosive extrapolation that overflows Double throws ForecastError instead of returning Infinity
+        let expSeries = (0..<20).map { pow(2.0, Double($0)) }
+        let expModel = try ARIMAModel(p: 1, d: 0, q: 0)
+        try await expModel.fit(series: expSeries)
+        await #expect(throws: ForecastError.containsInfinity) {
+            _ = try await expModel.forecast(horizon: 1050)
+        }
+    }
 }

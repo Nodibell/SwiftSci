@@ -37,7 +37,14 @@ let floatData: [Float] = [1.2, 2.4, 3.6, 4.8]
 let floatMean = try Stats.mean(floatData)
 let floatStd = try Stats.standardDeviation(floatData)
 print("Float32 Mean: \(floatMean), Std: \(floatStd)")
+
+// 3. Higher-order moments (skewness and excess kurtosis)
+let momentsData = [1.0, 2.0, 3.0, 4.0, 5.0]
+let skew = try Stats.skewness(momentsData)  // 0.0
+let kurt = try Stats.kurtosis(momentsData)  // -1.912
 ```
+
+> Note: In `SwiftSci v3.13.x`, `Stats.skewness` and `Stats.kurtosis` normalize the $1/n$ central moment numerator by the sample standard deviation `s` computed with `ddof = 1` ($\frac{m_3}{s^3}$ and $\frac{m_4}{s^4} - 3$), rather than the population-moment Fisher formula ($m_3 / m_2^{3/2}$ and $m_4 / m_2^2 - 3$). This default is preserved in `v3.13.2` for API compatibility.
 
 ---
 

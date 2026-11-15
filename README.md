@@ -129,88 +129,19 @@ Because GitHub-hosted `macos-latest` runners operate in virtualized environments
 
 ---
 
-## 📊 Performance Comparison: SwiftSci 3.13.1 (Candidate) vs 3.12.0 vs 3.11.0 vs Python
+## Performance and scientific validation
 
-> Full versioned tables & workload provenance: [`PERFORMANCE.md`](PERFORMANCE.md) ([`3.13.1` Candidate](PERFORMANCE/3.13.1.md)) · [`ACCURACY.md`](ACCURACY.md) ([`3.13.1` Candidate](ACCURACY/3.13.1.md)). (`v3.13.0` introduced `SwiftLLM`/`SwiftNLP` changes only with no independent classical run and retains the `3.12.0` baseline.)
+SwiftSci `v3.13.1` is the latest published release. The `v3.13.2` Stage A candidate passed all 39 scientific workloads and all three rolling-origin backtests. CPU acceptance completed all 16 profiles. Four pandas comparator cases across two profiles failed their original accuracy thresholds. SwiftSci cases passed, and the reviewed regression policy reported zero blockers.
 
-The following benchmark metrics reflect the standardized, certified dual-language automated harness (`standard-3.13.1` / `migration-3.13.1` vs `standard-3.12.0` / `migration-3.12.0` under `Benchmarks/Tools/bench.py`) executed on Apple Silicon (`Apple M4 Pro`, `24 GiB`, IEEE 754 `Double`, Swift `6.4.2` Release vs Python worker `3.14.6` with `Pandas 3.0.6`, `NumPy 2.5.3`, `SciPy 1.18.1`, `PyArrow 25.0.1`) under **Benchmark Methodology v2**. In the **SwiftSci 3.13.1** candidate, targeted hot-path work alongside scientific correctness hardening delivers **−79.5% / −84.0% inner join latency** (`10.64 → 2.18 ms` standard, `13.81 → 2.21 ms` mixed-schema), **−27.9% mixed-schema filter latency**, a **3.45–4.94× faster CSV writer** (`9.88–17.53 ms` vs `48.80–60.42 ms` Pandas on clean idle microbenchmarks), and **3.02–3.92× faster quoted null-token CSV reads** (`3.51 / 3.33 ms` vs `10.62 / 13.04 ms`):
+Timing and accuracy tables are in the [Stage A performance report](PERFORMANCE/3.13.2-candidate.md) and [Stage A accuracy report](ACCURACY/3.13.2-candidate.md). Final release measurements require the clean-tree Stage B run.
 
-### ⚡ Side-by-Side: SwiftSci 3.13.1 vs 3.12.0 vs 3.11.0 (100k Rows / ML Fixtures)
+## 🚀 What's New in v3.13.2-candidate (Uncommitted Patch Candidate)
 
-| Benchmark Scenario | SwiftSci 3.11.0 | SwiftSci 3.12.0 | SwiftSci 3.13.1 | Python Baseline (`3.13.1`) | 3.13.1 vs 3.12.0 / Scope | 3.13.1 vs Python |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **CSV Read** (`medium-csv-read`, `csv-read-v2`) | `3.76 ms` | `2.20 ms` | **`2.80 ms`** (`2.37` clean) | `11.47 ms` (*Pandas*) | Complete finite non-null schema | **SwiftSci 4.10×** |
-| **CSV Read NullTokens** (`100k×3` Eager / Stream, idle) | `—` | `—` | **`3.51 / 3.33 ms`** | `10.62 / 13.04 ms` (*Pandas*) | Quoted null-token round-trip | **SwiftSci 3.02× / 3.92×** |
-| **CSV Write** (`100k×3` Num / NullTokens, idle) | `—` | `—` | **`9.88 / 15.71 ms`** | `48.80 / 57.22 ms` (*Pandas*) | Fast `ColumnAccessor` writer | **SwiftSci 4.94× / 3.64×** |
-| **CSV Stream Read** (100k rows, 10k chunks) | `46.80 ms` | `2.21 ms` | **`2.44 ms`** | `13.38 ms` (*Pandas*) | Parity within noise | **SwiftSci 5.48×** |
-| **CSV Stream Filter** (100k rows, 10k chunks) | `—` | `2.58 ms` | **`2.88 ms`** | `15.59 ms` (*Pandas*) | Parity within noise | **SwiftSci 5.42×** |
-| **CSV Stream GroupBy** (100k rows, 10k chunks)| `—` | `2.94 ms` | **`3.18 ms`** | `27.29 ms` (*Pandas*) | Parity (`18.8` vs `227.9 MiB` RSS) | **SwiftSci 8.58×** |
-| **Sort Double Column** (100k rows) | `2.75 ms` | `2.14 ms` | **`2.36 ms`** (`2.27` clean) | `2.96 ms` (*NumPy*) | Adaptive radix sort (OS/toolchain shift) | **SwiftSci 1.25×** |
-| **MinMaxScaler (Fit + Transform)** (100k) | `0.73 ms` | `0.74 ms` | **`0.83 ms`** (`0.79` clean) | `1.01 ms` (*Scikit-Learn*) | Parity (OS/toolchain shift) | **SwiftSci 1.22×** |
-| **StandardScaler (Fit + Transform)** (100k) | `1.97 ms` | `1.97 ms` | **`2.11 ms`** | `1.11 ms` (*Scikit-Learn*) | Parity | Python 1.90× |
-| **Target Vector Extraction** (100k) | `0.051 ms` | `0.057 ms` | **`0.058 ms`** | `0.108 ms` (*NumPy*) | Parity | **SwiftSci 1.87×** |
-| **Flat Feature Matrix Extraction** (100k) | `0.113 ms` | `0.112 ms` | **`0.122 ms`** | `0.747 ms` (*NumPy*) | Parity | **SwiftSci 6.13×** |
-| **Row Filtering (`medium-filter` / `mixed`)** | `0.23 ms` | `0.23 / 0.41 ms` | **`0.24 / 0.30 ms`** | `0.83 / 0.89 ms` (*Pandas*) | ⚡ **−27.9%** mixed | **SwiftSci 3.49× / 2.97×** |
-| **GroupBy + Aggregation** (100k rows) | `0.37 ms` | `0.380 ms` | **`0.404 ms`** (`0.390` clean) | `0.541 ms` (*Pandas*) | Parity (`< 0.025 ms` floor) | **SwiftSci 1.34×** |
-| **GroupBy Multi-Output (Sum + Mean)** (100k) | `—` | `0.485 ms` | **`0.514 ms`** | `1.759 ms` (*Pandas*) | Parity | **SwiftSci 3.42×** |
-| **Row-wise Horizontal Sum** (`Num / Mixed`) | `—` | `3.85 / 3.95 ms` | **`4.02 / 4.10 ms`** | `19.36 / 49.33 ms` (*Pandas*) | Parity | **SwiftSci 4.82× / 12.03×** |
-| **DataFrame SIMD Hash Join** (`100k`, `Std / Mixed`) | `2.70 ms` (`--research`) | `10.64 / 13.81 ms` | **`2.18 / 2.21 ms`** (`migration`) | `0.92 / 0.94 ms` (*Pandas*) | ⚡ **−79.5% / −84.0%** (`migration`) | Dedicated `.inner` compact probe |
-| **RandomForest Fit** (1k×4, 50 trees, `--research`) | `2.21 ms` | `2.21 ms` | **`5.59 ms`** | `30.08 ms` (*Scikit-Learn*) | Separate harness (in-proc) | **SwiftSci 5.38×** |
-| **GBDT Regressor Fit** (1k×4, 50 est, `--research`) | `4.68 ms` | `4.68 ms` | **`9.48 ms`** | `27.75 ms` (*Scikit-Learn*) | Separate harness (in-proc) | **SwiftSci 2.93×** |
-| **PCA SVD Fit + Transform** (1k×100→10, `--research`) | `0.027 ms` | `0.027 ms` | **`0.783 ms`** | `0.747 ms` (*Scikit-Learn*) | Full `fitTransform` | Parity (0.95×) |
-| **Peak Resident Memory (CSV 100k RSS)** | `48.7 MiB` | `32.2 MiB` | **`39.4 MiB`** | `215.9 MiB` (*Pandas*) | Bounded metadata + compact `Double` | **5.48× less RAM** |
+- **Scientific Correctness Fixes (`SwiftForecast`)**: Fixed **G-037** (`ARIMAModel` and `SARIMAModel` closed-loop in-sample `fittedValues` reconstruction + `ARIMAX` exogenous component) and **G-033** (non-finite detection, MA/SMA invertibility checks, fail-closed `isFitted = false` cleanup, and Schur-Cohn polynomial negation fix in `AutoARIMA`).
+- **Estimator Documentation (`SwiftStats` & `SwiftExplain`)**: Preserved `Stats.skewness` / `Stats.kurtosis` `ddof = 1` sample denominator behavior and corrected DocC formulas; corrected `TreeSHAP` complexity (`O(T · 2^K · L)` exact for `K <= 12`, `2048`-sample seeded MC for `K > 12`) and documented G-035/G-036 deferrals.
+- **Benchmark Infrastructure Cleanup**: Removed obsolete `--research` runners (`Benchmarks/Swift/`, legacy `Benchmarks/Python/{benchmarks,accuracy_benchmarks,compare}.py`, `Benchmarks/CSVAcceleration/`) and added [`scientific_validation_suite.py`](Benchmarks/Tools/scientific_validation_suite.py) + structured reports under [`Benchmarks/Reports/v3.13.2-candidate/`](Benchmarks/Reports/v3.13.2-candidate/VERIFIED_PERFORMANCE_V3132.md).
 
-### 📊 Full Workload Matrix (SwiftSci 3.13.1 Standardized & Idle Patched Suites vs Reference Stack)
-
-| Domain / Scenario | SwiftSci 3.13.1 | Python Reference Stack | Relative Performance | Scope / Implementation |
-| :--- | :---: | :---: | :---: | :--- |
-| **Holt-Winters Fit** (50k pts, s=12, `--research`) | **`18.77 ms`** | `3,265.6 ms` (*Statsmodels*) | **SwiftSci 174.03×** | Native Nelder-Mead simplex optimizer |
-| **ARIMA(1,1,1) Fit** (50k pts, `--research`) | **`2.41 ms`** | `415.1 ms` (*Statsmodels Kalman MLE*) | **SwiftSci 172.57×** | Vectorized Hannan-Rissanen conditional OLS solver |
-| **Chi-Square Goodness-of-Fit** ($N=100$, idle) | **`0.0014 ms`** | `0.0903 ms` (*SciPy*) | **SwiftSci 65.67×** | Upper-tail regularized incomplete gamma (`p=2.147307e-04`) |
-| **RFE Feature Selection** (`1000×50 → 10`, idle) | **`0.259 ms`** | `16.173 ms` (*Scikit-Learn*) | **SwiftSci 62.40×** | Original-index-preserving recursive elimination |
-| **Shapiro-Wilk Normality Test** ($N=100 / 1000$, idle) | **`0.0033 / 0.0303 ms`** | `0.0659 / 0.0924 ms` (*SciPy*) | **SwiftSci 20.02× / 3.05×** | Royston AS R94 $W$ & calibrated $p$-value transformation |
-| **KS Lilliefors Normality Test** ($N=200 / 2000$, idle) | **`0.0072 / 0.0779 ms`** | `0.0831 / 0.0865 ms` (*Statsmodels*) | **SwiftSci 11.52× / 1.11×** | Normal Lilliefors calibrated critical distribution |
-| **NaiveBayes Fit** (1k×100, 3 classes, `--research`) | **`0.0259 ms`** | `0.5077 ms` (*Scikit-Learn*) | **SwiftSci 19.64×** | Accelerate `vDSP_dotprD` SIMD dot-product |
-| **SQLite DataFrame Ingestion** (`tiny-sqlite-ingest`) | **`0.0678 ms`** | `0.1160 ms` (*Pandas*) | **SwiftSci 1.71×** | Persistent in-memory C-API (`11.9` vs `155.9 MiB` RSS) |
-| **CSV Stream GroupBy** (100k rows, 10k chunks) | **`3.180 ms`** | `27.29 ms` (*Pandas*) | **SwiftSci 8.58×** | On-demand streaming chunks (`18.8` vs `227.9 MiB` = 12.1× less RAM) |
-| **CSV Stream Read** (100k rows, 10k chunks) | **`2.441 ms`** | `13.38 ms` (*Pandas*) | **SwiftSci 5.48×** | Scoped record batch discovery & SIMD structural scan |
-| **CSV Read** (`medium-csv-read`, `100k × 5`) | **`2.798 ms`** | `11.47 ms` (*Pandas*) | **SwiftSci 4.10×** | Complete finite schema (`csv-read-v2`) & compact `Double` (`39.4` vs `215.9 MiB`) |
-| **CSV Read NullTokens** (`100k × 3` Eager / Stream, idle) | **`3.512 / 3.326 ms`** | `10.618 / 13.044 ms` (*Pandas*) | **SwiftSci 3.02× / 3.92×** | Quoted null-token round-trip (`"NA"`, `"null"`, `"NaN"`, `"None"`, `""`, `nil`) |
-| **CSV Write** (`100k × 3`: Num / NullTokens / Plain, idle) | **`9.88 / 15.71 / 17.53 ms`** | `48.80 / 57.22 / 60.42 ms` (*Pandas*) | **SwiftSci 3.45–4.94×** | Direct `ColumnAccessor` & single pre-reserved `String` |
-| **OneHotEncoder** (50k rows, `--research`) | **`5.505 ms`** | `20.69 ms` (*Scikit-Learn*) | **SwiftSci 3.76×** | SIMD categorical bitmask transform |
-| **Classification ROC-AUC** (50k preds) | **`2.563 ms`** | `2.392 ms` (*Scikit-Learn*) | **Parity 0.93×** | Single-pass sorted trapezoidal integration (`29.2` vs `180.5 MiB`) |
-| **KernelSHAP Explain** (100 coalitions, `--research`) | **`0.0303 ms`** | `0.3704 ms` (*SHAP*) | **SwiftSci 12.23×** | Zero-division guarded coalitional sampling |
-| **Two-Sample Welch T-Test** (100k samples) | **`0.3105 ms`** | `0.7329 ms` (*SciPy*) | **SwiftSci 2.36×** | Accelerate vDSP Welch's t-test (`22.5` vs `172.6 MiB`) |
-| **Student / Paired / ANOVA** (100k samples) | **`0.307 / 0.295 / 0.467 ms`** | `0.687 / 0.569 / 0.872 ms` (*SciPy*) | **SwiftSci 1.87–2.24×** | Compensated blocked moments & Accelerate distributions |
-| **Pearson Correlation** (100k pairs) | **`0.169 ms`** | `0.275 ms` (*NumPy*) | **SwiftSci 1.62×** | SIMD dot-product covariance (`23.9` vs `177.1 MiB`) |
-| **Mean Reduction** (vDSP 1M / 100k doubles) | **`0.0813 / 0.0079 ms`** | `0.1289 / 0.0153 ms` (*NumPy*) | **SwiftSci 1.59× / 1.94×** | Apple Accelerate `vDSP_meanvD` |
-| **SortBy Double Column** (100k rows) | **`2.362 ms`** | `2.963 ms` (*NumPy*) | **SwiftSci 1.25×** | Compact `Double` adaptive radix sort |
-| **DataFrame SIMD Hash Join** (`100k`, `Std / Mixed`, `migration`) | **`2.185 / 2.209 ms`** | `0.924 / 0.943 ms` (*Pandas*) | **−79.5% / −84.0% vs 3.12.0** | Dedicated `.inner` compact join probe without `BitSet` overhead |
-| **SwiftLLM Incremental Decode** (RoPE + KV-Cache) | **`0.125 ms`** | `1.450 ms` (*Full Forward*) | **SwiftSci 11.60×** | Architectural comparison: single-token incremental decode with cached K/V ($O(N)$ attention) vs full-sequence forward recomputation ($O(N^2)$); $\Delta \le 1.03 \times 10^{-7}$ |
-| **Metal MSL gemv_q4_0 Kernel** (1024d) | **`0.015 ms`** | `0.045 ms` (*Float32 Dequant*) | **SwiftSci 3.00×** | Zero-copy packed Q4_0 evaluation |
-| **AutoARIMA Zero-Variance Guard** (1000 pts) | **`< 0.01 ms`** | Divergent loop | **Instant Exit** | Zero-variance fast exit + bounded optimization iterations |
-
-### 🎯 Validation & Correctness Scorecard
-
-SwiftSci incorporates automated conformance profiles (`certification` `27/27`, `dataframe-conformance` `24/24`, `scientific-workflow` `4/4`) alongside `AccuracyBenchmarks.swift` (`--research`). See [`ACCURACY/3.13.1.md`](ACCURACY/3.13.1.md) for complete findings.
-
-> **Methodology Note**: Validation distinguishes **Algorithmic/Contract Correctness** from **Predictive Quality** on synthetic benchmarks.
-> - **ARIMA(1,1,1)** (`SwiftForecast`, unchanged from `3.12.0`) uses Hannan–Rissanen conditional OLS. On the seasonal (`period=12`) fixture (`h=24`), SwiftSci yields `RMSE = 10.218, R² = -1.555` vs Statsmodels `RMSE = 22.158, R² = -11.014`—neither captures `period=12` seasonality compared with `Holt-Winters` (`R² = 0.997`) or `Seasonal Naive` (`R² = +0.463`), so $R^2$ is reported explicitly as negative rather than claiming agreement.
-> - **NaiveBayes** matches Scikit-Learn with **exact formula parity** ($\Delta \text{Acc} = 0.00\%$) on the synthetic uniform token benchmark.
-
-```text
-  ┌────────────────────────────────────────────────────────────────────────────────────────┐
-  │                    3.13.1 CANDIDATE ACCURACY & QUALITY SCORECARD                       │
-  ├────────────────────────────────────────────────────────────────────────────────────────┤
-  │ [Forecast] Holt-Winters (h=24) : RMSE=0.350, MAE=0.275, MAPE=0.19%, R²=0.997           │
-  │ [Forecast] ARIMA(1,1,1) (h=24) : RMSE=10.218, MAE=8.557, MAPE=5.87%, R²=-1.555         │
-  │ [ML Reg]   GBDT (30 tr, d=4)   : RMSE=0.490, R²=0.9851                                 │
-  │ [ML Cls]   RandomForest (30 tr): Accuracy=97.50%, F1=0.973                             │
-  │ [NLP Cls]  NaiveBayes (3-class): Accuracy=35.00%, Macro-F1=0.342 (Parity ΔAcc=0.00%)   │
-  └────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-## 🚀 What's New in v3.13.1 (Working-Tree Candidate)
+## 🚀 What's New in v3.13.1 (Published `0cf99f0`)
 
 - **Statistical Correctness & Normality Calibration (`SwiftStats`)**: Corrected Chi-square survival/CDF upper-tail accuracy via regularized incomplete gamma precision fixes (`p=2.147307e-04`, **65.67× faster** at $N=100$ idle), implemented Royston AS R94 Shapiro-Wilk `W` + calibrated $p$-value transformation across $n \in [3, 5000]$ (**20.02× faster** at $N=100$), and calibrated Lilliefors KS normal test curves (**11.52× faster** at $N=200$).
 - **Preprocessing Leak Prevention & Numerical Stability (`SwiftPreprocessing`)**: Enforced genuine out-of-fold K-fold cross-fitting inside `TargetEncoder.fitTransform`, replaced naive sum-of-squares in `VarianceThreshold` with shifted variance, fixed `SelectKBest` ANOVA Bessel degrees of freedom, remapped `RFE` surviving feature indices back to original coordinates (**62.40× faster** than Scikit-Learn on `1000×50 → 10` idle), and enforced canonical non-decreasing multi-index ordering in `PolynomialFeatures`.
@@ -274,7 +205,7 @@ SwiftSci incorporates automated conformance profiles (`certification` `27/27`, `
 
 - **API Reference**: [Interactive DocC Documentation](https://nodibell.github.io/SwiftSci/) (100% verified coverage across all 15 modules)
 - **Engineering Handbook & Practical Cookbook**: [SwiftSci 3.13.1 Complete Engineering Handbook & Practical Cookbook](https://github.com/Nodibell/SwiftSci/releases/tag/v3.13.1) ([PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.1/SwiftSci_Handbook_3.13.1.pdf) · [EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.1/SwiftSci_Handbook_3.13.1.epub)) (129 pages, `7.52 MB` PDF / `0.20 MB` EPUB, 70 verified recipes)
-- **Benchmarking Suite**: [PERFORMANCE.md](PERFORMANCE.md) ([`3.13.1` Candidate](PERFORMANCE/3.13.1.md)) & [ACCURACY.md](ACCURACY.md) ([`3.13.1` Candidate](ACCURACY/3.13.1.md)) · Historical Archives (`3.10.3`–`3.13.0`) under `PERFORMANCE/` and `ACCURACY/`
+- **Benchmarking Suite**: [PERFORMANCE.md](PERFORMANCE.md) ([`3.13.2-candidate`](PERFORMANCE/3.13.2-candidate.md) · [`3.13.1`](PERFORMANCE/3.13.1.md)) & [ACCURACY.md](ACCURACY.md) ([`3.13.2-candidate`](ACCURACY/3.13.2-candidate.md) · [`3.13.1`](ACCURACY/3.13.1.md)) · [Evidence Reports (`v3.13.2-candidate`)](Benchmarks/Reports/v3.13.2-candidate/VERIFIED_PERFORMANCE_V3132.md) · Historical Archives (`3.10.3`–`3.13.0`) under `PERFORMANCE/` and `ACCURACY/`
 - **Release History**: [CHANGELOG.md](CHANGELOG.md)
 - **Roadmap**: [ROADMAP.md](ROADMAP/ROADMAP.md)
 

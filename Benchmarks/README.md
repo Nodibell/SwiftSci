@@ -59,7 +59,7 @@ flowchart TB
 
 Diagram destinations: [fixtures and answers](#fixtures-and-reference-answers), [specifications](#experiment-specifications), [preparation](#preparation-and-reference-evaluation), [controller](#build-and-run-controller), [workers](#workers-and-output-validation), [evidence](#run-evidence), and [acceptance and reports](#acceptance-and-reporting).
 
-Output validation happens inside each worker. It has no separate pipeline folder. The Swift worker uses [Support/Protocol.swift](Support/Protocol.swift), and Python adapters validate their outputs before returning responses. Several orchestration steps share `Tools/`. Generated inputs and run evidence belong to local working directories rather than committed fixture sources.
+Output validation happens inside each worker. It has no separate pipeline folder. The Swift worker uses [Support/Protocol.swift](Support/Protocol.swift), and Python adapters validate their outputs before returning responses. Several orchestration steps share `Tools/` (including [scientific_validation_suite.py](Tools/scientific_validation_suite.py) for scientific accuracy-gated validation and rolling-origin time-series backtests). Generated inputs and run evidence belong to local working directories rather than committed fixture sources, while summarized candidate release reports live under [Reports/v3.13.2-candidate/](Reports/v3.13.2-candidate/VERIFIED_PERFORMANCE_V3132.md).
 
 ## Component definitions
 
@@ -93,7 +93,7 @@ Model conformance checks declared calculations. It does not establish trained-mo
 | [profiles/](Specs/profiles/) | Cases, warmups, measured samples, independent process batches, and timeouts. |
 | [schemas/](Specs/schemas/) | JSON schemas for serialized specifications and worker records. Runtime checks also live in the controller and worker implementations. |
 | [acceptance.json](Specs/acceptance.json) | Canonical profile coverage, CPU, Apple, and sweep tiers, plus explicitly deferred work. |
-| [legacy-inventory.json](Specs/legacy-inventory.json) | Mappings from historical workloads to standardized replacements or research dispositions. |
+| [legacy-inventory.json](Specs/legacy-inventory.json) | Historical ledger mapping retired legacy workloads to standardized replacements or retired research dispositions. |
 
 [contracts.py](Tools/contracts.py) validates specifications and computes experiment identities. The resolved plan records dataset and workload definitions with the source and engine identities. A changed operation or measurement boundary requires a new workload contract.
 
@@ -177,7 +177,7 @@ Build snapshots, build records, logs, and products live under `~/Library/Caches/
 
 [Persistent model admission trial](PersistentModelTrial/README.md) compares retaining a model across short work admissions with repeated pool creation and whole-run reservations. It measures the throughput and peer-latency tradeoff under fixed memory partitions. The comparison uses the retained-session API and qualifies a single-model workload; it does not establish a general scheduling policy.
 
-[Results/](Results/) preserves historical measurements. [Specs/legacy-inventory.json](Specs/legacy-inventory.json) records which historical workloads have standardized replacements and which remain research. The research implementations in [Swift/](Swift/), [CSVAcceleration/](CSVAcceleration/), and legacy [Python/](Python/) scripts have different measurement contracts.
+[Results/](Results/) preserves archived historical artifacts such as the hash-locked `DataFrameOptimization/` baseline. [Specs/legacy-inventory.json](Specs/legacy-inventory.json) records the historical mapping from retired `--research` scripts (`Swift/`, `CSVAcceleration/`, legacy `Python/` scripts) to standardized replacements or retired research dispositions. Active `--research` runners have been removed; use [Tools/bench.py](Tools/bench.py) and `Benchmarks/Tools/scientific_validation_suite.py` for new benchmarks.
 
 Kiraa is an unofficial research reference with known bugs. It is neither an independent correctness oracle nor a supported standardized engine. Trained-model quality, unmatched algorithms, long-context inference, and physical zero-copy claims remain outside the current conformance scope.
 
@@ -265,7 +265,7 @@ Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile
 Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/migration-smoke-01
 ```
 
-`inventory` reconciles 133 legacy result rows and two diagnostics with standardized workloads or explicit research dispositions. A row marked as migrated identifies its replacement contract; it does not certify historical output. Learned-model and GPU workloads that remain research require `--research` and cannot support certification or production claims.
+`inventory` reconciles 133 legacy result rows and two diagnostics with standardized workloads or explicit research dispositions. A row marked as migrated identifies its replacement contract; it does not certify historical output. The legacy `--research` runner has been removed in the v3.13.2 cleanup; new learned-model, forecasting, and explainability comparisons live in `Benchmarks/Tools/scientific_validation_suite.py`.
 
 To run the larger profile, prepare it first and change `--profile` and the output directory. Close competing CPU/GPU workloads and keep power conditions consistent before taking performance measurements. The controller serializes its own builds and runs within this checkout; it cannot prevent other applications or checkouts from consuming resources.
 
@@ -333,7 +333,7 @@ The [Benchmark conformance workflow](../.github/workflows/benchmark-conformance.
 
 Add a workload by defining its semantics and tolerance, adding an independent reference and both worker implementations, then including it in a profile. Change the workload version when semantics change. Add generator versions and checksum manifests for new datasets. A faster result is usable only after its output passes validation.
 
-The legacy `SwiftSciBenchmarks`, `Python/benchmarks.py` and `Python/accuracy_benchmarks.py` require `--research`. They label console and JSON output as unvalidated research. Their input and measurement rules differ from the standardized contracts. `Python/compare.py` is retired and always fails with directions to the standardized comparison command. Preserve historical artifacts; use audited standardized runs for new comparisons.
+The legacy `SwiftSciBenchmarks`, `Python/benchmarks.py`, `Python/accuracy_benchmarks.py`, `Python/compare.py`, `generate_fixtures.py`, and `CSVAcceleration/` harnesses are retired and removed from the active workspace (enforced by `inventory.py` / `test_inventory.py`). Preserve historical baselines (`Benchmarks/Baselines/`, `Benchmarks/Results/DataFrameOptimization/`); use audited standardized runs (`bench.py`) and `Benchmarks/Tools/scientific_validation_suite.py` for all new comparisons.
 
 ## Public workload profiles
 

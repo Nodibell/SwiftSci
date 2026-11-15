@@ -9,7 +9,13 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "Benchmarks/Tools"))
 from contracts import ContractError, read_json
-from inventory import INVENTORY_PATH, discover, reconcile
+from inventory import (
+    INVENTORY_PATH,
+    LEGACY_RETIRED_PATHS,
+    discover,
+    reconcile,
+    retired_legacy_stragglers,
+)
 
 
 class LegacyInventoryTests(unittest.TestCase):
@@ -23,6 +29,9 @@ class LegacyInventoryTests(unittest.TestCase):
 
     def test_complete_registration_coverage(self):
         summary = reconcile(ROOT, self.inventory)
+        self.assertTrue(summary["legacy_sources_retired"])
+        self.assertEqual(retired_legacy_stragglers(ROOT), [])
+        self.assertEqual(discover(ROOT), [])
         self.assertEqual(summary["entries"], 135)
         self.assertEqual(
             summary["by_kind"],
@@ -128,6 +137,24 @@ class LegacyInventoryTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ContractError, "Unrecognized Swift"):
                 discover(root)
+
+    def test_retired_legacy_stragglers_fail_reconcile(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            specs_dir = root / "Benchmarks/Specs"
+            specs_dir.mkdir(parents=True)
+            (root / "Benchmarks/Python").mkdir(parents=True)
+            (root / "Benchmarks/Python/compare.py").write_text("# stray legacy script\n")
+            minimal_inventory = {
+                "schema_version": 1,
+                "scope": "legacy",
+                "experimental_references": self.inventory["experimental_references"],
+                "entries": [],
+            }
+            with self.assertRaisesRegex(ContractError, "Retired legacy"):
+                reconcile(root, minimal_inventory)
+            for rel in LEGACY_RETIRED_PATHS:
+                self.assertFalse((ROOT / rel).exists(), f"Stray retired path: {rel}")
 
 
 if __name__ == "__main__":

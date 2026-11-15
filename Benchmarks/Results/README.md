@@ -18,19 +18,8 @@ python3 Benchmarks/Tools/bench.py compare Benchmarks/Runs/baseline Benchmarks/Ru
 
 The legacy `Python/compare.py` command is retired. Its name matching, zero-duration ratios and CI gates cannot establish a valid comparison.
 
-## Reproduce legacy research
+## Legacy `--research` runners (retired in v3.13.2 cleanup)
 
-Run from the repository root. These commands label outputs as unvalidated research, with no certification or production claims:
-
-```bash
-swift run -c release SwiftSciBenchmarks --research \
-  --json Benchmarks/Results/swift_research.json
-python3 Benchmarks/Python/benchmarks.py --research \
-  --json Benchmarks/Results/python_research.json
-python3 Benchmarks/Python/accuracy_benchmarks.py --research \
-  --json Benchmarks/Results/accuracy_research.json
-```
-
-Use a new filename to preserve existing results. A common seed or similar operation name does not establish equivalent inputs, algorithms or timing boundaries. Learned-model and GPU results remain research unless a standardized workload independently validates their complete output.
+The legacy unvalidated `--research` executables and ad-hoc result JSONs (`SwiftSciBenchmarks`, `Benchmarks/Swift/`, `Benchmarks/Python/benchmarks.py`, `Benchmarks/Python/accuracy_benchmarks.py`, `Benchmarks/Python/compare.py`, `Benchmarks/generate_fixtures.py`, `Benchmarks/CSVAcceleration/`, `Benchmarks/Results/python_results.json`, `Benchmarks/Results/swift_results.json`, and root `python_accuracy.json`) were removed from the active workspace during the v3.13.2 benchmark cleanup. See [DataFrameOptimization/README.md](DataFrameOptimization/README.md) for the hash-locked archive note (its `artifact-hashes.json` manifest remains intact), and use [Tools/bench.py](../Tools/bench.py) or `Benchmarks/Tools/scientific_validation_suite.py` for reproducible, contract-verified benchmarks.
 
 Kiraa results under `DataFrameOptimization` refer to an unofficial development build with known bugs. Treat that build as an optional experimental reference, never an accuracy oracle or production baseline.

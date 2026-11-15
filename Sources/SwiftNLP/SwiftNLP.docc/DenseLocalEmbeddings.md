@@ -9,7 +9,7 @@ Modern Retrieval-Augmented Generation (RAG), semantic vector search, and automat
 1. **``AppleSentenceEmbeddingEngine``**: Native 512-dimensional contextual semantic embeddings powered by Apple Natural Language and Core ML foundation models with Accelerate $L_2$ unit normalization.
 2. **``LocalEmbeddingEngine``**: Deterministic, lightweight subword N-gram hashing projection producing customizable $D$-dimensional embeddings in microseconds with zero disk weight.
 
-Both engines integrate seamlessly with ``ZeroShotTextClassifier`` for zero-shot text categorization and ``SwiftCluster.VectorStore`` for real-time similarity search.
+Both engines integrate seamlessly with ``ZeroShotTextClassifier`` for zero-shot text categorization and [`SwiftCluster.VectorStore`](https://nodibell.github.io/SwiftSci/documentation/swiftcluster/vectorstore/) for real-time similarity search.
 
 ```mermaid
 graph TD
@@ -153,7 +153,7 @@ let multiResult = try await classifier.classify(
 
 ## 6. DataFrame Zero-Shot Categorization
 
-Classify entire columns of tabular data directly within a ``SwiftDataFrame`` using `zeroShotClassify`:
+Classify entire columns of tabular data directly within a [`SwiftDataFrame`](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/) using `zeroShotClassify`:
 
 ```swift
 import SwiftDataFrame

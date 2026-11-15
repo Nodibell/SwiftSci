@@ -33,7 +33,12 @@ public actor ARIMAModel {
     
     private var series: [Double] = []
     private var diffSeries: [Double] = []
+    /// One-step-ahead in-sample fitted values on the original data scale (`count == series.count`).
+    /// Initial boundary indices `0..<order.d` retain seed observations; for `t >= order.d`,
+    /// `fittedValues[t] == series[t] - residuals[t - order.d]`.
     public private(set) var fittedValues: [Double] = []
+    /// One-step-ahead conditional innovations (`count == series.count - order.d`), aligned so that
+    /// `residuals[t - order.d] == series[t] - fittedValues[t]` for `t >= order.d`.
     public private(set) var residuals: [Double] = []
     public private(set) var isFitted: Bool = false
     
@@ -52,12 +57,38 @@ public actor ARIMAModel {
         self.estimationMethod = method
     }
     
+    private func resetFittedState() {
+        self.isFitted = false
+        self.arCoefficients = []
+        self.maCoefficients = []
+        self.intercept = 0.0
+        self.exogCoefficients = []
+        self.regIntercept = 0.0
+        self.fittedExog = nil
+        self.hasExog = false
+        self.series = []
+        self.diffSeries = []
+        self.fittedValues = []
+        self.residuals = []
+    }
+
     /// Fits the ARIMA model on the series using Hannan-Rissanen conditional OLS.
     /// - Parameters:
     ///   - series: 1D temporal time-series observations array.
     ///   - exog: Exogenous explanatory regressors array.
-    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs, or model is unfitted.
+    /// - Throws: `ForecastError` if series length is insufficient, values contain NaNs/Infs,
+    ///   estimated moving-average coefficients are non-invertible, or residuals/fitted values become non-finite.
     public func fit(series: [Double], exog: [[Double]]? = nil) throws {
+        resetFittedState()
+        do {
+            try performFit(series: series, exog: exog)
+        } catch {
+            resetFittedState()
+            throw error
+        }
+    }
+
+    private func performFit(series: [Double], exog: [[Double]]? = nil) throws {
         let n = series.count
         guard n > 0 else { throw ForecastError.emptyTimeSeries }
         
@@ -65,8 +96,7 @@ public actor ARIMAModel {
         guard n >= minLen else {
             throw ForecastError.insufficientLength(minimum: minLen, got: n)
         }
-        if series.contains(where: { $0.isNaN }) { throw ForecastError.containsNaN }
-        if series.contains(where: { $0.isInfinite }) { throw ForecastError.containsInfinity }
+        try ForecastValidation.ensureFinite(series)
         
         var arimaTargetSeries = series
         
@@ -82,6 +112,7 @@ public actor ARIMAModel {
                 guard row.count == numExog else {
                     throw ForecastError.matrixDimensionMismatch(expectedRows: n, expectedCols: numExog, gotRows: n, gotCols: row.count)
                 }
+                try ForecastValidation.ensureFinite(row)
             }
             
             // Fit OLS regression: series = exog * beta + intercept
@@ -109,6 +140,7 @@ public actor ARIMAModel {
                 }
                 residualsReg[i] = series[i] - regVal
             }
+            try ForecastValidation.ensureFinite(residualsReg)
             arimaTargetSeries = residualsReg
         } else {
             self.hasExog = false
@@ -127,23 +159,30 @@ public actor ARIMAModel {
             }
             current = diff
         }
+        try ForecastValidation.ensureFinite(current)
         self.diffSeries = current
         
         let nDiff = diffSeries.count
         
         // Handle trivial ARIMA(0, 0, 0)
         if order.p == 0 && order.q == 0 {
-            self.intercept = vDSP.mean(diffSeries)
+            let localIntercept = vDSP.mean(diffSeries)
+            try ForecastValidation.ensureFinite(localIntercept)
+            let localFittedDiff = [Double](repeating: localIntercept, count: nDiff)
+            var localResiduals = [Double](repeating: 0.0, count: nDiff)
+            for i in 0..<nDiff {
+                localResiduals[i] = diffSeries[i] - localIntercept
+            }
+            try ForecastValidation.ensureFinite(localResiduals)
+            let integratedARIMA = try integrate(fittedDiff: localFittedDiff, original: self.series, d: order.d)
+            let integratedFitted = withExogenousComponent(integratedARIMA, exog: exog)
+            try ForecastValidation.ensureFinite(integratedFitted)
+            
+            self.intercept = localIntercept
             self.arCoefficients = []
             self.maCoefficients = []
-            self.fittedValues = [Double](repeating: intercept, count: nDiff)
-            self.residuals = [Double](repeating: 0.0, count: nDiff)
-            for i in 0..<nDiff {
-                self.residuals[i] = diffSeries[i] - intercept
-            }
-            
-            // Reconstruct original scale fitted values
-            self.fittedValues = try integrate(fittedDiff: self.fittedValues, original: series, d: order.d)
+            self.residuals = localResiduals
+            self.fittedValues = integratedFitted
             self.isFitted = true
             return
         }
@@ -166,6 +205,7 @@ public actor ARIMAModel {
             }
             estResiduals[t] = diffSeries[t] - val
         }
+        try ForecastValidation.ensureFinite(estResiduals)
         
         // 3. Conditional OLS for ARIMA(p, 0, q) on diffSeries (Hannan-Rissanen Step 2)
         let startIdx = Swift.max(order.p, order.q)
@@ -195,17 +235,13 @@ public actor ARIMAModel {
         
         let coeffs = try solveLeastSquares(X: XMat, y: yVec, rows: numSamples, cols: numCoeffs)
         
-        self.intercept = coeffs[0]
-        if order.p > 0 {
-            self.arCoefficients = Array(coeffs[1...order.p])
-        } else {
-            self.arCoefficients = []
-        }
-        if order.q > 0 {
-            self.maCoefficients = Array(coeffs[(1 + order.p)...(order.p + order.q)])
-        } else {
-            self.maCoefficients = []
-        }
+        let localIntercept = coeffs[0]
+        let localAR = order.p > 0 ? Array(coeffs[1...order.p]) : []
+        let localMA = order.q > 0 ? Array(coeffs[(1 + order.p)...(order.p + order.q)]) : []
+        try ForecastValidation.ensureFinite(localIntercept)
+        try ForecastValidation.ensureFinite(localAR)
+        try ForecastValidation.ensureFinite(localMA)
+        try ForecastValidation.ensureMAInvertible(ma: localMA)
         
         // 4. Compute in-sample fitted values and residuals on differenced series
         var diffFitted = [Double](repeating: 0.0, count: nDiff)
@@ -216,20 +252,29 @@ public actor ARIMAModel {
                 diffFitted[t] = diffSeries[t]
                 diffResiduals[t] = 0.0
             } else {
-                var val = intercept
+                var val = localIntercept
                 for j in 0..<order.p {
-                    val += arCoefficients[j] * diffSeries[t - 1 - j]
+                    val += localAR[j] * diffSeries[t - 1 - j]
                 }
                 for j in 0..<order.q {
-                    val += maCoefficients[j] * diffResiduals[t - 1 - j]
+                    val += localMA[j] * diffResiduals[t - 1 - j]
                 }
                 diffFitted[t] = val
                 diffResiduals[t] = diffSeries[t] - val
             }
         }
         
+        try ForecastValidation.ensureFinite(diffFitted)
+        try ForecastValidation.ensureFinite(diffResiduals)
+        let integratedARIMA = try integrate(fittedDiff: diffFitted, original: self.series, d: order.d)
+        let integratedFitted = withExogenousComponent(integratedARIMA, exog: exog)
+        try ForecastValidation.ensureFinite(integratedFitted)
+
+        self.intercept = localIntercept
+        self.arCoefficients = localAR
+        self.maCoefficients = localMA
         self.residuals = diffResiduals
-        self.fittedValues = try integrate(fittedDiff: diffFitted, original: self.series, d: order.d)
+        self.fittedValues = integratedFitted
         self.isFitted = true
     }
     
@@ -259,11 +304,10 @@ public actor ARIMAModel {
                 guard row.count == exogCoefficients.count else {
                     throw ForecastError.matrixDimensionMismatch(expectedRows: horizon, expectedCols: exogCoefficients.count, gotRows: horizon, gotCols: row.count)
                 }
-                guard row.allSatisfy({ !$0.isNaN && !$0.isInfinite }) else {
-                    throw ForecastError.containsNaN
-                }
+                try ForecastValidation.ensureFinite(row)
             }
         }
+        try ForecastValidation.ensureFinite(residuals)
         
         let nDiff = diffSeries.count
         var diffPreds = [Double](repeating: 0.0, count: horizon)
@@ -293,6 +337,8 @@ public actor ARIMAModel {
             allResiduals.append(0.0) // forecast residual is 0
         }
         
+        try ForecastValidation.ensureFinite(diffPreds)
+
         // Integrate forecasts back to original scale
         let integratedForecastsResiduals = try integrate(fittedDiff: diffPreds, original: series, d: order.d, isForecast: true)
         
@@ -307,6 +353,7 @@ public actor ARIMAModel {
                 finalPredictions[h] = integratedForecastsResiduals[h] + regVal
             }
         }
+        try ForecastValidation.ensureFinite(finalPredictions)
         
         // Calculate metrics
         let nOriginal = series.count
@@ -329,6 +376,9 @@ public actor ARIMAModel {
         // Log-likelihood approximation: -N/2 * (1 + ln(2*pi*MSE))
         let k = Double(1 + order.p + order.q + (hasExog ? exogCoefficients.count : 0))
         let aic = validCount > 0 ? (2.0 * k + validCount * log(mse > 0 ? mse : 1e-15) + validCount * (1.0 + log(2.0 * Double.pi))) : 0.0
+        try ForecastValidation.ensureFinite(mse)
+        try ForecastValidation.ensureFinite(mae)
+        try ForecastValidation.ensureFinite(aic)
         
         let forecastResult = ForecastResult(
             predictions: finalPredictions,
@@ -356,18 +406,17 @@ public actor ARIMAModel {
     /// Uses the conditional Gaussian residual-MSE formula `-n/2 * (1 + ln(2*pi*MSE))` derived from the
     /// Hannan-Rissanen two-stage OLS fit (not exact state-space / Kalman Gaussian MLE).
     ///
-    /// - Throws: `ForecastError.notFitted` if model has not been fitted.
+    /// - Throws: `ForecastError.notFitted` if model has not been fitted, or
+    ///   `ForecastError.containsNaN` / `ForecastError.containsInfinity` if residuals or criterion are non-finite.
     /// - Returns: Conditional AIC score as a `Double`.
     ///
     /// ## Complexity
     /// O(1) over precomputed residuals.
     public func aic() throws -> Double {
-        guard isFitted else { throw ForecastError.notFitted }
-        let mse = vDSP.sumOfSquares(residuals) / Double(residuals.count)
-        // H-07: Include exogenous coefficients in degrees of freedom penalty
-        let k = Double(1 + order.p + order.q + (hasExog ? exogCoefficients.count : 0))
-        let n = Double(residuals.count)
-        return 2.0 * k + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+        let (mse, k, n) = try informationCriterionInputs()
+        let score = 2.0 * k + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+        try ForecastValidation.ensureFinite(score)
+        return score
     }
 
     /// Computes the approximate Bayesian Information Criterion (BIC) from conditional least-squares residuals.
@@ -375,18 +424,29 @@ public actor ARIMAModel {
     /// Uses the conditional Gaussian residual-MSE formula derived from the Hannan-Rissanen two-stage
     /// OLS fit (not exact state-space / Kalman Gaussian MLE).
     ///
-    /// - Throws: `ForecastError.notFitted` if model has not been fitted.
+    /// - Throws: `ForecastError.notFitted` if model has not been fitted, or
+    ///   `ForecastError.containsNaN` / `ForecastError.containsInfinity` if residuals or criterion are non-finite.
     /// - Returns: Conditional BIC score as a `Double`.
     ///
     /// ## Complexity
     /// O(1) over precomputed residuals.
     public func bic() throws -> Double {
+        let (mse, k, n) = try informationCriterionInputs()
+        let score = k * log(n) + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+        try ForecastValidation.ensureFinite(score)
+        return score
+    }
+
+    private func informationCriterionInputs() throws -> (mse: Double, k: Double, n: Double) {
         guard isFitted else { throw ForecastError.notFitted }
-        let mse = vDSP.sumOfSquares(residuals) / Double(residuals.count)
+        try ForecastValidation.ensureFinite(residuals)
+        guard !residuals.isEmpty else { throw ForecastError.insufficientLength(minimum: 1, got: 0) }
+        let n = Double(residuals.count)
+        let mse = vDSP.sumOfSquares(residuals) / n
+        try ForecastValidation.ensureFinite(mse)
         // H-07: Include exogenous coefficients in degrees of freedom penalty
         let k = Double(1 + order.p + order.q + (hasExog ? exogCoefficients.count : 0))
-        let n = Double(residuals.count)
-        return k * log(n) + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+        return (mse, k, n)
     }
     
     // MARK: - Private helper methods
@@ -444,8 +504,10 @@ public actor ARIMAModel {
         guard info == 0 else {
             throw ForecastError.singularMatrix
         }
-        
-        return Array(b[0..<cols])
+
+        let solution = Array(b[0..<cols])
+        try ForecastValidation.ensureFinite(solution)
+        return solution
     }
     
     private func integrate(fittedDiff: [Double], original: [Double], d: Int, isForecast: Bool = false) throws -> [Double] {
@@ -496,18 +558,32 @@ public actor ARIMAModel {
                     levelSeries = diff
                 }
                 
-                // Reconstruct from levelSeries[0]
-                var lastVal = levelSeries[0]
-                reconstructed.append(lastVal)
-                for diffVal in current {
-                    let val = lastVal + diffVal
-                    reconstructed.append(val)
-                    lastVal = val
+                // Reconstruct one-step-ahead levels on original scale from observed levelSeries[i]
+                // rather than open-loop cumulative prediction feedback, avoiding random-walk drift.
+                reconstructed.reserveCapacity(levelSeries.count)
+                reconstructed.append(levelSeries[0])
+                for (i, diffVal) in current.enumerated() {
+                    reconstructed.append(levelSeries[i] + diffVal)
                 }
             }
             current = reconstructed
         }
         
         return current
+    }
+
+    private func withExogenousComponent(_ arimaFitted: [Double], exog: [[Double]]?) -> [Double] {
+        guard hasExog, let exog = exog else {
+            return arimaFitted
+        }
+        var combined = [Double](repeating: 0.0, count: arimaFitted.count)
+        for i in 0..<arimaFitted.count {
+            var regVal = regIntercept
+            for j in 0..<exogCoefficients.count {
+                regVal += exogCoefficients[j] * exog[i][j]
+            }
+            combined[i] = regVal + arimaFitted[i]
+        }
+        return combined
     }
 }

@@ -297,3 +297,12 @@ class MetalProvenanceTests(unittest.TestCase):
     def test_matching_metal_artifacts_are_included_in_run_fingerprint(self):
         result = self.resolve()
         self.assertEqual(result["engines"]["swiftsci"]["build"]["metal"], self.record["metal"])
+
+    def test_source_identity_captures_untracked_sources_and_dirty_worktree(self):
+        from runner import source_identity
+
+        ident = source_identity(ROOT)
+        self.assertTrue(ident["dirty"])
+        self.assertIn("ForecastValidation.swift", "\n".join(ident["dirty_entries"]))
+        self.assertIn("commit", ident)
+        self.assertIn("tree_sha256", ident)

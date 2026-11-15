@@ -8,7 +8,7 @@ Autonomous AI data analyst agents require two core capabilities when interacting
 1. **Sandboxed Code & Command Execution**: Safely filtering, grouping, projecting, and transforming tabular datasets without executing arbitrary unvetted shell scripts or system processes.
 2. **Token-Efficient Context Summarization**: Compressing high-dimensional tables into structured, dense Markdown schema summaries that fit comfortably within LLM context windows.
 
-`SwiftAgent` provides ``SwiftAgentEvaluator`` and ``RAGContextGenerator`` to bridge on-device large language models (`SwiftLLM`) with the native performance of ``SwiftDataFrame``.
+`SwiftAgent` provides ``SwiftAgentEvaluator`` and ``RAGContextGenerator`` to bridge on-device large language models (`SwiftLLM`) with the native performance of [`SwiftDataFrame`](https://nodibell.github.io/SwiftSci/documentation/swiftdataframe/).
 
 ```mermaid
 graph TD

@@ -22,7 +22,12 @@ public actor SARIMAModel {
 
     private var series: [Double] = []
     private var diffSeries: [Double] = []
+    /// One-step-ahead in-sample fitted values on the original data scale (`count == series.count`).
+    /// Initial boundary indices `0..<(order.d + seasonalOrder.D * seasonalOrder.s)` retain seed observations;
+    /// for post-warmup indices `t`, `fittedValues[t] == series[t] - residuals[t - warmUp]`.
     public private(set) var fittedValues: [Double] = []
+    /// One-step-ahead conditional innovations (`count == series.count - (order.d + seasonalOrder.D * seasonalOrder.s)`),
+    /// aligned so that `residuals[t - warmUp] == series[t] - fittedValues[t]` for `t >= warmUp`.
     public private(set) var residuals: [Double] = []
     public private(set) var isFitted: Bool = false
 
@@ -50,16 +55,39 @@ public actor SARIMAModel {
         self.seasonalOrder = (P, D, Q, s)
     }
 
+    private func resetFittedState() {
+        self.isFitted = false
+        self.arCoefficients = []
+        self.maCoefficients = []
+        self.seasonalArCoefficients = []
+        self.seasonalMaCoefficients = []
+        self.intercept = 0.0
+        self.series = []
+        self.diffSeries = []
+        self.fittedValues = []
+        self.residuals = []
+    }
+
     /// Fits the SARIMA model to the given time series using two-stage conditional least squares
     /// with multiplicative polynomial cross-term refinement.
     ///
     /// - Parameter series: Array of historical numerical observations.
-    /// - Throws: `ForecastError` if series contains NaNs/Infs, is empty, or has insufficient length.
+    /// - Throws: `ForecastError` if series contains NaNs/Infs, is empty, has insufficient length,
+    ///   yields non-invertible moving-average polynomials, or produces non-finite residuals/fitted values.
     public func fit(series: [Double]) throws {
+        resetFittedState()
+        do {
+            try performFit(series: series)
+        } catch {
+            resetFittedState()
+            throw error
+        }
+    }
+
+    private func performFit(series: [Double]) throws {
         let n = series.count
         guard n > 0 else { throw ForecastError.emptyTimeSeries }
-        if series.contains(where: { $0.isNaN }) { throw ForecastError.containsNaN }
-        if series.contains(where: { $0.isInfinite }) { throw ForecastError.containsInfinity }
+        try ForecastValidation.ensureFinite(series)
 
         let s = seasonalOrder.s
         let maxLag = Swift.max(order.p + seasonalOrder.P * s, order.q + seasonalOrder.Q * s)
@@ -88,6 +116,7 @@ public actor SARIMAModel {
             }
             current = diff
         }
+        try ForecastValidation.ensureFinite(current)
         self.diffSeries = current
 
         let nDiff = diffSeries.count
@@ -96,15 +125,18 @@ public actor SARIMAModel {
         let minDiff = diffSeries.min() ?? 0.0
         let maxDiff = diffSeries.max() ?? 0.0
         if abs(maxDiff - minDiff) < 1e-12 {
+            try ForecastValidation.ensureFinite(minDiff)
+            let diffFitted = [Double](repeating: minDiff, count: nDiff)
+            let diffResiduals = [Double](repeating: 0.0, count: nDiff)
+            let integratedFitted = try integrate(fittedDiff: diffFitted, original: series, d: order.d, D: seasonalOrder.D, s: s)
+            try ForecastValidation.ensureFinite(integratedFitted)
             self.intercept = minDiff
             self.arCoefficients = [Double](repeating: 0.0, count: order.p)
             self.seasonalArCoefficients = [Double](repeating: 0.0, count: seasonalOrder.P)
             self.maCoefficients = [Double](repeating: 0.0, count: order.q)
             self.seasonalMaCoefficients = [Double](repeating: 0.0, count: seasonalOrder.Q)
-            let diffFitted = [Double](repeating: minDiff, count: nDiff)
-            let diffResiduals = [Double](repeating: 0.0, count: nDiff)
             self.residuals = diffResiduals
-            self.fittedValues = try integrate(fittedDiff: diffFitted, original: series, d: order.d, D: seasonalOrder.D, s: s)
+            self.fittedValues = integratedFitted
             self.isFitted = true
             return
         }
@@ -124,6 +156,7 @@ public actor SARIMAModel {
             }
             estResiduals[t] = diffSeries[t] - val
         }
+        try ForecastValidation.ensureFinite(estResiduals)
 
         // 3. Conditional Least Squares with Multiplicative Polynomial Terms
         let startIdx = Swift.max(maxLag, 1)
@@ -221,18 +254,20 @@ public actor SARIMAModel {
                     yAdjusted[i] = diffSeries[t] + crossAR - crossMA
                 }
 
-                if let refined = try? solveLeastSquares(X: XMat, y: yAdjusted, rows: numSamples, cols: numCoeffs) {
+                if yAdjusted.allSatisfy(\.isFinite),
+                   let refined = try? solveLeastSquares(X: XMat, y: yAdjusted, rows: numSamples, cols: numCoeffs) {
                     coeffs = refined
                     (curIntercept, curAR, curSAR, curMA, curSMA) = extractCoefficients(coeffs)
                 }
             }
         }
 
-        self.intercept = curIntercept
-        self.arCoefficients = curAR
-        self.seasonalArCoefficients = curSAR
-        self.maCoefficients = curMA
-        self.seasonalMaCoefficients = curSMA
+        try ForecastValidation.ensureFinite(curIntercept)
+        try ForecastValidation.ensureFinite(curAR)
+        try ForecastValidation.ensureFinite(curSAR)
+        try ForecastValidation.ensureFinite(curMA)
+        try ForecastValidation.ensureFinite(curSMA)
+        try ForecastValidation.ensureMAInvertible(ma: curMA, seasonalMA: curSMA)
 
         // 4. In-sample multi-lag multiplicative recursion to produce fitted values and residuals
         var diffFitted = [Double](repeating: 0.0, count: nDiff)
@@ -252,30 +287,42 @@ public actor SARIMAModel {
                     q: order.q,
                     Q: seasonalOrder.Q,
                     s: s,
-                    ar: arCoefficients,
-                    sar: seasonalArCoefficients,
-                    ma: maCoefficients,
-                    sma: seasonalMaCoefficients,
-                    intercept: intercept
+                    ar: curAR,
+                    sar: curSAR,
+                    ma: curMA,
+                    sma: curSMA,
+                    intercept: curIntercept
                 )
                 diffFitted[t] = pred
                 diffResiduals[t] = diffSeries[t] - pred
             }
         }
 
+        try ForecastValidation.ensureFinite(diffFitted)
+        try ForecastValidation.ensureFinite(diffResiduals)
+        let integratedFitted = try integrate(fittedDiff: diffFitted, original: series, d: order.d, D: seasonalOrder.D, s: s)
+        try ForecastValidation.ensureFinite(integratedFitted)
+
+        self.intercept = curIntercept
+        self.arCoefficients = curAR
+        self.seasonalArCoefficients = curSAR
+        self.maCoefficients = curMA
+        self.seasonalMaCoefficients = curSMA
         self.residuals = diffResiduals
-        self.fittedValues = try integrate(fittedDiff: diffFitted, original: series, d: order.d, D: seasonalOrder.D, s: s)
+        self.fittedValues = integratedFitted
         self.isFitted = true
     }
 
     /// Forecasts `steps` periods ahead using the full multiplicative SARIMA operator.
     ///
     /// - Parameter steps: Number of future time steps to forecast. Must be at least 1.
-    /// - Throws: `ForecastError.notFitted` if unfitted, or `ForecastError.invalidHorizon` if steps < 1.
+    /// - Throws: `ForecastError.notFitted` if unfitted, `ForecastError.invalidHorizon` if steps < 1,
+    ///   or `ForecastError.containsNaN` / `ForecastError.containsInfinity` if the extrapolation becomes non-finite.
     /// - Returns: Array of forecasted future values in the original series scale.
     public func forecast(steps: Int) throws -> [Double] {
         guard isFitted else { throw ForecastError.notFitted }
         guard steps >= 1 else { throw ForecastError.invalidHorizon(steps) }
+        try ForecastValidation.ensureFinite(residuals)
 
         let s = seasonalOrder.s
         var fcDiff = [Double](repeating: 0.0, count: steps)
@@ -304,35 +351,45 @@ public actor SARIMAModel {
             historyResiduals.append(0.0) // future residuals are zero in expectation
         }
 
-        return try integrate(fittedDiff: fcDiff, original: series, d: order.d, D: seasonalOrder.D, s: s, isForecast: true)
+        try ForecastValidation.ensureFinite(fcDiff)
+        let integrated = try integrate(fittedDiff: fcDiff, original: series, d: order.d, D: seasonalOrder.D, s: s, isForecast: true)
+        try ForecastValidation.ensureFinite(integrated)
+        return integrated
     }
 
     /// Computes the Akaike Information Criterion (AIC) for the fitted SARIMA model.
     ///
-    /// - Throws: `ForecastError.notFitted` if model has not been fitted.
+    /// - Throws: `ForecastError.notFitted` if model has not been fitted, or
+    ///   `ForecastError.containsNaN` / `ForecastError.containsInfinity` if residuals or criterion are non-finite.
     /// - Returns: AIC score as a `Double`.
     public func aic() throws -> Double {
-        guard isFitted else { throw ForecastError.notFitted }
-        let validResiduals = residuals.filter { $0.isFinite }
-        guard !validResiduals.isEmpty else { return Double.infinity }
-        let mse = vDSP.sumOfSquares(validResiduals) / Double(validResiduals.count)
-        let k = Double(1 + order.p + order.q + seasonalOrder.P + seasonalOrder.Q)
-        let n = Double(validResiduals.count)
-        return 2.0 * k + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+        let (mse, k, n) = try informationCriterionInputs()
+        let score = 2.0 * k + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+        try ForecastValidation.ensureFinite(score)
+        return score
     }
 
     /// Computes the Bayesian Information Criterion (BIC) for the fitted SARIMA model.
     ///
-    /// - Throws: `ForecastError.notFitted` if model has not been fitted.
+    /// - Throws: `ForecastError.notFitted` if model has not been fitted, or
+    ///   `ForecastError.containsNaN` / `ForecastError.containsInfinity` if residuals or criterion are non-finite.
     /// - Returns: BIC score as a `Double`.
     public func bic() throws -> Double {
+        let (mse, k, n) = try informationCriterionInputs()
+        let score = k * log(n) + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+        try ForecastValidation.ensureFinite(score)
+        return score
+    }
+
+    private func informationCriterionInputs() throws -> (mse: Double, k: Double, n: Double) {
         guard isFitted else { throw ForecastError.notFitted }
-        let validResiduals = residuals.filter { $0.isFinite }
-        guard !validResiduals.isEmpty else { return Double.infinity }
-        let mse = vDSP.sumOfSquares(validResiduals) / Double(validResiduals.count)
+        try ForecastValidation.ensureFinite(residuals)
+        guard !residuals.isEmpty else { throw ForecastError.insufficientLength(minimum: 1, got: 0) }
+        let n = Double(residuals.count)
+        let mse = vDSP.sumOfSquares(residuals) / n
+        try ForecastValidation.ensureFinite(mse)
         let k = Double(1 + order.p + order.q + seasonalOrder.P + seasonalOrder.Q)
-        let n = Double(validResiduals.count)
-        return k * log(n) + n * log(mse > 0 ? mse : 1e-15) + n * (1.0 + log(2.0 * Double.pi))
+        return (mse, k, n)
     }
 
     // MARK: - Private helper methods
@@ -464,7 +521,9 @@ public actor SARIMAModel {
             throw ForecastError.singularMatrix
         }
 
-        return Array(b[0..<cols])
+        let solution = Array(b[0..<cols])
+        try ForecastValidation.ensureFinite(solution)
+        return solution
     }
 
     private func integrate(
@@ -508,12 +567,11 @@ public actor SARIMAModel {
                     lastVal = val
                 }
             } else {
-                var lastVal = subLevelSeries[0]
-                reconstructed.append(lastVal)
-                for diffVal in current {
-                    let val = lastVal + diffVal
-                    reconstructed.append(val)
-                    lastVal = val
+                // Closed-loop one-step reconstruction from observed subLevelSeries[i]
+                reconstructed.reserveCapacity(subLevelSeries.count)
+                reconstructed.append(subLevelSeries[0])
+                for (i, diffVal) in current.enumerated() {
+                    reconstructed.append(subLevelSeries[i] + diffVal)
                 }
             }
             current = reconstructed
@@ -541,12 +599,13 @@ public actor SARIMAModel {
                     history.append(val)
                 }
             } else {
+                // Closed-loop seasonal one-step reconstruction from observed subLevelSeries[i]
+                reconstructed.reserveCapacity(subLevelSeries.count)
                 for i in 0..<Swift.min(s, subLevelSeries.count) {
                     reconstructed.append(subLevelSeries[i])
                 }
-                for i in 0..<current.count {
-                    let val = reconstructed[i] + current[i]
-                    reconstructed.append(val)
+                for (i, diffVal) in current.enumerated() {
+                    reconstructed.append(subLevelSeries[i] + diffVal)
                 }
             }
             current = reconstructed

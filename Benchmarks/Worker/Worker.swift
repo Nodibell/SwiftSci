@@ -66,6 +66,11 @@ import SwiftStats
         responseURL: URL(fileURLWithPath: CommandLine.arguments[3]))
       exit(status)
     }
+    if CommandLine.arguments.count == 4 && CommandLine.arguments[1] == "--scientific-suite" {
+      let status = await runScientificSuite(requestURL: URL(fileURLWithPath: CommandLine.arguments[2]),
+        responseURL: URL(fileURLWithPath: CommandLine.arguments[3]))
+      exit(status)
+    }
     guard CommandLine.arguments.count == 3 else {
       fputs("Expected request and response paths\n", stderr)
       exit(2)

@@ -4,6 +4,26 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.2] - 2026-11-16
+
+### Fixed
+
+- ARIMA/SARIMA reject non-finite intermediate results and invalid moving-average polynomials and clear fitted state after failed fits.
+- AutoARIMA uses the corrected coefficient convention in Schur–Cohn validation.
+- G-037 aligns one-step fitted values and innovations on the original scale. ARIMA and SARIMA use observed levels to reverse differencing. ARIMAX includes the exogenous component.
+
+### Benchmarks and documentation
+
+- Replaced retired research runners with the standardized harness and scientific validation suite. Provenance regression tests use isolated Git repositories.
+- Verified 39 scientific workloads, three rolling-origin backtests and six benchmark campaigns. Added release-specific [performance](PERFORMANCE/3.13.2.md) and [accuracy](ACCURACY/3.13.2.md) reports.
+- Clarified SwiftStats sample moments and TreeSHAP scope and complexity. Updated the installation guide and Handbook.
+
+### Known limitations
+
+- Four pandas Wampler 4/5 comparator cases failed their original tolerances. SwiftSci passed all 202 CPU acceptance executions.
+- Conditional external Llama tokenizer and MLX checkpoint parity checks were skipped.
+- Gradient-boosted tree regressors (G-035) and class-targeted probability TreeSHAP (G-036) remain deferred.
+
 ## [3.13.1] - 2026-11-14
 
 ### Native Model Support (`SwiftLLM`, `SwiftNLP`)

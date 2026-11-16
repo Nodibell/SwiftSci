@@ -39,8 +39,11 @@ def load_policy(root):
 
 
 def contract_identity(root):
-    names = subprocess.check_output(['git', '-C', str(root), 'ls-files'], text=True).splitlines()
-    return identity({name: digest((root / name).read_bytes()) for name in names
+    names = subprocess.check_output(
+        ['git', '-C', str(root), 'ls-files', '--cached', '--others', '--exclude-standard'],
+        text=True,
+    ).splitlines()
+    return identity({name: digest((root / name).read_bytes()) for name in sorted(set(names))
                      if name.startswith(('Benchmarks/Specs/', 'Benchmarks/Fixtures/')) and (root / name).is_file()})
 
 

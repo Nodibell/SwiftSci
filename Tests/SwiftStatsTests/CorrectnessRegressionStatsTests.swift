@@ -201,4 +201,41 @@ struct CorrectnessRegressionStatsTests {
         #expect(throws: StatsError.self) { try Stats.kolmogorovSmirnov([1, 2, 3, 4, .nan]) }
         #expect(throws: StatsError.self) { try Stats.shapiroWilk(Array(repeating: 1.0, count: 5001).enumerated().map { Double($0.offset) }) }
     }
+
+    @Test("Stats.skewness and Stats.kurtosis preserve ddof=1 denominator behavior and reject invalid inputs")
+    func skewnessAndKurtosisNumericalContracts() throws {
+        // Canonical small symmetric sample: preserves v3.13.x ddof=1 denominator (-1.912 vs -1.3)
+        let base = [1.0, 2.0, 3.0, 4.0, 5.0]
+        #expect(abs(try Stats.skewness(base)) < 1e-15)
+        #expect(abs(try Stats.kurtosis(base) - (-1.912)) < 1e-12)
+
+        // Large constant offsets preserve precision
+        let shifted12 = base.map { 1e12 + $0 }
+        let shifted15 = base.map { 1e15 + $0 }
+        #expect(abs(try Stats.skewness(shifted12)) < 1e-12)
+        #expect(abs(try Stats.kurtosis(shifted12) - (-1.912)) < 1e-12)
+        #expect(abs(try Stats.skewness(shifted15)) < 1e-12)
+        #expect(abs(try Stats.kurtosis(shifted15) - (-1.912)) < 1e-12)
+
+        // Asymmetric series: exact agreement with (1/n)*sum((x-mu)^k)/s^k and describe()
+        let squares = (1...20).map { Double($0 * $0) }
+        let skewSq = try Stats.skewness(squares)
+        let kurtSq = try Stats.kurtosis(squares)
+        #expect(abs(skewSq - 0.5627062604150179) < 1e-12)
+        #expect(abs(kurtSq - (-1.1053953481264138)) < 1e-12)
+        let summary = try Stats.describe(squares)
+        #expect(summary.skewness == skewSq)
+        #expect(summary.kurtosis == kurtSq)
+
+        // Zero-variance input returns 0.0
+        #expect(try Stats.skewness([7.0, 7.0, 7.0, 7.0]) == 0.0)
+        #expect(try Stats.kurtosis([7.0, 7.0, 7.0, 7.0]) == 0.0)
+
+        // Input validation
+        #expect(throws: StatsError.emptyInput) { _ = try Stats.skewness([]) }
+        #expect(throws: StatsError.self) { _ = try Stats.skewness([1.0, 2.0]) }
+        #expect(throws: StatsError.self) { _ = try Stats.kurtosis([1.0, 2.0, 3.0]) }
+        #expect(throws: StatsError.containsNaN) { _ = try Stats.skewness([1.0, .nan, 3.0]) }
+        #expect(throws: StatsError.containsInfinity) { _ = try Stats.kurtosis([1.0, 2.0, .infinity, 4.0]) }
+    }
 }

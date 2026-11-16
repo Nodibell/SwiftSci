@@ -92,6 +92,13 @@ let seasonalForecast = try await sarima.forecast(horizon: 12)
 print("12-Month Ahead Forecast: \(seasonalForecast.pointForecasts)")
 ```
 
+### Fitted Values and Residual Alignment
+
+Both ``ARIMAModel`` and ``SARIMAModel`` expose original-scale in-sample predictions via `fittedValues` (`fittedValues.count == series.count`) and innovation residuals via `residuals` (`residuals.count == series.count - (d + D * s)`):
+
+- **Warmup indices (`0..<(d + D * s)`)**: `fittedValues[t]` preserves the initial observed value `series[t]` because full differencing history is unavailable before `t = d + D * s`.
+- **Post-warmup indices (`(d + D * s)..<series.count`)**: `fittedValues[t]` equals the **closed-loop one-step-ahead in-sample prediction** on the original scale computed using observed values up to `t - 1`, so `series[t] - fittedValues[t] == residuals[t - (d + D * s)]`.
+
 ---
 
 ## 3. Automated Order Selection (`AutoARIMA`)

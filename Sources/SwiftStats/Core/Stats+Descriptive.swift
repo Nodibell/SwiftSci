@@ -209,12 +209,17 @@ extension Stats {
         try probs.map { try percentile(values, q: $0, checkNaN: checkNaN) }
     }
 
-    /// Standardised third central moment (Fisher's definition).
+    /// Sample-standardized third central moment (moment skewness with sample standard deviation denominator).
+    ///
+    /// Computes \(\frac{\frac{1}{n}\sum_{i=1}^{n}(x_i - \bar{x})^3}{s^3}\), where \(s\) is the
+    /// sample standard deviation with `ddof = 1`. Because the numerator uses \(1/n\) while \(s\) uses
+    /// \(n - 1\), this differs from Fisher's population-moment skewness \(m_3 / m_2^{3/2}\) by a factor
+    /// of \(((n - 1) / n)^{3/2}\). Retained in `v3.13.x` for API compatibility.
     /// - Parameters:
     ///   - values: Numeric values array to be evaluated.
     ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
-    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
-    /// - Returns: Computed numerical scalar value.
+    /// - Throws: `StatsError` if input is empty, contains fewer than 3 observations, or contains NaNs/Infinities when `checkNaN` is `true`.
+    /// - Returns: Computed numerical scalar value (returns `0` when sample variance is `0`).
     public static func skewness(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values, minimum: 3)
         if checkNaN { try requireNoNaN(values) }
@@ -228,12 +233,18 @@ extension Stats {
         return m3 / (s * s * s)
     }
 
-    /// Excess kurtosis (Fisher's definition, normal distribution = 0).
+    /// Sample-standardized excess kurtosis (fourth central moment normalized by `ddof = 1` variance squared, minus `3`).
+    ///
+    /// Computes \(\frac{\frac{1}{n}\sum_{i=1}^{n}(x_i - \bar{x})^4}{s^4} - 3\), where \(s\) is the
+    /// sample standard deviation with `ddof = 1`. Because the numerator uses \(1/n\) while \(s\) uses
+    /// \(n - 1\), the fourth-moment ratio differs from Fisher's population-moment excess kurtosis
+    /// \(m_4 / m_2^2 - 3\) by \(((n - 1) / n)^2\) (for example, yielding `-1.912` rather than `-1.3`
+    /// on `[1, 2, 3, 4, 5]`). Retained in `v3.13.x` for API compatibility.
     /// - Parameters:
     ///   - values: Numeric values array to be evaluated.
     ///   - checkNaN: Flag indicating whether to validate and reject NaN/Infinite values.
-    /// - Throws: `StatsError` if input is empty, contains NaNs when forbidden, or dimensions mismatch.
-    /// - Returns: Computed numerical scalar value.
+    /// - Throws: `StatsError` if input is empty, contains fewer than 4 observations, or contains NaNs/Infinities when `checkNaN` is `true`.
+    /// - Returns: Computed numerical scalar value (returns `0` when sample variance is `0`).
     public static func kurtosis(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values, minimum: 4)
         if checkNaN { try requireNoNaN(values) }

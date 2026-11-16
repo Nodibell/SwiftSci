@@ -19,20 +19,28 @@ public struct TreeSHAPExplanation: Sendable, Codable, Equatable {
     }
 }
 
-/// TreeSHAP (Tree Shapley Additive Explanations) for decision trees and tree ensembles
-/// (Lundberg et al., 2018; Nature Machine Intelligence).
+/// TreeSHAP (Tree Shapley Additive Explanations) for decision trees and random forests
+/// (path-dependent formulation following Lundberg et al., 2018; Nature Machine Intelligence).
 ///
-/// The value function is the *path-dependent* conditional expectation over the tree's own sample
-/// weights (not a full observational conditional expectation).
+/// The value function is the *path-dependent* conditional expectation over each tree's leaves
+/// using uniform leaf weight `1.0` (`FlatTreeNode` does not store training sample `cover` in `v3.13.x`).
 ///
 /// - Exact: a tree that splits on `K <= maxExactFeatures` (12) distinct features is solved by
-///   enumerating all `2^K` coalitions, which yields the exact Shapley values.
+///   enumerating all `2^K` coalitions in `O(2^K * L)` time, which yields the exact Shapley values.
 /// - Approximate: for `K > maxExactFeatures` the values are Monte-Carlo estimates from
 ///   `approximationSamples` (2048) random feature permutations drawn from a seeded generator
 ///   (`permutationSeed`, default 42), so results are reproducible but carry sampling error.
 ///   Every permutation telescopes to `f(x) - E[f(X)]`, so the estimate satisfies the efficiency
 ///   axiom up to floating-point rounding; this does not make individual attributions exact.
 ///   Use ``isExact(tree:numFeatures:)`` to see which branch a tree takes.
+///
+/// ### Deferred Limitations (`v3.13.x`)
+/// - **G-035 (`GradientBoostedTreesRegressor`)**: No GBDT overload is provided in `v3.13.x`
+///   (`explainDetailed(trees:)` averages uniformly by `1/T` rather than applying
+///   `initialPrediction + learningRate * sum_m T_m(x)`). Deferred to a future release.
+/// - **G-036 (Classification)**: Classifiers explain the scalar `FlatTreeNode.value` class code with
+///   uniform `1.0` leaf weights rather than empirical `cover` or per-class `predictProbability`
+///   distributions. Deferred to a future release.
 ///
 /// Efficiency axiom:
 /// \[
@@ -382,6 +390,10 @@ public struct TreeSHAP: Sendable {
     // MARK: - Integration with SwiftML Tree Models
 
     /// Computes TreeSHAP for a `DecisionTreeClassifier`.
+    ///
+    /// - Note: In `v3.13.x`, classifier TreeSHAP attributes the scalar `FlatTreeNode.value`
+    ///   class code using uniform `1.0` leaf weights rather than `FlatTreeNode.cover` or
+    ///   per-class `predictProbability` distributions (**G-036**, deferred to a future release).
     public func explain(decisionTree: DecisionTreeClassifier, instance: [Double]) async -> [Double] {
         let nodes = await decisionTree.flatNodes
         return explain(tree: nodes, instance: instance, numFeatures: instance.count)
@@ -394,6 +406,10 @@ public struct TreeSHAP: Sendable {
     }
 
     /// Computes TreeSHAP for a `RandomForestClassifier`.
+    ///
+    /// - Note: In `v3.13.x`, classifier TreeSHAP averages scalar `FlatTreeNode.value` class codes
+    ///   across trees with uniform `1.0` leaf weights rather than per-class `predictProbability`
+    ///   vote fractions (**G-036**, deferred to a future release).
     public func explain(randomForest: RandomForestClassifier, instance: [Double]) async -> [Double] {
         let flatTrees = await randomForest.flatTrees
         return explain(trees: flatTrees, instance: instance, numFeatures: instance.count)

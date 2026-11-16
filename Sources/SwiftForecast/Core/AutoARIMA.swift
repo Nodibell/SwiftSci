@@ -226,29 +226,49 @@ public actor AutoARIMA {
 
     // MARK: - Stationarity & Invertibility Checks
 
-    /// Verifies whether an AR or MA polynomial is stable/invertible (roots strictly outside the unit circle)
-    /// using the Schur-Cohn / Levinson-Durbin step-down reflection coefficient recursion.
+    /// Verifies whether an AR polynomial \(1 - \sum_{k=1}^{p} a_k B^k\) is stationary/stable
+    /// (all roots strictly outside the unit circle) using the Schur-Cohn / Levinson-Durbin
+    /// step-down reflection coefficient recursion.
     public static func isPolynomialStable(coefficients: [Double]) -> Bool {
         guard !coefficients.isEmpty else { return true }
+        guard coefficients.allSatisfy(\.isFinite) else { return false }
         var a = coefficients
         var p = a.count
         while p > 0 {
             let r = a[p - 1]
-            if abs(r) >= 1.0 - 1e-7 {
+            if !r.isFinite || abs(r) >= 1.0 - 1e-7 {
                 return false
             }
             let denom = 1.0 - r * r
-            if denom <= 1e-15 {
+            if !denom.isFinite || denom <= 1e-15 {
                 return false
             }
             var nextA = [Double](repeating: 0.0, count: p - 1)
             for j in 0..<(p - 1) {
-                nextA[j] = (a[j] + r * a[p - 2 - j]) / denom
+                let nextVal = (a[j] + r * a[p - 2 - j]) / denom
+                guard nextVal.isFinite else { return false }
+                nextA[j] = nextVal
             }
             a = nextA
             p -= 1
         }
         return true
+    }
+
+    /// Verifies whether an MA polynomial \(1 + \sum_{k=1}^{q} \theta_k B^k\) is invertible
+    /// (all roots strictly outside the unit circle) by negating the coefficients to match the
+    /// \(1 - \sum a_k B^k\) sign convention of ``isPolynomialStable(coefficients:)``.
+    internal static func isMAPolynomialInvertible(coefficients: [Double]) -> Bool {
+        isPolynomialStable(coefficients: coefficients.map(-))
+    }
+
+    private func resetFittedState() {
+        self.bestOrder = nil
+        self.bestScore = nil
+        self.leaderboard = []
+        self.fittedModel = nil
+        self.fittedSARIMAModel = nil
+        self.fittedSeries = []
     }
 
     // MARK: - Public Methods
@@ -271,26 +291,43 @@ public actor AutoARIMA {
     /// - Returns: An `ARIMAResult` containing the winning model's in-sample fit and diagnostics.
     /// - Throws: `ForecastError` if series is too short or all candidate configurations fail to converge.
     public func fit(series: [Double], exog: [[Double]]? = nil) async throws -> ARIMAResult {
+        resetFittedState()
+        do {
+            return try await performFit(series: series, exog: exog)
+        } catch {
+            resetFittedState()
+            throw error
+        }
+    }
+
+    private func performFit(series: [Double], exog: [[Double]]? = nil) async throws -> ARIMAResult {
         guard !series.isEmpty else { throw ForecastError.emptyTimeSeries }
         if seasonal && seasonalPeriod > 1 && exog != nil && !exog!.isEmpty {
             throw ForecastError.invalidParameter("Seasonal AutoARIMA with exogenous regressors (SARIMAX) is currently unsupported. Omit 'exog' or set 'seasonal: false' for ARIMAX.")
         }
-        self.fittedSeries = series
+        try ForecastValidation.ensureFinite(series)
+        if let exog {
+            for row in exog {
+                try ForecastValidation.ensureFinite(row)
+            }
+        }
 
         // Zero-variance guard: if the series is constant, fit trivial ARIMA(0, 0, 0)
         let minVal = series.min() ?? 0.0
         let maxVal = series.max() ?? 0.0
         if abs(maxVal - minVal) < 1e-12 {
             let zeroOrder = AutoARIMAOrder(p: 0, d: 0, q: 0)
+            let model = try ARIMAModel(p: 0, d: 0, q: 0)
+            try await model.fit(series: series, exog: exog)
+            let forecastExog = exog.flatMap { matrix in matrix.last.map { [$0] } }
+            let result = try await model.forecast(horizon: 1, exog: forecastExog)
             self.bestOrder = zeroOrder
             self.bestScore = 0.0
             self.leaderboard = [(zeroOrder.description, 0.0)]
-            let model = try ARIMAModel(p: 0, d: 0, q: 0)
-            try await model.fit(series: series, exog: exog)
+            self.fittedSeries = series
             self.fittedModel = model
             self.fittedSARIMAModel = nil
-            let forecastExog = exog.flatMap { matrix in matrix.last.map { [$0] } }
-            return try await model.forecast(horizon: 1, exog: forecastExog)
+            return result
         }
 
         // Generate candidate orders
@@ -365,9 +402,9 @@ public actor AutoARIMA {
                             let sMaCoeffs = await model.seasonalMaCoefficients
 
                             guard AutoARIMA.isPolynomialStable(coefficients: arCoeffs),
-                                  AutoARIMA.isPolynomialStable(coefficients: maCoeffs),
+                                  AutoARIMA.isMAPolynomialInvertible(coefficients: maCoeffs),
                                   AutoARIMA.isPolynomialStable(coefficients: sArCoeffs),
-                                  AutoARIMA.isPolynomialStable(coefficients: sMaCoeffs) else {
+                                  AutoARIMA.isMAPolynomialInvertible(coefficients: sMaCoeffs) else {
                                 return nil
                             }
 
@@ -385,7 +422,7 @@ public actor AutoARIMA {
                             let maCoeffs = await model.maCoefficients
 
                             guard AutoARIMA.isPolynomialStable(coefficients: arCoeffs),
-                                  AutoARIMA.isPolynomialStable(coefficients: maCoeffs) else {
+                                  AutoARIMA.isMAPolynomialInvertible(coefficients: maCoeffs) else {
                                 return nil
                             }
 
@@ -424,12 +461,9 @@ public actor AutoARIMA {
 
         // Sort: lower AIC/BIC is superior
         let sorted = evaluated.sorted { $0.score < $1.score }
-        self.leaderboard = sorted.map { ($0.order.description, $0.score) }
+        let leaderboardEntries = sorted.map { ($0.order.description, $0.score) }
 
         let winner = sorted.first!
-        self.bestOrder = winner.order
-        self.bestScore = winner.score
-
         let isSeasonalWinner = winner.order.s > 1 && (winner.order.P > 0 || winner.order.D > 0 || winner.order.Q > 0)
         if isSeasonalWinner {
             let winningModel = try SARIMAModel(
@@ -442,44 +476,26 @@ public actor AutoARIMA {
                 s: winner.order.s
             )
             try await winningModel.fit(series: series)
+            let result = try await buildSARIMAResult(model: winningModel, horizon: 1)
+            self.bestOrder = winner.order
+            self.bestScore = winner.score
+            self.leaderboard = leaderboardEntries
+            self.fittedSeries = series
             self.fittedSARIMAModel = winningModel
             self.fittedModel = nil
-
-            let preds = try await winningModel.forecast(steps: 1)
-            let aicVal = (try? await winningModel.aic()) ?? 0.0
-            let res = await winningModel.residuals
-            let fittedVals = await winningModel.fittedValues
-            let validRes = res.filter { $0.isFinite }
-            let mseVal = validRes.isEmpty ? 0.0 : (vDSP.sumOfSquares(validRes) / Double(validRes.count))
-            let maeVal = validRes.isEmpty ? 0.0 : (validRes.reduce(0.0) { $0 + abs($1) } / Double(validRes.count))
-
-            let forecastResult = ForecastResult(
-                predictions: preds,
-                lowerBound: nil,
-                upperBound: nil,
-                fittedValues: fittedVals,
-                residuals: res,
-                aic: aicVal,
-                mse: mseVal,
-                mae: maeVal
-            )
-            return ARIMAResult(
-                order: (winner.order.p, winner.order.d, winner.order.q),
-                seasonalOrder: (winner.order.P, winner.order.D, winner.order.Q, winner.order.s),
-                arCoefficients: await winningModel.arCoefficients,
-                maCoefficients: await winningModel.maCoefficients,
-                intercept: await winningModel.intercept,
-                exogCoefficients: [],
-                forecast: forecastResult
-            )
+            return result
         } else {
             let winningModel = try ARIMAModel(p: winner.order.p, d: winner.order.d, q: winner.order.q)
             try await winningModel.fit(series: series, exog: exog)
+            let forecastExog = exog.flatMap { matrix in matrix.last.map { [$0] } }
+            let result = try await winningModel.forecast(horizon: 1, exog: forecastExog)
+            self.bestOrder = winner.order
+            self.bestScore = winner.score
+            self.leaderboard = leaderboardEntries
+            self.fittedSeries = series
             self.fittedModel = winningModel
             self.fittedSARIMAModel = nil
-
-            let forecastExog = exog.flatMap { matrix in matrix.last.map { [$0] } }
-            return try await winningModel.forecast(horizon: 1, exog: forecastExog)
+            return result
         }
     }
 
@@ -496,39 +512,45 @@ public actor AutoARIMA {
     public func forecast(horizon: Int, exog: [[Double]]? = nil) async throws -> ARIMAResult {
         if let sarima = fittedSARIMAModel {
             guard horizon >= 1 else { throw ForecastError.invalidHorizon(horizon) }
-            let preds = try await sarima.forecast(steps: horizon)
-            let order = sarima.order
-            let sOrder = sarima.seasonalOrder
-            let aicVal = (try? await sarima.aic()) ?? 0.0
-            let res = await sarima.residuals
-            let fittedVals = await sarima.fittedValues
-            let validRes = res.filter { $0.isFinite }
-            let mseVal = validRes.isEmpty ? 0.0 : (vDSP.sumOfSquares(validRes) / Double(validRes.count))
-            let maeVal = validRes.isEmpty ? 0.0 : (validRes.reduce(0.0) { $0 + abs($1) } / Double(validRes.count))
-
-            let forecastResult = ForecastResult(
-                predictions: preds,
-                lowerBound: nil,
-                upperBound: nil,
-                fittedValues: fittedVals,
-                residuals: res,
-                aic: aicVal,
-                mse: mseVal,
-                mae: maeVal
-            )
-            return ARIMAResult(
-                order: order,
-                seasonalOrder: sOrder,
-                arCoefficients: await sarima.arCoefficients,
-                maCoefficients: await sarima.maCoefficients,
-                intercept: await sarima.intercept,
-                exogCoefficients: [],
-                forecast: forecastResult
-            )
+            return try await buildSARIMAResult(model: sarima, horizon: horizon)
         } else if let model = fittedModel {
             return try await model.forecast(horizon: horizon, exog: exog)
         } else {
             throw ForecastError.notFitted
         }
+    }
+
+    private func buildSARIMAResult(model: SARIMAModel, horizon: Int) async throws -> ARIMAResult {
+        let preds = try await model.forecast(steps: horizon)
+        let aicVal = try await model.aic()
+        let res = await model.residuals
+        let fittedVals = await model.fittedValues
+        try ForecastValidation.ensureFinite(preds)
+        try ForecastValidation.ensureFinite(res)
+        try ForecastValidation.ensureFinite(fittedVals)
+        let mseVal = res.isEmpty ? 0.0 : (vDSP.sumOfSquares(res) / Double(res.count))
+        let maeVal = res.isEmpty ? 0.0 : (res.reduce(0.0) { $0 + abs($1) } / Double(res.count))
+        try ForecastValidation.ensureFinite(mseVal)
+        try ForecastValidation.ensureFinite(maeVal)
+
+        let forecastResult = ForecastResult(
+            predictions: preds,
+            lowerBound: nil,
+            upperBound: nil,
+            fittedValues: fittedVals,
+            residuals: res,
+            aic: aicVal,
+            mse: mseVal,
+            mae: maeVal
+        )
+        return ARIMAResult(
+            order: model.order,
+            seasonalOrder: model.seasonalOrder,
+            arCoefficients: await model.arCoefficients,
+            maCoefficients: await model.maCoefficients,
+            intercept: await model.intercept,
+            exogCoefficients: [],
+            forecast: forecastResult
+        )
     }
 }

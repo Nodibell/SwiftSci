@@ -6,6 +6,20 @@ import re
 from contracts import fields, load_profile, load_workload, read_json, require
 
 INVENTORY_PATH = "Benchmarks/Specs/legacy-inventory.json"
+LEGACY_DISCOVERY_SOURCES = [
+    "Benchmarks/Swift",
+    "Benchmarks/Python/benchmarks.py",
+    "Benchmarks/Python/accuracy_benchmarks.py",
+]
+LEGACY_RETIRED_PATHS = [
+    *LEGACY_DISCOVERY_SOURCES,
+    "Benchmarks/Python/compare.py",
+    "Benchmarks/generate_fixtures.py",
+    "Benchmarks/CSVAcceleration",
+    "python_accuracy.json",
+    "Benchmarks/Results/python_results.json",
+    "Benchmarks/Results/swift_results.json",
+]
 EXPERIMENTAL_REFERENCES = [
     {
         "id": "kiraa",
@@ -19,62 +33,82 @@ EXPERIMENTAL_REFERENCES = [
 ]
 
 
+def has_active_legacy_sources(root):
+    """Return True when legacy registration files exist under root."""
+    return any((root / rel).exists() for rel in LEGACY_DISCOVERY_SOURCES)
+
+
+def retired_legacy_stragglers(root):
+    """List retired legacy benchmark paths that still exist under root."""
+    return [rel for rel in LEGACY_RETIRED_PATHS if (root / rel).exists()]
+
+
 def discover(root):
     """Read registrations without importing optional legacy dependencies."""
+    if not has_active_legacy_sources(root):
+        return []
     found = []
-    for path in sorted((root / "Benchmarks/Swift").glob("*Benchmarks.swift")):
-        source = str(path.relative_to(root))
-        text = path.read_text()
-        calls = list(re.finditer(r"BenchmarkRunner\.run\s*\(", text))
-        names = re.findall(r'BenchmarkRunner\.run\s*\(\s*name:\s*"([^"\n]+)"', text)
-        require(len(calls) == len(names), f"Unrecognized Swift registration: {source}")
-        found.extend({"source": source, "name": n, "kind": "timed"} for n in names)
+    swift_dir = root / "Benchmarks/Swift"
+    if swift_dir.exists():
+        for path in sorted(swift_dir.glob("*Benchmarks.swift")):
+            source = str(path.relative_to(root))
+            text = path.read_text()
+            calls = list(re.finditer(r"BenchmarkRunner\.run\s*\(", text))
+            names = re.findall(r'BenchmarkRunner\.run\s*\(\s*name:\s*"([^"\n]+)"', text)
+            require(len(calls) == len(names), f"Unrecognized Swift registration: {source}")
+            found.extend({"source": source, "name": n, "kind": "timed"} for n in names)
     source = "Benchmarks/Python/benchmarks.py"
-    for node in ast.walk(ast.parse((root / source).read_text())):
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == "run_benchmark"
-        ):
-            name = (
-                node.args[0]
-                if node.args
-                else next((k.value for k in node.keywords if k.arg == "name"), None)
-            )
-            require(
-                isinstance(name, ast.Constant) and isinstance(name.value, str),
-                "Dynamic Python benchmark name",
-            )
-            found.append({"source": source, "name": name.value, "kind": "timed"})
+    benchmarks_py = root / source
+    if benchmarks_py.exists():
+        for node in ast.walk(ast.parse(benchmarks_py.read_text())):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "run_benchmark"
+            ):
+                name = (
+                    node.args[0]
+                    if node.args
+                    else next((k.value for k in node.keywords if k.arg == "name"), None)
+                )
+                require(
+                    isinstance(name, ast.Constant) and isinstance(name.value, str),
+                    "Dynamic Python benchmark name",
+                )
+                found.append({"source": source, "name": name.value, "kind": "timed"})
     source = "Benchmarks/Python/accuracy_benchmarks.py"
-    for node in ast.walk(ast.parse((root / source).read_text())):
-        if isinstance(node, ast.Assign):
-            for target in node.targets:
-                if (
-                    isinstance(target, ast.Subscript)
-                    and isinstance(target.value, ast.Name)
-                    and target.value.id == "results"
-                ):
-                    require(
-                        isinstance(target.slice, ast.Constant)
-                        and isinstance(target.slice.value, str),
-                        "Dynamic accuracy result key",
-                    )
-                    found.append(
-                        {
-                            "source": source,
-                            "name": target.slice.value,
-                            "kind": "accuracy-result",
-                        }
-                    )
+    accuracy_py = root / source
+    if accuracy_py.exists():
+        for node in ast.walk(ast.parse(accuracy_py.read_text())):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if (
+                        isinstance(target, ast.Subscript)
+                        and isinstance(target.value, ast.Name)
+                        and target.value.id == "results"
+                    ):
+                        require(
+                            isinstance(target.slice, ast.Constant)
+                            and isinstance(target.slice.value, str),
+                            "Dynamic accuracy result key",
+                        )
+                        found.append(
+                            {
+                                "source": source,
+                                "name": target.slice.value,
+                                "kind": "accuracy-result",
+                            }
+                        )
     source = "Benchmarks/Swift/AccuracyBenchmarks.swift"
-    text = (root / source).read_text()
-    for name, pattern in [
-        ("Student t-test", r"Stats\.tTest\([^\n]*equalVariances:\s*true"),
-        ("Paired t-test", r"Stats\.pairedTTest\("),
-    ]:
-        if re.search(pattern, text):
-            found.append({"source": source, "name": name, "kind": "untimed-diagnostic"})
+    accuracy_swift = root / source
+    if accuracy_swift.exists():
+        text = accuracy_swift.read_text()
+        for name, pattern in [
+            ("Student t-test", r"Stats\.tTest\([^\n]*equalVariances:\s*true"),
+            ("Paired t-test", r"Stats\.pairedTTest\("),
+        ]:
+            if re.search(pattern, text):
+                found.append({"source": source, "name": name, "kind": "untimed-diagnostic"})
     keys = [(x["source"], x["name"]) for x in found]
     require(len(keys) == len(set(keys)), "Duplicate legacy registration")
     return sorted(found, key=lambda x: (x["source"], x["name"]))
@@ -89,7 +123,23 @@ def reconcile(root, inventory=None):
         "Kiraa must remain an optional unofficial, known-buggy experimental reference, never an oracle or certification engine",
     )
     require(isinstance(inventory["entries"], list), "Inventory entries must be a list")
-    expected = {(x["source"], x["name"]): x["kind"] for x in discover(root)}
+    if has_active_legacy_sources(root):
+        expected = {(x["source"], x["name"]): x["kind"] for x in discover(root)}
+        legacy_sources_retired = False
+    else:
+        stragglers = retired_legacy_stragglers(root)
+        require(
+            not stragglers,
+            f"Retired legacy benchmark paths must remain removed: {stragglers}",
+        )
+        canonical = read_json(root / INVENTORY_PATH) if (root / INVENTORY_PATH).exists() else inventory
+        expected = {}
+        for entry in canonical["entries"]:
+            fields(entry, ["source", "name", "kind", "suite", "reason", "replacements"])
+            key = (entry["source"], entry["name"])
+            require(key not in expected, f"Duplicate canonical inventory entry: {key}")
+            expected[key] = entry["kind"]
+        legacy_sources_retired = True
     seen = set()
     workloads = set()
     for entry in inventory["entries"]:
@@ -152,4 +202,5 @@ def reconcile(root, inventory=None):
         ),
         "replacement_workloads": len(workloads),
         "experimental_references": inventory["experimental_references"],
+        "legacy_sources_retired": legacy_sources_retired,
     }

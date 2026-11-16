@@ -12,7 +12,7 @@ Explainable Artificial Intelligence (XAI) bridges the gap between predictive acc
 
 | Method | Supported Models | Algorithmic Complexity | Scope | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
-| **`TreeSHAP`** | Decision Trees, Random Forests, GBDT | `O(T · L · D²)` | Local & Global | **Recommended for all tree models.** Exact polynomial Shapley computation directly on flat nodes without sampling noise. |
+| **`TreeSHAP`** | `DecisionTreeClassifier`, `DecisionTreeRegressor`, `RandomForestClassifier`, `RandomForestRegressor` | `O(T · 2^K · L)` exact (`K ≤ 12`); `O(T · S · K · L)` seeded MC (`K > 12`, `S = 2048`) | Local & Global | **Exact for `K ≤ 12` distinct split features** using path-dependent uniform leaf weights (`1.0`). Does not support `GradientBoostedTreesRegressor` or per-class probability attributions in `v3.13.x`. |
 | **`KernelSHAP`** | Any black-box model (MLP, SVM, Ensembles) | `O(S · D²)` | Local | Universal Shapley attribution using weighted coalition sampling. |
 | **`LIME`** | Any black-box model (MLP, Vision, NLP) | `O(S · D)` | Local | **Fast local surrogate.** Fits an interpretable weighted linear model around perturbations. |
 | **`PermutationImportance`** | Any model | `O(D · N)` | Global | Fast global feature ranking by measuring validation loss degradation upon feature column shuffling. |
@@ -20,9 +20,13 @@ Explainable Artificial Intelligence (XAI) bridges the gap between predictive acc
 
 ---
 
-## 1. Exact TreeSHAP for Tree Ensembles
+## 1. Path-Dependent TreeSHAP for Decision Trees & Random Forests
 
-`TreeSHAP` traverses tree branches in polynomial time, calculating exact Shapley values without random coalition sampling:
+`TreeSHAP` evaluates path-dependent conditional expectations over each tree's leaves using uniform leaf weights (`1.0`). When a tree splits on `K ≤ TreeSHAP.maxExactFeatures` (`12`) distinct features, `TreeSHAP` enumerates all `2^K` coalitions in `O(2^K · L)` time to compute exact Shapley values; when `K > 12`, it switches to deterministic seeded Monte Carlo permutation sampling (`approximationSamples = 2048`):
+
+> Important: Known limitations in `v3.13.x` (deferred to a future release):
+> - **G-035 (`GradientBoostedTreesRegressor`)**: `TreeSHAP` does not provide a `GradientBoostedTreesRegressor` adapter in `v3.13.x` (`explainDetailed(trees:)` computes an unweighted `1/T` ensemble average rather than `initialPrediction + learningRate * sum_m T_m(x)`). Use ``KernelSHAP`` or ``LIMEExplainer`` for GBDT models.
+> - **G-036 (Classification & Leaf Weights)**: `FlatTreeNode` does not store training sample counts (`cover`), so `TreeSHAP` weights all leaves uniformly (`1.0`); `RandomForestClassifier` trees do not populate `classDistribution` on leaves, and `DecisionTreeClassifier.prune(alpha:)` clears `classDistribution` on collapsed nodes. Consequently, classifier `TreeSHAP` attributes the scalar `node.value` label code rather than per-class `predictProbability` distributions.
 
 ```swift
 import Foundation
@@ -33,14 +37,14 @@ import SwiftExplain
 let X = [[1.0, 2.0], [2.0, 1.0], [5.0, 4.0], [6.0, 5.0]]
 let y = [0, 0, 1, 1]
 
-let forest = try RandomForestClassifier(nTrees: 10, maxDepth: 4)
+let forest = try RandomForestClassifier(nEstimators: 10, maxDepth: 4)
 try await forest.fit(features: X, labels: y)
 
 // 2. Explain prediction on a target instance
 let treeSHAP = TreeSHAP()
 let instance = [5.5, 4.2]
 
-let shapValues = try await treeSHAP.explain(model: forest, instance: instance)
+let shapValues = await treeSHAP.explain(randomForest: forest, instance: instance)
 
 print("=== TreeSHAP Feature Attributions ===")
 for (featureIdx, attribution) in shapValues.enumerated() {

@@ -36,27 +36,39 @@ def command(args):
     return subprocess.check_output(args, text=True, stderr=subprocess.DEVNULL).strip()
 
 
+def tracked_and_untracked_files(root):
+    names = command(
+        ["git", "-C", str(root), "ls-files", "--cached", "--others", "--exclude-standard"]
+    ).splitlines()
+    return [name for name in sorted(set(names)) if (root / name).is_file()]
+
+
+def dirty_worktree_summary(root):
+    lines = command(["git", "-C", str(root), "status", "--porcelain"]).splitlines()
+    return sorted(line.strip() for line in lines if line.strip())
+
+
 def source_identity(root):
-    names = command(["git", "-C", str(root), "ls-files"]).splitlines()
+    names = tracked_and_untracked_files(root)
     sources = {
         name: digest((root / name).read_bytes())
         for name in names
-        if (root / name).is_file()
-        and (
-            name.startswith(
-                (
-                    "Sources/",
-                    "Benchmarks/Tools/",
-                    "Benchmarks/Worker/",
-                    "Benchmarks/Support/",
-                    "Benchmarks/Python/",
-                )
+        if name.startswith(
+            (
+                "Sources/",
+                "Benchmarks/Tools/",
+                "Benchmarks/Worker/",
+                "Benchmarks/Support/",
+                "Benchmarks/Python/",
             )
-            or name in ["Package.swift", "Package.resolved"]
         )
+        or name in ["Package.swift", "Package.resolved"]
     }
+    dirty_entries = dirty_worktree_summary(root)
     return dict(
         commit=command(["git", "-C", str(root), "rev-parse", "HEAD"]),
+        dirty=bool(dirty_entries),
+        dirty_entries=dirty_entries,
         files=sources,
         tree_sha256=identity(sources),
     )
@@ -122,7 +134,7 @@ def build(root, products, packages):
     source = source_identity(root)
     products.parent.mkdir(parents=True, exist_ok=True)
     snapshot = Path(tempfile.mkdtemp(prefix="source-", dir=products.parent))
-    for name in command(["git", "-C", str(root), "ls-files"]).splitlines():
+    for name in tracked_and_untracked_files(root):
         p = root / name
         if not p.is_file():
             continue

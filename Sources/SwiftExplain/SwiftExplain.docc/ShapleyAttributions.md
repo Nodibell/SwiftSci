@@ -8,7 +8,7 @@ Black-box machine learning models—such as deep neural networks, random forests
 
 `SwiftExplain` provides mathematically grounded, axiomatic interpretability algorithms:
 
-1. **``TreeSHAP``**: Path-dependent Shapley attributions for tree-based models (`DecisionTreeClassifier`, `RandomForestClassifier`, `RandomForestRegressor`). Solves trees with `K <= TreeSHAP.maxExactFeatures` (`12`) distinct split features exactly via $2^K$ coalition enumeration, and uses deterministic seeded Monte Carlo permutation sampling (`approximationSamples = 2048`) with exact additive efficiency enforcement ($\sum_i \phi_i = f(x) - \mathbb{E}[f(X)]$) for larger $K$.
+1. **``TreeSHAP``**: Path-dependent Shapley attributions for `DecisionTreeClassifier`, `DecisionTreeRegressor`, `RandomForestClassifier`, and `RandomForestRegressor`. Solves trees with `K <= TreeSHAP.maxExactFeatures` (`12`) distinct split features exactly via $2^K$ coalition enumeration (`O(2^K · L)` per tree), and uses deterministic seeded Monte Carlo permutation sampling (`approximationSamples = 2048`) with exact additive efficiency enforcement ($\sum_i \phi_i = f(x) - \mathbb{E}[f(X)]$) for larger $K$.
 2. **``KernelSHAP``**: Model-agnostic explainer solving constrained weighted linear regression against an empirical background dataset for any arbitrary asynchronous prediction function.
 3. **``LIMEExplainer``**: Local Interpretable Model-agnostic Explanations fitting ridge linear surrogate models around perturbed neighborhoods.
 
@@ -30,8 +30,12 @@ graph TD
 
 ``TreeSHAP`` evaluates path-dependent conditional expectations over a tree's internal sample weights (Lundberg et al., 2018; Nature Machine Intelligence):
 
-- When a tree splits on `K <= TreeSHAP.maxExactFeatures` (`12`) distinct features, ``TreeSHAP`` enumerates all $2^K$ coalitions to return **exact** path-dependent Shapley values.
+- When a tree splits on `K <= TreeSHAP.maxExactFeatures` (`12`) distinct features, ``TreeSHAP`` enumerates all $2^K$ coalitions to return **exact** path-dependent Shapley values (`O(2^K · L)` per tree).
 - When `K > 12`, ``TreeSHAP`` switches to deterministic Monte Carlo permutation sampling (`TreeSHAP.approximationSamples = 2048` with `permutationSeed`), renormalizing any efficiency discrepancy evenly across active features. Use `treeShap.isExact(tree:numFeatures:)` to inspect which regime a tree uses.
+
+> Important: Known limitations in `v3.13.x` (deferred to a future release):
+> - **G-035 (`GradientBoostedTreesRegressor`)**: `TreeSHAP` has no adapter for `GradientBoostedTreesRegressor` in `v3.13.x` (`explainDetailed(trees:)` averages uniformly by `1/T` rather than summing `initialPrediction + learningRate * sum_m T_m(x)`).
+> - **G-036 (Classification & Leaf Weights)**: `FlatTreeNode` does not store training sample `cover` (all leaves receive uniform `1.0` weight), `RandomForestClassifier` leaves do not persist `classDistribution`, and `DecisionTreeClassifier.prune(alpha:)` clears `classDistribution` on pruned leaves. Classifier `TreeSHAP` attributes the scalar `node.value` label code rather than per-class `predictProbability` distributions.
 
 ```swift
 import SwiftML

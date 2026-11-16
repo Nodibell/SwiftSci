@@ -75,7 +75,7 @@ print("Created \(chunks.count) overlapping text chunks.")
 
 ## 2. Choosing an Embedding Strategy
 
-`SwiftNLP` provides two built-in embedding engines conforming to ``SentenceEmbeddingProvider``:
+`SwiftNLP` provides two built-in embedding engines conforming to [`SentenceEmbeddingProvider`](https://nodibell.github.io/SwiftSci/documentation/swiftnlp/sentenceembeddingprovider/):
 
 ```swift
 // Strategy A: Native Apple Neural Embeddings (512-D, High Semantic Accuracy)

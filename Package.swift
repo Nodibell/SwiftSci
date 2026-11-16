@@ -452,30 +452,6 @@ let package = Package(
             path: "Tests/SwiftSciBenchmarkSupportTests"
         ),
 
-        // ── SwiftSciBenchmarks ───────────────────────────────────────────
-        .executableTarget(
-            name: "SwiftSciBenchmarks",
-            dependencies: [
-                "SwiftDataFrame",
-                "SwiftStats",
-                "SwiftPreprocessing",
-                "SwiftML",
-                "SwiftCluster",
-                "SwiftNLP",
-                "SwiftOptimize",
-                "SwiftForecast",
-                "SwiftLLM",
-                "SwiftExplain",
-                "SwiftVision",
-                "SwiftDatabase",
-                "SwiftAgent",
-                "SwiftVisualization",
-            ],
-            path: "Benchmarks/Swift",
-            cSettings: globalCSettings,
-            swiftSettings: globalSwiftSettings
-        ),
-
         .target(
             name: "SwiftWorkflow",
             dependencies: ["SwiftDataFrame", "SwiftPreprocessing", "SwiftCluster", "SwiftML"],

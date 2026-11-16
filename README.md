@@ -129,7 +129,8 @@ See the [performance report](PERFORMANCE/3.13.2.md) and [accuracy report](ACCURA
 ## 📚 Documentation & Resources
 
 - **API Reference**: [Interactive DocC Documentation](https://nodibell.github.io/SwiftSci/)
-- **Engineering Handbook:** SwiftSci 3.13.2 ([PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.2/SwiftSci_Handbook_3.13.2.pdf) · [EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.2/SwiftSci_Handbook_3.13.2.epub)).
+- **SwiftSci 3.13.2 companion guide:** [PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.2/SwiftSci_Handbook_3.13.2.pdf) · [EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.2/SwiftSci_Handbook_3.13.2.epub).
+- **Full Engineering Handbook & Practical Cookbook:** [3.13.1 archive](https://github.com/Nodibell/SwiftSci/releases/tag/v3.13.1) for the module deep dives, architecture and recipes. Use the 3.13.2 guide and reports for current release details.
 - **Benchmarks:** [Performance](PERFORMANCE/3.13.2.md) · [Accuracy](ACCURACY/3.13.2.md) · [Performance archive](PERFORMANCE.md) · [Accuracy archive](ACCURACY.md).
 - **Release History**: [CHANGELOG.md](CHANGELOG.md)
 - **Roadmap**: [ROADMAP.md](ROADMAP/ROADMAP.md)

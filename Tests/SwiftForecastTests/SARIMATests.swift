@@ -177,7 +177,6 @@ struct SARIMATests {
     }
 
     private func computeRMSE(predicted: [Double], actual: [Double]) -> Double {
-        precondition(predicted.count == actual.count && !predicted.isEmpty)
         var sumSquaredError: Double = 0.0
         for i in 0..<predicted.count {
             let diff: Double = predicted[i] - actual[i]
@@ -209,7 +208,7 @@ struct SARIMATests {
         try await good500.fit(series: train500)
         #expect(await good500.isFitted)
         let fc500 = try await good500.forecast(steps: 24)
-        #expect(fc500.count == 24)
+        try #require(fc500.count == test500.count, "syn500 forecast must match the holdout length")
         #expect(fc500.allSatisfy { $0.isFinite })
         let rmse500: Double = computeRMSE(predicted: fc500, actual: test500)
         #expect(rmse500 < 2.0)
@@ -230,6 +229,7 @@ struct SARIMATests {
         try await good50k.fit(series: train50k)
         #expect(await good50k.isFitted)
         let fc50k = try await good50k.forecast(steps: 24)
+        try #require(fc50k.count == test50k.count, "syn50k forecast must match the holdout length")
         #expect(fc50k.allSatisfy { $0.isFinite })
         let rmse50k: Double = computeRMSE(predicted: fc50k, actual: test50k)
         #expect(rmse50k < 2.5)

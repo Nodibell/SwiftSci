@@ -144,12 +144,51 @@ struct SARIMATests {
         #expect(bic > aic)
     }
 
+    private func makeSyntheticSeasonalUniformSeries(count: Int = 500, seed: UInt64 = 42) -> [Double] {
+        var rng = BenchmarkLCG(seed: seed)
+        var result: [Double] = []
+        result.reserveCapacity(count)
+        for t in 0..<count {
+            let dt = Double(t)
+            let angle: Double = (2.0 * Double.pi * dt) / 12.0
+            let trend: Double = 100.0 + 0.2 * dt
+            let seasonal: Double = 8.0 * sin(angle)
+            let noise: Double = rng.nextDouble(in: -1.5...1.5)
+            let value: Double = (trend + seasonal) + noise
+            result.append(value)
+        }
+        return result
+    }
+
+    private func makeSyntheticSeasonalGaussianSeries(count: Int = 50_000, seed: UInt64 = 42) -> [Double] {
+        var rng = BenchmarkLCG(seed: seed)
+        var result: [Double] = []
+        result.reserveCapacity(count)
+        for t in 0..<count {
+            let dt = Double(t)
+            let angle: Double = (2.0 * Double.pi * dt) / 12.0
+            let trend: Double = 100.0 + 0.002 * dt
+            let seasonal: Double = 10.0 * sin(angle)
+            let noise: Double = rng.nextGaussian() * 0.8
+            let value: Double = (trend + seasonal) + noise
+            result.append(value)
+        }
+        return result
+    }
+
+    private func computeRMSE(predicted: [Double], actual: [Double]) -> Double {
+        var sumSquaredError: Double = 0.0
+        for i in 0..<predicted.count {
+            let diff: Double = predicted[i] - actual[i]
+            sumSquaredError += diff * diff
+        }
+        let meanSquaredError: Double = sumSquaredError / Double(predicted.count)
+        return sqrt(meanSquaredError)
+    }
+
     @Test("SARIMA rejects non-invertible syn500/syn50k (1,1,1)(1,0,0)[12] and preserves finite (1,1,1)(0,1,0)[12] forecasts")
     func testSARIMASyntheticStabilityAndInvertibility() async throws {
-        var rng500 = BenchmarkLCG(seed: 42)
-        let syn500 = (0..<500).map { t in
-            100.0 + 0.2 * Double(t) + 8.0 * sin(2.0 * .pi * Double(t) / 12.0) + rng500.nextDouble(in: -1.5...1.5)
-        }
+        let syn500: [Double] = makeSyntheticSeasonalUniformSeries(count: 500, seed: 42)
         let train500 = Array(syn500.prefix(476))
         let test500 = Array(syn500.suffix(24))
 
@@ -169,17 +208,14 @@ struct SARIMATests {
         try await good500.fit(series: train500)
         #expect(await good500.isFitted)
         let fc500 = try await good500.forecast(steps: 24)
-        #expect(fc500.count == 24)
+        try #require(fc500.count == test500.count, "syn500 forecast must match the holdout length")
         #expect(fc500.allSatisfy { $0.isFinite })
-        let rmse500 = sqrt(zip(fc500, test500).map { ($0 - $1) * ($0 - $1) }.reduce(0.0, +) / 24.0)
+        let rmse500: Double = computeRMSE(predicted: fc500, actual: test500)
         #expect(rmse500 < 2.0)
         #expect(try await good500.aic().isFinite)
         #expect(try await good500.bic().isFinite)
 
-        var rng50k = BenchmarkLCG(seed: 42)
-        let syn50k = (0..<50_000).map { t in
-            100.0 + 0.002 * Double(t) + 10.0 * sin(2.0 * .pi * Double(t) / 12.0) + rng50k.nextGaussian() * 0.8
-        }
+        let syn50k: [Double] = makeSyntheticSeasonalGaussianSeries(count: 50_000, seed: 42)
         let train50k = Array(syn50k.prefix(49_976))
         let test50k = Array(syn50k.suffix(24))
 
@@ -193,8 +229,9 @@ struct SARIMATests {
         try await good50k.fit(series: train50k)
         #expect(await good50k.isFitted)
         let fc50k = try await good50k.forecast(steps: 24)
+        try #require(fc50k.count == test50k.count, "syn50k forecast must match the holdout length")
         #expect(fc50k.allSatisfy { $0.isFinite })
-        let rmse50k = sqrt(zip(fc50k, test50k).map { ($0 - $1) * ($0 - $1) }.reduce(0.0, +) / 24.0)
+        let rmse50k: Double = computeRMSE(predicted: fc50k, actual: test50k)
         #expect(rmse50k < 2.5)
     }
 
@@ -238,10 +275,7 @@ struct SARIMATests {
         #expect(abs(fc2[2] - 366.15239606803044) < 1e-8)
 
         // Failed refit must reset previously fitted model back to isFitted == false
-        var rng500 = BenchmarkLCG(seed: 42)
-        let syn500 = (0..<500).map { t in
-            100.0 + 0.2 * Double(t) + 8.0 * sin(2.0 * .pi * Double(t) / 12.0) + rng500.nextDouble(in: -1.5...1.5)
-        }
+        let syn500: [Double] = makeSyntheticSeasonalUniformSeries(count: 500, seed: 42)
         await #expect(throws: ForecastError.self) {
             try await apModel1.fit(series: Array(syn500.prefix(476)))
         }

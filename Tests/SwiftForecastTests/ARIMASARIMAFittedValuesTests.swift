@@ -271,13 +271,41 @@ struct ARIMASARIMAFittedValuesTests {
         }
     }
 
+    private func makeQuadraticTrendSeries(count: Int, rng: inout TestLCG) -> [Double] {
+        var result: [Double] = []
+        result.reserveCapacity(count)
+        for t in 0..<count {
+            let dt = Double(t)
+            let linearTerm: Double = 20.0 + 0.5 * dt
+            let quadraticTerm: Double = 0.02 * Double(t * t)
+            let seasonalTerm: Double = 2.0 * sin(dt * 0.4)
+            let noiseTerm: Double = rng.nextDouble(in: -0.5...0.5)
+            let value: Double = ((linearTerm + quadraticTerm) + seasonalTerm) + noiseTerm
+            result.append(value)
+        }
+        return result
+    }
+
+    private func makeExogenousTargetSeries(exog: [[Double]], baseSeries: [Double]) -> [Double] {
+        var result: [Double] = []
+        result.reserveCapacity(exog.count)
+        for t in 0..<exog.count {
+            let x0: Double = exog[t][0]
+            let x1: Double = exog[t][1]
+            let base: Double = baseSeries[t]
+            let step1: Double = 12.0 + 3.0 * x0
+            let step2: Double = step1 - 4.0 * x1
+            let value: Double = step2 + base * 0.1
+            result.append(value)
+        }
+        return result
+    }
+
     @Test("Synthetic ARIMA (d=0,1,2 and ARIMAX) and SARIMA (seasonal differencing) satisfy causal one-step identity")
     func testSyntheticDifferencingOrdersAndExog() async throws {
         var rng = TestLCG(seed: 77)
         let n = 120
-        let seriesD2 = (0..<n).map { t in
-            20.0 + 0.5 * Double(t) + 0.02 * Double(t * t) + 2.0 * sin(Double(t) * 0.4) + rng.nextDouble(in: -0.5...0.5)
-        }
+        let seriesD2: [Double] = makeQuadraticTrendSeries(count: n, rng: &rng)
 
         // ARIMA(1, 2, 1) (d = 2)
         let arimaD2 = try ARIMAModel(p: 1, d: 2, q: 1)
@@ -312,10 +340,10 @@ struct ARIMASARIMAFittedValuesTests {
         }
 
         // ARIMAX(1, 1, 0) and ARIMAX(0, 1, 0) return fittedValues on original scale with exact residual identity
-        let exog = (0..<n).map { [Double($0) * 0.25, sin(Double($0) * 0.3)] }
-        let yExog = (0..<n).map { t in
-            12.0 + 3.0 * exog[t][0] - 4.0 * exog[t][1] + seriesD2[t] * 0.1
+        let exog: [[Double]] = (0..<n).map { (t: Int) -> [Double] in
+            [Double(t) * 0.25, sin(Double(t) * 0.3)]
         }
+        let yExog: [Double] = makeExogenousTargetSeries(exog: exog, baseSeries: seriesD2)
         for (p, q) in [(1, 0), (0, 0)] {
             let arimax = try ARIMAModel(p: p, d: 1, q: q)
             try await arimax.fit(series: yExog, exog: exog)

@@ -1,5 +1,7 @@
 import copy
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -7,7 +9,7 @@ from unittest.mock import patch
 from test_contracts import ROOT
 from contracts import *
 from datasets import *
-from runner import run
+from runner import build, metal_build_record, plan, run, source_identity
 from reporting import summarize, comparison
 
 
@@ -195,10 +197,6 @@ class AuditTests(unittest.TestCase):
             comparison(good, other)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class InstrumentationTests(unittest.TestCase):
     def test_coverage_sections_reject_worker_even_when_build_settings_claim_no_coverage(
         self,
@@ -298,11 +296,108 @@ class MetalProvenanceTests(unittest.TestCase):
         result = self.resolve()
         self.assertEqual(result["engines"]["swiftsci"]["build"]["metal"], self.record["metal"])
 
-    def test_source_identity_captures_untracked_sources_and_dirty_worktree(self):
-        from runner import source_identity
+class SourceProvenanceTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name) / "repo"
+        self.root.mkdir()
+        subprocess.run(["git", "init", "--quiet"], cwd=self.root, check=True)
+        self.source = self.root / "Sources/Example.swift"
+        self.source.parent.mkdir()
+        self.original = b"let value = 1\n"
+        self.source.write_bytes(self.original)
+        self.git("add", "--", "Sources/Example.swift")
+        self.git("commit", "--quiet", "--no-gpg-sign", "-m", "Fixture source")
 
-        ident = source_identity(ROOT)
-        self.assertTrue(ident["dirty"])
-        self.assertIn("ForecastValidation.swift", "\n".join(ident["dirty_entries"]))
-        self.assertIn("commit", ident)
-        self.assertIn("tree_sha256", ident)
+        self.products = Path(temp.name) / "build/derived"
+        self.worker = self.products / "Build/Products/Release/SwiftSciBenchmarkWorker"
+        self.record_path = self.worker.with_suffix(".build.json")
+
+    def git(self, *args):
+        return subprocess.check_output(
+            ["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+             "-c", "core.hooksPath=/dev/null", *args],
+            cwd=self.root,
+            text=True,
+        ).strip()
+
+    def test_clean_worktree_records_commit_and_source_hashes(self):
+        ident = source_identity(self.root)
+        expected_files = {"Sources/Example.swift": digest(self.original)}
+        self.assertEqual(ident["commit"], self.git("rev-parse", "HEAD"))
+        self.assertFalse(ident["dirty"])
+        self.assertEqual(ident["dirty_entries"], [])
+        self.assertEqual(ident["files"], expected_files)
+        self.assertEqual(ident["tree_sha256"], identity(expected_files))
+
+    def test_modified_tracked_source_changes_fingerprint(self):
+        before = source_identity(self.root)
+        changed = b"let value = 2\n"
+        self.source.write_bytes(changed)
+        after = source_identity(self.root)
+        self.assertEqual(after["commit"], before["commit"])
+        self.assertTrue(after["dirty"])
+        self.assertEqual(after["dirty_entries"], ["M Sources/Example.swift"])
+        self.assertEqual(after["files"], {"Sources/Example.swift": digest(changed)})
+        self.assertNotEqual(after["tree_sha256"], before["tree_sha256"])
+
+    def test_untracked_source_is_included_in_fingerprint(self):
+        before = source_identity(self.root)
+        added = b"let added = 3\n"
+        (self.root / "Sources/Added.swift").write_bytes(added)
+        after = source_identity(self.root)
+        self.assertEqual(after["commit"], before["commit"])
+        self.assertTrue(after["dirty"])
+        self.assertEqual(after["dirty_entries"], ["?? Sources/Added.swift"])
+        self.assertEqual(after["files"], {**before["files"], "Sources/Added.swift": digest(added)})
+        self.assertNotEqual(after["tree_sha256"], before["tree_sha256"])
+
+    def test_source_changed_during_build_cannot_be_recorded(self):
+        real_run = subprocess.run
+
+        def build_worker(args, **kwargs):
+            if args[0] != "xcodebuild":
+                return real_run(args, **kwargs)
+            self.assertEqual((kwargs["cwd"] / "Sources/Example.swift").read_bytes(), self.original)
+            self.source.write_bytes(b"let value = 2\n")
+            self.worker.parent.mkdir(parents=True)
+            self.worker.write_bytes(b"worker")
+
+        with (
+            patch("runner.subprocess.run", side_effect=build_worker),
+            patch("runner.verify_uninstrumented"),
+            self.assertRaisesRegex(ContractError, "Source changed during build; rebuild"),
+        ):
+            build(self.root, self.products, self.products.parent / "packages")
+        self.assertFalse(self.record_path.exists())
+
+    def test_plan_rejects_worker_built_from_different_source_fingerprint(self):
+        shutil.copytree(ROOT / "Benchmarks/Tools", self.root / "Benchmarks/Tools",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        self.git("add", "--", "Benchmarks/Tools")
+        self.git("commit", "--quiet", "--no-gpg-sign", "-m", "Fixture benchmark inputs")
+        self.worker.parent.mkdir(parents=True)
+        self.worker.write_bytes(b"worker")
+        library = self.worker.parent / "mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib"
+        library.parent.mkdir(parents=True)
+        library.write_bytes(b"compiled safe math")
+        original_source = source_identity(self.root)
+        write_json(self.record_path, dict(
+            binary_sha256=digest(self.worker.read_bytes()),
+            coverage_instrumentation="absent",
+            environment={},
+            source=original_source,
+            metal=metal_build_record(self.worker),
+        ))
+
+        with patch("runner.verify_uninstrumented"), patch("runner.environment", return_value={}):
+            resolved = plan(self.root, {"cases": []}, ["swiftsci"], self.worker, sys.executable)
+            self.assertEqual(resolved["source"], original_source)
+            self.source.write_bytes(b"let value = 2\n")
+            with self.assertRaisesRegex(ContractError, "Swift worker source is stale; rebuild"):
+                plan(self.root, {"cases": []}, ["swiftsci"], self.worker, sys.executable)
+
+
+if __name__ == "__main__":
+    unittest.main()

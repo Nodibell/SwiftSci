@@ -59,7 +59,7 @@ flowchart TB
 
 Diagram destinations: [fixtures and answers](#fixtures-and-reference-answers), [specifications](#experiment-specifications), [preparation](#preparation-and-reference-evaluation), [controller](#build-and-run-controller), [workers](#workers-and-output-validation), [evidence](#run-evidence), and [acceptance and reports](#acceptance-and-reporting).
 
-Output validation happens inside each worker. It has no separate pipeline folder. The Swift worker uses [Support/Protocol.swift](Support/Protocol.swift), and Python adapters validate their outputs before returning responses. Several orchestration steps share `Tools/` (including [scientific_validation_suite.py](Tools/scientific_validation_suite.py) for scientific accuracy-gated validation and rolling-origin time-series backtests). Generated inputs and run evidence belong to local working directories rather than committed fixture sources, while summarized candidate release reports live under [Reports/v3.13.2-candidate/](Reports/v3.13.2-candidate/VERIFIED_PERFORMANCE_V3132.md).
+Output validation happens inside each worker. It has no separate pipeline folder. The Swift worker uses [Support/Protocol.swift](Support/Protocol.swift), and Python adapters validate their outputs before returning responses. Several orchestration steps share `Tools/` (including [scientific_validation_suite.py](Tools/scientific_validation_suite.py) for scientific accuracy-gated validation and rolling-origin time-series backtests). Generated inputs and run evidence belong to local working directories rather than committed fixture sources, while versioned release evidence indexes live under [Reports/v3.13.2/](Reports/v3.13.2/README.md).
 
 ## Component definitions
 

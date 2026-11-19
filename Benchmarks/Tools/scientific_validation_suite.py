@@ -1,4 +1,4 @@
-"""Scientific validation and Stage A benchmark suite for SwiftSci v3.13.2-candidate.
+"""Scientific validation and accuracy-gated benchmark suite for SwiftSci.
 
 Executes isolated SwiftSci (`SwiftSciBenchmarkWorker --scientific-suite`) and
 Python reference (`Benchmarks/Python/scientific_reference_worker.py`) subprocesses
@@ -1517,8 +1517,18 @@ def run_rolling_origin_checks(datasets, swift_worker, py_exe, py_worker, env):
     return results
 
 
-def execute_suite(root, swift_worker, python_engine, output_path, processes=5, warmups=2, samples=5):
-    """Execute the full Stage A scientific validation suite and write audited JSON report."""
+def execute_suite(
+    root,
+    swift_worker,
+    python_engine,
+    output_path,
+    processes=5,
+    warmups=2,
+    samples=5,
+    status="LOCAL",
+    label="scientific-validation",
+):
+    """Execute the scientific validation suite and write an audited JSON report."""
     py_worker = root / "Benchmarks/Python/scientific_reference_worker.py"
     runner.verify_uninstrumented(swift_worker)
     metal_rec = runner.metal_build_record(swift_worker)
@@ -1621,8 +1631,8 @@ def execute_suite(root, swift_worker, python_engine, output_path, processes=5, w
 
     payload = {
         "schema_version": 1,
-        "status": "CANDIDATE",
-        "label": "v3.13.2-candidate",
+        "status": status,
+        "label": label,
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source_identity": {
             "commit": src_id["commit"],
@@ -1679,7 +1689,7 @@ def execute_suite(root, swift_worker, python_engine, output_path, processes=5, w
     return payload
 
 
-def main(argv=None):
+def build_arg_parser():
     parser = argparse.ArgumentParser(description="Run SwiftSci scientific validation suite")
     parser.add_argument(
         "--swift-worker",
@@ -1702,7 +1712,21 @@ def main(argv=None):
     parser.add_argument("--processes", type=int, default=5)
     parser.add_argument("--warmups", type=int, default=2)
     parser.add_argument("--samples", type=int, default=5)
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--status",
+        default="LOCAL",
+        help="Run status label recorded in output metadata",
+    )
+    parser.add_argument(
+        "--label",
+        default="scientific-validation",
+        help="Run identifier label recorded in output metadata",
+    )
+    return parser
+
+
+def main(argv=None):
+    args = build_arg_parser().parse_args(argv)
 
     root = Path(__file__).resolve().parents[2]
     payload = execute_suite(
@@ -1713,6 +1737,8 @@ def main(argv=None):
         processes=args.processes,
         warmups=args.warmups,
         samples=args.samples,
+        status=args.status,
+        label=args.label,
     )
     print(json.dumps(payload["summary"], indent=2))
     if not payload["summary"]["all_gates_passed"]:

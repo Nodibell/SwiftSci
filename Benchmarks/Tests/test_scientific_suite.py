@@ -1,7 +1,8 @@
-"""Unit tests for the Stage A scientific validation suite and gate logic."""
+"""Unit tests for the scientific validation suite and gate logic."""
 
 import json
 import math
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -12,7 +13,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "Benchmarks/Tools"))
 import scientific_validation_suite as svs  # noqa: E402
 
-PY311_ENGINE = Path("/Users/oleksiichumak/.pyenv/versions/3.11.9/bin/python3")
+PY311_ENGINE = Path(
+    os.environ.get(
+        "SWIFTSCI_SCIENTIFIC_PYTHON",
+        str(Path.home() / ".pyenv/versions/3.11.9/bin/python3"),
+    )
+)
 
 
 class ScientificSuiteStatsAndGatingTests(unittest.TestCase):
@@ -219,6 +225,25 @@ class ScientificSuiteStatsAndGatingTests(unittest.TestCase):
         self.assertFalse(reg_fail["passed"])
         self.assertGreater(reg_fail["metrics"]["r2_gap_vs_python"], 0.05)
         self.assertEqual(reg_fail["speedup_fit"]["reason"], "ACCURACY_OR_FINITENESS_GATE_FAILED")
+
+    def test_cli_metadata_defaults_and_overrides(self):
+        defaults = svs.build_arg_parser().parse_args([
+            "--swift-worker", "/tmp/worker",
+            "--python-engine", "/tmp/python3",
+            "--output", "/tmp/out.json",
+        ])
+        self.assertEqual(defaults.status, "LOCAL")
+        self.assertEqual(defaults.label, "scientific-validation")
+
+        custom = svs.build_arg_parser().parse_args([
+            "--swift-worker", "/tmp/worker",
+            "--python-engine", "/tmp/python3",
+            "--output", "/tmp/out.json",
+            "--status", "RELEASE",
+            "--label", "v3.13.2",
+        ])
+        self.assertEqual(custom.status, "RELEASE")
+        self.assertEqual(custom.label, "v3.13.2")
 
 
 if __name__ == "__main__":

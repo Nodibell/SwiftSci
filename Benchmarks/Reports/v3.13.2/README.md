@@ -1,6 +1,6 @@
 # SwiftSci 3.13.2 reproducibility archive
 
-[Download the raw release evidence](SwiftSci-v3.13.2-Stage-B-evidence.tar.gz?raw=true). The archive preserves the verified run at commit `8039d02f9d63c27022a794dfff5bd43d2e8a9710`.
+[Download the raw release evidence (GitHub Release asset)](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.2/SwiftSci-v3.13.2-Stage-B-evidence.tar.gz). The archive preserves the verified run at commit `8039d02f9d63c27022a794dfff5bd43d2e8a9710`.
 
 | Identifier | SHA-256 |
 |---|---|

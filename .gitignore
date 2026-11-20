@@ -26,3 +26,6 @@ Benchmarks/.venv-standardized/
 
 # Optional pretrained comparison environment
 Benchmarks/.venv-llm/
+
+# Optional scientific validation environment
+Benchmarks/.venv-scientific/

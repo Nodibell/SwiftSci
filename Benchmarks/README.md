@@ -61,6 +61,16 @@ Diagram destinations: [fixtures and answers](#fixtures-and-reference-answers), [
 
 Output validation happens inside each worker. It has no separate pipeline folder. The Swift worker uses [Support/Protocol.swift](Support/Protocol.swift), and Python adapters validate their outputs before returning responses. Several orchestration steps share `Tools/` (including [scientific_validation_suite.py](Tools/scientific_validation_suite.py) for scientific accuracy-gated validation and rolling-origin time-series backtests). Generated inputs and run evidence belong to local working directories rather than committed fixture sources, while versioned release evidence indexes live under [Reports/v3.13.2/](Reports/v3.13.2/README.md).
 
+### Benchmark suite catalog
+
+| Family | Entry points & guides | Scope |
+| --- | --- | --- |
+| Standardized contracts, conformance & sweeps | [bench.py](Tools/bench.py), [acceptance.py](Tools/acceptance.py), [comparison_suite.py](Tools/comparison_suite.py), [sweeps.py](Tools/sweeps.py) | `28` profiles (`cpu`, `apple`, `sweep`), `206` datasets, `65` workload contracts against pandas/NumPy, Polars, DuckDB, and [Python MLX](MLX-COMPARISONS.md) |
+| Scientific accuracy-gated validation | [scientific_validation_suite.py](Tools/scientific_validation_suite.py), [scientific_reference_worker.py](Python/scientific_reference_worker.py) | `39` scientific workloads + `3` rolling-origin time-series backtests (Holt-Winters, ARIMA/SARIMA/AutoARIMA, ML, PCA/KMeans, TreeSHAP, Stats, SwiftLLM KV-cache ablation) |
+| Pretrained Llama, GGUF & `llama.cpp` diagnostics | [pretrained guide](Fixtures/pretrained/README.md), [generation](Fixtures/pretrained/GENERATION.md), [llama.cpp](Fixtures/pretrained/LLAMA-CPP.md), [check_pretrained_inspection.py](Tests/check_pretrained_inspection.py) | Synthetic CPU preflight controls plus opt-in Llama 3.2 1B BF16 inspection, MLX-LM generation/precision sweeps, and GGUF / `llama.cpp` comparison |
+| Core ML & memory-budget trial harnesses | [CoreMLInference](CoreMLInference/README.md), [BoundedInference](BoundedInference/README.md), [FusedPreprocessingTrial](FusedPreprocessingTrial/README.md), [MixedWorkloads](MixedWorkloads/README.md), [PersistentModelTrial](PersistentModelTrial/README.md) | Isolated `CoreMLPredictor`, matrix pool, `CoreMLBatchPipeline` concurrency/backpressure, fused imputation/scaling/packing, and shared `MemoryBudget` trials |
+| Archived baselines & release evidence | [ProductionDefault-20261001](Baselines/ProductionDefault-20261001/README.md), [DataFrameOptimization](Results/DataFrameOptimization/README.md), [Reports/v3.13.2](Reports/v3.13.2/README.md) | Historical baselines, hash-locked DataFrame optimization records, legacy retirement ledger ([legacy-inventory.json](Specs/legacy-inventory.json)), and `v3.13.2` release evidence |
+
 ## Component definitions
 
 ### Fixtures and reference answers
@@ -171,13 +181,48 @@ Explicit Metal diagnostics and larger sweeps run on an identified Apple silicon 
 
 Build snapshots, build records, logs, and products live under `~/Library/Caches/SwiftSci/standardized-benchmarks/` by default. They are outside the repository checkout.
 
-## Historical and research work
+## Core ML and memory-budget trials
 
-[Mixed-workload qualification](MixedWorkloads/README.md) compares CPU preprocessing, MLX GPU regression, and Core ML inference under shared admission. It records workload-specific progress, cancellation, throughput, and memory evidence. It does not certify a scheduling policy or physical device placement.
+Five opt-in trial harnesses isolate Core ML execution, packed preprocessing, and `MemoryBudget` admission behavior outside the standardized `bench.py` profiles:
 
-[Persistent model admission trial](PersistentModelTrial/README.md) compares retaining a model across short work admissions with repeated pool creation and whole-run reservations. It measures the throughput and peer-latency tradeoff under fixed memory partitions. The comparison uses the retained-session API and qualifies a single-model workload; it does not establish a general scheduling policy.
+| Trial | Guide | What it measures |
+| --- | --- | --- |
+| Core ML inference qualification | [CoreMLInference/README.md](CoreMLInference/README.md) | `CoreMLPredictor` vs native CPU/GPU `LinearRegression`, model load vs inference, compute-policy placement (`--sweep`, `--samples`) |
+| Bounded inference | [BoundedInference/README.md](BoundedInference/README.md) | Serial Core ML API vs `CoreMLBatchPipeline` (`1–4` admitted batches, `--smoke` or `--sustained`) |
+| Fused preprocessing trial | [FusedPreprocessingTrial/README.md](FusedPreprocessingTrial/README.md) | `StandardPreprocessingPlan` fused imputation + standard scaling + row-major packing (`run.py`, `run_coreml.py`) |
+| Mixed workloads | [MixedWorkloads/README.md](MixedWorkloads/README.md) | Concurrent CPU preprocessing, MLX GPU regression, and Core ML inference sharing one `MemoryBudget` (`--smoke` or full matrix) |
+| Persistent model admission trial | [PersistentModelTrial/README.md](PersistentModelTrial/README.md) | Retained Core ML sessions (`CoreMLBatchPipeline.withSession`) vs chunk reload under fixed capacity partitions (`--smoke` or full matrix) |
 
-[Results/](Results/) preserves archived historical artifacts such as the hash-locked `DataFrameOptimization/` baseline. [Specs/legacy-inventory.json](Specs/legacy-inventory.json) records the historical mapping from retired `--research` scripts (`Swift/`, `CSVAcceleration/`, legacy `Python/` scripts) to standardized replacements or retired research dispositions. Active `--research` runners have been removed; use [Tools/bench.py](Tools/bench.py) and `Benchmarks/Tools/scientific_validation_suite.py` for new benchmarks.
+Build the Release worker first (`bench.py build`). `CoreMLInference/run.py` and `FusedPreprocessingTrial/run.py` require only the worker and a fresh output directory; the Covertype Core ML trials (`BoundedInference`, `FusedPreprocessingTrial/run_coreml.py`, `MixedWorkloads`, `PersistentModelTrial`) also take `--models` and `--raw` (see [Covertype preparation](FusedPreprocessingTrial/README.md#covertype-and-core-ml-workflow)):
+
+```bash
+worker="$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker"
+
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/CoreMLInference/run.py --worker "$worker" --output Benchmarks/Runs/coreml-qual-01
+
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/FusedPreprocessingTrial/run.py --worker "$worker" --output Benchmarks/Runs/fused-prep-01
+
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/BoundedInference/run.py --worker "$worker" \
+  --models "$models_dir" --raw "$raw_covertype" --smoke --output Benchmarks/Runs/bounded-smoke-01
+
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/MixedWorkloads/run.py --worker "$worker" \
+  --models "$models_dir" --raw "$raw_covertype" --smoke --output Benchmarks/Runs/mixed-smoke-01
+
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/PersistentModelTrial/run.py --worker "$worker" \
+  --models "$models_dir" --raw "$raw_covertype" --smoke --output Benchmarks/Runs/persistent-smoke-01
+```
+
+## Archived baselines and retired legacy runners
+
+- [Baselines/ProductionDefault-20261001/](Baselines/ProductionDefault-20261001/README.md) preserves the initial 10,300-sample `production-default` reference run.
+- [Results/](Results/README.md) preserves archived historical studies including the hash-locked [DataFrameOptimization/](Results/DataFrameOptimization/README.md) artifacts.
+- [Reports/v3.13.2/](Reports/v3.13.2/README.md) indexes the published `v3.13.2` release evidence and SHA-256 verification archive.
+- [Specs/legacy-inventory.json](Specs/legacy-inventory.json) maps retired `--research` scripts (`Swift/`, `CSVAcceleration/`, legacy `Python/` scripts) to standardized replacements or retired research dispositions. Active `--research` runners have been removed; use [Tools/bench.py](Tools/bench.py) and [Tools/scientific_validation_suite.py](Tools/scientific_validation_suite.py) for new benchmarks.
 
 Kiraa is an unofficial research reference with known bugs. It is neither an independent correctness oracle nor a supported standardized engine. Trained-model quality, unmatched algorithms, long-context inference, and physical zero-copy claims remain outside the current conformance scope.
 
@@ -185,24 +230,51 @@ Kiraa is an unofficial research reference with known bugs. It is neither an inde
 
 Use an Apple silicon Mac with Xcode selected and Python 3.12 or newer. Run these commands from the repository root. The initial dependency installation and Swift package resolution require network access; prepared datasets require none.
 
+### With `uv` (recommended)
+
+Create the standardized environment once (for example on Python 3.14), install the core pinned stack plus optional multi-engine (`requirements-comparison.txt`) or Python MLX (`requirements-mlx.txt`) packages, run tests, prepare inputs, and build the uninstrumented Release worker:
+
 ```bash
-python3 -m venv Benchmarks/.venv-standardized
-Benchmarks/.venv-standardized/bin/python -m pip install -r Benchmarks/Python/requirements-standardized.txt
-Benchmarks/.venv-standardized/bin/python -m unittest discover -s Benchmarks/Tests
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile smoke
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py build
+uv venv Benchmarks/.venv-standardized --python 3.14
+uv pip install --python Benchmarks/.venv-standardized/bin/python -r Benchmarks/Python/requirements-standardized.txt
+# Optional: enable Polars + DuckDB comparisons:
+uv pip install --python Benchmarks/.venv-standardized/bin/python -r Benchmarks/Python/requirements-comparison.txt
+# Optional: enable Python MLX comparisons:
+uv pip install --python Benchmarks/.venv-standardized/bin/python -r Benchmarks/Python/requirements-mlx.txt
+
+POLARS_MAX_THREADS=1 uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  -m unittest discover -s Benchmarks/Tests
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py prepare --profile smoke
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py build
 ```
 
 The build command prints the worker path. By default it is:
 
 ```bash
 worker="$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker"
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile smoke \
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py run --profile smoke \
   --engines swiftsci,pandas --swift-worker "$worker" \
   --python Benchmarks/.venv-standardized/bin/python \
   --output Benchmarks/Runs/smoke-01
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/smoke-01
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py report Benchmarks/Runs/smoke-01
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py audit Benchmarks/Runs/smoke-01
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py report Benchmarks/Runs/smoke-01
+```
+
+Pass `--python Benchmarks/.venv-standardized/bin/python` explicitly so isolated Python worker subprocesses use the same environment. Running via `uv run --no-project --python ...` avoids looking for a `pyproject.toml` at the repository root.
+
+### With standard `venv` and `pip`
+
+```bash
+python3 -m venv Benchmarks/.venv-standardized
+Benchmarks/.venv-standardized/bin/python -m pip install -r Benchmarks/Python/requirements-standardized.txt
+POLARS_MAX_THREADS=1 Benchmarks/.venv-standardized/bin/python -m unittest discover -s Benchmarks/Tests
+Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile smoke
+Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py build
 ```
 
 Choose a new output directory for every run. Existing evidence is never overwritten. Rebuild after changing sources or after another Xcode command replaces the worker in the same derived-data directory. A binary checksum mismatch requires a rebuild; do not edit the build record. The builder copies Git-tracked files, including staged additions and their working contents, into a separate cache directory. Stage new source files before building. This excludes untracked cloud-sync duplicate files without changing the checkout. Xcode uses the package-level Release `build-for-testing` action with `-enableCodeCoverage NO` and dependencies pinned in `Package.resolved`. This compiles the targets without running the test suite. The generated Swift package scheme can ignore coverage settings during a plain `build` action. The builder and run planner inspect the actual Mach-O binary and reject LLVM profiling or coverage sections. A compiler setting alone is not proof that instrumentation is absent. It permits package plugins for this invocation only.
@@ -231,21 +303,38 @@ The `tabular-smoke` and `tabular-migration` profiles select the 19 supported mig
 
 ## Profiles and supported operations
 
-| Profile | Table rows | Warmups / measured samples per process | Independent processes per case and engine |
-| --- | ---: | ---: | ---: |
-| `smoke` | 129 | 0 / 1 | 1 |
-| `standard` | 100,000 | 2 / 5 | 3 |
-| `extended` | 1,000,000 | 2 / 5 | 3 |
-| `certification` | All nine NIST univariate datasets | 0 / 1 | 1 |
-| `nist` | All nine NIST univariate datasets | 2 / 5 | 3 |
-| `migration-smoke` | Small numeric, mixed and Parquet fixtures | 0 / 1 | 1 |
-| `migration` | Mixed sizes declared per case | 2 / 5 | 3 |
-| `public-smoke` | 257 synthetic rows; 1,599 real wine rows | 0 / 1 | 1 |
-| `public-data` | 100,000 synthetic rows; 1,599 real wine rows | 2 / 5 | 3 |
-| `numerical-conformance` | Eight NIST OLS and eleven ANOVA datasets | 0 / 1 | 1 |
-| `numerical-binary64` | Same 19 inputs with exact-binary64 references | 0 / 1 | 1 |
-| `model-conformance` | Two PCA and one multinomial Naive Bayes fixture | 0 / 1 | 1 |
-| `controlled-conformance` | Ten fixed inference, clustering, Kalman, search and explanation fixtures | 1 / 2 | 1 |
+All `28` standardized profiles declared under [Specs/profiles/](Specs/profiles/) and [Specs/acceptance.json](Specs/acceptance.json):
+
+| Profile | Tier | Cases | Warmups / samples | Processes | Scope |
+| --- | --- | ---: | ---: | ---: | --- |
+| `smoke` | `cpu` | 14 | 0 / 1 | 1 | Small (`129` rows) 11 DataFrame/stats ops + 3 NIST quick checks |
+| `standard` | `sweep` | 14 | 2 / 5 | 3 | `100,000` rows, 11 DataFrame/stats ops + 3 NIST checks |
+| `extended` | `sweep` | 14 | 2 / 5 | 3 | `1,000,000` rows, 11 DataFrame/stats ops + 3 NIST checks |
+| `certification` | `cpu` | 27 | 0 / 1 | 1 | All 9 NIST univariate datasets (mean, sample variance, sample stddev) |
+| `nist` | `sweep` | 27 | 2 / 5 | 3 | Repeated timing and precision sweep on all 9 NIST univariate datasets |
+| `migration-smoke` | `cpu` | 36 | 0 / 1 | 1 | Quick check of mixed types, joins, streaming CSV, Parquet, stats, SQLite |
+| `migration` | `sweep` | 36 | 2 / 5 | 3 | Full 36-case Swift/Python migration suite |
+| `tabular-smoke` | `sweep` | 19 | 0 / 1 | 1 | 19-case shared Swift/pandas/Polars/DuckDB smoke check |
+| `tabular-migration` | `sweep` | 19 | 2 / 5 | 3 | 19-case shared 4-engine tabular timing suite |
+| `public-smoke` | `cpu` | 11 | 0 / 1 | 1 | `257` H2O-style synthetic rows + `1,599` UCI red-wine rows |
+| `public-data` | `sweep` | 11 | 2 / 5 | 3 | `100,000` H2O-style rows + `1,599` UCI red-wine pipeline (`4` engines) |
+| `dataframe-conformance` | `cpu` | 24 | 1 / 2 | 1 | Exact ints, nulls vs NaN, stable sort, grouping, functional replace, matrices |
+| `numerical-conformance` | `cpu` | 19 | 0 / 1 | 1 | 8 NIST OLS + 11 ANOVA datasets against original decimal references |
+| `numerical-binary64` | `cpu` | 19 | 0 / 1 | 1 | Same 19 NIST OLS/ANOVA inputs against exact binary64 references |
+| `supervised-conformance` | `cpu` | 6 | 1 / 2 | 1 | Frozen Wine/WDBC splits, train-only scaling, OLS/logistic regression |
+| `model-conformance` | `cpu` | 3 | 0 / 1 | 1 | Exact synthetic PCA and multinomial Naive Bayes contracts |
+| `controlled-conformance` | `cpu` | 10 | 1 / 2 | 1 | Supplied-weight inference, KMeans, Kalman, cosine search, exact SHAP |
+| `vision-conformance` | `cpu` | 8 | 1 / 2 | 1 | Normalized NCHW/HWC layout, gray expansion, bilinear resize, padding |
+| `boundary-cpu-conformance` | `cpu` | 4 | 1 / 2 | 1 | CPU DataFrame-to-tensor values, alignment, dtype, mutation isolation |
+| `boundary-conformance` | `apple` | 6 | 1 / 2 | 1 | CPU and Metal DataFrame-to-tensor conformance |
+| `boundary-sweep` | `sweep` | 54 | 1 / 2 | 1 | Stage (`conversion`, `prepared`, `pipeline`) × size/width/dtype sweep |
+| `neural-cpu-conformance` | `cpu` | 5 | 1 / 2 | 1 | Fixed Float32 transformer decoder logits on MLX CPU |
+| `neural-conformance` | `apple` | 12 | 1 / 2 | 1 | Fixed Float32 decoder logits on MLX CPU and Metal GPU |
+| `neural-loader-conformance` | `apple` | 2 | 1 / 2 | 1 | Public `TransformerDecoder` weight-loading parameter replacement diagnostics |
+| `neural-shaped-cpu-conformance` | `cpu` | 6 | 1 / 3 | 1 | Wider decoder (`16/32`) and longer context (`8–128` tokens) on CPU |
+| `neural-shaped-conformance` | `apple` | 12 | 1 / 3 | 1 | Wider decoder and longer context conformance on CPU and Metal GPU |
+| `scientific-workflow` | `cpu` | 4 | 0 / 2 | 1 | End-to-end CSV read, filter, join, matrix, OLS workflows |
+| `persisted-workflow` | `cpu` | 6 | 0 / 2 | 1 | Training-only preprocessing, native reload, Core ML export in fresh process |
 
 The first three profiles each contain 11 table workloads and three NIST checks. All four adapters support CSV read, numeric filtering, stable sorting, grouped sum, matrix export, target-vector export, standard scaling, min-max scaling, mean, sample variance and sample standard deviation. The `pandas` adapter uses pandas for dataframe work and NumPy for numerical work.
 
@@ -256,13 +345,17 @@ The original table profiles cover finite numeric data and one grouping key. The 
 The migration profiles add streaming CSV, mixed numeric/string/Boolean types, joins, Parquet, multi-output grouping, row reductions, correlations, hypothesis tests, regression metrics, ROC-AUC, encoders, SQLite ingestion, RAG summaries and pooling/Dice workloads. Each profile declares 36 cases. Read its resolved plan for the exact input size and operation boundary. The `pandas` adapter also uses SciPy, PyArrow and SQLite where the workload requires them. Parquet interoperability regression tests also cover nulls; the timed migration fixtures do not. These profiles complement the original profiles; they do not replace the NIST checks.
 
 ```bash
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py inventory
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile migration-smoke
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile migration-smoke \
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py inventory
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py prepare --profile migration-smoke
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py run --profile migration-smoke \
   --engines swiftsci,pandas --swift-worker "$worker" \
   --python Benchmarks/.venv-standardized/bin/python \
   --output Benchmarks/Runs/migration-smoke-01
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/migration-smoke-01
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py audit Benchmarks/Runs/migration-smoke-01
 ```
 
 `inventory` reconciles 133 legacy result rows and two diagnostics with standardized workloads or explicit research dispositions. A row marked as migrated identifies its replacement contract; it does not certify historical output. The legacy `--research` runner has been removed in the v3.13.2 cleanup; new learned-model, forecasting, and explainability comparisons live in `Benchmarks/Tools/scientific_validation_suite.py`.
@@ -288,10 +381,24 @@ Both workers retain the result through the end timestamp, then validate every ou
 Use `--mode production-default` with `bench.py run` for measurements under each engine's native scheduling defaults. The complete `comparison_suite.py` driver selects this mode by default. The controller clears documented BLAS, OpenMP, NumExpr, Polars and Rayon thread overrides before launching workers. DuckDB opens a connection without a thread override. Swift retains its normal GCD and Accelerate behavior. Equal access to the machine does not imply equal thread counts.
 
 ```sh
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run \
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py run \
   --mode production-default --profile standard \
   --engines swiftsci,pandas,polars,duckdb \
-  --swift-worker "$worker" --output Benchmarks/Runs/production-standard
+  --swift-worker "$worker" \
+  --python Benchmarks/.venv-standardized/bin/python \
+  --output Benchmarks/Runs/production-standard
+
+# Or run the full 4-engine comparison driver (standard, extended, public-data, nist, migration, tabular-migration):
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/comparison_suite.py \
+  --swift-worker "$worker" \
+  --python "$PWD/Benchmarks/.venv-standardized/bin/python" \
+  --output Benchmarks/Runs/comparison-01
+
+# Summarize a boundary-sweep run directory:
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/sweeps.py Benchmarks/Runs/boundary-sweep-01
 ```
 
 Prepare the profile and build the worker first. This mode raises the profile to at least five independent process rounds and rotates engine order each round. It keeps the profile's warmups, samples, input types, tolerances and output contract. Worker responses record the thread environment and available configured pool sizes. Polars reports its pool size; DuckDB reports the connection's configured threads. Active thread use and Swift's GCD pool size remain unmeasured. Python engine records identify NumPy's linked BLAS and LAPACK backends.
@@ -309,16 +416,22 @@ The reporter takes the median within each process, then the median of those proc
 ## Certification and comparisons
 
 ```bash
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py prepare --profile certification
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py certify --engines swiftsci,pandas \
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py prepare --profile certification
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py certify --engines swiftsci,pandas \
   --swift-worker "$worker" --python Benchmarks/.venv-standardized/bin/python \
   --output Benchmarks/Runs/certification-01
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/certification-01
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py run --profile nist --engines swiftsci,pandas \
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py audit Benchmarks/Runs/certification-01
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py run --profile nist --engines swiftsci,pandas \
   --swift-worker "$worker" --python Benchmarks/.venv-standardized/bin/python \
   --output Benchmarks/Runs/nist-01
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py audit Benchmarks/Runs/nist-01
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/bench.py compare Benchmarks/Runs/baseline Benchmarks/Runs/candidate
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py audit Benchmarks/Runs/nist-01
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/bench.py compare Benchmarks/Runs/baseline Benchmarks/Runs/candidate
 ```
 
 A certificate is a local workload-conformance record. It binds the run checksum, experiment contract, source fingerprint, case identities and validated sample count. It is unsigned and does not imply NIST endorsement, third-party accreditation, or correctness of untested APIs. `audit` checks the checksum, complete case coverage, sample counts and validation status. Crashes, timeouts, missing responses and output mismatches fail the run and cannot yield a passing certificate.
@@ -360,11 +473,25 @@ The [bounded decoder shape pack](Fixtures/neural-shaped/README.md) adds widths 1
 `Specs/acceptance.json` assigns every canonical profile to an execution tier and names deferred coverage. `cpu` runs bounded CPU conformance, including numerical, model and supervised cases. `apple` also runs explicit Metal and loader diagnostics. `sweep` runs repeated size profiles and the bounded conversion/computation sweeps. `all` runs every profile. The inventory command separately preserves the disposition of every legacy registration; a replacement contract does not validate historical timing results.
 
 ```sh
-Benchmarks/.venv-standardized/bin/python Benchmarks/Tools/acceptance.py \
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/acceptance.py \
   --tier all \
   --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
   --python Benchmarks/.venv-standardized/bin/python \
   --output Benchmarks/Runs/acceptance-unique-name
+
+# Or mirror CI CPU acceptance + reviewed regression policy + workflow mutation challenge:
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/acceptance.py \
+  --tier cpu --check-baseline \
+  --swift-worker "$worker" \
+  --python Benchmarks/.venv-standardized/bin/python \
+  --output Benchmarks/Runs/acceptance-cpu-01
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tests/check_public_workflow_workers.py \
+  --run Benchmarks/Runs/acceptance-cpu-01/scientific-workflow \
+  --run Benchmarks/Runs/acceptance-cpu-01/persisted-workflow \
+  --output Benchmarks/Runs/workflow-controls-01
 ```
 
 Build the worker first with `bench.py build`. Use a new output directory for each acceptance run. The command prepares and executes each profile even after another profile fails. It returns nonzero if any profile fails. The report distinguishes complete recorded worker failures from missing evidence, crashes and setup failures. It never converts a known failure into a passing certificate. The source identity, tracked fixture/specification identity, full worker requests, independently reconstructed expected bytes, responses and certificate hashes are checked throughout the run. Keep the checkout unchanged during acceptance.
@@ -377,7 +504,74 @@ This completes the declared testing infrastructure scope, not certification of e
 
 ## Public workflow conformance
 
-The `scientific-workflow` profile checks four complete CSV-to-numerical-result cases with declared column types, duplicate join keys, and reordered inputs. The `persisted-workflow` profile checks training-only preprocessing and prediction, native regressor reload, and composite Core ML pipeline export in fresh processes. Read the [workflow contracts](Fixtures/workflows/README.md) for the distinction between fitted-state validation and persistence, diagnostic timing limits, and retained failure evidence. Both profiles run in the CPU acceptance tier. CI also challenges passing workers with corrupt answers and malformed inputs.
+The `scientific-workflow` profile checks four complete CSV-to-numerical-result cases with declared column types, duplicate join keys, and reordered inputs. The `persisted-workflow` profile checks training-only preprocessing and prediction, native regressor reload, and composite Core ML pipeline export in fresh processes. Read the [workflow contracts](Fixtures/workflows/README.md) for the distinction between fitted-state validation and persistence, diagnostic timing limits, and retained failure evidence. Both profiles run in the CPU acceptance tier. CI also challenges passing workers with corrupt answers and malformed inputs via [check_public_workflow_workers.py](Tests/check_public_workflow_workers.py).
+
+## Scientific validation suite
+
+[scientific_validation_suite.py](Tools/scientific_validation_suite.py) executes `39` accuracy-gated workloads and `3` rolling-origin time-series backtests across isolated Swift ([ScientificSuiteWorkloads.swift](Worker/ScientificSuiteWorkloads.swift)) and Python ([scientific_reference_worker.py](Python/scientific_reference_worker.py)) worker processes, separating `fit` and `infer`, reporting whole-process `ru_maxrss`, suppressing stages under `1000 ns`, and checking numerical/G-037 gates before computing any speedup:
+
+- **Time series (`SwiftForecast`):** Holt-Winters (`hw_syn500_ro`), ARIMA & SARIMA against matched Hannan-Rissanen and `statsmodels` state-space references (`arima_dgp_ro`, `sarima_ap_ro`), fail-closed MA/SMA invertibility checks (`G-033`), `AutoARIMA`, `G-037` closed-loop `fittedValues`/`residuals` identity checks, and `TimeSeriesAnomalyDetector`.
+- **Supervised ML (`SwiftML` vs `scikit-learn`):** OLS linear regression, logistic regression, linear SVC, decision tree regressor/classifier, random forest regressor/classifier, GBDT regressor, and HistGBDT regressor/classifier.
+- **Unsupervised, Explainability, Stats & LLM:** PCA, KMeans, `TreeSHAP` (exact $2^K$ oracle for $K \le 12$ and seeded Monte Carlo for $K > 12$), `Stats.skewness`/`kurtosis` (`ddof = 1` relation check), and `SwiftLLM` KV-cache vs full-forward decode ablation.
+
+Install [requirements.txt](Python/requirements.txt) in an isolated scientific environment (for example Python 3.11 for pinned `statsmodels`/`scikit-learn`/`shap`), build the Release worker, and run via `uv`:
+
+```bash
+uv venv Benchmarks/.venv-scientific --python 3.11
+uv pip install --python Benchmarks/.venv-scientific/bin/python -r Benchmarks/Python/requirements.txt
+
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/scientific_validation_suite.py \
+  --swift-worker "$HOME/Library/Caches/SwiftSci/standardized-benchmarks/derived/Build/Products/Release/SwiftSciBenchmarkWorker" \
+  --python-engine "$PWD/Benchmarks/.venv-scientific/bin/python" \
+  --processes 5 --warmups 2 --samples 5 \
+  --status LOCAL --label local-scientific \
+  --output Benchmarks/Runs/scientific-01/scientific_validation.json
+```
+
+To run the Python reference smoke test inside `Benchmarks/Tests/test_scientific_suite.py` against that environment, set `SWIFTSCI_SCIENTIFIC_PYTHON="$PWD/Benchmarks/.venv-scientific/bin/python"`.
+
+## Pretrained Llama, GGUF, and `llama.cpp` diagnostics
+
+This opt-in group covers synthetic CPU preflight controls plus real Llama 3.2 1B BF16 integration, precision, generation, and GGUF/`llama.cpp` cross-runtime checks (detailed setup in [Fixtures/pretrained/README.md](Fixtures/pretrained/README.md), [PRECISION.md](Fixtures/pretrained/PRECISION.md), [GENERATION.md](Fixtures/pretrained/GENERATION.md), and [LLAMA-CPP.md](Fixtures/pretrained/LLAMA-CPP.md)):
+
+```bash
+# 1. Synthetic CPU preflight controls (no model download or Metal GPU required):
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tests/check_pretrained_inspection.py \
+  --swift-worker "$worker" --output Benchmarks/Runs/preflight-controls-01
+
+# 2. Optional real-checkpoint environment (Apple silicon Metal required):
+uv venv Benchmarks/.venv-llm --python 3.14
+uv pip install --python Benchmarks/.venv-llm/bin/python -r Benchmarks/Python/requirements-llm.txt
+
+model="$HOME/Library/Caches/SwiftSci/models/Llama-3.2-1B-Instruct-bf16-863c846a"
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/pretrained_llama.py \
+  --model "$model" --python Benchmarks/.venv-llm/bin/python \
+  --swift-worker "$worker" --output Benchmarks/Runs/llama-integration-01
+
+# 3. Longer-prompt & batched greedy generation across 4 precision policies:
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/llama_generation_benchmark.py \
+  --model "$model" --python Benchmarks/.venv-llm/bin/python \
+  --output Benchmarks/Runs/llama-generation-01
+
+# 4. GGUF conversion verification & llama.cpp server comparison (after converting GGUF; see LLAMA-CPP.md):
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/llama_cpp_compare.py \
+  --model "$model" --gguf "$model.gguf" \
+  --conversion-report Benchmarks/Runs/llama-cpp-01/conversion.json \
+  --python Benchmarks/.venv-llm/bin/python \
+  --server /opt/homebrew/bin/llama-server \
+  --scores --output Benchmarks/Runs/llama-cpp-01/comparison
+
+# 5. Timed precision policies over recorded score probes:
+uv run --no-project --python Benchmarks/.venv-standardized/bin/python \
+  Benchmarks/Tools/llama_precision_benchmark.py \
+  --model "$model" --score-run Benchmarks/Runs/llama-cpp-01/comparison/score-comparison \
+  --python Benchmarks/.venv-llm/bin/python --output Benchmarks/Runs/llama-precision-timing-01
+```
 
 ## Known failures and the CI regression policy
 

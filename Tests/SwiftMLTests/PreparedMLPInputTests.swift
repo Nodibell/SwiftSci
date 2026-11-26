@@ -5,10 +5,10 @@ import SwiftPreprocessing
 
 @Suite("Reusable source-ordered MLP inputs", .serialized)
 struct PreparedMLPInputTests {
-    @Test(arguments: [1, 7, 128, 512, 513])
+    @Test(arguments: [1, 7, 128, 512, 513, 8193])
     func repeatedPredictionsPreserveExactLogicalOrder(width: Int) async throws {
         let c = try await preparedMLPTestContext(width: width)
-        let budget = try MemoryBudget(limit: 128 * 1024 * 1024)
+        let budget = try MemoryBudget(limit: (width > 4096 ? 256 : 128) * 1024 * 1024)
         for count in [0, 1, 31, 32, 33, 65, 1031] {
             let indices = (0..<count).map { ($0 * 17) % 43 }
             var view = try IndexedNumericBatch(c.source, selectingRows: indices)
@@ -28,9 +28,14 @@ struct PreparedMLPInputTests {
             #expect(await budget.reservedBytes == 0)
             for _ in 0..<3 {
                 let callerManaged = try c.fitted.predictExternallyAdmitted(features: input)
-                #expect(callerManaged.map(\.bitPattern) == expected.map(\.bitPattern))
                 let result = try await c.model.predict(features: input, budget: budget)
-                #expect(result.map(\.bitPattern) == expected.map(\.bitPattern))
+                if mlpEffectivePredictionBatchRows(width: width) == 32 || width > 8_192 {
+                    #expect(callerManaged.map(\.bitPattern) == expected.map(\.bitPattern))
+                    #expect(result.map(\.bitPattern) == expected.map(\.bitPattern))
+                } else {
+                    matrixMLPExpectClose(callerManaged, expected)
+                    matrixMLPExpectClose(result, expected)
+                }
                 #expect(await budget.reservedBytes == 0)
             }
         }

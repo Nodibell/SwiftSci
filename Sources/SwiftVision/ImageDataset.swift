@@ -50,8 +50,8 @@ public struct BoundingBox: Sendable, Codable, Equatable {
         let interHeight = max(0.0, interYMax - interYMin)
         let interArea = interWidth * interHeight
 
-        let areaA = (self.xMax - self.xMin) * (self.yMax - self.yMin)
-        let areaB = (other.xMax - other.xMin) * (other.yMax - other.yMin)
+        let areaA = max(0.0, self.xMax - self.xMin) * max(0.0, self.yMax - self.yMin)
+        let areaB = max(0.0, other.xMax - other.xMin) * max(0.0, other.yMax - other.yMin)
         let unionArea = areaA + areaB - interArea
 
         guard unionArea > 0 else { return 0.0 }
@@ -385,11 +385,21 @@ public actor YOLOv8Detector {
     /// - Parameters:
     ///   - image: The input image dataset.
     /// - Throws: An error if image dimensions are invalid.
-    /// - Returns: A list of detected bounding boxes filtered by NMS.
+    /// - Returns: A list of detected bounding boxes in normalized `[0.0, 1.0]` original image coordinates, filtered by NMS.
     public func detect(image: ImageDataset) async throws -> [BoundingBox] {
         guard image.width > 0, image.height > 0 else {
             throw VisionError.invalidInput("Image dimensions must be positive")
         }
+
+        let targetW = preprocessor.targetWidth
+        let targetH = preprocessor.targetHeight
+        let w = Double(image.width)
+        let h = Double(image.height)
+        let scale = min(Double(targetW) / max(1.0, w), Double(targetH) / max(1.0, h))
+        let newW = min(targetW, max(1, Int(round(w * scale))))
+        let newH = min(targetH, max(1, Int(round(h * scale))))
+        let padX = Double((targetW - newW) / 2)
+        let padY = Double((targetH - newH) / 2)
 
         let inputTensor = preprocessor.preprocess(image: image)
         let backboneOut = backbone(inputTensor)
@@ -419,10 +429,12 @@ public actor YOLOv8Detector {
 
             if Double(maxScore) >= confidenceThreshold {
                 let boxOffset = a * 4
-                let xMin = Double(rawBoxes[boxOffset + 0])
-                let yMin = Double(rawBoxes[boxOffset + 1])
-                let xMax = Double(rawBoxes[boxOffset + 2])
-                let yMax = Double(rawBoxes[boxOffset + 3])
+                let xMin = min(1.0, max(0.0, (Double(rawBoxes[boxOffset + 0]) - padX) / Double(newW)))
+                let yMin = min(1.0, max(0.0, (Double(rawBoxes[boxOffset + 1]) - padY) / Double(newH)))
+                let xMax = min(1.0, max(0.0, (Double(rawBoxes[boxOffset + 2]) - padX) / Double(newW)))
+                let yMax = min(1.0, max(0.0, (Double(rawBoxes[boxOffset + 3]) - padY) / Double(newH)))
+                guard xMax > xMin && yMax > yMin else { continue }
+
                 let label = maxClass < classLabels.count ? classLabels[maxClass] : "object_\(maxClass)"
 
                 candidateBoxes.append(BoundingBox(

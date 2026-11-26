@@ -60,9 +60,10 @@ func preparedMLPPredictionEstimate(_ input: PreparedMLPInput, layers: [LayerWeig
         throw SwiftMLError.dimensionMismatch(expected: first.inDim, got: input.batch.columnCount)
     }
     let width = layers.reduce(0) { max($0, max($1.inDim, $1.outDim)) }
-    let batched = input.rowCount >= mlpPredictionBatchRows && width > 0 && width <= 512
+    let batchRows = mlpEffectivePredictionBatchRows(width: width)
+    let batched = batchRows >= 2 && input.rowCount >= batchRows
     let workspace = try input.preprocessing.workspaceAllowance(rowCount: input.rowCount)
     return try MemoryEstimate(capacities: [input.retainedBytes, modelBytes, workspace.bytes, 65_536,
-        preparedMLPBytes(width, MemoryLayout<Double>.stride, batched ? 2 * mlpPredictionBatchRows : 4),
+        preparedMLPBytes(width, MemoryLayout<Double>.stride, batched ? 2 * batchRows : 4),
         preparedMLPBytes(input.rowCount, MemoryLayout<Double>.stride, input.logicalPositions == nil ? 2 : 4)])
 }

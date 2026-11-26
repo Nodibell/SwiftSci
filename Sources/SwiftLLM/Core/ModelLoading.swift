@@ -156,13 +156,7 @@ extension LLMConfig {
 
         var eos = Set<Int>()
         for container in [textConfig["eos_token_id"], root["eos_token_id"]] {
-            if let num = container as? NSNumber, CFGetTypeID(num) != CFBooleanGetTypeID() {
-                eos.insert(num.intValue)
-            } else if let many = container as? [Any] {
-                for case let value as NSNumber in many where CFGetTypeID(value) != CFBooleanGetTypeID() {
-                    eos.insert(value.intValue)
-                }
-            }
+            eos.formUnion(Self.parseEOSTokenIDs(from: container))
         }
 
         let isGemmaFamily = architecture == .gemma2 || architecture == .gemma3 || architecture == .gemma4
@@ -302,6 +296,24 @@ extension LLMConfig {
             )
         }
     }
+
+    fileprivate static func parseEOSTokenIDs(from container: Any?) -> Set<Int> {
+        var eos = Set<Int>()
+        if let num = container as? NSNumber, CFGetTypeID(num) != CFBooleanGetTypeID() {
+            let d = num.doubleValue
+            if d.rounded() == d, abs(d) < 1e12 {
+                eos.insert(Int(d))
+            }
+        } else if let many = container as? [Any] {
+            for case let value as NSNumber in many where CFGetTypeID(value) != CFBooleanGetTypeID() {
+                let d = value.doubleValue
+                if d.rounded() == d, abs(d) < 1e12 {
+                    eos.insert(Int(d))
+                }
+            }
+        }
+        return eos
+    }
 }
 
 // MARK: - Directory loading
@@ -327,7 +339,13 @@ extension TransformerDecoder {
             return try Data(contentsOf: url)
         }
         let configData = try read("config.json")
-        let config = try LLMConfig(huggingFaceConfigJSON: configData, maxSeqLen: maxSeqLen)
+        var config = try LLMConfig(huggingFaceConfigJSON: configData, maxSeqLen: maxSeqLen)
+        let generationConfigURL = directory.appendingPathComponent("generation_config.json")
+        if fm.fileExists(atPath: generationConfigURL.path),
+           let generationConfigData = try? Data(contentsOf: generationConfigURL),
+           let generationConfigRoot = try? JSONSerialization.jsonObject(with: generationConfigData) as? [String: Any] {
+            config.eosTokenIDs.formUnion(LLMConfig.parseEOSTokenIDs(from: generationConfigRoot["eos_token_id"]))
+        }
         let tokenizer: any Tokenizer
         if config.architecture == .llama {
             tokenizer = try BPETokenizer(llama3TokenizerJSON: read("tokenizer.json"))
@@ -426,6 +444,7 @@ public struct ModelDownloader: Sendable {
 
         try await fetch("config.json", repo: repo, revision: revision, into: directory)
         try await fetch("tokenizer.json", repo: repo, revision: revision, into: directory)
+        try await fetch("generation_config.json", repo: repo, revision: revision, into: directory, optional: true)
         let hasIndex = try await fetch("model.safetensors.index.json", repo: repo, revision: revision,
                                        into: directory, optional: true)
         let shards: [String]

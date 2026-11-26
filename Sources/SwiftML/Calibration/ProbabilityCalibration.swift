@@ -3,29 +3,29 @@ import Foundation
 // MARK: - Platt Scaling
 
 /// Calibrates uncalibrated raw scores / logits into probabilities using sigmoid (Platt) scaling.
-/// Fits parameters A and B in P(y=1|f) = 1 / (1 + exp(A * f + B)) via logistic OLS/Newton optimization.
+/// Fits parameters `a` and `b` in `P(y=1|f) = sigmoid(a * f + b)` via gradient descent on log-loss.
 public final class PlattScaling: @unchecked Sendable {
-    /// The a.
-    public private(set) var a: Double = -1.0
-    /// The b.
+    /// The slope parameter `a`.
+    public private(set) var a: Double = 1.0
+    /// The intercept parameter `b`.
     public private(set) var b: Double = 0.0
-    /// is fitted.
+    /// Whether the calibrator has been fitted.
     public private(set) var isFitted: Bool = false
 
     /// Creates a new instance.
     public init() {}
 
-    /// Fit.
+    /// Fits Platt scaling parameters `a` and `b` using score and binary target pairs.
     /// - Parameters:
-    ///   - scores: The scores.
-    ///   - targets: The targets.
-    ///   - maxIterations: The max iterations.
-    ///   - lr: The lr.
+    ///   - scores: Uncalibrated decision scores or logits.
+    ///   - targets: Binary target labels (`0` or `1`).
+    ///   - maxIterations: Maximum number of gradient descent iterations.
+    ///   - lr: Gradient descent learning rate.
     public func fit(scores: [Double], targets: [Int], maxIterations: Int = 100, lr: Double = 0.05) {
         guard !scores.isEmpty, scores.count == targets.count else { return }
 
-        // Gradient descent optimization for log loss parameters A and B
-        var currA = -1.0
+        // Gradient descent optimization for log loss parameters a and b
+        var currA = 1.0
         var currB = 0.0
 
         for _ in 0..<maxIterations {
@@ -34,7 +34,7 @@ public final class PlattScaling: @unchecked Sendable {
 
             for (s, t) in zip(scores, targets) {
                 let logit = currA * s + currB
-                let p = 1.0 / (1.0 + exp(-logit))
+                let p = sigmoid(logit)
                 let err = p - Double(t)
                 gradA += err * s
                 gradB += err
@@ -50,14 +50,14 @@ public final class PlattScaling: @unchecked Sendable {
         self.isFitted = true
     }
 
-    /// Predict probability.
+    /// Predicts the calibrated positive-class probability for a single score.
     /// - Parameters:
-    ///   - score: The score.
-    /// - Returns: A `Double` result.
+    ///   - score: Uncalibrated decision score or logit.
+    /// - Returns: Calibrated probability in `(0, 1)`.
     public func predictProbability(score: Double) -> Double {
-        guard isFitted else { return 1.0 / (1.0 + exp(-score)) }
+        guard isFitted else { return sigmoid(score) }
         let logit = a * score + b
-        return 1.0 / (1.0 + exp(-logit))
+        return sigmoid(logit)
     }
 
     /// Predict probabilities.

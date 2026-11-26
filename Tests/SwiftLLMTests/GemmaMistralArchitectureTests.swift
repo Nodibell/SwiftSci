@@ -600,6 +600,50 @@ struct GemmaMistralArchitectureTests {
         #expect(MLX.abs(modifiedLogits - full).max().item(Float.self) > 1e-5)
     }
 
+    @Test("G-050: TransformerDecoder.generationPrompt avoids duplicate <bos> for Gemma 4 prompts")
+    func gemma4GenerationPromptSingleBOS() async throws {
+        let tokData = try Self.makeMinimalGemmaTokenizerJSON(vocabSize: 300)
+        let tokenizer = try SentencePieceBPETokenizer(tokenizerJSON: tokData)
+        let prompt = ChatTemplate.gemma4.render(messages: [.user("hi")], addGenerationPrompt: true)
+        #expect(prompt.hasPrefix("<bos>"))
+
+        let expectedTokens = tokenizer.encode(text: prompt, addSpecialTokens: false)
+        #expect(expectedTokens.first == 2)
+        #expect(expectedTokens.dropFirst().first != 2)
+
+        // Exact maxSeqLen == expectedTokens.count succeeds only if duplicate BOS is NOT added.
+        let cfg = LLMConfig(
+            vocabSize: 300,
+            numLayers: 1,
+            hiddenDim: 8,
+            numHeads: 2,
+            numKVHeads: 1,
+            intermediateSize: 16,
+            maxSeqLen: expectedTokens.count
+        )
+        let decoder = TransformerDecoder(config: cfg, tokenizer: tokenizer)
+        Self.populateDeterministicWeights(decoder)
+
+        var completionInfo: GenerationCompletionInfo?
+        for try await event in decoder.generateDetails(prompt: prompt, options: LLMOptions(temperature: 0, maxTokens: 0)) {
+            if case .info(let info) = event {
+                completionInfo = info
+            }
+        }
+        #expect(completionInfo?.promptTokenCount == expectedTokens.count)
+
+        // A prompt without leading <bos> still receives the tokenizer's single BOS token.
+        let plainPrompt = "hi"
+        let expectedPlainCount = tokenizer.encode(text: plainPrompt, addSpecialTokens: true).count
+        var plainInfo: GenerationCompletionInfo?
+        for try await event in decoder.generateDetails(prompt: plainPrompt, options: LLMOptions(temperature: 0, maxTokens: 0)) {
+            if case .info(let info) = event {
+                plainInfo = info
+            }
+        }
+        #expect(plainInfo?.promptTokenCount == expectedPlainCount)
+    }
+
     @Test("Gemma 4 MoE + mixed-bit quantized checkpoint loads packed 4-bit experts and 8-bit router")
     func gemma4MoEAndMixedBitQuantization() throws {
         // Hidden=64, intermediate=64, moe_intermediate=64 to allow clean groupSize=64 affine packing

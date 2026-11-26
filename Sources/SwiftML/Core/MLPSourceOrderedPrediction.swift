@@ -7,7 +7,7 @@ extension MLPRegressor {
                                       preprocessing: StandardPreprocessingPlan) async throws -> [Double] {
         try Task.checkCancellation()
         // Keep every row in the same BLAS batch-size class, including the original tail.
-        let prefix = mlpSourceOrderPrefix(rowCount: features.rowCount)
+        let prefix = mlpSourceOrderPrefix(rowCount: features.rowCount, width: features.columnCount)
         let ordered = try features.sourceOrdered(prefixCount: prefix)
         try Task.checkCancellation()
         let prediction = try await predict(features: ordered.batch, preprocessing: preprocessing)
@@ -18,6 +18,8 @@ extension MLPRegressor {
     }
 }
 
-func mlpSourceOrderPrefix(rowCount: Int) -> Int {
-    rowCount >= mlpPredictionBatchRows ? rowCount - rowCount % mlpPredictionBatchRows : rowCount
+func mlpSourceOrderPrefix(rowCount: Int, width: Int) -> Int {
+    let batchRows = mlpEffectivePredictionBatchRows(width: width)
+    guard batchRows >= 2 else { return rowCount }
+    return rowCount >= batchRows ? rowCount - rowCount % batchRows : rowCount
 }

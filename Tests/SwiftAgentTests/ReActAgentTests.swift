@@ -351,4 +351,114 @@ struct ReActAgentTests {
         let errUTF8 = SchemaValidationError.utf8ConversionFailed
         #expect(errUTF8.errorDescription == "Malformed input: cannot convert to UTF-8")
     }
+
+    @Test("G-038: parseResponse handles Gemma 4 <|channel>thought blocks (inline, multi-block, empty, unclosed)")
+    func testParseGemma4ChannelThoughtBlocks() async {
+        let agent = ReActAgent()
+
+        // Inline directive immediately following <channel|>
+        let inline = "<|channel>thought\nLet me plan.<channel|>Action: EchoTool\nAction Input: hello"
+        let parsedInline = await agent.parseResponse(inline)
+        #expect(parsedInline.thought == "Let me plan.")
+        #expect(parsedInline.action == "EchoTool")
+        #expect(parsedInline.actionInput == "hello")
+        #expect(parsedInline.finalAnswer == nil)
+
+        // Multiple blocks + inline Final Answer
+        let multi = "<|channel>thought\nStep one.<channel|>\n<|channel>thought\nStep two.<channel|>Final Answer: 42"
+        let parsedMulti = await agent.parseResponse(multi)
+        #expect(parsedMulti.thought == "Step one.\nStep two.")
+        #expect(parsedMulti.action == nil)
+        #expect(parsedMulti.finalAnswer == "42")
+
+        // Empty thought block
+        let empty = "<|channel>thought\n<channel|>Final Answer: Clean"
+        let parsedEmpty = await agent.parseResponse(empty)
+        #expect(parsedEmpty.thought.isEmpty)
+        #expect(parsedEmpty.finalAnswer == "Clean")
+
+        // Unclosed thought block with half-generated Action: must not execute or become finalAnswer
+        let unclosed = "<|channel>thought\nIncomplete reasoning\nAction: DangerTool\nAction Input: boom"
+        let parsedUnclosed = await agent.parseResponse(unclosed)
+        #expect(parsedUnclosed.thought == "Incomplete reasoning\nAction: DangerTool\nAction Input: boom")
+        #expect(parsedUnclosed.action == nil)
+        #expect(parsedUnclosed.actionInput == nil)
+        #expect(parsedUnclosed.finalAnswer == nil)
+    }
+
+    @Test("G-038: parseResponse handles <think>...</think> closed and unclosed blocks")
+    func testParseXMLThinkBlocks() async {
+        let agent = ReActAgent()
+
+        let closedInline = "<think>Compute sum</think>Final Answer: 30"
+        let parsedClosed = await agent.parseResponse(closedInline)
+        #expect(parsedClosed.thought == "Compute sum")
+        #expect(parsedClosed.finalAnswer == "30")
+
+        let unclosed = "<think>Still thinking\nAction: EchoTool\nAction Input: partial"
+        let parsedUnclosed = await agent.parseResponse(unclosed)
+        #expect(parsedUnclosed.thought == "Still thinking\nAction: EchoTool\nAction Input: partial")
+        #expect(parsedUnclosed.action == nil)
+        #expect(parsedUnclosed.actionInput == nil)
+        #expect(parsedUnclosed.finalAnswer == nil)
+    }
+
+    @Test("G-052: parseResponse stops collecting Action Input at Observation: (case-insensitive)")
+    func testParseActionInputStopsAtObservation() async {
+        let agent = ReActAgent()
+
+        let singleLine = """
+        Thought: Querying data.
+        Action: DataFrameQuery
+        Action Input: filter: age > 25
+        observation: Result (3 rows)
+        extra hallucinated observation line
+        """
+        let parsedSingle = await agent.parseResponse(singleLine)
+        #expect(parsedSingle.action == "DataFrameQuery")
+        #expect(parsedSingle.actionInput == "filter: age > 25")
+        #expect(parsedSingle.finalAnswer == nil)
+
+        let multiLine = """
+        Action: Calc
+        Action Input: line 1
+        line 2
+        Observation: 99
+        more ignored text
+        """
+        let parsedMulti = await agent.parseResponse(multiLine)
+        #expect(parsedMulti.action == "Calc")
+        #expect(parsedMulti.actionInput == "line 1\nline 2")
+    }
+
+    @Test("G-052: ReActAgent executes Action when Action precedes hallucinated Final Answer in same turn")
+    func testActionPriorityOverHallucinatedFinalAnswer() async throws {
+        let tool = CustomAgentTool(name: "EchoTool", description: "Echo input") { "Real: \($0)" }
+        let agent = ReActAgent(tools: [tool], maxSteps: 3)
+
+        let mockLLM: @Sendable (String) async throws -> String = { prompt in
+            if !prompt.contains("Previous History:") {
+                return """
+                Thought: Run EchoTool first.
+                Action: EchoTool
+                Action Input: ping
+                Observation: Hallucinated observation
+                Thought: Hallucinated follow-up
+                Final Answer: Hallucinated answer
+                """
+            } else {
+                return """
+                Thought: Observed real tool output.
+                Final Answer: Verified answer
+                """
+            }
+        }
+
+        let (answer, trace) = try await agent.run(query: "Test priority", llm: mockLLM)
+        #expect(trace.count == 2)
+        #expect(trace[0].action == "EchoTool")
+        #expect(trace[0].actionInput == "ping")
+        #expect(trace[0].observation == "Real: ping")
+        #expect(answer == "Verified answer")
+    }
 }

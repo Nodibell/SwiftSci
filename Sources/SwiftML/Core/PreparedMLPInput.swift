@@ -50,7 +50,9 @@ package final class PreparedMLPInput: Sendable {
     package static func prepareExternallyAdmitted(features: IndexedNumericBatch,
         preprocessing: StandardPreprocessingPlan, peak: MemoryEstimate) throws -> PreparedMLPInput {
         try Task.checkCancellation()
-        let ordered = try features.sourceOrdered(prefixCount: mlpSourceOrderPrefix(rowCount: features.rowCount))
+        let ordered = try features.sourceOrdered(
+            prefixCount: mlpSourceOrderPrefix(rowCount: features.rowCount, width: features.columnCount)
+        )
         let retained = try preparedMLPInputBytes(ordered.batch, preprocessing: preprocessing,
             mappingCapacity: ordered.logicalPositions?.capacity ?? 0)
         guard retained <= peak.bytes else { throw MemoryAdmissionError.invalidCapacity }

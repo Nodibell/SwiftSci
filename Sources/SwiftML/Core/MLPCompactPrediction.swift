@@ -3,7 +3,8 @@ import SwiftDataFrame
 func mlpCompactPrediction(features: PreparedNumericBatch, layers: [LayerWeights],
                           activate: (Double) -> Double) -> [Double] {
     let width = layers.reduce(0) { max($0, max($1.inDim, $1.outDim)) }
-    if features.rowCount >= mlpPredictionBatchRows && width > 0 && width <= 512 {
+    let batchRows = mlpEffectivePredictionBatchRows(width: width)
+    if batchRows >= 2 && features.rowCount >= batchRows {
         return mlpBatchedPrediction(rowCount: features.rowCount, width: width, layers: layers,
             fill: { start, count, buffer, stride in
                 for column in features.columns.indices {

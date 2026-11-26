@@ -41,7 +41,7 @@ public struct LayerWeights: Sendable, Codable {
     }
 }
 
-private struct LayerAdamState: Sendable {
+private final class LayerAdamState {
     var mW: [Double]
     var vW: [Double]
     var mB: [Double]
@@ -163,7 +163,12 @@ public actor MLPClassifier: ClassifierEstimator {
             throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
-        let numFeatures = features[0].count
+        let numFeatures = try validateMLPTrainingInputs(
+            features: features,
+            targets: targets,
+            validationFeatures: validationFeatures,
+            validationTargets: validationTargets
+        )
 
         self.resolvedDevice = await HardwareRouter.shared.resolveDevice(
             for: "MLPClassifier",
@@ -175,6 +180,9 @@ public actor MLPClassifier: ClassifierEstimator {
         let uniqueClasses = Array(Set(targets)).sorted()
         self.classes = uniqueClasses
         let numClasses = max(1, uniqueClasses.count)
+        let lossKind: MLPLossKind = numClasses <= 2
+            ? .binaryCrossEntropy(positiveClass: uniqueClasses.last ?? 1.0)
+            : .softmaxCrossEntropy(classes: uniqueClasses)
 
         let layerSizes = [numFeatures] + hiddenLayerSizes + [numClasses > 2 ? numClasses : 1]
         var rng = SeededRandom(seed: seed)
@@ -196,176 +204,25 @@ public actor MLPClassifier: ClassifierEstimator {
             adamStates.append(LayerAdamState(inDim: inDim, outDim: outDim))
         }
 
-        var es = earlyStopping
-        var bestLayers: [LayerWeights]? = nil
-
-        for epoch in 0..<maxIter {
-            for i in 0..<numSamples {
-                let x = features[i]
-                let yVal = targets[i]
-
-                // Forward Pass
-                var activations = [x]
-                for l in 0..<layers.count {
-                    let prev = activations[l]
-                    let isLast = l == layers.count - 1
-                    var out = layers[l].b
-                    cblas_dgemm(
-                        CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        1, Int32(layers[l].outDim), Int32(layers[l].inDim),
-                        1.0,
-                        prev, Int32(layers[l].inDim),
-                        layers[l].W, Int32(layers[l].outDim),
-                        1.0,
-                        &out, Int32(layers[l].outDim)
-                    )
-
-                    if isLast {
-                        if numClasses == 2 {
-                            out[0] = sigmoid(out[0])
-                        }
-                    } else {
-                        for j in 0..<layers[l].outDim {
-                            out[j] = applyActivation(out[j], activation: activation)
-                        }
-                    }
-                    activations.append(out)
-                }
-
-                // Output Error Delta
-                var delta = [Double]()
-                let lastOut = activations.last!
-
-                if numClasses <= 2 {
-                    let err = lastOut[0] - (yVal == (uniqueClasses.last ?? 1.0) ? 1.0 : 0.0)
-                    delta = [err]
-                } else {
-                    delta = lastOut.enumerated().map { (cIdx, v) in
-                        v - (uniqueClasses[cIdx] == yVal ? 1.0 : 0.0)
-                    }
-                }
-
-                // Backward Pass & Gradient Updates
-                for l in stride(from: layers.count - 1, through: 0, by: -1) {
-                    let prevAct = activations[l]
-                    let inD = layers[l].inDim
-                    let outD = layers[l].outDim
-
-                    var gradW = [Double](repeating: 0.0, count: inD * outD)
-                    var nextDelta = [Double](repeating: 0.0, count: inD)
-
-                    for k in 0..<inD {
-                        for j in 0..<outD {
-                            let idx = k * outD + j
-                            gradW[idx] = delta[j] * prevAct[k]
-                            nextDelta[k] += delta[j] * layers[l].W[idx]
-                        }
-                        if l > 0 {
-                            nextDelta[k] *= applyActivationDeriv(prevAct[k], activation: activation)
-                        }
-                    }
-                    let gradB = delta
-
-                    // Optimizer Step
-                    if solver == .adam {
-                        adamStates[l].t += 1
-                        let t = Double(adamStates[l].t)
-                        let b1_corr = 1.0 - pow(beta1, t)
-                        let b2_corr = 1.0 - pow(beta2, t)
-                        let oneMinusBeta1 = 1.0 - beta1
-                        let oneMinusBeta2 = 1.0 - beta2
-                        let lr = learningRate
-                        let eps = epsilon
-                        let wCount = layers[l].W.count
-
-                        for p in 0..<wCount {
-                            let g = gradW[p]
-                            adamStates[l].mW[p] = beta1 * adamStates[l].mW[p] + oneMinusBeta1 * g
-                            adamStates[l].vW[p] = beta2 * adamStates[l].vW[p] + oneMinusBeta2 * g * g
-                            let mHat = adamStates[l].mW[p] / b1_corr
-                            let vHat = adamStates[l].vW[p] / b2_corr
-                            layers[l].W[p] -= lr * mHat / (sqrt(vHat) + eps)
-                        }
-
-                        for j in 0..<outD {
-                            let g = gradB[j]
-                            adamStates[l].mB[j] = beta1 * adamStates[l].mB[j] + oneMinusBeta1 * g
-                            adamStates[l].vB[j] = beta2 * adamStates[l].vB[j] + oneMinusBeta2 * g * g
-                            let mHat = adamStates[l].mB[j] / b1_corr
-                            let vHat = adamStates[l].vB[j] / b2_corr
-                            layers[l].b[j] -= lr * mHat / (sqrt(vHat) + eps)
-                        }
-                    } else {
-                        // SGD via vDSP
-                        let wCount = layers[l].W.count
-                        var negLr = -learningRate
-                        var stepW = [Double](repeating: 0.0, count: wCount)
-                        vDSP_vsmulD(gradW, 1, &negLr, &stepW, 1, vDSP_Length(wCount))
-                        vDSP_vaddD(layers[l].W, 1, stepW, 1, &layers[l].W, 1, vDSP_Length(wCount))
-
-                        var stepB = [Double](repeating: 0.0, count: outD)
-                        vDSP_vsmulD(gradB, 1, &negLr, &stepB, 1, vDSP_Length(outD))
-                        vDSP_vaddD(layers[l].b, 1, stepB, 1, &layers[l].b, 1, vDSP_Length(outD))
-                    }
-
-                    delta = nextDelta
-                }
-            }
-
-            // Early stopping validation check
-            if var tracker = es, let valX = validationFeatures, let valY = validationTargets, !valX.isEmpty {
-                var totalLoss = 0.0
-                for vi in 0..<valX.count {
-                    let vx = valX[vi]
-                    let vy = valY[vi]
-                    var out = vx
-                    for l in 0..<layers.count {
-                        var nextOut = layers[l].b
-                        cblas_dgemm(
-                            CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                            1, Int32(layers[l].outDim), Int32(layers[l].inDim),
-                            1.0,
-                            out, Int32(layers[l].inDim),
-                            layers[l].W, Int32(layers[l].outDim),
-                            1.0,
-                            &nextOut, Int32(layers[l].outDim)
-                        )
-                        if l == layers.count - 1 {
-                            if numClasses == 2 {
-                                nextOut[0] = sigmoid(nextOut[0])
-                            }
-                        } else {
-                            for j in 0..<layers[l].outDim {
-                                nextOut[j] = applyActivation(nextOut[j], activation: activation)
-                            }
-                        }
-                        out = nextOut
-                    }
-
-                    if numClasses <= 2 {
-                        let targetVal = vy == (uniqueClasses.last ?? 1.0) ? 1.0 : 0.0
-                        let p = max(1e-12, min(1.0 - 1e-12, out[0]))
-                        totalLoss -= (targetVal * log(p) + (1.0 - targetVal) * log(1.0 - p))
-                    } else {
-                        let targetIdx = uniqueClasses.firstIndex(of: vy) ?? 0
-                        let p = max(1e-12, min(1.0 - 1e-12, out[targetIdx]))
-                        totalLoss -= log(p)
-                    }
-                }
-                totalLoss /= Double(valX.count)
-                let (shouldStop, isBest) = tracker.step(currentScore: totalLoss, epoch: epoch)
-                if isBest {
-                    bestLayers = layers
-                }
-                es = tracker
-                if shouldStop {
-                    if tracker.restoreBestWeights, let best = bestLayers {
-                        layers = best
-                    }
-                    break
-                }
-            }
-        }
+        layers = mlpRunMiniBatchTraining(
+            initialLayers: layers,
+            adamStates: &adamStates,
+            features: features,
+            targets: targets,
+            validationFeatures: validationFeatures,
+            validationTargets: validationTargets,
+            earlyStopping: earlyStopping,
+            activation: activation,
+            solver: solver,
+            maxIter: maxIter,
+            learningRate: learningRate,
+            beta1: beta1,
+            beta2: beta2,
+            epsilon: epsilon,
+            batchSize: batchSize,
+            lossKind: lossKind,
+            rng: &rng
+        )
 
         self.layers = layers
     }
@@ -432,8 +289,7 @@ public actor MLPClassifier: ClassifierEstimator {
         }
         guard !features.isEmpty else { return [] }
 
-        if features.count >= mlpPredictionBatchRows,
-           let batched = try mlpBatchedPrediction(features: features, layers: layers,
+        if let batched = try mlpBatchedPrediction(features: features, layers: layers,
             activate: { applyActivation($0, activation: activation) },
             finish: { mlpProbabilities($0, classCount: classes.count) }) { return batched }
 
@@ -441,7 +297,7 @@ public actor MLPClassifier: ClassifierEstimator {
         results.reserveCapacity(features.count)
 
         for x in features {
-            let curr = mlpPredictRow(x, layers: layers,
+            let curr = try mlpPredictRowValidated(x, layers: layers,
                 activate: { applyActivation($0, activation: activation) })
             results.append(mlpProbabilities(curr, classCount: classes.count))
         }
@@ -561,7 +417,12 @@ public actor MLPRegressor: RegressorEstimator {
             throw SwiftMLError.emptyInput
         }
         let numSamples = features.count
-        let numFeatures = features[0].count
+        let numFeatures = try validateMLPTrainingInputs(
+            features: features,
+            targets: targets,
+            validationFeatures: validationFeatures,
+            validationTargets: validationTargets
+        )
 
         self.resolvedDevice = await HardwareRouter.shared.resolveDevice(
             for: "MLPRegressor",
@@ -590,151 +451,25 @@ public actor MLPRegressor: RegressorEstimator {
             adamStates.append(LayerAdamState(inDim: inDim, outDim: outDim))
         }
 
-        var es = earlyStopping
-        var bestLayers: [LayerWeights]? = nil
-
-        for epoch in 0..<maxIter {
-            for i in 0..<numSamples {
-                let x = features[i]
-                let yVal = targets[i]
-
-                // Forward Pass
-                var activations = [x]
-                for l in 0..<layers.count {
-                    let prev = activations[l]
-                    let isLast = l == layers.count - 1
-                    var out = layers[l].b
-                    cblas_dgemm(
-                        CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        1, Int32(layers[l].outDim), Int32(layers[l].inDim),
-                        1.0,
-                        prev, Int32(layers[l].inDim),
-                        layers[l].W, Int32(layers[l].outDim),
-                        1.0,
-                        &out, Int32(layers[l].outDim)
-                    )
-
-                    if !isLast {
-                        for j in 0..<layers[l].outDim {
-                            out[j] = applyActivation(out[j], activation: activation)
-                        }
-                    }
-                    activations.append(out)
-                }
-
-                // Output Error Delta
-                var delta = [activations.last![0] - yVal]
-
-                // Backward Pass & Gradient Updates
-                for l in stride(from: layers.count - 1, through: 0, by: -1) {
-                    let prevAct = activations[l]
-                    let inD = layers[l].inDim
-                    let outD = layers[l].outDim
-
-                    var gradW = [Double](repeating: 0.0, count: inD * outD)
-                    var nextDelta = [Double](repeating: 0.0, count: inD)
-
-                    for k in 0..<inD {
-                        for j in 0..<outD {
-                            let idx = k * outD + j
-                            gradW[idx] = delta[j] * prevAct[k]
-                            nextDelta[k] += delta[j] * layers[l].W[idx]
-                        }
-                        if l > 0 {
-                            nextDelta[k] *= applyActivationDeriv(prevAct[k], activation: activation)
-                        }
-                    }
-                    let gradB = delta
-
-                    // Optimizer Step
-                    if solver == .adam {
-                        adamStates[l].t += 1
-                        let t = Double(adamStates[l].t)
-                        let b1_corr = 1.0 - pow(beta1, t)
-                        let b2_corr = 1.0 - pow(beta2, t)
-                        let oneMinusBeta1 = 1.0 - beta1
-                        let oneMinusBeta2 = 1.0 - beta2
-                        let lr = learningRate
-                        let eps = epsilon
-
-                        for j in 0..<outD {
-                            for k in 0..<inD {
-                                let idx = k * outD + j
-                                let g = gradW[idx]
-                                adamStates[l].mW[idx] = beta1 * adamStates[l].mW[idx] + oneMinusBeta1 * g
-                                adamStates[l].vW[idx] = beta2 * adamStates[l].vW[idx] + oneMinusBeta2 * g * g
-                                let mHat = adamStates[l].mW[idx] / b1_corr
-                                let vHat = adamStates[l].vW[idx] / b2_corr
-                                layers[l].W[idx] -= lr * mHat / (sqrt(vHat) + eps)
-                            }
-                            let gB = gradB[j]
-                            adamStates[l].mB[j] = beta1 * adamStates[l].mB[j] + oneMinusBeta1 * gB
-                            adamStates[l].vB[j] = beta2 * adamStates[l].vB[j] + oneMinusBeta2 * gB * gB
-                            let mHat = adamStates[l].mB[j] / b1_corr
-                            let vHat = adamStates[l].vB[j] / b2_corr
-                            layers[l].b[j] -= lr * mHat / (sqrt(vHat) + eps)
-                        }
-                    } else {
-                        // SGD via vDSP
-                        let wCount = layers[l].W.count
-                        var negLr = -learningRate
-                        var stepW = [Double](repeating: 0.0, count: wCount)
-                        vDSP_vsmulD(gradW, 1, &negLr, &stepW, 1, vDSP_Length(wCount))
-                        vDSP_vaddD(layers[l].W, 1, stepW, 1, &layers[l].W, 1, vDSP_Length(wCount))
-
-                        var stepB = [Double](repeating: 0.0, count: outD)
-                        vDSP_vsmulD(gradB, 1, &negLr, &stepB, 1, vDSP_Length(outD))
-                        vDSP_vaddD(layers[l].b, 1, stepB, 1, &layers[l].b, 1, vDSP_Length(outD))
-                    }
-
-                    delta = nextDelta
-                }
-            }
-
-            // Early stopping validation check
-            if var tracker = es, let valX = validationFeatures, let valY = validationTargets, !valX.isEmpty {
-                var mse = 0.0
-                for vi in 0..<valX.count {
-                    let vx = valX[vi]
-                    var out = vx
-                    for l in 0..<layers.count {
-                        let isLast = l == layers.count - 1
-                        var nextOut = layers[l].b
-                        cblas_dgemm(
-                            CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                            1, Int32(layers[l].outDim), Int32(layers[l].inDim),
-                            1.0,
-                            out, Int32(layers[l].inDim),
-                            layers[l].W, Int32(layers[l].outDim),
-                            1.0,
-                            &nextOut, Int32(layers[l].outDim)
-                        )
-                        if !isLast {
-                            for j in 0..<layers[l].outDim {
-                                nextOut[j] = applyActivation(nextOut[j], activation: activation)
-                            }
-                        }
-                        out = nextOut
-                    }
-                    let diff = out[0] - valY[vi]
-                    mse += diff * diff
-                }
-                mse /= Double(valX.count)
-                let (shouldStop, isBest) = tracker.step(currentScore: mse, epoch: epoch)
-                if isBest {
-                    bestLayers = layers
-                }
-                es = tracker
-                if shouldStop {
-                    if tracker.restoreBestWeights, let best = bestLayers {
-                        layers = best
-                    }
-                    break
-                }
-            }
-        }
-
-        return layers
+        return mlpRunMiniBatchTraining(
+            initialLayers: layers,
+            adamStates: &adamStates,
+            features: features,
+            targets: targets,
+            validationFeatures: validationFeatures,
+            validationTargets: validationTargets,
+            earlyStopping: earlyStopping,
+            activation: activation,
+            solver: solver,
+            maxIter: maxIter,
+            learningRate: learningRate,
+            beta1: beta1,
+            beta2: beta2,
+            epsilon: epsilon,
+            batchSize: batchSize,
+            lossKind: .mse,
+            rng: &rng
+        )
     }
 
     /// Fits training-only imputation and scaling, then captures immutable CPU Double prediction.
@@ -863,8 +598,7 @@ public actor MLPRegressor: RegressorEstimator {
         }
         guard !features.isEmpty else { return [] }
 
-        if features.count >= mlpPredictionBatchRows,
-           let batched = try mlpBatchedPrediction(features: features, layers: layers,
+        if let batched = try mlpBatchedPrediction(features: features, layers: layers,
             activate: { applyActivation($0, activation: activation) },
             finish: { $0[0] }) { return batched }
 
@@ -872,7 +606,7 @@ public actor MLPRegressor: RegressorEstimator {
         results.reserveCapacity(features.count)
 
         for x in features {
-            let curr = mlpPredictRow(x, layers: layers,
+            let curr = try mlpPredictRowValidated(x, layers: layers,
                 activate: { applyActivation($0, activation: activation) })
             results.append(curr[0])
         }
@@ -942,15 +676,11 @@ private func applyActivation(_ x: Double, activation: ActivationFunction) -> Dou
     }
 }
 
-private func applyActivationDeriv(_ x: Double, activation: ActivationFunction) -> Double {
+private func applyActivationDeriv(_ a: Double, activation: ActivationFunction) -> Double {
     switch activation {
-    case .relu: return x > 0 ? 1.0 : 0.0
-    case .sigmoid:
-        let s = sigmoid(x)
-        return s * (1.0 - s)
-    case .tanh:
-        let t = tanh(x)
-        return 1.0 - t * t
+    case .relu: return a > 0.0 ? 1.0 : 0.0
+    case .sigmoid: return a * (1.0 - a)
+    case .tanh: return 1.0 - a * a
     }
 }
 
@@ -964,4 +694,515 @@ where Values.Element == Double {
     let exps = logits.map { exp($0 - maxLogit) }
     let sumExp = exps.reduce(0.0, +)
     return exps.map { $0 / sumExp }
+}
+
+// MARK: - Mini-Batch BLAS Training Engine
+
+enum MLPLossKind {
+    case binaryCrossEntropy(positiveClass: Double)
+    case softmaxCrossEntropy(classes: [Double])
+    case mse
+}
+
+final class MLPFlatBuffer {
+    var data: [Double]
+    init(count: Int) {
+        self.data = [Double](repeating: 0.0, count: count)
+    }
+}
+
+final class MLPMiniBatchWorkspace {
+    var batchInput: [Double]
+    var batchTargets: [Double]
+    var layerOutputs: [MLPFlatBuffer]
+    var deltaA: [Double]
+    var deltaB: [Double]
+    var gradW: [MLPFlatBuffer]
+    var gradB: [MLPFlatBuffer]
+    var sgdScratch: [Double]
+
+    init(layers: [LayerWeights], maxBatchSize: Int) {
+        let numFeatures = layers[0].inDim
+        let maxDim = layers.reduce(numFeatures) { max($0, max($1.inDim, $1.outDim)) }
+        let maxWeightCount = layers.reduce(1) { max($0, max($1.W.count, $1.outDim)) }
+
+        self.batchInput = [Double](repeating: 0.0, count: maxBatchSize * numFeatures)
+        self.batchTargets = [Double](repeating: 0.0, count: maxBatchSize)
+        self.layerOutputs = layers.map { MLPFlatBuffer(count: maxBatchSize * $0.outDim) }
+        self.deltaA = [Double](repeating: 0.0, count: maxBatchSize * maxDim)
+        self.deltaB = [Double](repeating: 0.0, count: maxBatchSize * maxDim)
+        self.gradW = layers.map { MLPFlatBuffer(count: $0.inDim * $0.outDim) }
+        self.gradB = layers.map { MLPFlatBuffer(count: $0.outDim) }
+        self.sgdScratch = [Double](repeating: 0.0, count: maxWeightCount)
+    }
+}
+
+private func validateMLPTrainingInputs(
+    features: [[Double]],
+    targets: [Double],
+    validationFeatures: [[Double]]?,
+    validationTargets: [Double]?
+) throws -> Int {
+    guard features.count == targets.count else {
+        throw SwiftMLError.dimensionMismatch(expected: features.count, got: targets.count)
+    }
+    let numFeatures = features[0].count
+    for row in features {
+        guard row.count == numFeatures else {
+            throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+        }
+    }
+    if (validationFeatures != nil) != (validationTargets != nil) {
+        throw SwiftMLError.invalidInput("Validation features and targets must both be provided")
+    }
+    if let valX = validationFeatures, let valY = validationTargets {
+        guard valX.count == valY.count else {
+            throw SwiftMLError.dimensionMismatch(expected: valX.count, got: valY.count)
+        }
+        for row in valX {
+            guard row.count == numFeatures else {
+                throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
+        }
+    }
+    return numFeatures
+}
+
+@discardableResult
+func mlpComputeMiniBatchLossAndGradients(
+    layers: [LayerWeights],
+    features: [[Double]],
+    targets: [Double],
+    indices: ArraySlice<Int>,
+    activation: ActivationFunction,
+    lossKind: MLPLossKind,
+    workspace: MLPMiniBatchWorkspace,
+    computeGradients: Bool
+) -> Double {
+    let actualB = indices.count
+    guard actualB > 0 else { return 0.0 }
+    let numFeatures = layers[0].inDim
+
+    workspace.batchInput.withUnsafeMutableBufferPointer { inputBuf in
+        let inputPtr = inputBuf.baseAddress!
+        var r = 0
+        for sampleIdx in indices {
+            let rowOff = r * numFeatures
+            features[sampleIdx].withUnsafeBufferPointer { src in
+                (inputPtr + rowOff).update(from: src.baseAddress!, count: numFeatures)
+            }
+            workspace.batchTargets[r] = targets[sampleIdx]
+            r += 1
+        }
+    }
+
+    // Forward pass across all layers
+    for l in 0..<layers.count {
+        let inD = layers[l].inDim
+        let outD = layers[l].outDim
+        let isLast = l == layers.count - 1
+
+        layers[l].b.withUnsafeBufferPointer { bBuf in
+            let bPtr = bBuf.baseAddress!
+            workspace.layerOutputs[l].data.withUnsafeMutableBufferPointer { outBuf in
+                let outPtr = outBuf.baseAddress!
+                for r in 0..<actualB {
+                    (outPtr + r * outD).update(from: bPtr, count: outD)
+                }
+                layers[l].W.withUnsafeBufferPointer { wBuf in
+                    let wPtr = wBuf.baseAddress!
+                    let runGemm: (UnsafePointer<Double>) -> Void = { prevPtr in
+                        cblas_dgemm(
+                            CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                            Int32(actualB), Int32(outD), Int32(inD),
+                            1.0,
+                            prevPtr, Int32(inD),
+                            wPtr, Int32(outD),
+                            1.0,
+                            outPtr, Int32(outD)
+                        )
+                    }
+                    if l == 0 {
+                        workspace.batchInput.withUnsafeBufferPointer { runGemm($0.baseAddress!) }
+                    } else {
+                        workspace.layerOutputs[l - 1].data.withUnsafeBufferPointer { runGemm($0.baseAddress!) }
+                    }
+                }
+                if !isLast {
+                    let count = actualB * outD
+                    for idx in 0..<count {
+                        outPtr[idx] = applyActivation(outPtr[idx], activation: activation)
+                    }
+                }
+            }
+        }
+    }
+
+    // Compute loss and initial output logit delta
+    var totalLoss = 0.0
+    workspace.layerOutputs[layers.count - 1].data.withUnsafeBufferPointer { lastBuf in
+        let lastPtr = lastBuf.baseAddress!
+        workspace.deltaA.withUnsafeMutableBufferPointer { deltaBuf in
+            let deltaPtr = deltaBuf.baseAddress!
+            switch lossKind {
+            case .binaryCrossEntropy(let positiveClass):
+                for r in 0..<actualB {
+                    let z = lastPtr[r]
+                    let y = workspace.batchTargets[r] == positiveClass ? 1.0 : 0.0
+                    totalLoss += log1p(exp(-abs(z))) + max(z, 0.0) - z * y
+                    if computeGradients {
+                        deltaPtr[r] = sigmoid(z) - y
+                    }
+                }
+            case .softmaxCrossEntropy(let uniqueClasses):
+                let numClasses = uniqueClasses.count
+                for r in 0..<actualB {
+                    let rowOff = r * numClasses
+                    var m = lastPtr[rowOff]
+                    for c in 1..<numClasses {
+                        if lastPtr[rowOff + c] > m {
+                            m = lastPtr[rowOff + c]
+                        }
+                    }
+                    var sumExp = 0.0
+                    for c in 0..<numClasses {
+                        let e = exp(lastPtr[rowOff + c] - m)
+                        deltaPtr[rowOff + c] = e
+                        sumExp += e
+                    }
+                    let logZ = m + log(sumExp)
+                    let yVal = workspace.batchTargets[r]
+                    if let targetIdx = uniqueClasses.firstIndex(of: yVal) {
+                        totalLoss += logZ - lastPtr[rowOff + targetIdx]
+                    } else {
+                        totalLoss += logZ
+                    }
+                    if computeGradients {
+                        let invSum = 1.0 / sumExp
+                        for c in 0..<numClasses {
+                            let p = deltaPtr[rowOff + c] * invSum
+                            deltaPtr[rowOff + c] = p - (uniqueClasses[c] == yVal ? 1.0 : 0.0)
+                        }
+                    }
+                }
+            case .mse:
+                for r in 0..<actualB {
+                    let diff = lastPtr[r] - workspace.batchTargets[r]
+                    totalLoss += 0.5 * diff * diff
+                    if computeGradients {
+                        deltaPtr[r] = diff
+                    }
+                }
+            }
+        }
+    }
+
+    let meanLoss = totalLoss / Double(actualB)
+    guard computeGradients else {
+        return meanLoss
+    }
+
+    // Backward pass across layers using BLAS dgemm
+    let scale = 1.0 / Double(actualB)
+    var deltaInA = true
+
+    for l in stride(from: layers.count - 1, through: 0, by: -1) {
+        let inD = layers[l].inDim
+        let outD = layers[l].outDim
+
+        mlpWithPrevAndDelta(workspace: workspace, layerIndex: l, deltaInA: deltaInA) { prevPtr, deltaPtr in
+            workspace.gradW[l].data.withUnsafeMutableBufferPointer { gradWBuf in
+                cblas_dgemm(
+                    CblasRowMajor, CblasTrans, CblasNoTrans,
+                    Int32(inD), Int32(outD), Int32(actualB),
+                    scale,
+                    prevPtr, Int32(inD),
+                    deltaPtr, Int32(outD),
+                    0.0,
+                    gradWBuf.baseAddress!, Int32(outD)
+                )
+            }
+
+            workspace.gradB[l].data.withUnsafeMutableBufferPointer { gradBBuf in
+                let gradBPtr = gradBBuf.baseAddress!
+                for j in 0..<outD {
+                    gradBPtr[j] = 0.0
+                }
+                for r in 0..<actualB {
+                    let rowOff = r * outD
+                    for j in 0..<outD {
+                        gradBPtr[j] += deltaPtr[rowOff + j]
+                    }
+                }
+                for j in 0..<outD {
+                    gradBPtr[j] *= scale
+                }
+            }
+        }
+
+        if l > 0 {
+            let actCount = actualB * inD
+            let computePrevDelta: (UnsafePointer<Double>, UnsafeMutablePointer<Double>) -> Void = { deltaPtr, nextDeltaPtr in
+                layers[l].W.withUnsafeBufferPointer { wBuf in
+                    cblas_dgemm(
+                        CblasRowMajor, CblasNoTrans, CblasTrans,
+                        Int32(actualB), Int32(inD), Int32(outD),
+                        1.0,
+                        deltaPtr, Int32(outD),
+                        wBuf.baseAddress!, Int32(outD),
+                        0.0,
+                        nextDeltaPtr, Int32(inD)
+                    )
+                }
+                workspace.layerOutputs[l - 1].data.withUnsafeBufferPointer { prevActBuf in
+                    let prevActPtr = prevActBuf.baseAddress!
+                    for idx in 0..<actCount {
+                        nextDeltaPtr[idx] *= applyActivationDeriv(prevActPtr[idx], activation: activation)
+                    }
+                }
+            }
+
+            if deltaInA {
+                workspace.deltaA.withUnsafeBufferPointer { dBuf in
+                    workspace.deltaB.withUnsafeMutableBufferPointer { nBuf in
+                        computePrevDelta(dBuf.baseAddress!, nBuf.baseAddress!)
+                    }
+                }
+            } else {
+                workspace.deltaB.withUnsafeBufferPointer { dBuf in
+                    workspace.deltaA.withUnsafeMutableBufferPointer { nBuf in
+                        computePrevDelta(dBuf.baseAddress!, nBuf.baseAddress!)
+                    }
+                }
+            }
+            deltaInA.toggle()
+        }
+    }
+
+    return meanLoss
+}
+
+private func mlpWithPrevAndDelta(
+    workspace: MLPMiniBatchWorkspace,
+    layerIndex l: Int,
+    deltaInA: Bool,
+    body: (UnsafePointer<Double>, UnsafePointer<Double>) -> Void
+) {
+    if l == 0 {
+        workspace.batchInput.withUnsafeBufferPointer { prevBuf in
+            if deltaInA {
+                workspace.deltaA.withUnsafeBufferPointer { deltaBuf in
+                    body(prevBuf.baseAddress!, deltaBuf.baseAddress!)
+                }
+            } else {
+                workspace.deltaB.withUnsafeBufferPointer { deltaBuf in
+                    body(prevBuf.baseAddress!, deltaBuf.baseAddress!)
+                }
+            }
+        }
+    } else {
+        workspace.layerOutputs[l - 1].data.withUnsafeBufferPointer { prevBuf in
+            if deltaInA {
+                workspace.deltaA.withUnsafeBufferPointer { deltaBuf in
+                    body(prevBuf.baseAddress!, deltaBuf.baseAddress!)
+                }
+            } else {
+                workspace.deltaB.withUnsafeBufferPointer { deltaBuf in
+                    body(prevBuf.baseAddress!, deltaBuf.baseAddress!)
+                }
+            }
+        }
+    }
+}
+
+private func mlpApplyOptimizerStep(
+    layers: inout [LayerWeights],
+    adamStates: inout [LayerAdamState],
+    workspace: MLPMiniBatchWorkspace,
+    solver: MLPSolver,
+    learningRate: Double,
+    beta1: Double,
+    beta2: Double,
+    epsilon: Double
+) {
+    if solver == .adam {
+        let oneMinusBeta1 = 1.0 - beta1
+        let oneMinusBeta2 = 1.0 - beta2
+        for l in 0..<layers.count {
+            adamStates[l].t += 1
+            let t = Double(adamStates[l].t)
+            let invB1Corr = 1.0 / (1.0 - pow(beta1, t))
+            let invB2Corr = 1.0 / (1.0 - pow(beta2, t))
+            let wCount = layers[l].W.count
+            let outD = layers[l].outDim
+
+            layers[l].W.withUnsafeMutableBufferPointer { wBuf in
+                let wPtr = wBuf.baseAddress!
+                workspace.gradW[l].data.withUnsafeBufferPointer { gBuf in
+                    let gPtr = gBuf.baseAddress!
+                    adamStates[l].mW.withUnsafeMutableBufferPointer { mBuf in
+                        let mPtr = mBuf.baseAddress!
+                        adamStates[l].vW.withUnsafeMutableBufferPointer { vBuf in
+                            let vPtr = vBuf.baseAddress!
+                            for p in 0..<wCount {
+                                let g = gPtr[p]
+                                let mNew = beta1 * mPtr[p] + oneMinusBeta1 * g
+                                let vNew = beta2 * vPtr[p] + oneMinusBeta2 * g * g
+                                mPtr[p] = mNew
+                                vPtr[p] = vNew
+                                let mHat = mNew * invB1Corr
+                                let vHat = vNew * invB2Corr
+                                wPtr[p] -= learningRate * mHat / (sqrt(vHat) + epsilon)
+                            }
+                        }
+                    }
+                }
+            }
+
+            layers[l].b.withUnsafeMutableBufferPointer { bBuf in
+                let bPtr = bBuf.baseAddress!
+                workspace.gradB[l].data.withUnsafeBufferPointer { gBuf in
+                    let gPtr = gBuf.baseAddress!
+                    adamStates[l].mB.withUnsafeMutableBufferPointer { mBuf in
+                        let mPtr = mBuf.baseAddress!
+                        adamStates[l].vB.withUnsafeMutableBufferPointer { vBuf in
+                            let vPtr = vBuf.baseAddress!
+                            for j in 0..<outD {
+                                let g = gPtr[j]
+                                let mNew = beta1 * mPtr[j] + oneMinusBeta1 * g
+                                let vNew = beta2 * vPtr[j] + oneMinusBeta2 * g * g
+                                mPtr[j] = mNew
+                                vPtr[j] = vNew
+                                let mHat = mNew * invB1Corr
+                                let vHat = vNew * invB2Corr
+                                bPtr[j] -= learningRate * mHat / (sqrt(vHat) + epsilon)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        var negLr = -learningRate
+        for l in 0..<layers.count {
+            let wCount = layers[l].W.count
+            let outD = layers[l].outDim
+            workspace.sgdScratch.withUnsafeMutableBufferPointer { scratchBuf in
+                let scratchPtr = scratchBuf.baseAddress!
+                workspace.gradW[l].data.withUnsafeBufferPointer { gWBuf in
+                    vDSP_vsmulD(gWBuf.baseAddress!, 1, &negLr, scratchPtr, 1, vDSP_Length(wCount))
+                    layers[l].W.withUnsafeMutableBufferPointer { wBuf in
+                        vDSP_vaddD(wBuf.baseAddress!, 1, scratchPtr, 1, wBuf.baseAddress!, 1, vDSP_Length(wCount))
+                    }
+                }
+                workspace.gradB[l].data.withUnsafeBufferPointer { gBBuf in
+                    vDSP_vsmulD(gBBuf.baseAddress!, 1, &negLr, scratchPtr, 1, vDSP_Length(outD))
+                    layers[l].b.withUnsafeMutableBufferPointer { bBuf in
+                        vDSP_vaddD(bBuf.baseAddress!, 1, scratchPtr, 1, bBuf.baseAddress!, 1, vDSP_Length(outD))
+                    }
+                }
+            }
+        }
+    }
+}
+
+private func mlpRunMiniBatchTraining(
+    initialLayers: [LayerWeights],
+    adamStates: inout [LayerAdamState],
+    features: [[Double]],
+    targets: [Double],
+    validationFeatures: [[Double]]?,
+    validationTargets: [Double]?,
+    earlyStopping: EarlyStopping?,
+    activation: ActivationFunction,
+    solver: MLPSolver,
+    maxIter: Int,
+    learningRate: Double,
+    beta1: Double,
+    beta2: Double,
+    epsilon: Double,
+    batchSize: Int,
+    lossKind: MLPLossKind,
+    rng: inout SeededRandom
+) -> [LayerWeights] {
+    var layers = initialLayers
+    let numSamples = features.count
+    let effectiveBatchSize = max(1, min(batchSize, numSamples))
+    let valCount = validationFeatures?.count ?? 0
+    let maxWorkspaceRows = max(effectiveBatchSize, min(effectiveBatchSize, valCount))
+    let workspace = MLPMiniBatchWorkspace(layers: layers, maxBatchSize: maxWorkspaceRows)
+
+    var trainIndices = Array(0..<numSamples)
+    let valIndices = Array(0..<valCount)
+    var es = earlyStopping
+    var bestLayers: [LayerWeights]? = nil
+
+    for epoch in 0..<maxIter {
+        trainIndices.shuffle(using: &rng)
+
+        var start = 0
+        while start < numSamples {
+            let end = min(start + effectiveBatchSize, numSamples)
+            mlpComputeMiniBatchLossAndGradients(
+                layers: layers,
+                features: features,
+                targets: targets,
+                indices: trainIndices[start..<end],
+                activation: activation,
+                lossKind: lossKind,
+                workspace: workspace,
+                computeGradients: true
+            )
+            mlpApplyOptimizerStep(
+                layers: &layers,
+                adamStates: &adamStates,
+                workspace: workspace,
+                solver: solver,
+                learningRate: learningRate,
+                beta1: beta1,
+                beta2: beta2,
+                epsilon: epsilon
+            )
+            start = end
+        }
+
+        if var tracker = es, let valX = validationFeatures, let valY = validationTargets, !valX.isEmpty {
+            var valLossSum = 0.0
+            var vStart = 0
+            while vStart < valCount {
+                let vEnd = min(vStart + effectiveBatchSize, valCount)
+                let batchCount = vEnd - vStart
+                let batchMean = mlpComputeMiniBatchLossAndGradients(
+                    layers: layers,
+                    features: valX,
+                    targets: valY,
+                    indices: valIndices[vStart..<vEnd],
+                    activation: activation,
+                    lossKind: lossKind,
+                    workspace: workspace,
+                    computeGradients: false
+                )
+                let batchValScore = switch lossKind {
+                case .mse: 2.0 * batchMean
+                case .binaryCrossEntropy, .softmaxCrossEntropy: batchMean
+                }
+                valLossSum += batchValScore * Double(batchCount)
+                vStart = vEnd
+            }
+            let valScore = valLossSum / Double(valCount)
+            let (shouldStop, isBest) = tracker.step(currentScore: valScore, epoch: epoch)
+            if isBest {
+                bestLayers = layers
+            }
+            es = tracker
+            if shouldStop {
+                if tracker.restoreBestWeights, let best = bestLayers {
+                    layers = best
+                }
+                break
+            }
+        }
+    }
+
+    return layers
 }

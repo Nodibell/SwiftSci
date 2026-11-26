@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import MLX
 #if canImport(CoreGraphics)
 import CoreGraphics
 #endif
@@ -408,5 +409,100 @@ struct DetectionTests {
         #expect(noGTMetrics.totalDetections == 1)
         #expect(noGTMetrics.predictionOnlyClasses == ["ghost"])
         #expect(noGTMetrics.summary.contains("No ground-truth target objects in dataset"))
+    }
+
+    @Test("YOLOAnnotationParser clamps border-overflowing corners independently and skips degenerate boxes")
+    func testYOLOAnnotationParserBorderClamping() {
+        let annotation = """
+        0 0.05 0.05 0.2 0.2
+        1 0.95 0.95 0.2 0.2
+        2 -0.5 0.5 0.2 0.2
+        3 1.5 0.5 0.2 0.2
+        """
+        let boxes = YOLOAnnotationParser.parse(text: annotation, classLabels: ["left", "right", "off_left", "off_right"])
+        #expect(boxes.count == 2)
+
+        // Left-top clamped: xCenter=0.05, w=0.2 -> raw [-0.05, 0.15] -> clamped [0.0, 0.15]
+        #expect(boxes[0].classLabel == "left")
+        #expect(abs(boxes[0].xMin - 0.0) < 1e-6)
+        #expect(abs(boxes[0].yMin - 0.0) < 1e-6)
+        #expect(abs(boxes[0].xMax - 0.15) < 1e-6)
+        #expect(abs(boxes[0].yMax - 0.15) < 1e-6)
+
+        // Right-bottom clamped: xCenter=0.95, w=0.2 -> raw [0.85, 1.05] -> clamped [0.85, 1.0]
+        #expect(boxes[1].classLabel == "right")
+        #expect(abs(boxes[1].xMin - 0.85) < 1e-6)
+        #expect(abs(boxes[1].yMin - 0.85) < 1e-6)
+        #expect(abs(boxes[1].xMax - 1.0) < 1e-6)
+        #expect(abs(boxes[1].yMax - 1.0) < 1e-6)
+
+        // Pixel scale clamping
+        let pixelBoxes = YOLOAnnotationParser.parse(text: "0 0.95 0.5 0.2 0.2", imageWidth: 640, imageHeight: 360)
+        #expect(pixelBoxes.count == 1)
+        #expect(abs(pixelBoxes[0].xMin - 544.0) < 1e-6)
+        #expect(abs(pixelBoxes[0].xMax - 640.0) < 1e-6)
+    }
+
+    @Test("BoundingBox.iou handles inverted coordinates safely without negative or bogus positive area")
+    func testBoundingBoxIoUInvertedBoxes() {
+        let invertedA = BoundingBox(xMin: 0.8, yMin: 0.8, xMax: 0.2, yMax: 0.2, confidence: 1.0, classLabel: "cat")
+        let invertedB = BoundingBox(xMin: 0.8, yMin: 0.8, xMax: 0.2, yMax: 0.2, confidence: 1.0, classLabel: "cat")
+        let valid = BoundingBox(xMin: 0.1, yMin: 0.1, xMax: 0.9, yMax: 0.9, confidence: 1.0, classLabel: "cat")
+        let singleAxisInverted = BoundingBox(xMin: 0.8, yMin: 0.1, xMax: 0.2, yMax: 0.9, confidence: 1.0, classLabel: "cat")
+
+        #expect(invertedA.iou(with: invertedB) == 0.0)
+        #expect(invertedA.iou(with: valid) == 0.0)
+        #expect(valid.iou(with: invertedA) == 0.0)
+        #expect(singleAxisInverted.iou(with: valid) == 0.0)
+    }
+
+    @Test("NeuralObjectDetector(yoloDetector:) preserves custom confidence and IoU thresholds")
+    func testNeuralObjectDetectorPreservesYOLOThresholds() {
+        let yolo = YOLOv8Detector(confidenceThreshold: 0.73, iouThreshold: 0.31)
+        let detector = NeuralObjectDetector(yoloDetector: yolo)
+        #expect(abs(detector.confidenceThreshold - 0.73) < 1e-9)
+        #expect(abs(detector.iouThreshold - 0.31) < 1e-9)
+    }
+
+    @Test("NeuralObjectDetector(yoloDetector:).evaluate achieves positive IoU against YOLOAnnotationParser on 640x360 image")
+    func testNeuralObjectDetectorEvaluatePositiveIoU() async throws {
+        var weights: [String: MLXArray] = [:]
+        weights["model.22.cv3.0.2.weight"] = MLXArray.zeros([1, 1, 1, 64])
+        weights["model.22.cv3.0.2.bias"] = MLXArray([-10.0] as [Float])
+        weights["model.22.cv3.1.2.weight"] = MLXArray.zeros([1, 1, 1, 64])
+        weights["model.22.cv3.1.2.bias"] = MLXArray([-10.0] as [Float])
+        weights["model.22.cv3.2.2.weight"] = MLXArray.zeros([1, 1, 1, 64])
+        weights["model.22.cv3.2.2.bias"] = MLXArray([5.0] as [Float])
+        weights["model.22.cv2.2.2.weight"] = MLXArray.zeros([64, 1, 1, 64])
+        var boxBias = [Float](repeating: -20.0, count: 64)
+        for side in 0..<4 {
+            boxBias[side * 16 + 10] = 20.0 // bin 10 -> distance 320px at P5 stride 32
+        }
+        weights["model.22.cv2.2.2.bias"] = MLXArray(boxBias)
+
+        let yolo = YOLOv8Detector(confidenceThreshold: 0.5, iouThreshold: 0.45, classLabels: ["target"])
+        await yolo.loadWeights(YOLOWeightLoader(weights: weights))
+        let detector = NeuralObjectDetector(yoloDetector: yolo)
+
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("yolo_pos_iou_\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let imgDataset = ImageDataset(width: 640, height: 360, channels: 3, data: [Double](repeating: 0.5, count: 640 * 360 * 3))
+        let imgURL = tempDir.appendingPathComponent("sample.png")
+        let pngData = try #require(imgDataset.toPNGData())
+        try pngData.write(to: imgURL)
+
+        // Anchor (0, 0) at stride 32 with dist=320 yields raw [-304, -304, 336, 336]
+        // Un-letterboxed on 640x360 (padY=140): [0.0, 0.0, 336/640=0.525, (336-140)/360=0.544444]
+        let gtBoxes = YOLOAnnotationParser.parse(
+            text: "0 0.2625 0.272222 0.525 0.544444",
+            classLabels: ["target"]
+        )
+        #expect(gtBoxes.count == 1)
+
+        let metrics = try await detector.evaluate(dataset: [(imageURL: imgURL, groundTruth: gtBoxes)])
+        #expect(metrics.meanIoU > 0.5)
+        #expect(metrics.map50 > 0.0)
     }
 }

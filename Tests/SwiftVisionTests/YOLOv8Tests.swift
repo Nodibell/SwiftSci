@@ -213,4 +213,44 @@ struct YOLOv8Tests {
         #expect(multiClassFiltered.count == 2)
         #expect(multiClassFiltered.map(\.classLabel) == ["person", "bicycle"])
     }
+
+    @Test("YOLOv8Detector un-letterboxes non-square 640x360 and 360x640 images to normalized [0, 1] coordinates")
+    func testYOLOv8NonSquareUnletterboxing() async throws {
+        // Configure deterministic P5 weights with distance = 1 * 32 = 32px so padding-only boxes filter out
+        // and interior boxes map accurately into [0, 1] original image coordinates.
+        var weights: [String: MLXArray] = [:]
+        weights["model.22.cv3.0.2.weight"] = MLXArray.zeros([1, 1, 1, 64])
+        weights["model.22.cv3.0.2.bias"] = MLXArray([-10.0] as [Float])
+        weights["model.22.cv3.1.2.weight"] = MLXArray.zeros([1, 1, 1, 64])
+        weights["model.22.cv3.1.2.bias"] = MLXArray([-10.0] as [Float])
+        weights["model.22.cv3.2.2.weight"] = MLXArray.zeros([1, 1, 1, 64])
+        weights["model.22.cv3.2.2.bias"] = MLXArray([5.0] as [Float])
+        weights["model.22.cv2.2.2.weight"] = MLXArray.zeros([64, 1, 1, 64])
+        var boxBias = [Float](repeating: -20.0, count: 64)
+        for side in 0..<4 {
+            boxBias[side * 16 + 1] = 20.0 // bin 1 -> distance 32px at P5 stride 32
+        }
+        weights["model.22.cv2.2.2.bias"] = MLXArray(boxBias)
+
+        let detector = YOLOv8Detector(confidenceThreshold: 0.5, iouThreshold: 0.45, classLabels: ["target"])
+        await detector.loadWeights(YOLOWeightLoader(weights: weights))
+
+        // Landscape 640x360 (padX = 0, padY = 140, newW = 640, newH = 360)
+        let landscape = ImageDataset(width: 640, height: 360, channels: 3, data: [Double](repeating: 0.5, count: 640 * 360 * 3))
+        let landscapeBoxes = try await detector.detect(image: landscape)
+        #expect(!landscapeBoxes.isEmpty)
+        for box in landscapeBoxes {
+            #expect(box.xMin >= 0.0 && box.xMin < box.xMax && box.xMax <= 1.0)
+            #expect(box.yMin >= 0.0 && box.yMin < box.yMax && box.yMax <= 1.0)
+        }
+
+        // Portrait 360x640 (padX = 140, padY = 0, newW = 360, newH = 640)
+        let portrait = ImageDataset(width: 360, height: 640, channels: 3, data: [Double](repeating: 0.5, count: 360 * 640 * 3))
+        let portraitBoxes = try await detector.detect(image: portrait)
+        #expect(!portraitBoxes.isEmpty)
+        for box in portraitBoxes {
+            #expect(box.xMin >= 0.0 && box.xMin < box.xMax && box.xMax <= 1.0)
+            #expect(box.yMin >= 0.0 && box.yMin < box.yMax && box.yMax <= 1.0)
+        }
+    }
 }

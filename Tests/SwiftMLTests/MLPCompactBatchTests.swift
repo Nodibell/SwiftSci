@@ -23,7 +23,7 @@ struct MLPCompactBatchTests {
         }
     }
     @Test func wideAndScratchBoundary() async throws {
-        for width in [512, 513] {
+        for width in [512, 513, 8193] {
             let rows = matrixMLPFeatures(33, width: width)
             let model = MLPRegressor(hiddenLayerSizes: [], maxIter: 1, seed: 42, requestedDevice: .cpu)
             try await model.fit(features: Array(rows.prefix(2)), targets: [1, 2])

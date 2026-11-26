@@ -46,8 +46,8 @@ public struct NeuralObjectDetector: Sendable {
     /// - Parameter yoloDetector: The YOLOv8 detector instance.
     public init(yoloDetector: YOLOv8Detector) {
         self.engine = .yolo(yoloDetector)
-        self.confidenceThreshold = 0.25
-        self.iouThreshold = 0.45
+        self.confidenceThreshold = yoloDetector.confidenceThreshold
+        self.iouThreshold = yoloDetector.iouThreshold
     }
 
     // MARK: - Live Detection

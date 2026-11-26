@@ -11,4 +11,9 @@
 
 The archive contains source and worker fingerprints, six resolved benchmark plans and certificates, CPU acceptance and regression decisions, scientific validation, control results and test logs. Some raw filenames and fields retain internal run labels. The commit and fingerprints identify the approved release.
 
+## Deep Audit Reports
+
+- [3.13.2 Deep Accuracy & Conformance Audit](accuracy.deep.md) — cryptographic fingerprints, all 27 NIST StRD dataset errors, G-037 residual identity verification, rolling-origin backtests, all 39 raw scientific workload gate IDs, pandas Wampler comparator mismatches, skipped conditional Llama checks, and G-035/G-036 deferred scope.
+- [3.13.2 Deep Performance Audit](performance.deep.md) — cryptographic fingerprints, six standardized campaign summary tables (`4,810` validated samples), full 17-dataset byte manifest, 6-decimal `median ± SD (ms)` tables for `standard` and `standard-production-default`, all 33 scientific workload `median (IQR)` stages, and SwiftLLM KV-cache ablation timings.
+
 [Runner guide](../../README.md) · [Performance](../../../PERFORMANCE/3.13.2.md) · [Accuracy](../../../ACCURACY/3.13.2.md)

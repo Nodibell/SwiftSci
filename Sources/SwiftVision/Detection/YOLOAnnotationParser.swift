@@ -46,10 +46,12 @@ public enum YOLOAnnotationParser {
             let w = widthNorm * imageWidth
             let h = heightNorm * imageHeight
 
-            let xMin = max(0.0, xCenter - (w / 2.0))
-            let yMin = max(0.0, yCenter - (h / 2.0))
-            let xMax = xMin + w
-            let yMax = yMin + h
+            let xMin = min(imageWidth, max(0.0, xCenter - (w / 2.0)))
+            let yMin = min(imageHeight, max(0.0, yCenter - (h / 2.0)))
+            let xMax = min(imageWidth, max(0.0, xCenter + (w / 2.0)))
+            let yMax = min(imageHeight, max(0.0, yCenter + (h / 2.0)))
+
+            guard xMax > xMin, yMax > yMin else { continue }
 
             let label = (classId >= 0 && classId < classLabels.count) ? classLabels[classId] : "class_\(classId)"
 

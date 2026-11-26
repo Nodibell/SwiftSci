@@ -1,18 +1,19 @@
 # SwiftSci Performance Benchmarks Index
 
-> **Versioned Documentation Architecture**: Full release-specific benchmark tables, methodology records, and raw environment metadata live under [`PERFORMANCE/`](PERFORMANCE/) paired with [`ACCURACY/`](ACCURACY/). Use [`Benchmarks/README.md`](Benchmarks/README.md) to run and audit standardized suites.
+> **Two-Tier Documentation Architecture**: Concise release-specific performance overviews live under [`PERFORMANCE/`](PERFORMANCE/) paired with [`ACCURACY/`](ACCURACY/). Raw cryptographic fingerprints, 6-decimal `Mean ± SD / CV% / IQR / z-score` dumps, and dataset byte tables live under [`Benchmarks/Reports/`](Benchmarks/Reports/). Use [`Benchmarks/README.md`](Benchmarks/README.md) to run and audit standardized suites.
 
-The latest published version is **3.13.2**. See its [release report](PERFORMANCE/3.13.2.md) and the [evidence index](Benchmarks/Reports/v3.13.2/README.md).
+The latest published version is **3.13.3**. See its [performance overview](PERFORMANCE/3.13.3.md), [deep performance audit](Benchmarks/Reports/v3.13.3/performance.deep.md), and [evidence index](Benchmarks/Reports/v3.13.3/README.md).
 
-## Version archive
+## Version Archive
 
-| Version | Release status | Scope | Report | Companion |
-|---|---|---|---|---|
-| **3.13.2** | Latest published | Six audited benchmark campaigns | [Report](PERFORMANCE/3.13.2.md) | [Companion](ACCURACY/3.13.2.md) |
-| **`3.13.1`** | Published (`v3.13.1`, Superseded) | Historical `standard`, `migration`, `certification`, `dataframe-conformance`, `scientific-workflow`, idle patched microbenchmarks (`2026-11-14`), and retired `--research` | [`PERFORMANCE/3.13.1.md`](PERFORMANCE/3.13.1.md) | [`ACCURACY/3.13.1.md`](ACCURACY/3.13.1.md) |
-| **`3.13.0`** | Released (`v3.13.0`) | Carries forward `3.12.0` audited baseline (`SwiftLLM` / `SwiftNLP` changes only; no independent classical run) | [`PERFORMANCE/3.13.0.md`](PERFORMANCE/3.13.0.md) | [`ACCURACY/3.13.0.md`](ACCURACY/3.13.0.md) |
-| **`3.12.0`** | Released (`v3.12.0`) | Audited `standard-3.12.0` & `migration-3.12.0` (`macOS 27.2`, Swift `6.4`) + legacy research tables | [`PERFORMANCE/3.12.0.md`](PERFORMANCE/3.12.0.md) | [`ACCURACY/3.12.0.md`](ACCURACY/3.12.0.md) |
-| **`3.11.0`** | Released (`v3.11.0`) | `standard-3.11.0` (`macOS 27.0.1`, Swift `6.4`) + 15-audit ML/Data `--research` baseline | [`PERFORMANCE/3.11.0.md`](PERFORMANCE/3.11.0.md) | [`ACCURACY/3.11.0.md`](ACCURACY/3.11.0.md) |
-| **`3.10.3`** | Released (`v3.10.3`) | Methodology v2 initial `DenseColumn` / compensated precision / 1M DataFrame history | [`PERFORMANCE/3.10.3.md`](PERFORMANCE/3.10.3.md) | [`ACCURACY/3.10.3.md`](ACCURACY/3.10.3.md) |
+| Version | Release Status | Scope | Overview | Deep Audit / Evidence | Companion |
+|---|---|---|---|---|---|
+| **`3.13.3`** | Latest (`v3.13.3`) | Six AC `production-default` campaigns (`10,300` samples across 4 engines) + 768-D MLP BLAS (`2.57×` fit) + `39/39` scientific suite + SwiftLLM KV-cache ablation | [Overview](PERFORMANCE/3.13.3.md) | [Deep Audit](Benchmarks/Reports/v3.13.3/performance.deep.md) · [Archive](Benchmarks/Reports/v3.13.3/README.md) | [Accuracy](ACCURACY/3.13.3.md) |
+| **`3.13.2`** | Historical (`v3.13.2`) | Six audited standardized campaigns (`4,810` samples) + `39/39` scientific suite + SwiftLLM KV-cache ablation | [Overview](PERFORMANCE/3.13.2.md) | [Deep Audit](Benchmarks/Reports/v3.13.2/performance.deep.md) · [Archive](Benchmarks/Reports/v3.13.2/README.md) | [Accuracy](ACCURACY/3.13.2.md) |
+| **`3.13.1`** | Historical (`v3.13.1`, Superseded) | Historical `standard`, `migration`, idle patched microbenchmarks (`2026-11-14`), OS-variance audit, and retired `--research` | [Overview](PERFORMANCE/3.13.1.md) | [Deep Audit](Benchmarks/Reports/v3.13.1/performance.deep.md) · [Index](Benchmarks/Reports/v3.13.1/README.md) | [Accuracy](ACCURACY/3.13.1.md) |
+| **`3.13.0`** | Historical (`v3.13.0`) | Carries forward `3.12.0` audited baseline (`SwiftLLM` / `SwiftNLP` changes only; no independent classical run) | [Overview](PERFORMANCE/3.13.0.md) | [Methodology](Benchmarks/README.md) | [Accuracy](ACCURACY/3.13.0.md) |
+| **`3.12.0`** | Historical (`v3.12.0`) | Audited `standard-3.12.0` & `migration-3.12.0` (`macOS 27.2`, Swift `6.4`) + legacy research tables | [Overview](PERFORMANCE/3.12.0.md) | [Methodology](Benchmarks/README.md) | [Accuracy](ACCURACY/3.12.0.md) |
+| **`3.11.0`** | Historical (`v3.11.0`) | `standard-3.11.0` (`macOS 27.0.1`, Swift `6.4`) + 15-audit ML/Data `--research` baseline | [Overview](PERFORMANCE/3.11.0.md) | [Methodology](Benchmarks/README.md) | [Accuracy](ACCURACY/3.11.0.md) |
+| **`3.10.3`** | Historical research (`v3.10.3`) | Methodology v2 initial `DenseColumn` / compensated precision / 1M DataFrame history | [Overview](PERFORMANCE/3.10.3.md) | [Methodology](Benchmarks/README.md) | [Accuracy](ACCURACY/3.10.3.md) |
 
 See the [benchmark guide](Benchmarks/README.md) for reproduction.

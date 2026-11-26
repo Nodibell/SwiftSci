@@ -1,0 +1,121 @@
+# SwiftSci 3.13.1 Deep Accuracy & Scientific Conformance Audit
+
+> **Navigation**: [← v3.13.1 Evidence Index](README.md) · [Accuracy Overview](../../../ACCURACY/3.13.1.md) · [Deep Performance Audit](performance.deep.md) · [Latest (`3.13.2`)](../v3.13.2/accuracy.deep.md)
+>
+> **Status — Historical Snapshot (`v3.13.1`, Superseded by `v3.13.2`)**: Evaluates the published `v3.13.1` codebase (`HEAD: 8e45a1e88ca0f8ae072321fe7852d81aec6a6fe6`, `2026-11-14`) before the `v3.13.2` correctness patches and legacy `--research` harness removal.
+
+> [!WARNING]
+> **v3.13.2 Scientific Correctness Audit Notice**: The `v3.13.1` release contained scientific defects remediated or formally scoped in `v3.13.2`: **G-033** (missing SARIMA/ARIMA non-stationarity/non-invertibility and finite validation + AutoARIMA MA/SMA polynomial sign convention), **G-037** (ARIMA/SARIMA `fittedValues` open-loop integration drift on differenced models, fixed in `v3.13.2`), **G-035** (`TreeSHAP` has no `GradientBoostedTreesRegressor` support), **G-036** (`TreeSHAP` has no classifier log-odds/probability explanations), and `Stats.skewness`/`Stats.kurtosis` `ddof=1` sample denominator documentation. Furthermore, the legacy `SwiftSciBenchmarks --research` console accuracy suite cited below was retired and removed in `v3.13.2`. See [`ACCURACY/3.13.2.md`](../../../ACCURACY/3.13.2.md) and [`v3.13.2/accuracy.deep.md`](../v3.13.2/accuracy.deep.md).
+
+---
+
+## Suite & Verification Summary (`2026-11-14`)
+
+All audited conformance suites passed with `certificate.json` status `"passed"`:
+- **`certification`** (NIST StRD, `27/27`): **ALL PASSED**, max SwiftSci abs error `5.588e-09`
+- **`dataframe-conformance`** (`24/24`): **ALL PASSED**, max abs error `0.000e+00`
+- **`scientific-workflow`** (`4/4`): **ALL PASSED**, max abs error `1.421e-14`
+- **Unit & Cookbook Verification**: `138` XCTest + `1,695` Swift Testing = `1,833` passed (`0` failures; `3` optional external-model tests skipped) in both Debug and Release; `CookbookVerification` `70/70` recipes passed; `100.00%` (`2,551/2,551`) DocC declaration coverage.
+
+---
+
+## 1. Scientific Correctness Enhancements & Verification Checksums (`3.13.1`)
+
+| Subsystem | Prior Behavior (`3.13.0`) | `3.13.1` Fix | Verified Verification Checksum (`2026-11-14`) |
+| :--- | :--- | :--- | :--- |
+| **`SwiftStats` Distributions & Normality** | Upper-tail Chi-square survival precision drift; approximate Shapiro-Wilk & uncalibrated KS normal $p$-values. | Fixed regularized incomplete gamma upper-tail precision in `chiSquareTest`; implemented Royston AS R94 `ShapiroWilk` ($n \in [3, 5000]$) & calibrated Lilliefors KS normal curves. | `ChiSquare_100`: `stat=156.274131, p=2.147307e-04` (SciPy exact); `ShapiroWilk`: `100/1000/5000` match SciPy `w=0.973260 / 0.998273 / 0.999666`, `p=0.039465 / 0.416374 / 0.602935`; `Lilliefors`: `d=0.044160 / 0.010317`. |
+| **`SwiftPreprocessing` Leakage & Indexing** | Unshifted VarianceThreshold; ANOVA Bessel df mismatch; relative `RFE` indices; unordered `PolynomialFeatures`; full-sample `TargetEncoder.fitTransform`. | Shifted variance in `VarianceThreshold`; corrected Bessel df in `SelectKBest`; original coordinate index remapping in `RFE`; canonical non-decreasing multi-indices in `PolynomialFeatures`; strict out-of-fold K-fold cross-fitting in `TargetEncoder.fitTransform`. | `VarianceThreshold_Shifted` (`kept=99`); `SelectKBest` (`kept=20`); `RFE` (`kept=10`); `PolynomialFeatures` (`rows=1000, cols=210`); `TargetEncoder_OOF` (`n=100000, sum=494635.5612` vs Sklearn `494630.2821`). |
+| **`SwiftDataFrame` CSV, `unique`, Variance** | Literal null tokens/empty strings indistinguishable from `nil` on round-trip; stringified deduplication in `unique`; cancellation in `TypedColumn.variance`. | `wasQuoted` preserved distinctly from `escapedQuotesPresent` across eager & streaming CSV readers + auto-quoting in `CSVWriter`; `CanonicalUniqueKey` deduplication; cancellation-immune shifted `TypedColumn.variance`. | `CSV_Read_*_100k_NullTokens` (`rows=100000, cols=3`); `TypedColumn_Variance_Shifted1e12_1M` (`v=9.957297e-05` vs Pandas `9.957298e-05`, `s=9.978626e-03`); `DataFrame_Unique_100k_MixedKeys` (`rows=499` vs `499`). |
+
+---
+
+## 2. Pre-Release Audit Findings on Semantics & Byte Parity
+
+### A. `TypedColumn.unique`: `248` (SwiftSci) vs `247` (Pandas) Is an Intended Contract Difference
+
+On the `100k` nullable `[Double?]` fixture (`m = i % 250`):
+- **SwiftSci (`248` unique elements)**: `TypedColumn.CanonicalUniqueKey` explicitly separates **SQL missing (`nil`, `m == 0`)** from **canonical IEEE `NaN` (`m == 1, 2`)**, collapses multiple `NaN` bit payloads to `1` entry, and canonicalizes `-0.0` / `+0.0` (`m == 3, 4`) to `1` signed-zero entry: `1 (nil) + 1 (NaN) + 1 (±0.0) + 245 (values 5..249) = 248`.
+- **Pandas / NumPy (`247` unique elements)**: Converting to non-nullable `np.float64` maps `nil` (`None`) and `NaN` (`m in (0, 1, 2)`) into a single `np.nan`: `1 (NaN) + 1 (±0.0) + 245 (values 5..249) = 247`.
+
+### B. CSV Null-Token Serialization Contract & Byte Parity
+
+Under [`CSVWriter.swift`](../../../Sources/SwiftDataFrame/IO/CSVWriter.swift) and `CSVReader` default options (`nullValues`: `""`, `"NA"`, `"null"`, `"NaN"`, `"None"`):
+- **Unquoted empty or configured null tokens** decode as `nil`.
+- **Quoted empty (`""`) or quoted null-token strings (`"NA"`, `"null"`, `"NaN"`, `"None"`)** retain their literal `String` value.
+- On `CSV_Write_100k_NullTokens` (`100k × 3`), SwiftSci writes **`2,290,455` bytes** vs Pandas **`2,165,456` bytes**: the `+124,999`-byte difference equals `2 quote bytes × (5/8) × 100,000 = +125,000` quotes added by SwiftSci around the 5 quoted string/empty variants (minus `1` trailing EOF `\n` byte on `PlainStrings`/`Numeric`/`NullTokens` vs Pandas). Default `pd.read_csv` collapses unquoted Pandas output by conflating `62,500` literal null-token/`""` rows with `12,500` missing values into `75,000` `NaN` rows.
+- This workload (`CSV_*_100k_NullTokens`) is distinct from `medium-csv-read` ([`csv-read-v2.json`](../../Specs/workloads/csv-read-v2.json)), which tests `100k × 5` complete-schema finite non-null numeric/string rows without quoting or null tokens.
+
+### C. ARIMA `R² = -1.555` Root-Cause Investigation (Not a Regression)
+
+`git diff v3.12.0 -- Sources/SwiftForecast/Core/ARIMA.swift` shows only documentation comments added at `aic()`/`bic()`—the estimator logic in `3.13.1` is **byte-identical to `3.12.0`**. Replicating the archived `AccuracyBenchmarks.swift` (`--research`, removed in v3.13.2) fixture (`BenchmarkLCG(seed: 42)`, `N = 500`, `nTrain = 476`, `h = 24`, $y_t = 20 + 0.25t + 8\sin(2\pi t/12) + \varepsilon_t$):
+
+| Model / Baseline (`h = 24`) | RMSE | MAE | MAPE | Out-of-Sample $R^2$ | Diagnosis |
+| :--- | ---: | ---: | ---: | ---: | :--- |
+| **SwiftSci Holt-Winters ETS** | `0.350` | `0.275` | `0.19%` | **`+0.997`** | Matches seasonal + trend dynamics (`3.13.1` console) |
+| **Statsmodels Holt-Winters ETS** | `0.331` | `0.288` | `0.20%` | **`+0.997`** | Reference seasonal agreement (`ΔR² = 0.000`) |
+| **Seasonal Naive (`t - 12`)** | `4.684` | `4.390` | `3.09%` | **`+0.463`** | Captures period-12 seasonality even without drift |
+| **Naive Drift** | `6.997` | `5.716` | `3.93%` | **`-0.198`** | Linear trend projection without seasonality |
+| **Naive Persistence (Last Value)** | `9.547` | `7.869` | `5.40%` | **`-1.230`** | Zero-change horizon baseline |
+| **SwiftSci `ARIMA(1,1,1)` (`3.12.0` & `3.13.1`)** | `10.218` | `8.557` | `5.87%` | **`-1.555`** | Non-seasonal Hannan–Rissanen fit on seasonal series |
+| **Statsmodels `ARIMA(1,1,1)` (`trend='t'`)** | `19.696` | `18.117` | `12.56%` | **`-8.493`** | Non-seasonal MLE with linear differenced trend |
+| **Statsmodels `ARIMA(1,1,1)` (default)** | `22.158` | `20.400` | `14.15%` | **`-11.014`** | Non-seasonal default reverts toward flat forecast |
+
+> **Correction of Prior Scorecard Summary**: Prior `ACCURACY.md` summaries stated `$R^2$ agrees at reported precision; lower RMSE on ARIMA`. That was inaccurate for ARIMA: `SwiftSci R² = -1.555` and `Statsmodels R² = -11.014` do **not** agree in $R^2$, and both fail relative to `Holt-Winters` (`+0.997`) and `Seasonal Naive` (`+0.463`) because a non-seasonal `ARIMA(1,1,1)` model cannot represent a deterministic `period=12` sinusoidal signal.
+
+---
+
+## 3. Standardized Conformance & Certification Detail (`work/Runs/*-3.13.1`)
+
+### NIST StRD Certification (`certification`, `27/27` Passed, Max Error `5.588e-09`)
+
+| Case Range | Metric(s) | Status | Max SwiftSci Abs Error | SwiftSci Median Range (ms) |
+| :--- | :--- | :---: | :---: | :---: |
+| `nist-pidigits` (3 cases) | mean, variance, stddev | ✅ `pass` | `0.00e+00` .. `1.07e-14` | `0.0140` .. `0.1518 ms` |
+| `nist-lottery` (3 cases) | mean, variance, stddev | ✅ `pass` | `5.68e-14` .. `4.37e-11` | `0.0053` .. `0.0084 ms` |
+| `nist-lew` (3 cases) | mean, variance, stddev | ✅ `pass` | `0.00e+00` .. `7.28e-11` | `0.0060` .. `0.0071 ms` |
+| `nist-mavro` (3 cases) | mean, variance, stddev | ✅ `pass` | `0.00e+00` .. `3.24e-17` | `0.0055` .. `0.0070 ms` |
+| `nist-michelso` (3 cases) | mean, variance, stddev | ✅ `pass` | `0.00e+00` .. `1.14e-15` | `0.0060` .. `0.0072 ms` |
+| `nist-numacc1` (3 cases) | mean, variance, stddev | ✅ `pass` | `0.00e+00` | `0.0063` .. `0.0071 ms` |
+| `nist-numacc2` (3 cases) | mean, variance, stddev | ✅ `pass` | `0.00e+00` .. `1.39e-17` | `0.0057` .. `0.0073 ms` |
+| `nist-numacc3` (3 cases) | mean, variance, stddev | ✅ `pass` | `6.98e-12` .. `3.49e-10` | `0.0060` .. `0.0087 ms` |
+| `nist-numacc4` (3 cases) | mean, variance, stddev | ✅ `pass` | `1.12e-10` .. `5.59e-09` | `0.0061` .. `0.0107 ms` |
+
+### DataFrame Semantic Conformance (`dataframe-conformance`, `24/24` Passed, Max Error `0.000e+00`)
+
+All `24` conformance checks (`dataframe-gather-int64/empty`, `dataframe-select-order`, `dataframe-sort-int64-asc/desc`, `dataframe-filter-int64-exact/empty`, `dataframe-matrix-nullable/nonsquare/duplicate/empty-selection`, `dataframe-replace-isolation`, `dataframe-group-string-components/int64`, `dataframe-filter-float-{eq,ne,lt,le,gt,ge,isnull,isnotnull}`, `dataframe-sort-float-asc/desc`) passed with **`0.00e+00`** max absolute error against Pandas reference outputs (`0.0217` .. `0.0749 ms` Swift vs `0.2473` .. `1.454 ms` Pandas).
+
+### End-to-End Scientific Workflow (`scientific-workflow`, `4/4` Passed, Max Error `1.421e-14`)
+
+| Case ID | Status | SwiftSci Med (ms) | Pandas Med (ms) | Max Abs Error | SwiftSci RSS (MB) |
+| :--- | :---: | ---: | ---: | ---: | ---: |
+| `workflow-scientific` | ✅ `pass` | `20.419` | `8.708` | `1.42e-14` | `25.7` |
+| `workflow-scientific-unique-keys` | ✅ `pass` | `5.787` | `7.443` | `1.42e-14` | `25.7` |
+| `workflow-scientific-feature-order` | ✅ `pass` | `7.080` | `3.639` | `1.42e-14` | `25.7` |
+| `workflow-scientific-row-order` | ✅ `pass` | `6.366` | `4.865` | `1.42e-14` | `25.7` |
+
+---
+
+## 4. Historical Console Accuracy Suite (`AccuracyBenchmarks.swift`, Retired in v3.13.2)
+
+Direct console output previously recorded from the retired `SwiftSciBenchmarks --research` runner on `3.13.1`:
+
+| Model / Test | `3.13.1` Console Metric Output | Notes |
+| :--- | :--- | :--- |
+| **`ExponentialSmoothing` (Holt-Winters, `h=24`)** | `RMSE=0.350, MAE=0.275, MAPE=0.19%, R²=0.997` | Matches Statsmodels `R²=0.997` |
+| **`ARIMAModel(1,1,1)` (`h=24`)** | `RMSE=10.218, MAE=8.557, MAPE=5.87%, R²=-1.555` | Non-seasonal fit on period-12 series (Statsmodels `-11.014`) |
+| **OLS Linear (`LAPACK`)** | `RMSE=0.0533, MAE=0.0452, R²=0.99988` | Exact match |
+| **`GBDT Regressor` (`30 tr, d=4`)** | `RMSE=0.490, R²=0.9851` | Non-linear regression surface |
+| **`HistGBDT Regressor` (`30 tr, b=256`)** | `RMSE=0.527, R²=0.9827` | 256-bin histogram GBDT |
+| **`DecisionTree Regressor` (`d=5`)** | `RMSE=0.872, R²=0.9527` | Regression tree |
+| **`LogisticRegression`** | `Accuracy=97.50%, F1=0.973` | Binary classification |
+| **`LinearSVC` (`C=1.0`)** | `Accuracy=99.50%, F1=0.995` | Soft-margin SVM |
+| **`RandomForest Classifier` (`30 tr`)** | `Accuracy=97.50%, F1=0.973` | Parallel ensemble |
+| **`HistGBDT Classifier`** | `Accuracy=97.00%, F1=0.968` | Histogram GBDT classifier |
+| **`DecisionTree Classifier` (`d=5`)** | `Accuracy=98.00%, F1=0.978` | CART Gini tree |
+| **`NaiveBayes` (`3-class`)** | `Accuracy=35.00%, Macro-F1=0.342` | Synthetic uniform token formula parity fixture |
+| **`PCA SVD` (`5D → 2D`)** | `EVR=[0.6188, 0.3786], Total=99.74%` | Accelerate LAPACK SVD |
+| **`K-Means` (`k=3, N=600`)** | `Inertia (WCSS)=394.31, Centroids=3` | Bounded convergence |
+| **`StandardScaler`** | `col0 μ=30.6374, σ=11.5337` | vDSP scaling |
+| **`MinMaxScaler`** | `col0 [10.03, 49.78] → Transformed [0.0000, 1.0000]` | Bounds clamping |
+| **`Stats` Hypothesis & Correlation** | `Welch t=-0.0323, p=9.742503e-01, df=1840.0`; `Student t=-0.0323, p=9.742500e-01`; `Paired t=0.0328, p=9.738098e-01`; `ANOVA F=275.2785, p=1.761608e-110`; `Pearson r=0.03513, Spearman ρ=0.03529` | Exact SciPy parity |
+| **`VADER Sentiment`** | `Positive Compound=0.4770 (Pos=0.286, Neg=0.000)`; `Negative Compound=-0.9052 (Pos=0.000, Neg=0.710)`; `Neutral Compound=0.0000 (Neu=1.000)` | Lexicon parity |

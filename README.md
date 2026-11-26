@@ -1,4 +1,4 @@
-# SwiftSci 3.13.2
+# SwiftSci 3.13.3
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -29,7 +29,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.13.2")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.13.3")
 ]
 ```
 
@@ -118,20 +118,20 @@ in one versioned JSON artifact. The 14 core modules remain independently usable.
 
 ---
 
-## What’s new in v3.13.2
+## What’s new in v3.13.3
 
-- **ARIMA and SARIMA** reject invalid or non-finite fits and clear failed fitted state. AutoARIMA applies the corrected polynomial coefficient convention.
-- **One-step fitted values** use observed levels to reconstruct predictions on the original scale. ARIMAX includes the exogenous contribution.
-- **Benchmarking** uses the standardized runner and scientific validation suite for numerical references, forecasting, models and data workflows.
+- **MLP BLAS mini-batch & stability (`SwiftML`)**: Accelerate `cblas_dgemm` / `vDSP` mini-batch training delivers **2.57×** faster 768-D `MLPClassifier` fit (`40.312 ms` vs scikit-learn `103.639 ms`, `train_accuracy = 1.0000`), numerically stable extreme-logit softmax/BCE, finite-difference gradient verification (`< 1e-6`), and `256 KiB` scratch-budgeted batched prediction up to width `8,192`.
+- **Multiclass HistGBDT, LinearSVC & calibration (`SwiftML`)**: `HistGradientBoostingClassifier` now supports multiclass softmax (`K > 2`) with arbitrary integer labels; `LinearSVC`, `PlattScaling`, and `CalibratedClassifier` enforce rectangularity, epoch bounds, and binary label preservation.
+- **Vision, Gemma 4 & ReActAgent (`SwiftVision`, `SwiftLLM`, `SwiftNLP`, `SwiftAgent`)**: Non-square YOLOv8 un-letterboxing, `YOLOAnnotationParser` clamping, `VisionImageClassifier` split/collision profiling, Gemma 4 `<bos>` deduplication, `generation_config.json` `eos_token_id` unioning, and `<|channel>thought` / `<think>` + action-precedence parsing in `ReActAgent`.
+- **AC-powered 4-engine benchmarking**: `6/6` `production-default` comparison campaigns (`10,300` validated samples across `swiftsci`, `pandas`, `polars`, and `duckdb`) plus `39/39` scientific validation workloads.
 
-See the [performance report](PERFORMANCE/3.13.2.md) and [accuracy report](ACCURACY/3.13.2.md). The [changelog](CHANGELOG.md) covers earlier releases.
+See the [performance report](PERFORMANCE/3.13.3.md) and [accuracy report](ACCURACY/3.13.3.md). The [changelog](CHANGELOG.md) covers earlier releases.
 
 ## 📚 Documentation & Resources
 
 - **API Reference**: [Interactive DocC Documentation](https://nodibell.github.io/SwiftSci/)
-- **SwiftSci 3.13.2 companion guide:** [PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.2/SwiftSci_Handbook_3.13.2.pdf) · [EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.2/SwiftSci_Handbook_3.13.2.epub).
-- **Full Engineering Handbook & Practical Cookbook:** [3.13.1 archive](https://github.com/Nodibell/SwiftSci/releases/tag/v3.13.1) for the module deep dives, architecture and recipes. Use the 3.13.2 guide and reports for current release details.
-- **Benchmarks:** [Performance](PERFORMANCE/3.13.2.md) · [Accuracy](ACCURACY/3.13.2.md) · [Performance archive](PERFORMANCE.md) · [Accuracy archive](ACCURACY.md).
+- **SwiftSci 3.13.3 Handbook & Cookbook:** [Handbook PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.3/SwiftSci_Handbook_3.13.3.pdf) · [Handbook EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.3/SwiftSci_Handbook_3.13.3.epub) · [Cookbook PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.3/SwiftSci_Cookbook_3.13.3.pdf) · [Cookbook EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.3/SwiftSci_Cookbook_3.13.3.epub) · [Companion Guide](Documentation/Handbook-3.13.3.md)
+- **Benchmarks:** [Performance](PERFORMANCE/3.13.3.md) · [Accuracy](ACCURACY/3.13.3.md) · [Performance archive](PERFORMANCE.md) · [Accuracy archive](ACCURACY.md).
 - **Release History**: [CHANGELOG.md](CHANGELOG.md)
 - **Roadmap**: [ROADMAP.md](ROADMAP/ROADMAP.md)
 

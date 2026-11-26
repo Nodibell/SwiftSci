@@ -171,4 +171,70 @@ struct VisionImageClassifierTests {
             _ = try await classifier.profileFolder(at: nonExistentURL)
         }
     }
+
+    @Test("VisionImageClassifier profileFolder handles train/val splits without class conflation or filename collisions")
+    func testProfileFolderSplitLayoutAndCollisionDisambiguation() async throws {
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory.appendingPathComponent("swiftsci_split_test_\(UUID().uuidString)")
+        let trainCatsDir = tempDir.appendingPathComponent("train/cats")
+        let valDogsDir = tempDir.appendingPathComponent("val/dogs")
+
+        try fileManager.createDirectory(at: trainCatsDir, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: valDogsDir, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: tempDir) }
+
+        #if canImport(CoreGraphics) && canImport(ImageIO)
+        let imgA = ImageDataset(width: 16, height: 16, channels: 3, data: [Double](repeating: 0.9, count: 16 * 16 * 3))
+        let imgB = ImageDataset(width: 24, height: 24, channels: 3, data: [Double](repeating: 0.2, count: 24 * 24 * 3))
+        let pngA = try #require(imgA.toPNGData())
+        let pngB = try #require(imgB.toPNGData())
+
+        try pngA.write(to: trainCatsDir.appendingPathComponent("01.png"))
+        try pngB.write(to: valDogsDir.appendingPathComponent("01.png"))
+
+        let classifier = VisionImageClassifier()
+        let profile = try await classifier.profileFolder(
+            at: tempDir,
+            maxSampleImages: 10,
+            candidateLabels: ["animal", "landscape"]
+        )
+
+        #expect(profile.totalImages == 2)
+        #expect(profile.subfolderClasses["cats"] == 1)
+        #expect(profile.subfolderClasses["dogs"] == 1)
+        #expect(profile.subfolderClasses["train"] == nil)
+        #expect(profile.subfolderClasses["val"] == nil)
+        #expect(profile.samplePredictions.count == 2)
+        #expect(profile.samplePredictions["01.png"] == nil)
+        #expect(profile.samplePredictions["train/cats/01.png"] != nil)
+        #expect(profile.samplePredictions["val/dogs/01.png"] != nil)
+        #expect(abs(profile.averageWidth - 20.0) < 1e-4)
+        #expect(abs(profile.averageHeight - 20.0) < 1e-4)
+        #endif
+    }
+
+    @Test("VisionImageClassifier profileFolder averages dimensions only over valid images")
+    func testProfileFolderValidImageCountAveraging() async throws {
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory.appendingPathComponent("swiftsci_valid_avg_test_\(UUID().uuidString)")
+        let catsDir = tempDir.appendingPathComponent("cats")
+
+        try fileManager.createDirectory(at: catsDir, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: tempDir) }
+
+        #if canImport(CoreGraphics) && canImport(ImageIO)
+        let img = ImageDataset(width: 20, height: 40, channels: 3, data: [Double](repeating: 0.5, count: 20 * 40 * 3))
+        let png = try #require(img.toPNGData())
+        try png.write(to: catsDir.appendingPathComponent("valid.png"))
+        // Corrupt file with .png extension
+        try Data("not a png".utf8).write(to: catsDir.appendingPathComponent("corrupt.png"))
+
+        let classifier = VisionImageClassifier()
+        let profile = try await classifier.profileFolder(at: tempDir, maxSampleImages: 10)
+
+        #expect(profile.totalImages == 2)
+        #expect(abs(profile.averageWidth - 20.0) < 1e-4)
+        #expect(abs(profile.averageHeight - 40.0) < 1e-4)
+        #endif
+    }
 }

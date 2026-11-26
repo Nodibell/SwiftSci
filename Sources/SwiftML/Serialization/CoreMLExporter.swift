@@ -15,6 +15,9 @@ import Foundation
 /// | ``exportBinaryDecisionTreeRegressor(state:featureNames:outputName:)`` | `.mlmodel` binary | ✅ |
 /// | ``exportBinaryRandomForestClassifier(state:featureNames:outputName:classLabels:)`` | `.mlmodel` binary | ✅ |
 /// | ``exportBinaryRandomForestRegressor(state:featureNames:outputName:)`` | `.mlmodel` binary | ✅ |
+/// | ``exportBinaryGradientBoostedTreesRegressor(trees:initialPrediction:learningRate:featureNames:outputName:)`` | `.mlmodel` binary | ✅ |
+/// | ``exportBinaryMLPClassifier(name:inputNames:outputName:layers:activation:classLabels:)`` | `.mlmodel` binary | ✅ |
+/// | ``exportBinaryMLPRegressor(name:inputNames:outputName:layers:activation:)`` | `.mlmodel` binary | ✅ |
 ///
 /// ## Binary format compatibility
 ///
@@ -22,12 +25,7 @@ import Foundation
 /// compatible with Xcode 15+, macOS 14+, iOS 17+, and visionOS 1+.
 /// Binary `.mlmodel` files can be loaded with `MLModel(contentsOf:)` and deployed to
 /// CPU, GPU, or Apple Neural Engine via Core ML inference pipeline.
-///
-/// ## Out of scope
-///
-/// - `MLPClassifier` / `MLPRegressor` (`NeuralNetwork` proto subtree — deferred beyond v3.1)
-/// - `.mlpackage` directory bundles with manifest (single `.mlmodel` satisfies G-001)
-/// - GradientBoostedTrees ensemble export
+/// Directory `.mlpackage` bundles are supported via ``writeMLPackage(modelData:to:author:description:)``.
 ///
 /// ## Example
 ///

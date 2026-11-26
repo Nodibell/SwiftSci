@@ -18,7 +18,23 @@ func mlpMatrixRow(_ matrix: PreparedNumericMatrix, row: Int) -> [Double] {
     }
 }
 
+func mlpValidateRow(_ values: [Double], layers: [LayerWeights]) throws {
+    guard let first = layers.first else {
+        throw SwiftMLError.modelNotFitted
+    }
+    guard values.count == first.inDim else {
+        throw SwiftMLError.dimensionMismatch(expected: first.inDim, got: values.count)
+    }
+}
+
+func mlpPredictRowValidated(_ values: [Double], layers: [LayerWeights], activate: (Double) -> Double) throws -> [Double] {
+    try mlpValidateRow(values, layers: layers)
+    return mlpPredictRow(values, layers: layers, activate: activate)
+}
+
 func mlpPredictRow(_ values: [Double], layers: [LayerWeights], activate: (Double) -> Double) -> [Double] {
+    precondition(!layers.isEmpty && values.count == layers[0].inDim,
+                 "MLP row dimension mismatch before BLAS gemm")
     var current = values
     for index in layers.indices {
         var next = layers[index].b

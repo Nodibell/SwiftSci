@@ -182,6 +182,17 @@ public struct ChatTemplate: Sendable, Equatable {
     /// - Returns: Array of token IDs.
     public func encode(messages: [ChatMessage], using tokenizer: any Tokenizer, addGenerationPrompt: Bool = true) -> [Int] {
         let text = render(messages: messages, addGenerationPrompt: addGenerationPrompt)
+        if let sp = tokenizer as? SentencePieceBPETokenizer {
+            let bosTokens = sp.encode(text: "", addSpecialTokens: true)
+            if bosTokens.count == 1 {
+                let bosText = sp.decode(tokens: bosTokens)
+                if (bosText == "<bos>" || bosText == "<s>"),
+                   text.hasPrefix(bosText),
+                   sp.encode(text: bosText, addSpecialTokens: false) == bosTokens {
+                    return sp.encode(text: text, addSpecialTokens: false)
+                }
+            }
+        }
         return tokenizer.encode(text: text)
     }
 

@@ -19,6 +19,9 @@ import Foundation
 /// | ``DecisionTreeRegressor`` | `TreeEnsembleRegressor` |
 /// | ``RandomForestClassifier`` | `TreeEnsembleClassifier` (multi-tree) |
 /// | ``RandomForestRegressor`` | `TreeEnsembleRegressor` (multi-tree) |
+/// | ``GradientBoostedTreesRegressor`` | `TreeEnsembleRegressor` (additive GBDT) |
+/// | ``MLPClassifier`` | `NeuralNetwork` (macOS) |
+/// | ``MLPRegressor`` | `NeuralNetwork` (macOS) |
 ///
 /// ## Example
 ///
@@ -32,9 +35,6 @@ import Foundation
 /// let url = URL(fileURLWithPath: "/tmp/Forest.mlmodel")
 /// try await clf.writeCoreML(to: url, featureNames: ["age", "income", "score"], outputName: "label")
 /// ```
-///
-/// - Note: `MLPClassifier` / `MLPRegressor` export is deferred beyond v3.1 (requires
-///   the `NeuralNetwork` Core ML proto subtree). Gradient boosted tree export is similarly deferred.
 public protocol CoreMLExportable {
     /// Exports the fitted model as binary Apple Core ML `.mlmodel` `Data`.
     ///

@@ -65,10 +65,14 @@ struct MLPBatchedPredictionTests {
         let short = try mlpBatchedPrediction(features: [[3, 4]], layers: [small],
                                              activate: { $0 }, finish: { $0[0] })
         #expect(short == nil)
-        let wide = LayerWeights(W: Array(repeating: 1, count: 513), b: [0], inDim: 513, outDim: 1)
+        let wide = LayerWeights(W: Array(repeating: 1, count: 8193), b: [0], inDim: 8193, outDim: 1)
         let fallback = try mlpBatchedPrediction(features: Array(repeating: wide.W, count: 32),
             layers: [wide], activate: { $0 }, finish: { $0[0] })
         #expect(fallback == nil)
+        let maxBatched = LayerWeights(W: Array(repeating: 1, count: 8192), b: [0.5], inDim: 8192, outDim: 1)
+        let maxBatchedResult = try mlpBatchedPrediction(features: Array(repeating: Array(repeating: 0.5, count: 8192), count: 5),
+            layers: [maxBatched], activate: { $0 }, finish: { $0[0] })
+        #expect(maxBatchedResult == Array(repeating: 4096.5, count: 5))
         #expect(throws: SwiftMLError.self) {
             _ = try mlpBatchedPrediction(features: Array(repeating: [1.0], count: 32),
                 layers: [small], activate: { $0 }, finish: { $0[0] })
@@ -78,6 +82,56 @@ struct MLPBatchedPredictionTests {
             layers: [small], activate: { $0 }, finish: { $0[0] })
         let tail = try #require(optionalTail)
         #expect(tail == Array(repeating: 2.5, count: 65))
+    }
+
+    @Test(arguments: [768, 2048, 4096])
+    func wideLayersUseBatchedParityWithinScratchBudget(_ width: Int) throws {
+        let batchRows = mlpEffectivePredictionBatchRows(width: width)
+        #expect(batchRows == min(32, 16_384 / width))
+        #expect(batchRows >= 2)
+        #expect(2 * batchRows * width * MemoryLayout<Double>.stride <= 262_144)
+
+        let l1 = LayerWeights(
+            W: (0..<(width * 16)).map { Double(($0 % 19) - 9) / 100.0 },
+            b: (0..<16).map { Double($0) * 0.05 },
+            inDim: width,
+            outDim: 16
+        )
+        let l2 = LayerWeights(
+            W: (0..<16).map { Double($0 - 8) * 0.1 },
+            b: [0.25],
+            inDim: 16,
+            outDim: 1
+        )
+        let layers = [l1, l2]
+        let rows: [[Double]] = (0..<(batchRows * 2 + 3)).map { r in
+            (0..<width).map { c in Double(((r * 7 + c * 3) % 23) - 11) / 31.0 }
+        }
+
+        let batched = try #require(try mlpBatchedPrediction(
+            features: rows,
+            layers: layers,
+            activate: { max(0.0, $0) },
+            finish: { $0[0] }
+        ))
+        let scalar = rows.map { scalarForward($0, layers, .relu)[0] }
+        expectClose(batched, scalar)
+
+        let flatRowMajor = rows.flatMap { $0 }
+        let matrix = PreparedNumericMatrix(
+            values: flatRowMajor,
+            columnNames: (0..<width).map { "f\($0)" },
+            rowCount: rows.count,
+            order: .rowMajor,
+            sourceRows: Array(0..<rows.count)
+        )
+        let batchedMatrix = try #require(mlpBatchedPrediction(
+            matrix: matrix,
+            layers: layers,
+            activate: { max(0.0, $0) },
+            finish: { $0[0] }
+        ) as [Double]?)
+        expectClose(batchedMatrix, scalar)
     }
 
     @Test func scratchLimitBoundary() throws {

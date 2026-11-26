@@ -104,4 +104,79 @@ struct ChatTemplateTests {
         #expect(ast.role == .assistant && ast.content == "ast")
         #expect(tol.role == .tool && tol.content == "tol")
     }
+
+    @Test("G-050: ChatTemplate.gemma4.encode emits single BOS token with SentencePieceBPETokenizer")
+    func testGemma4EncodeSingleBOS() throws {
+        var vocab: [String: Int] = [
+            "<unk>": 0,
+            "<eos>": 1,
+            "<bos>": 2,
+            "▁": 3,
+            "h": 4,
+            "i": 5,
+            "hi": 6,
+        ]
+        var nextID = 7
+        for byte in 0..<256 {
+            vocab[String(format: "<0x%02X>", byte)] = nextID
+            nextID += 1
+        }
+        let tokenizerJSON: [String: Any] = [
+            "version": "1.0",
+            "added_tokens": [
+                ["id": 0, "content": "<unk>", "special": true],
+                ["id": 1, "content": "<eos>", "special": true],
+                ["id": 2, "content": "<bos>", "special": true],
+                ["id": 270, "content": "<|turn>", "special": true],
+                ["id": 271, "content": "<turn|>", "special": true],
+            ],
+            "normalizer": ["type": "Replace", "pattern": ["String": " "], "content": "▁"],
+            "pre_tokenizer": [
+                "type": "Split",
+                "pattern": ["String": " "],
+                "behavior": "MergedWithPrevious",
+                "invert": false,
+            ],
+            "post_processor": [
+                "type": "TemplateProcessing",
+                "single": [
+                    ["SpecialToken": ["id": "<bos>", "type_id": 0]],
+                    ["Sequence": ["id": "A", "type_id": 0]],
+                ],
+                "special_tokens": [
+                    "<bos>": ["id": "<bos>", "ids": [2], "tokens": ["<bos>"]],
+                ],
+            ],
+            "decoder": [
+                "type": "Sequence",
+                "decoders": [
+                    ["type": "Replace", "pattern": ["String": "▁"], "content": " "],
+                    ["type": "ByteFallback"],
+                    ["type": "Fuse"],
+                ],
+            ],
+            "model": [
+                "type": "BPE",
+                "dropout": NSNull(),
+                "unk_token": "<unk>",
+                "continuing_subword_prefix": NSNull(),
+                "end_of_word_suffix": NSNull(),
+                "fuse_unk": false,
+                "byte_fallback": true,
+                "vocab": vocab,
+                "merges": ["h i"],
+            ],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: tokenizerJSON)
+        let tokenizer = try SentencePieceBPETokenizer(tokenizerJSON: data)
+
+        let messages = [ChatMessage.user("hi")]
+        let rendered = ChatTemplate.gemma4.render(messages: messages, addGenerationPrompt: true)
+        #expect(rendered.hasPrefix("<bos><|turn>user\n"))
+
+        let encoded = ChatTemplate.gemma4.encode(messages: messages, using: tokenizer, addGenerationPrompt: true)
+        #expect(encoded.first == 2)
+        #expect(encoded.dropFirst().first != 2)
+        #expect(encoded == tokenizer.encode(text: rendered, addSpecialTokens: false))
+    }
 }

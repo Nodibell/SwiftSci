@@ -78,10 +78,14 @@ public actor HistGradientBoostingClassifier: ClassifierEstimator {
 
     /// Bin upper thresholds for each feature column: `binEdges[featureIdx]` has up to `maxBins` values.
     private var binEdges: [[Double]] = []
-    /// Trained ensemble of flat trees.
+    /// Trained ensemble of flat trees (binary classification).
     private var trees: [[HistTreeNode]] = []
-    /// Initial baseline log-odds prediction.
+    /// Initial baseline log-odds prediction (binary classification).
     private var initialLogOdds: Double = 0.0
+    /// Initial per-class baseline logits (multiclass softmax classification).
+    private var multiclassInitialLogOdds: [Double] = []
+    /// Trained per-iteration, per-class tree ensembles `[iteration][classIndex]` (multiclass classification).
+    private var multiclassTrees: [[[HistTreeNode]]] = []
     /// Unique class labels observed during fitting.
     private var classes: [Int] = []
 
@@ -148,6 +152,7 @@ public actor HistGradientBoostingClassifier: ClassifierEstimator {
         let n = features.count
         let numFeatures = features[0].count
         guard numFeatures > 0 else { throw SwiftMLError.invalidParameter("Features must have at least 1 column") }
+        try validateHistRectangularFeatures(features, expectedWidth: numFeatures)
 
         let uniqueClasses = Array(Set(targets.map { Int($0) })).sorted()
         guard uniqueClasses.count >= 2 else {
@@ -194,103 +199,222 @@ public actor HistGradientBoostingClassifier: ClassifierEstimator {
             }
         }
 
-        // 3. Binary classification setup (class 1 vs class 0)
-        let positiveClass = uniqueClasses[1]
-        let yBinary: [Double] = targets.map { Int($0) == positiveClass ? 1.0 : 0.0 }
-        let posCount = yBinary.reduce(0.0, +)
-        let priorProb = max(1e-5, min(1.0 - 1e-5, posCount / Double(n)))
-        self.initialLogOdds = log(priorProb / (1.0 - priorProb))
+        let allIndices = Array(0..<n)
 
-        var currentLogOdds = [Double](repeating: initialLogOdds, count: n)
-        var ensemble: [[HistTreeNode]] = []
-        ensemble.reserveCapacity(nEstimators)
+        if uniqueClasses.count == 2 {
+            // 3. Binary classification setup (class 1 vs class 0)
+            let positiveClass = uniqueClasses[1]
+            let yBinary: [Double] = targets.map { Int($0) == positiveClass ? 1.0 : 0.0 }
+            let posCount = yBinary.reduce(0.0, +)
+            let priorProb = max(1e-5, min(1.0 - 1e-5, posCount / Double(n)))
+            self.initialLogOdds = log(priorProb / (1.0 - priorProb))
+            self.multiclassInitialLogOdds = []
+            self.multiclassTrees = []
 
-        for _ in 0..<nEstimators {
-            // Compute negative gradients and hessians for logistic loss
-            var gradients = [Double](repeating: 0.0, count: n)
-            var hessians = [Double](repeating: 0.0, count: n)
+            var currentLogOdds = [Double](repeating: initialLogOdds, count: n)
+            var ensemble: [[HistTreeNode]] = []
+            ensemble.reserveCapacity(nEstimators)
 
-            for i in 0..<n {
-                let p = 1.0 / (1.0 + exp(-currentLogOdds[i]))
-                gradients[i] = yBinary[i] - p
-                hessians[i] = max(1e-4, p * (1.0 - p))
+            for _ in 0..<nEstimators {
+                // Compute negative gradients and hessians for logistic loss
+                var gradients = [Double](repeating: 0.0, count: n)
+                var hessians = [Double](repeating: 0.0, count: n)
+
+                for i in 0..<n {
+                    let p = sigmoid(currentLogOdds[i])
+                    gradients[i] = yBinary[i] - p
+                    hessians[i] = max(1e-4, p * (1.0 - p))
+                }
+
+                // Build histogram tree
+                var treeNodes: [HistTreeNode] = []
+                _ = buildHistTree(
+                    binnedMatrix: binnedMatrix,
+                    binEdges: computedEdges,
+                    gradients: gradients,
+                    hessians: hessians,
+                    sampleIndices: allIndices,
+                    depth: 0,
+                    treeNodes: &treeNodes
+                )
+
+                // Update current predictions
+                for i in 0..<n {
+                    let delta = Self.predictBinnedSample(binnedMatrix[i], nodes: treeNodes)
+                    currentLogOdds[i] += learningRate * delta
+                }
+
+                ensemble.append(treeNodes)
             }
 
-            // Build histogram tree
-            var treeNodes: [HistTreeNode] = []
-            let allIndices = Array(0..<n)
-            _ = buildHistTree(
-                binnedMatrix: binnedMatrix,
-                binEdges: computedEdges,
-                gradients: gradients,
-                hessians: hessians,
-                sampleIndices: allIndices,
-                depth: 0,
-                treeNodes: &treeNodes
-            )
-
-            // Update current predictions
+            self.trees = ensemble
+        } else {
+            // 4. Multiclass softmax gradient boosting (K > 2)
+            let numClasses = uniqueClasses.count
+            var classCounts = [Int](repeating: 0, count: numClasses)
+            var targetIndices = [Int](repeating: 0, count: n)
             for i in 0..<n {
-                let delta = Self.predictBinnedSample(binnedMatrix[i], nodes: treeNodes)
-                currentLogOdds[i] += learningRate * delta
+                let cIdx = uniqueClasses.firstIndex(of: Int(targets[i])) ?? 0
+                targetIndices[i] = cIdx
+                classCounts[cIdx] += 1
             }
 
-            ensemble.append(treeNodes)
+            let initLogits = classCounts.map { count in
+                log(max(1e-5, Double(count) / Double(n)))
+            }
+            self.initialLogOdds = 0.0
+            self.trees = []
+            self.multiclassInitialLogOdds = initLogits
+
+            var currentLogits = [Double](repeating: 0.0, count: n * numClasses)
+            for i in 0..<n {
+                let base = i * numClasses
+                for k in 0..<numClasses {
+                    currentLogits[base + k] = initLogits[k]
+                }
+            }
+
+            var ensemble: [[[HistTreeNode]]] = []
+            ensemble.reserveCapacity(nEstimators)
+            var probs = [Double](repeating: 0.0, count: n * numClasses)
+
+            for _ in 0..<nEstimators {
+                // Numerically stable row-wise softmax
+                for i in 0..<n {
+                    let base = i * numClasses
+                    var maxLogit = currentLogits[base]
+                    for k in 1..<numClasses {
+                        if currentLogits[base + k] > maxLogit {
+                            maxLogit = currentLogits[base + k]
+                        }
+                    }
+                    var sumExp = 0.0
+                    for k in 0..<numClasses {
+                        let e = exp(currentLogits[base + k] - maxLogit)
+                        probs[base + k] = e
+                        sumExp += e
+                    }
+                    let invSum = 1.0 / sumExp
+                    for k in 0..<numClasses {
+                        probs[base + k] *= invSum
+                    }
+                }
+
+                var iterTrees: [[HistTreeNode]] = []
+                iterTrees.reserveCapacity(numClasses)
+
+                for k in 0..<numClasses {
+                    var gradients = [Double](repeating: 0.0, count: n)
+                    var hessians = [Double](repeating: 0.0, count: n)
+
+                    for i in 0..<n {
+                        let p = probs[i * numClasses + k]
+                        let y = targetIndices[i] == k ? 1.0 : 0.0
+                        gradients[i] = y - p
+                        hessians[i] = max(1e-4, p * (1.0 - p))
+                    }
+
+                    var treeNodes: [HistTreeNode] = []
+                    _ = buildHistTree(
+                        binnedMatrix: binnedMatrix,
+                        binEdges: computedEdges,
+                        gradients: gradients,
+                        hessians: hessians,
+                        sampleIndices: allIndices,
+                        depth: 0,
+                        treeNodes: &treeNodes
+                    )
+                    iterTrees.append(treeNodes)
+                }
+
+                for k in 0..<numClasses {
+                    let treeNodes = iterTrees[k]
+                    for i in 0..<n {
+                        let delta = Self.predictBinnedSample(binnedMatrix[i], nodes: treeNodes)
+                        currentLogits[i * numClasses + k] += learningRate * delta
+                    }
+                }
+
+                ensemble.append(iterTrees)
+            }
+
+            self.multiclassTrees = ensemble
         }
-
-        self.trees = ensemble
     }
 
     /// Predicts discrete class labels for the input feature matrix.
     ///
     /// - Parameter features: 2D array of samples to evaluate.
     /// - Returns: Predicted integer class label for each sample.
-    /// - Throws: `SwiftMLError.notFitted` if `fit()` has not been invoked.
+    /// - Throws: `SwiftMLError.notFitted` if `fit()` has not been invoked, or `SwiftMLError.dimensionMismatch` on feature width mismatch.
     ///
     /// ## Thread Safety
     /// Thread-safe via actor isolation.
     public func predict(features: [[Double]]) async throws -> [Int] {
-        guard !trees.isEmpty, !classes.isEmpty else { throw SwiftMLError.notFitted }
+        guard (!trees.isEmpty || !multiclassTrees.isEmpty), !classes.isEmpty else { throw SwiftMLError.notFitted }
         guard !features.isEmpty else { return [] }
 
         let probabilities = try await predictProbability(features: features)
-        let positiveClass = classes.count > 1 ? classes[1] : classes[0]
-        let negativeClass = classes[0]
-
+        if classes.count == 2 {
+            let positiveClass = classes[1]
+            let negativeClass = classes[0]
+            return probabilities.map { probRow in
+                probRow[1] >= 0.5 ? positiveClass : negativeClass
+            }
+        }
         return probabilities.map { probRow in
-            let posProb = probRow[1]
-            return posProb >= 0.5 ? positiveClass : negativeClass
+            classes[probRow.argmax()]
         }
     }
 
     /// Predicts class probabilities for the input feature matrix.
     ///
     /// - Parameter features: 2D array of samples to evaluate.
-    /// - Returns: 2D array where each row contains `[P(class 0), P(class 1)]`.
-    /// - Throws: `SwiftMLError.notFitted` if the model has not been trained.
+    /// - Returns: 2D array where each row contains class probabilities aligned with sorted fitted classes.
+    /// - Throws: `SwiftMLError.notFitted` if the model has not been trained, or `SwiftMLError.dimensionMismatch` on feature width mismatch.
     ///
     /// ## Thread Safety
     /// Thread-safe via actor isolation.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
-        guard !trees.isEmpty, !classes.isEmpty else { throw SwiftMLError.notFitted }
+        guard (!trees.isEmpty || !multiclassTrees.isEmpty), !classes.isEmpty else { throw SwiftMLError.notFitted }
         guard !features.isEmpty else { return [] }
+        try validateHistRectangularFeatures(features, expectedWidth: binEdges.count)
 
         var results: [[Double]] = []
         results.reserveCapacity(features.count)
 
-        for row in features {
-            var logOdds = initialLogOdds
-            // Discretize row
-            let binnedRow = (0..<binEdges.count).map { col in
-                Self.binValue(row[col], edges: binEdges[col])
+        if classes.count == 2 {
+            for row in features {
+                var logOdds = initialLogOdds
+                let binnedRow = (0..<binEdges.count).map { col in
+                    Self.binValue(row[col], edges: binEdges[col])
+                }
+                for tree in trees {
+                    let delta = Self.predictBinnedSample(binnedRow, nodes: tree)
+                    logOdds += learningRate * delta
+                }
+                let p1 = sigmoid(logOdds)
+                let p0 = 1.0 - p1
+                results.append([p0, p1])
             }
-            for tree in trees {
-                let delta = Self.predictBinnedSample(binnedRow, nodes: tree)
-                logOdds += learningRate * delta
+        } else {
+            let numClasses = classes.count
+            for row in features {
+                var logits = multiclassInitialLogOdds
+                let binnedRow = (0..<binEdges.count).map { col in
+                    Self.binValue(row[col], edges: binEdges[col])
+                }
+                for iterTrees in multiclassTrees {
+                    for k in 0..<numClasses {
+                        let delta = Self.predictBinnedSample(binnedRow, nodes: iterTrees[k])
+                        logits[k] += learningRate * delta
+                    }
+                }
+                let maxLogit = logits.max() ?? 0.0
+                let exps = logits.map { exp($0 - maxLogit) }
+                let sumExp = exps.reduce(0.0, +)
+                results.append(exps.map { $0 / sumExp })
             }
-            let p1 = 1.0 / (1.0 + exp(-logOdds))
-            let p0 = 1.0 - p1
-            results.append([p0, p1])
         }
 
         return results
@@ -566,6 +690,8 @@ public actor HistGradientBoostingRegressor: RegressorEstimator {
 
         let n = features.count
         let numFeatures = features[0].count
+        guard numFeatures > 0 else { throw SwiftMLError.invalidParameter("Features must have at least 1 column") }
+        try validateHistRectangularFeatures(features, expectedWidth: numFeatures)
 
         // 1. Build bin edges
         var computedEdges: [[Double]] = []
@@ -650,6 +776,7 @@ public actor HistGradientBoostingRegressor: RegressorEstimator {
     public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         guard !features.isEmpty else { return [] }
+        try validateHistRectangularFeatures(features, expectedWidth: binEdges.count)
 
         var results = [Double](repeating: initialMean, count: features.count)
         for i in 0..<features.count {
@@ -849,5 +976,13 @@ public actor HistGradientBoostingRegressor: RegressorEstimator {
             }
         }
         return nodes[curr].value
+    }
+}
+
+private func validateHistRectangularFeatures(_ features: [[Double]], expectedWidth: Int) throws {
+    for row in features {
+        guard row.count == expectedWidth else {
+            throw SwiftMLError.dimensionMismatch(expected: expectedWidth, got: row.count)
+        }
     }
 }

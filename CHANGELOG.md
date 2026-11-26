@@ -4,6 +4,32 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.3] - 2026-11-26
+
+### Fixed
+
+- **MLP BLAS mini-batch training, numerical stability, and wide-layer prediction (`G-042`, `G-043`, `G-044`)**: Replaced scalar inner training loops in `MLPClassifier` and `MLPRegressor` with Accelerate (`cblas_dgemm` / `vDSP`) mini-batch forward/backward passes, log-sum-exp softmax and binary cross-entropy stability under extreme logits (`±1000`), and normalized partial-batch gradients (`< 1e-6` central finite-difference error across ReLU, Sigmoid, and Tanh). Expanded batched prediction width support up to `8,192` within a strict `256 KiB` per-call scratch budget, enforced rectangularity/validation pairing checks, and preserved single-class label consistency.
+- **HistGradientBoosting multiclass & rectangularity (`G-045`)**: Added multiclass softmax gradient boosting (`K > 2`) with arbitrary non-zero-based integer class label support in `HistGradientBoostingClassifier` alongside rectangular feature validation in both `HistGradientBoostingClassifier` and `HistGradientBoostingRegressor`.
+- **LinearSVC & probability calibration (`G-046`, `G-047`)**: Guarded zero/negative epoch counts (`max(0, epochs)`) and added rectangularity checks across CPU and GPU `LinearSVC` paths. Updated `PlattScaling` to start with positive slope `a = 1.0` and overflow-safe `sigmoid`; enforced `modelNotFitted` and binary-only guards while preserving arbitrary binary class labels (e.g., `[-1, 1]`) in `CalibratedClassifier`.
+- **SwiftVision YOLOv8 geometry, annotation clamping, and IoU safety (`G-048`)**: Fixed `YOLOv8Detector.detect(image:)` non-square un-letterboxing to normalized `[0, 1]` original image coordinates, independent edge clamping and degenerate-box skipping in `YOLOAnnotationParser.parse`, and non-negative area clamping for inverted boxes in `BoundingBox.iou(with:)`.
+- **SwiftVision threshold preservation and folder profiling (`G-049`)**: Preserved custom `confidenceThreshold` and `iouThreshold` in `NeuralObjectDetector(yoloDetector:)`, and fixed `VisionImageClassifier.profileFolder` symlink/split-layout traversal, relative-path filename collision disambiguation, and valid decoded image count averaging.
+- **Core ML export documentation polish**: Updated `CoreMLExportable` and `CoreMLExporter` DocC documentation tables to reflect supported `GradientBoostedTreesRegressor`, `MLPClassifier`, `MLPRegressor`, and `.mlpackage` exports.
+- **Gemma 4 BOS deduplication & `generation_config.json` EOS union (`G-050`, `G-051`)**: Prevented duplicate `<bos>` / `<s>` emission in `ChatTemplate.gemma4.encode` and `TransformerDecoder.generationPrompt` for `SentencePieceBPETokenizer`; fetched optional `generation_config.json` in `ModelDownloader` and unioned scalar/array `eos_token_id` values in `TransformerDecoder.load(directory:)`.
+- **ReActAgent thinking tags & turn parsing (`G-038`, `G-052`)**: Added Gemma 4 `<|channel>thought...<channel|>` and XML `<think>...</think>` block extraction (`G-038`), halted `Action Input` capture at `Observation:` lines, and executed `Action` when it precedes a hallucinated `Final Answer` in the same turn (`G-052`).
+- **CLI & release unification (`G-053`, `G-039`)**: Updated `SwiftSciCLI` to `3.13.3` and unified the two-tier `ACCURACY/` and `PERFORMANCE/` reports alongside `Benchmarks/Reports/` deep audits across `3.10.3`–`3.13.3`.
+
+### Benchmarks and documentation
+
+- **768-D `MLPClassifier` mini-batch BLAS speedup**: `N=512, D=768, C=5, batchSize=32, maxIter=20` fit completed in `40.312 ms` median vs scikit-learn `103.639 ms` (**2.57×** faster fit; `train_accuracy = 1.0000` on both).
+- **AC-powered `production-default` comparison suite**: Passed `6/6` profiles (`standard`, `extended`, `public-data`, `nist`, `migration`, `tabular-migration`) across `swiftsci`, `pandas`, `polars`, and `duckdb` with `10,300` validated measurements (`0` failures), plus `39/39` scientific validation workloads, `3/3` rolling-origin backtests, `2/2` expected-error checks, `202/202` SwiftSci CPU acceptance cases, `60/60` pretrained inspection controls, and `100/100` workflow mutation controls.
+- **Verification & docs**: Passed `1,874` Swift tests (`0` failures; `7` env-gated skips), `100.00%` (`2,551/2,551`) DocC declaration coverage, and `71/71` verified Cookbook recipes. Added release-specific [performance](PERFORMANCE/3.13.3.md) and [accuracy](ACCURACY/3.13.3.md) reports and updated the Engineering Handbook & Cookbook.
+
+### Known limitations
+
+- Four pandas Wampler 4/5 comparator cases failed their original tolerances across `numerical-binary64` and `numerical-conformance`. SwiftSci passed all `202/202` CPU acceptance executions (`0` regression blockers).
+- Seven environment-gated Swift tests (external HuggingFace checkpoint / live network / optional fixture checks) were skipped.
+- Gradient-boosted tree regressors (`G-035`) and class-targeted probability `TreeSHAP` (`G-036`) remain deferred.
+
 ## [3.13.2] - 2026-11-16
 
 ### Fixed

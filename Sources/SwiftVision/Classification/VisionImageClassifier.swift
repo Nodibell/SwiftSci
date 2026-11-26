@@ -284,14 +284,20 @@ public struct VisionImageClassifier: Sendable {
         maxSampleImages: Int = 50,
         candidateLabels: [String] = []
     ) async throws -> ImageFolderProfile {
+        let resolvedFolderURL = folderURL.resolvingSymlinksInPath()
         var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: folderURL.path, isDirectory: &isDir), isDir.boolValue else {
+        guard FileManager.default.fileExists(atPath: resolvedFolderURL.path, isDirectory: &isDir), isDir.boolValue else {
             throw VisionError.invalidInput("URL must be an existing directory: \(folderURL.path)")
         }
 
-        var (allImageURLs, formatCounts, subfolderClasses) = try scanDirectory(at: folderURL)
+        var (allImageURLs, formatCounts, subfolderClasses) = try scanDirectory(at: resolvedFolderURL)
 
-        allImageURLs.sort { $0.lastPathComponent < $1.lastPathComponent }
+        allImageURLs.sort {
+            if $0.lastPathComponent != $1.lastPathComponent {
+                return $0.lastPathComponent < $1.lastPathComponent
+            }
+            return $0.path < $1.path
+        }
 
         guard !allImageURLs.isEmpty else {
             return ImageFolderProfile(
@@ -312,16 +318,26 @@ public struct VisionImageClassifier: Sendable {
 
         // Select evenly spaced sample images
         let sampleCount = min(maxSampleImages, allImageURLs.count)
-        let step = max(1, allImageURLs.count / sampleCount)
+        let step = max(1, allImageURLs.count / max(1, sampleCount))
         var sampleURLs: [URL] = []
-        for i in stride(from: 0, to: allImageURLs.count, by: step) {
-            if sampleURLs.count < sampleCount {
-                sampleURLs.append(allImageURLs[i])
+        if sampleCount > 0 {
+            for i in stride(from: 0, to: allImageURLs.count, by: step) {
+                if sampleURLs.count < sampleCount {
+                    sampleURLs.append(allImageURLs[i])
+                }
             }
         }
 
+        var filenameCounts: [String: Int] = [:]
+        for url in sampleURLs {
+            filenameCounts[url.lastPathComponent, default: 0] += 1
+        }
+        let rootPath = resolvedFolderURL.standardizedFileURL.path
+        let rootPrefix = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
+
         var totalWidth: Double = 0
         var totalHeight: Double = 0
+        var validImageCount = 0
         var minW = Int.max
         var minH = Int.max
         var maxW = 0
@@ -348,6 +364,7 @@ public struct VisionImageClassifier: Sendable {
             #endif
 
             if imgW > 0 && imgH > 0 {
+                validImageCount += 1
                 totalWidth += Double(imgW)
                 totalHeight += Double(imgH)
                 minW = min(minW, imgW)
@@ -358,7 +375,18 @@ public struct VisionImageClassifier: Sendable {
 
             // Zero-shot classification
             if let preds = try? await classify(imageURL: url, candidateLabels: candidateLabels, maxResults: 3) {
-                samplePredictions[url.lastPathComponent] = preds
+                let predictionKey: String
+                if filenameCounts[url.lastPathComponent, default: 0] > 1 {
+                    let filePath = url.standardizedFileURL.path
+                    if filePath.hasPrefix(rootPrefix) {
+                        predictionKey = String(filePath.dropFirst(rootPrefix.count))
+                    } else {
+                        predictionKey = url.path
+                    }
+                } else {
+                    predictionKey = url.lastPathComponent
+                }
+                samplePredictions[predictionKey] = preds
                 for pred in preds {
                     let existing = labelConfSums[pred.identifier, default: (0.0, 0)]
                     labelConfSums[pred.identifier] = (existing.total + pred.confidence, existing.count + 1)
@@ -367,8 +395,8 @@ public struct VisionImageClassifier: Sendable {
         }
 
         let inspectedCount = max(1, sampleURLs.count)
-        let avgW = totalWidth > 0 ? totalWidth / Double(inspectedCount) : 0.0
-        let avgH = totalHeight > 0 ? totalHeight / Double(inspectedCount) : 0.0
+        let avgW = validImageCount > 0 ? totalWidth / Double(validImageCount) : 0.0
+        let avgH = validImageCount > 0 ? totalHeight / Double(validImageCount) : 0.0
         if minW == Int.max { minW = 0; minH = 0 }
 
         // Top detected labels sorted by mean confidence
@@ -487,33 +515,39 @@ public struct VisionImageClassifier: Sendable {
     private func scanDirectory(
         at folderURL: URL
     ) throws -> (imageURLs: [URL], formatCounts: [String: Int], subfolderClasses: [String: Int]) {
+        let resolvedFolderURL = folderURL.resolvingSymlinksInPath()
         guard let enumerator = FileManager.default.enumerator(
-            at: folderURL,
+            at: resolvedFolderURL,
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles]
         ) else {
             throw VisionError.invalidInput("Failed to enumerate directory at: \(folderURL.path)")
         }
 
+        let splitNames: Set<String> = ["train", "training", "val", "valid", "validation", "test", "testing"]
+        let rootPath = resolvedFolderURL.standardizedFileURL.path
+        let rootPrefix = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
+
         var allImageURLs: [URL] = []
         var formatCounts: [String: Int] = [:]
         var subfolderClasses: [String: Int] = [:]
 
         while let fileURL = enumerator.nextObject() as? URL {
-            let ext = fileURL.pathExtension.lowercased()
+            let resolvedFileURL = fileURL.resolvingSymlinksInPath()
+            let ext = resolvedFileURL.pathExtension.lowercased()
             guard Self.supportedExtensions.contains(ext) else { continue }
-            allImageURLs.append(fileURL)
+            allImageURLs.append(resolvedFileURL)
             formatCounts[ext, default: 0] += 1
 
-            let rootPath = folderURL.standardizedFileURL.path
-            let filePath = fileURL.standardizedFileURL.path
-            if filePath.hasPrefix(rootPath) {
-                let relative = String(filePath.dropFirst(rootPath.count))
+            let filePath = resolvedFileURL.standardizedFileURL.path
+            if filePath.hasPrefix(rootPrefix) {
+                let relative = String(filePath.dropFirst(rootPrefix.count))
                     .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                let components = relative.components(separatedBy: "/")
-                if components.count > 1 {
-                    let subfolder = components[0]
-                    subfolderClasses[subfolder, default: 0] += 1
+                let components = relative.components(separatedBy: "/").filter { !$0.isEmpty }
+                if components.count >= 3 && splitNames.contains(components[0].lowercased()) {
+                    subfolderClasses[components[1], default: 0] += 1
+                } else if components.count >= 2 {
+                    subfolderClasses[components[0], default: 0] += 1
                 }
             }
         }

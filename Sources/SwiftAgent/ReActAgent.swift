@@ -176,25 +176,98 @@ public actor ReActAgent {
         tools[tool.name] = tool
     }
 
-    /// Parses a raw LLM text response into Thought, Action, Action Input, or Final Answer components.
-    ///
-    /// - Parameter response: Raw output from LLM.
-    /// - Returns: Extracted step tuple.
-    public func parseResponse(_ response: String) -> (thought: String, action: String?, actionInput: String?, finalAnswer: String?) {
-        var thought = ""
+    private struct ParsedResponseDetails: Sendable {
+        let step: (thought: String, action: String?, actionInput: String?, finalAnswer: String?)
+        let actionPrecedesFinalAnswer: Bool
+    }
+
+    private enum ThinkingTag: CaseIterable {
+        case gemma4Channel
+        case xmlThink
+
+        var openTag: String {
+            switch self {
+            case .gemma4Channel: "<|channel>thought"
+            case .xmlThink: "<think>"
+            }
+        }
+
+        var closeTag: String {
+            switch self {
+            case .gemma4Channel: "<channel|>"
+            case .xmlThink: "</think>"
+            }
+        }
+    }
+
+    private func extractThinkingBlocks(from response: String) -> (cleaned: String, thoughtParts: [String]) {
+        var cleaned = ""
+        var thoughtParts: [String] = []
+        var cursor = response.startIndex
+
+        while cursor < response.endIndex {
+            var earliestRange: Range<String.Index>? = nil
+            var matchedTag: ThinkingTag? = nil
+            for tag in ThinkingTag.allCases {
+                if let range = response.range(of: tag.openTag, range: cursor..<response.endIndex) {
+                    if earliestRange == nil || range.lowerBound < earliestRange!.lowerBound {
+                        earliestRange = range
+                        matchedTag = tag
+                    }
+                }
+            }
+
+            guard let openRange = earliestRange, let tag = matchedTag else {
+                cleaned += response[cursor...]
+                break
+            }
+
+            cleaned += response[cursor..<openRange.lowerBound]
+            let interiorStart = openRange.upperBound
+            if let closeRange = response.range(of: tag.closeTag, range: interiorStart..<response.endIndex) {
+                let interior = String(response[interiorStart..<closeRange.lowerBound])
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !interior.isEmpty {
+                    thoughtParts.append(interior)
+                }
+                cursor = closeRange.upperBound
+            } else {
+                let interior = String(response[interiorStart...])
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !interior.isEmpty {
+                    thoughtParts.append(interior)
+                }
+                break
+            }
+        }
+
+        return (cleaned: cleaned, thoughtParts: thoughtParts)
+    }
+
+    private func parseResponseDetails(_ response: String) -> ParsedResponseDetails {
+        let extracted = extractThinkingBlocks(from: response)
         var action: String? = nil
         var actionInput: String? = nil
         var finalAnswer: String? = nil
 
-        let lines = response.components(separatedBy: .newlines)
-        
+        let lines = extracted.cleaned.components(separatedBy: .newlines)
+
         enum Section {
             case none, thought, action, actionInput, finalAnswer
         }
         var currentSection = Section.none
+        var firstActionOrFinal: Section? = nil
         var thoughtLines: [String] = []
         var actionInputLines: [String] = []
         var finalAnswerLines: [String] = []
+
+        func isObservationLine(_ line: String) -> Bool {
+            var clean = line.trimmingCharacters(in: .whitespaces)
+            while clean.hasPrefix("*") || clean.hasPrefix("_") || clean.hasPrefix("#") {
+                clean = String(clean.dropFirst()).trimmingCharacters(in: .whitespaces)
+            }
+            return clean.lowercased().hasPrefix("observation:")
+        }
 
         func normalizeTag(_ line: String) -> (Section, String)? {
             var clean = line.trimmingCharacters(in: .whitespaces)
@@ -238,8 +311,15 @@ public actor ReActAgent {
         }
 
         for line in lines {
+            if currentSection == .actionInput && isObservationLine(line) {
+                currentSection = .none
+                continue
+            }
             if let (section, content) = normalizeTag(line) {
                 currentSection = section
+                if firstActionOrFinal == nil && (section == .action || section == .finalAnswer) {
+                    firstActionOrFinal = section
+                }
                 switch section {
                 case .thought:
                     if !content.isEmpty { thoughtLines.append(content) }
@@ -266,7 +346,13 @@ public actor ReActAgent {
             }
         }
 
-        thought = thoughtLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        var allThoughtParts = extracted.thoughtParts
+        let parsedThought = thoughtLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !parsedThought.isEmpty {
+            allThoughtParts.append(parsedThought)
+        }
+        let thought = allThoughtParts.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+
         if !actionInputLines.isEmpty {
             var rawInput = actionInputLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
             if rawInput.hasPrefix("```") {
@@ -280,12 +366,24 @@ public actor ReActAgent {
             finalAnswer = finalAnswerLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        if finalAnswer == nil && action == nil && !response.isEmpty {
-            // Fallback: entire response is final answer
-            finalAnswer = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCleaned = extracted.cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        if finalAnswer == nil && action == nil && !trimmedCleaned.isEmpty {
+            // Fallback: entire cleaned post-thought response is final answer
+            finalAnswer = trimmedCleaned
         }
 
-        return (thought: thought, action: action, actionInput: actionInput, finalAnswer: finalAnswer)
+        return ParsedResponseDetails(
+            step: (thought: thought, action: action, actionInput: actionInput, finalAnswer: finalAnswer),
+            actionPrecedesFinalAnswer: firstActionOrFinal == .action
+        )
+    }
+
+    /// Parses a raw LLM text response into Thought, Action, Action Input, or Final Answer components.
+    ///
+    /// - Parameter response: Raw output from LLM.
+    /// - Returns: Extracted step tuple.
+    public func parseResponse(_ response: String) -> (thought: String, action: String?, actionInput: String?, finalAnswer: String?) {
+        parseResponseDetails(response).step
     }
 
     /// Executes the autonomous ReAct reasoning loop.
@@ -408,13 +506,15 @@ public actor ReActAgent {
 
                         let response = try await completion(prompt)
                         try Task.checkCancellation()
-                        let parsed = parseResponse(response.text)
+                        let details = parseResponseDetails(response.text)
+                        let parsed = details.step
+                        let preferAction = details.actionPrecedesFinalAnswer && parsed.action != nil
 
                         if !parsed.thought.isEmpty {
                             continuation.yield(.thoughtDelta(parsed.thought + "\n"))
                         }
 
-                        if let answer = parsed.finalAnswer {
+                        if !preferAction, let answer = parsed.finalAnswer {
                             continuation.yield(.answerDelta(answer))
                             let step = AgentStep(thought: parsed.thought, observation: answer, completionInfo: response.completionInfo)
                             trace.append(step)
@@ -595,7 +695,7 @@ public actor ReActAgent {
     public func run(
         query: String,
         model: any LLMModel,
-        options: LLMOptions = LLMOptions(temperature: 0.2, maxTokens: 256)
+        options: LLMOptions = LLMOptions(temperature: 0.2, maxTokens: 1024)
     ) async throws -> (finalAnswer: String, trace: [AgentStep]) {
         try await run(query: query, completion: { prompt in
             try await Self.generateResponse(prompt: prompt, model: model, options: options)

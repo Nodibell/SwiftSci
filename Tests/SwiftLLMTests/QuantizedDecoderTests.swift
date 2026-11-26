@@ -421,5 +421,66 @@ struct ModelLoadingTests {
             _ = try TransformerDecoder.load(directory: dir)
         }
     }
+
+    @Test("G-051: TransformerDecoder.load unions scalar and array eos_token_id from generation_config.json",
+          arguments: [false, true])
+    func generationConfigEOSUnion(useArray: Bool) async throws {
+        MLXRandom.seed(13)
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("gen-eos-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote/acme/tiny/resolve/main")
+        try fm.createDirectory(at: remote, withIntermediateDirectories: true)
+
+        try Data(configJSON.utf8).write(to: remote.appendingPathComponent("config.json"))
+        try llama3Tokenizer().write(to: remote.appendingPathComponent("tokenizer.json"))
+        let genConfig: [String: Any] = useArray
+            ? ["eos_token_id": [1, 106, 107]]
+            : ["eos_token_id": 106]
+        try JSONSerialization.data(withJSONObject: genConfig)
+            .write(to: remote.appendingPathComponent("generation_config.json"))
+
+        let cfg = try LLMConfig(huggingFaceConfigJSON: Data(configJSON.utf8))
+        let packed = quantize(makeDenseWeights(cfg), groupSize: 64, bits: 4).packed
+        try MLX.save(arrays: packed, url: remote.appendingPathComponent("model.safetensors"))
+
+        let downloader = ModelDownloader(endpoint: root.appendingPathComponent("remote"),
+                                         cacheDirectory: root.appendingPathComponent("cache"))
+        let folder = try await downloader.download(repo: "acme/tiny")
+        #expect(fm.fileExists(atPath: folder.appendingPathComponent("generation_config.json").path))
+
+        let decoder = try TransformerDecoder.load(directory: folder)
+        let expected: Set<Int> = useArray ? [1, 2, 106, 107] : [1, 2, 106]
+        #expect(decoder.config.eosTokenIDs == expected)
+    }
+
+    @Test("G-051: ModelDownloader and TransformerDecoder.load tolerate missing or keyless generation_config.json")
+    func missingOptionalGenerationConfigResilience() async throws {
+        MLXRandom.seed(15)
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("gen-missing-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote/acme/tiny/resolve/main")
+        try fm.createDirectory(at: remote, withIntermediateDirectories: true)
+        try Data(configJSON.utf8).write(to: remote.appendingPathComponent("config.json"))
+        try llama3Tokenizer().write(to: remote.appendingPathComponent("tokenizer.json"))
+
+        let cfg = try LLMConfig(huggingFaceConfigJSON: Data(configJSON.utf8))
+        let packed = quantize(makeDenseWeights(cfg), groupSize: 64, bits: 4).packed
+        try MLX.save(arrays: packed, url: remote.appendingPathComponent("model.safetensors"))
+
+        let downloader = ModelDownloader(endpoint: root.appendingPathComponent("remote"),
+                                         cacheDirectory: root.appendingPathComponent("cache"))
+        let folder = try await downloader.download(repo: "acme/tiny")
+        #expect(!fm.fileExists(atPath: folder.appendingPathComponent("generation_config.json").path))
+
+        let decoderNoFile = try TransformerDecoder.load(directory: folder)
+        #expect(decoderNoFile.config.eosTokenIDs == [1, 2])
+
+        // Present generation_config.json without eos_token_id also succeeds without failing.
+        try Data("{\"temperature\": 0.7}".utf8).write(to: folder.appendingPathComponent("generation_config.json"))
+        let decoderNoKey = try TransformerDecoder.load(directory: folder)
+        #expect(decoderNoKey.config.eosTokenIDs == [1, 2])
+    }
 }
 #endif

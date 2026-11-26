@@ -77,6 +77,11 @@ public actor LinearSVC: ClassifierEstimator {
         guard numFeatures > 0 else {
             throw SwiftMLError.invalidInput("Feature dimension must be > 0")
         }
+        for row in features {
+            guard row.count == numFeatures else {
+                throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
+        }
         
         let router = HardwareRouter.shared
         let deviceToUse = await router.resolveDevice(
@@ -129,7 +134,7 @@ public actor LinearSVC: ClassifierEstimator {
         
         let gradFn = valueAndGrad(lossFn, argumentNumbers: [0, 1])
         
-        for _ in 0..<epochs {
+        for _ in 0..<max(0, epochs) {
             let (_, grads) = gradFn([w, b])
             w = w - lr * grads[0]
             b = b - lr * grads[1]
@@ -164,6 +169,9 @@ public actor LinearSVC: ClassifierEstimator {
         var flatX = [Double](repeating: 0.0, count: numSamples * numFeatures)
         for i in 0..<numSamples {
             let row = features[i]
+            guard row.count == numFeatures else {
+                throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
             for j in 0..<numFeatures {
                 flatX[i * numFeatures + j] = row[j]
             }
@@ -176,8 +184,8 @@ public actor LinearSVC: ClassifierEstimator {
 
         flatX.withUnsafeBufferPointer { xBuf in
             let xPtr = xBuf.baseAddress!
-            for epoch in 1...epochs {
-                let currentLr = lr / (1.0 + 0.001 * Double(epoch))
+            for epoch in 0..<max(0, epochs) {
+                let currentLr = lr / (1.0 + 0.001 * Double(epoch + 1))
                 var gradW = [Double](repeating: 0.0, count: numFeatures)
                 var gradB = 0.0
 
@@ -236,10 +244,12 @@ public actor LinearSVC: ClassifierEstimator {
         
         if resolvedDevice == .cpu || cpuWeights != nil, let w = cpuWeights, let b = cpuBias {
             let numFeatures = w.count
-            return features.map { row in
+            return try features.map { row in
+                guard row.count == numFeatures else {
+                    throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+                }
                 var score = b
-                let count = min(row.count, numFeatures)
-                for j in 0..<count {
+                for j in 0..<numFeatures {
                     score += w[j] * row[j]
                 }
                 return score
@@ -251,6 +261,11 @@ public actor LinearSVC: ClassifierEstimator {
         }
         
         let numFeatures = w.shape[0]
+        for row in features {
+            guard row.count == numFeatures else {
+                throw SwiftMLError.dimensionMismatch(expected: numFeatures, got: row.count)
+            }
+        }
         let flatX = features.flatMap { $0.map { Float($0) } }
         let X = MLXArray(flatX).reshaped([features.count, numFeatures])
         let scores = matmul(X, w) + b

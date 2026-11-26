@@ -1377,12 +1377,27 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
     private func generationPrompt(_ prompt: String, options: LLMOptions) throws -> [Int] {
         guard options.maxTokens >= 0 else { throw GenerationError.invalidMaxTokens(options.maxTokens) }
         guard config.maxSeqLen > 0 else { throw GenerationError.invalidContextLimit(config.maxSeqLen) }
-        var tokens = tokenizer.encode(text: prompt)
+        var tokens = Self.encodePrompt(prompt, using: tokenizer)
         if tokens.isEmpty { tokens = [0] }
         guard tokens.count <= config.maxSeqLen else {
             throw GenerationError.promptTooLong(promptTokens: tokens.count, capacity: config.maxSeqLen)
         }
         return tokens
+    }
+
+    private static func encodePrompt(_ prompt: String, using tokenizer: any Tokenizer) -> [Int] {
+        if let sp = tokenizer as? SentencePieceBPETokenizer {
+            let bosTokens = sp.encode(text: "", addSpecialTokens: true)
+            if bosTokens.count == 1 {
+                let bosText = sp.decode(tokens: bosTokens)
+                if (bosText == "<bos>" || bosText == "<s>"),
+                   prompt.hasPrefix(bosText),
+                   sp.encode(text: bosText, addSpecialTokens: false) == bosTokens {
+                    return sp.encode(text: prompt, addSpecialTokens: false)
+                }
+            }
+        }
+        return tokenizer.encode(text: prompt)
     }
 
     private func generationStream<Element: Sendable>(

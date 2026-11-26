@@ -2,17 +2,24 @@ import Accelerate
 import SwiftDataFrame
 
 let mlpPredictionBatchRows = 32
+let mlpMaxScratchElementsPerBuffer = 16_384
 
-// Per-call scratch is capped at 256 KiB. Small requests and wider networks keep
-// the row path; the measured crossover does not justify batching them.
+func mlpEffectivePredictionBatchRows(width: Int) -> Int {
+    guard width > 0 else { return 0 }
+    return min(mlpPredictionBatchRows, mlpMaxScratchElementsPerBuffer / width)
+}
+
+// Per-call scratch is strictly bounded at 2 * 16_384 * 8 = 256 KiB.
+// Networks with width <= 8_192 (effectiveBatchRows >= 2) execute batched cblas_dgemm;
+// wider networks and small requests keep the row path.
 func mlpBatchedPrediction<Result>(
     features: [[Double]], layers: [LayerWeights],
     activate: (Double) -> Double,
     finish: (UnsafeBufferPointer<Double>) -> Result
 ) throws -> [Result]? {
-    guard features.count >= mlpPredictionBatchRows else { return nil }
     let width = layers.reduce(0) { max($0, max($1.inDim, $1.outDim)) }
-    guard width > 0, width <= 512, let firstLayer = layers.first else { return nil }
+    let batchRows = mlpEffectivePredictionBatchRows(width: width)
+    guard batchRows >= 2, features.count >= batchRows, let firstLayer = layers.first else { return nil }
     guard firstLayer.inDim > 0 else { throw SwiftMLError.emptyInput }
     for row in features where row.count != firstLayer.inDim {
         throw SwiftMLError.dimensionMismatch(expected: firstLayer.inDim, got: row.count)
@@ -32,9 +39,9 @@ func mlpBatchedPrediction<Result>(
     activate: (Double) -> Double,
     finish: (UnsafeBufferPointer<Double>) -> Result
 ) -> [Result]? {
-    guard matrix.rowCount >= mlpPredictionBatchRows else { return nil }
     let width = layers.reduce(0) { max($0, max($1.inDim, $1.outDim)) }
-    guard width > 0, width <= 512, !layers.isEmpty else { return nil }
+    let batchRows = mlpEffectivePredictionBatchRows(width: width)
+    guard batchRows >= 2, matrix.rowCount >= batchRows, !layers.isEmpty else { return nil }
     return matrix.values.withUnsafeBufferPointer { source in
         mlpBatchedPrediction(rowCount: matrix.rowCount, width: width, layers: layers,
             fill: { start, count, buffer, stride in
@@ -63,7 +70,7 @@ func mlpBatchedPrediction<Result>(
     finish: (UnsafeBufferPointer<Double>) -> Result
 ) rethrows -> [Result] {
     let lastLayer = layers.last!
-    let batchRows = mlpPredictionBatchRows
+    let batchRows = max(1, mlpEffectivePredictionBatchRows(width: width))
     var first = [Double](repeating: 0, count: batchRows * width)
     var second = [Double](repeating: 0, count: batchRows * width)
     var results: [Result] = []

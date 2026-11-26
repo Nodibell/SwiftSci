@@ -5,7 +5,7 @@ import SwiftDataFrame
 
 @Suite("Public standardized MLP network width")
 struct StandardizedMLPWidthTests {
-    @Test(arguments: [512, 513])
+    @Test(arguments: [512, 513, 8193])
     func batchingBoundaryMatchesPublicReference(_ width: Int) async throws {
         let rows: [[Double]] = matrixMLPFeatures(4, width: width)
         let training = try matrixMLPBatch(rows, width: width)

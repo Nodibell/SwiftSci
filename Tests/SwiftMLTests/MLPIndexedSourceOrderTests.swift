@@ -5,7 +5,7 @@ import SwiftPreprocessing
 
 @Suite("Source-ordered CPU prediction", .serialized)
 struct MLPIndexedSourceOrderTests {
-    @Test(arguments: [1, 7, 128, 512, 513])
+    @Test(arguments: [1, 7, 128, 512, 513, 8193])
     func predictionsRestoreLogicalOrderExactly(width: Int) async throws {
         let rows = matrixMLPFeatures(8, width: width)
         let training = try matrixMLPBatch(rows, width: width)
@@ -28,7 +28,11 @@ struct MLPIndexedSourceOrderTests {
                 }
                 let expected = try await model.predict(features: gathered, preprocessing: plan)
                 let actual = try await model.predictSourceOrdered(features: view, preprocessing: plan)
-                #expect(actual.map(\.bitPattern) == expected.map(\.bitPattern))
+                if mlpEffectivePredictionBatchRows(width: width) == 32 || width > 8_192 {
+                    #expect(actual.map(\.bitPattern) == expected.map(\.bitPattern))
+                } else {
+                    matrixMLPExpectClose(actual, expected)
+                }
             }
         }
     }

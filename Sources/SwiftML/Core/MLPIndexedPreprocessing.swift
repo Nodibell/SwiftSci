@@ -10,8 +10,9 @@ func mlpPreprocessedPrediction<Result>(features: IndexedNumericBatch,
         throw SwiftMLError.dimensionMismatch(expected: first.inDim, got: features.columnCount)
     }
     let width = layers.reduce(0) { max($0, max($1.inDim, $1.outDim)) }
-    let batched = features.rowCount >= mlpPredictionBatchRows && width > 0 && width <= 512
-    var writer = try preprocessing.makeRowWriter(features, maximumRows: batched ? mlpPredictionBatchRows : 1)
+    let batchRows = mlpEffectivePredictionBatchRows(width: width)
+    let batched = batchRows >= 2 && features.rowCount >= batchRows
+    var writer = try preprocessing.makeRowWriter(features, maximumRows: batched ? batchRows : 1)
     if batched {
         return try mlpBatchedPrediction(rowCount: features.rowCount, width: width, layers: layers,
             fill: { start, count, buffer, stride in
@@ -25,7 +26,7 @@ func mlpPreprocessedPrediction<Result>(features: IndexedNumericBatch,
         try input.withUnsafeMutableBufferPointer {
             try writer.fillDouble(rows: row..<(row + 1), into: $0, stride: features.columnCount)
         }
-        let prediction = mlpPredictRow(input, layers: layers, activate: activate)
+        let prediction = try mlpPredictRowValidated(input, layers: layers, activate: activate)
         results.append(prediction.withUnsafeBufferPointer(finish))
     }
     return results

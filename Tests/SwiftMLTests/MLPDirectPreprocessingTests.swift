@@ -5,7 +5,7 @@ import SwiftPreprocessing
 
 @Suite("Direct preprocessing MLP trial", .serialized)
 struct MLPDirectPreprocessingTests {
-    @Test(arguments: [1, 7, 64, 129, 512, 513])
+    @Test(arguments: [1, 7, 64, 129, 512, 513, 8193])
     func bitwisePredictionsAndSnapshots(width: Int) async throws {
         let rows = matrixMLPFeatures(8, width: width)
         let training = try matrixMLPBatch(rows, width: width)

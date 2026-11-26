@@ -1701,7 +1701,7 @@ def build_arg_parser():
         "--python-engine",
         type=Path,
         required=True,
-        help="Path to Python 3.11 interpreter with statsmodels/sklearn/shap",
+        help="Path to Python interpreter with statsmodels/sklearn/shap",
     )
     parser.add_argument(
         "--output",
@@ -1732,7 +1732,8 @@ def main(argv=None):
     payload = execute_suite(
         root=root,
         swift_worker=args.swift_worker.resolve(),
-        python_engine=args.python_engine.resolve(),
+        # Preserve the venv executable path; resolving its symlink bypasses pyvenv.cfg.
+        python_engine=Path(os.path.abspath(str(args.python_engine))),
         output_path=args.output.resolve(),
         processes=args.processes,
         warmups=args.warmups,

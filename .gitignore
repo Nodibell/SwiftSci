@@ -22,7 +22,9 @@ Book/
 documentation-analysis.txt
 # Standardized benchmark working runs
 Benchmarks/Runs/
+Benchmarks/.venv/
 Benchmarks/.venv-standardized/
+Benchmarks/uv.lock
 
 # Optional pretrained comparison environment
 Benchmarks/.venv-llm/

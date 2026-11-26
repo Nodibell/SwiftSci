@@ -98,7 +98,7 @@ The cross-library checker normalizes fixture numbers through Float64 with rtol 1
 
 Existing CSV integer-parser overflow, sampled type inference and trailing-delimiter behavior remain outside this change. Existing NaN sorting fallback remains in place. The current optional-array storage API is unchanged. No production GPU CSV acceleration, compact storage replacement or AI inference speedup is claimed.
 
-The standalone GPU experiment found usable index construction slower than parallel CPU scanning, so it was not integrated. Its source and methodology are in [CSVAcceleration](../../CSVAcceleration/README.md).
+The standalone GPU experiment found usable index construction slower than parallel CPU scanning, so it was not integrated. Its source and methodology originally lived in `Benchmarks/CSVAcceleration/` (retired from the active workspace in the v3.13.2 benchmark cleanup and preserved in git history).
 
 ## Evidence provenance
 

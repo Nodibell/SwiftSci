@@ -8,17 +8,14 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "Benchmarks/Tools"))
 import scientific_validation_suite as svs  # noqa: E402
+import suite_cli  # noqa: E402
 
-PY311_ENGINE = Path(
-    os.environ.get(
-        "SWIFTSCI_SCIENTIFIC_PYTHON",
-        str(Path.home() / ".pyenv/versions/3.11.9/bin/python3"),
-    )
-)
+SCIENTIFIC_PYTHON = suite_cli.resolve_scientific_python(ROOT)
 
 
 class ScientificSuiteStatsAndGatingTests(unittest.TestCase):
@@ -154,8 +151,8 @@ class ScientificSuiteStatsAndGatingTests(unittest.TestCase):
         self.assertLess(res["max_additivity_diff"], 1e-12)
 
     def test_python_reference_worker_smoke(self):
-        if not PY311_ENGINE.exists():
-            self.skipTest("Python 3.11 scientific stack not installed at expected path")
+        if SCIENTIFIC_PYTHON is None or not SCIENTIFIC_PYTHON.exists():
+            self.skipTest("Scientific Python stack (sklearn/statsmodels/shap) not installed")
         py_worker = ROOT / "Benchmarks/Python/scientific_reference_worker.py"
         with tempfile.TemporaryDirectory() as tmp:
             req_p = Path(tmp) / "req.json"
@@ -172,7 +169,7 @@ class ScientificSuiteStatsAndGatingTests(unittest.TestCase):
                 encoding="utf-8",
             )
             proc = subprocess.run(
-                [str(PY311_ENGINE), str(py_worker), str(req_p), str(res_p)],
+                [str(SCIENTIFIC_PYTHON), str(py_worker), str(req_p), str(res_p)],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -244,6 +241,42 @@ class ScientificSuiteStatsAndGatingTests(unittest.TestCase):
         ])
         self.assertEqual(custom.status, "RELEASE")
         self.assertEqual(custom.label, "v3.13.2")
+
+    def test_main_preserves_symlinked_python_engine_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            real_python = tmp_dir / "real_python3"
+            real_python.write_text("#!/bin/sh\n", encoding="utf-8")
+            real_python.chmod(0o755)
+            worker = tmp_dir / "SwiftSciBenchmarkWorker"
+            worker.write_text("", encoding="utf-8")
+            venv_bin = tmp_dir / "venv" / "bin"
+            venv_bin.mkdir(parents=True)
+            symlink_python = venv_bin / "python3"
+            symlink_python.symlink_to(real_python)
+            out_path = tmp_dir / "out.json"
+
+            captured = {}
+
+            def fake_execute_suite(**kwargs):
+                captured.update(kwargs)
+                return {"summary": {"all_gates_passed": True}}
+
+            with mock.patch.object(svs, "execute_suite", side_effect=fake_execute_suite):
+                svs.main([
+                    "--swift-worker",
+                    str(worker),
+                    "--python-engine",
+                    str(symlink_python),
+                    "--output",
+                    str(out_path),
+                ])
+
+            self.assertEqual(
+                captured["python_engine"],
+                Path(os.path.abspath(str(symlink_python))),
+            )
+            self.assertNotEqual(captured["python_engine"], symlink_python.resolve())
 
 
 if __name__ == "__main__":

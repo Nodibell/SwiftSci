@@ -14,6 +14,19 @@ from runner import build, plan, run
 from execution_policy import MODES, LEGACY_MODE
 from reporting import comparison, summarize, audit
 from inventory import INVENTORY_PATH, discover, reconcile
+import suite_cli
+
+
+UNIFIED_COMMANDS = {
+    "list",
+    "doctor",
+    "accept",
+    "scientific",
+    "compare-engines",
+    "controls",
+    "trial",
+    "release-gate",
+}
 
 
 def main():
@@ -53,7 +66,13 @@ def main():
     p = commands.add_parser("compare")
     p.add_argument("baseline", type=Path)
     p.add_argument("candidate", type=Path)
-    args = parser.parse_args()
+    suite_cli.register_subcommands(commands)
+
+    args, extra_args = parser.parse_known_args()
+    if extra_args and args.command != "trial":
+        parser.error(f"unrecognized arguments: {' '.join(extra_args)}")
+    if args.command in UNIFIED_COMMANDS:
+        return suite_cli.dispatch(root, args, extra_args=extra_args)
     if args.command == "inventory":
         require(
             not (args.discover and args.suite), "Use --discover or --suite, not both"
@@ -119,8 +138,12 @@ def main():
             for name in sorted({c["dataset"] for c in profile["cases"]}):
                 print(prepare(root, load_manifest(root, name)))
             return 0
+        swift_worker = args.swift_worker
+        engines = args.engines.split(",")
+        if swift_worker is None and "swiftsci" in engines and suite_cli.default_worker_path().is_file():
+            swift_worker = str(suite_cli.default_worker_path())
         resolved = plan(
-            root, profile, args.engines.split(","), args.swift_worker, args.python, args.mode
+            root, profile, engines, swift_worker, args.python, args.mode
         )
         result = run(
             root,

@@ -216,7 +216,7 @@ jobs:
   deploy-pages:
     name: Deploy to GitHub Pages
     if: github.repository == 'Nodibell/SwiftSci' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build, docc-check]
+    needs: [build, test, docc-check]
     permissions:
       pages: write
       id-token: write
@@ -232,7 +232,7 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: 'docs'
 

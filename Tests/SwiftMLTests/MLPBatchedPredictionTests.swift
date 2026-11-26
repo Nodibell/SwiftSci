@@ -104,8 +104,12 @@ struct MLPBatchedPredictionTests {
             outDim: 1
         )
         let layers = [l1, l2]
-        let rows: [[Double]] = (0..<(batchRows * 2 + 3)).map { r in
-            (0..<width).map { c in Double(((r * 7 + c * 3) % 23) - 11) / 31.0 }
+        let rowCount = batchRows * 2 + 3
+        let rows: [[Double]] = (0..<rowCount).map { (r: Int) -> [Double] in
+            (0..<width).map { (c: Int) -> Double in
+                let value = ((r * 7 + c * 3) % 23) - 11
+                return Double(value) / 31.0
+            }
         }
 
         let batched = try #require(try mlpBatchedPrediction(

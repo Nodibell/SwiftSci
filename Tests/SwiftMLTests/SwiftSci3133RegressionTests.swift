@@ -12,9 +12,11 @@ struct SwiftSci3133RegressionTests {
         let eps = 1e-6
 
         // 11 samples, 4 features -> tests both full batch (0..<8) and partial batch (8..<11 with batchSize = 4)
-        let features: [[Double]] = (0..<11).map { r in
-            (0..<4).map { c in
-                let raw = sin(Double(r * 5 + c * 3 + 1)) * 0.8 + Double(c - 1) * 0.23
+        let features: [[Double]] = (0..<11).map { (r: Int) -> [Double] in
+            (0..<4).map { (c: Int) -> Double in
+                let angle = Double(r * 5 + c * 3 + 1)
+                let offset = Double(c - 1) * 0.23
+                let raw = sin(angle) * 0.8 + offset
                 return raw == 0.0 ? 0.17 : raw
             }
         }

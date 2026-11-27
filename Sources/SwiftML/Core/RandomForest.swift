@@ -20,6 +20,17 @@ func bootstrapSample(features: [[Double]], targets: [Double], seed: Int, maxSamp
     return (sampledFeatures, sampledTargets)
 }
 
+// MARK: - Forest Probability Mode
+
+/// Strategy used by ``RandomForestClassifier`` to aggregate individual tree outputs into class probabilities.
+public enum ForestProbabilityMode: Sendable, Codable, Equatable {
+    /// Averages hard majority-class vote indicators (`1.0` for each tree's predicted class, `0.0` otherwise).
+    case hardVote
+    /// Averages empirical per-leaf class probability distributions (`FlatTreeNode.classDistribution`) across trees,
+    /// falling back to hard one-hot leaf indicators when `classDistribution` is absent.
+    case softLeafDistribution
+}
+
 // MARK: - Random Forest Classifier
 
 /// Actor-isolated Random Forest Classifier.
@@ -153,6 +164,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
         let criterion = self.criterion
         let nEstimators = self.nEstimators
         let baseSeed = self.randomState ?? 42
+        let classMapping = mapping
+        let classCount = uniqueClasses.count
 
         let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: (Int, [FlatTreeNode]).self) { group in
             for i in 0..<nEstimators {
@@ -171,6 +184,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
                         criterion: criterion,
                         maxFeatures: maxFeatures,
                         seed: treeSeed,
+                        classToIndex: classMapping,
+                        numClasses: classCount,
                         nodes: &nodes
                     )
                     return (i, nodes)
@@ -213,31 +228,66 @@ public actor RandomForestClassifier: ClassifierEstimator {
     ///
     /// The returned 2D array has shape `[N, C]`, where `N` is the number of input samples and `C` is the
     /// number of unique classes observed during training (or restored from state). Column `i` corresponds
-    /// to the empirical probability of observing class label `classes[i]`, exactly matching the contract
-    /// of ``DecisionTreeClassifier/predictProbability(features:)`` and ``ClassifierEstimator``.
+    /// to the empirical probability of observing class label `classes[i]` under ``ForestProbabilityMode/hardVote``,
+    /// exactly matching the contract of ``DecisionTreeClassifier/predictProbability(features:)`` and ``ClassifierEstimator``.
     ///
     /// - Parameters:
     ///   - features: The features matrix of shape `[N, P]`.
     /// - Throws: `SwiftMLError.notFitted` if the model is not fitted.
     /// - Returns: A `[[Double]]` probability matrix of shape `[N, C]` ordered by sorted class labels in ``classes``.
     public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
+        return try await predictProbability(features: features, mode: .hardVote)
+    }
+
+    /// Predicts class probability distributions across classes ordered by ``classes`` using the specified aggregation mode.
+    ///
+    /// - Parameters:
+    ///   - features: The features matrix of shape `[N, P]`.
+    ///   - mode: Aggregation strategy across trees (``ForestProbabilityMode/hardVote`` or ``ForestProbabilityMode/softLeafDistribution``).
+    /// - Throws: `SwiftMLError.notFitted` if the model is not fitted.
+    /// - Returns: A `[[Double]]` probability matrix of shape `[N, C]` ordered by sorted class labels in ``classes``.
+    public func predictProbability(features: [[Double]], mode: ForestProbabilityMode) async throws -> [[Double]] {
         guard !trees.isEmpty else { throw SwiftMLError.notFitted }
         let effectiveClassCount = !classes.isEmpty ? classes.count : numClasses
-        return features.map { sample in
-            var votes = [Double](repeating: 0, count: effectiveClassCount)
+        let total = Double(trees.count)
+        return features.map { (sample: [Double]) -> [Double] in
+            var probs = [Double](repeating: 0.0, count: effectiveClassCount)
             for treeNodes in trees {
-                let pred = RandomForestClassifier.predictSample(sample, nodes: treeNodes)
-                if let idx = classToIndex[pred], idx < votes.count {
-                    votes[idx] += 1.0
-                } else {
-                    let intPred = Int(pred)
-                    if intPred >= 0 && intPred < votes.count {
-                        votes[intPred] += 1.0
+                switch mode {
+                case .hardVote:
+                    let pred = RandomForestClassifier.predictSample(sample, nodes: treeNodes)
+                    if let idx = classToIndex[pred], idx < probs.count {
+                        probs[idx] += 1.0
+                    } else {
+                        let intPred = Int(pred)
+                        if intPred >= 0 && intPred < probs.count {
+                            probs[intPred] += 1.0
+                        }
+                    }
+                case .softLeafDistribution:
+                    if let leaf = RandomForestClassifier.predictLeaf(sample, nodes: treeNodes),
+                       let dist = leaf.classDistribution,
+                       dist.count == effectiveClassCount {
+                        for c in 0..<effectiveClassCount {
+                            probs[c] += dist[c]
+                        }
+                    } else {
+                        let pred = RandomForestClassifier.predictSample(sample, nodes: treeNodes)
+                        if let idx = classToIndex[pred], idx < probs.count {
+                            probs[idx] += 1.0
+                        } else {
+                            let intPred = Int(pred)
+                            if intPred >= 0 && intPred < probs.count {
+                                probs[intPred] += 1.0
+                            }
+                        }
                     }
                 }
             }
-            let total = Double(trees.count)
-            return total > 0 ? votes.map { $0 / total } : votes
+            if total > 0.0 {
+                return probs.map { (value: Double) -> Double in value / total }
+            }
+            return probs
         }
     }
 
@@ -333,27 +383,61 @@ public actor RandomForestClassifier: ClassifierEstimator {
         criterion: SplitCriterion,
         maxFeatures: Int?,
         seed: Int = 42,
+        classToIndex: [Double: Int],
+        numClasses: Int,
         nodes: inout [FlatTreeNode]
     ) -> Int {
-        let labels = indices.map { y[$0] }
+        let labels = indices.map { (idx: Int) -> Double in y[idx] }
         let majority = labels.mostFrequent()
+        var classCounts = [Double](repeating: 0.0, count: numClasses)
+        for idx in indices {
+            if let cIdx = classToIndex[y[idx]], cIdx < numClasses {
+                classCounts[cIdx] += 1.0
+            }
+        }
+        let total = Double(indices.count)
+        let distribution = total > 0.0 ? classCounts.map { (count: Double) -> Double in count / total } : classCounts
 
         if depth >= maxDepth || indices.count < minSamplesSplit || Set(labels).count == 1 {
-            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0))
+            nodes.append(
+                FlatTreeNode(
+                    featureIndex: -1,
+                    threshold: 0,
+                    leftChild: -1,
+                    rightChild: -1,
+                    value: majority,
+                    isLeaf: true,
+                    impurityGain: 0.0,
+                    classDistribution: distribution,
+                    cover: total
+                )
+            )
             return nodes.count - 1
         }
 
         let splitSeed = seed &+ (depth &* 31) &+ (indices.count &* 101)
         guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: criterion, maxFeatures: maxFeatures, seed: splitSeed) else {
-            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true, impurityGain: 0.0))
+            nodes.append(
+                FlatTreeNode(
+                    featureIndex: -1,
+                    threshold: 0,
+                    leftChild: -1,
+                    rightChild: -1,
+                    value: majority,
+                    isLeaf: true,
+                    impurityGain: 0.0,
+                    classDistribution: distribution,
+                    cover: total
+                )
+            )
             return nodes.count - 1
         }
 
         let currentIndex = nodes.count
         nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false, impurityGain: 0.0))
 
-        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, seed: seed &* 3 &+ 1, nodes: &nodes)
-        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, seed: seed &* 3 &+ 2, nodes: &nodes)
+        let leftIndex  = buildTreeSync(X: X, y: y, indices: split.leftIndices,  presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, seed: seed &* 3 &+ 1, classToIndex: classToIndex, numClasses: numClasses, nodes: &nodes)
+        let rightIndex = buildTreeSync(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1, maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, criterion: criterion, maxFeatures: maxFeatures, seed: seed &* 3 &+ 2, classToIndex: classToIndex, numClasses: numClasses, nodes: &nodes)
 
         let nodeGain = split.gain * Double(indices.count)
         nodes[currentIndex] = FlatTreeNode(
@@ -363,16 +447,18 @@ public actor RandomForestClassifier: ClassifierEstimator {
             rightChild: rightIndex,
             value: majority,
             isLeaf: false,
-            impurityGain: nodeGain
+            impurityGain: nodeGain,
+            classDistribution: distribution,
+            cover: total
         )
 
         return currentIndex
     }
 
-    private static func predictSample(_ x: [Double], nodes: [FlatTreeNode]) -> Double {
-        guard !nodes.isEmpty else { return 0 }
+    private static func predictLeaf(_ x: [Double], nodes: [FlatTreeNode]) -> FlatTreeNode? {
+        guard !nodes.isEmpty else { return nil }
         var curr = 0
-        while !nodes[curr].isLeaf {
+        while curr >= 0 && curr < nodes.count && !nodes[curr].isLeaf {
             let node = nodes[curr]
             let val = (node.featureIndex >= 0 && node.featureIndex < x.count) ? x[node.featureIndex] : 0.0
             if val <= node.threshold {
@@ -381,7 +467,12 @@ public actor RandomForestClassifier: ClassifierEstimator {
                 curr = node.rightChild
             }
         }
-        return nodes[curr].value
+        guard curr >= 0 && curr < nodes.count else { return nil }
+        return nodes[curr]
+    }
+
+    private static func predictSample(_ x: [Double], nodes: [FlatTreeNode]) -> Double {
+        return predictLeaf(x, nodes: nodes)?.value ?? 0.0
     }
 }
 
@@ -606,18 +697,19 @@ public actor RandomForestRegressor: RegressorEstimator {
         seed: Int = 42,
         nodes: inout [FlatTreeNode]
     ) -> Int {
-        let values = indices.map { y[$0] }
+        let values = indices.map { (idx: Int) -> Double in y[idx] }
         let mean = values.mean()
+        let cover = Double(indices.count)
 
         if depth >= maxDepth || indices.count < minSamplesSplit {
-            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0))
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0, cover: cover))
             return nodes.count - 1
         }
 
         let splitSeed = seed &+ (depth &* 31) &+ (indices.count &* 101)
         guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: maxFeatures, seed: splitSeed),
               split.gain > 0 else {
-            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0))
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0, cover: cover))
             return nodes.count - 1
         }
 
@@ -635,7 +727,8 @@ public actor RandomForestRegressor: RegressorEstimator {
             rightChild: right,
             value: mean,
             isLeaf: false,
-            impurityGain: nodeGain
+            impurityGain: nodeGain,
+            cover: cover
         )
 
         return currentIndex

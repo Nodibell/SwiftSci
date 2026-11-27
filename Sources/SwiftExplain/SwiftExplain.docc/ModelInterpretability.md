@@ -12,7 +12,7 @@ Explainable Artificial Intelligence (XAI) bridges the gap between predictive acc
 
 | Method | Supported Models | Algorithmic Complexity | Scope | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
-| **`TreeSHAP`** | `DecisionTreeClassifier`, `DecisionTreeRegressor`, `RandomForestClassifier`, `RandomForestRegressor` | `O(T · 2^K · L)` exact (`K ≤ 12`); `O(T · S · K · L)` seeded MC (`K > 12`, `S = 2048`) | Local & Global | **Exact for `K ≤ 12` distinct split features** using path-dependent uniform leaf weights (`1.0`). Does not support `GradientBoostedTreesRegressor` or per-class probability attributions in `v3.13.x`. |
+| **`TreeSHAP`** | `DecisionTreeClassifier`, `DecisionTreeRegressor`, `RandomForestClassifier`, `RandomForestRegressor`, `GradientBoostedTreesRegressor` | `O(T · 2^K · L)` exact (`K ≤ 12`); `O(T · S · K · L)` seeded MC (`K > 12`, `S = 2048`) | Local & Global | **Exact for `K ≤ 12` distinct split features** using either `.uniformLeaf` (default) or `.empiricalCover` leaf weights; supports GBDT additive explanations and per-class probability decomposition. |
 | **`KernelSHAP`** | Any black-box model (MLP, SVM, Ensembles) | `O(S · D²)` | Local | Universal Shapley attribution using weighted coalition sampling. |
 | **`LIME`** | Any black-box model (MLP, Vision, NLP) | `O(S · D)` | Local | **Fast local surrogate.** Fits an interpretable weighted linear model around perturbations. |
 | **`PermutationImportance`** | Any model | `O(D · N)` | Global | Fast global feature ranking by measuring validation loss degradation upon feature column shuffling. |
@@ -20,13 +20,12 @@ Explainable Artificial Intelligence (XAI) bridges the gap between predictive acc
 
 ---
 
-## 1. Path-Dependent TreeSHAP for Decision Trees & Random Forests
+## 1. Path-Dependent TreeSHAP for Trees, Forests & GBDTs
 
-`TreeSHAP` evaluates path-dependent conditional expectations over each tree's leaves using uniform leaf weights (`1.0`). When a tree splits on `K ≤ TreeSHAP.maxExactFeatures` (`12`) distinct features, `TreeSHAP` enumerates all `2^K` coalitions in `O(2^K · L)` time to compute exact Shapley values; when `K > 12`, it switches to deterministic seeded Monte Carlo permutation sampling (`approximationSamples = 2048`):
+`TreeSHAP` evaluates path-dependent conditional expectations over each tree's leaves using either ``TreeNodeWeighting/uniformLeaf`` (default, leaf weight `1.0`) or ``TreeNodeWeighting/empiricalCover`` (leaf weight `FlatTreeNode.cover`, with automatic fallback to `1.0` when decoding legacy `<= 3.13.3` serialized models). When a tree splits on `K ≤ TreeSHAP.maxExactFeatures` (`12`) distinct features, `TreeSHAP` enumerates all `2^K` coalitions in `O(2^K · L)` time to compute exact Shapley values; when `K > 12`, it switches to deterministic seeded Monte Carlo permutation sampling (`approximationSamples = 2048`):
 
-> Important: Known limitations in `v3.13.x` (deferred to a future release):
-> - **G-035 (`GradientBoostedTreesRegressor`)**: `TreeSHAP` does not provide a `GradientBoostedTreesRegressor` adapter in `v3.13.x` (`explainDetailed(trees:)` computes an unweighted `1/T` ensemble average rather than `initialPrediction + learningRate * sum_m T_m(x)`). Use ``KernelSHAP`` or ``LIMEExplainer`` for GBDT models.
-> - **G-036 (Classification & Leaf Weights)**: `FlatTreeNode` does not store training sample counts (`cover`), so `TreeSHAP` weights all leaves uniformly (`1.0`); `RandomForestClassifier` trees do not populate `classDistribution` on leaves, and `DecisionTreeClassifier.prune(alpha:)` clears `classDistribution` on collapsed nodes. Consequently, classifier `TreeSHAP` attributes the scalar `node.value` label code rather than per-class `predictProbability` distributions.
+- **GBDT (`GradientBoostedTreesRegressor`)**: `explainDetailed(gbdt:instance:)`, `explain(gbdt:instance:)`, and `explainBatch(gbdt:instances:)` apply `initialPrediction + learningRate * sum_m T_m(x)` with per-tree Shapley attributions scaled by `learningRate`.
+- **Per-Class Classification (`DecisionTreeClassifier`, `RandomForestClassifier`)**: `explainClassDetailed`, `explainAllClassesDetailed`, and `explainBatchClass` decompose calibrated `predictProbability` outputs (supporting `ForestProbabilityMode.hardVote` and `ForestProbabilityMode.softLeafDistribution`), while `explain(decisionTree:)` and `explain(randomForest:)` preserve scalar `FlatTreeNode.value` compatibility. `DecisionTreeClassifier.prune(alpha:)` preserves both empirical `classDistribution` and `cover` on collapsed leaves.
 
 ```swift
 import Foundation

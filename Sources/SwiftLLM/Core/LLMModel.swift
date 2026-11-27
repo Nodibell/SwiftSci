@@ -42,6 +42,10 @@ public struct LLMOptions: Sendable {
     /// Maximum number of tokens to generate. Zero requests no output.
     /// TransformerDecoder may stop earlier at its configured context capacity.
     public var maxTokens: Int
+    /// String sequences whose first occurrence stops generation and is excluded from emitted output.
+    public var stopSequences: [String]
+    /// Additional token IDs that stop generation without being emitted.
+    public var stopTokenIDs: Set<Int>
 
     /// The temperature parameter.
     @available(*, deprecated, message: "Use sampling.temperature instead")
@@ -75,12 +79,18 @@ public struct LLMOptions: Sendable {
     /// - Parameters:
     ///   - sampling: The sampling pipeline configuration.
     ///   - maxTokens: Maximum number of tokens to generate.
+    ///   - stopSequences: String sequences that stop generation when matched in decoded text.
+    ///   - stopTokenIDs: Additional token IDs that stop generation without being emitted.
     public init(
         sampling: SamplingConfiguration = SamplingConfiguration(),
-        maxTokens: Int = 100
+        maxTokens: Int = 100,
+        stopSequences: [String] = [],
+        stopTokenIDs: Set<Int> = []
     ) {
         self.sampling = sampling
         self.maxTokens = maxTokens
+        self.stopSequences = stopSequences
+        self.stopTokenIDs = stopTokenIDs
     }
 
     /// Backwards-compatible initializer.
@@ -90,12 +100,16 @@ public struct LLMOptions: Sendable {
     ///   - topK: The top k.
     ///   - repetitionPenalty: Multiplicative repetition penalty (default: `1.0`).
     ///   - maxTokens: The max tokens.
+    ///   - stopSequences: String sequences that stop generation when matched in decoded text.
+    ///   - stopTokenIDs: Additional token IDs that stop generation without being emitted.
     public init(
         temperature: Double = 0.7,
         topP: Double = 0.9,
         topK: Int = 40,
         repetitionPenalty: Float = 1.0,
-        maxTokens: Int = 100
+        maxTokens: Int = 100,
+        stopSequences: [String] = [],
+        stopTokenIDs: Set<Int> = []
     ) {
         self.sampling = SamplingConfiguration(
             temperature: Float(temperature),
@@ -104,6 +118,8 @@ public struct LLMOptions: Sendable {
             repetitionPenalty: repetitionPenalty
         )
         self.maxTokens = maxTokens
+        self.stopSequences = stopSequences
+        self.stopTokenIDs = stopTokenIDs
     }
 }
 

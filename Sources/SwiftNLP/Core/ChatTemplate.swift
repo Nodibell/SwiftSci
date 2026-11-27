@@ -103,6 +103,26 @@ public struct ChatTemplate: Sendable, Equatable {
     /// Preconfigured template using Gemma 4 Instruct format.
     public static let gemma4 = ChatTemplate(customFormat: .gemma4)
 
+    /// Canonical turn-end stop sequences for this template family.
+    public var defaultStopSequences: [String] {
+        switch customFormat {
+        case .gemma:
+            return ["<end_of_turn>"]
+        case .gemma4:
+            return ["<turn|>"]
+        case nil:
+            break
+        }
+        switch style {
+        case .llama3, .llama32Instruct:
+            return ["<|eot_id|>"]
+        case .chatML:
+            return ["<|im_end|>"]
+        case .mistral:
+            return ["</s>"]
+        }
+    }
+
     /// Renders messages into a formatted prompt string.
     /// - Parameters:
     ///   - messages: Array of conversational chat messages.

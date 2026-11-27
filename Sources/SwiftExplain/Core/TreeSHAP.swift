@@ -19,11 +19,21 @@ public struct TreeSHAPExplanation: Sendable, Codable, Equatable {
     }
 }
 
-/// TreeSHAP (Tree Shapley Additive Explanations) for decision trees and random forests
+/// Leaf weighting strategy used by ``TreeSHAP`` when marginalizing unconditioned branches.
+public enum TreeNodeWeighting: Sendable, Codable, Equatable {
+    /// Assigns uniform weight `1.0` to every leaf and sums internal node weights bottom-up.
+    case uniformLeaf
+    /// Uses empirical training sample counts (`FlatTreeNode.cover`) on leaves when all reachable leaves provide finite positive `cover`,
+    /// falling back gracefully to ``uniformLeaf`` otherwise (e.g., for legacy `<= 3.13.3` serialized models).
+    case empiricalCover
+}
+
+/// TreeSHAP (Tree Shapley Additive Explanations) for decision trees, random forests, and gradient boosted trees
 /// (path-dependent formulation following Lundberg et al., 2018; Nature Machine Intelligence).
 ///
-/// The value function is the *path-dependent* conditional expectation over each tree's leaves
-/// using uniform leaf weight `1.0` (`FlatTreeNode` does not store training sample `cover` in `v3.13.x`).
+/// The value function is the *path-dependent* conditional expectation over each tree's leaves,
+/// configured via ``weighting`` (``TreeNodeWeighting/uniformLeaf`` by default, or ``TreeNodeWeighting/empiricalCover``
+/// using `FlatTreeNode.cover` sample counts).
 ///
 /// - Exact: a tree that splits on `K <= maxExactFeatures` (12) distinct features is solved by
 ///   enumerating all `2^K` coalitions in `O(2^K * L)` time, which yields the exact Shapley values.
@@ -34,13 +44,10 @@ public struct TreeSHAPExplanation: Sendable, Codable, Equatable {
 ///   axiom up to floating-point rounding; this does not make individual attributions exact.
 ///   Use ``isExact(tree:numFeatures:)`` to see which branch a tree takes.
 ///
-/// ### Deferred Limitations (`v3.13.x`)
-/// - **G-035 (`GradientBoostedTreesRegressor`)**: No GBDT overload is provided in `v3.13.x`
-///   (`explainDetailed(trees:)` averages uniformly by `1/T` rather than applying
-///   `initialPrediction + learningRate * sum_m T_m(x)`). Deferred to a future release.
-/// - **G-036 (Classification)**: Classifiers explain the scalar `FlatTreeNode.value` class code with
-///   uniform `1.0` leaf weights rather than empirical `cover` or per-class `predictProbability`
-///   distributions. Deferred to a future release.
+/// Supports:
+/// - Regression trees and ensembles (`DecisionTreeRegressor`, `RandomForestRegressor`, `GradientBoostedTreesRegressor`).
+/// - Scalar classification label explanations (`explain(decisionTree:)`, `explain(randomForest:)`) as well as
+///   per-class calibrated probability explanations (`explainClassDetailed`, `explainAllClassesDetailed`, `explainBatchClass`).
 ///
 /// Efficiency axiom:
 /// \[
@@ -54,12 +61,17 @@ public struct TreeSHAP: Sendable {
     public static let approximationSamples = 2048
     /// Seed of the permutation sampler used by the approximate (`K > 12`) branch.
     public let permutationSeed: UInt64
+    /// Leaf weighting strategy used when computing conditional expectations along unconditioned branches.
+    public let weighting: TreeNodeWeighting
 
-    /// Creates a new TreeSHAP explainer instance with the default permutation seed (42).
-    public init() { self.permutationSeed = 42 }
-
-    /// Creates an explainer whose approximate branch (`K > 12`) uses `permutationSeed` for reproducibility.
-    public init(permutationSeed: UInt64) { self.permutationSeed = permutationSeed }
+    /// Creates a new TreeSHAP explainer instance.
+    /// - Parameters:
+    ///   - permutationSeed: Seed for the deterministic Monte Carlo permutation sampler when `K > maxExactFeatures` (default `42`).
+    ///   - weighting: Leaf weighting strategy used during marginalization (default ``TreeNodeWeighting/uniformLeaf``).
+    public init(permutationSeed: UInt64 = 42, weighting: TreeNodeWeighting = .uniformLeaf) {
+        self.permutationSeed = permutationSeed
+        self.weighting = weighting
+    }
 
     /// Returns `true` when `tree` is solved exactly (at most ``maxExactFeatures`` distinct split features).
     public func isExact(tree: [FlatTreeNode], numFeatures: Int) -> Bool {
@@ -112,15 +124,40 @@ public struct TreeSHAP: Sendable {
 
     // MARK: - Tree Structure Analysis & Probability Modeling
 
+    /// Checks whether every reachable leaf from the root has a finite, strictly positive `cover`.
+    private func allReachableLeavesHaveValidCover(tree: [FlatTreeNode]) -> Bool {
+        guard !tree.isEmpty else { return false }
+        var stack: [Int] = [0]
+        var visited = Set<Int>()
+        var foundLeaf = false
+        while let idx = stack.popLast() {
+            guard idx >= 0 && idx < tree.count && visited.insert(idx).inserted else { continue }
+            let node = tree[idx]
+            if node.isLeaf {
+                foundLeaf = true
+                guard let c = node.cover, c.isFinite, c > 0.0 else {
+                    return false
+                }
+            } else {
+                stack.append(node.leftChild)
+                stack.append(node.rightChild)
+            }
+        }
+        return foundLeaf
+    }
+
     /// Computes subtree sample weights (or leaf counts) to establish branching transition probabilities.
     private func computeSubtreeWeights(tree: [FlatTreeNode]) -> [Double] {
+        guard !tree.isEmpty else { return [] }
+        let useEmpiricalCover = (weighting == .empiricalCover) && allReachableLeavesHaveValidCover(tree: tree)
         var weights = [Double](repeating: 0.0, count: tree.count)
         func getWeight(idx: Int) -> Double {
             guard idx >= 0 && idx < tree.count else { return 0.0 }
             let node = tree[idx]
             if node.isLeaf {
-                weights[idx] = 1.0
-                return 1.0
+                let leafWeight = useEmpiricalCover ? (node.cover ?? 1.0) : 1.0
+                weights[idx] = leafWeight
+                return leafWeight
             }
             let wL = getWeight(idx: node.leftChild)
             let wR = getWeight(idx: node.rightChild)
@@ -132,33 +169,47 @@ public struct TreeSHAP: Sendable {
         return weights
     }
 
-    /// Evaluates the unconditioned expected prediction of the tree: \(\mathbb{E}[f(X)]\).
-    public func computeExpectedValue(tree: [FlatTreeNode]) -> Double {
+    private func computeExpectedValue(
+        tree: [FlatTreeNode],
+        weights: [Double],
+        leafValue: (FlatTreeNode) -> Double
+    ) -> Double {
         guard !tree.isEmpty else { return 0.0 }
-        let weights = computeSubtreeWeights(tree: tree)
 
         func expectNode(idx: Int) -> Double {
             guard idx >= 0 && idx < tree.count else { return 0.0 }
             let node = tree[idx]
-            if node.isLeaf { return node.value }
+            if node.isLeaf { return leafValue(node) }
             let wL = (node.leftChild >= 0 && node.leftChild < tree.count) ? weights[node.leftChild] : 0.0
             let wR = (node.rightChild >= 0 && node.rightChild < tree.count) ? weights[node.rightChild] : 0.0
             let total = wL + wR
-            guard total > 0.0 else { return node.value }
+            guard total > 0.0 else { return leafValue(node) }
             return (wL / total) * expectNode(idx: node.leftChild) + (wR / total) * expectNode(idx: node.rightChild)
         }
 
         return expectNode(idx: 0)
     }
 
-    /// Predicts scalar output of a single decision tree for an instance vector.
-    public func predict(tree: [FlatTreeNode], instance: [Double]) -> Double {
+    /// Evaluates the unconditioned expected prediction of the tree: \(\mathbb{E}[f(X)]\).
+    public func computeExpectedValue(tree: [FlatTreeNode]) -> Double {
+        guard !tree.isEmpty else { return 0.0 }
+        let weights = computeSubtreeWeights(tree: tree)
+        return computeExpectedValue(tree: tree, weights: weights) { (node: FlatTreeNode) -> Double in
+            node.value
+        }
+    }
+
+    private func predict(
+        tree: [FlatTreeNode],
+        instance: [Double],
+        leafValue: (FlatTreeNode) -> Double
+    ) -> Double {
         guard !tree.isEmpty else { return 0.0 }
         var curr = 0
         while curr >= 0 && curr < tree.count && !tree[curr].isLeaf {
             let node = tree[curr]
             guard node.featureIndex >= 0 && node.featureIndex < instance.count else {
-                return node.value
+                return leafValue(node)
             }
             if instance[node.featureIndex] <= node.threshold {
                 curr = node.leftChild
@@ -167,7 +218,14 @@ public struct TreeSHAP: Sendable {
             }
         }
         guard curr >= 0 && curr < tree.count else { return 0.0 }
-        return tree[curr].value
+        return leafValue(tree[curr])
+    }
+
+    /// Predicts scalar output of a single decision tree for an instance vector.
+    public func predict(tree: [FlatTreeNode], instance: [Double]) -> Double {
+        return predict(tree: tree, instance: instance) { (node: FlatTreeNode) -> Double in
+            node.value
+        }
     }
 
     // MARK: - Path-Dependent TreeSHAP for FlatTreeNode arrays
@@ -189,6 +247,17 @@ public struct TreeSHAP: Sendable {
     /// Computes TreeSHAP attributions and detailed baseline decomposition for a single decision tree
     /// (exact for `K <= maxExactFeatures`, seeded Monte Carlo permutation estimate for `K > maxExactFeatures`).
     public func explainDetailed(tree: [FlatTreeNode], instance: [Double], numFeatures: Int) -> TreeSHAPExplanation {
+        return explainDetailed(tree: tree, instance: instance, numFeatures: numFeatures) { (node: FlatTreeNode) -> Double in
+            node.value
+        }
+    }
+
+    private func explainDetailed(
+        tree: [FlatTreeNode],
+        instance: [Double],
+        numFeatures: Int,
+        leafValue: (FlatTreeNode) -> Double
+    ) -> TreeSHAPExplanation {
         guard !tree.isEmpty, !instance.isEmpty, numFeatures > 0 else {
             return TreeSHAPExplanation(
                 values: [Double](repeating: 0.0, count: max(0, numFeatures)),
@@ -208,8 +277,8 @@ public struct TreeSHAP: Sendable {
         }
 
         let weights = computeSubtreeWeights(tree: tree)
-        let baseValue = computeExpectedValue(tree: tree)
-        let prediction = predict(tree: tree, instance: instance)
+        let baseValue = computeExpectedValue(tree: tree, weights: weights, leafValue: leafValue)
+        let prediction = predict(tree: tree, instance: instance, leafValue: leafValue)
 
         // Find active split features in the tree
         var activeFeaturesSet = Set<Int>()
@@ -244,14 +313,14 @@ public struct TreeSHAP: Sendable {
             func traverse(idx: Int) -> Double {
                 guard idx >= 0 && idx < tree.count else { return 0.0 }
                 let node = tree[idx]
-                if node.isLeaf { return node.value }
+                if node.isLeaf { return leafValue(node) }
 
                 guard let bit = featureToBit[node.featureIndex] else {
                     // Feature not in active features: marginalize
                     let wL = (node.leftChild >= 0 && node.leftChild < tree.count) ? weights[node.leftChild] : 0.0
                     let wR = (node.rightChild >= 0 && node.rightChild < tree.count) ? weights[node.rightChild] : 0.0
                     let total = wL + wR
-                    guard total > 0.0 else { return node.value }
+                    guard total > 0.0 else { return leafValue(node) }
                     return (wL / total) * traverse(idx: node.leftChild) + (wR / total) * traverse(idx: node.rightChild)
                 }
 
@@ -264,7 +333,7 @@ public struct TreeSHAP: Sendable {
                     let wL = (node.leftChild >= 0 && node.leftChild < tree.count) ? weights[node.leftChild] : 0.0
                     let wR = (node.rightChild >= 0 && node.rightChild < tree.count) ? weights[node.rightChild] : 0.0
                     let total = wL + wR
-                    guard total > 0.0 else { return node.value }
+                    guard total > 0.0 else { return leafValue(node) }
                     return (wL / total) * traverse(idx: node.leftChild) + (wR / total) * traverse(idx: node.rightChild)
                 }
             }
@@ -358,6 +427,17 @@ public struct TreeSHAP: Sendable {
     /// Computes TreeSHAP attributions and detailed decomposition for an ensemble of trees
     /// (exact per tree for `K <= maxExactFeatures`, seeded Monte Carlo permutation estimate otherwise).
     public func explainDetailed(trees: [[FlatTreeNode]], instance: [Double], numFeatures: Int) -> TreeSHAPExplanation {
+        return explainDetailed(trees: trees, instance: instance, numFeatures: numFeatures) { (node: FlatTreeNode) -> Double in
+            node.value
+        }
+    }
+
+    private func explainDetailed(
+        trees: [[FlatTreeNode]],
+        instance: [Double],
+        numFeatures: Int,
+        leafValue: (FlatTreeNode) -> Double
+    ) -> TreeSHAPExplanation {
         guard !trees.isEmpty else {
             return TreeSHAPExplanation(
                 values: [Double](repeating: 0.0, count: max(0, numFeatures)),
@@ -371,7 +451,7 @@ public struct TreeSHAP: Sendable {
         var totalPred = 0.0
 
         for tree in trees {
-            let explanation = explainDetailed(tree: tree, instance: instance, numFeatures: numFeatures)
+            let explanation = explainDetailed(tree: tree, instance: instance, numFeatures: numFeatures, leafValue: leafValue)
             for i in 0..<numFeatures {
                 totalPhi[i] += explanation.values[i]
             }
@@ -380,8 +460,9 @@ public struct TreeSHAP: Sendable {
         }
 
         let n = Double(trees.count)
+        let averagedPhi = totalPhi.map { (v: Double) -> Double in v / n }
         return TreeSHAPExplanation(
-            values: totalPhi.map { $0 / n },
+            values: averagedPhi,
             baseValue: totalBase / n,
             prediction: totalPred / n
         )
@@ -389,36 +470,434 @@ public struct TreeSHAP: Sendable {
 
     // MARK: - Integration with SwiftML Tree Models
 
-    /// Computes TreeSHAP for a `DecisionTreeClassifier`.
+    /// Computes scalar TreeSHAP attributions for a `DecisionTreeClassifier` using `FlatTreeNode.value`.
     ///
-    /// - Note: In `v3.13.x`, classifier TreeSHAP attributes the scalar `FlatTreeNode.value`
-    ///   class code using uniform `1.0` leaf weights rather than `FlatTreeNode.cover` or
-    ///   per-class `predictProbability` distributions (**G-036**, deferred to a future release).
+    /// Preserves scalar label-code semantics; for calibrated per-class probability explanations, use
+    /// ``explainClassDetailed(decisionTree:instance:classIndex:)`` or
+    /// ``explainAllClassesDetailed(decisionTree:instance:)``.
+    /// - Parameters:
+    ///   - decisionTree: Fitted `DecisionTreeClassifier` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    /// - Returns: Shapley attributions for the scalar predicted class label.
     public func explain(decisionTree: DecisionTreeClassifier, instance: [Double]) async -> [Double] {
         let nodes = await decisionTree.flatNodes
         return explain(tree: nodes, instance: instance, numFeatures: instance.count)
     }
 
     /// Computes TreeSHAP for a `DecisionTreeRegressor`.
+    /// - Parameters:
+    ///   - decisionTree: Fitted `DecisionTreeRegressor` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    /// - Returns: Shapley attributions for the predicted continuous target.
     public func explain(decisionTree: DecisionTreeRegressor, instance: [Double]) async -> [Double] {
         let nodes = await decisionTree.flatNodes
         return explain(tree: nodes, instance: instance, numFeatures: instance.count)
     }
 
-    /// Computes TreeSHAP for a `RandomForestClassifier`.
+    /// Computes scalar TreeSHAP attributions for a `RandomForestClassifier` using averaged `FlatTreeNode.value`.
     ///
-    /// - Note: In `v3.13.x`, classifier TreeSHAP averages scalar `FlatTreeNode.value` class codes
-    ///   across trees with uniform `1.0` leaf weights rather than per-class `predictProbability`
-    ///   vote fractions (**G-036**, deferred to a future release).
+    /// Preserves scalar label-code semantics; for per-class probability explanations under
+    /// `ForestProbabilityMode`, use ``explainClassDetailed(randomForest:instance:classIndex:probabilityMode:)``
+    /// or ``explainAllClassesDetailed(randomForest:instance:probabilityMode:)``.
+    /// - Parameters:
+    ///   - randomForest: Fitted `RandomForestClassifier` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    /// - Returns: Average Shapley attributions for the scalar predicted class code across trees.
     public func explain(randomForest: RandomForestClassifier, instance: [Double]) async -> [Double] {
         let flatTrees = await randomForest.flatTrees
         return explain(trees: flatTrees, instance: instance, numFeatures: instance.count)
     }
 
     /// Computes TreeSHAP for a `RandomForestRegressor`.
+    /// - Parameters:
+    ///   - randomForest: Fitted `RandomForestRegressor` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    /// - Returns: Average Shapley attributions for the predicted continuous target across trees.
     public func explain(randomForest: RandomForestRegressor, instance: [Double]) async -> [Double] {
         let flatTrees = await randomForest.flatTrees
         return explain(trees: flatTrees, instance: instance, numFeatures: instance.count)
+    }
+
+    // MARK: - Gradient Boosted Decision Trees (G-035)
+
+    private func explainDetailedGBDT(
+        trees: [[FlatTreeNode]],
+        initialPrediction: Double,
+        learningRate: Double,
+        instance: [Double],
+        numFeatures: Int
+    ) -> TreeSHAPExplanation {
+        guard !trees.isEmpty else {
+            return TreeSHAPExplanation(
+                values: [Double](repeating: 0.0, count: max(0, instance.count)),
+                baseValue: 0.0,
+                prediction: 0.0
+            )
+        }
+        guard numFeatures > 0,
+              instance.count == numFeatures,
+              instance.allSatisfy({ (val: Double) -> Bool in !val.isNaN && !val.isInfinite }) else {
+            return TreeSHAPExplanation(
+                values: [Double](repeating: 0.0, count: max(0, numFeatures)),
+                baseValue: 0.0,
+                prediction: 0.0
+            )
+        }
+
+        var sumPhi = [Double](repeating: 0.0, count: numFeatures)
+        var sumBase = 0.0
+        var sumPred = 0.0
+
+        for tree in trees {
+            let exp = explainDetailed(tree: tree, instance: instance, numFeatures: numFeatures)
+            for i in 0..<numFeatures {
+                sumPhi[i] += exp.values[i]
+            }
+            sumBase += exp.baseValue
+            sumPred += exp.prediction
+        }
+
+        let scaledPhi = sumPhi.map { (v: Double) -> Double in learningRate * v }
+        return TreeSHAPExplanation(
+            values: scaledPhi,
+            baseValue: initialPrediction + learningRate * sumBase,
+            prediction: initialPrediction + learningRate * sumPred
+        )
+    }
+
+    /// Computes detailed additive TreeSHAP attributions for a `GradientBoostedTreesRegressor`.
+    ///
+    /// Aggregates per-tree attributions scaled by `learningRate` and anchors the baseline with `initialPrediction`:
+    /// \(\phi_i = \eta \sum_{m=1}^{T} \phi_i(T_m, x)\),
+    /// \(\text{baseValue} = f_0 + \eta \sum_{m=1}^{T} \mathbb{E}[T_m(X)]\), and
+    /// \(\text{prediction} = f_0 + \eta \sum_{m=1}^{T} T_m(x)\).
+    /// - Parameters:
+    ///   - gbdt: Fitted `GradientBoostedTreesRegressor` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    /// - Returns: A ``TreeSHAPExplanation`` matching the GBDT additive prediction decomposition.
+    public func explainDetailed(gbdt: GradientBoostedTreesRegressor, instance: [Double]) async -> TreeSHAPExplanation {
+        let trees = await gbdt.getEnsembleTrees()
+        let initialPrediction = await gbdt.getInitialPrediction()
+        let modelNumFeatures = await gbdt.getNumFeatures()
+        let learningRate = await gbdt.learningRate
+        let numFeatures = modelNumFeatures > 0 ? modelNumFeatures : instance.count
+        return explainDetailedGBDT(
+            trees: trees,
+            initialPrediction: initialPrediction,
+            learningRate: learningRate,
+            instance: instance,
+            numFeatures: numFeatures
+        )
+    }
+
+    /// Computes additive TreeSHAP feature attributions for a `GradientBoostedTreesRegressor`.
+    /// - Parameters:
+    ///   - gbdt: Fitted `GradientBoostedTreesRegressor` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    /// - Returns: Shapley attributions \(\phi_i = \eta \sum_{m=1}^{T} \phi_i(T_m, x)\) for each feature.
+    public func explain(gbdt: GradientBoostedTreesRegressor, instance: [Double]) async -> [Double] {
+        return await explainDetailed(gbdt: gbdt, instance: instance).values
+    }
+
+    /// Computes additive TreeSHAP feature attributions concurrently for a batch of instances with a `GradientBoostedTreesRegressor`.
+    /// - Parameters:
+    ///   - gbdt: Fitted `GradientBoostedTreesRegressor` instance.
+    ///   - instances: Batch of feature vectors to explain.
+    /// - Returns: Array of Shapley attribution vectors, one per input instance.
+    public func explainBatch(gbdt: GradientBoostedTreesRegressor, instances: [[Double]]) async -> [[Double]] {
+        guard let first = instances.first else { return [] }
+        let trees = await gbdt.getEnsembleTrees()
+        let initialPrediction = await gbdt.getInitialPrediction()
+        let modelNumFeatures = await gbdt.getNumFeatures()
+        let learningRate = await gbdt.learningRate
+        let numFeatures = modelNumFeatures > 0 ? modelNumFeatures : first.count
+
+        guard !trees.isEmpty else {
+            return [[Double]](repeating: [Double](repeating: 0.0, count: numFeatures), count: instances.count)
+        }
+
+        var results = [[Double]](repeating: [], count: instances.count)
+        if instances.count <= 4 {
+            for (idx, instance) in instances.enumerated() {
+                results[idx] = explainDetailedGBDT(
+                    trees: trees,
+                    initialPrediction: initialPrediction,
+                    learningRate: learningRate,
+                    instance: instance,
+                    numFeatures: numFeatures
+                ).values
+            }
+            return results
+        }
+
+        await withTaskGroup(of: (Int, [Double]).self) { group in
+            for (idx, instance) in instances.enumerated() {
+                group.addTask {
+                    let phi = self.explainDetailedGBDT(
+                        trees: trees,
+                        initialPrediction: initialPrediction,
+                        learningRate: learningRate,
+                        instance: instance,
+                        numFeatures: numFeatures
+                    ).values
+                    return (idx, phi)
+                }
+            }
+            for await (idx, phi) in group {
+                results[idx] = phi
+            }
+        }
+        return results
+    }
+
+    // MARK: - Per-Class Probability TreeSHAP (G-036)
+
+    private static func decisionTreeClassLeafExtractor(
+        classes: [Double],
+        classIndex: Int
+    ) -> @Sendable (FlatTreeNode) -> Double {
+        let targetClass = classes[classIndex]
+        return { (node: FlatTreeNode) -> Double in
+            if let dist = node.classDistribution, classIndex < dist.count {
+                return dist[classIndex]
+            }
+            return node.value == targetClass ? 1.0 : 0.0
+        }
+    }
+
+    private static func randomForestClassLeafExtractor(
+        classes: [Double],
+        classToIndex: [Double: Int],
+        classIndex: Int,
+        probabilityMode: ForestProbabilityMode
+    ) -> @Sendable (FlatTreeNode) -> Double {
+        let numClasses = classes.count
+        return { (node: FlatTreeNode) -> Double in
+            switch probabilityMode {
+            case .softLeafDistribution:
+                if let dist = node.classDistribution, dist.count == numClasses {
+                    return dist[classIndex]
+                }
+                if let idx = classToIndex[node.value], idx < numClasses {
+                    return idx == classIndex ? 1.0 : 0.0
+                }
+                return Int(node.value) == classIndex ? 1.0 : 0.0
+            case .hardVote:
+                if let idx = classToIndex[node.value], idx < numClasses {
+                    return idx == classIndex ? 1.0 : 0.0
+                }
+                return Int(node.value) == classIndex ? 1.0 : 0.0
+            }
+        }
+    }
+
+    /// Computes per-class probability TreeSHAP explanations across all classes for a `DecisionTreeClassifier`.
+    ///
+    /// Class order matches `decisionTree.classes`. Each class explanation decomposes `predictProbability([instance])[0][c]`
+    /// using leaf `classDistribution[c]` (with one-hot fallback on `node.value` for legacy serialized trees).
+    /// - Parameters:
+    ///   - decisionTree: Fitted `DecisionTreeClassifier` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    /// - Returns: Array of ``TreeSHAPExplanation`` values, one per class in `decisionTree.classes`.
+    public func explainAllClassesDetailed(
+        decisionTree: DecisionTreeClassifier,
+        instance: [Double]
+    ) async -> [TreeSHAPExplanation] {
+        let nodes = await decisionTree.flatNodes
+        let classes = await decisionTree.classes
+        guard !nodes.isEmpty, !classes.isEmpty else { return [] }
+
+        var explanations: [TreeSHAPExplanation] = []
+        explanations.reserveCapacity(classes.count)
+        for c in 0..<classes.count {
+            let extractor = Self.decisionTreeClassLeafExtractor(classes: classes, classIndex: c)
+            explanations.append(
+                explainDetailed(tree: nodes, instance: instance, numFeatures: instance.count, leafValue: extractor)
+            )
+        }
+        return explanations
+    }
+
+    /// Computes the per-class probability TreeSHAP explanation for a single target class on a `DecisionTreeClassifier`.
+    /// - Parameters:
+    ///   - decisionTree: Fitted `DecisionTreeClassifier` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    ///   - classIndex: Zero-based index into `decisionTree.classes`.
+    /// - Throws: `SwiftMLError.modelNotFitted` if not fitted, or `SwiftMLError.indexOutOfRange` if `classIndex` is out of bounds.
+    /// - Returns: A ``TreeSHAPExplanation`` decomposing `predictProbability([instance])[0][classIndex]`.
+    public func explainClassDetailed(
+        decisionTree: DecisionTreeClassifier,
+        instance: [Double],
+        classIndex: Int
+    ) async throws -> TreeSHAPExplanation {
+        let nodes = await decisionTree.flatNodes
+        let classes = await decisionTree.classes
+        guard !nodes.isEmpty, !classes.isEmpty else { throw SwiftMLError.modelNotFitted }
+        guard classIndex >= 0 && classIndex < classes.count else {
+            throw SwiftMLError.indexOutOfRange(index: classIndex, count: classes.count)
+        }
+        let extractor = Self.decisionTreeClassLeafExtractor(classes: classes, classIndex: classIndex)
+        return explainDetailed(tree: nodes, instance: instance, numFeatures: instance.count, leafValue: extractor)
+    }
+
+    /// Computes per-class probability TreeSHAP attributions concurrently for a batch of instances on a `DecisionTreeClassifier`.
+    /// - Parameters:
+    ///   - decisionTree: Fitted `DecisionTreeClassifier` instance.
+    ///   - instances: Batch of feature vectors to explain.
+    ///   - classIndex: Zero-based index into `decisionTree.classes`.
+    /// - Throws: `SwiftMLError.modelNotFitted` if not fitted, or `SwiftMLError.indexOutOfRange` if `classIndex` is out of bounds.
+    /// - Returns: Array of Shapley attribution vectors for `classIndex`, one per instance.
+    public func explainBatchClass(
+        decisionTree: DecisionTreeClassifier,
+        instances: [[Double]],
+        classIndex: Int
+    ) async throws -> [[Double]] {
+        let nodes = await decisionTree.flatNodes
+        let classes = await decisionTree.classes
+        guard !nodes.isEmpty, !classes.isEmpty else { throw SwiftMLError.modelNotFitted }
+        guard classIndex >= 0 && classIndex < classes.count else {
+            throw SwiftMLError.indexOutOfRange(index: classIndex, count: classes.count)
+        }
+        guard let first = instances.first else { return [] }
+        let extractor = Self.decisionTreeClassLeafExtractor(classes: classes, classIndex: classIndex)
+        return await explainBatch(trees: [nodes], instances: instances, numFeatures: first.count, leafValue: extractor)
+    }
+
+    /// Computes per-class probability TreeSHAP explanations across all classes for a `RandomForestClassifier`.
+    ///
+    /// Class order matches `randomForest.classes`. Each class explanation decomposes
+    /// `predictProbability([instance], mode: probabilityMode)[0][c]`.
+    /// - Parameters:
+    ///   - randomForest: Fitted `RandomForestClassifier` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    ///   - probabilityMode: Probability aggregation strategy matching `RandomForestClassifier.predictProbability(features:mode:)` (default `.hardVote`).
+    /// - Returns: Array of ``TreeSHAPExplanation`` values, one per class in `randomForest.classes`.
+    public func explainAllClassesDetailed(
+        randomForest: RandomForestClassifier,
+        instance: [Double],
+        probabilityMode: ForestProbabilityMode = .hardVote
+    ) async -> [TreeSHAPExplanation] {
+        let trees = await randomForest.flatTrees
+        let rawClasses = await randomForest.classes
+        let numClasses = await randomForest.numClasses
+        let effectiveClasses: [Double]
+        if !rawClasses.isEmpty {
+            effectiveClasses = rawClasses
+        } else if numClasses > 0 {
+            effectiveClasses = (0..<numClasses).map { (i: Int) -> Double in Double(i) }
+        } else {
+            effectiveClasses = []
+        }
+        guard !trees.isEmpty, !effectiveClasses.isEmpty else { return [] }
+
+        var classToIndex = [Double: Int]()
+        for (idx, c) in effectiveClasses.enumerated() {
+            classToIndex[c] = idx
+        }
+
+        var explanations: [TreeSHAPExplanation] = []
+        explanations.reserveCapacity(effectiveClasses.count)
+        for c in 0..<effectiveClasses.count {
+            let extractor = Self.randomForestClassLeafExtractor(
+                classes: effectiveClasses,
+                classToIndex: classToIndex,
+                classIndex: c,
+                probabilityMode: probabilityMode
+            )
+            explanations.append(
+                explainDetailed(trees: trees, instance: instance, numFeatures: instance.count, leafValue: extractor)
+            )
+        }
+        return explanations
+    }
+
+    /// Computes the per-class probability TreeSHAP explanation for a single target class on a `RandomForestClassifier`.
+    /// - Parameters:
+    ///   - randomForest: Fitted `RandomForestClassifier` instance.
+    ///   - instance: Feature vector of the instance to explain.
+    ///   - classIndex: Zero-based index into `randomForest.classes`.
+    ///   - probabilityMode: Probability aggregation strategy matching `RandomForestClassifier.predictProbability(features:mode:)` (default `.hardVote`).
+    /// - Throws: `SwiftMLError.modelNotFitted` if not fitted, or `SwiftMLError.indexOutOfRange` if `classIndex` is out of bounds.
+    /// - Returns: A ``TreeSHAPExplanation`` decomposing `predictProbability([instance], mode: probabilityMode)[0][classIndex]`.
+    public func explainClassDetailed(
+        randomForest: RandomForestClassifier,
+        instance: [Double],
+        classIndex: Int,
+        probabilityMode: ForestProbabilityMode = .hardVote
+    ) async throws -> TreeSHAPExplanation {
+        let trees = await randomForest.flatTrees
+        let rawClasses = await randomForest.classes
+        let numClasses = await randomForest.numClasses
+        let effectiveClasses: [Double]
+        if !rawClasses.isEmpty {
+            effectiveClasses = rawClasses
+        } else if numClasses > 0 {
+            effectiveClasses = (0..<numClasses).map { (i: Int) -> Double in Double(i) }
+        } else {
+            effectiveClasses = []
+        }
+        guard !trees.isEmpty, !effectiveClasses.isEmpty else { throw SwiftMLError.modelNotFitted }
+        guard classIndex >= 0 && classIndex < effectiveClasses.count else {
+            throw SwiftMLError.indexOutOfRange(index: classIndex, count: effectiveClasses.count)
+        }
+
+        var classToIndex = [Double: Int]()
+        for (idx, c) in effectiveClasses.enumerated() {
+            classToIndex[c] = idx
+        }
+
+        let extractor = Self.randomForestClassLeafExtractor(
+            classes: effectiveClasses,
+            classToIndex: classToIndex,
+            classIndex: classIndex,
+            probabilityMode: probabilityMode
+        )
+        return explainDetailed(trees: trees, instance: instance, numFeatures: instance.count, leafValue: extractor)
+    }
+
+    /// Computes per-class probability TreeSHAP attributions concurrently for a batch of instances on a `RandomForestClassifier`.
+    /// - Parameters:
+    ///   - randomForest: Fitted `RandomForestClassifier` instance.
+    ///   - instances: Batch of feature vectors to explain.
+    ///   - classIndex: Zero-based index into `randomForest.classes`.
+    ///   - probabilityMode: Probability aggregation strategy matching `RandomForestClassifier.predictProbability(features:mode:)` (default `.hardVote`).
+    /// - Throws: `SwiftMLError.modelNotFitted` if not fitted, or `SwiftMLError.indexOutOfRange` if `classIndex` is out of bounds.
+    /// - Returns: Array of Shapley attribution vectors for `classIndex`, one per instance.
+    public func explainBatchClass(
+        randomForest: RandomForestClassifier,
+        instances: [[Double]],
+        classIndex: Int,
+        probabilityMode: ForestProbabilityMode = .hardVote
+    ) async throws -> [[Double]] {
+        let trees = await randomForest.flatTrees
+        let rawClasses = await randomForest.classes
+        let numClasses = await randomForest.numClasses
+        let effectiveClasses: [Double]
+        if !rawClasses.isEmpty {
+            effectiveClasses = rawClasses
+        } else if numClasses > 0 {
+            effectiveClasses = (0..<numClasses).map { (i: Int) -> Double in Double(i) }
+        } else {
+            effectiveClasses = []
+        }
+        guard !trees.isEmpty, !effectiveClasses.isEmpty else { throw SwiftMLError.modelNotFitted }
+        guard classIndex >= 0 && classIndex < effectiveClasses.count else {
+            throw SwiftMLError.indexOutOfRange(index: classIndex, count: effectiveClasses.count)
+        }
+        guard let first = instances.first else { return [] }
+
+        var classToIndex = [Double: Int]()
+        for (idx, c) in effectiveClasses.enumerated() {
+            classToIndex[c] = idx
+        }
+
+        let extractor = Self.randomForestClassLeafExtractor(
+            classes: effectiveClasses,
+            classToIndex: classToIndex,
+            classIndex: classIndex,
+            probabilityMode: probabilityMode
+        )
+        return await explainBatch(trees: trees, instances: instances, numFeatures: first.count, leafValue: extractor)
     }
 
     // MARK: - Concurrent Batch TreeSHAP
@@ -430,6 +909,17 @@ public struct TreeSHAP: Sendable {
         instances: [[Double]],
         numFeatures: Int
     ) async -> [[Double]] {
+        return await explainBatch(trees: trees, instances: instances, numFeatures: numFeatures) { (node: FlatTreeNode) -> Double in
+            node.value
+        }
+    }
+
+    private func explainBatch(
+        trees: [[FlatTreeNode]],
+        instances: [[Double]],
+        numFeatures: Int,
+        leafValue: @escaping @Sendable (FlatTreeNode) -> Double
+    ) async -> [[Double]] {
         guard !instances.isEmpty else { return [] }
         guard !trees.isEmpty else {
             return [[Double]](repeating: [Double](repeating: 0.0, count: numFeatures), count: instances.count)
@@ -439,7 +929,7 @@ public struct TreeSHAP: Sendable {
 
         if instances.count <= 4 {
             for (idx, instance) in instances.enumerated() {
-                results[idx] = explain(trees: trees, instance: instance, numFeatures: numFeatures)
+                results[idx] = explainDetailed(trees: trees, instance: instance, numFeatures: numFeatures, leafValue: leafValue).values
             }
             return results
         }
@@ -447,7 +937,7 @@ public struct TreeSHAP: Sendable {
         await withTaskGroup(of: (Int, [Double]).self) { group in
             for (idx, instance) in instances.enumerated() {
                 group.addTask {
-                    let phi = self.explain(trees: trees, instance: instance, numFeatures: numFeatures)
+                    let phi = self.explainDetailed(trees: trees, instance: instance, numFeatures: numFeatures, leafValue: leafValue).values
                     return (idx, phi)
                 }
             }

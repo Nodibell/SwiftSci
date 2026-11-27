@@ -96,6 +96,22 @@ public enum DecoderArchitecture: String, Sendable {
     case gemma3
     /// Gemma 4 text decoder, including proportional RoPE, KV-sharing, per-layer inputs, and sparse MoE experts.
     case gemma4
+
+    /// Returns the default `ChatTemplate` for this decoder architecture.
+    /// - Parameter date: Date text supplied to date-aware templates such as Llama 3.2 Instruct (default `"26 Nov 2026"`).
+    /// - Returns: The matching `ChatTemplate` for this architecture.
+    public func defaultChatTemplate(date: String = "26 Nov 2026") -> ChatTemplate {
+        switch self {
+        case .llama:
+            return .llama32Instruct(date: date)
+        case .mistral:
+            return .mistral
+        case .gemma2, .gemma3:
+            return .gemma
+        case .gemma4:
+            return .gemma4
+        }
+    }
 }
 
 /// Architectural hyperparameter configuration for a decoder-only Transformer language model.
@@ -731,6 +747,12 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
     public let config: LLMConfig
     /// Tokenizer used to encode/decode text.
     public let tokenizer: any Tokenizer
+    /// Generation configuration loaded from `generation_config.json`, when present.
+    public private(set) var generationConfiguration: GenerationConfiguration?
+
+    func setGenerationConfiguration(_ configuration: GenerationConfiguration?) {
+        self.generationConfiguration = configuration
+    }
 
     // MARK: Compile cache
 
@@ -1374,6 +1396,60 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
         generationStream(prompt: prompt, options: options) { $0 }
     }
 
+    /// Generates decoded text for a chat conversation without completion metadata.
+    ///
+    /// Formats `messages` using `template` (or ``DecoderArchitecture/defaultChatTemplate(date:)``),
+    /// merges the template's default stop sequences without duplication, and encodes cleanly without
+    /// duplicating leading BOS tokens.
+    ///
+    /// - Parameters:
+    ///   - messages: Conversational messages to render into a prompt.
+    ///   - template: Optional chat template override; defaults to `config.architecture.defaultChatTemplate()`.
+    ///   - options: Inference options configuring sampling, token budget, and stop signals.
+    /// - Returns: An `AsyncStream` of decoded text segments.
+    public func generate(
+        messages: [ChatMessage],
+        template: ChatTemplate? = nil,
+        options: LLMOptions = LLMOptions()
+    ) async throws -> AsyncStream<String> {
+        let (prompt, effectiveOptions) = prepareChatGeneration(messages: messages, template: template, options: options)
+        return try await generate(prompt: prompt, options: effectiveOptions)
+    }
+
+    /// Generates text chunks followed by one completion record for a chat conversation.
+    ///
+    /// Formats `messages` using `template` (or ``DecoderArchitecture/defaultChatTemplate(date:)``),
+    /// merges the template's default stop sequences without duplication, and encodes cleanly without
+    /// duplicating leading BOS tokens.
+    ///
+    /// - Parameters:
+    ///   - messages: Conversational messages to render into a prompt.
+    ///   - template: Optional chat template override; defaults to `config.architecture.defaultChatTemplate()`.
+    ///   - options: Inference options configuring sampling, token budget, and stop signals.
+    /// - Returns: Text chunks followed by one final completion record on normal termination.
+    public func generateDetails(
+        messages: [ChatMessage],
+        template: ChatTemplate? = nil,
+        options: LLMOptions = LLMOptions()
+    ) -> AsyncThrowingStream<GenerationEvent, any Error> {
+        let (prompt, effectiveOptions) = prepareChatGeneration(messages: messages, template: template, options: options)
+        return generateDetails(prompt: prompt, options: effectiveOptions)
+    }
+
+    private func prepareChatGeneration(
+        messages: [ChatMessage],
+        template: ChatTemplate?,
+        options: LLMOptions
+    ) -> (prompt: String, options: LLMOptions) {
+        let resolvedTemplate = template ?? config.architecture.defaultChatTemplate()
+        let prompt = resolvedTemplate.render(messages: messages, addGenerationPrompt: true)
+        var effectiveOptions = options
+        for stop in resolvedTemplate.defaultStopSequences where !effectiveOptions.stopSequences.contains(stop) {
+            effectiveOptions.stopSequences.append(stop)
+        }
+        return (prompt, effectiveOptions)
+    }
+
     private func generationPrompt(_ prompt: String, options: LLMOptions) throws -> [Int] {
         guard options.maxTokens >= 0 else { throw GenerationError.invalidMaxTokens(options.maxTokens) }
         guard config.maxSeqLen > 0 else { throw GenerationError.invalidContextLimit(config.maxSeqLen) }
@@ -1419,6 +1495,18 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
         }
     }
 
+    private static func earliestStopRange(in text: String, stopSequences: [String]) -> Range<String.Index>? {
+        var earliest: Range<String.Index>? = nil
+        for sequence in stopSequences {
+            if let range = text.range(of: sequence) {
+                if earliest == nil || range.lowerBound < earliest!.lowerBound {
+                    earliest = range
+                }
+            }
+        }
+        return earliest
+    }
+
     private func generationTask(
         tokens promptTokens: [Int], options: LLMOptions,
         emit: @escaping @Sendable (GenerationEvent) -> Void,
@@ -1431,6 +1519,13 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
             var reason: GenerationStopReason = .length(options.maxTokens <= remaining ? .maxTokens : .contextWindow)
             var generated = 0
             var textDecoder = tokenizer.makeStreamDecoder()
+            let effectiveEOS = config.eosTokenIDs.union(options.stopTokenIDs)
+            let activeStopSequences: [String] = options.stopSequences.filter { (seq: String) -> Bool in !seq.isEmpty }
+            let maxHoldback: Int = activeStopSequences.isEmpty
+                ? 0
+                : max(1, activeStopSequences.map { (seq: String) -> Int in seq.count }.max() ?? 1) - 1
+            var pendingText = ""
+            var stoppedBySequence = false
 
             if budget > 0 && !Task.isCancelled {
                 var tokens = promptTokens
@@ -1439,18 +1534,39 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
                     while generated < budget {
                         if Task.isCancelled { break }
                         let next = Sampler.sample(logits: lastLogits, options: options, pastTokens: tokens)
-                        if config.eosTokenIDs.contains(next) {
+                        if effectiveEOS.contains(next) {
                             reason = .stop
                             break
                         }
                         let decoded = textDecoder.append(next)
-                        if config.eosTokenIDs.isEmpty, let decoded, decoded.isEmpty || decoded == "<unk>" {
+                        if effectiveEOS.isEmpty, let decoded, decoded.isEmpty || decoded == "<unk>" {
                             reason = .stop
                             break
                         }
                         generated += 1
                         tokens.append(next)
-                        if let decoded, !decoded.isEmpty { emit(.chunk(decoded)) }
+                        if let decoded, !decoded.isEmpty {
+                            if activeStopSequences.isEmpty {
+                                emit(.chunk(decoded))
+                            } else {
+                                pendingText += decoded
+                                if let matchRange = Self.earliestStopRange(in: pendingText, stopSequences: activeStopSequences) {
+                                    let prefix = String(pendingText[..<matchRange.lowerBound])
+                                    if !prefix.isEmpty { emit(.chunk(prefix)) }
+                                    pendingText = ""
+                                    reason = .stop
+                                    stoppedBySequence = true
+                                    break
+                                }
+                                if pendingText.count > maxHoldback {
+                                    let emitCount = pendingText.count - maxHoldback
+                                    let splitIdx = pendingText.index(pendingText.startIndex, offsetBy: emitCount)
+                                    let safePrefix = String(pendingText[..<splitIdx])
+                                    pendingText = String(pendingText[splitIdx...])
+                                    if !safePrefix.isEmpty { emit(.chunk(safePrefix)) }
+                                }
+                            }
+                        }
                         if generated == budget || Task.isCancelled { break }
 
                         let offset = caches.first?.count ?? (tokens.count - 1)
@@ -1463,9 +1579,23 @@ public final class TransformerDecoder: Module, CompletionReportingLLMModel, @unc
 
             if Task.isCancelled {
                 reason = .cancelled
-            } else {
-                let text = textDecoder.finish()
-                if !text.isEmpty { emit(.chunk(text)) }
+            } else if !stoppedBySequence {
+                let tail = textDecoder.finish()
+                if activeStopSequences.isEmpty {
+                    if !tail.isEmpty { emit(.chunk(tail)) }
+                } else {
+                    if !tail.isEmpty { pendingText += tail }
+                    if !pendingText.isEmpty {
+                        if let matchRange = Self.earliestStopRange(in: pendingText, stopSequences: activeStopSequences) {
+                            let prefix = String(pendingText[..<matchRange.lowerBound])
+                            if !prefix.isEmpty { emit(.chunk(prefix)) }
+                            reason = .stop
+                        } else {
+                            emit(.chunk(pendingText))
+                        }
+                        pendingText = ""
+                    }
+                }
             }
             emit(.info(GenerationCompletionInfo(promptTokenCount: promptTokens.count,
                 generationTokenCount: generated, stopReason: reason)))

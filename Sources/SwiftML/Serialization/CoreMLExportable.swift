@@ -15,6 +15,7 @@ import Foundation
 /// |------|----------------|
 /// | ``LinearRegression`` | `GLMRegressor` |
 /// | ``LogisticRegression`` | `GLMClassifier` |
+/// | ``OneVsRestClassifier`` | `GLMClassifier` (binary or multiclass OneVsRest) |
 /// | ``DecisionTreeClassifier`` | `TreeEnsembleClassifier` |
 /// | ``DecisionTreeRegressor`` | `TreeEnsembleRegressor` |
 /// | ``RandomForestClassifier`` | `TreeEnsembleClassifier` (multi-tree) |
@@ -294,6 +295,70 @@ extension LogisticRegression: CoreMLExportable {
             outputName: outputName,
             weights: weights,
             bias: bias
+        )
+    }
+}
+
+// MARK: - OneVsRestClassifier Conformance
+
+extension OneVsRestClassifier: CoreMLExportable {
+    /// Exports the fitted One-Vs-Rest classifier as a binary `.mlmodel` (`GLMClassifier`).
+    ///
+    /// For binary (`classes.count == 2`) models, exports a single `ReferenceClass` weight vector
+    /// for `classes[1]`. For multiclass (`classes.count >= 3`) models, exports all `classes.count`
+    /// weight vectors and offsets with `OneVsRest` class encoding and `Logit` post-transform.
+    ///
+    /// - Parameters:
+    ///   - featureNames: Ordered input feature column names. Defaults to `feature_0`, `feature_1`, ... when empty.
+    ///   - outputName: Output predicted class label name (stored as `Int64`). Defaults to `"label"`.
+    /// - Throws: ``SwiftMLError/modelNotFitted`` if the model is unfitted,
+    ///   ``SwiftMLError/dimensionMismatch(expected:got:)`` if `featureNames` count mismatches, or
+    ///   ``SwiftMLError/exportFailed(_:)`` if fewer than 2 classes are present.
+    /// - Returns: Binary `.mlmodel` artifact data.
+    public func exportCoreML(featureNames: [String] = [], outputName: String = "label") async throws -> Data {
+        let fittedClasses = classes
+        guard !fittedClasses.isEmpty else { throw SwiftMLError.modelNotFitted }
+        guard fittedClasses.count >= 2 else {
+            throw SwiftMLError.exportFailed("Core ML GLMClassifier requires at least 2 classes.")
+        }
+        let nf = getNumFeatures()
+        guard nf > 0 else { throw SwiftMLError.modelNotFitted }
+        let names = featureNames.isEmpty ? (0..<nf).map { (i: Int) -> String in "feature_\(i)" } : featureNames
+        guard names.count == nf else {
+            throw SwiftMLError.dimensionMismatch(expected: nf, got: names.count)
+        }
+
+        var weightsList: [[Double]] = []
+        var biasesList: [Double] = []
+        let classEncoding: Int
+        if fittedClasses.count == 2 {
+            let (w1, b1) = try await getWeightsAndBias(forClass: 1)
+            weightsList = [w1]
+            biasesList = [b1]
+            classEncoding = 0
+        } else {
+            weightsList.reserveCapacity(fittedClasses.count)
+            biasesList.reserveCapacity(fittedClasses.count)
+            for c in 0..<fittedClasses.count {
+                let (w, b) = try await getWeightsAndBias(forClass: c)
+                weightsList.append(w)
+                biasesList.append(b)
+            }
+            classEncoding = 1
+        }
+
+        let labels = fittedClasses.map { (c: Double) -> Int64 in Int64(c) }
+        let probsName = outputName == "classProbability" ? "classProbabilities" : "classProbability"
+        return buildGLMClassifierModel(
+            name: "SwiftSciOneVsRestClassifier",
+            input: .doubleScalars(names),
+            outputName: outputName,
+            probabilitiesName: probsName,
+            weightsList: weightsList,
+            biases: biasesList,
+            classEncoding: classEncoding,
+            postTransform: 0,
+            classLabels: .int64(labels)
         )
     }
 }

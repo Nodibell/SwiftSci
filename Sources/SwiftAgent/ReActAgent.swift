@@ -1,4 +1,5 @@
 import SwiftLLM
+import SwiftNLP
 import Foundation
 import SwiftDataFrame
 
@@ -404,10 +405,11 @@ public actor ReActAgent {
 
     private func run(
         query: String,
+        chatTemplate: ChatTemplate? = nil,
         completion: @escaping @Sendable (String) async throws -> Response
     ) async throws -> (finalAnswer: String, trace: [AgentStep]) {
         try Task.checkCancellation()
-        let stream = self.stream(query: query, completion: completion)
+        let stream = self.stream(query: query, chatTemplate: chatTemplate, completion: completion)
         var finalAnswer: String = ""
         var trajectory: [AgentStep] = []
 
@@ -442,13 +444,75 @@ public actor ReActAgent {
         query: String,
         llm: @escaping @Sendable (String) async throws -> String
     ) -> AsyncStream<AgentStreamEvent> {
-        stream(query: query, completion: { prompt in
+        stream(query: query, chatTemplate: nil, completion: { prompt in
             Response(text: try await llm(prompt), completionInfo: nil)
         })
     }
 
+    private func buildPrompt(
+        query: String,
+        pastContext: String,
+        trace: [AgentStep],
+        template: ChatTemplate?
+    ) -> String {
+        var toolsBlock = "Available Tools:\n"
+        for (_, tool) in tools.sorted(by: { $0.key < $1.key }) {
+            toolsBlock += "- Tool: \(tool.name)\n"
+            toolsBlock += "  Description: \(tool.description)\n"
+            let doc = tool.parameterSchema.formattedDocumentation()
+            if !doc.isEmpty && doc != "None (accepts arbitrary text or empty object)." {
+                toolsBlock += "  Parameters:\n\(doc)\n"
+            }
+        }
+        let formatBlock = "Format instructions:\nThought: [reasoning]\nAction: [tool name]\nAction Input: [input]\nOr:\nThought: [reasoning]\nFinal Answer: [result]\n\n"
+
+        var historyBlock = ""
+        if !trace.isEmpty {
+            historyBlock += "Previous History:\n"
+            for step in trace {
+                historyBlock += "Thought: \(step.thought)\n"
+                if let act = step.action, let inp = step.actionInput {
+                    historyBlock += "Action: \(act)\nAction Input: \(inp)\n"
+                }
+                if let obs = step.observation {
+                    historyBlock += "Observation: \(obs)\n"
+                }
+            }
+        }
+
+        if let template {
+            var systemContent = "You are an autonomous AI analyst answering the user's question.\n\n"
+            if !pastContext.isEmpty {
+                systemContent += pastContext
+            }
+            systemContent += toolsBlock + "\n" + formatBlock.trimmingCharacters(in: .newlines)
+
+            var userContent = query
+            if !historyBlock.isEmpty {
+                userContent += "\n\n" + historyBlock.trimmingCharacters(in: .newlines)
+            }
+            return template.render(
+                messages: [
+                    .system(systemContent),
+                    .user(userContent)
+                ],
+                addGenerationPrompt: true
+            )
+        }
+
+        var prompt = "You are an autonomous AI analyst answering the following question: '\(query)'.\n\n"
+        if !pastContext.isEmpty {
+            prompt += pastContext
+        }
+        prompt += toolsBlock
+        prompt += "\n" + formatBlock
+        prompt += historyBlock
+        return prompt
+    }
+
     private func stream(
         query: String,
+        chatTemplate: ChatTemplate? = nil,
         completion: @escaping @Sendable (String) async throws -> Response
     ) -> AsyncStream<AgentStreamEvent> {
         guard !Task.isCancelled else { return AsyncStream { $0.finish() } }
@@ -476,33 +540,12 @@ public actor ReActAgent {
 
                     for _ in 0..<maxSteps {
                         try Task.checkCancellation()
-                        var prompt = "You are an autonomous AI analyst answering the following question: '\(query)'.\n\n"
-                        if !pastContext.isEmpty {
-                            prompt += pastContext
-                        }
-                        prompt += "Available Tools:\n"
-                        for (_, tool) in tools.sorted(by: { $0.key < $1.key }) {
-                            prompt += "- Tool: \(tool.name)\n"
-                            prompt += "  Description: \(tool.description)\n"
-                            let doc = tool.parameterSchema.formattedDocumentation()
-                            if !doc.isEmpty && doc != "None (accepts arbitrary text or empty object)." {
-                                prompt += "  Parameters:\n\(doc)\n"
-                            }
-                        }
-                        prompt += "\nFormat instructions:\nThought: [reasoning]\nAction: [tool name]\nAction Input: [input]\nOr:\nThought: [reasoning]\nFinal Answer: [result]\n\n"
-
-                        if !trace.isEmpty {
-                            prompt += "Previous History:\n"
-                            for step in trace {
-                                prompt += "Thought: \(step.thought)\n"
-                                if let act = step.action, let inp = step.actionInput {
-                                    prompt += "Action: \(act)\nAction Input: \(inp)\n"
-                                }
-                                if let obs = step.observation {
-                                    prompt += "Observation: \(obs)\n"
-                                }
-                            }
-                        }
+                        let prompt = buildPrompt(
+                            query: query,
+                            pastContext: pastContext,
+                            trace: trace,
+                            template: chatTemplate
+                        )
 
                         let response = try await completion(prompt)
                         try Task.checkCancellation()
@@ -690,16 +733,71 @@ public actor ReActAgent {
     ///   - query: Analytical question or directive to execute.
     ///   - model: A local LLMModel instance executing natively on Apple Silicon.
     ///   - options: Inference options (temperature, topP, maxTokens).
+    ///   - chatTemplate: Optional chat template override. When `nil`, `TransformerDecoder` models
+    ///     use their architecture's default chat template, while other `LLMModel` implementations
+    ///     preserve plain-string prompting.
     /// - Returns: Tuple with final answer and complete reasoning step trace.
     /// - Throws: `CancellationError` when the caller is cancelled, or `AgentError` when reasoning fails.
     public func run(
         query: String,
         model: any LLMModel,
-        options: LLMOptions = LLMOptions(temperature: 0.2, maxTokens: 1024)
+        options: LLMOptions = LLMOptions(temperature: 0.2, maxTokens: 1024),
+        chatTemplate: ChatTemplate? = nil
     ) async throws -> (finalAnswer: String, trace: [AgentStep]) {
-        try await run(query: query, completion: { prompt in
-            try await Self.generateResponse(prompt: prompt, model: model, options: options)
+        let resolved = Self.resolveTemplateAndOptions(model: model, options: options, chatTemplate: chatTemplate)
+        return try await run(query: query, chatTemplate: resolved.template, completion: { prompt in
+            try await Self.generateResponse(prompt: prompt, model: model, options: resolved.options)
         })
+    }
+
+    /// Streams real-time reasoning thoughts, tool execution states, and answer deltas using a native `LLMModel`.
+    ///
+    /// Cancelling an awaiting consumer requests producer cancellation. A pre-cancelled
+    /// caller receives a finished stream. Models conforming to `CompletionReportingLLMModel`
+    /// must finish normally with one final `.stop` record before their text is parsed or tools execute.
+    ///
+    /// - Parameters:
+    ///   - query: Analytical question or directive to execute.
+    ///   - model: A local LLMModel instance executing natively on Apple Silicon.
+    ///   - options: Inference options (temperature, topP, maxTokens).
+    ///   - chatTemplate: Optional chat template override. When `nil`, `TransformerDecoder` models
+    ///     use their architecture's default chat template, while other `LLMModel` implementations
+    ///     preserve plain-string prompting.
+    /// - Returns: An asynchronous stream of `AgentStreamEvent` values.
+    public func stream(
+        query: String,
+        model: any LLMModel,
+        options: LLMOptions = LLMOptions(temperature: 0.2, maxTokens: 1024),
+        chatTemplate: ChatTemplate? = nil
+    ) -> AsyncStream<AgentStreamEvent> {
+        let resolved = Self.resolveTemplateAndOptions(model: model, options: options, chatTemplate: chatTemplate)
+        return stream(query: query, chatTemplate: resolved.template, completion: { prompt in
+            try await Self.generateResponse(prompt: prompt, model: model, options: resolved.options)
+        })
+    }
+
+    private nonisolated static func resolveTemplateAndOptions(
+        model: any LLMModel,
+        options: LLMOptions,
+        chatTemplate: ChatTemplate?
+    ) -> (template: ChatTemplate?, options: LLMOptions) {
+        let effectiveTemplate: ChatTemplate?
+        #if os(macOS)
+        effectiveTemplate = chatTemplate ?? (model as? TransformerDecoder)?.config.architecture.defaultChatTemplate()
+        #else
+        effectiveTemplate = chatTemplate
+        #endif
+
+        var effectiveOptions = options
+        if let template = effectiveTemplate {
+            for stop in template.defaultStopSequences where !effectiveOptions.stopSequences.contains(stop) {
+                effectiveOptions.stopSequences.append(stop)
+            }
+        }
+        for stop in ["\nObservation:", "\nObservation :"] where !effectiveOptions.stopSequences.contains(stop) {
+            effectiveOptions.stopSequences.append(stop)
+        }
+        return (effectiveTemplate, effectiveOptions)
     }
 
     private nonisolated static func generateResponse(

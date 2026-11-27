@@ -48,8 +48,10 @@ public struct FlatTreeNode: Sendable, Codable {
     public let isLeaf: Bool
     /// Impurity reduction achieved by this split.
     public let impurityGain: Double
-    /// Empirical class probability distribution at this leaf node (classifier only).
+    /// Empirical class probability distribution at this node ordered by `classes` (classifier only).
     public let classDistribution: [Double]?
+    /// Number of training samples routed through this node during fitting (`nil` for legacy `<= 3.13.3` models).
+    public let cover: Double?
 
     /// Creates a new flat tree node.
     /// - Parameters:
@@ -60,7 +62,8 @@ public struct FlatTreeNode: Sendable, Codable {
     ///   - value: Predicted value at a leaf node.
     ///   - isLeaf: Whether this node is a terminal leaf.
     ///   - impurityGain: Impurity reduction achieved by this split.
-    ///   - classDistribution: Empirical class probability distribution at this leaf node.
+    ///   - classDistribution: Empirical class probability distribution at this node.
+    ///   - cover: Number of training samples routed through this node during fitting.
     public init(
         featureIndex: Int,
         threshold: Double,
@@ -69,7 +72,8 @@ public struct FlatTreeNode: Sendable, Codable {
         value: Double,
         isLeaf: Bool,
         impurityGain: Double = 0.0,
-        classDistribution: [Double]? = nil
+        classDistribution: [Double]? = nil,
+        cover: Double? = nil
     ) {
         self.featureIndex = featureIndex
         self.threshold = threshold
@@ -79,6 +83,7 @@ public struct FlatTreeNode: Sendable, Codable {
         self.isLeaf = isLeaf
         self.impurityGain = impurityGain
         self.classDistribution = classDistribution
+        self.cover = cover
     }
 }
 
@@ -480,7 +485,8 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
                     value: nodes[idx].value,
                     isLeaf: true,
                     impurityGain: 0.0,
-                    classDistribution: nodes[idx].classDistribution
+                    classDistribution: nodes[idx].classDistribution,
+                    cover: nodes[idx].cover
                 )
                 return true
             }
@@ -490,18 +496,18 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     }
 
     private func buildTree(X: [[Double]], y: [Double], indices: [Int], presortedIndices: [[Int]], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
-        let labels = indices.map { y[$0] }
+        let labels = indices.map { (idx: Int) -> Double in y[idx] }
         let majority = labels.mostFrequent()
+        var classCounts = [Double](repeating: 0.0, count: classes.count)
+        for idx in indices {
+            if let cIdx = classToIndex[y[idx]] {
+                classCounts[cIdx] += 1.0
+            }
+        }
+        let total = Double(indices.count)
+        let distribution = total > 0.0 ? classCounts.map { (count: Double) -> Double in count / total } : classCounts
 
         func makeLeaf() -> FlatTreeNode {
-            var classCounts = [Double](repeating: 0.0, count: classes.count)
-            for idx in indices {
-                if let cIdx = classToIndex[y[idx]] {
-                    classCounts[cIdx] += 1.0
-                }
-            }
-            let total = Double(indices.count)
-            let distribution = total > 0 ? classCounts.map { $0 / total } : classCounts
             return FlatTreeNode(
                 featureIndex: -1,
                 threshold: 0,
@@ -510,7 +516,8 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
                 value: majority,
                 isLeaf: true,
                 impurityGain: 0.0,
-                classDistribution: distribution
+                classDistribution: distribution,
+                cover: total
             )
         }
 
@@ -542,7 +549,9 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
             rightChild: rightIndex,
             value: majority,
             isLeaf: false,
-            impurityGain: nodeGain
+            impurityGain: nodeGain,
+            classDistribution: distribution,
+            cover: total
         )
 
         return currentIndex
@@ -684,7 +693,8 @@ public actor DecisionTreeRegressor: RegressorEstimator {
                     rightChild: -1,
                     value: nodes[idx].value,
                     isLeaf: true,
-                    impurityGain: 0.0
+                    impurityGain: 0.0,
+                    cover: nodes[idx].cover
                 )
                 return true
             }
@@ -725,17 +735,18 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     }
 
     private func buildTree(X: [[Double]], y: [Double], indices: [Int], presortedIndices: [[Int]], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
-        let values = indices.map { y[$0] }
+        let values = indices.map { (idx: Int) -> Double in y[idx] }
         let mean = values.mean()
+        let cover = Double(indices.count)
 
         if depth >= maxDepth || indices.count < minSamplesSplit {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0, cover: cover)
             nodes.append(leaf)
             return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: nil) else {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, impurityGain: 0.0, cover: cover)
             nodes.append(leaf)
             return nodes.count - 1
         }
@@ -755,7 +766,8 @@ public actor DecisionTreeRegressor: RegressorEstimator {
             rightChild: rightIndex,
             value: mean,
             isLeaf: false,
-            impurityGain: nodeGain
+            impurityGain: nodeGain,
+            cover: cover
         )
 
         return currentIndex

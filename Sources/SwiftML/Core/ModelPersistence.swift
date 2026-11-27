@@ -105,6 +105,56 @@ public struct RandomForestModelState: Codable, Sendable {
     }
 }
 
+/// Represents gradient boosted decision trees regressor model state.
+public struct GradientBoostedTreesModelState: Codable, Sendable {
+    /// The number of boosting estimators configured.
+    public let nEstimators: Int
+    /// The shrinkage learning rate applied to each boosting tree.
+    public let learningRate: Double
+    /// The maximum depth of individual regression trees.
+    public let maxDepth: Int
+    /// The minimum number of samples required to split an internal node.
+    public let minSamplesSplit: Int
+    /// The loss function utilized during boosting.
+    public let loss: GBDTLoss
+    /// The fitted decision trees in the boosting ensemble.
+    public let trees: [[FlatTreeNode]]
+    /// The initial base prediction offset before boosting updates.
+    public let initialPrediction: Double
+    /// The number of input features observed during training.
+    public let numFeatures: Int
+
+    /// Creates a serialized gradient boosted decision trees model state.
+    /// - Parameters:
+    ///   - nEstimators: The number of boosting estimators configured.
+    ///   - learningRate: The shrinkage learning rate applied to each boosting tree.
+    ///   - maxDepth: The maximum depth of individual regression trees.
+    ///   - minSamplesSplit: The minimum number of samples required to split an internal node.
+    ///   - loss: The loss function utilized during boosting.
+    ///   - trees: The fitted decision trees in the boosting ensemble.
+    ///   - initialPrediction: The initial base prediction offset before boosting updates.
+    ///   - numFeatures: The number of input features observed during training.
+    public init(
+        nEstimators: Int,
+        learningRate: Double,
+        maxDepth: Int,
+        minSamplesSplit: Int,
+        loss: GBDTLoss,
+        trees: [[FlatTreeNode]],
+        initialPrediction: Double,
+        numFeatures: Int
+    ) {
+        self.nEstimators = nEstimators
+        self.learningRate = learningRate
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.loss = loss
+        self.trees = trees
+        self.initialPrediction = initialPrediction
+        self.numFeatures = numFeatures
+    }
+}
+
 // MARK: - Model Persistence Extensions
 
 extension LinearRegression {
@@ -268,6 +318,37 @@ extension RandomForestRegressor {
             maxSamples: state.maxSamples,
             randomState: state.randomState,
             trees: state.trees,
+            numFeatures: state.numFeatures
+        )
+    }
+}
+
+extension GradientBoostedTreesRegressor {
+    /// Saves trained Gradient Boosted Decision Trees parameters, base offset, and tree ensemble to a JSON file URL.
+    /// - Parameter url: Target file `URL`.
+    /// - Throws: `SwiftMLError.notFitted` if the model has not been fitted, or I/O encoding errors.
+    public func save(to url: URL) async throws {
+        let state = getModelState()
+        guard !state.trees.isEmpty else { throw SwiftMLError.notFitted }
+        let data = try JSONEncoder().encode(state)
+        try data.write(to: url)
+    }
+
+    /// Loads a trained Gradient Boosted Decision Trees Regressor from a JSON file URL.
+    /// - Parameter url: Source file `URL`.
+    /// - Throws: I/O or decoding errors if the file is invalid, or `SwiftMLError` if parameters are invalid.
+    /// - Returns: A restored ``GradientBoostedTreesRegressor`` model instance.
+    public static func load(from url: URL) throws -> GradientBoostedTreesRegressor {
+        let data = try Data(contentsOf: url)
+        let state = try JSONDecoder().decode(GradientBoostedTreesModelState.self, from: data)
+        return try GradientBoostedTreesRegressor(
+            nEstimators: state.nEstimators,
+            learningRate: state.learningRate,
+            maxDepth: state.maxDepth,
+            minSamplesSplit: state.minSamplesSplit,
+            loss: state.loss,
+            trees: state.trees,
+            initialPrediction: state.initialPrediction,
             numFeatures: state.numFeatures
         )
     }

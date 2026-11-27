@@ -4,6 +4,28 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.14.0] - 2026-11-27
+
+### Added & Fixed
+
+- **`TreeSHAP` for `GradientBoostedTreesRegressor` & node cover weighting (`G-035`)**: Added `explain`, `explainDetailed`, and `explainBatch` for `GradientBoostedTreesRegressor` in `SwiftExplain`, introduced `TreeNodeWeighting` (`.uniformLeaf` and `.empiricalCover`), populated `FlatTreeNode.cover` across `DecisionTreeRegressor`, `DecisionTreeClassifier`, `RandomForestRegressor`, `RandomForestClassifier`, and `GradientBoostedTreesRegressor`, and preserved `cover` and loss metadata in `GradientBoostedTreesModelState` (`ModelPersistence`). Verified against `2^K` coalition enumeration across `.squaredError`, `.absoluteError`, and `.huber`, plus Python `shap.TreeExplainer` (`shap 0.54.1`) with `maxShapDiff = 1.332e-15`.
+- **Per-class probability `TreeSHAP` & `ForestProbabilityMode` (`G-036`)**: Added `explainClassDetailed`, `explainAllClassesDetailed`, and `explainBatchClass` for `DecisionTreeClassifier` and `RandomForestClassifier`, populated `FlatTreeNode.classDistribution`, and added `RandomForestClassifier.predictProbability(features:mode:)` supporting `.softLeafDistribution` and `.hardVote` (`ForestProbabilityMode`). Verified against `2^K` coalition enumeration across `C = 2, 3, 5` and Python `shap.TreeExplainer` (`DecisionTreeClassifier` `maxShapDiff = 1.665e-16`; `RandomForestClassifier` `maxShapDiff = 1.110e-16`).
+- **`ReActAgent` chat templates, `ChatTemplate` stop sequences & `GenerationConfiguration` (`G-038`)**: Added chat-template formatting to `ReActAgent.stream(query:chatTemplate:...)` and `run`, exposed `ChatTemplate.defaultStopSequences` across all 6 template families (`.llama3`, `.llama32Instruct`, `.chatML`, `.mistral`, `.gemma`, `.gemma4`), added `stopSequences` and `stopTokenIDs` to `LLMOptions`, introduced `GenerationConfiguration` (`generation_config.json` parsing and `makeLLMOptions`), and added chat-templated `TransformerDecoder.generate` / `generateDetails` with stop-sequence and stop-token halting.
+- **`SwiftVision` dataset metadata, cropping & split `ImageFolder` loaders (`G-039`)**: Added `YOLODatasetMetadata` (`data.yaml` parsing), bounding-box and background cropping (`ImageDataset.crop`, `cropAll`, `sampleBackgroundCrop`), and `ImageDataset.loadFolder` / `loadSplitFolder` (`ImageFolderDataset`, `SplitImageDataset`).
+- **`TrainedVisionClassifier`, `OneVsRestClassifier` & Core ML Vision pipeline export (`G-040`)**: Conformed `OneVsRestClassifier` to `ClassifierEstimator` (`getBias`, `getWeights`, `getWeightsAndBias`, `decisionFunction`, and vectorized `predictProbability`), added `CoreMLExporter.exportBinaryMLPClassifier`, `exportBinaryVisionFeaturePrint`, and `exportVisionClassifierPipeline` (`VisionScenePrintRevision`), and added the `TrainedVisionClassifier` actor (`.oneVsRest`, `.mlp`, `.randomForest`) with compiled Core ML `VisionFeaturePrint.Scene` numerical parity.
+- **CLI & release documentation**: Updated `SwiftSciCLI` to `3.14.0`, rebuilt the unified 15-module DocC site, and published `3.14.0` accuracy, performance, and deep audit reports alongside the `3.14.0` Engineering Handbook and Practical Cookbook.
+
+### Benchmarks and documentation
+
+- **`OneVsRestClassifier.predictProbability` & `TreeSHAP` benchmarks (`v3140_bench`, Release)**: `OneVsRestClassifier.predictProbability` (`500 × 16`, `4` classes) ran in `0.069 ms` median vs scikit-learn `0.203 ms` (**SwiftSci 2.94×** faster), while `OneVsRestClassifier.fit` (`1000 × 16`, `4` classes) ran in `192.265 ms` vs `3.820 ms`. GBDT batch `TreeSHAP` (`50` trees, `depth=4`, `50` instances) completed in `3.709 ms` vs `shap.TreeExplainer` `1.045 ms`, and `RandomForestClassifier` multiclass per-class `TreeSHAP` (`30` trees, `depth=5`, `3` classes, `50` instances) completed in `21.727 ms` vs `1.316 ms`.
+- **AC-powered `production-default` comparison & scientific suite**: Passed `6/6` profiles (`standard`, `extended`, `public-data`, `nist`, `migration`, `tabular-migration`) across `swiftsci`, `pandas`, `polars`, and `duckdb` with `10,300` validated measurements (`0` failures), plus `39/39` scientific validation workloads, `3/3` rolling-origin backtests, `2/2` expected-error checks, `202/202` SwiftSci CPU acceptance cases, `60/60` pretrained inspection controls, and `100/100` workflow mutation controls.
+- **Verification & docs**: `xcodebuild test` + `swift test -c release` recorded `1,919` total tests (`1,912` passed / `2,814` dynamic runs, `0` failures, `7` env-gated skips), `15/15` DocC archives built with `--warnings-as-errors`, `verify_doc_coverage.py` reported `100.00%` (`2,641/2,641` matched declarations documented, `0` placeholders), `TreeSHAPOracle` (`shap 0.54.1`) passed `5/5` models (`<= 1.776e-15`), and `CookbookVerification` passed `71/71` recipes. Added release-specific [performance](PERFORMANCE/3.14.0.md) and [accuracy](ACCURACY/3.14.0.md) reports.
+
+### Known limitations
+
+- Four pandas Wampler 4/5 comparator cases failed their original tolerances across `numerical-binary64` and `numerical-conformance`. SwiftSci passed all `202/202` CPU acceptance executions (`0` regression blockers).
+- Seven environment-gated Swift tests (external HuggingFace checkpoint / live network / optional fixture checks) were skipped.
+
 ## [3.13.3] - 2026-11-26
 
 ### Fixed

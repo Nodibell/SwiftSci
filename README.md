@@ -1,4 +1,4 @@
-# SwiftSci 3.13.3
+# SwiftSci 3.14.0
 
 **SwiftSci** is a native, high-performance, modular scientific computing and machine learning library for Swift. Built from the ground up for Apple Silicon (M-series) Unified Memory Architecture (UMA), SwiftSci is fully compliant with Swift 6 strict concurrency requirements.
 
@@ -29,7 +29,7 @@ Add SwiftSci to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.13.3")
+    .package(url: "https://github.com/Nodibell/SwiftSci.git", from: "3.14.0")
 ]
 ```
 
@@ -118,20 +118,20 @@ in one versioned JSON artifact. The 14 core modules remain independently usable.
 
 ---
 
-## What’s new in v3.13.3
+## What’s new in v3.14.0
 
-- **MLP BLAS mini-batch & stability (`SwiftML`)**: Accelerate `cblas_dgemm` / `vDSP` mini-batch training delivers **2.57×** faster 768-D `MLPClassifier` fit (`40.312 ms` vs scikit-learn `103.639 ms`, `train_accuracy = 1.0000`), numerically stable extreme-logit softmax/BCE, finite-difference gradient verification (`< 1e-6`), and `256 KiB` scratch-budgeted batched prediction up to width `8,192`.
-- **Multiclass HistGBDT, LinearSVC & calibration (`SwiftML`)**: `HistGradientBoostingClassifier` now supports multiclass softmax (`K > 2`) with arbitrary integer labels; `LinearSVC`, `PlattScaling`, and `CalibratedClassifier` enforce rectangularity, epoch bounds, and binary label preservation.
-- **Vision, Gemma 4 & ReActAgent (`SwiftVision`, `SwiftLLM`, `SwiftNLP`, `SwiftAgent`)**: Non-square YOLOv8 un-letterboxing, `YOLOAnnotationParser` clamping, `VisionImageClassifier` split/collision profiling, Gemma 4 `<bos>` deduplication, `generation_config.json` `eos_token_id` unioning, and `<|channel>thought` / `<think>` + action-precedence parsing in `ReActAgent`.
-- **AC-powered 4-engine benchmarking**: `6/6` `production-default` comparison campaigns (`10,300` validated samples across `swiftsci`, `pandas`, `polars`, and `duckdb`) plus `39/39` scientific validation workloads.
+- **`TreeSHAP` for GBDT & Per-Class Probabilities (`SwiftExplain`, `SwiftML`, `G-035`, `G-036`)**: Exact and sampled `TreeSHAP` for `GradientBoostedTreesRegressor`, per-class probability `TreeSHAP` (`explainClassDetailed`, `explainAllClassesDetailed`, `explainBatchClass`) for `DecisionTreeClassifier` and `RandomForestClassifier`, `TreeNodeWeighting` (`.uniformLeaf` / `.empiricalCover`), `ForestProbabilityMode` (`.softLeafDistribution` / `.hardVote`), and `FlatTreeNode.cover` / `classDistribution` persistence—verified to `<= 1.78e-15` against Python `shap.TreeExplainer` (`shap 0.54.1`).
+- **Chat-Templated Agents, Stop Sequences & `GenerationConfiguration` (`SwiftAgent`, `SwiftLLM`, `SwiftNLP`, `G-038`)**: `ReActAgent.stream(query:chatTemplate:...)`, `ChatTemplate.defaultStopSequences` across all 6 families, `LLMOptions.stopSequences` / `stopTokenIDs`, and `GenerationConfiguration` (`generation_config.json`) support in `TransformerDecoder`.
+- **`TrainedVisionClassifier`, `OneVsRestClassifier` & Core ML Vision Pipelines (`SwiftVision`, `SwiftML`, `G-039`, `G-040`)**: `YOLODatasetMetadata`, image/background crop helpers, `ImageDataset.loadFolder` / `loadSplitFolder`, `OneVsRestClassifier` `ClassifierEstimator` conformance (**2.94×** faster `predictProbability`: `0.069 ms` vs scikit-learn `0.203 ms`), `CoreMLExporter.exportVisionClassifierPipeline`, and `TrainedVisionClassifier` with compiled Core ML `VisionFeaturePrint.Scene` parity.
+- **AC-powered 4-engine benchmarking**: `6/6` `production-default` comparison campaigns (`10,300` validated samples across `swiftsci`, `pandas`, `polars`, and `duckdb`), `39/39` scientific validation workloads, `1,912/1,919` Swift tests (`0` failures, `7` env-gated skips), `2,641/2,641` DocC declarations, and `71/71` Cookbook recipes.
 
-See the [performance report](PERFORMANCE/3.13.3.md) and [accuracy report](ACCURACY/3.13.3.md). The [changelog](CHANGELOG.md) covers earlier releases.
+See the [performance report](PERFORMANCE/3.14.0.md) and [accuracy report](ACCURACY/3.14.0.md). The [changelog](CHANGELOG.md) covers earlier releases.
 
 ## 📚 Documentation & Resources
 
 - **API Reference**: [Interactive DocC Documentation](https://nodibell.github.io/SwiftSci/)
-- **SwiftSci 3.13.3 Handbook & Cookbook:** [Handbook PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.3/SwiftSci_Handbook_3.13.3.pdf) · [Handbook EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.3/SwiftSci_Handbook_3.13.3.epub) · [Cookbook PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.3/SwiftSci_Cookbook_3.13.3.pdf) · [Cookbook EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.13.3/SwiftSci_Cookbook_3.13.3.epub) · [Companion Guide](Documentation/Handbook-3.13.3.md)
-- **Benchmarks:** [Performance](PERFORMANCE/3.13.3.md) · [Accuracy](ACCURACY/3.13.3.md) · [Performance archive](PERFORMANCE.md) · [Accuracy archive](ACCURACY.md).
+- **SwiftSci 3.14.0 Handbook & Cookbook:** [Handbook PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.14.0/SwiftSci_Handbook_3.14.0.pdf) · [Handbook EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.14.0/SwiftSci_Handbook_3.14.0.epub) · [Cookbook PDF](https://github.com/Nodibell/SwiftSci/releases/download/v3.14.0/SwiftSci_Cookbook_3.14.0.pdf) · [Cookbook EPUB](https://github.com/Nodibell/SwiftSci/releases/download/v3.14.0/SwiftSci_Cookbook_3.14.0.epub) · [Companion Guide](Documentation/Handbook-3.14.0.md)
+- **Benchmarks:** [Performance](PERFORMANCE/3.14.0.md) · [Accuracy](ACCURACY/3.14.0.md) · [Performance archive](PERFORMANCE.md) · [Accuracy archive](ACCURACY.md).
 - **Release History**: [CHANGELOG.md](CHANGELOG.md)
 - **Roadmap**: [ROADMAP.md](ROADMAP/ROADMAP.md)
 

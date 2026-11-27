@@ -211,18 +211,15 @@ jobs:
 
 
   # ─────────────────────────────────────────────────────────────
-  # 6. Deploy Documentation to GitHub Pages (main branch only)
+  # 6. Prepare & Deploy Documentation to GitHub Pages (main branch only)
   # ─────────────────────────────────────────────────────────────
-  deploy-pages:
-    name: Deploy to GitHub Pages
+  upload-pages:
+    name: Prepare GitHub Pages Artifact
     if: github.repository == 'Nodibell/SwiftSci' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [build, test, docc-check]
     permissions:
+      contents: read
       pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -235,6 +232,21 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: 'docs'
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    if: github.repository == 'Nodibell/SwiftSci' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: upload-pages
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for artifact metadata indexing
+        run: sleep 5
 
       - name: Deploy to GitHub Pages
         id: deployment

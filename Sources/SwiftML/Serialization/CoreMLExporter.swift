@@ -1,5 +1,15 @@
 import Foundation
 
+// MARK: - Vision FeaturePrint Revision
+
+/// Vision FeaturePrint Scene model revision used by Core ML image feature extraction.
+public enum VisionScenePrintRevision: Int, Sendable, Equatable {
+    /// ScenePrint v1 (`SCENE_VERSION_1`): 299×299 RGB input producing a 2048-element `Float32` embedding (`specificationVersion = 4`).
+    case v1 = 1
+    /// ScenePrint v2 (`SCENE_VERSION_2`): 360×360 RGB input producing a 768-element `Float32` embedding (`specificationVersion = 7`).
+    case v2 = 2
+}
+
 // MARK: - CoreMLExporter
 
 /// Exports fitted SwiftML models to Apple Core ML artifact formats.
@@ -517,15 +527,8 @@ public enum CoreMLExporter {
     ///   - activation: Non-linear activation function identifier (e.g., relu, tanh, sigmoid).
     ///   - classLabels: Accepted for compatibility; label metadata is not encoded in the probability output.
     /// - Returns: Raw serialized binary data representation.
-    public static func exportBinaryMLPClassifier(
-        name: String = "SwiftSciMLPClassifier",
-        inputNames: [String],
-        outputName: String = "target",
-        layers: [LayerWeights],
-        activation: String = "relu",
-        classLabels: [String]? = nil
-    ) -> Data {
-        let weights = layers.map { layer -> [[Double]] in
+    private static func mlpLayerWeightsAndBiases(_ layers: [LayerWeights]) -> (weights: [[[Double]]], biases: [[Double]]) {
+        let weights = layers.map { (layer: LayerWeights) -> [[Double]] in
             var w2D = [[Double]](repeating: [Double](repeating: 0.0, count: layer.inDim), count: layer.outDim)
             for i in 0..<layer.inDim {
                 for j in 0..<layer.outDim {
@@ -537,7 +540,19 @@ public enum CoreMLExporter {
             }
             return w2D
         }
-        let biases = layers.map { $0.b }
+        let biases = layers.map { (layer: LayerWeights) -> [Double] in layer.b }
+        return (weights, biases)
+    }
+
+    public static func exportBinaryMLPClassifier(
+        name: String = "SwiftSciMLPClassifier",
+        inputNames: [String],
+        outputName: String = "target",
+        layers: [LayerWeights],
+        activation: String = "relu",
+        classLabels: [String]? = nil
+    ) -> Data {
+        let (weights, biases) = mlpLayerWeightsAndBiases(layers)
 
         return buildNeuralNetworkModel(
             name: name,
@@ -565,19 +580,7 @@ public enum CoreMLExporter {
         layers: [LayerWeights],
         activation: String = "relu"
     ) -> Data {
-        let weights = layers.map { layer -> [[Double]] in
-            var w2D = [[Double]](repeating: [Double](repeating: 0.0, count: layer.inDim), count: layer.outDim)
-            for i in 0..<layer.inDim {
-                for j in 0..<layer.outDim {
-                    let flatIdx = i * layer.outDim + j
-                    if flatIdx < layer.W.count {
-                        w2D[j][i] = layer.W[flatIdx]
-                    }
-                }
-            }
-            return w2D
-        }
-        let biases = layers.map { $0.b }
+        let (weights, biases) = mlpLayerWeightsAndBiases(layers)
 
         return buildNeuralNetworkModel(
             name: name,
@@ -767,6 +770,234 @@ public enum CoreMLExporter {
         do { try data.write(to: url) } catch {
             throw SwiftMLError.exportFailed("Failed to write pipeline regressor .mlmodel to \(url.path): \(error.localizedDescription)")
         }
+    }
+
+    // MARK: - Vision FeaturePrint & Composite Vision Classifier Pipeline
+
+    /// Encodes a standalone Core ML `VisionFeaturePrint.Scene` feature-extractor `.mlmodel`.
+    ///
+    /// - Parameters:
+    ///   - inputImageName: Input image feature name (`ImageFeatureType`, RGB). Defaults to `"image"`.
+    ///   - outputFeatureName: Output embedding `MLMultiArray` (`Float32`) feature name. Defaults to `"scenePrint"`.
+    ///   - revision: Vision ScenePrint revision (`.v1` = `299×299 → [2048]`, `.v2` = `360×360 → [768]`). Defaults to `.v2`.
+    /// - Returns: Binary `.mlmodel` `Data` representing the `VisionFeaturePrint.Scene` model.
+    public static func exportBinaryVisionFeaturePrint(
+        inputImageName: String = "image",
+        outputFeatureName: String = "scenePrint",
+        revision: VisionScenePrintRevision = .v2
+    ) -> Data {
+        buildVisionFeaturePrintSceneModel(
+            inputImageName: inputImageName,
+            outputFeatureName: outputFeatureName,
+            revision: revision
+        )
+    }
+
+    /// Exports a composite Core ML `PipelineClassifier` combining `VisionFeaturePrint.Scene` with a fitted SwiftML classifier.
+    ///
+    /// The generated `.mlmodel` accepts an RGB image (`299×299` for `.v1` or `360×360` for `.v2`), extracts the
+    /// ScenePrint embedding, and classifies it using the supplied fitted classifier (`OneVsRestClassifier`,
+    /// `LogisticRegression`, `DecisionTreeClassifier`, `RandomForestClassifier`, or `MLPClassifier`).
+    ///
+    /// - Parameters:
+    ///   - classifier: Fitted SwiftML classifier conforming to ``CoreMLExportable``.
+    ///   - inputImageName: Input image feature name. Defaults to `"image"`.
+    ///   - outputLabelName: Output predicted class label feature name. Defaults to `"label"`.
+    ///   - classLabels: Optional ordered string class labels matching the classifier's sorted classes.
+    ///     When `nil`, integer class labels from the classifier are used.
+    ///   - revision: Vision ScenePrint revision (`.v1` expects `2048` features; `.v2` expects `768`). Defaults to `.v2`.
+    /// - Throws: ``SwiftMLError/modelNotFitted`` if the classifier is unfitted,
+    ///   ``SwiftMLError/dimensionMismatch(expected:got:)`` if the classifier's feature count does not match `revision`,
+    ///   ``SwiftMLError/invalidParameter(_:)`` if `classLabels` length mismatches, or
+    ///   ``SwiftMLError/unsupportedOperation(_:)`` for unsupported classifier types.
+    /// - Returns: Binary `.mlmodel` `Data` encoding a native Core ML `PipelineClassifier`.
+    public static func exportVisionClassifierPipeline(
+        classifier: any CoreMLExportable,
+        inputImageName: String = "image",
+        outputLabelName: String = "label",
+        classLabels: [String]? = nil,
+        revision: VisionScenePrintRevision = .v2
+    ) async throws -> Data {
+        let expectedDim = revision == .v1 ? 2048 : 768
+        let sceneFeatureName = inputImageName == "scenePrint" ? "__swiftsci_scenePrint" : "scenePrint"
+        let probabilitiesName = outputLabelName == "classProbability" ? "classProbabilities" : "classProbability"
+
+        let visionStageData = buildVisionFeaturePrintSceneModel(
+            inputImageName: inputImageName,
+            outputFeatureName: sceneFeatureName,
+            revision: revision
+        )
+
+        let stage2Input = CoreMLClassifierInputKind.float32Vector(name: sceneFeatureName, dimension: expectedDim)
+        let classifierStageData: Data
+        let usesStringLabels: Bool
+
+        switch classifier {
+        case let dt as DecisionTreeClassifier:
+            let nodes = await dt.getTreeNodes()
+            guard !nodes.isEmpty else { throw SwiftMLError.modelNotFitted }
+            let state = await dt.getModelState()
+            guard state.numFeatures == expectedDim else {
+                throw SwiftMLError.dimensionMismatch(expected: expectedDim, got: state.numFeatures)
+            }
+            let fittedClasses = await dt.classes
+            let resolvedNumeric = !fittedClasses.isEmpty ? fittedClasses : [0.0, 1.0]
+            let resolvedLabels = try resolveVisionClassLabels(numericClasses: resolvedNumeric, stringLabels: classLabels)
+            usesStringLabels = resolvedLabels.usesStringLabels
+            classifierStageData = buildTreeEnsembleClassifierModel(
+                name: "VisionDecisionTreeStage",
+                input: stage2Input,
+                outputName: outputLabelName,
+                probabilitiesName: probabilitiesName,
+                treesNodes: [nodes],
+                numericClasses: resolvedNumeric,
+                classLabels: resolvedLabels
+            )
+
+        case let rf as RandomForestClassifier:
+            let trees = await rf.getForestTrees()
+            guard !trees.isEmpty else { throw SwiftMLError.modelNotFitted }
+            let nf = await rf.getNumFeatures()
+            guard nf == expectedDim else {
+                throw SwiftMLError.dimensionMismatch(expected: expectedDim, got: nf)
+            }
+            let fittedClasses = await rf.classes
+            let nc = await rf.numClasses
+            let resolvedNumeric = !fittedClasses.isEmpty
+                ? fittedClasses
+                : (0..<max(nc, 2)).map { (idx: Int) -> Double in Double(idx) }
+            let resolvedLabels = try resolveVisionClassLabels(numericClasses: resolvedNumeric, stringLabels: classLabels)
+            usesStringLabels = resolvedLabels.usesStringLabels
+            classifierStageData = buildTreeEnsembleClassifierModel(
+                name: "VisionRandomForestStage",
+                input: stage2Input,
+                outputName: outputLabelName,
+                probabilitiesName: probabilitiesName,
+                treesNodes: trees,
+                numericClasses: resolvedNumeric,
+                classLabels: resolvedLabels
+            )
+
+        #if os(macOS)
+        case let ovr as OneVsRestClassifier:
+            let fittedClasses = await ovr.classes
+            guard !fittedClasses.isEmpty else { throw SwiftMLError.modelNotFitted }
+            let nf = await ovr.getNumFeatures()
+            guard nf > 0 else { throw SwiftMLError.modelNotFitted }
+            guard nf == expectedDim else {
+                throw SwiftMLError.dimensionMismatch(expected: expectedDim, got: nf)
+            }
+            guard fittedClasses.count >= 2 else {
+                throw SwiftMLError.invalidParameter("Vision classifier pipeline requires at least 2 classes.")
+            }
+            let resolvedLabels = try resolveVisionClassLabels(numericClasses: fittedClasses, stringLabels: classLabels)
+            usesStringLabels = resolvedLabels.usesStringLabels
+            var weightsList: [[Double]] = []
+            var biasesList: [Double] = []
+            let classEncoding: Int
+            if fittedClasses.count == 2 {
+                let (w1, b1) = try await ovr.getWeightsAndBias(forClass: 1)
+                weightsList = [w1]
+                biasesList = [b1]
+                classEncoding = 0
+            } else {
+                weightsList.reserveCapacity(fittedClasses.count)
+                biasesList.reserveCapacity(fittedClasses.count)
+                for c in 0..<fittedClasses.count {
+                    let (w, b) = try await ovr.getWeightsAndBias(forClass: c)
+                    weightsList.append(w)
+                    biasesList.append(b)
+                }
+                classEncoding = 1
+            }
+            classifierStageData = buildGLMClassifierModel(
+                name: "VisionOneVsRestStage",
+                input: stage2Input,
+                outputName: outputLabelName,
+                probabilitiesName: probabilitiesName,
+                weightsList: weightsList,
+                biases: biasesList,
+                classEncoding: classEncoding,
+                postTransform: 0,
+                classLabels: resolvedLabels
+            )
+
+        case let lr as LogisticRegression:
+            let (wOpt, bOpt) = await lr.getWeightsAndBias()
+            guard let w = wOpt, let b = bOpt else { throw SwiftMLError.modelNotFitted }
+            guard w.count == expectedDim else {
+                throw SwiftMLError.dimensionMismatch(expected: expectedDim, got: w.count)
+            }
+            let resolvedLabels = try resolveVisionClassLabels(numericClasses: [0.0, 1.0], stringLabels: classLabels)
+            usesStringLabels = resolvedLabels.usesStringLabels
+            classifierStageData = buildGLMClassifierModel(
+                name: "VisionLogisticStage",
+                input: stage2Input,
+                outputName: outputLabelName,
+                probabilitiesName: probabilitiesName,
+                weightsList: [w],
+                biases: [b],
+                classEncoding: 0,
+                postTransform: 0,
+                classLabels: resolvedLabels
+            )
+
+        case let mlp as MLPClassifier:
+            guard let layers = await mlp.trainedLayers, !layers.isEmpty else {
+                throw SwiftMLError.modelNotFitted
+            }
+            let nf = layers[0].inDim
+            guard nf == expectedDim else {
+                throw SwiftMLError.dimensionMismatch(expected: expectedDim, got: nf)
+            }
+            let fittedClasses = await mlp.trainedClasses ?? [0.0, 1.0]
+            let resolvedNumeric = fittedClasses.count >= 2 ? fittedClasses : [0.0, 1.0]
+            let resolvedLabels = try resolveVisionClassLabels(numericClasses: resolvedNumeric, stringLabels: classLabels)
+            usesStringLabels = resolvedLabels.usesStringLabels
+            let (weights, biases) = mlpLayerWeightsAndBiases(layers)
+            let actRaw = mlp.activation.rawValue
+            classifierStageData = buildNeuralNetworkClassifierModel(
+                name: "VisionMLPClassifierStage",
+                input: stage2Input,
+                outputName: outputLabelName,
+                probabilitiesName: probabilitiesName,
+                layerWeights: weights,
+                layerBiases: biases,
+                hiddenActivation: actRaw,
+                classLabels: resolvedLabels
+            )
+        #endif
+
+        default:
+            throw SwiftMLError.unsupportedOperation(
+                "Vision classifier pipeline export does not support \(type(of: classifier))."
+            )
+        }
+
+        return buildVisionPipelineClassifierModel(
+            inputImageName: inputImageName,
+            outputLabelName: outputLabelName,
+            probabilitiesName: probabilitiesName,
+            usesStringLabels: usesStringLabels,
+            revision: revision,
+            visionStageData: visionStageData,
+            classifierStageData: classifierStageData
+        )
+    }
+
+    private static func resolveVisionClassLabels(
+        numericClasses: [Double],
+        stringLabels: [String]?
+    ) throws -> CoreMLClassLabels {
+        if let labels = stringLabels {
+            guard labels.count == numericClasses.count else {
+                throw SwiftMLError.invalidParameter(
+                    "classLabels count (\(labels.count)) must match classifier class count (\(numericClasses.count))"
+                )
+            }
+            return .string(labels)
+        }
+        return .int64(numericClasses.map { (c: Double) -> Int64 in Int64(c) })
     }
 
     // MARK: - Modern .mlpackage Directory Bundle Exporter

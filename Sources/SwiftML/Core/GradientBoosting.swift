@@ -3,7 +3,7 @@ import Foundation
 // MARK: - GBDT Loss Functions
 
 /// Loss functions available for Gradient Boosted Decision Tree optimization.
-public enum GBDTLoss: Sendable, Equatable {
+public enum GBDTLoss: Sendable, Codable, Equatable {
     /// Squared error loss ($L_2$) for conditional mean regression.
     case squaredError
     /// Absolute error loss ($L_1$) for conditional median regression.
@@ -65,6 +65,69 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         self.maxDepth = maxDepth
         self.minSamplesSplit = minSamplesSplit
         self.loss = loss
+    }
+
+    /// Creates a new restored `GradientBoostedTreesRegressor` instance from trained state.
+    /// - Parameters:
+    ///   - nEstimators: The number of boosting iterations configured.
+    ///   - learningRate: The shrinkage parameter applied to each tree update.
+    ///   - maxDepth: The maximum depth of individual regression trees.
+    ///   - minSamplesSplit: The minimum number of samples to split a node.
+    ///   - loss: The loss function utilized during training.
+    ///   - trees: The fitted ensemble of flat regression trees.
+    ///   - initialPrediction: The base prediction offset before boosting updates.
+    ///   - numFeatures: The number of input features observed during training.
+    /// - Throws: `SwiftMLError` if hyperparameter values or state invariants are invalid.
+    public init(
+        nEstimators: Int,
+        learningRate: Double,
+        maxDepth: Int,
+        minSamplesSplit: Int = 2,
+        loss: GBDTLoss = .squaredError,
+        trees: [[FlatTreeNode]],
+        initialPrediction: Double,
+        numFeatures: Int
+    ) throws {
+        guard nEstimators > 0 else { throw SwiftMLError.invalidParameter("nEstimators must be > 0") }
+        guard learningRate > 0 && learningRate.isFinite else {
+            throw SwiftMLError.invalidParameter("learningRate must be finite and > 0")
+        }
+        guard maxDepth > 0 else { throw SwiftMLError.invalidParameter("maxDepth must be > 0") }
+        guard minSamplesSplit >= 2 else { throw SwiftMLError.invalidParameter("minSamplesSplit must be >= 2") }
+        if case .quantile(let alpha) = loss {
+            guard alpha > 0.0 && alpha < 1.0 && alpha.isFinite else {
+                throw SwiftMLError.invalidParameter("quantile alpha must be finite and between 0 and 1 (exclusive)")
+            }
+        }
+        guard initialPrediction.isFinite else {
+            throw SwiftMLError.containsNaN
+        }
+        guard numFeatures >= 0 else {
+            throw SwiftMLError.invalidParameter("numFeatures must be >= 0")
+        }
+        self.nEstimators = nEstimators
+        self.learningRate = learningRate
+        self.maxDepth = maxDepth
+        self.minSamplesSplit = minSamplesSplit
+        self.loss = loss
+        self.trees = trees
+        self.initialPrediction = initialPrediction
+        self.numFeatures = numFeatures
+    }
+
+    /// Returns the fitted model state for serialization.
+    /// - Returns: A `GradientBoostedTreesModelState` snapshot containing hyperparameters, base prediction, and trees.
+    public func getModelState() -> GradientBoostedTreesModelState {
+        return GradientBoostedTreesModelState(
+            nEstimators: nEstimators,
+            learningRate: learningRate,
+            maxDepth: maxDepth,
+            minSamplesSplit: minSamplesSplit,
+            loss: loss,
+            trees: trees,
+            initialPrediction: initialPrediction,
+            numFeatures: numFeatures
+        )
     }
 
     /// Returns the fitted decision trees in the ensemble.
@@ -354,7 +417,10 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
                 leftChild: old.leftChild,
                 rightChild: old.rightChild,
                 value: qVal,
-                isLeaf: true
+                isLeaf: true,
+                impurityGain: old.impurityGain,
+                classDistribution: old.classDistribution,
+                cover: old.cover
             )
         }
     }
@@ -369,17 +435,18 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         minSamplesSplit: Int,
         nodes: inout [FlatTreeNode]
     ) -> Int {
-        let values = indices.map { y[$0] }
+        let values = indices.map { (idx: Int) -> Double in y[idx] }
         let mean = values.mean()
+        let cover = Double(indices.count)
         
         if depth >= maxDepth || indices.count < minSamplesSplit {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, cover: cover)
             nodes.append(leaf)
             return nodes.count - 1
         }
         
         guard let split = bestSplit(X: X, y: y, indices: indices, presortedIndices: presortedIndices, criterion: .mse, maxFeatures: nil) else {
-            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true, cover: cover)
             nodes.append(leaf)
             return nodes.count - 1
         }
@@ -392,7 +459,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         let right = buildTree(X: X, y: y, indices: split.rightIndices, presortedIndices: presortedIndices, depth: depth + 1,
                               maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, nodes: &nodes)
         
-        nodes[currentIndex] = FlatTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, leftChild: left, rightChild: right, value: mean, isLeaf: false)
+        nodes[currentIndex] = FlatTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, leftChild: left, rightChild: right, value: mean, isLeaf: false, cover: cover)
         return currentIndex
     }
     

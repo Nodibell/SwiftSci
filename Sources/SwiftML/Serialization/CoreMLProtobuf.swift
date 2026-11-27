@@ -17,17 +17,19 @@ import Foundation
 // MARK: - Model.proto field numbers
 
 private enum ModelField {
-    static let specificationVersion: Int   = 1   // int32
-    static let description: Int            = 2   // ModelDescription
-    static let pipelineClassifier: Int     = 200 // PipelineClassifier
-    static let pipelineRegressor: Int      = 201 // PipelineRegressor
-    static let pipeline: Int               = 202 // Pipeline
-    static let glmRegressor: Int           = 300 // GLMRegressor
-    static let treeEnsembleRegressor: Int  = 302 // TreeEnsembleRegressor
-    static let glmClassifier: Int          = 400 // GLMClassifier
-    static let treeEnsembleClassifier: Int = 402 // TreeEnsembleClassifier
-    static let neuralNetwork: Int          = 500 // NeuralNetwork
-    static let scaler: Int                 = 604 // Scaler
+    static let specificationVersion: Int    = 1    // int32
+    static let description: Int             = 2    // ModelDescription
+    static let pipelineClassifier: Int      = 200  // PipelineClassifier
+    static let pipelineRegressor: Int       = 201  // PipelineRegressor
+    static let pipeline: Int                = 202  // Pipeline
+    static let glmRegressor: Int            = 300  // GLMRegressor
+    static let treeEnsembleRegressor: Int   = 302  // TreeEnsembleRegressor
+    static let glmClassifier: Int           = 400  // GLMClassifier
+    static let treeEnsembleClassifier: Int  = 402  // TreeEnsembleClassifier
+    static let neuralNetworkClassifier: Int = 403  // NeuralNetworkClassifier
+    static let neuralNetwork: Int           = 500  // NeuralNetwork
+    static let scaler: Int                  = 604  // Scaler
+    static let visionFeaturePrint: Int      = 2002 // VisionFeaturePrint
 }
 
 private enum PipelineField {
@@ -87,9 +89,10 @@ private enum SoftmaxNDLayerParamsField {
 }
 
 private enum ModelDescriptionField {
-    static let input: Int                = 1  // repeated FeatureDescription
-    static let output: Int               = 10 // repeated FeatureDescription
-    static let predictedFeatureName: Int = 11 // string
+    static let input: Int                      = 1  // repeated FeatureDescription
+    static let output: Int                     = 10 // repeated FeatureDescription
+    static let predictedFeatureName: Int       = 11 // string
+    static let predictedProbabilitiesName: Int = 12 // string
 }
 
 private enum FeatureDescriptionField {
@@ -103,11 +106,43 @@ private enum FeatureTypeField {
     static let stringType: Int     = 3 // StringFeatureType
     static let imageType: Int      = 4 // ImageFeatureType
     static let multiArrayType: Int = 5 // ArrayFeatureType
+    static let dictionaryType: Int = 6 // DictionaryFeatureType
+}
+
+private enum ImageFeatureTypeField {
+    static let width: Int      = 1 // int64
+    static let height: Int     = 2 // int64
+    static let colorSpace: Int = 3 // ColorSpace enum (RGB = 20)
+}
+
+private enum ImageColorSpace {
+    static let rgb: UInt64 = 20
+}
+
+private enum DictionaryFeatureTypeField {
+    static let int64KeyType: Int  = 1 // Int64FeatureType
+    static let stringKeyType: Int = 2 // StringFeatureType
 }
 
 private enum ArrayFeatureTypeField {
     static let shape: Int    = 1 // repeated int64
     static let dataType: Int = 2 // ArrayDataType enum (DOUBLE = 65600, FLOAT32 = 65568)
+}
+
+private enum NeuralNetworkClassifierField {
+    static let layers: Int                      = 1   // repeated NeuralNetworkLayer
+    static let arrayInputShapeMapping: Int      = 5   // 1 = EXACT_ARRAY_MAPPING
+    static let stringClassLabels: Int           = 100 // StringVector
+    static let int64ClassLabels: Int            = 101 // Int64Vector
+    static let labelProbabilityLayerName: Int = 200 // string
+}
+
+private enum VisionFeaturePrintField {
+    static let scene: Int = 20 // VisionFeaturePrint.Scene
+}
+
+private enum VisionFeaturePrintSceneField {
+    static let version: Int = 1 // SceneVersion (1 = SCENE_VERSION_1, 2 = SCENE_VERSION_2)
 }
 
 // MARK: - GLMRegressor field numbers (GLMRegressor.proto)
@@ -137,12 +172,17 @@ private enum Int64VectorField {
     static let vector: Int = 1 // repeated int64 (packed)
 }
 
+private enum StringVectorField {
+    static let vector: Int = 1 // repeated string
+}
+
 // MARK: - TreeEnsemble field numbers (TreeEnsemble.proto)
 
 private enum TreeEnsembleClassifierField {
-    static let treeEnsemble: Int     = 1   // TreeEnsembleParameters
-    static let postTransform: Int    = 2   // TreeEnsemblePostEvaluationTransform (0 = NoTransform)
-    static let int64ClassLabels: Int = 101 // Int64Vector
+    static let treeEnsemble: Int      = 1   // TreeEnsembleParameters
+    static let postTransform: Int     = 2   // TreeEnsemblePostEvaluationTransform (0 = NoTransform)
+    static let stringClassLabels: Int = 100 // StringVector
+    static let int64ClassLabels: Int  = 101 // Int64Vector
 }
 
 private enum TreeEnsembleRegressorField {
@@ -178,7 +218,31 @@ private enum EvaluationInfoField {
     static let evaluationValue: Int = 2 // double — prediction value
 }
 
-// MARK: - FeatureDescription builder helpers
+// MARK: - Classifier Description Helpers
+
+internal enum CoreMLClassifierInputKind {
+    case doubleScalars([String])
+    case float32Vector(name: String, dimension: Int)
+}
+
+internal enum CoreMLClassLabels {
+    case int64([Int64])
+    case string([String])
+
+    var count: Int {
+        switch self {
+        case .int64(let labels): return labels.count
+        case .string(let labels): return labels.count
+        }
+    }
+
+    var usesStringLabels: Bool {
+        switch self {
+        case .int64: return false
+        case .string: return true
+        }
+    }
+}
 
 private func encodeDoubleFeature(name: String) -> Data {
     var fw = ProtobufWriter()
@@ -213,6 +277,65 @@ private func encodeInt64Feature(name: String) -> Data {
     return fw.data
 }
 
+private func encodeStringFeature(name: String) -> Data {
+    var fw = ProtobufWriter()
+    fw.writeStringField(fieldNumber: FeatureDescriptionField.name, value: name)
+    var tw = ProtobufWriter()
+    tw.writeBytesField(fieldNumber: FeatureTypeField.stringType, bytes: Data())
+    fw.writeBytesField(fieldNumber: FeatureDescriptionField.type, bytes: tw.data)
+    return fw.data
+}
+
+private func encodeImageFeature(name: String, width: Int, height: Int, colorSpace: UInt64 = ImageColorSpace.rgb) -> Data {
+    var fw = ProtobufWriter()
+    fw.writeStringField(fieldNumber: FeatureDescriptionField.name, value: name)
+    var img = ProtobufWriter()
+    img.writeVarintField(fieldNumber: ImageFeatureTypeField.width, value: UInt64(width))
+    img.writeVarintField(fieldNumber: ImageFeatureTypeField.height, value: UInt64(height))
+    img.writeVarintField(fieldNumber: ImageFeatureTypeField.colorSpace, value: colorSpace)
+    var tw = ProtobufWriter()
+    tw.writeBytesField(fieldNumber: FeatureTypeField.imageType, bytes: img.data)
+    fw.writeBytesField(fieldNumber: FeatureDescriptionField.type, bytes: tw.data)
+    return fw.data
+}
+
+private func encodeDictionaryFeature(name: String, stringKeys: Bool) -> Data {
+    var fw = ProtobufWriter()
+    fw.writeStringField(fieldNumber: FeatureDescriptionField.name, value: name)
+    var dictType = ProtobufWriter()
+    let keyField = stringKeys ? DictionaryFeatureTypeField.stringKeyType : DictionaryFeatureTypeField.int64KeyType
+    dictType.writeBytesField(fieldNumber: keyField, bytes: Data())
+    var tw = ProtobufWriter()
+    tw.writeBytesField(fieldNumber: FeatureTypeField.dictionaryType, bytes: dictType.data)
+    fw.writeBytesField(fieldNumber: FeatureDescriptionField.type, bytes: tw.data)
+    return fw.data
+}
+
+private func encodeClassLabelsField(
+    into writer: inout ProtobufWriter,
+    labels: CoreMLClassLabels,
+    stringField: Int,
+    int64Field: Int
+) {
+    switch labels {
+    case .int64(let intLabels):
+        var labelVec = ProtobufWriter()
+        let encoded = intLabels.map { (value: Int64) -> UInt64 in UInt64(bitPattern: value) }
+        labelVec.writePackedVarintsField(fieldNumber: Int64VectorField.vector, values: encoded)
+        writer.writeBytesField(fieldNumber: int64Field, bytes: labelVec.data)
+    case .string(let strLabels):
+        var labelVec = ProtobufWriter()
+        for str in strLabels {
+            labelVec.writeStringField(fieldNumber: StringVectorField.vector, value: str)
+        }
+        writer.writeBytesField(fieldNumber: stringField, bytes: labelVec.data)
+    }
+}
+
+private func defaultProbabilitiesOutputName(for outputName: String) -> String {
+    outputName == "classProbability" ? "classProbabilities" : "classProbability"
+}
+
 private func buildModelDescription(inputNames: [String], outputName: String, outputIsInt64: Bool = false) -> Data {
     var desc = ProtobufWriter()
     for name in inputNames {
@@ -221,6 +344,41 @@ private func buildModelDescription(inputNames: [String], outputName: String, out
     let outData = outputIsInt64 ? encodeInt64Feature(name: outputName) : encodeDoubleFeature(name: outputName)
     desc.writeBytesField(fieldNumber: ModelDescriptionField.output, bytes: outData)
     desc.writeStringField(fieldNumber: ModelDescriptionField.predictedFeatureName, value: outputName)
+    return desc.data
+}
+
+private func buildClassifierModelDescription(
+    input: CoreMLClassifierInputKind,
+    outputLabelName: String,
+    probabilitiesName: String?,
+    usesStringLabels: Bool
+) -> Data {
+    var desc = ProtobufWriter()
+    switch input {
+    case .doubleScalars(let names):
+        for name in names {
+            desc.writeBytesField(fieldNumber: ModelDescriptionField.input, bytes: encodeDoubleFeature(name: name))
+        }
+    case .float32Vector(let name, let dimension):
+        desc.writeBytesField(
+            fieldNumber: ModelDescriptionField.input,
+            bytes: encodeMultiArrayFeature(name: name, shape: [dimension], isDouble: false)
+        )
+    }
+    let labelOut = usesStringLabels
+        ? encodeStringFeature(name: outputLabelName)
+        : encodeInt64Feature(name: outputLabelName)
+    desc.writeBytesField(fieldNumber: ModelDescriptionField.output, bytes: labelOut)
+    if let probsName = probabilitiesName {
+        desc.writeBytesField(
+            fieldNumber: ModelDescriptionField.output,
+            bytes: encodeDictionaryFeature(name: probsName, stringKeys: usesStringLabels)
+        )
+    }
+    desc.writeStringField(fieldNumber: ModelDescriptionField.predictedFeatureName, value: outputLabelName)
+    if let probsName = probabilitiesName {
+        desc.writeStringField(fieldNumber: ModelDescriptionField.predictedProbabilitiesName, value: probsName)
+    }
     return desc.data
 }
 
@@ -288,29 +446,70 @@ internal func buildGLMClassifierModel(
     bias: Double,
     classLabels: [Int64] = [0, 1]
 ) -> Data {
+    buildGLMClassifierModel(
+        name: name,
+        input: .doubleScalars(inputNames),
+        outputName: outputName,
+        probabilitiesName: defaultProbabilitiesOutputName(for: outputName),
+        weightsList: [weights],
+        biases: [bias],
+        classEncoding: 0,
+        postTransform: 0,
+        classLabels: .int64(classLabels)
+    )
+}
+
+/// Builds a binary `.mlmodel` payload encoding a binary or multiclass `GLMClassifier`.
+///
+/// - Parameters:
+///   - name: Model display name.
+///   - input: Scalar double inputs or a single Float32 vector input.
+///   - outputName: Name of the predicted class label output.
+///   - probabilitiesName: Optional predicted probabilities dictionary output name.
+///   - weightsList: Weight vectors (1 vector for binary ReferenceClass; `C` vectors for OneVsRest `C >= 3`).
+///   - biases: Intercept offsets matching `weightsList.count`.
+///   - classEncoding: `0` for `ReferenceClass`, `1` for `OneVsRest`.
+///   - postTransform: `0` for `Logit`.
+///   - classLabels: `Int64` or `String` class labels.
+/// - Returns: Binary `Data` representing a complete, loadable Apple Core ML `.mlmodel` file.
+internal func buildGLMClassifierModel(
+    name: String,
+    input: CoreMLClassifierInputKind,
+    outputName: String,
+    probabilitiesName: String?,
+    weightsList: [[Double]],
+    biases: [Double],
+    classEncoding: Int,
+    postTransform: Int = 0,
+    classLabels: CoreMLClassLabels
+) -> Data {
     var model = ProtobufWriter()
     model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
     model.writeBytesField(
         fieldNumber: ModelField.description,
-        bytes: buildModelDescription(inputNames: inputNames, outputName: outputName, outputIsInt64: true)
+        bytes: buildClassifierModelDescription(
+            input: input,
+            outputLabelName: outputName,
+            probabilitiesName: probabilitiesName,
+            usesStringLabels: classLabels.usesStringLabels
+        )
     )
 
     var glm = ProtobufWriter()
-    var doubleArray = ProtobufWriter()
-    doubleArray.writePackedDoublesField(fieldNumber: DoubleArrayField.values, values: weights)
-    glm.writeBytesField(fieldNumber: GLMClassifierField.weights, bytes: doubleArray.data)
-    glm.writePackedDoublesField(fieldNumber: GLMClassifierField.offset, values: [bias])
-    // postEvaluationTransform = 0 (Logit in GLMClassifier.proto)
-    glm.writeVarintField(fieldNumber: GLMClassifierField.postTransform, value: 0)
-    // classEncoding = 0 (ReferenceClass)
-    glm.writeVarintField(fieldNumber: GLMClassifierField.classEncoding, value: 0)
-    // int64ClassLabels
-    var labelVec = ProtobufWriter()
-    labelVec.writePackedVarintsField(
-        fieldNumber: Int64VectorField.vector,
-        values: classLabels.map { UInt64(bitPattern: Int64($0)) }
+    for weights in weightsList {
+        var doubleArray = ProtobufWriter()
+        doubleArray.writePackedDoublesField(fieldNumber: DoubleArrayField.values, values: weights)
+        glm.writeBytesField(fieldNumber: GLMClassifierField.weights, bytes: doubleArray.data)
+    }
+    glm.writePackedDoublesField(fieldNumber: GLMClassifierField.offset, values: biases)
+    glm.writeVarintField(fieldNumber: GLMClassifierField.postTransform, value: UInt64(postTransform))
+    glm.writeVarintField(fieldNumber: GLMClassifierField.classEncoding, value: UInt64(classEncoding))
+    encodeClassLabelsField(
+        into: &glm,
+        labels: classLabels,
+        stringField: GLMClassifierField.stringClassLabels,
+        int64Field: GLMClassifierField.int64ClassLabels
     )
-    glm.writeBytesField(fieldNumber: GLMClassifierField.int64ClassLabels, bytes: labelVec.data)
 
     model.writeBytesField(fieldNumber: ModelField.glmClassifier, bytes: glm.data)
     return model.data
@@ -334,20 +533,47 @@ internal func buildTreeEnsembleClassifierModel(
     treesNodes: [[FlatTreeNode]],
     classLabels: [Int64] = [0, 1]
 ) -> Data {
+    buildTreeEnsembleClassifierModel(
+        name: name,
+        input: .doubleScalars(inputNames),
+        outputName: outputName,
+        probabilitiesName: defaultProbabilitiesOutputName(for: outputName),
+        treesNodes: treesNodes,
+        numericClasses: classLabels.map { (c: Int64) -> Double in Double(c) },
+        classLabels: .int64(classLabels)
+    )
+}
+
+/// Builds a binary `.mlmodel` for a decision tree or random forest **classifier** with scalar or vector inputs.
+internal func buildTreeEnsembleClassifierModel(
+    name: String,
+    input: CoreMLClassifierInputKind,
+    outputName: String,
+    probabilitiesName: String?,
+    treesNodes: [[FlatTreeNode]],
+    numericClasses: [Double],
+    classLabels: CoreMLClassLabels
+) -> Data {
     var model = ProtobufWriter()
     model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
     model.writeBytesField(
         fieldNumber: ModelField.description,
-        bytes: buildModelDescription(inputNames: inputNames, outputName: outputName, outputIsInt64: true)
+        bytes: buildClassifierModelDescription(
+            input: input,
+            outputLabelName: outputName,
+            probabilitiesName: probabilitiesName,
+            usesStringLabels: classLabels.usesStringLabels
+        )
     )
 
     var clf = ProtobufWriter()
     var params = ProtobufWriter()
-    let numClasses = classLabels.count
+    let numClasses = max(1, classLabels.count)
     params.writeVarintField(fieldNumber: TreeEnsembleParametersField.numPredictionDimensions, value: UInt64(numClasses))
     let basePred = [Double](repeating: 0.0, count: numClasses)
     params.writePackedDoublesField(fieldNumber: TreeEnsembleParametersField.basePredictionValue, values: basePred)
 
+    let leafWeight = 1.0 / Double(max(1, treesNodes.count))
     for (treeIdx, nodes) in treesNodes.enumerated() {
         for (i, node) in nodes.enumerated() {
             var n = ProtobufWriter()
@@ -356,10 +582,11 @@ internal func buildTreeEnsembleClassifierModel(
             if node.isLeaf {
                 n.writeVarintField(fieldNumber: TreeNodeField.nodeBehavior, value: TreeNodeBehavior.leafNode.rawValue)
                 var leaf = ProtobufWriter()
-                let targetInt = Int64(node.value)
-                let evalIdx = classLabels.firstIndex(of: targetInt) ?? min(max(0, Int(node.value)), numClasses - 1)
+                let evalIdx = numericClasses.firstIndex(of: node.value)
+                    ?? numericClasses.firstIndex(where: { (c: Double) -> Bool in Int64(c) == Int64(node.value) })
+                    ?? min(max(0, Int(node.value)), numClasses - 1)
                 leaf.writeVarintField(fieldNumber: EvaluationInfoField.evaluationIndex, value: UInt64(evalIdx))
-                leaf.writeDoubleField(fieldNumber: EvaluationInfoField.evaluationValue, value: 1.0)
+                leaf.writeDoubleField(fieldNumber: EvaluationInfoField.evaluationValue, value: leafWeight)
                 n.writeBytesField(fieldNumber: TreeNodeField.evaluationInfo, bytes: leaf.data)
             } else {
                 n.writeVarintField(fieldNumber: TreeNodeField.nodeBehavior, value: TreeNodeBehavior.branchOnValueLessThanEqual.rawValue)
@@ -374,12 +601,12 @@ internal func buildTreeEnsembleClassifierModel(
 
     clf.writeBytesField(fieldNumber: TreeEnsembleClassifierField.treeEnsemble, bytes: params.data)
     clf.writeVarintField(fieldNumber: TreeEnsembleClassifierField.postTransform, value: 0) // NoTransform
-    var labelVec = ProtobufWriter()
-    labelVec.writePackedVarintsField(
-        fieldNumber: Int64VectorField.vector,
-        values: classLabels.map { UInt64(bitPattern: Int64($0)) }
+    encodeClassLabelsField(
+        into: &clf,
+        labels: classLabels,
+        stringField: TreeEnsembleClassifierField.stringClassLabels,
+        int64Field: TreeEnsembleClassifierField.int64ClassLabels
     )
-    clf.writeBytesField(fieldNumber: TreeEnsembleClassifierField.int64ClassLabels, bytes: labelVec.data)
 
     model.writeBytesField(fieldNumber: ModelField.treeEnsembleClassifier, bytes: clf.data)
     return model.data
@@ -630,7 +857,30 @@ internal func buildNeuralNetworkModel(
     model.writeBytesField(fieldNumber: ModelField.description, bytes: desc.data)
 
     var nnMsg = ProtobufWriter()
-    var currentInputs = [inFeatureName]
+    encodeNeuralNetworkLayers(
+        into: &nnMsg,
+        startInputName: inFeatureName,
+        finalOutputName: outputName,
+        layerWeights: layerWeights,
+        layerBiases: layerBiases,
+        hiddenActivation: hiddenActivation,
+        outputActivation: outputActivation
+    )
+    nnMsg.writeVarintField(fieldNumber: NeuralNetworkField.arrayInputShapeMapping, value: 1)
+    model.writeBytesField(fieldNumber: ModelField.neuralNetwork, bytes: nnMsg.data)
+    return model.data
+}
+
+private func encodeNeuralNetworkLayers(
+    into nnWriter: inout ProtobufWriter,
+    startInputName: String,
+    finalOutputName: String,
+    layerWeights: [[[Double]]],
+    layerBiases: [[Double]],
+    hiddenActivation: String,
+    outputActivation: String?
+) {
+    var currentInputs = [startInputName]
 
     for layerIdx in 0..<layerWeights.count {
         let weights2D = layerWeights[layerIdx]
@@ -656,7 +906,7 @@ internal func buildNeuralNetworkModel(
         let isLastLayer = (layerIdx == layerWeights.count - 1)
         let actType = isLastLayer ? (outputActivation ?? "linear") : hiddenActivation
         let hasActivation = actType.lowercased() != "linear"
-        let ipOutName = (!hasActivation && isLastLayer) ? outputName : "dense_out_\(layerIdx)"
+        let ipOutName = (!hasActivation && isLastLayer) ? finalOutputName : "dense_out_\(layerIdx)"
 
         var ipLayer = ProtobufWriter()
         ipLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.name, value: "dense_\(layerIdx)")
@@ -675,15 +925,15 @@ internal func buildNeuralNetworkModel(
         ipParams.writeBytesField(fieldNumber: InnerProductLayerParamsField.weights, bytes: wParams.data)
 
         var bParams = ProtobufWriter()
-        bParams.writePackedFloatsField(fieldNumber: WeightParamsField.floatValue, values: biases.map { Float($0) })
+        let floatBiases = biases.map { (b: Double) -> Float in Float(b) }
+        bParams.writePackedFloatsField(fieldNumber: WeightParamsField.floatValue, values: floatBiases)
         ipParams.writeBytesField(fieldNumber: InnerProductLayerParamsField.bias, bytes: bParams.data)
 
         ipLayer.writeBytesField(fieldNumber: NeuralNetworkLayerField.innerProduct, bytes: ipParams.data)
-        nnMsg.writeBytesField(fieldNumber: NeuralNetworkField.layers, bytes: ipLayer.data)
+        nnWriter.writeBytesField(fieldNumber: NeuralNetworkField.layers, bytes: ipLayer.data)
 
-        // Activation
         if hasActivation {
-            let finalLayerOut = isLastLayer ? outputName : "act_out_\(layerIdx)"
+            let finalLayerOut = isLastLayer ? finalOutputName : "act_out_\(layerIdx)"
             var actLayer = ProtobufWriter()
             actLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.name, value: "act_\(layerIdx)")
             actLayer.writeStringField(fieldNumber: NeuralNetworkLayerField.input, value: ipOutName)
@@ -693,8 +943,10 @@ internal func buildNeuralNetworkModel(
             let activationField: Int
             switch actType.lowercased() {
             case "softmax":
-                actParams.writeVarintField(fieldNumber: SoftmaxNDLayerParamsField.axis,
-                                           value: UInt64(bitPattern: Int64(-1)))
+                actParams.writeVarintField(
+                    fieldNumber: SoftmaxNDLayerParamsField.axis,
+                    value: UInt64(bitPattern: Int64(-1))
+                )
                 activationField = NeuralNetworkLayerField.softmaxND
             case "relu":
                 actParams.writeBytesField(fieldNumber: ActivationParamsField.reLU, bytes: Data())
@@ -709,15 +961,122 @@ internal func buildNeuralNetworkModel(
                 activationField = NeuralNetworkLayerField.activation
             }
             actLayer.writeBytesField(fieldNumber: activationField, bytes: actParams.data)
-            nnMsg.writeBytesField(fieldNumber: NeuralNetworkField.layers, bytes: actLayer.data)
+            nnWriter.writeBytesField(fieldNumber: NeuralNetworkField.layers, bytes: actLayer.data)
             currentInputs = [finalLayerOut]
         } else {
             currentInputs = [ipOutName]
         }
     }
+}
 
-    nnMsg.writeVarintField(fieldNumber: NeuralNetworkField.arrayInputShapeMapping, value: 1)
-    model.writeBytesField(fieldNumber: ModelField.neuralNetwork, bytes: nnMsg.data)
+/// Builds a binary `.mlmodel` payload encoding a `NeuralNetworkClassifier` (`ModelField.neuralNetworkClassifier = 403`).
+internal func buildNeuralNetworkClassifierModel(
+    name: String,
+    input: CoreMLClassifierInputKind,
+    outputName: String,
+    probabilitiesName: String,
+    layerWeights: [[[Double]]],
+    layerBiases: [[Double]],
+    hiddenActivation: String,
+    classLabels: CoreMLClassLabels
+) -> Data {
+    var model = ProtobufWriter()
+    model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
+    model.writeBytesField(
+        fieldNumber: ModelField.description,
+        bytes: buildClassifierModelDescription(
+            input: input,
+            outputLabelName: outputName,
+            probabilitiesName: probabilitiesName,
+            usesStringLabels: classLabels.usesStringLabels
+        )
+    )
+
+    let startInputName: String
+    switch input {
+    case .doubleScalars(let names):
+        startInputName = names.first ?? "features"
+    case .float32Vector(let vectorName, _):
+        startInputName = vectorName
+    }
+
+    let probLayerOutName = (startInputName == "probabilities") ? "classProbabilitiesOutput" : "probabilities"
+    var resolvedWeights = layerWeights
+    var resolvedBiases = layerBiases
+    if let lastWeights = resolvedWeights.last,
+       let lastBiases = resolvedBiases.last,
+       lastBiases.count == 1,
+       classLabels.count == 2 {
+        // Core ML NeuralNetworkClassifier requires class score vector length == classLabels.count.
+        // For binary sigmoid (1 logit z), [0, z] under softmax equals [1 - sigmoid(z), sigmoid(z)].
+        let inDim = lastWeights.first?.count ?? 0
+        let zeroRow = [Double](repeating: 0.0, count: inDim)
+        let posRow = lastWeights.first ?? zeroRow
+        resolvedWeights[resolvedWeights.count - 1] = [zeroRow, posRow]
+        resolvedBiases[resolvedBiases.count - 1] = [0.0, lastBiases[0]]
+    }
+    let lastOutDim = resolvedBiases.last?.count ?? 1
+    let outputActivation = (lastOutDim == 1) ? "sigmoid" : "softmax"
+
+    var nnClf = ProtobufWriter()
+    encodeNeuralNetworkLayers(
+        into: &nnClf,
+        startInputName: startInputName,
+        finalOutputName: probLayerOutName,
+        layerWeights: resolvedWeights,
+        layerBiases: resolvedBiases,
+        hiddenActivation: hiddenActivation,
+        outputActivation: outputActivation
+    )
+    nnClf.writeVarintField(fieldNumber: NeuralNetworkClassifierField.arrayInputShapeMapping, value: 1)
+    encodeClassLabelsField(
+        into: &nnClf,
+        labels: classLabels,
+        stringField: NeuralNetworkClassifierField.stringClassLabels,
+        int64Field: NeuralNetworkClassifierField.int64ClassLabels
+    )
+    nnClf.writeStringField(
+        fieldNumber: NeuralNetworkClassifierField.labelProbabilityLayerName,
+        value: probLayerOutName
+    )
+
+    model.writeBytesField(fieldNumber: ModelField.neuralNetworkClassifier, bytes: nnClf.data)
+    return model.data
+}
+
+// MARK: - VisionFeaturePrint.Scene builder
+
+/// Builds a binary `.mlmodel` payload encoding a Core ML `VisionFeaturePrint.Scene` model (`field 2002`).
+internal func buildVisionFeaturePrintSceneModel(
+    inputImageName: String,
+    outputFeatureName: String,
+    revision: VisionScenePrintRevision
+) -> Data {
+    let specVersion: UInt64 = revision == .v1 ? 4 : 7
+    let imageSize = revision == .v1 ? 299 : 360
+    let featureDim = revision == .v1 ? 2048 : 768
+
+    var model = ProtobufWriter()
+    model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: specVersion)
+
+    var desc = ProtobufWriter()
+    desc.writeBytesField(
+        fieldNumber: ModelDescriptionField.input,
+        bytes: encodeImageFeature(name: inputImageName, width: imageSize, height: imageSize, colorSpace: ImageColorSpace.rgb)
+    )
+    desc.writeBytesField(
+        fieldNumber: ModelDescriptionField.output,
+        bytes: encodeMultiArrayFeature(name: outputFeatureName, shape: [featureDim], isDouble: false)
+    )
+    model.writeBytesField(fieldNumber: ModelField.description, bytes: desc.data)
+
+    var scene = ProtobufWriter()
+    scene.writeVarintField(fieldNumber: VisionFeaturePrintSceneField.version, value: UInt64(revision.rawValue))
+
+    var vfp = ProtobufWriter()
+    vfp.writeBytesField(fieldNumber: VisionFeaturePrintField.scene, bytes: scene.data)
+
+    model.writeBytesField(fieldNumber: ModelField.visionFeaturePrint, bytes: vfp.data)
     return model.data
 }
 
@@ -734,7 +1093,13 @@ internal func buildPipelineClassifierModel(
     var model = ProtobufWriter()
     model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: 4)
 
-    let desc = buildModelDescription(inputNames: inputNames, outputName: outputName, outputIsInt64: true)
+    let probsName = defaultProbabilitiesOutputName(for: outputName)
+    let desc = buildClassifierModelDescription(
+        input: .doubleScalars(inputNames),
+        outputLabelName: outputName,
+        probabilitiesName: probsName,
+        usesStringLabels: false
+    )
     model.writeBytesField(fieldNumber: ModelField.description, bytes: desc)
 
     var pipelineMsg = ProtobufWriter()
@@ -746,6 +1111,52 @@ internal func buildPipelineClassifierModel(
             pipelineMsg.writeStringField(fieldNumber: PipelineField.names, value: n)
         }
     }
+
+    var pipelineClassifierMsg = ProtobufWriter()
+    pipelineClassifierMsg.writeBytesField(fieldNumber: PipelineClassifierField.pipeline, bytes: pipelineMsg.data)
+
+    model.writeBytesField(fieldNumber: ModelField.pipelineClassifier, bytes: pipelineClassifierMsg.data)
+    return model.data
+}
+
+/// Builds a binary `.mlmodel` `PipelineClassifier` combining `VisionFeaturePrint.Scene` and a stage-2 classifier.
+internal func buildVisionPipelineClassifierModel(
+    inputImageName: String,
+    outputLabelName: String,
+    probabilitiesName: String,
+    usesStringLabels: Bool,
+    revision: VisionScenePrintRevision,
+    visionStageData: Data,
+    classifierStageData: Data
+) -> Data {
+    let specVersion: UInt64 = revision == .v1 ? 4 : 7
+    let imageSize = revision == .v1 ? 299 : 360
+
+    var model = ProtobufWriter()
+    model.writeVarintField(fieldNumber: ModelField.specificationVersion, value: specVersion)
+
+    var desc = ProtobufWriter()
+    desc.writeBytesField(
+        fieldNumber: ModelDescriptionField.input,
+        bytes: encodeImageFeature(name: inputImageName, width: imageSize, height: imageSize, colorSpace: ImageColorSpace.rgb)
+    )
+    let labelOut = usesStringLabels
+        ? encodeStringFeature(name: outputLabelName)
+        : encodeInt64Feature(name: outputLabelName)
+    desc.writeBytesField(fieldNumber: ModelDescriptionField.output, bytes: labelOut)
+    desc.writeBytesField(
+        fieldNumber: ModelDescriptionField.output,
+        bytes: encodeDictionaryFeature(name: probabilitiesName, stringKeys: usesStringLabels)
+    )
+    desc.writeStringField(fieldNumber: ModelDescriptionField.predictedFeatureName, value: outputLabelName)
+    desc.writeStringField(fieldNumber: ModelDescriptionField.predictedProbabilitiesName, value: probabilitiesName)
+    model.writeBytesField(fieldNumber: ModelField.description, bytes: desc.data)
+
+    var pipelineMsg = ProtobufWriter()
+    pipelineMsg.writeBytesField(fieldNumber: PipelineField.models, bytes: visionStageData)
+    pipelineMsg.writeBytesField(fieldNumber: PipelineField.models, bytes: classifierStageData)
+    pipelineMsg.writeStringField(fieldNumber: PipelineField.names, value: "VisionFeaturePrint")
+    pipelineMsg.writeStringField(fieldNumber: PipelineField.names, value: "Classifier")
 
     var pipelineClassifierMsg = ProtobufWriter()
     pipelineClassifierMsg.writeBytesField(fieldNumber: PipelineClassifierField.pipeline, bytes: pipelineMsg.data)

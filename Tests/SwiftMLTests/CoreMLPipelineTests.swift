@@ -66,6 +66,12 @@ final class CoreMLPipelineTests: XCTestCase {
             submodelsData: [scalerData, clfData]
         )
         XCTAssertTrue(FileManager.default.fileExists(atPath: tempURL.path))
+
+        let compiledURL = try MLModel.compileModel(at: tempURL)
+        defer { try? FileManager.default.removeItem(at: compiledURL) }
+        let model = try MLModel(contentsOf: compiledURL)
+        let pred = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: ["f1": 12.0, "f2": 18.0]))
+        XCTAssertNotNil(pred.featureValue(for: "label")?.int64Value)
     }
 
     func testPipelineRegressorSerialization() throws {
@@ -102,6 +108,46 @@ final class CoreMLPipelineTests: XCTestCase {
             submodelsData: [scalerData, regData]
         )
         XCTAssertTrue(FileManager.default.fileExists(atPath: tempURL.path))
+
+        let compiledURL = try MLModel.compileModel(at: tempURL)
+        defer { try? FileManager.default.removeItem(at: compiledURL) }
+        let model = try MLModel(contentsOf: compiledURL)
+        let pred = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: ["sqft": 1000.0, "rooms": 3.0]))
+        XCTAssertNotNil(pred.featureValue(for: "price")?.doubleValue)
+    }
+
+    func testChainedPipelineRegressorCompilesAndPredicts() throws {
+        let scalerData = CoreMLExporter.exportBinaryStandardScaler(
+            name: "ScalerStage",
+            inputNames: ["sqft", "rooms"],
+            outputNames: ["scaled_sqft", "scaled_rooms"],
+            shiftValues: [-1000.0, -2.0],
+            scaleValues: [0.001, 0.5]
+        )
+        let regData = CoreMLExporter.exportBinaryLinearModel(
+            name: "RegStage",
+            inputNames: ["scaled_sqft", "scaled_rooms"],
+            outputName: "price",
+            weights: [200000.0, 30000.0],
+            bias: 100000.0
+        )
+
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ChainedPipelineReg_\(UUID().uuidString).mlmodel")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+        try CoreMLExporter.writePipelineRegressor(
+            to: tempURL,
+            inputNames: ["sqft", "rooms"],
+            outputName: "price",
+            submodelsData: [scalerData, regData]
+        )
+        let compiledURL = try MLModel.compileModel(at: tempURL)
+        defer { try? FileManager.default.removeItem(at: compiledURL) }
+        let model = try MLModel(contentsOf: compiledURL)
+        let pred = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: ["sqft": 2000.0, "rooms": 4.0]))
+        // scaled_sqft = (2000 - 1000) * 0.001 = 1.0, scaled_rooms = (4 - 2) * 0.5 = 1.0
+        // price = 200000 * 1.0 + 30000 * 1.0 + 100000 = 330000.0
+        let predicted = try XCTUnwrap(pred.featureValue(for: "price")?.doubleValue)
+        XCTAssertEqual(predicted, 330000.0, accuracy: 1e-6)
     }
 
     func testMLPackageExport() throws {

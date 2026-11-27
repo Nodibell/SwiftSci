@@ -340,11 +340,9 @@ extension TransformerDecoder {
         }
         let configData = try read("config.json")
         var config = try LLMConfig(huggingFaceConfigJSON: configData, maxSeqLen: maxSeqLen)
-        let generationConfigURL = directory.appendingPathComponent("generation_config.json")
-        if fm.fileExists(atPath: generationConfigURL.path),
-           let generationConfigData = try? Data(contentsOf: generationConfigURL),
-           let generationConfigRoot = try? JSONSerialization.jsonObject(with: generationConfigData) as? [String: Any] {
-            config.eosTokenIDs.formUnion(LLMConfig.parseEOSTokenIDs(from: generationConfigRoot["eos_token_id"]))
+        let generationConfig = try GenerationConfiguration.loadIfPresent(in: directory)
+        if let generationConfig {
+            config.eosTokenIDs.formUnion(generationConfig.eosTokenIDs)
         }
         let tokenizer: any Tokenizer
         if config.architecture == .llama {
@@ -356,6 +354,7 @@ extension TransformerDecoder {
         let quantization = AffineQuantizationConfig(configJSON: configData)
 
         let decoder = TransformerDecoder(config: config, tokenizer: tokenizer)
+        decoder.setGenerationConfiguration(generationConfig)
         var missingAcrossShards: Set<String>?
         var missingNorms = Set(decoder.expectedDenseParameterKeys)
         for shard in shards {
